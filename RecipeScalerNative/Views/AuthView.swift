@@ -1,0 +1,283 @@
+//
+//  AuthView.swift
+//  RecipeScalerNative
+//
+//
+
+import SwiftUI
+
+struct AuthView: View {
+    @StateObject private var authService = AuthService.shared
+    @State private var isLoading = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var showSeedInput = false
+    @State private var seedPhrase = ""
+    @State private var showQRScanner = false
+
+    private let gradient = LinearGradient(
+        colors: [
+            Color(red: 1.00, green: 0.60, blue: 0.43),
+            Color(red: 1.00, green: 0.25, blue: 0.00)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    var body: some View {
+        ZStack {
+            Color(.systemBackground)
+                .ignoresSafeArea()
+
+            VStack {
+                Spacer()
+
+                VStack(spacing: 20) {
+                    if !showSeedInput {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .fill(Color(.systemBackground))
+                                .shadow(color: Color(red: 0.88, green: 0.22, blue: 0.00, opacity: 0.30), radius: 40, x: 0, y: 10)
+                                .frame(width: 96, height: 96)
+
+                            Image("AppLogo")
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 96, height: 96)
+                                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        }
+                    }
+
+                    if showSeedInput {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Button {
+                                showSeedInput = false
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "chevron.left")
+                                        .font(.system(size: 14, weight: .medium))
+                                    Text("Back")
+                                        .font(.custom(AppFonts.sans, size: 15))
+                                }
+                                .foregroundColor(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier(AccessibilityIdentifiers.authBackButton)
+
+                            Text("Login")
+                                .font(.custom(AppFonts.display, size: 30))
+                                .padding(.top, 8)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("1. Open Account page on Recipe Scaler app")
+                                Text("2. Press \"Login on another device\"")
+                                Text("3. Enter your seed phrase to login into your account")
+                            }
+                            .font(.custom(AppFonts.sans, size: 16))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        VStack(spacing: 8) {
+                            Text("Welcome to\nRecipe Scaler")
+                                .font(.custom(AppFonts.display, size: 30))
+
+                            Text("Create a new account\nor restore existing one")
+                                .font(.custom(AppFonts.sans, size: 16))
+                                .foregroundStyle(.secondary)
+                        }
+                        .multilineTextAlignment(.center)
+                    }
+
+                    if showError {
+                        Text(errorMessage)
+                            .font(.custom(AppFonts.sans, size: 13))
+                            .foregroundStyle(.red)
+                            .padding(12)
+                            .frame(maxWidth: .infinity)
+                            .background(Color.red.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(Color.red.opacity(0.25), lineWidth: 1)
+                            )
+                    }
+
+                    if showSeedInput {
+                        VStack(spacing: 12) {
+                            ZStack(alignment: .topLeading) {
+                                TextEditor(text: $seedPhrase)
+                                    .font(.custom(AppFonts.sans, size: 16))
+                                    .frame(height: 120)
+                                    .autocapitalization(.none)
+                                    .autocorrectionDisabled()
+                                    .padding(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .stroke(Color(.systemGray4), lineWidth: 1)
+                                    )
+                                    .accessibilityIdentifier(AccessibilityIdentifiers.authSeedTextEditor)
+
+                                if seedPhrase.isEmpty {
+                                    Text("Seed phrase consists of 12 words")
+                                        .font(.custom(AppFonts.sans, size: 16))
+                                        .foregroundStyle(.secondary)
+                                        .padding(.leading, 17)
+                                        .padding(.top, 20)
+                                        .allowsHitTesting(false)
+                                }
+
+                                VStack {
+                                    HStack {
+                                        Spacer()
+                                        Button {
+                                            showQRScanner = true
+                                        } label: {
+                                            Image(systemName: "qrcode.viewfinder")
+                                                .font(.system(size: 20))
+                                                .foregroundColor(.primary)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .padding(8)
+                                        .accessibilityLabel("Scan QR code")
+                                        .accessibilityIdentifier(AccessibilityIdentifiers.authQRCodeButton)
+                                    }
+                                    Spacer()
+                                }
+                            }
+
+                            Button {
+                                Task { await loginUser() }
+                            } label: {
+                                HStack {
+                                    Spacer()
+                                    if isLoading {
+                                        ProgressView().tint(.white)
+                                    } else {
+                                        Text("Login")
+                                            .font(.custom(AppFonts.sansMedium, size: 18))
+                                            .foregroundColor(.white)
+                                    }
+                                    Spacer()
+                                }
+                            }
+                            .frame(height: 56)
+                            .background(
+                                seedPhrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading
+                                    ? Color(.systemGray5)
+                                    : Color(.darkGray)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .disabled(seedPhrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
+                            .accessibilityIdentifier(AccessibilityIdentifiers.authLoginButton)
+                        }
+                    } else {
+                        VStack(spacing: 12) {
+                            Button {
+                                Task { await registerUser() }
+                            } label: {
+                                HStack {
+                                    Spacer()
+                                    if isLoading {
+                                        ProgressView().tint(.white)
+                                    } else {
+                                        Text("I'm new user")
+                                            .font(.custom(AppFonts.sansMedium, size: 18))
+                                    }
+                                    Spacer()
+                                }
+                            }
+                            .frame(height: 56)
+                            .background(gradient)
+                            .foregroundStyle(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .disabled(isLoading)
+                            .accessibilityIdentifier(AccessibilityIdentifiers.authNewUserButton)
+
+                            Button {
+                                showSeedInput = true
+                            } label: {
+                                Text("I used Recipe Scaler before")
+                                    .font(.custom(AppFonts.sansMedium, size: 18))
+                                    .foregroundColor(.primary)
+                                    .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .stroke(Color(.systemGray4), lineWidth: 2)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(isLoading)
+                            .accessibilityIdentifier(AccessibilityIdentifiers.authExistingUserButton)
+                        }
+                    }
+                }
+                .frame(maxWidth: 360)
+                .padding(.horizontal, 24)
+                .gesture(
+                    DragGesture()
+                        .onEnded { value in
+                            if showSeedInput && value.translation.width > 100 {
+                                withAnimation {
+                                    showSeedInput = false
+                                }
+                            }
+                        }
+                )
+
+                Spacer()
+            }
+        }
+        .sheet(isPresented: $showQRScanner) {
+            QRScannerView(
+                onResult: { text in
+                    let normalized = text.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+                        .split(separator: " ")
+                        .joined(separator: " ")
+                    seedPhrase = normalized
+                    showQRScanner = false
+                    let wordCount = normalized.split(separator: " ").count
+                    if wordCount == 12 {
+                        Task { await loginUser(seed: normalized) }
+                    }
+                },
+                onClose: { showQRScanner = false }
+            )
+        }
+        .accessibilityIdentifier(AccessibilityIdentifiers.authRoot)
+    }
+
+    private func registerUser() async {
+        isLoading = true
+        showError = false
+        defer { isLoading = false }
+
+        do {
+            let result = try await authService.registerAuto()
+            print("Registration successful! Seed phrase: \(result.seedPhrase)")
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
+    private func loginUser(seed: String? = nil) async {
+        let phrase = seed ?? seedPhrase
+        isLoading = true
+        showError = false
+        defer { isLoading = false }
+
+        do {
+            _ = try await authService.loginWithSeed(phrase)
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+}
+
+#Preview {
+    AuthView()
+}
