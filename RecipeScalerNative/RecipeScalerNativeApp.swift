@@ -7,11 +7,17 @@
 import SwiftUI
 import SwiftData
 import UIKit
+#if DEBUG
+import Agentation
+#endif
 
 @main
 struct RecipeScalerNativeApp: App {
     init() {
         configureNavigationBarFonts()
+        #if DEBUG
+        Agentation.shared.install()
+        #endif
     }
 
     var sharedModelContainer: ModelContainer = {

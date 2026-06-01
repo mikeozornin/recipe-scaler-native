@@ -18,15 +18,16 @@ enum RecipeDetailScaling {
         return recipe.ingredients
             .sorted { $0.order < $1.order }
             .map { ingredient in
-                let scaledAmount = ingredient.scaled(targetServings: target, baseServings: base)
-                let (amount, unit) = splitAmountAndUnit(scaledAmount)
+                let scaledText = ingredient.scaledDisplay(targetServings: target, baseServings: base)
+                let (amount, unit) = splitAmountAndUnit(scaledText)
                 return DisplayIngredient(
                     id: ingredient.id,
                     name: ingredient.name,
                     originalAmount: amount,
                     unit: unit,
                     order: ingredient.order,
-                    isSeparator: false
+                    isSeparator: ingredient.isHeaderRow,
+                    amountDisplay: scaledText
                 )
             }
     }

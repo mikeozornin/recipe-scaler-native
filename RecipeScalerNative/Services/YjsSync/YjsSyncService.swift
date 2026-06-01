@@ -13,9 +13,17 @@ final class YjsSyncService: ObservableObject {
     @Published private(set) var collectionEntries: [CollectionEntry] = []
     @Published private(set) var currentRecipe: RecipeData?
     @Published private(set) var connectionState: ConnectionState = .disconnected
+    @Published private(set) var writeSyncStates: [String: WriteSyncState] = [:]
+    @Published var syncErrorMessage: String?
+    @Published private(set) var activeRecipeWasRemoved = false
+
+    func acknowledgeRecipeRemoved() {
+        activeRecipeWasRemoved = false
+    }
 
     private let documentManager: DocumentManager
     private let store: YDocStore
+    private let offlineQueue: OfflineWriteQueue
     private let eventHandler: SyncEventHandler
     private var manager: SocketManager?
     private var socket: SocketIOClient?
@@ -29,9 +37,15 @@ final class YjsSyncService: ObservableObject {
     private var activeRecipeId: String?
     private var disconnectTimestamp: Date?
     private var changeHandlersInstalled = false
+    private var localUpdateHandlerInstalled = false
+    private var recipeRefreshSuspended = 0
+    private lazy var updateDebouncer: UpdateDebouncer = UpdateDebouncer { [weak self] recipeId, update in
+        await self?.sendDebouncedUpdate(recipeId: recipeId, update: update)
+    }
 
     init(store: YDocStore) {
         self.store = store
+        self.offlineQueue = OfflineWriteQueue(store: store)
         self.documentManager = DocumentManager(store: store)
         self.eventHandler = SyncEventHandler()
 
@@ -49,10 +63,121 @@ final class YjsSyncService: ObservableObject {
 
     // MARK: - Public API
 
+    func writeSyncState(for recipeId: String) -> WriteSyncState {
+        writeSyncStates[recipeId] ?? .idle
+    }
+
+    func patchCurrentRecipeForEditing(ingredient: IngredientData? = nil, nutrition: NutritionData? = nil) {
+        patchCurrentRecipe(ingredient: ingredient, nutrition: nutrition)
+    }
+
+    func suspendRecipeRefresh() {
+        recipeRefreshSuspended += 1
+    }
+
+    func resumeRecipeRefresh() async {
+        guard recipeRefreshSuspended > 0 else { return }
+        recipeRefreshSuspended -= 1
+        guard recipeRefreshSuspended == 0, let recipeId = activeRecipeId else { return }
+        await refreshCurrentRecipe(recipeId: recipeId)
+    }
+
+    // MARK: - Recipe editing (Phase 3)
+
+    func updateRecipeName(_ name: String) async throws {
+        guard let recipeId = activeRecipeId else { throw RecipeEditError.documentNotLoaded }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        try await documentManager.updateRecipeName(recipeId: recipeId, name: trimmed)
+        patchCurrentRecipe(name: trimmed)
+        await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
+    }
+
+    func updateRecipeServings(_ servings: Int) async throws {
+        guard let recipeId = activeRecipeId else { throw RecipeEditError.documentNotLoaded }
+        try await documentManager.updateRecipeServings(recipeId: recipeId, servings: servings)
+        patchCurrentRecipe(servings: servings)
+        await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
+    }
+
+    func updateRecipeColor(_ color: String) async throws {
+        guard let recipeId = activeRecipeId else { throw RecipeEditError.documentNotLoaded }
+        let normalized = RecipeAccentColor.normalizedStored(color)
+        try await documentManager.updateRecipeColor(recipeId: recipeId, color: normalized)
+        patchCurrentRecipe(color: normalized)
+        await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
+    }
+
+    func moveIngredient(fromIndex: Int, toIndex: Int) async throws {
+        guard let recipeId = activeRecipeId else { throw RecipeEditError.documentNotLoaded }
+        try await documentManager.moveIngredient(recipeId: recipeId, fromIndex: fromIndex, toIndex: toIndex)
+        await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
+    }
+
+    func flushPendingEdits() async {
+        guard let recipeId = activeRecipeId else { return }
+        await updateDebouncer.flushNow(recipeId: recipeId)
+    }
+
+    func addIngredient(_ ingredient: IngredientData) async throws {
+        guard let recipeId = activeRecipeId else { throw RecipeEditError.documentNotLoaded }
+        try await documentManager.addIngredient(recipeId: recipeId, ingredient: ingredient)
+        patchCurrentRecipe(ingredient: ingredient)
+        await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
+    }
+
+    func updateIngredient(_ ingredient: IngredientData) async throws {
+        guard let recipeId = activeRecipeId else { throw RecipeEditError.documentNotLoaded }
+        try await documentManager.updateIngredient(recipeId: recipeId, ingredient: ingredient)
+        patchCurrentRecipe(ingredient: ingredient)
+        await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
+    }
+
+    func removeIngredient(id: String) async throws {
+        guard let recipeId = activeRecipeId else { throw RecipeEditError.documentNotLoaded }
+        try await documentManager.removeIngredient(recipeId: recipeId, ingredientId: id)
+        if var recipe = currentRecipe, recipe.id == recipeId {
+            recipe = recipe.replacing(ingredients: recipe.ingredients.filter { $0.id != id })
+            currentRecipe = recipe
+        }
+        await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
+    }
+
+    func updateNutrition(
+        calories: Double?,
+        protein: Double?,
+        fat: Double?,
+        carbs: Double?
+    ) async throws {
+        guard let recipeId = activeRecipeId else { throw RecipeEditError.documentNotLoaded }
+        try await documentManager.updateNutrition(
+            recipeId: recipeId,
+            calories: calories,
+            protein: protein,
+            fat: fat,
+            carbs: carbs
+        )
+        patchCurrentRecipe(
+            nutrition: NutritionData(
+                calories: calories,
+                protein: protein,
+                fat: fat,
+                carbs: carbs,
+                extra: [:]
+            )
+        )
+        await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
+        await flushPendingEdits()
+    }
+
     /// Start synchronization for the given user.
     /// Should be called after successful authentication.
     func start(userId: String) async {
         let isSameUser = self.userId == userId
+        if !isSameUser, self.userId != nil {
+            await documentManager.clearOfflineQueueForAccountSwitch()
+            writeSyncStates = [:]
+        }
         self.userId = userId
         await documentManager.setUserId(userId)
 
@@ -241,6 +366,7 @@ final class YjsSyncService: ObservableObject {
         connectionState = .connected
         if disconnectTimestamp != nil {
             reloadStaleDocumentsAfterReconnect()
+            Task { await drainOfflineQueue() }
         } else {
             loadCollectionDocument()
         }
@@ -294,7 +420,94 @@ final class YjsSyncService: ObservableObject {
             }
         }
 
-        eventHandler.onSyncConfirmed = { _ in /* Phase 2: no-op */ }
+        eventHandler.onSyncConfirmed = { [weak self] recipeId, lastSyncedAt in
+            Task { @MainActor in
+                await self?.handleSyncConfirmed(recipeId: recipeId, lastSyncedAt: lastSyncedAt)
+            }
+        }
+    }
+
+    private func handleLocalRecipeUpdate(recipeId: String, update: Data) async {
+        writeSyncStates[recipeId] = .pendingLocal
+        await updateDebouncer.schedule(recipeId: recipeId, update: update)
+    }
+
+    private func sendDebouncedUpdate(recipeId: String, update: Data) async {
+        guard let userId else { return }
+        let docKey = docKeyFor(recipeId: recipeId)
+
+        if socket?.status == .connected, isSocketAuthenticated {
+            writeSyncStates[recipeId] = .syncing
+            await emitSyncRequest(recipeId: recipeId, update: update, docKey: docKey)
+        } else {
+            writeSyncStates[recipeId] = .queued
+            try? await offlineQueue.enqueue(docKey: docKey, recipeId: recipeId, yjsUpdate: update)
+            logger.info("Queued offline update for \(recipeId) (\(update.count) bytes)")
+        }
+    }
+
+    private func emitSyncRequest(recipeId: String, update: Data, docKey: String) async {
+        guard socket?.status == .connected, isSocketAuthenticated else { return }
+        let lastSyncedAt = try? await store.loadSnapshot(docKey: docKey)?.lastSyncedAt
+        var payload: [String: Any] = [
+            "recipeId": recipeId,
+            "yjsUpdate": YjsPayloadBytes.array(from: update),
+        ]
+        if let lastSyncedAt {
+            payload["lastSyncedAt"] = lastSyncedAt
+        }
+        socket?.emit("sync_request", payload)
+        logger.info("Emitted sync_request for \(recipeId) (\(update.count) bytes)")
+    }
+
+    private func handleSyncConfirmed(recipeId: String, lastSyncedAt: String?) async {
+        guard recipeId != "collection", recipeId != "unknown" else { return }
+        let docKey = docKeyFor(recipeId: recipeId)
+        writeSyncStates[recipeId] = .synced
+
+        if let doc = await documentManager.getDoc(key: docKey),
+           let state = await doc.encodeStateAsUpdate() {
+            try? await store.saveSnapshot(docKey: docKey, state: state, lastSyncedAt: lastSyncedAt)
+        }
+
+        if let queue = try? await offlineQueue.fetchAll() {
+            for entry in queue where entry.recipeId == recipeId {
+                if let id = entry.id {
+                    try? await offlineQueue.deleteEntry(id: id)
+                }
+            }
+        }
+    }
+
+    private func drainOfflineQueue() async {
+        guard socket?.status == .connected, isSocketAuthenticated else { return }
+        guard let entries = try? await offlineQueue.fetchAll(), !entries.isEmpty else { return }
+
+        var byDocKey: [String: [OfflineSyncEntry]] = [:]
+        for entry in entries {
+            byDocKey[entry.docKey, default: []].append(entry)
+        }
+
+        for (docKey, docEntries) in byDocKey {
+            guard let recipeId = docEntries.first?.recipeId else { continue }
+            let merged: Data
+            if docEntries.count == 1 {
+                merged = docEntries[0].yjsUpdate
+            } else if let doc = await documentManager.getDoc(key: docKey),
+                      let snapshot = await doc.encodeStateAsUpdate() {
+                merged = snapshot
+            } else {
+                merged = docEntries.last!.yjsUpdate
+            }
+            writeSyncStates[recipeId] = .syncing
+            await emitSyncRequest(recipeId: recipeId, update: merged, docKey: docKey)
+            for entry in docEntries {
+                if let id = entry.id {
+                    try? await offlineQueue.deleteEntry(id: id)
+                }
+            }
+        }
+        logger.info("Drained offline sync queue (\(entries.count) entries)")
     }
 
     // MARK: - Event Handlers
@@ -324,7 +537,7 @@ final class YjsSyncService: ObservableObject {
         if recipeId == "collection" {
             await refreshCollectionEntries()
         } else {
-            await refreshCurrentRecipe(recipeId: recipeId)
+            await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
         }
     }
 
@@ -362,15 +575,20 @@ final class YjsSyncService: ObservableObject {
         let docKey = docKeyFor(recipeId: recipeId)
         logger.debug("recipe_updated: \(docKey), \(updateData.count) bytes")
 
+        let suppressObserver = recipeRefreshSuspended > 0 && activeRecipeId == recipeId
         do {
-            try await documentManager.applyUpdate(key: docKey, data: updateData)
+            try await documentManager.applyUpdate(
+                key: docKey,
+                data: updateData,
+                suppressRecipeChangeNotification: suppressObserver
+            )
         } catch {
             logger.error("Failed to apply recipe update for \(docKey): \(error)")
             requestDocumentReload(recipeId: recipeId)
             return
         }
 
-        await refreshCurrentRecipe(recipeId: recipeId)
+        await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
     }
 
     private func handleCollectionUpdated(updateData: Data) async {
@@ -387,6 +605,18 @@ final class YjsSyncService: ObservableObject {
         await refreshCollectionEntries()
     }
 
+    // MARK: - Recipe image prefetch
+
+    private func scheduleImagePrefetch(for entries: [CollectionEntry]) {
+        let allowNetwork = connectionState == .connected
+        Task {
+            await RecipeImageService.shared.prefetchPreviews(
+                entries: entries,
+                allowNetwork: allowNetwork
+            )
+        }
+    }
+
     // MARK: - Collection Reading
 
     private func refreshCollectionEntries() async {
@@ -394,10 +624,24 @@ final class YjsSyncService: ObservableObject {
             let entries = try await documentManager.readCollectionEntries()
             let filtered = entries.filter { !$0.deleted }
             collectionEntries = filtered
+            syncActiveRecipeFromCollection()
+            scheduleImagePrefetch(for: filtered)
             logger.info("Collection refreshed: \(filtered.count) active entries (total \(entries.count))")
         } catch {
             logger.error("Failed to read collection entries: \(error)")
         }
+    }
+
+    private func collectionEntry(for recipeId: String) -> CollectionEntry? {
+        collectionEntries.first { $0.id == recipeId }
+    }
+
+    private func syncActiveRecipeFromCollection() {
+        guard let recipeId = activeRecipeId,
+              var recipe = currentRecipe,
+              recipe.id == recipeId,
+              let entry = collectionEntry(for: recipeId) else { return }
+        currentRecipe = RecipeCollectionMerge.merged(recipe, with: entry)
     }
 
     // MARK: - Local Snapshot Loading
@@ -414,6 +658,12 @@ final class YjsSyncService: ObservableObject {
     }
 
     private func installChangeHandlersIfNeeded() async {
+        if !localUpdateHandlerInstalled {
+            localUpdateHandlerInstalled = true
+            await documentManager.setLocalUpdateHandler { [weak self] recipeId, update in
+                await self?.handleLocalRecipeUpdate(recipeId: recipeId, update: update)
+            }
+        }
         guard !changeHandlersInstalled else { return }
         changeHandlersInstalled = true
         await documentManager.setChangeHandlers(
@@ -424,10 +674,15 @@ final class YjsSyncService: ObservableObject {
             },
             onRecipeChanged: { [weak self] recipeId in
                 Task { @MainActor in
-                    await self?.refreshCurrentRecipe(recipeId: recipeId)
+                    await self?.refreshCurrentRecipeIfAllowed(recipeId: recipeId)
                 }
             }
         )
+    }
+
+    private func refreshCurrentRecipeIfAllowed(recipeId: String) async {
+        guard recipeRefreshSuspended == 0 else { return }
+        await refreshCurrentRecipe(recipeId: recipeId)
     }
 
     private func refreshCurrentRecipe(recipeId: String) async {
@@ -435,14 +690,51 @@ final class YjsSyncService: ObservableObject {
         guard activeRecipeId == recipeId else { return }
 
         do {
-            currentRecipe = try await documentManager.readRecipeData(recipeId: recipeId, userId: userId)
+            guard var recipe = try await documentManager.readRecipeData(recipeId: recipeId, userId: userId) else {
+                currentRecipe = nil
+                return
+            }
+            recipe = RecipeCollectionMerge.merged(recipe, with: collectionEntry(for: recipeId))
+            currentRecipe = recipe
         } catch {
             logger.error("Failed to read recipe \(recipeId): \(error)")
         }
     }
 
+    private func patchCurrentRecipe(
+        name: String? = nil,
+        servings: Int? = nil,
+        color: String? = nil,
+        ingredient: IngredientData? = nil,
+        nutrition: NutritionData? = nil
+    ) {
+        guard let recipe = currentRecipe, recipe.id == activeRecipeId else { return }
+        var ingredients = recipe.ingredients
+        if let ingredient {
+            if let index = ingredients.firstIndex(where: { $0.id == ingredient.id }) {
+                ingredients[index] = ingredient
+            } else {
+                ingredients.append(ingredient)
+            }
+        }
+        currentRecipe = recipe.replacing(
+            name: name,
+            servings: servings,
+            color: color,
+            ingredients: ingredient == nil ? nil : ingredients,
+            nutrition: nutrition.map { Optional.some($0) }
+        )
+    }
+
     private func handleSyncError(message: String, recipeId: String?) async {
         logger.error("Sync error: \(message), recipeId: \(recipeId ?? "none")")
+
+        if let recipeId, recipeId != "collection" {
+            writeSyncStates[recipeId] = .error(message)
+            if activeRecipeId == recipeId {
+                syncErrorMessage = localizedSyncError(message)
+            }
+        }
 
         if message.contains("Ownership validation failed") {
             connectionState = .error(message)
@@ -453,7 +745,10 @@ final class YjsSyncService: ObservableObject {
             if activeRecipeId == recipeId {
                 currentRecipe = nil
                 activeRecipeId = nil
+                activeRecipeWasRemoved = true
             }
+            try? await offlineQueue.clear(forRecipeId: recipeId)
+            writeSyncStates.removeValue(forKey: recipeId)
             await refreshCollectionEntries()
             return
         }
@@ -514,5 +809,18 @@ final class YjsSyncService: ObservableObject {
             return "\(userId):collection"
         }
         return "\(userId):recipe:\(recipeId)"
+    }
+
+    private func localizedSyncError(_ message: String) -> String {
+        if message.contains("Ownership validation failed") {
+            return String(localized: "edit.error.ownership")
+        }
+        if message.contains("Recipe is deleted") {
+            return String(localized: "edit.error.deleted")
+        }
+        if message.contains("Invalid update") || message.contains("Empty") {
+            return String(localized: "edit.error.invalidUpdate")
+        }
+        return message
     }
 }

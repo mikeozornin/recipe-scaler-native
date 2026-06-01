@@ -23,15 +23,11 @@ struct YrsArray {
         return try body(YrsMap(branch: mapBranch))
     }
 
-    /// Iterates array elements that are Y.Maps. Map branches are only valid during `body`.
+    /// Iterates array elements that are Y.Maps. Each element is read via `withMap` so `YOutput` lifetimes stay valid.
     func forEachMap(txn: OpaquePointer, _ body: (YrsMap) throws -> Void) rethrows {
-        guard let iter = yarray_iter(branch, txn) else { return }
-        defer { yarray_iter_destroy(iter) }
-        while let output = yarray_iter_next(iter) {
-            if let mapBranch = youtput_read_ymap(output) {
-                try body(YrsMap(branch: mapBranch))
-            }
-            youtput_destroy(output)
+        let count = length(txn: txn)
+        for index in 0..<count {
+            try withMap(at: index, txn: txn, body)
         }
     }
 
@@ -45,4 +41,16 @@ struct YrsArray {
         }
     }
 
+    // ─── Writes (Phase 3) ────────────────────────────────────────────────
+
+    func insert(value: YrsInput, at index: UInt32, txn: OpaquePointer) {
+        YrsInput.withMaterialized(value) { input in
+            var input = input
+            yarray_insert_range(branch, txn, index, &input, 1)
+        }
+    }
+
+    func remove(at index: UInt32, len: UInt32 = 1, txn: OpaquePointer) {
+        yarray_remove_range(branch, txn, index, len)
+    }
 }

@@ -225,7 +225,7 @@ Server `sync_error` events are mainly business-rule violations:
 
 CRDT handles concurrent edits automatically — no manual conflict resolution needed.
 
-## Phase 2 iOS Implementation (current)
+## Phase 2 iOS Implementation (done)
 
 Swift modules under `RecipeScalerNative/Services/`:
 
@@ -264,6 +264,25 @@ sequenceDiagram
 ```
 
 Reconnection: `reconnectAttempt` → `reconnecting`, then `reconnect` → re-`auth` and reload collection + active recipe.
+
+## Phase 3 iOS Implementation (done)
+
+Native **write path** for v3 recipes only (`RecipeEditPolicy`). v1/v2 remain read-only with `RecipeLegacyBanner`.
+
+| Module | Role |
+|--------|------|
+| `Yrs/YrsInput` + map/array writes | Local mutations inside `withWriteTransaction` |
+| `YjsSync/UpdateDebouncer` | ~1 s idle, merge `Data` before `sync_request` |
+| `YjsSync/OfflineWriteQueue` | GRDB `offline_sync_queue`; enqueue when offline; `drainOfflineQueue` after `auth` |
+| `YjsSync/WriteSyncState` | UI chip in `RecipeEditToolbar` |
+| `ViewModels/RecipeEditViewModel` | Draft fields → `YjsSyncService` on Done |
+| `Views/YDocRecipeDetailView` | Edit mode: name, servings, color, ingredients sheet, nutrition |
+
+**Not written on iOS (Phase 3):** `description` (XmlFragment), collection mutations, `scaleFactor` in Y.Doc (slider stays local UI only).
+
+**Sync:** `sync_request` / `sync_confirmed`; `sync_error` → localized alert; tombstone → pop detail + purge queue for `recipeId`. Offline queue cleared on `setUserId` when account changes.
+
+Spec: [`specs/002-native-editing/`](../specs/002-native-editing/).
 
 ## Comparison with Web Client
 

@@ -16,6 +16,8 @@ struct DisplayIngredient: Identifiable {
     let unit: String
     let order: Int
     let isSeparator: Bool
+    /// Preformatted amount for Y.Doc rows (e.g. `"200 g"`); when set, shown instead of numeric scaling.
+    var amountDisplay: String? = nil
 }
 
 struct RecipeDetailView: View {
@@ -326,6 +328,9 @@ struct IngredientRow: View {
     let scaleFactor: Double
 
     var scaledAmount: String {
+        if let amountDisplay = ingredient.amountDisplay, !amountDisplay.isEmpty {
+            return amountDisplay
+        }
         guard let amount = ingredient.originalAmount else {
             return ""
         }

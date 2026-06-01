@@ -43,10 +43,17 @@ class APIClient: ObservableObject {
     }
 
     // MARK: - Image URL Helpers
-    func recipeImageURL(id: String, preview: Bool) -> URL? {
+    func recipeImageURL(id: String, preview: Bool, version: String? = nil) -> URL? {
         var components = URLComponents(string: "\(baseURL)/api/recipes/\(id)/image")
+        var queryItems: [URLQueryItem] = []
         if preview {
-            components?.queryItems = [URLQueryItem(name: "preview", value: "true")]
+            queryItems.append(URLQueryItem(name: "preview", value: "true"))
+        }
+        if let version, !version.isEmpty {
+            queryItems.append(URLQueryItem(name: "v", value: version))
+        }
+        if !queryItems.isEmpty {
+            components?.queryItems = queryItems
         }
         return components?.url
     }

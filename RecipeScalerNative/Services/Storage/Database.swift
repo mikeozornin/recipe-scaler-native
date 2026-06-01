@@ -41,6 +41,22 @@ final class YrsDatabase {
             }
         }
 
+        migrator.registerMigration("v2_create_offline_sync_queue") { db in
+            try db.create(table: "offline_sync_queue") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("docKey", .text).notNull()
+                t.column("recipeId", .text).notNull()
+                t.column("yjsUpdate", .blob).notNull()
+                t.column("createdAt", .text).notNull()
+                t.column("attemptCount", .integer).notNull().defaults(to: 0)
+            }
+            try db.create(
+                index: "offline_sync_queue_docKey_createdAt",
+                on: "offline_sync_queue",
+                columns: ["docKey", "createdAt"]
+            )
+        }
+
         try migrator.migrate(dbQueue)
     }
 }

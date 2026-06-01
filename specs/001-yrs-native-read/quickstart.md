@@ -100,6 +100,17 @@ xcodebuild test \
   -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
+### Проверка паритета списка рецептов (FR-019–FR-021)
+
+На одном аккаунте сравнить iOS и мобильный веб (`recipe-scaler`):
+
+1. **Эмодзи**: рецепт `🍕 Пицца` — слева 🍕, в тексте «Пицца»; рецепт без ведущего эмодзи — цветной кружок
+2. **Сортировка**: `Apple`, `☕ Coffee`, `🍕 Pizza` → алфавит по названию без эмодзи (Coffee перед Pizza)
+3. **Pin**: закреплённые в секции «Закрепленные», остальные в «Рецепты»; порядок внутри секции как на вебе
+4. **Вёрстка**: двухстрочное длинное название — читаемый межстрочный интервал; строка не ниже 44 pt
+
+Unit-тесты: `RecipeScalerNativeTests` → `testRecipeTitleEmoji*`.
+
 ### Key Files to Modify
 
 | Component | Files | Description |
@@ -109,7 +120,8 @@ xcodebuild test \
 | Storage | `RecipeScalerNative/Services/Storage/*.swift` | New — GRDB SQLite |
 | Y.Doc models | `RecipeScalerNative/Models/YDoc/*.swift` | New — domain models |
 | Recipe list VM | `RecipeScalerNative/ViewModels/RecipeListViewModel.swift` | Rewrite — Y.Doc data source |
-| Recipe list view | `RecipeScalerNative/Views/RecipeListView.swift` | Update — use Y.Doc data |
+| Recipe list view | `RecipeScalerNative/Views/RecipeListView.swift` | Update — use Y.Doc data, UI parity (FR-019–FR-021) |
+| Recipe title emoji | `RecipeScalerNative/Utils/RecipeTitleEmoji.swift` | Port of `shared/utils/recipe-title-emoji.ts` |
 | Recipe detail view | `RecipeScalerNative/Views/RecipeDetailView.swift` | Update — use Y.Doc data |
 | App entry | `RecipeScalerNative/RecipeScalerNativeApp.swift` | Update — init YjsSyncService |
 

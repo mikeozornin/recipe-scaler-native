@@ -14,8 +14,12 @@ rtk git diff
 rtk find . -name "*.swift"
 rtk grep "DocumentManager" RecipeScalerNative/
 rtk read RecipeScalerNative/Config.swift
-# Xcode (when building from CLI):
-# xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16' build
+
+# Xcode — built-in rtk filter (no project .rtk/filters.toml, no rtk trust)
+rtk xcodebuild -scheme RecipeScalerNative \
+  -destination 'platform=iOS Simulator,name=iPhone 16' build
+rtk xcodebuild -scheme RecipeScalerNative \
+  -destination 'platform=iOS Simulator,name=iPhone 16' test
 ```
 
 ## Meta Commands

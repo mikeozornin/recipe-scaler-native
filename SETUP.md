@@ -201,12 +201,24 @@ rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim
 ## Testing
 
 ```bash
-# Unit tests
+# Build (simulator)
+xcodebuild -scheme RecipeScalerNative \
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
+
+# Unit tests (if test target is in scheme)
 xcodebuild test -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,name=iPhone 16'
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
 
 # UI tests
 xcodebuild test -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
   -only-testing:RecipeScalerNativeUITests
 ```
+
+### Phase 3 — native editing (manual)
+
+Requires backend + web client. Full matrix: [`specs/002-native-editing/quickstart.md`](specs/002-native-editing/quickstart.md).
+
+1. Sign in on iOS (seed phrase) and open a **v3** recipe → **Edit** → change name/servings → verify on web within ~5 s.
+2. Open **v1/v2** recipe → legacy banner, no **Edit** button; scale slider still works locally.
+3. Airplane mode → edit field → reconnect → change appears on web within ~10 s.

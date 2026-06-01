@@ -99,7 +99,7 @@ persisted → [corruption detected] → deleted → [re-fetch from server]
 | `id` | `String` | `map["id"]` | UUID рецепта |
 | `name` | `String` | `map["name"]` | Название |
 | `color` | `String` | `map["color"]` | Hex цвет (напр. `#3b82f6`) |
-| `imageUrl` | `String?` | `map["imageUrl"]` | URL изображения |
+| `imageUrl` | `String?` | `map["imageUrl"]` | Путь/версия в storage (не прямой URL UI); кэш — [003](../003-recipe-image-offline-cache/data-model.md) |
 | `updatedAt` | `String` | `map["updatedAt"]` | ISO 8601 |
 | `deleted` | `Bool` | `map["deleted"]` | Tombstone: true = удалён |
 | `isPinned` | `Bool` | `map["isPinned"]` | Закреплён вверху списка |
@@ -107,7 +107,24 @@ persisted → [corruption detected] → deleted → [re-fetch from server]
 **Validation**:
 - `id` — непустой UUID
 - `deleted == true` → не отображать в списке
-- Сортировка: `isPinned` рецепты первыми, затем по `updatedAt` (desc)
+
+**Сортировка для отображения** (паритет с веб `sortCollectionsByDisplayName`):
+
+1. `isPinned == true` выше остальных
+2. `compareRecipeNamesIgnoringLeadingEmoji(name)` — по display name (без ведущего эмодзи, `trim`, case-insensitive)
+3. при равенстве — полное `name`
+4. при равенстве — `id`
+
+**Отображение в списке** (паритет с мобильным `recipe-list.tsx`, см. FR-019–FR-021 в `spec.md`):
+
+| Аспект | Правило |
+|--------|---------|
+| Ведущий маркер | Эмодзи из начала `name` (`recipe-title-emoji`) **или** кружок `color` 12×12 |
+| Текст строки | `name` без ведущего эмодзи; пустое → «Без названия» |
+| Секции | «Закрепленные» / «Рецепты» (вторая — только если есть обе группы) |
+| Метрики строки | min height 44 pt, padding vertical 10 pt, title 16 pt, line spacing ~8 pt при переносе |
+
+**Swift**: `RecipeTitleEmoji.swift`, `CollectionEntry.sorted` → `RecipeTitleEmoji.sortCollectionEntries`.
 
 ### RecipeData
 
@@ -128,7 +145,7 @@ persisted → [corruption detected] → deleted → [re-fetch from server]
 | `hasSteps` | `Bool` | `map["hasSteps"]` | all |
 | `createdAt` | `String` | `map["createdAt"]` | all |
 | `updatedAt` | `String` | `map["updatedAt"]` | all |
-| `imageUrl` | `String?` | `map["imageUrl"]` | all |
+| `imageUrl` | `String?` | `map["imageUrl"]` | all; см. [003](../003-recipe-image-offline-cache/data-model.md) |
 | `imageAspectRatio` | `Double?` | `map["imageAspectRatio"]` | all |
 | `originalRecipeLink` | `String?` | `map["originalRecipeLink"]` | all |
 | `originalRecipe` | `String?` | `map["originalRecipe"]` | all |
@@ -178,7 +195,7 @@ scaledAmount = originalAmount * (targetServings / baseServings)
 
 Остаётся из Phase 1. Используется как UI cache layer. Данные заполняются из Y.Doc через observers. Поля в основном совпадают с RecipeData.
 
-**Key difference**: Recipe SwiftData model имеет дополнительные поля для image caching (local paths, etags), которые не связаны с Y.Doc.
+**Key difference**: Recipe SwiftData model имеет дополнительные поля для image caching (local paths, etags) для legacy `RecipeDetailView`. Поток Y.Doc использует файловый кэш — см. [003-recipe-image-offline-cache](../003-recipe-image-offline-cache/data-model.md).
 
 ### Ingredient (SwiftData) — UI Cache
 

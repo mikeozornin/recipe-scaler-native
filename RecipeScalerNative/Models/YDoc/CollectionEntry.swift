@@ -11,15 +11,8 @@ struct CollectionEntry: Identifiable, Sendable {
     let deleted: Bool
     let isPinned: Bool
 
-    /// Sort entries: pinned first, then by updatedAt descending.
+    /// Sort entries: pinned first, then alphabetically by display name (emoji ignored), then id.
     static func sorted(_ entries: [CollectionEntry]) -> [CollectionEntry] {
-        entries
-            .filter { !$0.deleted }
-            .sorted { lhs, rhs in
-                if lhs.isPinned != rhs.isPinned {
-                    return lhs.isPinned && !rhs.isPinned
-                }
-                return lhs.updatedAt > rhs.updatedAt
-            }
+        RecipeTitleEmoji.sortCollectionEntries(entries.filter { !$0.deleted })
     }
 }

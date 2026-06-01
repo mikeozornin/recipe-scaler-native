@@ -64,4 +64,57 @@ actor YDocStore {
             try YDocSnapshot.deleteAll(db)
         }
     }
+
+    // MARK: - Offline write queue (Phase 3)
+
+    func enqueueOfflineUpdate(docKey: String, recipeId: String, yjsUpdate: Data) throws {
+        let now = ISO8601DateFormatter().string(from: Date())
+        var entry = OfflineSyncEntry(
+            id: nil,
+            docKey: docKey,
+            recipeId: recipeId,
+            yjsUpdate: yjsUpdate,
+            createdAt: now,
+            attemptCount: 0
+        )
+        try dbQueue.write { db in
+            try entry.insert(db)
+        }
+    }
+
+    func fetchOfflineQueue() throws -> [OfflineSyncEntry] {
+        try dbQueue.read { db in
+            try OfflineSyncEntry
+                .order(Column("createdAt").asc)
+                .fetchAll(db)
+        }
+    }
+
+    func deleteOfflineEntry(id: Int64) throws {
+        try dbQueue.write { db in
+            _ = try OfflineSyncEntry.deleteOne(db, key: id)
+        }
+    }
+
+    func deleteOfflineQueue(forDocKey docKey: String) throws {
+        try dbQueue.write { db in
+            try OfflineSyncEntry
+                .filter(Column("docKey") == docKey)
+                .deleteAll(db)
+        }
+    }
+
+    func deleteAllOfflineQueue() throws {
+        try dbQueue.write { db in
+            try OfflineSyncEntry.deleteAll(db)
+        }
+    }
+
+    func deleteOfflineQueue(forRecipeId recipeId: String) throws {
+        try dbQueue.write { db in
+            try OfflineSyncEntry
+                .filter(Column("recipeId") == recipeId)
+                .deleteAll(db)
+        }
+    }
 }

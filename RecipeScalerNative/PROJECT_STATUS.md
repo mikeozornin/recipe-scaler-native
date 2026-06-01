@@ -38,22 +38,30 @@ Native read from Y.Doc via yrs + Socket.IO. No editing mutations yet.
 
 - [ ] SC-002 parity: compare v1/v2/v3 sample recipes with web client (T031a)
 
-## Phase 3: Native Editing — NEXT
+## Phase 3: Native Editing — DONE
 
-Edit recipe fields (except description) through yrs mutations.
+Edit v3 recipe fields (except description) through yrs mutations, debounced sync, offline queue.
 
-### Scope
+### Completed
 
-- [ ] Write to Y.Map: name, servings, scaleFactor, color
-- [ ] Ingredient CRUD via Y.Map mutations
-- [ ] Nutrition editing
-- [ ] Debounced update sending (1s, same as web)
-- [ ] Offline queue: store updates in SQLite, drain on reconnect
+- [x] `RecipeEditPolicy` — v3-only writes; v1/v2 read-only + `RecipeLegacyBanner`
+- [x] yrs write API: `YrsInput`, `YrsMap`/`YrsArray` mutations, `YrsDocument` local updates
+- [x] `DocumentManager` — name, servings, color, ingredient CRUD, nutrition map
+- [x] `UpdateDebouncer` (~1 s) + `sync_request` / `sync_confirmed`
+- [x] SQLite `offline_sync_queue` + `OfflineWriteQueue`; drain on reconnect; purge on user change
+- [x] UI: `YDocRecipeDetailView` edit mode, `RecipeEditToolbar`, `IngredientEditSheet`
+- [x] `sync_error` → localized alerts; tombstone removes recipe and pops navigation
 
-### Depends on
+### Manual validation (see `specs/002-native-editing/quickstart.md`)
 
-- Phase 2 complete
-- Y.Doc schema fully mapped (see docs/YJS-SCHEMA.md)
+- [ ] iOS → web field parity with live backend + web client
+- [ ] Offline edit → reconnect → web within 10 s
+- [ ] Debounce: ≤2 `sync_request` per 10 s rapid typing
+
+### Out of scope (later phases)
+
+- Description rich-text editor (Phase 4)
+- Collection create/delete, shopping list (Phase 5)
 
 ## Phase 4: Description Editor (WKWebView + Tiptap)
 
@@ -70,11 +78,11 @@ QR scanner, PDF export, widgets, App Store prep.
 ## Architecture Evolution
 
 ```
-Phase 1 (done)          Phase 2 (done)             Phase 3+ (target)
+Phase 1 (done)          Phase 2 (done)             Phase 3 (done)
 ┌────────────┐     ┌─────────────────────┐    ┌──────────────────────┐
 │ REST JSON  │     │  yrs Y.Doc (read)   │    │ yrs Y.Doc (read/write│
-│ SwiftData  │ ──► │  + Socket.IO sync   │ ──►│ + Tiptap WebView     │
-│ WS notify  │     │  + SQLite snapshots │    │ + offline queue      │
+│ SwiftData  │ ──► │  + Socket.IO sync   │ ──►│ + offline write queue│
+│ WS notify  │     │  + SQLite snapshots │    │ + debounced sync     │
 └────────────┘     └─────────────────────┘    └──────────────────────┘
 ```
 
@@ -84,3 +92,4 @@ Phase 1 (done)          Phase 2 (done)             Phase 3+ (target)
 - [docs/YJS-SCHEMA.md](../docs/YJS-SCHEMA.md)
 - [SETUP.md](../SETUP.md)
 - [specs/001-yrs-native-read/](../specs/001-yrs-native-read/)
+- [specs/002-native-editing/](../specs/002-native-editing/)

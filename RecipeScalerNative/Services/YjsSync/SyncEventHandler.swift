@@ -26,8 +26,8 @@ final class SyncEventHandler {
     /// Called on sync error.
     var onSyncError: ((String, String?) -> Void)?
 
-    /// Called when sync is confirmed (Phase 2: no-op).
-    var onSyncConfirmed: ((String) -> Void)?
+    /// Called when sync is confirmed (recipeId, lastSyncedAt).
+    var onSyncConfirmed: ((String, String?) -> Void)?
 
     // MARK: - Event Registration
 
@@ -137,8 +137,9 @@ final class SyncEventHandler {
     private func handleSyncConfirmed(_ data: [Any]) {
         guard let payload = data.first as? [String: Any] else { return }
         let recipeId = payload["recipeId"] as? String ?? "unknown"
-        Self.logger.debug("sync_confirmed: \(recipeId) (no-op in Phase 2)")
-        onSyncConfirmed?(recipeId)
+        let lastSyncedAt = payload["lastSyncedAt"] as? String
+        Self.logger.debug("sync_confirmed: \(recipeId)")
+        onSyncConfirmed?(recipeId, lastSyncedAt)
     }
 
     private func handleSyncError(_ data: [Any]) {

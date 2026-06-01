@@ -1,5 +1,5 @@
 {
-  "originHash" : "d7f42e0a2a90badcac1b1b8bd74cd45a14286871db048073cb8e65c81c91faa6",
+  "originHash" : "3de18fe45cdb408e31be6e4a4b146ba1521f1fe69d6e97e937fcea56ab9f0170",
   "pins" : [
     {
       "identity" : "grdb.swift",
@@ -38,6 +38,15 @@
       }
     },
     {
+      "identity" : "swift-agentation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ertembiyik/swift-agentation.git",
+      "state" : {
+        "revision" : "401adcb94d9e58a7de7e79cbc00586c4c741897d",
+        "version" : "1.0.0"
+      }
+    },
+    {
       "identity" : "swift-custom-dump",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-custom-dump",
@@ -62,6 +71,15 @@
       "state" : {
         "revision" : "4799286537280063c85a32f09884cfbca301b1a1",
         "version" : "602.0.0"
+      }
+    },
+    {
+      "identity" : "universalglass",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Aeastr/UniversalGlass.git",
+      "state" : {
+        "revision" : "9c084472801ac2c1b4c753668b275094c635b8a2",
+        "version" : "1.1.0"
       }
     },
     {

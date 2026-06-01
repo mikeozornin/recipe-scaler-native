@@ -10,8 +10,10 @@ struct YrsMap {
     func string(key: String, txn: OpaquePointer) -> String? {
         guard let output = ymap_get(branch, txn, key) else { return nil }
         defer { youtput_destroy(output) }
+        let tag = output.pointee.tag
+        guard tag == YrsValue.Y_JSON_STR else { return nil }
         guard let cStr = youtput_read_string(output) else { return nil }
-        // String payload is freed by youtput_destroy (see libyrs.h youtput_read_string).
+        // Payload is freed by youtput_destroy; copy before returning.
         return String(cString: cStr)
     }
 
@@ -40,6 +42,30 @@ struct YrsMap {
         defer { youtput_destroy(output) }
         guard let ptr = youtput_read_long(output) else { return nil }
         return Int(ptr.pointee)
+    }
+
+    /// String, JSON number, or integer — as display text (web often stores `originalAmount` as number).
+    func scalarString(key: String, txn: OpaquePointer) -> String? {
+        guard let output = ymap_get(branch, txn, key) else { return nil }
+        defer { youtput_destroy(output) }
+        if output.pointee.tag == YrsValue.Y_JSON_STR, let cStr = youtput_read_string(output) {
+            return String(cString: cStr)
+        }
+        if let ptr = youtput_read_float(output) {
+            return IngredientData.formatScalarNumber(ptr.pointee)
+        }
+        if let ptr = youtput_read_long(output) {
+            return IngredientData.formatScalarNumber(Double(ptr.pointee))
+        }
+        return nil
+    }
+
+    /// Whether the key is missing or explicitly null/undefined.
+    func isNullOrMissing(key: String, txn: OpaquePointer) -> Bool {
+        guard let output = ymap_get(branch, txn, key) else { return true }
+        defer { youtput_destroy(output) }
+        let tag = output.pointee.tag
+        return tag == YrsValue.Y_JSON_NULL || tag == YrsValue.Y_UNDEFINED
     }
 
     /// Get the raw YrsValue for a key. Caller owns the returned value (destroyed in `deinit`).
@@ -85,6 +111,24 @@ struct YrsMap {
         while let entry = ymap_iter_next(iter) {
             let wrapper = YrsMapEntry(entry)
             body(wrapper)
+        }
+    }
+
+    // ─── Writes (Phase 3) ────────────────────────────────────────────────
+
+    func insert(key: String, value: YrsInput, txn: OpaquePointer) {
+        YrsInput.withMaterialized(value) { input in
+            var input = input
+            key.withCString { keyPtr in
+                ymap_insert(branch, txn, keyPtr, &input)
+            }
+        }
+    }
+
+    @discardableResult
+    func remove(key: String, txn: OpaquePointer) -> Bool {
+        key.withCString { keyPtr in
+            ymap_remove(branch, txn, keyPtr) != 0
         }
     }
 }

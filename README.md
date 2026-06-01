@@ -49,7 +49,7 @@ Detailed architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 |-------|-------|--------|
 | Phase 1 | Read-only MVP (REST + WS notifications) | Done |
 | Phase 2 | yrs integration + YjsSyncService + native read | Next |
-| Phase 3 | Native editing (ingredients, servings, name) | Planned |
+| Phase 3 | Native editing (ingredients, servings, name) | Done |
 | Phase 4 | Description editing via WKWebView + Tiptap | Planned |
 | Phase 5 | Offline queue + tombstones + shopping list | Planned |
 | Phase 6 | Polish: push, widgets, Siri, PDF | Planned |

@@ -1,0 +1,19 @@
+import SwiftUI
+
+struct RecipeLegacyBanner: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "info.circle.fill")
+                .foregroundStyle(.secondary)
+            Text(String(localized: "edit.legacy.banner"))
+                .font(.custom(AppFonts.sans, size: 14))
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .padding(.horizontal)
+    }
+}

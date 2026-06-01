@@ -30,6 +30,13 @@ actor ImageCacheService {
         return fileManager.fileExists(atPath: url.path) ? url : nil
     }
 
+    func removeCached(recipeId: String) {
+        for variant in [CachedImageVariant.preview, CachedImageVariant.full] {
+            let url = localURL(recipeId: recipeId, variant: variant)
+            try? fileManager.removeItem(at: url)
+        }
+    }
+
     func fetchAndCache(
         recipeId: String,
         variant: CachedImageVariant,

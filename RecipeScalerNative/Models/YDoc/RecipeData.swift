@@ -30,4 +30,32 @@ struct RecipeData: Identifiable, Sendable {
             return RecipeVersion(rawValue: v) ?? .v1
         }
     }
+
+    func replacing(
+        name: String? = nil,
+        servings: Int? = nil,
+        color: String? = nil,
+        imageUrl: String?? = nil,
+        ingredients: [IngredientData]? = nil,
+        nutrition: NutritionData?? = nil
+    ) -> RecipeData {
+        RecipeData(
+            id: id,
+            name: name ?? self.name,
+            servings: servings ?? self.servings,
+            color: color ?? self.color,
+            version: version,
+            description: description,
+            ingredients: ingredients ?? self.ingredients,
+            nutrition: nutrition ?? self.nutrition,
+            isPublic: isPublic,
+            hasSteps: hasSteps,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            imageUrl: imageUrl ?? self.imageUrl,
+            imageAspectRatio: imageAspectRatio,
+            originalRecipeLink: originalRecipeLink,
+            originalRecipe: originalRecipe
+        )
+    }
 }
