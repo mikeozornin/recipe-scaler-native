@@ -24,7 +24,7 @@ enum ConnectionState: Equatable, Sendable {
         case .reconnecting:
             return String(localized: "connection.state.reconnecting")
         case .error(let message):
-            return String(localized: "connection.state.error \(message)")
+            return String(format: String(localized: "connection.state.error"), locale: .current, message)
         }
     }
 }

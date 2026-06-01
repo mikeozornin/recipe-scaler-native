@@ -11,15 +11,21 @@ struct YrsMap {
         guard let output = ymap_get(branch, txn, key) else { return nil }
         defer { youtput_destroy(output) }
         guard let cStr = youtput_read_string(output) else { return nil }
-        defer { ystring_destroy(cStr) }
+        // String payload is freed by youtput_destroy (see libyrs.h youtput_read_string).
         return String(cString: cStr)
     }
 
     func bool(key: String, txn: OpaquePointer) -> Bool? {
         guard let output = ymap_get(branch, txn, key) else { return nil }
         defer { youtput_destroy(output) }
-        guard let ptr = youtput_read_bool(output) else { return nil }
-        return ptr.pointee != 0
+        if let ptr = youtput_read_bool(output) {
+            return ptr.pointee != 0
+        }
+        // Yjs may encode booleans as JSON integers in some documents.
+        if output.pointee.tag == YrsValue.Y_JSON_INT, let ptr = youtput_read_long(output) {
+            return ptr.pointee != 0
+        }
+        return nil
     }
 
     func double(key: String, txn: OpaquePointer) -> Double? {
@@ -36,32 +42,33 @@ struct YrsMap {
         return Int(ptr.pointee)
     }
 
-    /// Get the raw YrsValue for a key. Caller is responsible for lifecycle.
-    func value(key: String, txn: OpaquePointer) -> YrsValue {
-        guard let output = ymap_get(branch, txn, key) else {
-            fatalError("ymap_get returned null for key '\(key)'")
-        }
+    /// Get the raw YrsValue for a key. Caller owns the returned value (destroyed in `deinit`).
+    func value(key: String, txn: OpaquePointer) -> YrsValue? {
+        guard let output = ymap_get(branch, txn, key) else { return nil }
         return YrsValue(output)
     }
 
     // ─── Nested Type Reads ───────────────────────────────────────────────
 
-    func nestedMap(key: String, txn: OpaquePointer) -> UnsafeMutablePointer<Branch>? {
+    func withNestedMap<T>(key: String, txn: OpaquePointer, _ body: (YrsMap) throws -> T) rethrows -> T? {
         guard let output = ymap_get(branch, txn, key) else { return nil }
         defer { youtput_destroy(output) }
-        return youtput_read_ymap(output)
+        guard let mapBranch = youtput_read_ymap(output) else { return nil }
+        return try body(YrsMap(branch: mapBranch))
     }
 
-    func nestedArray(key: String, txn: OpaquePointer) -> UnsafeMutablePointer<Branch>? {
+    func withNestedArray<T>(key: String, txn: OpaquePointer, _ body: (YrsArray) throws -> T) rethrows -> T? {
         guard let output = ymap_get(branch, txn, key) else { return nil }
         defer { youtput_destroy(output) }
-        return youtput_read_yarray(output)
+        guard let arrayBranch = youtput_read_yarray(output) else { return nil }
+        return try body(YrsArray(branch: arrayBranch))
     }
 
-    func nestedText(key: String, txn: OpaquePointer) -> UnsafeMutablePointer<Branch>? {
+    func withNestedText<T>(key: String, txn: OpaquePointer, _ body: (YrsText) throws -> T) rethrows -> T? {
         guard let output = ymap_get(branch, txn, key) else { return nil }
         defer { youtput_destroy(output) }
-        return youtput_read_ytext(output)
+        guard let textBranch = youtput_read_ytext(output) else { return nil }
+        return try body(YrsText(branch: textBranch))
     }
 
     // ─── Metadata ────────────────────────────────────────────────────────

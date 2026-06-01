@@ -8,11 +8,23 @@ import YrsC
 /// (`{userId}:collection` or `{userId}:recipe:{recipeId}`).
 actor DocumentManager {
     private var docs: [String: YrsDocument] = [:]
+    private var observerTokens: [String: YrsObserverToken] = [:]
     private let store: YDocStore
     private static let logger = Logger(subsystem: "com.recipescaler.native", category: "DocumentManager")
 
+    private var onCollectionChanged: (@Sendable () -> Void)?
+    private var onRecipeChanged: (@Sendable (String) -> Void)?
+
     init(store: YDocStore) {
         self.store = store
+    }
+
+    func setChangeHandlers(
+        onCollectionChanged: @escaping @Sendable () -> Void,
+        onRecipeChanged: @escaping @Sendable (String) -> Void
+    ) {
+        self.onCollectionChanged = onCollectionChanged
+        self.onRecipeChanged = onRecipeChanged
     }
 
     // ─── Document Lifecycle ──────────────────────────────────────────────
@@ -38,6 +50,7 @@ actor DocumentManager {
         }
 
         docs[key] = doc
+        await installObservers(key: key, doc: doc)
         return doc
     }
 
@@ -47,15 +60,35 @@ actor DocumentManager {
 
     func applyUpdate(key: String, data: Data, lastSyncedAt: String? = nil) async throws {
         let doc = try await getOrCreateDoc(key: key)
-        try await doc.applyUpdate(data)
+        do {
+            try await doc.applyUpdate(data)
+        } catch {
+            Self.logger.warning("applyUpdate failed for \(key), deleting corrupted snapshot")
+            docs.removeValue(forKey: key)
+            observerTokens.removeValue(forKey: key)
+            try? await store.deleteSnapshot(docKey: key)
+            throw error
+        }
 
         if let state = await doc.encodeStateAsUpdate() {
             try? await store.saveSnapshot(docKey: key, state: state, lastSyncedAt: lastSyncedAt)
         }
     }
 
+    /// Replace an in-memory document with a full server snapshot (used on `document_loaded`).
+    func replaceDocument(key: String, state: Data, lastSyncedAt: String? = nil) async throws {
+        docs.removeValue(forKey: key)
+        observerTokens.removeValue(forKey: key)
+        let doc = try YrsDocument(state: state)
+        docs[key] = doc
+        try? await store.saveSnapshot(docKey: key, state: state, lastSyncedAt: lastSyncedAt)
+        await installObservers(key: key, doc: doc)
+        Self.logger.info("Replaced doc \(key) from server snapshot (\(state.count) bytes)")
+    }
+
     func evictDoc(key: String) {
         docs.removeValue(forKey: key)
+        observerTokens.removeValue(forKey: key)
         Self.logger.info("Evicted doc \(key) from memory")
     }
 
@@ -68,19 +101,20 @@ actor DocumentManager {
 
     func readCollectionEntries() async throws -> [CollectionEntry] {
         let doc = try await getOrCreateDoc(key: currentCollectionKey)
-        let entries: [CollectionEntry] = try await doc.withReadTransaction { rawDoc, txn in
-            guard let arrayBranch = yarray(rawDoc, "recipes") else {
+        let entries: [CollectionEntry] = try await doc.withReadTransaction { _, txn in
+            guard let arrayBranch = ytype_get(txn, "recipes") else {
                 Self.logger.warning("No 'recipes' Y.Array found in collection doc")
                 return []
             }
             let array = YrsArray(branch: arrayBranch)
-            let count = array.length(txn: txn)
-            Self.logger.info("Reading \(count) collection entries")
-
             var result: [CollectionEntry] = []
-            for i in 0..<count {
-                guard let map = array.getMap(index: i, txn: txn) else { continue }
+            try array.forEachMap(txn: txn) { map in
                 result.append(self.parseCollectionEntry(from: map, txn: txn))
+            }
+            if result.isEmpty {
+                Self.logger.warning("Parsed 0 collection entries (recipes array length=\(array.length(txn: txn)))")
+            } else {
+                Self.logger.info("Parsed \(result.count) collection entries")
             }
             return result
         }
@@ -97,7 +131,7 @@ actor DocumentManager {
         }
 
         let result: RecipeData? = try await doc.withReadTransaction { rawDoc, txn in
-            guard let mapBranch = ymap(rawDoc, "recipe") else {
+            guard let mapBranch = ytype_get(txn, "recipe") else {
                 Self.logger.warning("No 'recipe' Y.Map found in recipe doc \(key)")
                 return nil as RecipeData?
             }
@@ -126,16 +160,43 @@ actor DocumentManager {
         self.currentCollectionKey = "\(userId):collection"
     }
 
+    private func installObservers(key: String, doc: YrsDocument) async {
+        observerTokens.removeValue(forKey: key)
+
+        if key.hasSuffix(":collection"), let handler = onCollectionChanged {
+            if let token = try? await doc.addDeepObserver(rootKey: "recipes", handler: handler) {
+                observerTokens[key] = token
+            }
+            return
+        }
+
+        guard let recipeId = recipeId(fromDocKey: key),
+              let handler = onRecipeChanged else { return }
+        let recipeHandler: @Sendable () -> Void = { handler(recipeId) }
+        if let token = try? await doc.addDeepObserver(rootKey: "recipe", handler: recipeHandler) {
+            observerTokens[key] = token
+        }
+    }
+
+    private func recipeId(fromDocKey key: String) -> String? {
+        guard let range = key.range(of: ":recipe:") else { return nil }
+        let id = String(key[range.upperBound...])
+        return id.isEmpty ? nil : id
+    }
+
     // ─── Parsing Helpers ─────────────────────────────────────────────────
 
     private func parseCollectionEntry(from map: YrsMap, txn: OpaquePointer) -> CollectionEntry {
-        CollectionEntry(
-            id: map.string(key: "id", txn: txn) ?? UUID().uuidString,
+        let id = map.string(key: "id", txn: txn) ?? UUID().uuidString
+        let deleted = map.bool(key: "deleted", txn: txn) ?? false
+
+        return CollectionEntry(
+            id: id,
             name: map.string(key: "name", txn: txn) ?? "",
             color: map.string(key: "color", txn: txn) ?? "#3b82f6",
             imageUrl: map.string(key: "imageUrl", txn: txn),
             updatedAt: map.string(key: "updatedAt", txn: txn) ?? "",
-            deleted: map.bool(key: "deleted", txn: txn) ?? false,
+            deleted: deleted,
             isPinned: map.bool(key: "isPinned", txn: txn) ?? false
         )
     }
@@ -175,10 +236,10 @@ actor DocumentManager {
         case .v1:
             return map.string(key: "description", txn: txn)
         case .v2:
-            guard let textBranch = map.nestedText(key: "description", txn: txn) else {
-                return map.string(key: "description", txn: txn)
+            if let text = map.withNestedText(key: "description", txn: txn, { $0.string(txn: txn) }) {
+                return text
             }
-            return YrsText(branch: textBranch).string(txn: txn)
+            return map.string(key: "description", txn: txn)
         case .v3:
             return nil
         }
@@ -194,17 +255,23 @@ actor DocumentManager {
             guard let json = map.string(key: "ingredients", txn: txn) else { return [] }
             return parseJSONIngredients(json)
         case .v2, .v3:
-            guard let arrayBranch = map.nestedArray(key: "ingredients", txn: txn) else { return [] }
-            let array = YrsArray(branch: arrayBranch)
-            return array.iterateMaps(txn: txn).enumerated().map { index, ingMap in
-                IngredientData(
-                    id: ingMap.string(key: "id", txn: txn) ?? UUID().uuidString,
-                    name: ingMap.string(key: "name", txn: txn) ?? "",
-                    amount: ingMap.string(key: "amount", txn: txn) ?? "",
-                    originalAmount: ingMap.string(key: "originalAmount", txn: txn) ?? "",
-                    order: ingMap.int(key: "order", txn: txn) ?? (index + 1)
-                )
-            }
+            return (try? map.withNestedArray(key: "ingredients", txn: txn) { array in
+                var ingredients: [IngredientData] = []
+                var index = 0
+                array.forEachMap(txn: txn) { ingMap in
+                    ingredients.append(
+                        IngredientData(
+                            id: ingMap.string(key: "id", txn: txn) ?? UUID().uuidString,
+                            name: ingMap.string(key: "name", txn: txn) ?? "",
+                            amount: ingMap.string(key: "amount", txn: txn) ?? "",
+                            originalAmount: ingMap.string(key: "originalAmount", txn: txn) ?? "",
+                            order: ingMap.int(key: "order", txn: txn) ?? (index + 1)
+                        )
+                    )
+                    index += 1
+                }
+                return ingredients
+            }) ?? []
         }
     }
 
@@ -213,7 +280,7 @@ actor DocumentManager {
         txn: OpaquePointer,
         version: RecipeData.RecipeVersion
     ) -> NutritionData? {
-        let val = map.value(key: "nutrition", txn: txn)
+        guard let val = map.value(key: "nutrition", txn: txn) else { return nil }
 
         if val.tag == YrsValue.Y_MAP {
             guard let mapBranch = val.mapBranch else { return nil }

@@ -44,7 +44,7 @@ final class YrsValue {
     /// Read as a string (Y_JSON_STR).
     var stringValue: String? {
         guard let cStr = youtput_read_string(output) else { return nil }
-        defer { ystring_destroy(cStr) }
+        // Freed by youtput_destroy in deinit.
         return String(cString: cStr)
     }
 

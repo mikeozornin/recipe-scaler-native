@@ -263,3 +263,67 @@ When creating or upgrading recipes:
 
 **iOS strategy:** Create new recipes as v2 (or v3 if XmlFragment is available).
 Read all formats, write v2+. Don't migrate existing recipes — let web client handle migration.
+
+---
+
+## Native (Swift) field mapping
+
+Phase 2 parsers live in `RecipeScalerNative/Services/YjsSync/DocumentManager.swift` and map wire keys to:
+
+### `CollectionEntry` ← `Y.Array('recipes')` entry `Y.Map`
+
+| Y.Map key | Swift property | Type |
+|-----------|----------------|------|
+| `id` | `id` | `String` |
+| `name` | `name` | `String` |
+| `color` | `color` | `String` |
+| `imageUrl` | `imageUrl` | `String?` |
+| `updatedAt` | `updatedAt` | `String` |
+| `deleted` | `deleted` | `Bool` |
+| `isPinned` | `isPinned` | `Bool` |
+
+Doc key: `{userId}:collection`
+
+### `RecipeData` ← `Y.Map('recipe')`
+
+| Y.Map key | Swift property | Notes |
+|-----------|----------------|-------|
+| `name` | `name` | string |
+| `servings` | `servings` | int |
+| `color` | `color` | string |
+| `version` | `version` | `v1` / `v2` / `v3` |
+| `description` | `description` | v1 string; v2 `Y.Text`; v3 not rendered (nil) |
+| `ingredients` | `ingredients` | v1 JSON string → `[IngredientData]`; v2/v3 `Y.Array` of maps |
+| `nutrition` | `nutrition` | JSON string or `Y.Map` → `NutritionData` |
+| `isPublic` | `isPublic` | bool |
+| `hasSteps` | `hasSteps` | bool |
+| `createdAt` | `createdAt` | string |
+| `updatedAt` | `updatedAt` | string |
+| `imageUrl` | `imageUrl` | string? |
+| `imageAspectRatio` | `imageAspectRatio` | double? |
+| `originalRecipeLink` | `originalRecipeLink` | string? |
+| `originalRecipe` | `originalRecipe` | string? |
+
+Doc key: `{userId}:recipe:{recipeId}`
+
+### `IngredientData` ← ingredient map or v1 JSON array element
+
+| Wire key | Swift property |
+|----------|----------------|
+| `id` | `id` |
+| `name` | `name` |
+| `amount` | `amount` |
+| `originalAmount` | `originalAmount` (falls back to `amount` when empty) |
+| `order` | `order` |
+
+### `NutritionData` ← `nutrition` JSON or map
+
+| Wire key | Swift property |
+|----------|----------------|
+| `calories` | `calories` |
+| `protein` | `protein` |
+| `fat` | `fat` |
+| `carbs` | `carbs` |
+| (other numeric keys) | `extra` |
+
+Scaling UI uses `originalAmount` with `servings` as base (see `RecipeDetailScaling` in `RecipeDetailViewModel.swift`).

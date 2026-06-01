@@ -19,15 +19,31 @@ final class YrsMapEntry {
         return String(cString: entry.pointee.key)
     }
 
-    /// The entry's value as a YrsValue wrapper.
-    /// Note: YMapEntry.value is `const YOutput*`, so we create a mutable copy.
-    var value: YrsValue {
-        // youtput_read_* functions take `const struct YOutput*` — we can pass
-        // the const pointer directly to YrsValue which takes a mutable pointer.
-        // Since YrsMapEntry owns the entry and ymap_entry_destroy frees the entry
-        // (not the output), we need to be careful. The output pointer is owned by
-        // the YMapEntry — so we should NOT destroy it separately.
-        let constPtr = entry.pointee.value
-        return YrsValue(UnsafeMutablePointer(mutating: constPtr!))
+    func stringValue() -> String? {
+        guard let output = entry.pointee.value else { return nil }
+        guard let cStr = youtput_read_string(output) else { return nil }
+        return String(cString: cStr)
+    }
+
+    func boolValue() -> Bool? {
+        guard let output = entry.pointee.value else { return nil }
+        guard let ptr = youtput_read_bool(output) else { return nil }
+        return ptr.pointee != 0
+    }
+
+    func intValue() -> Int? {
+        guard let output = entry.pointee.value else { return nil }
+        guard let ptr = youtput_read_long(output) else { return nil }
+        return Int(ptr.pointee)
+    }
+
+    func doubleValue() -> Double? {
+        guard let output = entry.pointee.value else { return nil }
+        guard let ptr = youtput_read_float(output) else { return nil }
+        return ptr.pointee
+    }
+
+    var tag: Int8 {
+        entry.pointee.value?.pointee.tag ?? YrsValue.Y_UNDEFINED
     }
 }

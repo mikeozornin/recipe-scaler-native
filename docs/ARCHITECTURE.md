@@ -225,6 +225,46 @@ Server `sync_error` events are mainly business-rule violations:
 
 CRDT handles concurrent edits automatically — no manual conflict resolution needed.
 
+## Phase 2 iOS Implementation (current)
+
+Swift modules under `RecipeScalerNative/Services/`:
+
+| Module | Role |
+|--------|------|
+| `Yrs/` | C FFI wrappers (`YrsDocument`, `YrsMap`, `YrsArray`, `YrsObserver`) |
+| `YjsSync/YjsSyncService` | `@MainActor` orchestrator, `@Published` UI state |
+| `YjsSync/DocumentManager` | Per-doc lifecycle, parse → `CollectionEntry` / `RecipeData`, SQLite snapshots |
+| `YjsSync/SyncEventHandler` | Socket.IO callbacks → apply updates |
+| `Storage/YDocStore` | GRDB `ydoc_snapshots` table |
+
+### Socket.IO read flow (Phase 2)
+
+```mermaid
+sequenceDiagram
+  participant App as ContentView
+  participant YSS as YjsSyncService
+  participant DM as DocumentManager
+  participant SIO as Socket.IO
+
+  App->>YSS: start(userId)
+  YSS->>DM: load collection snapshot from SQLite
+  YSS->>SIO: connect + auth {userId, deviceId}
+  SIO-->>YSS: connected (server ack)
+  YSS->>SIO: load_document {}
+  SIO-->>YSS: document_loaded {yjsState, lastSyncedAt}
+  YSS->>DM: replaceDocument / applyUpdate
+  DM-->>YSS: yobserve_deep callback
+  YSS-->>App: collectionEntries updated
+
+  App->>YSS: loadRecipe(recipeId)
+  YSS->>DM: getOrCreateDoc (SQLite first)
+  YSS->>SIO: load_document {recipeId}
+  SIO-->>YSS: document_loaded / recipe_updated
+  YSS-->>App: currentRecipe updated
+```
+
+Reconnection: `reconnectAttempt` → `reconnecting`, then `reconnect` → re-`auth` and reload collection + active recipe.
+
 ## Comparison with Web Client
 
 | Aspect | Web (yjs-client.ts) | iOS (YjsSyncService) |

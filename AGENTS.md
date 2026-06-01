@@ -8,3 +8,5 @@ specs/001-yrs-native-read/plan.md
 All feature specifications (spec.md) MUST be written in Russian.
 Checklists, plans, and tasks remain in English.
 <!-- SPECKIT END -->
+
+@RTK.md

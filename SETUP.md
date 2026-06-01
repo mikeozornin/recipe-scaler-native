@@ -12,7 +12,7 @@
 
 ### 1. Build yrs XCFramework
 
-yrs is the CRDT engine (Rust). It compiles as an XCFramework that Swift calls via C FFI.
+yrs is the CRDT engine (Rust). It compiles as an XCFramework that Swift calls via C FFI (`libyrs.h`).
 
 ```bash
 # Install Rust toolchain
@@ -21,18 +21,16 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 # Add iOS targets
 rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim
 
-# Clone y-crdt
-git clone https://github.com/y-crdt/y-crdt.git
-cd y-crdt
+# From repo root — clones y-crdt if needed, builds all slices
+./scripts/build-yrs-xcframework.sh
 
-# Build XCFramework (or use pre-built from releases)
-# This builds libyrs.a for all iOS architectures and wraps in .xcframework
-./scripts/build-xcframework.sh ios
+# Or with an existing y-crdt checkout:
+./scripts/build-yrs-xcframework.sh ~/repos/y-crdt ./Frameworks
 ```
 
-Output: `build/yswift/YniffiFFI.xcframework` or similar. Copy to `recipe-scaler-native/Frameworks/`.
+Output: `Frameworks/YrsXCFramework.xcframework` (device + simulator slices, `libyrs.h`, `module.modulemap`).
 
-Alternative: download pre-built XCFramework from [y-crdt releases](https://github.com/y-crdt/y-crdt/releases) if available for your version.
+Bridging headers for Xcode: `RecipeScalerNative/Bridging/libyrs.h` and `module.modulemap` (module `YrsC`).
 
 ### 2. Create/Update Xcode Project
 
@@ -47,7 +45,7 @@ If project exists, open `RecipeScalerNative.xcodeproj`.
 
 ### 3. Add XCFramework
 
-1. Drag `YniffiFFI.xcframework` (or `yrs.xcframework`) into Xcode project
+1. Drag `Frameworks/YrsXCFramework.xcframework` into the Xcode project (or verify it is already linked)
 2. Target → General → Frameworks → verify it's listed
 3. Ensure "Embed & Sign" is selected
 
@@ -61,11 +59,12 @@ https://github.com/kishikawakatsumi/KeychainAccess     # 4.2.2+
 https://github.com/anquii/BIP39                        # 1.0.0+
 ```
 
-For SQLite (choose one):
+SQLite for Y.Doc snapshots (required for Phase 2):
 ```
-https://github.com/groue/GRDB.swift                    # Recommended for Y state storage
-# OR use SwiftData for caching
+https://github.com/groue/GRDB.swift                    # from 7.0.0 — YDocStore / YrsDatabase
 ```
+
+SwiftData remains for UI-side `Recipe` / `Ingredient` cache models.
 
 ### 5. Configure Info.plist
 
@@ -136,9 +135,9 @@ RecipeScalerNative/
 │
 ├── Services/
 │   ├── APIClient.swift              # REST (auth, images)
-│   ├── WebSocketService.swift       # Socket.IO transport
-│   ├── YjsSyncService.swift         # CRDT sync orchestration
-│   ├── YrsBridge.swift              # Swift wrapper over yrs C API
+│   ├── YjsSync/                     # YjsSyncService, DocumentManager, SyncEventHandler
+│   ├── Yrs/                         # Swift wrapper over yrs C API (YrsDocument, YrsMap, …)
+│   ├── Storage/                     # GRDB Y.Doc snapshots (YDocStore, YrsDatabase)
 │   ├── AuthService.swift            # Seed auth
 │   ├── TimerManager.swift           # Timers
 │   └── ImageCacheService.swift      # Image caching
@@ -163,7 +162,7 @@ RecipeScalerNative/
 │   └── Assets.xcassets
 │
 ├── Frameworks/
-│   └── YniffiFFI.xcframework        # yrs Rust library
+│   └── YrsXCFramework.xcframework   # yrs Rust library (prebuilt via scripts/build-yrs-xcframework.sh)
 │
 └── docs/
     ├── ARCHITECTURE.md

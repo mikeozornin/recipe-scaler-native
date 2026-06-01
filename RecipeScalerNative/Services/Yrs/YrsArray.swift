@@ -15,12 +15,24 @@ struct YrsArray {
         return YrsValue(output)
     }
 
-    /// Get a nested Y.Map at the given index.
-    func getMap(index: UInt32, txn: OpaquePointer) -> YrsMap? {
+    /// Invokes `body` with a nested Y.Map at `index` while its parent YOutput is alive.
+    func withMap<T>(at index: UInt32, txn: OpaquePointer, _ body: (YrsMap) throws -> T) rethrows -> T? {
         guard let output = yarray_get(branch, txn, index) else { return nil }
         defer { youtput_destroy(output) }
         guard let mapBranch = youtput_read_ymap(output) else { return nil }
-        return YrsMap(branch: mapBranch)
+        return try body(YrsMap(branch: mapBranch))
+    }
+
+    /// Iterates array elements that are Y.Maps. Map branches are only valid during `body`.
+    func forEachMap(txn: OpaquePointer, _ body: (YrsMap) throws -> Void) rethrows {
+        guard let iter = yarray_iter(branch, txn) else { return }
+        defer { yarray_iter_destroy(iter) }
+        while let output = yarray_iter_next(iter) {
+            if let mapBranch = youtput_read_ymap(output) {
+                try body(YrsMap(branch: mapBranch))
+            }
+            youtput_destroy(output)
+        }
     }
 
     /// Iterate all elements as YrsValue.
@@ -33,17 +45,4 @@ struct YrsArray {
         }
     }
 
-    /// Iterate all elements that are Y.Map, skipping non-map entries.
-    func iterateMaps(txn: OpaquePointer) -> [YrsMap] {
-        guard let iter = yarray_iter(branch, txn) else { return [] }
-        defer { yarray_iter_destroy(iter) }
-        var maps: [YrsMap] = []
-        while let output = yarray_iter_next(iter) {
-            if let mapBranch = youtput_read_ymap(output) {
-                maps.append(YrsMap(branch: mapBranch))
-            }
-            youtput_destroy(output)
-        }
-        return maps
-    }
 }

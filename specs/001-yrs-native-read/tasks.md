@@ -22,13 +22,13 @@
 
 **Purpose**: Build yrs XCFramework, add GRDB dependency, create project structure
 
-- [ ] T001 Create build script `scripts/build-yrs-xcframework.sh` that compiles yffi crate for aarch64-apple-ios, aarch64-apple-ios-sim, x86_64-apple-ios and produces `Frameworks/YrsXCFramework.xcframework` with `libyrs.h` header and `module.modulemap`
-- [ ] T002 Run build script, verify `Frameworks/YrsXCFramework.xcframework` exists with all three architecture slices
-- [ ] T003 Add `YrsXCFramework.xcframework` to Xcode project with "Embed & Sign" in `RecipeScalerNative.xcodeproj/project.pbxproj`
-- [ ] T004 Add GRDB SPM dependency (url: `https://github.com/groue/GRDB.swift`, from: `7.0.0`) to `Package.swift` and verify it resolves
-- [ ] T005 [P] Create directory structure: `RecipeScalerNative/Services/Yrs/`, `RecipeScalerNative/Services/YjsSync/`, `RecipeScalerNative/Services/Storage/`, `RecipeScalerNative/Models/YDoc/`, `RecipeScalerNative/Bridging/`
-- [ ] T006 [P] Copy `libyrs.h` from y-crdt `tests-ffi/include/` to `RecipeScalerNative/Bridging/libyrs.h` and create `RecipeScalerNative/Bridging/module.modulemap` with `module YrsC { header "libyrs.h" export * }`
-- [ ] T007 Verify project compiles with yrs XCFramework and GRDB — run `xcodebuild build` for simulator target
+- [X] T001 Create build script `scripts/build-yrs-xcframework.sh` that compiles yffi crate for aarch64-apple-ios, aarch64-apple-ios-sim, x86_64-apple-ios and produces `Frameworks/YrsXCFramework.xcframework` with `libyrs.h` header and `module.modulemap`
+- [X] T002 Run build script, verify `Frameworks/YrsXCFramework.xcframework` exists with all three architecture slices
+- [X] T003 Add `YrsXCFramework.xcframework` to Xcode project with "Embed & Sign" in `RecipeScalerNative.xcodeproj/project.pbxproj`
+- [X] T004 Add GRDB SPM dependency (url: `https://github.com/groue/GRDB.swift`, from: `7.0.0`) to `Package.swift` and verify it resolves
+- [X] T005 [P] Create directory structure: `RecipeScalerNative/Services/Yrs/`, `RecipeScalerNative/Services/YjsSync/`, `RecipeScalerNative/Services/Storage/`, `RecipeScalerNative/Models/YDoc/`, `RecipeScalerNative/Bridging/`
+- [X] T006 [P] Copy `libyrs.h` from y-crdt `tests-ffi/include/` to `RecipeScalerNative/Bridging/libyrs.h` and create `RecipeScalerNative/Bridging/module.modulemap` with `module YrsC { header "libyrs.h" export * }`
+- [X] T007 Verify project compiles with yrs XCFramework and GRDB — run `xcodebuild build` for simulator target
 
 **Checkpoint**: XCFramework builds, GRDB resolves, project compiles with empty new directories
 
@@ -42,29 +42,31 @@
 
 ### yrs Swift Wrapper
 
-- [ ] T008 [P] Create `RecipeScalerNative/Services/Yrs/YrsError.swift` — error enum with cases: nullPointer, invalidState, applyFailed, transactionError
-- [ ] T009 [P] Create `RecipeScalerNative/Services/Yrs/YrsValue.swift` — `YrsValue` struct wrapping `YOutput`, with computed properties: `stringValue`, `boolValue`, `doubleValue`, `intValue`, `tag` (exposing Y_ARRAY, Y_MAP, Y_JSON_STR constants). Include `youtput_destroy` in deinit
-- [ ] T010 Create `RecipeScalerNative/Services/Yrs/YrsDocument.swift` — `actor YrsDocument` wrapping `UnsafeMutablePointer<YDoc>`: `init()`, `deinit` (ydoc_destroy), `withReadTransaction<T>` closure-based API, `applyUpdate(_ data: Data) throws`, `encodeStateAsUpdate() -> Data`. All memory-managed with defer patterns per contracts/yffi-api.md
-- [ ] T011 [P] Create `RecipeScalerNative/Services/Yrs/YrsMap.swift` — extension on YrsDocument or standalone `YrsMap` struct: `get(key:txn:) -> YrsValue?`, `string(key:txn:) -> String?`, `int(key:txn:) -> Int?`, `double(key:txn:) -> Double?`, `bool(key:txn:) -> Bool?`, `length(txn:) -> UInt32`, `iterate(txn:) -> [YrsMapEntry]`
-- [ ] T012 [P] Create `RecipeScalerNative/Services/Yrs/YrsArray.swift` — `YrsArray` struct: `length() -> UInt32`, `get(index:txn:) -> YrsValue?`, `iterate(txn:) -> [YrsValue]`
-- [ ] T013 [P] Create `RecipeScalerNative/Services/Yrs/YrsText.swift` — `YrsText` struct: `string(txn:) -> String?`
+- [X] T008 [P] Create `RecipeScalerNative/Services/Yrs/YrsError.swift` — error enum with cases: nullPointer, invalidState, applyFailed, transactionError
+- [X] T009 [P] Create `RecipeScalerNative/Services/Yrs/YrsValue.swift` — `YrsValue` struct wrapping `YOutput`, with computed properties: `stringValue`, `boolValue`, `doubleValue`, `intValue`, `tag` (exposing Y_ARRAY, Y_MAP, Y_JSON_STR constants). Include `youtput_destroy` in deinit
+- [X] T010 Create `RecipeScalerNative/Services/Yrs/YrsDocument.swift` — `actor YrsDocument` wrapping `UnsafeMutablePointer<YDoc>`: `init()`, `deinit` (ydoc_destroy), `withReadTransaction<T>` closure-based API, `applyUpdate(_ data: Data) throws`, `encodeStateAsUpdate() -> Data`. All memory-managed with defer patterns per contracts/yffi-api.md
+- [X] T010a Create `RecipeScalerNative/Services/Yrs/YrsObserver.swift` — RAII wrapper over `yobserve_*` from libyrs: `YrsObserverToken` class with `deinit` calling the unsubscribe fn, captured user `Unmanaged`/closure pointer. Used by DocumentManager to subscribe to Y.Array('recipes') and Y.Map('recipe') changes for FR-011 reactive SwiftUI updates
+- [X] T011 [P] Create `RecipeScalerNative/Services/Yrs/YrsMap.swift` — extension on YrsDocument or standalone `YrsMap` struct: `get(key:txn:) -> YrsValue?`, `string(key:txn:) -> String?`, `int(key:txn:) -> Int?`, `double(key:txn:) -> Double?`, `bool(key:txn:) -> Bool?`, `length(txn:) -> UInt32`, `iterate(txn:) -> [YrsMapEntry]`
+- [X] T012 [P] Create `RecipeScalerNative/Services/Yrs/YrsArray.swift` — `YrsArray` struct: `length() -> UInt32`, `get(index:txn:) -> YrsValue?`, `iterate(txn:) -> [YrsValue]`
+- [X] T013 [P] Create `RecipeScalerNative/Services/Yrs/YrsText.swift` — `YrsText` struct: `string(txn:) -> String?`
 
 ### SQLite Storage
 
-- [ ] T014 Create `RecipeScalerNative/Services/Storage/Database.swift` — GRDB `DatabaseQueue` setup at `ApplicationSupport/ydoc_snapshots.sqlite`, WAL mode, migration v1 creating `ydoc_snapshots` table (docKey TEXT PK, state BLOB NOT NULL, lastSyncedAt TEXT, updatedAt TEXT NOT NULL)
-- [ ] T015 Create `RecipeScalerNative/Services/Storage/YDocStore.swift` — `actor YDocStore` with CRUD: `loadSnapshot(docKey:) -> YDocSnapshot?`, `saveSnapshot(docKey:state:lastSyncedAt:)`, `deleteSnapshot(docKey:)`, `allSnapshotKeys() -> [String]`
+- [X] T014 Create `RecipeScalerNative/Services/Storage/Database.swift` — GRDB `DatabaseQueue` setup at `ApplicationSupport/ydoc_snapshots.sqlite`, WAL mode, migration v1 creating `ydoc_snapshots` table (docKey TEXT PK, state BLOB NOT NULL, lastSyncedAt TEXT, updatedAt TEXT NOT NULL)
+- [X] T015 Create `RecipeScalerNative/Services/Storage/YDocStore.swift` — `actor YDocStore` with CRUD: `loadSnapshot(docKey:) -> YDocSnapshot?`, `saveSnapshot(docKey:state:lastSyncedAt:)`, `deleteSnapshot(docKey:)`, `allSnapshotKeys() -> [String]`
 
 ### Domain Models
 
-- [ ] T016 [P] Create `RecipeScalerNative/Models/YDoc/CollectionEntry.swift` — struct with fields: id, name, color, imageUrl, updatedAt, deleted, isPinned
-- [ ] T017 [P] Create `RecipeScalerNative/Models/YDoc/IngredientData.swift` — struct with fields: id, name, amount, originalAmount, order
-- [ ] T018 [P] Create `RecipeScalerNative/Models/YDoc/NutritionData.swift` — struct with fields: calories, protein, fat, carbs (all Double?)
-- [ ] T019 [P] Create `RecipeScalerNative/Models/YDoc/RecipeData.swift` — struct with fields: id, name, servings, color, version, description, ingredients ([IngredientData]), nutrition (NutritionData?), isPublic, hasSteps, createdAt, updatedAt, imageUrl, imageAspectRatio, originalRecipeLink, originalRecipe
+- [X] T016 [P] Create `RecipeScalerNative/Models/YDoc/CollectionEntry.swift` — struct with fields: id, name, color, imageUrl, updatedAt, deleted, isPinned
+- [X] T017 [P] Create `RecipeScalerNative/Models/YDoc/IngredientData.swift` — struct with fields: id, name, amount, originalAmount, order
+- [X] T018 [P] Create `RecipeScalerNative/Models/YDoc/NutritionData.swift` — struct with fields: calories, protein, fat, carbs (all Double?)
+- [X] T019 [P] Create `RecipeScalerNative/Models/YDoc/RecipeData.swift` — struct with fields: id, name, servings, color, version, description, ingredients ([IngredientData]), nutrition (NutritionData?), isPublic, hasSteps, createdAt, updatedAt, imageUrl, imageAspectRatio, originalRecipeLink, originalRecipe
 
 ### Document Manager
 
-- [ ] T020 Create `RecipeScalerNative/Services/YjsSync/DocumentManager.swift` — `actor DocumentManager` managing `[String: YrsDocument]` dictionary: `createDoc(key:) -> YrsDocument`, `getDoc(key:) -> YrsDocument?`, `applyUpdate(key:state:) throws`, `readCollectionEntries() -> [CollectionEntry]`, `readRecipeData(recipeId:) -> RecipeData?`. Uses YrsMap/YrsArray wrappers to parse Y.Doc into domain models per data-model.md
-- [ ] T021 [P] Create `RecipeScalerNative/Services/YjsSync/ConnectionState.swift` — enum: disconnected, connecting, connected, reconnecting, error(String). `@MainActor @Published` observable
+- [X] T020 Create `RecipeScalerNative/Services/YjsSync/DocumentManager.swift` — `actor DocumentManager` managing `[String: YrsDocument]` dictionary: `createDoc(key:) -> YrsDocument`, `getDoc(key:) -> YrsDocument?`, `applyUpdate(key:state:) throws`, `readCollectionEntries() -> [CollectionEntry]`, `readRecipeData(recipeId:) -> RecipeData?`. Uses YrsMap/YrsArray wrappers to parse Y.Doc into domain models per data-model.md
+- [X] T020a Create observer-subscription flow in `DocumentManager.swift` — for each loaded Y.Doc, register a `YrsObserver` (from T010a) on `Y.Array('recipes')` (collection) and on `Y.Map('recipe')` (per recipe). On callback, re-parse the affected doc and call a `MainActor` publish closure supplied by YjsSyncService. YjsSyncService then updates its `@Published collectionEntries` / `@Published currentRecipe`. This is the FR-011 reactive path: no `@Query`, no manual reload
+- [X] T021 [P] Create `RecipeScalerNative/Services/YjsSync/ConnectionState.swift` — enum: disconnected, connecting, connected, reconnecting, error(String). `@MainActor @Published` observable
 
 **Checkpoint**: Foundation ready — yrs wrapper reads Y.Doc values, SQLite stores snapshots, domain models defined, DocumentManager parses collection and recipe documents
 
@@ -78,11 +80,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T022 [US1] Create `RecipeScalerNative/Services/YjsSync/SyncEventHandler.swift` — handles Socket.IO events: `auth` (emit userId+deviceId on connect), `load_document` (emit for collection), `document_loaded` (parse yjsState → apply to DocumentManager), `collection_updated` (parse yjsUpdate → apply to DocumentManager), `sync_error` (log and handle per contracts/sync-protocol.md). Binary conversion: `[Int] → Data` via `Data(array.map { UInt8($0) })`
-- [ ] T023 [US1] Create `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift` — `@MainActor ObservableObject` replacing WebSocketService: `@Published collectionEntries: [CollectionEntry]`, `@Published connectionState: ConnectionState`. Coordinates DocumentManager, SyncEventHandler, YDocStore. On `start(userId:)`: load SQLite snapshot → create Y.Doc → connect Socket.IO → emit load_document for collection → update collectionEntries. Wire up SyncEventHandler callbacks to update DocumentManager and refresh collectionEntries
-- [ ] T024 [US1] Rewrite `RecipeScalerNative/ViewModels/RecipeListViewModel.swift` — remove REST-based `loadRecipes()`, replace with subscription to YjsSyncService.collectionEntries. Map CollectionEntry to Recipe SwiftData model for image caching. Keep search functionality using local data. Remove `apiClient.fetchRecipesCached()` calls
-- [ ] T025 [US1] Update `RecipeScalerNative/Views/RecipeListView.swift` — bind to new ViewModel data source. Remove SwiftData `@Query` for recipes if redundant. Ensure list shows name, color, image, pinned status from CollectionEntry
-- [ ] T026 [US1] Update `RecipeScalerNative/RecipeScalerNativeApp.swift` — initialize YjsSyncService after auth, pass to views via environment object. Remove WebSocketService.shared singleton pattern if replaced
+- [X] T022 [US1] Create `RecipeScalerNative/Services/YjsSync/SyncEventHandler.swift` — handles Socket.IO events: `auth` (emit userId+deviceId on connect), `load_document` (emit for collection), `document_loaded` (parse yjsState → apply to DocumentManager), `collection_updated` (parse yjsUpdate → apply to DocumentManager), `sync_error` (log and handle per contracts/sync-protocol.md). Binary conversion: `[Int] → Data` via `Data(array.map { UInt8($0) })`
+- [X] T023 [US1] Create `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift` — `@MainActor ObservableObject` replacing WebSocketService: `@Published collectionEntries: [CollectionEntry]`, `@Published connectionState: ConnectionState`. Coordinates DocumentManager, SyncEventHandler, YDocStore. On `start(userId:)`: load SQLite snapshot → create Y.Doc → connect Socket.IO → emit load_document for collection → update collectionEntries. Wire up SyncEventHandler callbacks to update DocumentManager and refresh collectionEntries
+- [X] T024 [US1] Rewrite `RecipeScalerNative/ViewModels/RecipeListViewModel.swift` — remove REST-based `loadRecipes()`, replace with subscription to YjsSyncService.collectionEntries. Map CollectionEntry to Recipe SwiftData model for image caching. Keep search functionality using local data. Remove `apiClient.fetchRecipesCached()` calls
+- [X] T025 [US1] Update `RecipeScalerNative/Views/RecipeListView.swift` — bind to new ViewModel data source. Remove SwiftData `@Query` for recipes if redundant. Ensure list shows name, color, image, pinned status from CollectionEntry
+- [X] T026 [US1] Update `RecipeScalerNative/RecipeScalerNativeApp.swift` — initialize YjsSyncService after auth, pass to views via environment object. Remove WebSocketService.shared singleton pattern if replaced
 
 **Checkpoint**: App launches, connects to Socket.IO, loads collection Y.Doc, displays recipe list from CRDT data. Real-time collection updates work.
 
@@ -96,11 +98,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T027 [US2] Add version-aware recipe reading to `RecipeScalerNative/Services/YjsSync/DocumentManager.swift` — `readRecipeData(recipeId:)` method: detect version from `map["version"]`, parse ingredients (v1: JSON string parse, v2/v3: Y.Array of Y.Map), parse nutrition (JSON or Y.Map), parse description (v1: string, v2: Y.Text, v3: skip XmlFragment). Per research R6 and data-model.md
-- [ ] T028 [US2] Add recipe document loading to `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift` — `loadRecipe(recipeId:)` method: check DocumentManager for existing doc, else load from SQLite, emit `load_document` for recipe, handle `document_loaded` for recipes. Add `@Published currentRecipe: RecipeData?`
-- [ ] T029 [US2] Add `recipe_updated` handler to `RecipeScalerNative/Services/YjsSync/SyncEventHandler.swift` — parse `recipeId` + `yjsUpdate`, apply to DocumentManager, trigger YjsSyncService to refresh currentRecipe
-- [ ] T030 [US2] Update `RecipeScalerNative/Views/RecipeDetailView.swift` — bind to YjsSyncService.currentRecipe for name, servings, color, ingredients list, nutrition display. Remove REST full recipe fetch dependency. Load recipe via `loadRecipe(recipeId:)` on appear
-- [ ] T031 [US2] Add recipe snapshot persistence to `RecipeScalerNative/Services/YjsSync/DocumentManager.swift` — persist Y.Doc state to YDocStore after `document_loaded` and `recipe_updated` events. Load from SQLite on startup if available
+- [X] T027 [US2] Add version-aware recipe reading to `RecipeScalerNative/Services/YjsSync/DocumentManager.swift` — `readRecipeData(recipeId:)` method: detect version from `map["version"]`, parse ingredients (v1: JSON string parse, v2/v3: Y.Array of Y.Map), parse nutrition (JSON or Y.Map), parse description (v1: string, v2: Y.Text, v3: skip XmlFragment). Per research R6 and data-model.md
+- [X] T028 [US2] Add recipe document loading to `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift` — `loadRecipe(recipeId:)` method: check DocumentManager for existing doc, else load from SQLite, emit `load_document` for recipe, handle `document_loaded` for recipes. Add `@Published currentRecipe: RecipeData?`
+- [X] T029 [US2] Add `recipe_updated` handler to `RecipeScalerNative/Services/YjsSync/SyncEventHandler.swift` — parse `recipeId` + `yjsUpdate`, apply to DocumentManager, trigger YjsSyncService to refresh currentRecipe
+- [X] T030 [US2] Update `RecipeScalerNative/Views/RecipeDetailView.swift` — bind to YjsSyncService.currentRecipe for name, servings, color, ingredients list, nutrition display. Remove REST full recipe fetch dependency. Load recipe via `loadRecipe(recipeId:)` on appear
+- [X] T031 [US2] Wire event-to-applyUpdate flow in `DocumentManager.swift` — when `document_loaded` or `recipe_updated` events arrive in SyncEventHandler, route them through `DocumentManager.applyUpdate(...)`. Do NOT add a separate persistence path here — T040 owns all snapshot writes to keep the persistence surface single-sourced
+- [ ] T031a [US2] Manual parity verification (SC-002) — open 3 sample recipes in iOS simulator and the web client (one v1, one v2, one v3), confirm name/servings/ingredients/nutrition match field-for-field. Capture screenshot evidence and record in Phase 4 checkpoint before declaring US2 done
 
 **Checkpoint**: Tapping a recipe shows full detail from Y.Doc with ingredients, nutrition, all metadata. v1/v2/v3 recipes all render correctly. Real-time recipe updates work.
 
@@ -114,8 +117,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T032 [US3] Add scaling logic to `RecipeScalerNative/ViewModels/RecipeListViewModel.swift` or new `RecipeDetailViewModel` — compute scaled amounts from IngredientData.originalAmount using formula: `scaledAmount = originalAmount * (targetServings / baseServings)`. Handle v1 recipes where originalAmount may be missing (use amount as base)
-- [ ] T033 [US3] Update `RecipeScalerNative/Views/RecipeDetailView.swift` — wire serving slider to scaling computation. Display scaled amounts in ingredient list. scaleFactor is UI-local state (not persisted in Y.Doc per constitution). Ensure slider resets to base servings correctly
+- [X] T032 [US3] Add scaling logic to `RecipeScalerNative/ViewModels/RecipeListViewModel.swift` or new `RecipeDetailViewModel` — compute scaled amounts from IngredientData.originalAmount using formula: `scaledAmount = originalAmount * (targetServings / baseServings)`. Handle v1 recipes where originalAmount may be missing (use amount as base)
+- [X] T033 [US3] Update `RecipeScalerNative/Views/RecipeDetailView.swift` — wire serving slider to scaling computation. Display scaled amounts in ingredient list. scaleFactor is UI-local state (not persisted in Y.Doc per constitution). Ensure slider resets to base servings correctly
 
 **Checkpoint**: Serving slider scales all ingredient amounts correctly for v1/v2/v3 recipes. Reset returns to original values.
 
@@ -129,10 +132,10 @@
 
 ### Implementation for User Story 4
 
-- [ ] T034 [US4] Enhance `RecipeScalerNative/Services/YjsSync/SyncEventHandler.swift` — add reconnection handling: on Socket.IO `.reconnect` event, re-emit `auth` with userId+deviceId, reload stale documents (those with lastSyncedAt older than disconnect time). Configure Socket.IO client with reconnects: true, reconnectAttempts: -1, reconnectWait: 1000ms per contracts/sync-protocol.md
-- [ ] T035 [US4] Enhance `RecipeScalerNative/Services/YjsSync/ConnectionState.swift` — add transitions: connected → disconnected (on .disconnect), disconnected → reconnecting (on .reconnectAttempt), reconnecting → connected (on .connect). Publish state changes to YjsSyncService
-- [ ] T036 [US4] Add sync error handling to `RecipeScalerNative/Services/YjsSync/SyncEventHandler.swift` — handle `sync_error` per contracts/sync-protocol.md: "Ownership validation failed" → show error, "Recipe is deleted" → remove from list, "Empty/Invalid update" → reload document, other → retry once after 5s
-- [ ] T037 [US4] Add offline/online indicator to `RecipeScalerNative/Views/RecipeListView.swift` — bind to YjsSyncService.connectionState, show system icon (wifi/wifi.slash) with localized status text. Add i18n keys for connection states to `RecipeScalerNative/Resources/Localizable.xcstrings`
+- [X] T034 [US4] Enhance `RecipeScalerNative/Services/YjsSync/SyncEventHandler.swift` — add reconnection handling: on Socket.IO `.reconnect` event, re-emit `auth` with userId+deviceId, reload stale documents (those with lastSyncedAt older than disconnect time). Configure Socket.IO client with reconnects: true, reconnectAttempts: -1, reconnectWait: 1000ms per contracts/sync-protocol.md
+- [X] T035 [US4] Enhance `RecipeScalerNative/Services/YjsSync/ConnectionState.swift` — add transitions: connected → disconnected (on .disconnect), disconnected → reconnecting (on .reconnectAttempt), reconnecting → connected (on .connect). Publish state changes to YjsSyncService
+- [X] T036 [US4] Add sync error handling to `RecipeScalerNative/Services/YjsSync/SyncEventHandler.swift` — handle `sync_error` per contracts/sync-protocol.md: "Ownership validation failed" → show error, "Recipe is deleted" → remove from list, "Empty/Invalid update" → reload document, other → retry once after 5s
+- [X] T037 [US4] Add offline/online indicator to `RecipeScalerNative/Views/RecipeListView.swift` — bind to YjsSyncService.connectionState, show system icon (wifi/wifi.slash) with localized status text. Add i18n keys for connection states to `RecipeScalerNative/Resources/Localizable.xcstrings`
 
 **Checkpoint**: App shows connection state, auto-reconnects after network loss, handles sync errors gracefully, shows offline indicator.
 
@@ -146,9 +149,9 @@
 
 ### Implementation for User Story 5
 
-- [ ] T038 [US5] Add startup from SQLite to `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift` — in `start(userId:)`: first load collection snapshot from YDocStore, create Y.Doc from snapshot, parse and publish CollectionEntries immediately before Socket.IO connection. Then connect and sync in background
-- [ ] T039 [US5] Add recipe detail SQLite restore to `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift` — in `loadRecipe(recipeId:)`: check SQLite for existing snapshot before requesting from server. If found, parse and display immediately, then sync for updates in background
-- [ ] T040 [US5] Ensure snapshot persistence on every update in `RecipeScalerNative/Services/YjsSync/DocumentManager.swift` — after every `applyUpdate`, call YDocStore.saveSnapshot with current state and lastSyncedAt. Handle corruption: if ytransaction_apply fails, delete snapshot from SQLite and request full reload from server
+- [X] T038 [US5] Add startup from SQLite to `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift` — in `start(userId:)`: first load collection snapshot from YDocStore, create Y.Doc from snapshot, parse and publish CollectionEntries immediately before Socket.IO connection. Then connect and sync in background
+- [X] T039 [US5] Add recipe detail SQLite restore to `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift` — in `loadRecipe(recipeId:)`: check SQLite for existing snapshot before requesting from server. If found, parse and display immediately, then sync for updates in background
+- [X] T040 [US5] Ensure snapshot persistence on every update in `RecipeScalerNative/Services/YjsSync/DocumentManager.swift` — after every `applyUpdate`, call YDocStore.saveSnapshot with current state and lastSyncedAt. Handle corruption: if ytransaction_apply fails, delete snapshot from SQLite and request full reload from server
 
 **Checkpoint**: Force-quit and reopen shows recipes instantly from SQLite. Works fully offline with cached data. Most recent sync state is always persisted.
 
@@ -158,13 +161,15 @@
 
 **Purpose**: Cleanup, i18n, docs, removal of deprecated code
 
-- [ ] T041 [P] Add all new user-facing strings to `RecipeScalerNative/Resources/Localizable.xcstrings` — sync error messages (ownership failed, recipe deleted, sync error), connection status labels (connecting, connected, offline, reconnecting), recipe loading indicator. Both ru and en locales
-- [ ] T042 [P] Remove `RecipeScalerNative/Services/WebSocketService.swift` — all functionality replaced by YjsSyncService + SyncEventHandler
-- [ ] T043 [P] Remove REST recipe fetch from `RecipeScalerNative/Services/APIClient.swift` — remove `fetchRecipesCached()` and `fetchRecipeFullCached()` methods, keep image and auth endpoints. Remove `RecipeDTO` and related response types
-- [ ] T044 [P] Clean up `RecipeScalerNative/Models/ApiCacheEntry.swift` — remove REST-specific caching fields (etag, lastModified) that are no longer needed for recipe fetching. Keep if still used for image caching
-- [ ] T045 Update `SETUP.md` — add yrs XCFramework build instructions (prerequisites, running build script, adding to Xcode). Add GRDB dependency note. Update build steps to reflect Phase 2 setup
-- [ ] T046 Update `RecipeScalerNative/PROJECT_STATUS.md` — mark Phase 2 scope items as done after verification
-- [ ] T047 Verify all i18n strings use resource files — grep for hardcoded user-facing strings in new files, ensure none exist
+- [X] T041 [P] Add all new user-facing strings to `RecipeScalerNative/Resources/Localizable.xcstrings` — sync error messages (ownership failed, recipe deleted, sync error), connection status labels (connecting, connected, offline, reconnecting), recipe loading indicator. Both ru and en locales
+- [X] T042 [P] Remove `RecipeScalerNative/Services/WebSocketService.swift` — all functionality replaced by YjsSyncService + SyncEventHandler
+- [X] T043 [P] Remove REST recipe fetch from `RecipeScalerNative/Services/APIClient.swift` — remove `fetchRecipesCached()` and `fetchRecipeFullCached()` methods, keep image and auth endpoints. Remove `RecipeDTO` and related response types
+- [X] T044 [P] Clean up `RecipeScalerNative/Models/ApiCacheEntry.swift` — remove REST-specific caching fields (etag, lastModified) that are no longer needed for recipe fetching. Keep if still used for image caching
+- [X] T045 Update `SETUP.md` — add yrs XCFramework build instructions (prerequisites, running build script, adding to Xcode). Add GRDB dependency note. Update build steps to reflect Phase 2 setup
+- [X] T046 Update `RecipeScalerNative/PROJECT_STATUS.md` — mark Phase 2 scope items as done after verification
+- [X] T047 Verify all i18n strings use resource files — grep for hardcoded user-facing strings in new files, ensure none exist
+- [X] T048 [P] Update `docs/ARCHITECTURE.md` — add YjsSyncService to the sync architecture diagram, document Socket.IO event flow (auth → load_document → document_loaded → collection_updated/recipe_updated → sync_error), reference the new YrsDocument/YrsMap/YrsArray wrappers and the observer-driven reactivity path
+- [X] T049 [P] Update `docs/YJS-SCHEMA.md` — append a "Native (Swift) field mapping" section listing `CollectionEntry`, `RecipeData`, `IngredientData`, `NutritionData` with their wire-format field names, so schema parity between web and native is auditable from a single source
 
 ---
 
@@ -203,9 +208,9 @@ graph LR
 ### Parallel Opportunities
 
 - Within Phase 1: T005, T006 (directories + headers) can run in parallel
-- Within Phase 2: T008-T009 (error + value), T011-T013 (map/array/text), T016-T019 (domain models) — all parallelizable groups
+- Within Phase 2: T008-T009 (error + value), T011-T013 (map/array/text), T016-T019 (domain models) — all parallelizable groups. T010a (observer wrapper) is sequential after T010; T020a (observer subscription) is sequential after T010a
 - Phase 6 (US4) and Phase 7 (US5) can run in parallel with each other
-- Phase 8 polish tasks T041-T044 can all run in parallel
+- Phase 8 polish tasks T041-T044 and T048-T049 can all run in parallel
 
 ---
 

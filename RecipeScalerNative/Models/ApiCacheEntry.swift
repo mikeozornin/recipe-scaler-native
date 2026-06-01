@@ -6,6 +6,8 @@
 import Foundation
 import SwiftData
 
+/// HTTP conditional-cache metadata for REST assets (e.g. recipe images).
+/// Recipe list/detail data is sourced from Y.Doc snapshots, not this table.
 @Model
 final class ApiCacheEntry {
     @Attribute(.unique) var key: String

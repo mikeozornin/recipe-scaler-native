@@ -1,85 +1,58 @@
-//
-//  RecipeListView.swift
-//  RecipeScalerNative
-//
-//
-
 import SwiftUI
-import SwiftData
-import UIKit
-
-/// Value-type snapshot for list row to avoid reading SwiftData in body (breaks AttributeGraph cycle).
-struct RecipeRowData: Identifiable {
-    let id: String
-    let name: String
-    let color: String?
-    let imagePreviewLocalPath: String?
-    let imageUrl: String?
-}
 
 struct RecipeListView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Recipe.updatedAt, order: .reverse) private var recipes: [Recipe]
-
-    @StateObject private var viewModel: RecipeListViewModel
+    @EnvironmentObject private var syncService: YjsSyncService
     @State private var searchText = ""
     @State private var showingError = false
     @State private var errorMessage = ""
-    @State private var rowItems: [RecipeRowData] = []
-    private let autoLoad: Bool
 
-    @MainActor
-    init(autoLoad: Bool = true) {
-        _viewModel = StateObject(wrappedValue: RecipeListViewModel())
-        self.autoLoad = autoLoad
-    }
+    private var filteredEntries: [CollectionEntry] {
+        let entries = syncService.collectionEntries
+        let trimmed = searchText.trimmingCharacters(in: .whitespaces)
 
-    init(autoLoad: Bool = true, viewModel: RecipeListViewModel) {
-        _viewModel = StateObject(wrappedValue: viewModel)
-        self.autoLoad = autoLoad
-    }
+        guard !trimmed.isEmpty else {
+            return entries
+        }
 
-    var filteredRecipes: [Recipe] {
-        let baseRecipes: [Recipe]
-        if searchText.isEmpty {
-            baseRecipes = recipes
-        } else {
-            baseRecipes = recipes.filter { recipe in
-                recipe.name.localizedCaseInsensitiveContains(searchText)
+        let tokens = tokenizeQuery(trimmed)
+        return entries.filter { entry in
+            tokens.allSatisfy { token in
+                normalizeForSearch(entry.name).contains(token)
             }
         }
-
-        return baseRecipes.sorted { lhs, rhs in
-            let comparison = lhs.name.localizedCaseInsensitiveCompare(rhs.name)
-            if comparison == .orderedSame {
-                return lhs.updatedAt > rhs.updatedAt
-            }
-            return comparison == .orderedAscending
-        }
     }
 
-    private func updateRowItems() {
-        rowItems = filteredRecipes.map { recipe in
-            RecipeRowData(
-                id: recipe.id,
-                name: recipe.name,
-                color: recipe.color,
-                imagePreviewLocalPath: recipe.imagePreviewLocalPath,
-                imageUrl: recipe.imageUrl
-            )
-        }
+    private var rowItems: [RecipeRowData] {
+        filteredEntries
+            .sorted { lhs, rhs in
+                if lhs.isPinned != rhs.isPinned { return lhs.isPinned }
+                let comparison = lhs.name.localizedCaseInsensitiveCompare(rhs.name)
+                if comparison == .orderedSame {
+                    return lhs.updatedAt > rhs.updatedAt
+                }
+                return comparison == .orderedAscending
+            }
+            .map { entry in
+                RecipeRowData(
+                    id: entry.id,
+                    name: entry.name,
+                    color: entry.color,
+                    imageUrl: entry.imageUrl,
+                    isPinned: entry.isPinned
+                )
+            }
     }
 
     var body: some View {
         NavigationStack {
             Group {
-                if viewModel.isLoading && rowItems.isEmpty {
-                    ProgressView("Loading recipes...")
+                if syncService.connectionState == .connecting && syncService.collectionEntries.isEmpty {
+                    ProgressView(String(localized: "recipe.list.loading"))
                 } else if rowItems.isEmpty {
                     ContentUnavailableView(
-                        "No Recipes",
+                        String(localized: "recipe.list.empty.title"),
                         systemImage: "fork.knife",
-                        description: Text("Your recipes will appear here")
+                        description: Text(String(localized: "Your recipes will appear here"))
                     )
                 } else {
                     List {
@@ -94,16 +67,11 @@ struct RecipeListView: View {
                     .listStyle(.plain)
                     .accessibilityIdentifier(AccessibilityIdentifiers.recipeList)
                     .searchable(text: $searchText, prompt: "Search recipes")
-                    .refreshable {
-                        await viewModel.loadRecipes(modelContext: modelContext)
-                    }
                 }
             }
             .navigationTitle("Recipes")
             .navigationDestination(for: String.self) { recipeId in
-                if let recipe = recipes.first(where: { $0.id == recipeId }) {
-                    RecipeDetailView(recipe: recipe)
-                }
+                YDocRecipeDetailView(recipeId: recipeId)
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -117,17 +85,7 @@ struct RecipeListView: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 12) {
-                        // Sync status indicator
-                        if viewModel.isSyncing {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else if let lastSync = viewModel.lastSyncDate {
-                            Text(lastSync, style: .relative)
-                                .font(.custom(AppFonts.sans, size: 12))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
+                    ConnectionStateIndicator(state: syncService.connectionState)
                 }
             }
             .alert("Error", isPresented: $showingError) {
@@ -136,22 +94,84 @@ struct RecipeListView: View {
                 Text(errorMessage)
             }
         }
-        .task {
-            guard autoLoad else { return }
-            await viewModel.loadRecipes(modelContext: modelContext)
-            updateRowItems()
+    }
+
+    // MARK: - Search Helpers
+
+    private func tokenizeQuery(_ query: String) -> [String] {
+        var tokens: [String] = []
+        var remaining = query[...]
+
+        while !remaining.isEmpty {
+            remaining = Substring(remaining.trimmingCharacters(in: .whitespaces))
+            if remaining.isEmpty { break }
+
+            if remaining.hasPrefix("\"") {
+                remaining = remaining.dropFirst()
+                if let end = remaining.range(of: "\"") {
+                    let phrase = String(remaining[..<end.lowerBound])
+                    if !phrase.isEmpty {
+                        tokens.append(normalizeForSearch(phrase))
+                    }
+                    remaining = remaining[end.upperBound...]
+                } else {
+                    let phrase = String(remaining)
+                    tokens.append(normalizeForSearch(phrase))
+                    break
+                }
+            } else {
+                if let space = remaining.range(of: " ") {
+                    let word = String(remaining[..<space.lowerBound])
+                    tokens.append(normalizeForSearch(word))
+                    remaining = remaining[space.upperBound...]
+                } else {
+                    tokens.append(normalizeForSearch(String(remaining)))
+                    break
+                }
+            }
         }
-        .onChange(of: recipes.count) { updateRowItems() }
-        .onChange(of: searchText) { updateRowItems() }
-        .onChange(of: viewModel.errorMessage) { _, newValue in
-            guard let message = newValue, !message.isEmpty else { return }
-            errorMessage = message
-            showingError = true
+
+        return tokens
+    }
+
+    private func normalizeForSearch(_ value: String) -> String {
+        return value
+            .trimmingCharacters(in: .whitespaces)
+            .decomposedStringWithCanonicalMapping
+            .components(separatedBy: CharacterSet(charactersIn: "\u{0300}"..."\u{036F}"))
+            .joined()
+            .lowercased()
+    }
+}
+
+// MARK: - Connection State Indicator
+
+private struct ConnectionStateIndicator: View {
+    let state: ConnectionState
+
+    var body: some View {
+        switch state {
+        case .connecting, .reconnecting:
+            ProgressView()
+                .controlSize(.small)
+        case .connected:
+            Image(systemName: "checkmark.circle")
+                .font(.caption)
+                .foregroundStyle(.green)
+        case .error:
+            Image(systemName: "exclamationmark.circle")
+                .font(.caption)
+                .foregroundStyle(.red)
+        case .disconnected:
+            Image(systemName: "wifi.slash")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 }
 
 // MARK: - Recipe Row
+
 struct RecipeRow: View {
     let data: RecipeRowData
 
@@ -167,7 +187,6 @@ struct RecipeRow: View {
     var body: some View {
         HStack(spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
-                // Color indicator
                 if let colorHex = data.color {
                     Circle()
                         .fill(Color(hex: colorHex) ?? .gray)
@@ -177,25 +196,22 @@ struct RecipeRow: View {
                         }
                 }
 
-                // Recipe name (max 2 lines, no measurement feedback loop)
                 Text(data.name)
                     .font(.custom(AppFonts.sans, size: bodyFont.pointSize))
                     .foregroundColor(.primary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
+
+                if data.isPinned {
+                    Image(systemName: "pin.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Recipe image thumbnail
-            if let localPath = data.imagePreviewLocalPath,
-               let uiImage = UIImage(contentsOfFile: localPath) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: rowHeight, height: rowHeight)
-                    .clipped()
-            } else if data.imageUrl?.isEmpty == false {
-                AsyncImage(url: APIClient.shared.recipeImageURL(id: data.id, preview: true)) { phase in
+            if data.imageUrl?.isEmpty == false {
+                AsyncImage(url: URL(string: data.imageUrl!)) { phase in
                     if let image = phase.image {
                         image
                             .resizable()
@@ -214,9 +230,18 @@ struct RecipeRow: View {
     }
 }
 
- 
+// MARK: - Value Type
+
+struct RecipeRowData: Identifiable {
+    let id: String
+    let name: String
+    let color: String?
+    let imageUrl: String?
+    let isPinned: Bool
+}
 
 // MARK: - Color Extension
+
 extension Color {
     init?(hex: String) {
         var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -233,8 +258,11 @@ extension Color {
     }
 }
 
-// MARK: - Preview
 #Preview {
     RecipeListView()
-        .modelContainer(for: Recipe.self, inMemory: true)
+        .environmentObject({
+            let database = try! YrsDatabase()
+            let store = YDocStore(dbQueue: database.dbQueue)
+            return YjsSyncService(store: store)
+        }())
 }

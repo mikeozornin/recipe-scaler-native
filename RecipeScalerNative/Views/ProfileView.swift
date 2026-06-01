@@ -18,7 +18,7 @@ struct ProfileView: View {
                         Text("User ID")
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text(truncatedUserId(userId))
+                        Text(UserIdFormatter.format(userId))
                             .font(.custom(AppFonts.mono, size: 17))
                     }
                 }
@@ -51,13 +51,6 @@ struct ProfileView: View {
             }
             Button("Cancel", role: .cancel) { }
         }
-    }
-
-    private func truncatedUserId(_ id: String) -> String {
-        guard id.count > 10 else { return id }
-        let start = id.prefix(6)
-        let end = id.suffix(4)
-        return "\(start)···\(end)"
     }
 }
 
