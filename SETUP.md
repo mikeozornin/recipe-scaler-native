@@ -1,54 +1,80 @@
-# Setup Guide - RecipeScalerNative
+# Setup Guide — RecipeScalerNative
 
 ## Prerequisites
 
-- macOS with Xcode 15+
+- macOS with Xcode 16+
 - iOS 17+ device or simulator
+- Rust toolchain (for building yrs XCFramework)
 - Recipe Scaler backend running
+- Node.js (for building Tiptap WebView bundle, Phase 4+)
 
 ## Quick Start
 
-### 1. Create Xcode Project
+### 1. Build yrs XCFramework
 
-Open Xcode and create a new iOS App project:
+yrs is the CRDT engine (Rust). It compiles as an XCFramework that Swift calls via C FFI.
 
-1. File → New → Project
-2. Choose "iOS" → "App"
-3. Product Name: `RecipeScalerNative`
-4. Interface: `SwiftUI`
-5. Language: `Swift`
-6. Storage: None (we'll add SwiftData manually)
-7. Save to: `RecipeScalerNative` folder (this directory)
+```bash
+# Install Rust toolchain
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-### 2. Add Files to Project
+# Add iOS targets
+rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim
 
-Drag these folders into Xcode project navigator:
-- `Models/`
-- `Views/`
-- `ViewModels/`
-- `Services/`
-- `Resources/`
+# Clone y-crdt
+git clone https://github.com/y-crdt/y-crdt.git
+cd y-crdt
 
-### 3. Add SPM Dependencies
+# Build XCFramework (or use pre-built from releases)
+# This builds libyrs.a for all iOS architectures and wraps in .xcframework
+./scripts/build-xcframework.sh ios
+```
+
+Output: `build/yswift/YniffiFFI.xcframework` or similar. Copy to `recipe-scaler-native/Frameworks/`.
+
+Alternative: download pre-built XCFramework from [y-crdt releases](https://github.com/y-crdt/y-crdt/releases) if available for your version.
+
+### 2. Create/Update Xcode Project
+
+If starting fresh:
+
+1. Open Xcode → File → New → Project → iOS App
+2. Product Name: `RecipeScalerNative`
+3. Interface: `SwiftUI`, Language: `Swift`
+4. Save to `recipe-scaler-native/`
+
+If project exists, open `RecipeScalerNative.xcodeproj`.
+
+### 3. Add XCFramework
+
+1. Drag `YniffiFFI.xcframework` (or `yrs.xcframework`) into Xcode project
+2. Target → General → Frameworks → verify it's listed
+3. Ensure "Embed & Sign" is selected
+
+### 4. Add SPM Dependencies
 
 File → Add Package Dependencies:
 
 ```
-https://github.com/socketio/socket.io-client-swift
-https://github.com/kishikawakatsumi/KeychainAccess
-https://github.com/anquii/BIP39
+https://github.com/socketio/socket.io-client-swift    # 16.1.0+
+https://github.com/kishikawakatsumi/KeychainAccess     # 4.2.2+
+https://github.com/anquii/BIP39                        # 1.0.0+
 ```
 
-### 4. Configure Info.plist
+For SQLite (choose one):
+```
+https://github.com/groue/GRDB.swift                    # Recommended for Y state storage
+# OR use SwiftData for caching
+```
 
-Add these keys:
+### 5. Configure Info.plist
 
 ```xml
 <key>NSUserNotificationsUsageDescription</key>
-<string>We need notifications to alert you when timers complete</string>
+<string>Timer notifications</string>
 
 <key>NSCameraUsageDescription</key>
-<string>Camera access is needed to scan QR codes</string>
+<string>QR code scanning</string>
 
 <key>UIBackgroundModes</key>
 <array>
@@ -56,110 +82,132 @@ Add these keys:
 </array>
 ```
 
-### 5. Configure Capabilities
+### 6. Configure Server URL
 
-Project Settings → Signing & Capabilities:
-
-1. Enable "Push Notifications"
-2. Enable "Background Modes" → check "Background fetch"
-
-### 6. Update Configuration
-
-Edit `Services/APIClient.swift`:
+Edit `Services/APIClient.swift` or `Config.swift`:
 
 ```swift
-private init() {
-    // Change to your backend URL
-    self.baseURL = "https://your-server.com"
-}
+static let baseURL = "https://your-server.com"
 ```
 
 ### 7. Build & Run
 
-Cmd+R to build and run on simulator or device.
+```bash
+# From Xcode
+Cmd+R
 
-## Architecture
-
-### Data Flow
-
-```
-UI (SwiftUI)
-  ↓
-ViewModels (@Published)
-  ↓
-Services (APIClient, WebSocket)
-  ↓
-SwiftData (Cache) ← REST API → Backend
+# Or command line
+xcodebuild build -scheme RecipeScalerNative \
+  -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
-### Sync Strategy
+## Phase 4: Tiptap WebView Bundle
 
-**WebSocket notifications** → **REST API for data**
+When reaching Phase 4 (description editing), build the Tiptap bundle:
 
-1. WebSocket listens for events: `sync_confirmed`, `document_loaded`
-2. On event → GET `/api/recipes-v1/` for fresh data
-3. Update SwiftData cache
-4. SwiftUI auto-updates via @Query
+```bash
+cd recipe-scaler-native/TiptapEditor
 
-No backend changes needed!
+npm install
+npm run build    # Outputs tiptap-editor.bundle.js
+```
 
-## Project Structure
+Add `tiptap-editor.bundle.js` and `tiptap-editor.html` to Xcode project resources.
+
+The bundle includes:
+- yjs
+- @tiptap/core + StarterKit, Highlight, Link
+- Custom extensions: TimerNode, IngredientNode, HeadingWithHash
+- @tiptap/extension-collaboration
+- Bridge module for Swift ↔ WebView communication
+
+## Project Structure (Target)
 
 ```
 RecipeScalerNative/
-├── RecipeScalerNativeApp.swift    # Entry point
-├── ContentView.swift               # Root view
+├── RecipeScalerNativeApp.swift
+├── ContentView.swift
+├── Config.swift
+│
 ├── Models/
-│   ├── Recipe.swift                # SwiftData model
+│   ├── Recipe.swift
 │   ├── Ingredient.swift
 │   └── RecipeTimer.swift
-├── Views/
-│   ├── RecipeListView.swift       # Main list
-│   └── RecipeDetailView.swift     # Recipe details
-├── ViewModels/
-│   └── RecipeListViewModel.swift
+│
 ├── Services/
-│   ├── APIClient.swift            # REST API
-│   ├── WebSocketService.swift    # Socket.io
-│   ├── AuthService.swift          # Seed auth
-│   └── TimerManager.swift         # Timer logic
-└── Resources/
-    ├── en.lproj/                  # English
-    └── ru.lproj/                  # Russian
+│   ├── APIClient.swift              # REST (auth, images)
+│   ├── WebSocketService.swift       # Socket.IO transport
+│   ├── YjsSyncService.swift         # CRDT sync orchestration
+│   ├── YrsBridge.swift              # Swift wrapper over yrs C API
+│   ├── AuthService.swift            # Seed auth
+│   ├── TimerManager.swift           # Timers
+│   └── ImageCacheService.swift      # Image caching
+│
+├── Views/
+│   ├── RecipeListView.swift
+│   ├── RecipeDetailView.swift
+│   ├── RecipeEditView.swift
+│   ├── DescriptionEditorView.swift  # WKWebView wrapper
+│   ├── ShoppingListView.swift
+│   └── TimerExampleView.swift
+│
+├── ViewModels/
+│   ├── RecipeListViewModel.swift
+│   └── RecipeEditViewModel.swift
+│
+├── Resources/
+│   ├── TiptapEditor/                # WebView bundle (Phase 4)
+│   │   ├── tiptap-editor.html
+│   │   └── tiptap-editor.bundle.js
+│   ├── Localizable.xcstrings
+│   └── Assets.xcassets
+│
+├── Frameworks/
+│   └── YniffiFFI.xcframework        # yrs Rust library
+│
+└── docs/
+    ├── ARCHITECTURE.md
+    ├── YJS-SCHEMA.md
+    └── ADD_SPM_PACKAGES.md
 ```
 
 ## Troubleshooting
 
-### Build Errors
+### Rust build errors
+
+**"rustup target not found"**
+```bash
+rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim
+```
+
+**"library not found for -lyrs"**
+- Verify XCFramework is in Target → General → Frameworks
+- Clean build folder (Cmd+Shift+K) and rebuild
+
+### Socket.IO errors
 
 **"Cannot find 'SocketIO' in scope"**
 - File → Add Package Dependencies → socket.io-client-swift
 
-**"Cannot find 'KeychainAccess' in scope"**
-- Add KeychainAccess package
+**WebSocket not connecting**
+- Verify server URL in Config.swift
+- Check userId is set via AuthService
+- Ensure backend Socket.IO is running
 
-**SwiftData errors**
+### SwiftData errors
+
+**"Cannot find type 'Schema' in scope"**
 - Ensure iOS deployment target is 17.0+
 
-### Runtime Issues
+## Testing
 
-**Empty recipes list**
-- Check `baseURL` in APIClient.swift
-- Verify backend is running
-- Check network permissions
+```bash
+# Unit tests
+xcodebuild test -scheme RecipeScalerNative \
+  -destination 'platform=iOS Simulator,name=iPhone 16'
 
-**WebSocket not connecting**
-- Verify Socket.io server URL
-- Check userId is set in AuthService
-
-## Next Steps
-
-1. Test with real backend
-2. Implement QR scanner (Phase 4)
-3. Add push notifications (Phase 5)
-4. Implement PDF export (Phase 6)
-
-## Documentation
-
-- [README.md](README.md) - Project overview
-- [Plan](../.claude/plans/keen-yawning-tide.md) - Full implementation plan
+# UI tests
+xcodebuild test -scheme RecipeScalerNative \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -only-testing:RecipeScalerNativeUITests
+```

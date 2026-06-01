@@ -1,151 +1,99 @@
 # Recipe Scaler Native iOS
 
-Нативное iOS приложение для Recipe Scaler (read-only MVP).
+Native iOS app for Recipe Scaler with CRDT-based offline-first sync.
 
-## Требования
+## Requirements
 
-- Xcode 15.0+
+- Xcode 16.0+
 - iOS 17.0+
 - Swift 5.9+
+- Rust toolchain (for yrs XCFramework)
 
-## Архитектура
+## Architecture Overview
 
-### Модели данных
-- **Recipe** - рецепт с ингредиентами
-- **Ingredient** - ингредиент с масштабированием
-- **RecipeTimer** - таймер для готовки
+**CRDT-first**: each device holds a `Y.Doc` (via yrs Rust engine). Binary updates sync through the existing Socket.IO backend. No backend changes needed.
 
-### Сервисы
-- **APIClient** - REST API клиент для получения данных
-- **WebSocketService** - Socket.io для real-time уведомлений
+```mermaid
+flowchart TB
+  subgraph ios [iOS App]
+    UI[SwiftUI - native UI]
+    YSS[YjsSyncService]
+    YRS[yrs Y.Doc - Rust via C FFI]
+    WV[WKWebView - Tiptap description]
+    STORE[(SQLite: state + offline queue)]
+  end
 
-### Синхронизация (MVP)
+  subgraph server [Backend - unchanged]
+    SIO[Socket.IO]
+    YJS[YjsService]
+  end
 
-**Подход:** REST API + WebSocket уведомления (БЕЗ изменений бэкенда)
-
-1. **REST API**: `GET /api/recipes-v1/` для загрузки рецептов в JSON
-2. **WebSocket**: События `sync_confirmed`, `document_loaded` как уведомления
-3. **При событии**: делать GET запрос к REST API для обновления
-
-```
-┌─────────────┐
-│  iOS App    │
-└──────┬──────┘
-       │
-       ├─► REST API (/api/recipes-v1/)
-       │   └─► Загрузка рецептов (JSON)
-       │
-       └─► WebSocket (Socket.io)
-           ├─► Подписка на события
-           └─► При событии → GET запрос
+  UI --> YSS
+  YSS --> YRS
+  YRS -->|observeDeep| UI
+  YSS <-->|binary updates| SIO
+  YSS --> STORE
+  WV <-->|fragment updates| YSS
 ```
 
-**Важно:** WebSocket НЕ передаёт Yjs бинарные данные, только уведомления!
+- **yrs** (Rust) — CRDT engine, binary-compatible with Yjs 13.6.30 on server
+- **SwiftUI** — all UI except rich text description
+- **WKWebView + Tiptap** — description editing only (custom nodes: TimerNode, IngredientNode)
+- **Socket.IO** — same events as web client (`sync_request`, `load_document`, `recipe_updated`, etc.)
 
-## Зависимости (SPM)
+Detailed architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+## Phases
+
+| Phase | Scope | Status |
+|-------|-------|--------|
+| Phase 1 | Read-only MVP (REST + WS notifications) | Done |
+| Phase 2 | yrs integration + YjsSyncService + native read | Next |
+| Phase 3 | Native editing (ingredients, servings, name) | Planned |
+| Phase 4 | Description editing via WKWebView + Tiptap | Planned |
+| Phase 5 | Offline queue + tombstones + shopping list | Planned |
+| Phase 6 | Polish: push, widgets, Siri, PDF | Planned |
+
+## Y.Doc Schema
+
+Three document types per user, identical structure to web client:
+
+- **Collection**: `Y.Array('recipes')` of `Y.Map` entries (id, name, color, imageUrl, updatedAt, deleted, isPinned)
+- **Recipe**: `Y.Map('recipe')` (name, servings, scaleFactor, ingredients, nutrition, version...) + `Y.XmlFragment('description')` for v3
+- **Shopping list**: `Y.Map('shopping')` → items + meta
+
+Full schema: [docs/YJS-SCHEMA.md](docs/YJS-SCHEMA.md)
+
+## Dependencies (SPM)
 
 ```swift
-// Обязательные
-- SwiftData (встроено в iOS 17+)
-- socket.io-client-swift - WebSocket для real-time
-- KeychainAccess - хранение seed phrase
-- BIP39 - генерация seed phrase
+// Required
+- SwiftData (built into iOS 17+)
+- socket.io-client-swift     // WebSocket
+- KeychainAccess              // Secure storage
+- BIP39                       // Seed phrase generation
+- yrs XCFramework             // CRDT engine (custom build)
 
-// Будущее (v2+)
-- y-crdt/yswift - для редактирования
+// WKWebView bundle (not SPM, bundled in app)
+- yjs, @tiptap/core + extensions // Rich text description editor
 ```
 
-## Функции MVP
+## Xcode Project
 
-### ✅ Включено
-- Просмотр списка рецептов
-- Детальный просмотр рецепта
-- Масштабирование ингредиентов
-- Таймеры готовки
-- Поиск рецептов
-- Локализация (ru/en)
-- Offline кэширование (SwiftData)
-- Seed-based авторизация
-- QR для авторизации
-- WebSocket обновления
+Project is maintained manually in Xcode (no XcodeGen). See [SETUP.md](SETUP.md) for build instructions including Rust XCFramework compilation.
 
-### ❌ Не включено (требует yswift)
-- Создание рецептов
-- Редактирование рецептов
-- Rich-text редактор
-- Real-time collaboration
+## Governance
 
-Внутри приложения используется логотип из `AppLogo.imageset`. Иконка на домашнем экране — из `AppIcon.appiconset` (одна и та же для Debug и Release).
+Project principles and quality gates: [.specify/memory/constitution.md](.specify/memory/constitution.md)
 
-## Проект Xcode
+## Documentation
 
-Проект поддерживается вручную (без XcodeGen). Все изменения в структуре, таргетах и зависимостях вносятся в `RecipeScalerNative.xcodeproj` через Xcode.
-
-## Настройка
-
-1. Открыть `RecipeScalerNative.xcodeproj` в Xcode
-2. Настроить `baseURL` в `APIClient.swift`
-3. Build & Run (для dev-иконки собирайте в конфигурации Debug)
-
-## Тестирование
-
-### Unit + Snapshot
-```bash
-xcodebuild test -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 15'
-```
-
-### UI Tests
-```bash
-xcodebuild test -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:RecipeScalerNativeUITests
-```
-
-### Примечания
-- Snapshot-тесты используют `SnapshotTesting` и сохраняют эталонные изображения рядом с тестами.
-- Для UI тестов используется `accessibilityIdentifier` на ключевых элементах экрана авторизации.
-
-## Структура проекта
-
-```
-RecipeScalerNative/
-├── Models/
-│   ├── Recipe.swift
-│   ├── Ingredient.swift
-│   └── RecipeTimer.swift
-├── Views/
-│   ├── RecipeListView.swift
-│   ├── RecipeDetailView.swift
-│   └── ContentView.swift
-├── ViewModels/
-│   └── RecipeListViewModel.swift
-├── Services/
-│   ├── APIClient.swift
-│   └── WebSocketService.swift (TODO)
-└── Resources/
-    └── Localizations/ (TODO)
-```
-
-## TODO
-
-- [ ] WebSocket сервис для уведомлений
-- [ ] Seed-based авторизация
-- [ ] QR сканер/генератор
-- [ ] Таймеры с уведомлениями
-- [ ] Локализация (ru/en)
-- [ ] HTML → AttributedString конвертация
-- [ ] Синхронизация SwiftData с API
-
-## API Endpoints
-
-### Используемые в MVP
-- `GET /api/recipes-v1/` - список рецептов
-- `GET /api/recipes-v1/:id` - детали рецепта
-- `GET /api/recipes-v1/search?query=...` - поиск
-
-### WebSocket события (слушаем)
-- `sync_confirmed` - рецепт синхронизирован
-- `document_loaded` - документ загружен
-- `collection_updated` - коллекция обновлена
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — target architecture, data flow, sync protocol
+- [docs/YJS-SCHEMA.md](docs/YJS-SCHEMA.md) — exact Y.Doc structure, keys, types
+- [docs/ADD_SPM_PACKAGES.md](docs/ADD_SPM_PACKAGES.md) — SPM dependency setup
+- [SETUP.md](SETUP.md) — build and run instructions
+- [RecipeScalerNative/PROJECT_STATUS.md](RecipeScalerNative/PROJECT_STATUS.md) — current status
 
 ## License
 
-Совместимо с лицензией основного проекта Recipe Scaler.
+Compatible with the main Recipe Scaler project license.

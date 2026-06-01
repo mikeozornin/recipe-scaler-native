@@ -1,174 +1,130 @@
-# RecipeScalerNative - Project Status
+# RecipeScalerNative — Project Status
 
-## ✅ MVP Read-only - ГОТОВ К СБОРКЕ
+## Phase 1: Read-only MVP — DONE
 
-### Создано файлов: 13 Swift + документация
+Read-only iOS app using REST + WebSocket notifications. No CRDT on device.
 
-## Структура проекта
+### Completed
 
-```
-RecipeScalerNative/
-├── RecipeScalerNativeApp.swift        # App entry point с SwiftData
-├── ContentView.swift                   # Root view
-│
-├── Models/ (3 файла)
-│   ├── Recipe.swift                    # Рецепт (SwiftData @Model)
-│   ├── Ingredient.swift                # Ингредиент с масштабированием
-│   └── RecipeTimer.swift               # Таймер с управлением
-│
-├── Views/ (3 файла)
-│   ├── RecipeListView.swift           # Список рецептов
-│   ├── RecipeDetailView.swift         # Детальный просмотр
-│   └── TimerExampleView.swift         # UI таймеров
-│
-├── ViewModels/ (1 файл)
-│   └── RecipeListViewModel.swift      # Логика списка
-│
-├── Services/ (4 файла)
-│   ├── APIClient.swift                # REST API клиент
-│   ├── WebSocketService.swift         # Socket.io для уведомлений
-│   ├── AuthService.swift              # Seed-based авторизация
-│   └── TimerManager.swift             # Управление таймерами
-│
-└── Resources/
-    ├── en.lproj/Localizable.strings   # Английский
-    ├── ru.lproj/Localizable.strings   # Русский
-    └── Localizable.xcstrings           # Xcode 14+ формат
-```
+- [x] SwiftData models (Recipe, Ingredient, RecipeTimer)
+- [x] REST API client (GET /api/recipes-v1/)
+- [x] WebSocket notifications (Socket.IO)
+- [x] Recipe list with search
+- [x] Recipe detail view
+- [x] Ingredient scaling (slider)
+- [x] Localization (ru/en)
+- [x] Seed-based auth (BIP39 + Keychain)
+- [x] Timers with background execution + local notifications
+- [x] Device ID management
 
-## Реализованные фичи
+### Files: 13 Swift + documentation
 
-### ✅ Core (MVP)
-- [x] SwiftData модели (Recipe, Ingredient, RecipeTimer)
-- [x] REST API клиент (GET /api/recipes-v1/)
-- [x] WebSocket уведомления (Socket.io)
-- [x] Список рецептов с поиском
-- [x] Детальный просмотр рецепта
-- [x] Масштабирование ингредиентов (slider)
-- [x] Локализация (ru/en)
+## Phase 2: yrs Integration — NEXT
 
-### ✅ Авторизация
-- [x] Seed-based auth (BIP39)
-- [x] Keychain для seed phrase
-- [x] Auto-registration
-- [x] Login with seed
+Add yrs CRDT engine and YjsSyncService. Native read from Y.Doc, no editing yet.
 
-### ✅ Таймеры
-- [x] Создание/управление таймерами
-- [x] Background execution
-- [x] Локальные уведомления
-- [x] SwiftData persistence
+### Scope
 
-### ⏳ TODO (следующие фазы)
-- [ ] QR сканер/генератор
-- [ ] Push-уведомления (APNS)
-- [ ] PDF экспорт
-- [ ] Импорт из URL
+- [ ] Compile yrs as XCFramework (Rust → C FFI → Swift)
+- [ ] Swift wrapper over yrs C API (yffi)
+- [ ] YjsSyncService: connect, auth, load_document, sync_request
+- [ ] Y.Doc lifecycle: create, applyUpdate, encodeStateAsUpdate
+- [ ] Collection document: read Y.Array('recipes'), render list
+- [ ] Recipe document: read Y.Map('recipe'), render detail
+- [ ] SQLite persistence: state snapshots + lastSyncedAt
+- [ ] Migrate recipe list to use Y.Doc data instead of REST JSON
+
+### Risks
+
+- yrs XmlFragment API coverage — verify with real v3 recipe data
+- XCFramework build pipeline for arm64 + x86_64 + simulator
+
+## Phase 3: Native Editing
+
+Edit recipe fields (except description) through yrs mutations.
+
+### Scope
+
+- [ ] Write to Y.Map: name, servings, scaleFactor, color
+- [ ] Ingredient CRUD via Y.Map mutations
+- [ ] Nutrition editing
+- [ ] Debounced update sending (1s, same as web)
+- [ ] Observer → SwiftUI reactive updates
+- [ ] Offline queue: store updates in SQLite, drain on reconnect
+
+### Depends on
+
+- Phase 2 complete
+- Y.Doc schema fully mapped (see docs/YJS-SCHEMA.md)
+
+## Phase 4: Description Editor (WKWebView + Tiptap)
+
+Rich text editing for recipe description via embedded WebView.
+
+### Scope
+
+- [ ] Bundle Tiptap + custom extensions (TimerNode, IngredientNode, HeadingWithHash)
+- [ ] WKWebView component for description block
+- [ ] Bridge: Swift ↔ WKWebView via [UInt8] updates
+- [ ] yrs → WKWebView: initial XmlFragment state
+- [ ] WKWebView → yrs: user edits as Yjs updates
+- [ ] Remote updates → WKWebView: apply incoming changes
+- [ ] getHTML() for sharing / export
+- [ ] v2/v1 description fallback (Y.Text → plain text)
+
+### Depends on
+
+- Phase 2 (yrs with XmlFragment support)
+- Tiptap bundle build (webpack/esbuild)
+
+## Phase 5: Full Sync Parity
+
+Complete sync features matching web client.
+
+### Scope
+
+- [ ] Shopping list: Y.Map('shopping') + items + meta
+- [ ] Collection mutations: add/delete/pin recipes
+- [ ] Tombstone handling (deleted recipes in collection)
+- [ ] Recipe creation (new Y.Doc + collection entry)
+- [ ] Offline resilience: conflict-free merge after reconnect
+- [ ] Image upload (existing REST endpoint)
+- [ ] Push notifications as sync triggers (not data channel)
+
+## Phase 6: Polish
+
+- [ ] QR scanner/generator for auth
+- [ ] PDF export
+- [ ] Import from URL
 - [ ] Widgets
 - [ ] Siri Shortcuts
+- [ ] App Store preparation
 
-## Архитектура синхронизации
-
-**БЕЗ ИЗМЕНЕНИЙ БЭКЕНДА!**
+## Architecture Evolution
 
 ```
-┌─────────────────┐
-│   iOS App       │
-└────────┬────────┘
-         │
-         ├─► REST API: GET /api/recipes-v1/
-         │   └─► Загрузка данных в JSON
-         │
-         └─► WebSocket: Socket.io
-             ├─► События: sync_confirmed, document_loaded
-             └─► При событии → GET запрос к API
+Phase 1 (done)          Phase 2-3 (next)           Phase 4+ (target)
+┌────────────┐     ┌─────────────────────┐    ┌──────────────────────┐
+│ REST JSON  │     │  yrs Y.Doc (read)   │    │ yrs Y.Doc (read/write│
+│ SwiftData  │ ──► │  + Socket.IO sync   │ ──►│ + Tiptap WebView     │
+│ WS notify  │     │  + SQLite snapshots │    │ + offline queue      │
+└────────────┘     └─────────────────────┘    │ + shopping list      │
+                                               └──────────────────────┘
 ```
 
-**Важно:** WebSocket НЕ передаёт Yjs state, только уведомления!
+## Key Decisions
 
-## Зависимости (SPM)
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| CRDT engine | yrs (Rust) via C FFI | Binary-compatible with Yjs, 2k+ stars, not yswift (89 stars, WIP) |
+| Description editor | WKWebView + Tiptap | Custom Tiptap nodes impractical to rewrite natively |
+| Sync transport | Socket.IO (same as web) | No backend changes needed |
+| Local storage | SQLite | Y state snapshots + offline queue |
+| Auth | Seed-based (BIP39) | Same as web, no password needed |
+| UI framework | SwiftUI | Modern, native, declarative |
 
-```swift
-socket.io-client-swift  // WebSocket
-KeychainAccess          // Secure storage
-BIP39                   // Seed phrase
-SwiftData (iOS 17+)     // Persistence
-```
+## References
 
-## Следующий шаг: Сборка в Xcode
-
-### 1. Создать Xcode проект
-```bash
-# Открыть Xcode
-# File → New → Project → iOS App
-# Название: RecipeScalerNative
-# Interface: SwiftUI
-# Сохранить в: RecipeScalerNative/
-```
-
-### 2. Добавить файлы
-Перетащить папки в Xcode:
-- `Models/`
-- `Views/`
-- `ViewModels/`
-- `Services/`
-- `Resources/`
-
-### 3. Добавить зависимости SPM
-```
-https://github.com/socketio/socket.io-client-swift
-https://github.com/kishikawakatsumi/KeychainAccess
-https://github.com/anquii/BIP39
-```
-
-### 4. Настроить Info.plist
-```xml
-<key>NSUserNotificationsUsageDescription</key>
-<string>Timer notifications</string>
-
-<key>NSCameraUsageDescription</key>
-<string>QR code scanning</string>
-```
-
-### 5. Настроить baseURL
-Изменить в `APIClient.swift`:
-```swift
-self.baseURL = "https://your-server.com"
-```
-
-### 6. Build & Run! 🚀
-
-## Документация
-
-- [README.md](README.md) - Обзор проекта
-- [SETUP.md](SETUP.md) - Подробная инструкция
-- [План](../.claude/plans/keen-yawning-tide.md) - Полный план
-
-## Статистика
-
-- **Swift файлов:** 13
-- **Строк кода:** ~2500+
-- **Модели:** 3
-- **Views:** 3
-- **Сервисы:** 4
-- **Языки:** 2 (ru/en)
-
-## MVP Scope
-
-| Фича | Статус |
-|------|--------|
-| Просмотр рецептов | ✅ |
-| Масштабирование | ✅ |
-| Таймеры | ✅ |
-| Поиск | ✅ |
-| Авторизация | ✅ |
-| WebSocket sync | ✅ |
-| Offline cache | ✅ |
-| i18n | ✅ |
-| **Редактирование** | ❌ v2+ |
-| **QR коды** | ⏳ Phase 4 |
-| **Push** | ⏳ Phase 5 |
-
----
-
-**Проект готов к сборке в Xcode!** 🎉
+- [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) — target architecture
+- [docs/YJS-SCHEMA.md](../docs/YJS-SCHEMA.md) — Y.Doc structure
+- [SETUP.md](../SETUP.md) — build instructions

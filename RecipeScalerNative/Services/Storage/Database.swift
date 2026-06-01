@@ -1,0 +1,46 @@
+import Foundation
+import GRDB
+import OSLog
+
+/// GRDB database setup and migration for Y.Doc snapshot storage.
+///
+/// Database file: `ApplicationSupport/ydoc_snapshots.sqlite`
+/// Schema: single `ydoc_snapshots` table with WAL mode for concurrent reads.
+final class YrsDatabase {
+    let dbQueue: DatabaseQueue
+    private static let logger = Logger(subsystem: "com.recipescaler.native", category: "YrsDatabase")
+
+    init() throws {
+        let appSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        )[0]
+
+        let dbURL = appSupport.appendingPathComponent("ydoc_snapshots.sqlite")
+        YrsDatabase.logger.info("Opening database at \(dbURL.path)")
+
+        var config = Configuration()
+        config.prepareDatabase { db in
+            try db.execute(sql: "PRAGMA journal_mode=WAL")
+            try db.execute(sql: "PRAGMA foreign_keys = ON")
+        }
+
+        self.dbQueue = try DatabaseQueue(path: dbURL.path, configuration: config)
+        try migrate()
+    }
+
+    private func migrate() throws {
+        var migrator = DatabaseMigrator()
+
+        migrator.registerMigration("v1_create_ydoc_snapshots") { db in
+            try db.create(table: "ydoc_snapshots") { t in
+                t.column("docKey", .text).primaryKey()
+                t.column("state", .blob).notNull()
+                t.column("lastSyncedAt", .text)
+                t.column("updatedAt", .text).notNull()
+            }
+        }
+
+        try migrator.migrate(dbQueue)
+    }
+}

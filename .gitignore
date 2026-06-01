@@ -52,3 +52,7 @@ xcuserdata/
 
 # Documentation
 *.generated.swift
+
+# Spec Kit agent dirs (skills live globally in ~/.agents/skills)
+.agents/
+.cursor/

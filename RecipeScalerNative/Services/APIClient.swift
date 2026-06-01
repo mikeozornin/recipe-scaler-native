@@ -196,7 +196,7 @@ class APIClient: ObservableObject {
             headers["If-Modified-Since"] = lastModified
         }
 
-        let request = try buildRequest(path: "/api/v1/recipes", headers: headers)
+        let request = try buildRequest(path: "/api/recipes", headers: headers)
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -209,7 +209,7 @@ class APIClient: ObservableObject {
 
         if statusCode == 304 {
             #if DEBUG
-            print("[APIClient] GET /api/v1/recipes 304 Not Modified, ETag: \(responseEtag ?? etag ?? "nil")")
+            print("[APIClient] GET /api/recipes 304 Not Modified, ETag: \(responseEtag ?? etag ?? "nil")")
             #endif
             return CachedAPIResponse(
                 statusCode: statusCode,
@@ -241,7 +241,7 @@ class APIClient: ObservableObject {
 
     func fetchRecipe(id: String) async throws -> RecipeDTO {
         let response: APIResponse<RecipeDTO> = try await performRequest(
-            path: "/api/v1/recipes/\(id)"
+            path: "/api/recipes/\(id)"
         )
 
         guard response.success, let recipe = response.data else {
@@ -257,7 +257,7 @@ class APIClient: ObservableObject {
             URLQueryItem(name: "limit", value: "\(limit)")
         ]
 
-        var urlComponents = URLComponents(string: "\(baseURL)/api/v1/recipes/search")
+        var urlComponents = URLComponents(string: "\(baseURL)/api/recipes/search")
         urlComponents?.queryItems = queryItems
 
         guard let url = urlComponents?.url else {

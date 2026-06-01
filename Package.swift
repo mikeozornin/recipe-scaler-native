@@ -25,6 +25,9 @@ let package = Package(
         // Snapshot testing for UI regression checks
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.17.0"),
 
+        // SQLite storage for Y.Doc snapshots
+        .package(url: "https://github.com/groue/GRDB.swift", from: "7.0.0"),
+
         // BIP39 dependency removed for now (not used in code)
     ],
     targets: [
@@ -33,6 +36,7 @@ let package = Package(
             dependencies: [
                 .product(name: "SocketIO", package: "socket.io-client-swift"),
                 .product(name: "KeychainAccess", package: "KeychainAccess"),
+                .product(name: "GRDB", package: "GRDB.swift"),
             ],
             path: "RecipeScalerNative",
             exclude: [
