@@ -23,6 +23,9 @@ final class SyncEventHandler {
     /// Called when an incremental update arrives for the collection.
     var onCollectionUpdated: ((Data) -> Void)?
 
+    /// Called when an incremental update arrives for the shopping list.
+    var onShoppingListUpdated: ((Data) -> Void)?
+
     /// Called on sync error.
     var onSyncError: ((String, String?) -> Void)?
 
@@ -49,6 +52,10 @@ final class SyncEventHandler {
             self?.handleCollectionUpdated(data)
         }
 
+        client.on("shopping_list_updated") { [weak self] data, _ in
+            self?.handleShoppingListUpdated(data)
+        }
+
         client.on("sync_confirmed") { [weak self] data, _ in
             self?.handleSyncConfirmed(data)
         }
@@ -66,8 +73,14 @@ final class SyncEventHandler {
             return
         }
 
+        let documentKind = payload["documentKind"] as? String
         // Server returns recipeId=nil for collection document (we send {} without recipeId)
-        let recipeId = collectionRecipeId(from: payload["recipeId"])
+        let recipeId: String
+        if documentKind == ShoppingListConstants.documentKind {
+            recipeId = ShoppingListConstants.offlineRecipeId
+        } else {
+            recipeId = collectionRecipeId(from: payload["recipeId"])
+        }
         guard let stateData = YjsPayloadBytes.data(from: payload["yjsState"]) else {
             Self.logger.error("document_loaded: missing or invalid yjsState for \(recipeId)")
             return
@@ -134,9 +147,30 @@ final class SyncEventHandler {
         onCollectionUpdated?(updateData)
     }
 
+    private func handleShoppingListUpdated(_ data: [Any]) {
+        guard let payload = data.first as? [String: Any] else {
+            Self.logger.error("shopping_list_updated: invalid payload format")
+            return
+        }
+
+        guard let updateData = YjsPayloadBytes.data(from: payload["yjsUpdate"]) else {
+            Self.logger.warning("shopping_list_updated: missing yjsUpdate")
+            return
+        }
+
+        Self.logger.debug("shopping_list_updated: \(updateData.count) bytes")
+        onShoppingListUpdated?(updateData)
+    }
+
     private func handleSyncConfirmed(_ data: [Any]) {
         guard let payload = data.first as? [String: Any] else { return }
-        let recipeId = payload["recipeId"] as? String ?? "unknown"
+        let documentKind = payload["documentKind"] as? String
+        let recipeId: String
+        if documentKind == ShoppingListConstants.documentKind {
+            recipeId = ShoppingListConstants.offlineRecipeId
+        } else {
+            recipeId = payload["recipeId"] as? String ?? "unknown"
+        }
         let lastSyncedAt = payload["lastSyncedAt"] as? String
         Self.logger.debug("sync_confirmed: \(recipeId)")
         onSyncConfirmed?(recipeId, lastSyncedAt)

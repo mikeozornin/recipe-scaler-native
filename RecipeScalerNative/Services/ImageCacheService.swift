@@ -21,18 +21,16 @@ actor ImageCacheService {
     static let shared = ImageCacheService()
 
     private let fileManager = FileManager.default
-    private let baseFolderName = "RecipeImages"
 
     private init() {}
 
     func cachedImageURL(recipeId: String, variant: CachedImageVariant) -> URL? {
-        let url = localURL(recipeId: recipeId, variant: variant)
-        return fileManager.fileExists(atPath: url.path) ? url : nil
+        RecipeImageDiskCache.existingFileURL(recipeId: recipeId, variant: variant)
     }
 
     func removeCached(recipeId: String) {
         for variant in [CachedImageVariant.preview, CachedImageVariant.full] {
-            let url = localURL(recipeId: recipeId, variant: variant)
+            let url = RecipeImageDiskCache.fileURL(recipeId: recipeId, variant: variant)
             try? fileManager.removeItem(at: url)
         }
     }
@@ -40,20 +38,9 @@ actor ImageCacheService {
     func fetchAndCache(
         recipeId: String,
         variant: CachedImageVariant,
-        remoteURL: URL,
-        etag: String?,
-        lastModified: String?
+        request: URLRequest
     ) async throws -> CachedImageResult {
-        let localURL = localURL(recipeId: recipeId, variant: variant)
-
-        var request = URLRequest(url: remoteURL)
-        request.httpMethod = "GET"
-        request.cachePolicy = .reloadIgnoringLocalCacheData
-        if let etag, !etag.isEmpty {
-            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
-        } else if let lastModified, !lastModified.isEmpty {
-            request.setValue(lastModified, forHTTPHeaderField: "If-Modified-Since")
-        }
+        let localURL = RecipeImageDiskCache.fileURL(recipeId: recipeId, variant: variant)
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -61,18 +48,21 @@ actor ImageCacheService {
         }
 
         let statusCode = httpResponse.statusCode
-        let responseEtag = httpResponse.value(forHTTPHeaderField: "ETag") ?? etag
-        let responseLastModified = httpResponse.value(forHTTPHeaderField: "Last-Modified") ?? lastModified
+        let requestEtag = request.value(forHTTPHeaderField: "If-None-Match")
+        let requestLastModified = request.value(forHTTPHeaderField: "If-Modified-Since")
+        let responseEtag = httpResponse.value(forHTTPHeaderField: "ETag") ?? requestEtag
+        let responseLastModified = httpResponse.value(forHTTPHeaderField: "Last-Modified") ?? requestLastModified
 
         if statusCode == 304 {
             if !fileManager.fileExists(atPath: localURL.path) {
                 // Cache is missing, retry without validators
+                var retry = request
+                retry.setValue(nil, forHTTPHeaderField: "If-None-Match")
+                retry.setValue(nil, forHTTPHeaderField: "If-Modified-Since")
                 return try await fetchAndCache(
                     recipeId: recipeId,
                     variant: variant,
-                    remoteURL: remoteURL,
-                    etag: nil,
-                    lastModified: nil
+                    request: retry
                 )
             }
             return CachedImageResult(
@@ -98,16 +88,8 @@ actor ImageCacheService {
         )
     }
 
-    private func localURL(recipeId: String, variant: CachedImageVariant) -> URL {
-        let cachesDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        let folderURL = cachesDir.appendingPathComponent(baseFolderName, isDirectory: true)
-        let filename = "\(recipeId)_\(variant.rawValue).webp"
-        return folderURL.appendingPathComponent(filename)
-    }
-
     private func ensureBaseDirectoryExists() throws {
-        let cachesDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        let folderURL = cachesDir.appendingPathComponent(baseFolderName, isDirectory: true)
+        let folderURL = RecipeImageDiskCache.fileURL(recipeId: "_", variant: .preview).deletingLastPathComponent()
         if !fileManager.fileExists(atPath: folderURL.path) {
             try fileManager.createDirectory(at: folderURL, withIntermediateDirectories: true)
         }

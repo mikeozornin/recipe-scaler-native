@@ -54,8 +54,8 @@ struct AuthView: View {
                                 showSeedInput = false
                             } label: {
                                 HStack(spacing: 4) {
-                                    Image(systemName: "chevron.left")
-                                        .font(.system(size: 14, weight: .medium))
+                                    AppSymbol.image("chevron.left")
+                                        .font(.system(size: 14))
                                     Text("Back")
                                         .font(.custom(AppFonts.sans, size: 15))
                                 }
@@ -134,7 +134,7 @@ struct AuthView: View {
                                         Button {
                                             showQRScanner = true
                                         } label: {
-                                            Image(systemName: "qrcode.viewfinder")
+                                            AppSymbol.image("qrcode.viewfinder")
                                                 .font(.system(size: 20))
                                                 .foregroundColor(.primary)
                                         }

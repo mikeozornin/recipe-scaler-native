@@ -27,7 +27,14 @@ struct RecipeData: Identifiable, Sendable {
         /// Detect version from the version string in Y.Doc. Defaults to v1 if absent.
         static func detect(_ versionString: String?) -> RecipeVersion {
             guard let v = versionString else { return .v1 }
-            return RecipeVersion(rawValue: v) ?? .v1
+            if let parsed = RecipeVersion(rawValue: v) {
+                return parsed
+            }
+            // Legacy/native snapshots may store "3" instead of "v3".
+            if v == "3" { return .v3 }
+            if v == "2" { return .v2 }
+            if v == "1" { return .v1 }
+            return .v1
         }
     }
 
@@ -35,6 +42,8 @@ struct RecipeData: Identifiable, Sendable {
         name: String? = nil,
         servings: Int? = nil,
         color: String? = nil,
+        isPublic: Bool? = nil,
+        description: String?? = nil,
         imageUrl: String?? = nil,
         ingredients: [IngredientData]? = nil,
         nutrition: NutritionData?? = nil
@@ -45,10 +54,10 @@ struct RecipeData: Identifiable, Sendable {
             servings: servings ?? self.servings,
             color: color ?? self.color,
             version: version,
-            description: description,
+            description: description ?? self.description,
             ingredients: ingredients ?? self.ingredients,
             nutrition: nutrition ?? self.nutrition,
-            isPublic: isPublic,
+            isPublic: isPublic ?? self.isPublic,
             hasSteps: hasSteps,
             createdAt: createdAt,
             updatedAt: updatedAt,

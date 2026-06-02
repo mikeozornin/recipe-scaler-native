@@ -12,6 +12,11 @@ struct RecipeCachedImageView: View {
     let imageUrl: String?
     var variant: CachedImageVariant = .preview
     var allowsNetworkRefresh: Bool = true
+    /// Stored width/height ratio from Y.Doc (`imageAspectRatio`). Used when `preservesAspectRatio` is true.
+    var layoutAspectRatio: CGFloat?
+    /// When true, image keeps its proportions (web `object-contain`); list thumbnails keep default fill crop.
+    var preservesAspectRatio: Bool = false
+    var maxHeight: CGFloat?
 
     @State private var uiImage: UIImage?
 
@@ -23,9 +28,16 @@ struct RecipeCachedImageView: View {
     var body: some View {
         Group {
             if let uiImage {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
+                if preservesAspectRatio {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(effectiveAspectRatio(for: uiImage), contentMode: .fit)
+                        .frame(maxWidth: .infinity, maxHeight: maxHeight, alignment: .leading)
+                } else {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                }
             } else {
                 Color.clear
             }
@@ -48,28 +60,55 @@ struct RecipeCachedImageView: View {
         "\(recipeId)|\(imageUrl ?? "")|\(variant.rawValue)|\(allowsNetworkRefresh)"
     }
 
+    private func effectiveAspectRatio(for image: UIImage) -> CGFloat {
+        if let layoutAspectRatio, layoutAspectRatio > 0 {
+            return layoutAspectRatio
+        }
+        let size = image.size
+        guard size.height > 0 else { return 1 }
+        return size.width / size.height
+    }
+
     private func reloadImage() async {
         guard hasImageIndicator || uiImage != nil else {
-            uiImage = nil
+            await MainActor.run { uiImage = nil }
             return
         }
+
+        // Fast path: read .webp from Caches without waiting on the image actor queue.
+        if let fileURL = RecipeImageDiskCache.existingFileURL(recipeId: recipeId, variant: variant) {
+            await applyImage(from: fileURL)
+        }
+
+        guard allowsNetworkRefresh else { return }
 
         if let fileURL = await RecipeImageService.shared.ensureCached(
             recipeId: recipeId,
             imageUrl: imageUrl,
             variant: variant,
-            allowNetwork: allowsNetworkRefresh
+            allowNetwork: true
         ) {
-            uiImage = UIImage(contentsOfFile: fileURL.path)
-        } else {
-            uiImage = nil
+            await applyImage(from: fileURL)
+        } else if uiImage == nil {
+            await MainActor.run { uiImage = nil }
         }
     }
 
     private func reloadFromDiskOnly() async {
-        guard let fileURL = await RecipeImageService.shared.localFileURL(recipeId: recipeId, variant: variant) else {
+        guard let fileURL = RecipeImageDiskCache.existingFileURL(recipeId: recipeId, variant: variant) else {
             return
         }
-        uiImage = UIImage(contentsOfFile: fileURL.path)
+        await applyImage(from: fileURL)
+    }
+
+    private func applyImage(from fileURL: URL) async {
+        let variant = variant
+        let decoded = await Task.detached(priority: .userInitiated) {
+            RecipeImageDisplayCache.image(fileURL: fileURL, variant: variant)
+        }.value
+        guard let decoded else { return }
+        await MainActor.run {
+            uiImage = decoded
+        }
     }
 }

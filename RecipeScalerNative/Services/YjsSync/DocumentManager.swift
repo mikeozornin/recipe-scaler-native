@@ -14,7 +14,9 @@ actor DocumentManager {
 
     private var onCollectionChanged: (@Sendable () -> Void)?
     private var onRecipeChanged: (@Sendable (String) -> Void)?
+    var onShoppingChanged: (@Sendable () -> Void)?
     private var onLocalRecipeUpdate: (@Sendable (String, Data) async -> Void)?
+    var onLocalShoppingUpdate: (@Sendable (Data) async -> Void)?
     private var currentUserId: String?
     private var suppressRecipeObserverDepth = 0
 
@@ -32,6 +34,18 @@ actor DocumentManager {
 
     func setLocalUpdateHandler(_ handler: @escaping @Sendable (String, Data) async -> Void) {
         onLocalRecipeUpdate = handler
+    }
+
+    func setShoppingHandlers(
+        onChanged: @escaping @Sendable () -> Void,
+        onLocalUpdate: @escaping @Sendable (Data) async -> Void
+    ) {
+        onShoppingChanged = onChanged
+        onLocalShoppingUpdate = onLocalUpdate
+    }
+
+    func getCurrentUserId() -> String? {
+        currentUserId
     }
 
     // ─── Document Lifecycle ──────────────────────────────────────────────
@@ -152,18 +166,77 @@ actor DocumentManager {
         let key = "\(userId):recipe:\(recipeId)"
         guard let doc = docs[key] else {
             Self.logger.info("Recipe doc \(key) not loaded")
+            // #region agent log
+            AgentSyncDebugLog.write(
+                hypothesisId: "B",
+                location: "DocumentManager.swift:readRecipeData",
+                message: "doc_not_in_memory",
+                data: ["recipeId": recipeId, "key": key]
+            )
+            // #endregion
             return nil
         }
 
-        let result: RecipeData? = try await doc.withReadTransaction { rawDoc, txn in
+        let txnStart = CFAbsoluteTimeGetCurrent()
+        var xmlSnapshot: String?
+        let recipe: RecipeData? = try await doc.withReadTransaction { rawDoc, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else {
                 Self.logger.warning("No 'recipe' Y.Map found in recipe doc \(key)")
                 return nil as RecipeData?
             }
             let map = YrsMap(branch: mapBranch)
-            return self.parseRecipeData(from: map, txn: txn, recipeId: recipeId)
+            let parsed = self.parseRecipeData(from: map, txn: txn, recipeId: recipeId)
+            if RecipeData.RecipeVersion.detect(parsed.version) == .v3 {
+                xmlSnapshot = XmlFragmentToHTML.serializedFragment(txn: txn)
+                #if DEBUG
+                if recipeId == RecipeReadDiagnostics.launchRecipeId() {
+                    AgentSyncDebugLog.write(
+                        hypothesisId: "L",
+                        location: "DocumentManager.swift:readRecipeData",
+                        message: "fragment_structure",
+                        data: ["structure": XmlFragmentToHTML.debugFragmentStructure(txn: txn)]
+                    )
+                }
+                #endif
+            }
+            return parsed
         }
-        return result
+        // #region agent log
+        AgentSyncDebugLog.write(
+            hypothesisId: "C",
+            location: "DocumentManager.swift:readRecipeData",
+            message: "map_read_done",
+            data: [
+                "recipeId": recipeId,
+                "ms": String(Int((CFAbsoluteTimeGetCurrent() - txnStart) * 1000)),
+                "hasRecipe": String(recipe != nil),
+                "ingredientCount": String(recipe?.ingredients.count ?? 0),
+                "version": recipe?.version ?? "nil",
+                "xmlLen": String(xmlSnapshot?.count ?? 0),
+            ]
+        )
+        // #endregion
+
+        guard var recipe else { return nil }
+        if let xml = xmlSnapshot,
+           let html = XmlFragmentToHTML.html(fromSerializedXML: xml, ingredients: recipe.ingredients),
+           !html.isEmpty {
+            recipe = recipe.replacing(description: html)
+            // #region agent log
+            AgentSyncDebugLog.write(
+                hypothesisId: "D",
+                location: "DocumentManager.swift:readRecipeData",
+                message: "description_html_ready",
+                data: [
+                    "recipeId": recipeId,
+                    "htmlLen": String(html.count),
+                    "xmlLen": String(xml.count),
+                    "htmlHasHref": String(html.contains("href=\"")),
+                ]
+            )
+            // #endregion
+        }
+        return recipe
     }
 
     // ─── State Persistence ───────────────────────────────────────────────
@@ -195,12 +268,13 @@ actor DocumentManager {
     func updateRecipeName(recipeId: String, name: String) async throws {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        try await mutateRecipe(recipeId: recipeId) { map, txn in
+        let touchedAt = Self.isoTimestamp()
+        try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { map, txn in
             map.insert(key: "name", value: .string(trimmed), txn: txn)
         }
         try await updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
             entryMap.insert(key: "name", value: .string(trimmed), txn: txn)
-            entryMap.insert(key: "updatedAt", value: .string(Self.isoTimestamp()), txn: txn)
+            entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
         }
     }
 
@@ -211,24 +285,55 @@ actor DocumentManager {
         }
     }
 
+    func updateRecipeIsPublic(recipeId: String, isPublic: Bool) async throws {
+        try await mutateRecipe(recipeId: recipeId) { map, txn in
+            map.insert(key: "isPublic", value: .bool(isPublic), txn: txn)
+        }
+    }
+
     func updateRecipeColor(recipeId: String, color: String) async throws {
         let normalized = Self.normalizeColor(color)
-        try await mutateRecipe(recipeId: recipeId) { map, txn in
+        let touchedAt = Self.isoTimestamp()
+        // #region agent log
+        AgentSyncDebugLog.write(
+            hypothesisId: "D",
+            location: "DocumentManager.swift:updateRecipeColor:enter",
+            message: "color write started",
+            data: ["recipeId": recipeId, "normalizedColor": normalized, "touchedAt": touchedAt]
+        )
+        // #endregion
+        try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { map, txn in
             map.insert(key: "color", value: .string(normalized), txn: txn)
         }
         if !currentCollectionKey.isEmpty {
             try await updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
                 entryMap.insert(key: "color", value: .string(normalized), txn: txn)
-                entryMap.insert(key: "updatedAt", value: .string(Self.isoTimestamp()), txn: txn)
+                entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
             }
         }
+        // #region agent log
+        if let userId = currentUserId {
+            let recipe = try? await readRecipeData(recipeId: recipeId, userId: userId)
+            let entry = try? await readCollectionEntries().first { $0.id == recipeId }
+            AgentSyncDebugLog.write(
+                hypothesisId: "E",
+                location: "DocumentManager.swift:updateRecipeColor:afterWrite",
+                message: "in-memory read-back after color write",
+                data: [
+                    "recipeDocColor": recipe?.color ?? "nil",
+                    "recipeDocUpdatedAt": recipe?.updatedAt ?? "nil",
+                    "collectionEntryColor": entry?.color ?? "nil",
+                    "collectionEntryUpdatedAt": entry?.updatedAt ?? "nil",
+                ]
+            )
+        }
+        // #endregion
     }
 
     func addIngredient(recipeId: String, ingredient: IngredientData) async throws {
         try await mutateRecipe(recipeId: recipeId) { map, txn in
             try Self.withIngredientsArray(in: map, txn: txn) { array in
-                let index = array.length(txn: txn)
-                array.insert(value: YrsInput.ingredientMap(ingredient), at: index, txn: txn)
+                try Self.appendIngredient(ingredient, to: array, txn: txn)
                 Self.renumberIngredientOrders(in: array, txn: txn)
             }
         }
@@ -280,7 +385,7 @@ actor DocumentManager {
 
                 array.remove(at: UInt32(fromIndex), len: 1, txn: txn)
                 let insertAt = toIndex > fromIndex ? toIndex - 1 : toIndex
-                array.insert(value: YrsInput.ingredientMap(moved), at: UInt32(insertAt), txn: txn)
+                try Self.insertIngredient(moved, into: array, at: UInt32(insertAt), txn: txn)
                 Self.renumberIngredientOrders(in: array, txn: txn)
             }
         }
@@ -307,6 +412,104 @@ actor DocumentManager {
                     break
                 }
             }
+        }
+        await deliverPendingLocalUpdate(recipeId: "collection")
+    }
+
+    // MARK: - Collection writes (008)
+
+    private static let defaultNewRecipeColor = "oklch(0.65 0.25 270)"
+
+    func setCollectionEntryPinned(recipeId: String, isPinned: Bool) async throws {
+        let touchedAt = Self.isoTimestamp()
+        try await updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
+            entryMap.insert(key: "isPinned", value: .bool(isPinned), txn: txn)
+            entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
+        }
+    }
+
+    func tombstoneCollectionEntry(recipeId: String) async throws {
+        let touchedAt = Self.isoTimestamp()
+        try await updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
+            entryMap.insert(key: "deleted", value: .bool(true), txn: txn)
+            entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
+        }
+    }
+
+    /// Creates a v3 recipe document and collection entry (web `createRecipe` parity).
+    func createRecipe(
+        recipeId: String = UUID().uuidString,
+        name: String,
+        color: String = defaultNewRecipeColor
+    ) async throws -> String {
+        guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
+        let touchedAt = Self.isoTimestamp()
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayName = trimmedName.isEmpty ? String(localized: "recipe.create.new") : trimmedName
+        let normalizedColor = Self.normalizeColor(color)
+
+        try await appendCollectionEntryIfNotExists(
+            recipeId: recipeId,
+            name: displayName,
+            color: normalizedColor,
+            updatedAt: touchedAt
+        )
+
+        let recipeKey = "\(userId):recipe:\(recipeId)"
+        let doc = try await getOrCreateDoc(key: recipeKey)
+        try await doc.withWriteTransaction { rawDoc, txn in
+            guard let mapBranch = ymap(rawDoc, "recipe") else {
+                throw RecipeEditError.documentNotLoaded
+            }
+            let map = YrsMap(branch: mapBranch)
+            map.insert(key: "id", value: .string(recipeId), txn: txn)
+            map.insert(key: "name", value: .string(displayName), txn: txn)
+            map.insert(key: "version", value: .string("v3"), txn: txn)
+            map.insert(key: "servings", value: .int(1), txn: txn)
+            map.insert(key: "color", value: .string(normalizedColor), txn: txn)
+            map.insert(key: "createdAt", value: .string(touchedAt), txn: txn)
+            map.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
+            map.insert(key: "ingredients", value: .yarray([]), txn: txn)
+            map.insert(key: "isPublic", value: .bool(false), txn: txn)
+            _ = yxmlfragment(rawDoc, "description")
+        }
+        await deliverPendingLocalUpdate(recipeId: recipeId)
+        return recipeId
+    }
+
+    private func appendCollectionEntryIfNotExists(
+        recipeId: String,
+        name: String,
+        color: String,
+        updatedAt: String
+    ) async throws {
+        guard !currentCollectionKey.isEmpty else { return }
+        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        try await doc.withWriteTransaction { rawDoc, txn in
+            guard let arrayBranch = yarray(rawDoc, "recipes") else {
+                throw RecipeEditError.documentNotLoaded
+            }
+            let array = YrsArray(branch: arrayBranch)
+            let len = array.length(txn: txn)
+            for index in 0..<len {
+                let matches = array.withMap(at: index, txn: txn) { map in
+                    map.scalarString(key: "id", txn: txn) == recipeId
+                } ?? false
+                if matches { return }
+            }
+            let index = array.length(txn: txn)
+            array.insert(
+                value: .map([
+                    ("id", .string(recipeId)),
+                    ("name", .string(name)),
+                    ("color", .string(color)),
+                    ("updatedAt", .string(updatedAt)),
+                    ("deleted", .bool(false)),
+                    ("isPinned", .bool(false)),
+                ]),
+                at: index,
+                txn: txn
+            )
         }
         await deliverPendingLocalUpdate(recipeId: "collection")
     }
@@ -341,6 +544,7 @@ actor DocumentManager {
 
     private func mutateRecipe(
         recipeId: String,
+        touchedAt: String? = nil,
         _ body: (YrsMap, OpaquePointer) throws -> Void
     ) async throws {
         guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
@@ -358,15 +562,50 @@ actor DocumentManager {
         suppressRecipeObserverDepth += 1
         defer { suppressRecipeObserverDepth -= 1 }
 
+        let now = touchedAt ?? Self.isoTimestamp()
         try await doc.withWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else {
                 throw RecipeEditError.documentNotLoaded
             }
             let map = YrsMap(branch: mapBranch)
             try body(map, txn)
+            map.insert(key: "updatedAt", value: .string(now), txn: txn)
         }
 
         await deliverPendingLocalUpdate(recipeId: recipeId)
+    }
+
+    // MARK: - Description editor (006)
+
+    /// Full recipe Y.Doc state for WKWebView Yjs bootstrap.
+    func recipeDocumentState(recipeId: String) async throws -> Data {
+        guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
+        let key = "\(userId):recipe:\(recipeId)"
+        let doc = try await getOrCreateDoc(key: key)
+        guard let state = await doc.encodeStateAsUpdate() else {
+            throw RecipeEditError.documentNotLoaded
+        }
+        return state
+    }
+
+    /// Applies incremental update from the embedded Yjs editor; forwards bytes to sync debouncer.
+    func applyDescriptionEditorUpdate(recipeId: String, update: Data) async throws {
+        guard !update.isEmpty else { return }
+        guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
+        let key = "\(userId):recipe:\(recipeId)"
+        let doc = try await getOrCreateDoc(key: key)
+
+        let version = try await doc.withReadTransaction { _, txn in
+            guard let mapBranch = ytype_get(txn, "recipe") else { return nil as String? }
+            return YrsMap(branch: mapBranch).string(key: "version", txn: txn)
+        }
+        guard RecipeEditPolicy.canEdit(version: version) else {
+            throw RecipeEditError.legacyFormatReadOnly
+        }
+
+        try await applyUpdateToDoc(doc: doc, key: key, data: update, lastSyncedAt: nil)
+        notifyRecipeChangedIfNeeded(recipeId: recipeId)
+        await onLocalRecipeUpdate?(recipeId, update)
     }
 
     private func deliverPendingLocalUpdate(recipeId: String) async {
@@ -378,9 +617,30 @@ actor DocumentManager {
         } else {
             key = "\(userId):recipe:\(recipeId)"
         }
-        guard let doc = docs[key],
-              let update = await doc.consumePendingLocalUpdates(),
-              !update.isEmpty else { return }
+        guard let doc = docs[key] else { return }
+        // #region agent log
+        let observeBytesBeforeConsume = await doc.pendingLocalUpdateByteCount()
+        // #endregion
+        let observePayload = await doc.consumePendingLocalUpdates()
+        let encodePayload = await doc.encodeStateAsUpdate()
+        // #region agent log
+        AgentSyncDebugLog.write(
+            hypothesisId: "A",
+            location: "DocumentManager.swift:deliverPendingLocalUpdate",
+            message: "observe vs encode payload sizes",
+            data: [
+                "recipeId": recipeId,
+                "docKey": key,
+                "observePendingBytesBeforeConsume": String(observeBytesBeforeConsume),
+                "observePayloadBytes": String(observePayload?.count ?? 0),
+                "encodePayloadBytes": String(encodePayload?.count ?? 0),
+            ]
+        )
+        // #endregion
+        guard let update = encodePayload, !update.isEmpty else {
+            Self.logger.warning("No local Yjs update to sync for \(key)")
+            return
+        }
         await handler(recipeId, update)
     }
 
@@ -405,6 +665,13 @@ actor DocumentManager {
 
         if key.hasSuffix(":collection"), let handler = onCollectionChanged {
             if let token = try? await doc.addDeepObserver(rootKey: "recipes", handler: handler) {
+                observerTokens[key] = token
+            }
+            return
+        }
+
+        if key.hasSuffix(":shoppingList"), let handler = onShoppingChanged {
+            if let token = try? await doc.addDeepObserver(rootKey: ShoppingListConstants.rootMapKey, handler: handler) {
                 observerTokens[key] = token
             }
             return
@@ -449,15 +716,16 @@ actor DocumentManager {
     private func parseRecipeData(from map: YrsMap, txn: OpaquePointer, recipeId: String) -> RecipeData {
         let versionString = map.scalarString(key: "version", txn: txn)
         let version = RecipeData.RecipeVersion.detect(versionString)
+        let ingredients = readIngredients(from: map, txn: txn, version: version)
 
         return RecipeData(
             id: recipeId,
             name: readRecipeName(from: map, txn: txn),
-            servings: map.int(key: "servings", txn: txn) ?? 1,
+            servings: RecipeServings.baseServings(from: map, txn: txn),
             color: map.scalarString(key: "color", txn: txn) ?? "#3b82f6",
             version: versionString ?? "v1",
             description: readDescription(from: map, txn: txn, version: version),
-            ingredients: readIngredients(from: map, txn: txn, version: version),
+            ingredients: ingredients,
             nutrition: readNutrition(from: map, txn: txn, version: version),
             isPublic: map.bool(key: "isPublic", txn: txn) ?? false,
             hasSteps: map.bool(key: "hasSteps", txn: txn) ?? false,
@@ -484,11 +752,7 @@ actor DocumentManager {
         return ""
     }
 
-    private func readDescription(
-        from map: YrsMap,
-        txn: OpaquePointer,
-        version: RecipeData.RecipeVersion
-    ) -> String? {
+    private func readDescription(from map: YrsMap, txn: OpaquePointer, version: RecipeData.RecipeVersion) -> String? {
         switch version {
         case .v1:
             return map.string(key: "description", txn: txn)
@@ -498,7 +762,11 @@ actor DocumentManager {
             }
             return map.string(key: "description", txn: txn)
         case .v3:
-            return nil
+            // Filled from XmlFragment after the read transaction (see readRecipeData).
+            if let text = map.withNestedText(key: "description", txn: txn, { $0.string(txn: txn) }) {
+                return text
+            }
+            return map.string(key: "description", txn: txn)
         }
     }
 
@@ -530,12 +798,16 @@ actor DocumentManager {
         version: RecipeData.RecipeVersion
     ) -> NutritionData? {
         if let parsed = try? map.withNestedMap(key: "nutrition", txn: txn, { nMap in
-            NutritionData(
+            var extra: [String: Double] = [:]
+            if let totalWeight = nMap.double(key: "totalWeight", txn: txn) {
+                extra["totalWeight"] = totalWeight
+            }
+            return NutritionData(
                 calories: nMap.double(key: "calories", txn: txn),
                 protein: nMap.double(key: "protein", txn: txn),
                 fat: nMap.double(key: "fat", txn: txn),
                 carbs: nMap.double(key: "carbs", txn: txn),
-                extra: [:]
+                extra: extra
             )
         }) {
             return parsed
@@ -597,6 +869,32 @@ actor DocumentManager {
             throw RecipeEditError.documentNotLoaded
         }
         return result
+    }
+
+    /// Inserts a new ingredient map via scalar `ymap_insert` calls (avoids nested `yinput_ymap` UTF-8 panic in yffi).
+    private static func appendIngredient(
+        _ ingredient: IngredientData,
+        to array: YrsArray,
+        txn: OpaquePointer
+    ) throws {
+        let index = array.length(txn: txn)
+        try insertIngredient(ingredient, into: array, at: index, txn: txn)
+    }
+
+    private static func insertIngredient(
+        _ ingredient: IngredientData,
+        into array: YrsArray,
+        at index: UInt32,
+        txn: OpaquePointer
+    ) throws {
+        array.insert(value: .map([]), at: index, txn: txn)
+        let wrote = array.withMap(at: index, txn: txn) { ingMap -> Bool in
+            writeIngredient(ingMap, ingredient: ingredient, txn: txn)
+            return true
+        }
+        guard wrote == true else {
+            throw RecipeEditError.documentNotLoaded
+        }
     }
 
     private static func renumberIngredientOrders(in array: YrsArray, txn: OpaquePointer) {

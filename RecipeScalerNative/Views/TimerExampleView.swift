@@ -44,7 +44,7 @@ struct TimerExampleView: View {
 
                     Button(action: createTimer) {
                         HStack {
-                            Image(systemName: "plus.circle.fill")
+                            AppSymbol.image("plus.circle.fill")
                             Text("Create Timer")
                         }
                         .frame(maxWidth: .infinity)
@@ -172,13 +172,13 @@ struct ActiveTimerRow: View {
 
             VStack(spacing: 8) {
                 Button(action: { timerManager.pauseTimer(id: timer.id) }) {
-                    Image(systemName: "pause.fill")
+                    AppSymbol.image("pause.fill")
                         .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.bordered)
 
                 Button(action: { timerManager.deleteTimer(id: timer.id) }) {
-                    Image(systemName: "trash.fill")
+                    AppSymbol.image("trash.fill")
                         .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.bordered)
@@ -242,35 +242,35 @@ struct TimerRow: View {
             Menu {
                 if !timer.isRunning && !timer.hasCompleted {
                     Button(action: { timerManager.startTimer(id: timer.id) }) {
-                        Label("Start", systemImage: "play.fill")
+                        AppLabel.make("Start", symbol: "play.fill")
                     }
                 }
 
                 if timer.isRunning {
                     Button(action: { timerManager.pauseTimer(id: timer.id) }) {
-                        Label("Pause", systemImage: "pause.fill")
+                        AppLabel.make("Pause", symbol: "pause.fill")
                     }
                 }
 
                 if timer.isPaused {
                     Button(action: { timerManager.resumeTimer(id: timer.id) }) {
-                        Label("Resume", systemImage: "play.fill")
+                        AppLabel.make("Resume", symbol: "play.fill")
                     }
                 }
 
                 if !timer.hasCompleted {
                     Button(action: { timerManager.resetTimer(id: timer.id) }) {
-                        Label("Reset", systemImage: "arrow.counterclockwise")
+                        AppLabel.make("Reset", symbol: "arrow.counterclockwise")
                     }
                 }
 
                 Divider()
 
                 Button(role: .destructive, action: { timerManager.deleteTimer(id: timer.id) }) {
-                    Label("Delete", systemImage: "trash.fill")
+                    AppLabel.make("Delete", symbol: "trash.fill")
                 }
             } label: {
-                Image(systemName: "ellipsis.circle.fill")
+                AppSymbol.image("ellipsis.circle.fill")
                     .font(.custom(AppFonts.sansMedium, size: 20))
             }
         }

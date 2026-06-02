@@ -58,8 +58,30 @@ class APIClient: ObservableObject {
         return components?.url
     }
 
+    /// Builds an authenticated GET for recipe image bytes (used by `ImageCacheService`).
+    func recipeImageDownloadRequest(
+        remoteURL: URL,
+        etag: String?,
+        lastModified: String?
+    ) -> URLRequest {
+        var request = URLRequest(url: remoteURL)
+        request.httpMethod = "GET"
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        if let token = authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        } else if let userId = userId {
+            request.setValue(userId, forHTTPHeaderField: "x-user-id")
+        }
+        if let etag, !etag.isEmpty {
+            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
+        } else if let lastModified, !lastModified.isEmpty {
+            request.setValue(lastModified, forHTTPHeaderField: "If-Modified-Since")
+        }
+        return request
+    }
+
     // MARK: - Request Builder
-    private func buildRequest(
+    func buildRequest(
         path: String,
         method: String = "GET",
         body: Data? = nil,

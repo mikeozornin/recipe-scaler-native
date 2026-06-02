@@ -1,0 +1,93 @@
+//
+//  DebugLaunchOptions.swift
+//  RecipeScalerNative
+//
+
+import Foundation
+
+#if DEBUG
+enum DebugLaunchOptions {
+    /// Skip splash (verify scripts, deep links).
+    static var shouldSkipSplash: Bool {
+        if ProcessInfo.processInfo.arguments.contains("ui-testing") { return true }
+        for arg in ProcessInfo.processInfo.arguments {
+            if arg == "-SkipSplash=1" || arg == "-SkipSplash" { return true }
+        }
+        return openRecipeId != nil
+            || openTab != nil
+            || startDescriptionEdit
+            || startInEditMode
+            || showRecipeShare
+            || showAssistant
+    }
+
+    /// `-ShowAssistant=1` — opens assistant sheet on launch (verify 015).
+    static var showAssistant: Bool {
+        for arg in ProcessInfo.processInfo.arguments {
+            if arg == "-ShowAssistant=1" || arg == "-ShowAssistant" { return true }
+        }
+        return false
+    }
+
+    /// `-StartInEditMode=1` — recipe detail opens in edit mode.
+    static var startInEditMode: Bool {
+        for arg in ProcessInfo.processInfo.arguments {
+            if arg == "-StartInEditMode=1" || arg == "-StartInEditMode" { return true }
+            if arg.hasPrefix("-StartInEditMode=") {
+                let value = String(arg.dropFirst("-StartInEditMode=".count))
+                return value == "1" || value.lowercased() == "true"
+            }
+        }
+        return startDescriptionEdit
+    }
+
+    /// `-ShowRecipeShare=1` — opens system share sheet on recipe detail (verify 012).
+    static var showRecipeShare: Bool {
+        for arg in ProcessInfo.processInfo.arguments {
+            if arg == "-ShowRecipeShare=1" || arg == "-ShowRecipeShare" { return true }
+        }
+        return false
+    }
+
+    /// `xcrun simctl launch … -OpenRecipeId=<uuid>` — opens recipe detail after collection loads.
+    static var openRecipeId: String? {
+        for arg in ProcessInfo.processInfo.arguments {
+            guard arg.hasPrefix("-OpenRecipeId=") else { continue }
+            let id = String(arg.dropFirst("-OpenRecipeId=".count))
+            return id.isEmpty ? nil : id
+        }
+        return nil
+    }
+
+    /// `-StartDescriptionEdit=1` — opens description WKWebView editor (requires edit mode + v3).
+    static var startDescriptionEdit: Bool {
+        for arg in ProcessInfo.processInfo.arguments {
+            if arg == "-StartDescriptionEdit=1" || arg == "-StartDescriptionEdit" {
+                return true
+            }
+            if arg.hasPrefix("-StartDescriptionEdit=") {
+                let value = String(arg.dropFirst("-StartDescriptionEdit=".count))
+                return value == "1" || value.lowercased() == "true"
+            }
+        }
+        return false
+    }
+
+    /// `-OpenTab=shopping|discover|recipes|profile|import`
+    static var openTab: AppTab? {
+        for arg in ProcessInfo.processInfo.arguments {
+            guard arg.hasPrefix("-OpenTab=") else { continue }
+            let raw = String(arg.dropFirst("-OpenTab=".count))
+            switch raw {
+            case "discover": return .discover
+            case "import": return .importTab
+            case "recipes": return .recipes
+            case "shopping": return .shopping
+            case "profile": return .profile
+            default: return nil
+            }
+        }
+        return nil
+    }
+}
+#endif

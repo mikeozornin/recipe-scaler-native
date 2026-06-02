@@ -36,26 +36,63 @@ struct ContentView: View {
             if showSplash {
                 SplashView()
             } else if isAuthenticated {
-                RecipeListView()
-                    .environmentObject(syncService)
-                    .task(id: effectiveUserId) {
-                        if let userId = effectiveUserId {
-                            await syncService.start(userId: userId)
-                        }
-                    }
+                #if DEBUG
+                if RecipeDescriptionFixture.showsPreview {
+                    DescriptionFixturePreviewView()
+                } else {
+                    appShell(syncService: syncService)
+                }
+                #else
+                appShell(syncService: syncService)
+                #endif
             } else {
                 AuthView()
             }
         }
         .task {
+            #if DEBUG
+            if isUITesting || DebugLaunchOptions.shouldSkipSplash {
+                showSplash = false
+                return
+            }
+            #else
             if isUITesting {
                 showSplash = false
-            } else {
-                try? await Task.sleep(nanoseconds: 500_000_000)
-                showSplash = false
+                return
             }
+            #endif
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            showSplash = false
         }
         .accessibilityIdentifier(AccessibilityIdentifiers.rootContent)
+        #if !targetEnvironment(simulator)
+        .onChange(of: authService.isAuthenticated) { _, authenticated in
+            if !authenticated {
+                syncService.stop()
+            }
+        }
+        #endif
+    }
+
+    @ViewBuilder
+    private func appShell(syncService: YjsSyncService) -> some View {
+        AppShellView()
+            .environmentObject(syncService)
+            .task(id: effectiveUserId) {
+                #if DEBUG
+                AgentSyncDebugLog.write(
+                    hypothesisId: "boot",
+                    location: "ContentView.swift:appShell",
+                    message: "app_shell_start",
+                    data: ["userId": effectiveUserId ?? "nil"]
+                )
+                #endif
+                if let userId = effectiveUserId {
+                    await syncService.start(userId: userId)
+                } else {
+                    syncService.stop()
+                }
+            }
     }
 }
 

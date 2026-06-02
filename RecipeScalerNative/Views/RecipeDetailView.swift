@@ -92,23 +92,19 @@ struct RecipeDetailView: View {
                    let uiImage = UIImage(contentsOfFile: localPath) {
                     Image(uiImage: uiImage)
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 250)
-                        .clipped()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: .infinity, maxHeight: 400, alignment: .leading)
                 } else if let imageUrl = headerImageURL {
                     AsyncImage(url: imageUrl) { phase in
                         if let image = phase.image {
                             image
                                 .resizable()
-                                .aspectRatio(contentMode: .fill)
+                                .aspectRatio(contentMode: .fit)
                         } else {
                             Color.clear
                         }
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 250)
-                    .clipped()
+                    .frame(maxWidth: .infinity, maxHeight: 400, alignment: .leading)
                 }
 
                 VStack(alignment: .leading, spacing: 16) {
@@ -154,7 +150,7 @@ struct RecipeDetailView: View {
                     if let link = displayOriginalLink,
                        let url = URL(string: link) {
                         Link(destination: url) {
-                            Label("Original Recipe", systemImage: "link")
+                            AppLabel.make("Original Recipe", symbol: "link")
                         }
                         .padding(.horizontal)
                     }
@@ -219,12 +215,15 @@ struct RecipeDetailView: View {
         let existingLastModified = recipe.imageLastModified
 
         do {
-            let result = try await ImageCacheService.shared.fetchAndCache(
-                recipeId: recipeId,
-                variant: .full,
+            let request = APIClient.shared.recipeImageDownloadRequest(
                 remoteURL: remoteURL,
                 etag: existingEtag,
                 lastModified: existingLastModified
+            )
+            let result = try await ImageCacheService.shared.fetchAndCache(
+                recipeId: recipeId,
+                variant: .full,
+                request: request
             )
 
             await MainActor.run {
@@ -265,7 +264,7 @@ struct ScaleFactorControl: View {
                         scaleFactor = max(0.25, scaleFactor - 0.25)
                     }
                 } label: {
-                    Image(systemName: "minus.circle.fill")
+                    AppSymbol.image("minus")
                         .font(.custom(AppFonts.sans, size: 22))
                 }
                 .disabled(scaleFactor <= 0.25)
@@ -279,7 +278,7 @@ struct ScaleFactorControl: View {
                         scaleFactor = min(10, scaleFactor + 0.25)
                     }
                 } label: {
-                    Image(systemName: "plus.circle.fill")
+                    AppSymbol.image("plus")
                         .font(.custom(AppFonts.sans, size: 22))
                 }
                 .disabled(scaleFactor >= 10)
@@ -387,27 +386,9 @@ struct IngredientRow: View {
 // MARK: - Steps Section
 struct StepsSection: View {
     let htmlContent: String
+    var accentColor: Color = RecipeAccentColor.color(from: "oklch(0.65 0.25 270)")
 
-    private var attributedContent: AttributedString {
-        guard let data = htmlContent.data(using: .utf8) else {
-            return AttributedString(htmlContent)
-        }
-
-        if let attributed = try? NSAttributedString(
-            data: data,
-            options: [
-                .documentType: NSAttributedString.DocumentType.html,
-                .characterEncoding: String.Encoding.utf8.rawValue
-            ],
-            documentAttributes: nil
-        ) {
-            var result = AttributedString(attributed)
-            result.font = .custom(AppFonts.sans, size: 17)
-            return result
-        }
-
-        return AttributedString(htmlContent)
-    }
+    @State private var document: RecipeDescriptionDocument?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -415,10 +396,29 @@ struct StepsSection: View {
                 .font(.custom(AppFonts.display, size: 22))
                 .padding(.horizontal)
 
-            Text(attributedContent)
-                .padding(.horizontal)
+            if let document {
+                RecipeDescriptionView(document: document, accentColor: accentColor)
+                    .padding(.horizontal)
+            }
         }
         .accessibilityIdentifier(AccessibilityIdentifiers.stepsSection)
+        .task(id: htmlContent) {
+            let started = CFAbsoluteTimeGetCurrent()
+            let parsed = RecipeDescriptionParser.parse(htmlContent)
+            document = parsed
+            // #region agent log
+            AgentSyncDebugLog.write(
+                hypothesisId: "P",
+                location: "StepsSection.swift:task",
+                message: "description_parsed",
+                data: [
+                    "ms": String(Int((CFAbsoluteTimeGetCurrent() - started) * 1000)),
+                    "htmlLen": String(htmlContent.count),
+                    "blockCount": String(parsed.blocks.count),
+                ]
+            )
+            // #endregion
+        }
     }
 }
 

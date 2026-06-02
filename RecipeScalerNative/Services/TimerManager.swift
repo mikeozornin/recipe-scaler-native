@@ -27,13 +27,29 @@ final class TimerManager: NSObject, ObservableObject {
     private let notificationCenter = UNUserNotificationCenter.current()
     private let timerUpdateInterval: TimeInterval = 0.5 // Update UI every 0.5 seconds
 
+    private static let backgroundTaskIdentifier = "com.recipescaler.timerUpdate"
+    private static var didRegisterBackgroundTasks = false
+
+    /// Must run from `RecipeScalerNativeApp.init()` before the app finishes launching.
+    static func registerBackgroundTasksIfNeeded() {
+        guard !didRegisterBackgroundTasks else { return }
+        didRegisterBackgroundTasks = true
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: backgroundTaskIdentifier,
+            using: nil
+        ) { task in
+            Task { @MainActor in
+                shared.handleBackgroundTask(task as! BGProcessingTask)
+            }
+        }
+    }
+
     // MARK: - Initialization
     init(modelContext: ModelContext? = nil) {
         self.modelContext = modelContext
         super.init()
         setupNotifications()
         loadTimers()
-        setupBackgroundTask()
     }
 
     // MARK: - Setup Methods
@@ -48,15 +64,6 @@ final class TimerManager: NSObject, ObservableObject {
 
         // Handle notification taps
         notificationCenter.delegate = self
-    }
-
-    private func setupBackgroundTask() {
-        BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: "com.recipescaler.timerUpdate",
-            using: nil
-        ) { task in
-            self.handleBackgroundTask(task as! BGProcessingTask)
-        }
     }
 
     private func loadTimers() {
@@ -258,7 +265,7 @@ final class TimerManager: NSObject, ObservableObject {
 
     // MARK: - Background Task Management
     private func scheduleBackgroundTask() {
-        let request = BGProcessingTaskRequest(identifier: "com.recipescaler.timerUpdate")
+        let request = BGProcessingTaskRequest(identifier: Self.backgroundTaskIdentifier)
         request.requiresNetworkConnectivity = false
         request.requiresExternalPower = false
 

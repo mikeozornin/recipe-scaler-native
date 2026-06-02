@@ -47,11 +47,17 @@ else
 
 ### `prefetchPreviews(entries, allowNetwork)`
 
-- `allowNetwork == false` → no-op
+- `allowNetwork == false` → только очистка кэша для entries без `imageUrl`; загрузок нет
 - только entries с непустым `imageUrl`
-- concurrency: 3
+- concurrency: 3 рецепта параллельно
+- на каждый рецепт: `ensureCached` для `preview`, затем для `full`
 
 Триггер: `YjsSyncService.scheduleImagePrefetch` после обновления `collectionEntries` при `connectionState == .connected`.
+
+### `prefetchFull(recipeId, imageUrl, allowNetwork)`
+
+- `allowNetwork == false` → no-op
+- триггер: `.task` в `YDocRecipeDetailView` при открытии деталки (догрузка, если full ещё не в кэше)
 
 ## 4. Поведение UI
 

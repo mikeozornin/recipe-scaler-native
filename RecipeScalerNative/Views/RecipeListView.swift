@@ -3,9 +3,21 @@ import UIKit
 
 struct RecipeListView: View {
     @EnvironmentObject private var syncService: YjsSyncService
+    @Binding var navigationPath: NavigationPath
     @State private var searchText = ""
     @State private var showingError = false
     @State private var errorMessage = ""
+    @State private var showingSyncStatus = false
+    @State private var recipePendingDelete: RecipeRowData?
+    @State private var isCreatingRecipe = false
+    @State private var recipeIdToOpenInEditMode: String?
+
+    init(navigationPath: Binding<NavigationPath> = .constant(NavigationPath())) {
+        _navigationPath = navigationPath
+    }
+    #if DEBUG
+    @State private var didOpenDebugRecipe = false
+    #endif
 
     private var filteredEntries: [CollectionEntry] {
         let sorted = RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
@@ -40,16 +52,16 @@ struct RecipeListView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if syncService.connectionState == .connecting && syncService.collectionEntries.isEmpty {
                     ProgressView(String(localized: "recipe.list.loading"))
                 } else if !hasAnyRows {
-                    ContentUnavailableView(
-                        String(localized: "recipe.list.empty.title"),
-                        systemImage: "fork.knife",
-                        description: Text(String(localized: "Your recipes will appear here"))
-                    )
+                    ContentUnavailableView {
+                        AppLabel.make(String(localized: "recipe.list.empty.title"), symbol: "fork.knife")
+                    } description: {
+                        Text(String(localized: "Your recipes will appear here"))
+                    }
                 } else {
                     List {
                         if !pinnedRowItems.isEmpty {
@@ -77,28 +89,118 @@ struct RecipeListView: View {
             }
             .navigationTitle("Recipes")
             .navigationDestination(for: String.self) { recipeId in
-                YDocRecipeDetailView(recipeId: recipeId)
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    NavigationLink {
-                        ProfileView()
-                    } label: {
-                        Image(systemName: "person.circle")
-                            .font(.custom(AppFonts.sansMedium, size: 20))
+                YDocRecipeDetailView(
+                    recipeId: recipeId,
+                    startInEditMode: recipeIdToOpenInEditMode == recipeId
+                )
+                .onAppear {
+                    if recipeIdToOpenInEditMode == recipeId {
+                        recipeIdToOpenInEditMode = nil
                     }
-                    .accessibilityIdentifier(AccessibilityIdentifiers.profileButton)
                 }
-
+            }
+            #if DEBUG
+            .onChange(of: syncService.collectionEntries.count) { _, _ in
+                openDebugRecipeIfNeeded()
+            }
+            .task {
+                openDebugRecipeIfNeeded()
+            }
+            #endif
+            .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    ConnectionStateIndicator(state: syncService.connectionState)
+                    Button {
+                        Task { await handleAddRecipe() }
+                    } label: {
+                        AppSymbol.image("plus")
+                    }
+                    .disabled(isCreatingRecipe)
+                    .accessibilityIdentifier(AccessibilityIdentifiers.recipeListAdd)
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    SyncStatusIndicator(
+                        connectionState: syncService.connectionState,
+                        imageCacheStatus: syncService.imageCacheStatus
+                    ) {
+                        showingSyncStatus = true
+                    }
+                }
+            }
+            .sheet(isPresented: $showingSyncStatus) {
+                SyncStatusSheet(
+                    connectionState: syncService.connectionState,
+                    imageCacheStatus: syncService.imageCacheStatus,
+                    onRetryImageDownload: {
+                        syncService.retryImagePrefetch()
+                    }
+                )
             }
             .alert("Error", isPresented: $showingError) {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(errorMessage)
             }
+            .alert(
+                String(localized: "recipe.list.delete.confirm.title"),
+                isPresented: Binding(
+                    get: { recipePendingDelete != nil },
+                    set: { if !$0 { recipePendingDelete = nil } }
+                ),
+                presenting: recipePendingDelete
+            ) { item in
+                Button(String(localized: "recipe.list.delete.confirm.action"), role: .destructive) {
+                    Task { await confirmDeleteRecipe(item) }
+                }
+                Button(String(localized: "recipe.list.delete.confirm.cancel"), role: .cancel) {
+                    recipePendingDelete = nil
+                }
+            } message: { item in
+                Text(
+                    String(
+                        format: String(localized: "recipe.list.delete.confirm.message"),
+                        locale: .current,
+                        item.displayName
+                    )
+                )
+            }
+        }
+    }
+
+    // MARK: - Collection actions
+
+    private func handleAddRecipe() async {
+        guard !isCreatingRecipe else { return }
+        isCreatingRecipe = true
+        defer { isCreatingRecipe = false }
+        do {
+            let recipeId = try await syncService.createRecipe()
+            recipeIdToOpenInEditMode = recipeId
+            navigationPath.append(recipeId)
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
+        }
+    }
+
+    private func togglePin(for item: RecipeRowData) async {
+        do {
+            try await syncService.setRecipePinned(recipeId: item.id, isPinned: !item.isPinned)
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
+        }
+    }
+
+    private func confirmDeleteRecipe(_ item: RecipeRowData) async {
+        recipePendingDelete = nil
+        do {
+            try await syncService.deleteRecipeFromCollection(recipeId: item.id)
+            if !navigationPath.isEmpty {
+                navigationPath = NavigationPath()
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
         }
     }
 
@@ -129,8 +231,52 @@ struct RecipeListView: View {
             .buttonStyle(.plain)
             .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
             .accessibilityIdentifier(AccessibilityIdentifiers.recipeRow(id: item.id))
+            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                Button {
+                    Task { await togglePin(for: item) }
+                } label: {
+                    Label {
+                        Text(
+                            item.isPinned
+                                ? String(localized: "recipe.list.unpin")
+                                : String(localized: "recipe.list.pin")
+                        )
+                    } icon: {
+                        AppSymbol.image(item.isPinned ? "pin.slash" : "pin")
+                    }
+                }
+                .tint(.orange)
+            }
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                Button(role: .destructive) {
+                    recipePendingDelete = item
+                } label: {
+                    AppLabel.make(String(localized: "recipe.list.delete"), symbol: "trash")
+                }
+            }
+            .task(id: item.id) {
+                guard item.hasThumbnail,
+                      let fileURL = RecipeImageDiskCache.existingFileURL(recipeId: item.id, variant: .full) else {
+                    return
+                }
+                await Task.detached(priority: .utility) {
+                    _ = RecipeImageDisplayCache.image(fileURL: fileURL, variant: .full)
+                }.value
+            }
         }
     }
+
+    #if DEBUG
+    private func openDebugRecipeIfNeeded() {
+        guard !didOpenDebugRecipe,
+              let recipeId = DebugLaunchOptions.openRecipeId,
+              syncService.collectionEntries.contains(where: { $0.id == recipeId && !$0.deleted }) else {
+            return
+        }
+        didOpenDebugRecipe = true
+        navigationPath.append(recipeId)
+    }
+    #endif
 
     // MARK: - Search Helpers
 
@@ -194,8 +340,8 @@ private struct RecipeListSectionHeader: View {
     var body: some View {
         HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
             if isPinnedSection {
-                Image(systemName: "pin")
-                    .font(.system(size: 16, weight: .medium))
+                AppSymbol.image("pin")
+                    .font(.system(size: 16))
                     .frame(
                         width: RecipeRowLayoutMetrics.markerSlotWidth,
                         height: RecipeRowLayoutMetrics.titleLineHeight,
@@ -233,29 +379,85 @@ private extension View {
     }
 }
 
-// MARK: - Connection State Indicator
+// MARK: - Sync + image cache indicator
 
-private struct ConnectionStateIndicator: View {
-    let state: ConnectionState
+private struct SyncStatusIndicator: View {
+    let connectionState: ConnectionState
+    let imageCacheStatus: RecipeImageCacheStatus
+    let onTap: () -> Void
 
     var body: some View {
-        switch state {
+        Button(action: onTap) {
+            ZStack(alignment: .bottomTrailing) {
+                connectionGlyph
+                    .font(.caption)
+
+                if imageCacheStatus.recipesWithImage > 0 {
+                    imageCacheBadge
+                        .font(.system(size: 9))
+                        .offset(x: 4, y: 4)
+                }
+            }
+            .frame(minWidth: 28, minHeight: 28)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    @ViewBuilder
+    private var connectionGlyph: some View {
+        switch connectionState {
         case .connecting, .reconnecting:
             ProgressView()
                 .controlSize(.small)
         case .connected:
-            Image(systemName: "checkmark.circle")
-                .font(.caption)
-                .foregroundStyle(.green)
+            AppSymbol.image("checkmark.circle")
+                .foregroundStyle(connectionTint)
         case .error:
-            Image(systemName: "exclamationmark.circle")
-                .font(.caption)
+            AppSymbol.image("exclamationmark.circle")
                 .foregroundStyle(.red)
         case .disconnected:
-            Image(systemName: "wifi.slash")
-                .font(.caption)
+            AppSymbol.image("wifi.slash")
                 .foregroundStyle(.secondary)
         }
+    }
+
+    @ViewBuilder
+    private var imageCacheBadge: some View {
+        if imageCacheStatus.isDownloading {
+            AppSymbol.image("arrow.down.circle.fill")
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, .blue)
+        } else if imageCacheStatus.isFullyCached {
+            AppSymbol.image("photo.fill")
+                .foregroundStyle(.green)
+        } else {
+            AppSymbol.image("photo.badge.exclamationmark.fill")
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, .orange)
+        }
+    }
+
+    private var connectionTint: Color {
+        if imageCacheStatus.recipesWithImage > 0, !imageCacheStatus.isFullyCached {
+            return .orange
+        }
+        return .green
+    }
+
+    private var accessibilityLabel: String {
+        var parts = [connectionState.displayLabel]
+        if imageCacheStatus.recipesWithImage > 0 {
+            parts.append(
+                String(
+                    format: String(localized: "sync.status.a11y.images"),
+                    locale: .current,
+                    imageCacheStatus.fullCached,
+                    imageCacheStatus.recipesWithImage
+                )
+            )
+        }
+        return parts.joined(separator: ", ")
     }
 }
 

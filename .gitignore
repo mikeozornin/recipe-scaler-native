@@ -56,3 +56,5 @@ xcuserdata/
 # Spec Kit agent dirs (skills live globally in ~/.agents/skills)
 .agents/
 .cursor/
+.playwright-screenshots
+.debug-tabbar.ndjson

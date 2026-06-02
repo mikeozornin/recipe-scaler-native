@@ -4,9 +4,9 @@ private enum NutritionFieldFocus: Hashable {
     case calories, protein, fat, carbs
 }
 
-/// Per-ingredient nutrition editor (web `EditIngredientNutrition`).
+/// Per-ingredient nutrition editor (web `EditIngredientNutrition`, values per 100 g).
 struct EditIngredientNutritionSheet: View {
-    let ingredientName: String
+    let ingredient: IngredientData
     let onSave: (Double, Double, Double, Double) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -22,32 +22,44 @@ struct EditIngredientNutritionSheet: View {
         ingredient: IngredientData,
         onSave: @escaping (Double, Double, Double, Double) -> Void
     ) {
-        self.ingredientName = ingredient.name
+        self.ingredient = ingredient
         self.onSave = onSave
-        _calories = State(initialValue: Self.format(ingredient.calories))
-        _protein = State(initialValue: Self.format(ingredient.protein))
-        _fat = State(initialValue: Self.format(ingredient.fat))
-        _carbs = State(initialValue: Self.format(ingredient.carbs))
+        let per100g = IngredientNutritionEditing.per100gValues(from: ingredient)
+        _calories = State(initialValue: Self.formatCalories(per100g.calories))
+        _protein = State(initialValue: Self.formatMacro(per100g.protein))
+        _fat = State(initialValue: Self.formatMacro(per100g.fat))
+        _carbs = State(initialValue: Self.formatMacro(per100g.carbs))
     }
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(ingredientName)
-                    .font(.custom(AppFonts.sansMedium, size: 15))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+            VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(ingredient.name)
+                        .font(.custom(AppFonts.sans, size: 17))
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                HStack(spacing: 10) {
-                    nutritionField(String(localized: "nutrition.kcal.short"), text: $calories, focus: .calories)
-                    nutritionField(String(localized: "nutrition.protein.short"), text: $protein, focus: .protein)
-                    nutritionField(String(localized: "nutrition.fat.short"), text: $fat, focus: .fat)
-                    nutritionField(String(localized: "nutrition.carbs.short"), text: $carbs, focus: .carbs)
+                    Text(String(localized: "nutrition.per-100g-note"))
+                        .font(.custom(AppFonts.sans, size: 13))
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+                .padding(.bottom, 12)
+
+                Form {
+                    Section {
+                        nutritionRow(String(localized: "nutrition.kcal"), text: $calories, focus: .calories)
+                        nutritionRow(String(localized: "nutrition.protein.label"), text: $protein, focus: .protein)
+                        nutritionRow(String(localized: "nutrition.fat.label"), text: $fat, focus: .fat)
+                        nutritionRow(String(localized: "nutrition.carbs.label"), text: $carbs, focus: .carbs)
+                    }
+                }
+                .scrollContentBackground(.hidden)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 12)
+            .background(Color(.systemGroupedBackground))
             .navigationTitle(String(localized: "nutrition.ingredient.edit.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -59,12 +71,12 @@ struct EditIngredientNutritionSheet: View {
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Button { focusPrevious() } label: {
-                        Image(systemName: "chevron.up")
+                        AppSymbol.image("chevron.up")
                     }
                     .disabled(!canFocusPrevious)
 
                     Button { focusNext() } label: {
-                        Image(systemName: "chevron.down")
+                        AppSymbol.image("chevron.down")
                     }
                     .disabled(!canFocusNext)
 
@@ -74,7 +86,7 @@ struct EditIngredientNutritionSheet: View {
                 }
             }
         }
-        .presentationDetents([.height(200)])
+        .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
     }
 
@@ -100,35 +112,38 @@ struct EditIngredientNutritionSheet: View {
 
     private func saveAndDismiss() {
         focusedField = nil
-        onSave(
-            Self.parse(calories) ?? 0,
-            Self.parse(protein) ?? 0,
-            Self.parse(fat) ?? 0,
-            Self.parse(carbs) ?? 0
+        let per100g = IngredientNutritionEditing.Per100gValues(
+            calories: Self.parse(calories) ?? 0,
+            protein: Self.parse(protein) ?? 0,
+            fat: Self.parse(fat) ?? 0,
+            carbs: Self.parse(carbs) ?? 0
         )
+        let absolute = IngredientNutritionEditing.absoluteValues(
+            per100g: per100g,
+            weightGrams: ingredient.resolvedWeightGrams
+        )
+        onSave(absolute.calories, absolute.protein, absolute.fat, absolute.carbs)
     }
 
-    private func nutritionField(_ label: String, text: Binding<String>, focus: NutritionFieldFocus) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.custom(AppFonts.sans, size: 12))
-                .foregroundStyle(.secondary)
+    private func nutritionRow(_ label: String, text: Binding<String>, focus: NutritionFieldFocus) -> some View {
+        LabeledContent(label) {
             TextField("0", text: text)
                 .keyboardType(.decimalPad)
-                .font(.custom(AppFonts.mono, size: 16))
-                .padding(.vertical, 6)
-                .padding(.horizontal, 8)
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .multilineTextAlignment(.trailing)
+                .font(.custom(AppFonts.mono, size: 17))
                 .focused($focusedField, equals: focus)
         }
-        .frame(maxWidth: .infinity)
     }
 
-    private static func format(_ value: Double?) -> String {
-        guard let value else { return "" }
+    private static func formatCalories(_ value: Double) -> String {
+        guard value != 0 else { return "" }
+        return String(Int(value.rounded()))
+    }
+
+    private static func formatMacro(_ value: Double) -> String {
+        guard value != 0 else { return "" }
         if value.rounded() == value { return String(Int(value)) }
-        return String(value)
+        return String(format: "%.1f", value)
     }
 
     private static func parse(_ text: String) -> Double? {

@@ -63,9 +63,36 @@ Edit v3 recipe fields (except description) through yrs mutations, debounced sync
 - Description rich-text editor (Phase 4)
 - Collection create/delete, shopping list (Phase 5)
 
-## Phase 4: Description Editor (WKWebView + Tiptap)
+## Spec 003: Recipe image offline cache — DONE
 
-Rich text editing for recipe description via embedded WebView.
+REST download → disk cache (`preview` + `full`); UI reads local files only. Parity with web `imageVersionToken`.
+
+### Completed
+
+- [x] `RecipeImageService` — `ensureCached`, two-phase prefetch (previews then full), version-aware invalidation
+- [x] `ImageCacheService` + `RecipeImageDiskCache` / `RecipeImageDecoder` / display cache
+- [x] List + detail via `RecipeCachedImageView`; no `AsyncImage` on Y.Doc `imageUrl`
+- [x] Offline: no network when disconnected; stale local file OK until reconnect
+- [x] `SyncStatusSheet` — cache status in sync UI
+- [x] Unit tests + `scripts/verify-offline-images.sh`
+
+### Manual validation (`specs/003-recipe-image-offline-cache/quickstart.md`)
+
+- [x] Online previews in list after collection sync
+- [x] Offline list + full header image after prefetch (airplane mode, relaunch)
+- [x] Web photo change / delete → iOS updates after sync (verified 2026-06-02)
+
+## Spec 004: Description read-only — DONE (verified 2026-06-02)
+
+Native v3 `XmlFragment('description')` → HTML via yrs; existing `StepsSection`. No Tiptap / WKWebView.
+
+- [x] `XmlFragmentToHTML` + `DocumentManager` v3 read path
+- [x] Simulator verify: `scripts/verify-recipe-description-native.sh` (recipe `7daed53b`, screenshot + `description_html_ready` / `readRecipeData_done`)
+- [x] Manual quickstart (`specs/004-description-read-only/quickstart.md`) — automated path covers US1; offline/web regression still manual
+
+## Phase 4b: Description Editor (planned as 005)
+
+Rich text **editing** for recipe description (WKWebView + Tiptap or alternative).
 
 ## Phase 5: Full Sync Parity
 
@@ -93,3 +120,5 @@ Phase 1 (done)          Phase 2 (done)             Phase 3 (done)
 - [SETUP.md](../SETUP.md)
 - [specs/001-yrs-native-read/](../specs/001-yrs-native-read/)
 - [specs/002-native-editing/](../specs/002-native-editing/)
+- [specs/003-recipe-image-offline-cache/](../specs/003-recipe-image-offline-cache/)
+- [specs/004-description-read-only/](../specs/004-description-read-only/)

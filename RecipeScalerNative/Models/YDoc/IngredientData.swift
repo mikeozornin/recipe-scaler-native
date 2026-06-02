@@ -131,6 +131,15 @@ struct IngredientData: Identifiable, Sendable {
         return value
     }
 
+    /// Gram weight for per-100g nutrition (`weight` field or quantity when unit is grams).
+    var resolvedWeightGrams: Double? {
+        if let weight, weight > 0 { return weight }
+        let normalizedUnit = unit.trimmingCharacters(in: .whitespaces).lowercased()
+        guard normalizedUnit.isEmpty || normalizedUnit == "г" || normalizedUnit == "g" else { return nil }
+        guard let value = numericValue, value > 0 else { return nil }
+        return value
+    }
+
     /// Parse quantity field (digits only in UI; unit kept separately in Y.Doc).
     static func parsedQuantity(_ text: String) -> (originalAmount: String, hasQuantity: Bool) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)

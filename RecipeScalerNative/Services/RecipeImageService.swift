@@ -26,12 +26,65 @@ actor RecipeImageService {
 
     private let defaults = UserDefaults.standard
     private var inFlight = Set<String>()
-    private let prefetchConcurrency = 3
+    /// Parallel HTTP downloads (previews first, then full).
+    private let prefetchConcurrency = 8
+    private var isPrefetching = false
+    private var prefetchCompleted = 0
+    private var prefetchTotal = 0
+    private var cacheStatusNotifyTask: Task<Void, Never>?
 
     private init() {}
 
     func localFileURL(recipeId: String, variant: CachedImageVariant) async -> URL? {
         await ImageCacheService.shared.cachedImageURL(recipeId: recipeId, variant: variant)
+    }
+
+    /// Snapshot of disk cache vs collection entries (no network).
+    func cacheStatus(for entries: [CollectionEntry]) async -> RecipeImageCacheStatus {
+        var withImage = 0
+        var previewCached = 0
+        var fullCached = 0
+        var pending: [RecipeImageCachePendingEntry] = []
+
+        for entry in entries {
+            guard let imageUrl = entry.imageUrl, !imageUrl.isEmpty else { continue }
+            withImage += 1
+
+            let hasPreview = isVariantCached(
+                recipeId: entry.id,
+                imageUrl: imageUrl,
+                variant: .preview
+            )
+            let hasFull = isVariantCached(
+                recipeId: entry.id,
+                imageUrl: imageUrl,
+                variant: .full
+            )
+
+            if hasPreview { previewCached += 1 }
+            if hasFull { fullCached += 1 }
+
+            if !hasPreview || !hasFull {
+                pending.append(
+                    RecipeImageCachePendingEntry(
+                        id: entry.id,
+                        name: entry.name,
+                        missingPreview: !hasPreview,
+                        missingFull: !hasFull
+                    )
+                )
+            }
+        }
+
+        return RecipeImageCacheStatus(
+            recipesWithImage: withImage,
+            previewCached: previewCached,
+            fullCached: fullCached,
+            isDownloading: isPrefetching,
+            downloadCompleted: prefetchCompleted,
+            downloadTotal: prefetchTotal,
+            pendingEntries: pending
+        )
     }
 
     /// Returns a cached file URL, optionally refreshing from the API when allowed.
@@ -46,10 +99,8 @@ actor RecipeImageService {
             return nil
         }
 
-        let version = RecipeImageVersion.token(from: imageUrl)
-        if let local = await ImageCacheService.shared.cachedImageURL(recipeId: recipeId, variant: variant),
-           storedVersion(recipeId: recipeId, variant: variant) == version {
-            return local
+        if isVariantCached(recipeId: recipeId, imageUrl: imageUrl, variant: variant) {
+            return RecipeImageDiskCache.existingFileURL(recipeId: recipeId, variant: variant)
         }
 
         guard allowNetwork else {
@@ -66,6 +117,8 @@ actor RecipeImageService {
             }
         }
 
+        await postCacheStatusChanged()
+
         guard allowNetwork else { return }
 
         let candidates = entries.filter { entry in
@@ -74,22 +127,39 @@ actor RecipeImageService {
         }
         guard !candidates.isEmpty else { return }
 
-        var index = 0
-        await withTaskGroup(of: Void.self) { group in
-            let initial = min(prefetchConcurrency, candidates.count)
-            while index < initial {
-                let entry = candidates[index]
-                index += 1
-                group.addTask { await self.prefetchPreview(entry) }
-            }
-
-            for await _ in group {
-                guard index < candidates.count else { continue }
-                let entry = candidates[index]
-                index += 1
-                group.addTask { await self.prefetchPreview(entry) }
-            }
+        let needsPreview = candidates.filter { entry in
+            guard let imageUrl = entry.imageUrl else { return false }
+            return !isVariantCached(recipeId: entry.id, imageUrl: imageUrl, variant: .preview)
         }
+        let needsFull = candidates.filter { entry in
+            guard let imageUrl = entry.imageUrl else { return false }
+            return !isVariantCached(recipeId: entry.id, imageUrl: imageUrl, variant: .full)
+        }
+        guard !needsPreview.isEmpty || !needsFull.isEmpty else {
+            await postCacheStatusChanged(immediate: true)
+            return
+        }
+
+        isPrefetching = true
+        prefetchCompleted = 0
+        prefetchTotal = candidates.count
+        await postPrefetchUpdate()
+
+        // Phase 1: all list thumbnails first (visible UX wins).
+        await runPrefetchPool(entries: needsPreview) { entry in
+            await self.prefetchVariant(entry, variant: .preview)
+        }
+
+        // Phase 2: full images for offline detail (parallel, do not block previews).
+        await runPrefetchPool(entries: needsFull) { entry in
+            await self.prefetchVariant(entry, variant: .full)
+            await self.recordPrefetchRecipeCompleted()
+        }
+
+        isPrefetching = false
+        prefetchCompleted = prefetchTotal
+        await postPrefetchUpdate()
+        await postCacheStatusChanged(immediate: true)
     }
 
     func prefetchFull(recipeId: String, imageUrl: String?, allowNetwork: Bool) async {
@@ -100,6 +170,7 @@ actor RecipeImageService {
             variant: .full,
             allowNetwork: true
         )
+        await postCacheStatusChanged()
     }
 
     func removeCache(recipeId: String) async {
@@ -112,6 +183,57 @@ actor RecipeImageService {
     }
 
     // MARK: - Private
+
+    private func isVariantCached(
+        recipeId: String,
+        imageUrl: String,
+        variant: CachedImageVariant
+    ) -> Bool {
+        let version = RecipeImageVersion.token(from: imageUrl)
+        guard RecipeImageDiskCache.existingFileURL(recipeId: recipeId, variant: variant) != nil else {
+            return false
+        }
+        return storedVersion(recipeId: recipeId, variant: variant) == version
+    }
+
+    private func runPrefetchPool(
+        entries: [CollectionEntry],
+        work: @escaping @Sendable (CollectionEntry) async -> Void
+    ) async {
+        guard !entries.isEmpty else { return }
+        var index = 0
+        await withTaskGroup(of: Void.self) { group in
+            let initial = min(prefetchConcurrency, entries.count)
+            while index < initial {
+                let entry = entries[index]
+                index += 1
+                group.addTask { await work(entry) }
+            }
+
+            for await _ in group {
+                guard index < entries.count else { continue }
+                let entry = entries[index]
+                index += 1
+                group.addTask { await work(entry) }
+            }
+        }
+    }
+
+    private func recordPrefetchRecipeCompleted() async {
+        prefetchCompleted += 1
+        await postPrefetchUpdate()
+    }
+
+    private func prefetchVariant(_ entry: CollectionEntry, variant: CachedImageVariant) async {
+        guard let imageUrl = entry.imageUrl, !imageUrl.isEmpty else { return }
+        guard !isVariantCached(recipeId: entry.id, imageUrl: imageUrl, variant: variant) else { return }
+        _ = await ensureCached(
+            recipeId: entry.id,
+            imageUrl: imageUrl,
+            variant: variant,
+            allowNetwork: true
+        )
+    }
 
     private func fetchAndStore(
         recipeId: String,
@@ -134,13 +256,17 @@ actor RecipeImageService {
             return nil
         }
 
+        let request = await APIClient.shared.recipeImageDownloadRequest(
+            remoteURL: remoteURL,
+            etag: storedEtag(recipeId: recipeId, variant: variant),
+            lastModified: storedLastModified(recipeId: recipeId, variant: variant)
+        )
+
         do {
             let result = try await ImageCacheService.shared.fetchAndCache(
                 recipeId: recipeId,
                 variant: variant,
-                remoteURL: remoteURL,
-                etag: storedEtag(recipeId: recipeId, variant: variant),
-                lastModified: storedLastModified(recipeId: recipeId, variant: variant)
+                request: request
             )
             storeMetadata(
                 recipeId: recipeId,
@@ -150,19 +276,11 @@ actor RecipeImageService {
                 lastModified: result.lastModified
             )
             await notifyCached(recipeId: recipeId, variant: variant)
+            await postCacheStatusChanged()
             return result.localURL
         } catch {
             return await ImageCacheService.shared.cachedImageURL(recipeId: recipeId, variant: variant)
         }
-    }
-
-    private func prefetchPreview(_ entry: CollectionEntry) async {
-        _ = await ensureCached(
-            recipeId: entry.id,
-            imageUrl: entry.imageUrl,
-            variant: .preview,
-            allowNetwork: true
-        )
     }
 
     private func notifyCached(recipeId: String, variant: CachedImageVariant) async {
@@ -175,6 +293,40 @@ actor RecipeImageService {
                     "variant": variant.rawValue,
                 ]
             )
+        }
+    }
+
+    private func postPrefetchUpdate() async {
+        let completed = prefetchCompleted
+        let total = prefetchTotal
+        let isActive = isPrefetching
+        await MainActor.run {
+            NotificationCenter.default.post(
+                name: .recipeImagePrefetchDidUpdate,
+                object: nil,
+                userInfo: [
+                    "completed": completed,
+                    "total": total,
+                    "isActive": isActive,
+                ]
+            )
+        }
+    }
+
+    private func postCacheStatusChanged(immediate: Bool = false) async {
+        cacheStatusNotifyTask?.cancel()
+        if immediate {
+            await MainActor.run {
+                NotificationCenter.default.post(name: .recipeImageCacheStatusDidChange, object: nil)
+            }
+            return
+        }
+        cacheStatusNotifyTask = Task {
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                NotificationCenter.default.post(name: .recipeImageCacheStatusDidChange, object: nil)
+            }
         }
     }
 

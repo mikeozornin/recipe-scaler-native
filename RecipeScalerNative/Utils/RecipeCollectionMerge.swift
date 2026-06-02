@@ -19,16 +19,12 @@ enum RecipeCollectionMerge {
         return entry.name
     }
 
-    /// Collection wins when recipe color empty or collection `updatedAt` is newer (cross-doc sync).
+    /// Recipe doc is source of truth when color is set (web `use-yjs-sync` detail path).
+    /// Collection is fallback only when the recipe map has no color.
     private static func resolvedColor(recipe: RecipeData, entry: CollectionEntry) -> String {
         let recipeColor = recipe.color.trimmingCharacters(in: .whitespacesAndNewlines)
-        if recipeColor.isEmpty { return entry.color }
-        if isCollectionNewer(recipe: recipe, entry: entry) {
-            let normalizedRecipe = RecipeAccentColor.normalizedStored(recipe.color)
-            let normalizedEntry = RecipeAccentColor.normalizedStored(entry.color)
-            if normalizedRecipe != normalizedEntry { return entry.color }
-        }
-        return recipe.color
+        if !recipeColor.isEmpty { return recipe.color }
+        return entry.color
     }
 
     private static func resolvedImageUrl(recipe: RecipeData, entry: CollectionEntry) -> String? {
@@ -36,9 +32,4 @@ enum RecipeCollectionMerge {
         return entry.imageUrl
     }
 
-    private static func isCollectionNewer(recipe: RecipeData, entry: CollectionEntry) -> Bool {
-        guard !entry.updatedAt.isEmpty else { return false }
-        guard !recipe.updatedAt.isEmpty else { return true }
-        return entry.updatedAt >= recipe.updatedAt
-    }
 }

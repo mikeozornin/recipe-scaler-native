@@ -14,7 +14,7 @@ struct ServingsStepperView: View {
             Button {
                 servings = max(1, servings - 1)
             } label: {
-                Image(systemName: "minus.circle.fill")
+                AppSymbol.image("minus")
                     .font(.title3)
             }
             .disabled(servings <= 1 || isLoading)
@@ -28,7 +28,7 @@ struct ServingsStepperView: View {
             Button {
                 servings = min(99, servings + 1)
             } label: {
-                Image(systemName: "plus.circle.fill")
+                AppSymbol.image("plus")
                     .font(.title3)
             }
             .disabled(servings >= 99 || isLoading)

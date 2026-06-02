@@ -14,6 +14,7 @@ import Agentation
 @main
 struct RecipeScalerNativeApp: App {
     init() {
+        TimerManager.registerBackgroundTasksIfNeeded()
         configureNavigationBarFonts()
         #if DEBUG
         Agentation.shared.install()

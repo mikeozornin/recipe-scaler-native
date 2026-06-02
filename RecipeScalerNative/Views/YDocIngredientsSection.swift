@@ -23,6 +23,8 @@ struct YDocIngredientsSection: View {
     let baseServings: Int
     let viewServings: Int
     let accentColor: Color
+    var nutritionEnabled: Bool = false
+    var nutritionViewMode: IngredientNutritionViewMode = .dish
 
     private var sorted: [IngredientData] {
         ingredients.sorted { $0.order < $1.order }
@@ -33,6 +35,7 @@ struct YDocIngredientsSection: View {
             Text(String(localized: "Ingredients"))
                 .font(.custom(AppFonts.display, size: 22))
                 .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
+                .accessibilityIdentifier(AccessibilityIdentifiers.ingredientsSection)
 
             if sorted.isEmpty {
                 Text(String(localized: "No ingredients"))
@@ -46,7 +49,9 @@ struct YDocIngredientsSection: View {
                             ingredient: ingredient,
                             baseServings: baseServings,
                             viewServings: viewServings,
-                            accentColor: accentColor
+                            accentColor: accentColor,
+                            nutritionEnabled: nutritionEnabled,
+                            nutritionViewMode: nutritionViewMode
                         )
                     }
                 }
@@ -61,18 +66,47 @@ private struct YDocIngredientViewRow: View {
     let baseServings: Int
     let viewServings: Int
     let accentColor: Color
+    let nutritionEnabled: Bool
+    let nutritionViewMode: IngredientNutritionViewMode
 
     private var amountText: String {
         ingredient.scaledQuantityText(targetServings: viewServings, baseServings: max(1, baseServings))
+    }
+
+    private var nutritionSummary: String? {
+        guard nutritionEnabled else { return nil }
+        return IngredientNutritionDisplay.summaryLine(
+            ingredient: ingredient,
+            baseServings: baseServings,
+            viewServings: viewServings,
+            mode: nutritionViewMode
+        )
     }
 
     var body: some View {
         if ingredient.isHeaderRow {
             IngredientRowHeaderLabel(text: ingredient.name)
         } else {
-            HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
-                IngredientRowMarkerSlot(label: nil)
+            ingredientContent
+        }
+    }
 
+    @ViewBuilder
+    private var ingredientContent: some View {
+        if nutritionSummary != nil {
+            ingredientNameAmountRow(nutritionSummary: nutritionSummary)
+                .ingredientListRowChromeCompact()
+        } else {
+            ingredientNameAmountRow(nutritionSummary: nil)
+                .ingredientListRowChrome()
+        }
+    }
+
+    private func ingredientNameAmountRow(nutritionSummary: String?) -> some View {
+        HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
+            IngredientRowMarkerSlot(label: nil)
+
+            VStack(alignment: .leading, spacing: 4) {
                 Text(ingredient.name)
                     .font(.custom(AppFonts.sans, size: RecipeRowLayoutMetrics.titleFontSize))
                     .foregroundStyle(.primary)
@@ -80,16 +114,22 @@ private struct YDocIngredientViewRow: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                if !amountText.isEmpty {
-                    Text(amountText)
-                        .font(.custom(AppFonts.mono, size: RecipeRowLayoutMetrics.titleFontSize))
-                        .foregroundStyle(accentColor)
-                        .multilineTextAlignment(.trailing)
-                        .lineLimit(1)
-                        .frame(width: RecipeRowLayoutMetrics.amountColumnWidth, alignment: .trailing)
+                if let nutritionSummary {
+                    Text(nutritionSummary)
+                        .font(.custom(AppFonts.sans, size: 13))
+                        .foregroundStyle(.secondary)
                 }
             }
-            .ingredientListRowChrome()
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if !amountText.isEmpty {
+                Text(amountText)
+                    .font(.custom(AppFonts.mono, size: RecipeRowLayoutMetrics.titleFontSize))
+                    .foregroundStyle(accentColor)
+                    .multilineTextAlignment(.trailing)
+                    .lineLimit(1)
+                    .frame(width: RecipeRowLayoutMetrics.amountColumnWidth, alignment: .trailing)
+            }
         }
     }
 }
@@ -101,6 +141,8 @@ struct YDocIngredientsEditSection: View {
     let baseServings: Int
     let viewServings: Int
     let accentColor: Color
+    var nutritionEnabled: Bool = false
+    var nutritionViewMode: IngredientNutritionViewMode = .dish
     let onCommit: (IngredientData) async -> Void
     let onSaveNutrition: (String, Double, Double, Double, Double) async -> Void
     let onDelete: (String) async -> Void
@@ -161,6 +203,8 @@ struct YDocIngredientsEditSection: View {
                         baseServings: baseServings,
                         viewServings: viewServings,
                         accentColor: accentColor,
+                        nutritionEnabled: nutritionEnabled,
+                        nutritionViewMode: nutritionViewMode,
                         focusedField: $focusedField,
                         onNutritionTap: {
                             nutritionSheetTarget = IngredientNutritionTarget(ingredient: ingredient)
@@ -201,14 +245,14 @@ struct YDocIngredientsEditSection: View {
                     Button {
                         focusPrevious()
                     } label: {
-                        Image(systemName: "chevron.up")
+                        AppSymbol.image("chevron.up")
                     }
                     .disabled(!canFocusPrevious)
 
                     Button {
                         focusNext()
                     } label: {
-                        Image(systemName: "chevron.down")
+                        AppSymbol.image("chevron.down")
                     }
                     .disabled(!canFocusNext)
 
@@ -383,13 +427,13 @@ private struct IngredientRowMarkerSlot: View {
                     .font(.custom(AppFonts.sans, size: RecipeRowLayoutMetrics.titleFontSize))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .frame(
             width: RecipeRowLayoutMetrics.markerSlotWidth,
             height: RecipeRowLayoutMetrics.titleLineHeight,
-            alignment: .center
+            alignment: .trailing
         )
     }
 }
@@ -455,17 +499,20 @@ private struct YDocIngredientEditRow: View {
     let baseServings: Int
     let viewServings: Int
     let accentColor: Color
+    let nutritionEnabled: Bool
+    let nutritionViewMode: IngredientNutritionViewMode
     var focusedField: FocusState<IngredientFieldFocus?>.Binding
     let onNutritionTap: () -> Void
     let onDelete: () -> Void
     let onDropIngredient: (String) -> Void
 
     private var nutritionSummary: String? {
-        IngredientNutritionDisplay.summaryLine(
+        guard nutritionEnabled else { return nil }
+        return IngredientNutritionDisplay.summaryLine(
             ingredient: ingredient,
             baseServings: baseServings,
             viewServings: viewServings,
-            mode: .dish
+            mode: nutritionViewMode
         )
     }
 
@@ -492,7 +539,7 @@ private struct YDocIngredientEditRow: View {
             }
             .contextMenu {
                 Button(role: .destructive, action: onDelete) {
-                    Label(String(localized: "edit.ingredient.delete"), systemImage: "trash")
+                    AppLabel.make(String(localized: "edit.ingredient.delete"), symbol: "trash")
                 }
             }
         } else {
@@ -517,26 +564,28 @@ private struct YDocIngredientEditRow: View {
                         .focused(focusedField, equals: .amount(ingredient.id))
                 }
 
-                Button(action: onNutritionTap) {
-                    HStack(spacing: 4) {
-                        if let nutritionSummary {
-                            Text(nutritionSummary)
-                        } else {
-                            Text(String(localized: "nutrition.ingredient.tap-to-edit"))
+                if nutritionEnabled {
+                    Button(action: onNutritionTap) {
+                        HStack(spacing: 4) {
+                            if let nutritionSummary {
+                                Text(nutritionSummary)
+                            } else {
+                                Text(String(localized: "nutrition.ingredient.tap-to-edit"))
+                            }
+                            AppSymbol.image("pencil")
+                                .font(.system(size: 11))
                         }
-                        Image(systemName: "pencil")
-                            .font(.system(size: 11, weight: .semibold))
+                        .font(.custom(AppFonts.sans, size: 13))
+                        .foregroundStyle(.secondary)
+                        .underline(pattern: .dot, color: Color.secondary.opacity(0.5))
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .font(.custom(AppFonts.sans, size: 13))
-                    .foregroundStyle(.secondary)
-                    .underline(pattern: .dot, color: Color.secondary.opacity(0.5))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .buttonStyle(.plain)
+                    .padding(.leading, RecipeRowLayoutMetrics.markerSlotWidth + RecipeRowLayoutMetrics.rowMarkerSpacing)
+                    .padding(.bottom, RecipeRowLayoutMetrics.nutritionLineBottomInset)
                 }
-                .buttonStyle(.plain)
-                .padding(.leading, RecipeRowLayoutMetrics.markerSlotWidth + RecipeRowLayoutMetrics.rowMarkerSpacing)
-                .padding(.bottom, RecipeRowLayoutMetrics.nutritionLineBottomInset)
             }
-            .ingredientListRowChromeCompact()
+            .modifier(IngredientEditRowChrome(showsNutritionLine: nutritionEnabled))
             .draggable(ingredient.id)
             .dropDestination(for: String.self) { items, _ in
                 guard let draggedId = items.first else { return false }
@@ -545,7 +594,7 @@ private struct YDocIngredientEditRow: View {
             }
             .contextMenu {
                 Button(role: .destructive, action: onDelete) {
-                    Label(String(localized: "edit.ingredient.delete"), systemImage: "trash")
+                    AppLabel.make(String(localized: "edit.ingredient.delete"), symbol: "trash")
                 }
             }
         }
@@ -581,13 +630,15 @@ private struct YDocNewIngredientRow: View {
             Button {
                 Task { await onSubmit() }
             } label: {
-                Image(systemName: "return")
+                AppSymbol.image("return")
                     .font(.body.weight(.semibold))
                     .frame(width: 28, height: 28)
             }
             .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             .buttonStyle(.borderless)
         }
-        .ingredientListRowChrome()
+        .padding(.top, 4)
+        .frame(minHeight: RecipeRowLayoutMetrics.rowHeight, alignment: .top)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

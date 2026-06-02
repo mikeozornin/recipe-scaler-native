@@ -96,6 +96,18 @@ class RecipeListViewModel: ObservableObject {
     func persistAll() async {
         await syncService.persistAll()
     }
+
+    func setRecipePinned(recipeId: String, isPinned: Bool) async throws {
+        try await syncService.setRecipePinned(recipeId: recipeId, isPinned: isPinned)
+    }
+
+    func deleteRecipe(recipeId: String) async throws {
+        try await syncService.deleteRecipeFromCollection(recipeId: recipeId)
+    }
+
+    func createRecipe() async throws -> String {
+        try await syncService.createRecipe()
+    }
 }
 
 // MARK: - String Normalization Extension

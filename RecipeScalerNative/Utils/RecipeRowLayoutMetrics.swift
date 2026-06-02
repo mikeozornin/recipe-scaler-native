@@ -57,3 +57,15 @@ extension View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
+
+struct IngredientEditRowChrome: ViewModifier {
+    let showsNutritionLine: Bool
+
+    func body(content: Content) -> some View {
+        if showsNutritionLine {
+            content.ingredientListRowChromeCompact()
+        } else {
+            content.ingredientListRowChrome()
+        }
+    }
+}

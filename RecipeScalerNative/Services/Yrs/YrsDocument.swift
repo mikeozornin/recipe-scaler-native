@@ -23,6 +23,13 @@ private final class UpdateObserverBox: @unchecked Sendable {
         pending.append(data)
     }
 
+    func pendingByteCount() -> Int {
+        lock.lock()
+        let total = pending.reduce(0) { $0 + $1.count }
+        lock.unlock()
+        return total
+    }
+
     func consumePending() -> Data? {
         lock.lock()
         let batch = pending
@@ -133,6 +140,10 @@ actor YrsDocument {
 
     func consumePendingLocalUpdates() -> Data? {
         updateObserverBoxRef?.consumePending()
+    }
+
+    func pendingLocalUpdateByteCount() -> Int {
+        updateObserverBoxRef?.pendingByteCount() ?? 0
     }
 
     // ─── Transactions ────────────────────────────────────────────────────

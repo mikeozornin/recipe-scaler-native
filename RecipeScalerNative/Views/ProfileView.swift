@@ -29,7 +29,7 @@ struct ProfileView: View {
                     showingLogoutConfirmation = true
                 } label: {
                     HStack {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                        AppSymbol.image("rectangle.portrait.and.arrow.right")
                         Text("Logout")
                     }
                 }

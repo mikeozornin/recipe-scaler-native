@@ -3,8 +3,9 @@ import YrsC
 
 /// Builds `YInput` values for yrs write APIs (`ymap_insert`, `yarray_insert_range`, …).
 ///
-/// `yinput_string` does **not** copy the C string — it only stores the pointer until `ymap_insert`
-/// runs. All string pointers must stay alive through the insert call (see `YrsInputArena`).
+/// `yinput_string` and `yinput_ymap` borrow pointers — they must stay valid until the yrs
+/// insert call returns. `YrsInput.withMaterialized` keeps all strdup'd strings and heap-allocated
+/// `YInput` / key buffers alive for the duration of `body`.
 enum YrsInput {
     case string(String)
     case int(Int64)
@@ -13,7 +14,7 @@ enum YrsInput {
     case map([(String, YrsInput)])
     case yarray([YrsInput])
 
-    /// Materializes a `YInput` tree and keeps every borrowed C string alive for the duration of `body`.
+    /// Materializes a `YInput` tree and keeps every borrowed pointer alive through `body`.
     static func withMaterialized<R>(_ input: YrsInput, _ body: (YInput) -> R) -> R {
         let arena = Arena()
         defer { arena.releaseAll() }
@@ -45,13 +46,17 @@ enum YrsInput {
         return .map(entries)
     }
 
-    // MARK: - Arena (owns strdup'd C strings until releaseAll)
+    // MARK: - Arena
 
     private final class Arena {
         private var ownedCString: [UnsafeMutablePointer<CChar>] = []
+        private var ownedKeyBuffers: [UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>] = []
+        private var ownedValueBuffers: [UnsafeMutablePointer<YInput>] = []
 
         func persist(_ string: String) -> UnsafeMutablePointer<CChar> {
-            let ptr = string.withCString { strdup($0)! }
+            // Re-encode to guarantee valid UTF-8 for yffi (`to_str().unwrap()` on Y_JSON_STR).
+            let utf8 = String(decoding: Data(string.utf8), as: UTF8.self)
+            let ptr = utf8.withCString { strdup($0)! }
             ownedCString.append(ptr)
             return ptr
         }
@@ -70,21 +75,27 @@ enum YrsInput {
                 guard !entries.isEmpty else {
                     return yinput_ymap(nil, nil, 0)
                 }
-                var keyPtrs: [UnsafeMutablePointer<CChar>?] = entries.map { persist($0.0) }
-                var values = entries.map { materialize($0.1) }
-                return values.withUnsafeMutableBufferPointer { valueBuf in
-                    keyPtrs.withUnsafeMutableBufferPointer { keyBuf in
-                        yinput_ymap(keyBuf.baseAddress, valueBuf.baseAddress, UInt32(entries.count))
-                    }
+                let count = entries.count
+                let keysPtr = UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>.allocate(capacity: count)
+                let valuesPtr = UnsafeMutablePointer<YInput>.allocate(capacity: count)
+                ownedKeyBuffers.append(keysPtr)
+                ownedValueBuffers.append(valuesPtr)
+                for index in 0..<count {
+                    keysPtr[index] = persist(entries[index].0)
+                    valuesPtr[index] = materialize(entries[index].1)
                 }
+                return yinput_ymap(keysPtr, valuesPtr, UInt32(count))
             case .yarray(let items):
-                if items.isEmpty {
+                guard !items.isEmpty else {
                     return yinput_yarray(nil, 0)
                 }
-                var values = items.map { materialize($0) }
-                return values.withUnsafeMutableBufferPointer { buf in
-                    yinput_yarray(buf.baseAddress, UInt32(items.count))
+                let count = items.count
+                let valuesPtr = UnsafeMutablePointer<YInput>.allocate(capacity: count)
+                ownedValueBuffers.append(valuesPtr)
+                for index in 0..<count {
+                    valuesPtr[index] = materialize(items[index])
                 }
+                return yinput_yarray(valuesPtr, UInt32(count))
             }
         }
 
@@ -93,6 +104,16 @@ enum YrsInput {
                 free(ptr)
             }
             ownedCString.removeAll()
+
+            for ptr in ownedKeyBuffers {
+                ptr.deallocate()
+            }
+            ownedKeyBuffers.removeAll()
+
+            for ptr in ownedValueBuffers {
+                ptr.deallocate()
+            }
+            ownedValueBuffers.removeAll()
         }
     }
 }

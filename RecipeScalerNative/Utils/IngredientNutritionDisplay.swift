@@ -19,7 +19,7 @@ enum IngredientNutritionDisplay {
 
         switch mode {
         case .per100g:
-            if let weight = ingredient.weight, weight > 0 {
+            if let weight = ingredient.resolvedWeightGrams, weight > 0 {
                 return (base / weight) * 100
             }
             return base

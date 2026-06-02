@@ -1,0 +1,85 @@
+# Спецификация: импорт рецептов
+
+**Ветка**: `010-recipe-import`  
+**Дата**: 2026-06-02  
+**Статус**: Draft  
+**Зависимости**: `008-collection-mutations` (новый рецепт в коллекции), `007` (Import tab)  
+**Эталон**: `ImportRecipeSheet`, PRD § Import
+
+## Контекст
+
+Центральная вкладка Import на мобильном вебе открывает sheet с режимами:
+
+- URL  
+- Свободный текст  
+- Фото (≤8, ≤25 MB, preprocessing на сервере)  
+- Импорт файла export (.json / .zip v1.0–v1.3) — уточнить паритет с `docs/PRD.md` US6
+
+Парсинг — **на сервере** (LLM/OCR); iOS не дублирует логику.
+
+## Цель
+
+Те же входы и пост-условия, что мобильный веб: после импорта — рецепт в коллекции и переход на `/recipe/:id`.
+
+## Пользовательские сценарии
+
+### US1 — Импорт по URL (P1)
+
+**Когда** пользователь вводит URL, **тогда** `POST` parse/import endpoint (см. `llm/API.md`), прогресс, результат → сохранение в Y.Doc через сервер + sync на клиент.
+
+### US2 — Импорт текста (P1)
+
+**Когда** вставлен текст рецепта, **тогда** тот же pipeline; v3 steps как ordered-list HTML без «Шаг 1» (PRD).
+
+### US3 — Импорт фото (P2)
+
+**Когда** выбрано 1–8 фото из галереи/камеры, **тогда** multipart upload, лимиты PRD; JPEG preprocessing на сервере.
+
+### US4 — Навигация после успеха (P1)
+
+**Когда** один `recipeId`, **тогда** dismiss sheet + push detail с флагом «новый рецепт» (как `state: { isNewRecipe: true }` на вебе).
+
+### US5 — Ошибки (P1)
+
+Сетевые и validation ошибки — локализованные toast/alert; без частичного мусора в коллекции.
+
+## Требования
+
+### FR-IMP-001 — API (без изменения контракта)
+
+Использовать существующие endpoints из `docs/PRD.md` §7:
+
+- `POST /api/v2/recipes/:id/parse` (или актуальный flow создания id — сверить с веб `import-recipe-sheet`)
+- `POST /api/recipes/import/image`
+
+Точные пути — в `contracts/recipe-import-api.md` при implement.
+
+### FR-IMP-002 — Создание документа
+
+Сервер создаёт/обновляет recipe + collection entry; iOS принимает через `recipe_updated` / `collection_updated`, не пишет parse result вручную в CRDT (если только сервер не отдаёт yjs state — уточнить в research).
+
+### FR-IMP-003 — UI
+
+- Sheet из tab Import (007).
+- Поля: URL, multiline text, photo picker.
+- Индикатор загрузки; блокировка повторного submit.
+
+### FR-IMP-004 — Имена ингредиентов
+
+Паритет PRD: не выдумывать количества; сохранять имена из источника.
+
+## Вне scope
+
+- Импорт через Telegram (бот → уже на сервере)
+- Редактирование результата до save (опционально v2)
+
+## Критерии успеха
+
+- **SC-001**: URL импорт iOS → тот же рецепт на вебе (name + ≥3 ingredients) ≤ 30 с.
+- **SC-002**: Текст импорт — `version` v3 на вебе.
+- **SC-003**: Отмена/ошибка не оставляет пустой entry в коллекции.
+
+## Артефакты
+
+- `contracts/recipe-import-api.md`
+- `quickstart.md`
