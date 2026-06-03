@@ -11,11 +11,11 @@ enum RecipeNutritionDisplay {
         static let macroLabelTopSpacing: CGFloat = 4
 
         static var macroValueFont: Font {
-            .custom(AppFonts.sans, size: macroValueSize).weight(.semibold)
+            AppTypography.sansMedium(macroValueSize)
         }
 
         static var macroLabelFont: Font {
-            .custom(AppFonts.sans, size: macroLabelSize)
+            AppTypography.sans(macroLabelSize)
         }
     }
     struct Macros: Sendable, Equatable {

@@ -32,7 +32,7 @@ struct RecipeDetailView: View {
     @State private var loadedDescription: String?
     @State private var loadedImageUrl: String?
     @State private var loadedName: String?
-    @State private var loadedOriginalRecipeLink: String?
+
     @State private var isLoading = false
     @State private var loadError: String?
     @State private var scaleReloadTask: Task<Void, Never>?
@@ -68,9 +68,7 @@ struct RecipeDetailView: View {
         loadedName ?? recipe.name
     }
 
-    private var displayOriginalLink: String? {
-        loadedOriginalRecipeLink ?? recipe.originalRecipeLink
-    }
+
 
     private var headerImageURL: URL? {
         if let loadedImageUrl, !loadedImageUrl.isEmpty {
@@ -110,7 +108,7 @@ struct RecipeDetailView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     // Recipe title (wraps instead of truncating)
                     Text(displayName)
-                        .font(.custom(AppFonts.display, size: 28))
+                        .font(AppTypography.display(AppTypography.recipeTitleSize))
                         .lineLimit(nil)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal)
@@ -118,7 +116,7 @@ struct RecipeDetailView: View {
                     // Error message
                     if let error = loadError {
                         Text("Error: \(error)")
-                            .font(.custom(AppFonts.sans, size: 17))
+                            .font(AppTypography.body)
                             .foregroundColor(.red)
                             .padding()
                     }
@@ -135,7 +133,7 @@ struct RecipeDetailView: View {
                         )
                     } else if !isLoading {
                         Text("No ingredients")
-                            .font(.custom(AppFonts.sans, size: 17))
+                            .font(AppTypography.body)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal)
                     }
@@ -146,14 +144,6 @@ struct RecipeDetailView: View {
                         StepsSection(htmlContent: description)
                     }
 
-                    // Original Recipe Link
-                    if let link = displayOriginalLink,
-                       let url = URL(string: link) {
-                        Link(destination: url) {
-                            AppLabel.make("Original Recipe", symbol: "link")
-                        }
-                        .padding(.horizontal)
-                    }
                 }
             }
         }
@@ -179,7 +169,7 @@ struct RecipeDetailView: View {
     private func fillLoadedFromRecipe() {
         loadedName = recipe.name
         loadedDescription = recipe.detailHtml ?? recipe.recipeDescription
-        loadedOriginalRecipeLink = recipe.originalRecipeLink
+
         if let url = recipe.imageUrl, !url.isEmpty {
             loadedImageUrl = url
         }
@@ -250,12 +240,12 @@ struct ScaleFactorControl: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Scale")
-                    .font(.custom(AppFonts.sansMedium, size: 17))
+                    .font(AppTypography.bodySemibold)
 
                 Spacer()
 
                 Text("\(scaleFactor, specifier: "%.1f")×")
-                    .font(.custom(AppFonts.sansMedium, size: 20))
+                    .font(AppTypography.title3)
             }
 
             HStack(spacing: 12) {
@@ -265,7 +255,7 @@ struct ScaleFactorControl: View {
                     }
                 } label: {
                     AppSymbol.image("minus")
-                        .font(.custom(AppFonts.sans, size: 22))
+                        .font(AppTypography.sans(AppTypography.title2Size))
                 }
                 .disabled(scaleFactor <= 0.25)
                 .accessibilityIdentifier(AccessibilityIdentifiers.scaleMinusButton)
@@ -279,7 +269,7 @@ struct ScaleFactorControl: View {
                     }
                 } label: {
                     AppSymbol.image("plus")
-                        .font(.custom(AppFonts.sans, size: 22))
+                        .font(AppTypography.sans(AppTypography.title2Size))
                 }
                 .disabled(scaleFactor >= 10)
                 .accessibilityIdentifier(AccessibilityIdentifiers.scalePlusButton)
@@ -304,7 +294,7 @@ struct IngredientsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Ingredients")
-                .font(.custom(AppFonts.display, size: 22))
+                .font(AppTypography.title2)
                 .padding(.horizontal)
 
             VStack(alignment: .leading, spacing: 8) {
@@ -344,7 +334,7 @@ struct IngredientRow: View {
     var body: some View {
         if ingredient.isSeparator {
             Text(ingredient.name)
-                .font(.custom(AppFonts.sansMedium, size: 15))
+                .font(AppTypography.sansMedium(AppTypography.subheadlineSize))
                 .foregroundStyle(.secondary)
                 .padding(.top, 8)
         } else {
@@ -352,12 +342,12 @@ struct IngredientRow: View {
                 HStack(spacing: 4) {
                     if !scaledAmount.isEmpty {
                         Text(scaledAmount)
-                            .font(.custom(AppFonts.sansMedium, size: 17))
+                            .font(AppTypography.bodySemibold)
                             .foregroundStyle(isScaled ? .blue : .primary)
 
                         if !ingredient.unit.isEmpty {
                             Text(ingredient.unit)
-                                .font(.custom(AppFonts.sans, size: 17))
+                                .font(AppTypography.body)
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -365,7 +355,7 @@ struct IngredientRow: View {
                 .frame(width: 80, alignment: .leading)
 
                 Text(ingredient.name)
-                    .font(.custom(AppFonts.sans, size: 17))
+                    .font(AppTypography.body)
                     .lineLimit(nil)
 
                 Spacer()
@@ -393,7 +383,7 @@ struct StepsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Instructions")
-                .font(.custom(AppFonts.display, size: 22))
+                .font(AppTypography.title2)
                 .padding(.horizontal)
 
             if let document {
@@ -403,21 +393,7 @@ struct StepsSection: View {
         }
         .accessibilityIdentifier(AccessibilityIdentifiers.stepsSection)
         .task(id: htmlContent) {
-            let started = CFAbsoluteTimeGetCurrent()
-            let parsed = RecipeDescriptionParser.parse(htmlContent)
-            document = parsed
-            // #region agent log
-            AgentSyncDebugLog.write(
-                hypothesisId: "P",
-                location: "StepsSection.swift:task",
-                message: "description_parsed",
-                data: [
-                    "ms": String(Int((CFAbsoluteTimeGetCurrent() - started) * 1000)),
-                    "htmlLen": String(htmlContent.count),
-                    "blockCount": String(parsed.blocks.count),
-                ]
-            )
-            // #endregion
+            document = RecipeDescriptionParser.parse(htmlContent)
         }
     }
 }

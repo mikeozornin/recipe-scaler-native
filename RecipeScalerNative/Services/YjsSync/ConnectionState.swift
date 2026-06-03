@@ -28,3 +28,18 @@ enum ConnectionState: Equatable, Sendable {
         }
     }
 }
+
+/// Active Socket.IO transport strategy (shown in debug sync status).
+enum SyncConnectionTransport: String, Sendable, Equatable {
+    case websocketOnly
+    case pollingAndWebsocket
+
+    var displayLabel: String {
+        switch self {
+        case .websocketOnly:
+            return String(localized: "sync.status.transport.websocket")
+        case .pollingAndWebsocket:
+            return String(localized: "sync.status.transport.polling")
+        }
+    }
+}

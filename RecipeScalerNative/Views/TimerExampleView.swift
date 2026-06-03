@@ -19,7 +19,7 @@ struct TimerExampleView: View {
                 // MARK: - Create Timer Section
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Create New Timer")
-                        .font(.custom(AppFonts.sansMedium, size: 17))
+                        .font(AppTypography.bodySemibold)
 
                     TextField("Timer Name", text: $timerName)
                         .textFieldStyle(.roundedBorder)
@@ -27,10 +27,10 @@ struct TimerExampleView: View {
                     HStack {
                         VStack(alignment: .leading) {
                             Text("Duration")
-                                .font(.custom(AppFonts.sans, size: 12))
+                                .font(AppTypography.footnote)
                             Stepper(value: $timerDuration, in: 1...120, step: 1) {
                                 Text("\(Int(timerDuration))")
-                                    .font(.custom(AppFonts.sansMedium, size: 20))
+                                    .font(AppTypography.title3)
                             }
                         }
 
@@ -58,7 +58,7 @@ struct TimerExampleView: View {
                 // MARK: - Active Timers Section
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Active Timers (\(timerManager.activeTimers.count))")
-                        .font(.custom(AppFonts.sansMedium, size: 17))
+                        .font(AppTypography.bodySemibold)
 
                     if timerManager.activeTimers.isEmpty {
                         Text("No active timers")
@@ -83,7 +83,7 @@ struct TimerExampleView: View {
                 // MARK: - All Timers Section
                 VStack(alignment: .leading, spacing: 12) {
                     Text("All Timers (\(timerManager.timers.count))")
-                        .font(.custom(AppFonts.sansMedium, size: 17))
+                        .font(AppTypography.bodySemibold)
 
                     if timerManager.timers.isEmpty {
                         Text("No timers created yet")
@@ -161,9 +161,9 @@ struct ActiveTimerRow: View {
         HStack(spacing: 15) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(timer.name)
-                    .font(.custom(AppFonts.sansMedium, size: 17))
+                    .font(AppTypography.bodySemibold)
                 Text(displayTime)
-                    .font(.custom(AppFonts.sansMedium, size: 22))
+                    .font(AppTypography.sansMedium(AppTypography.title2Size))
                     .monospacedDigit()
                     .foregroundColor(.blue)
             }
@@ -225,9 +225,9 @@ struct TimerRow: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(timer.name)
-                    .font(.custom(AppFonts.sansMedium, size: 17))
+                    .font(AppTypography.bodySemibold)
                 Text(statusText)
-                    .font(.custom(AppFonts.sans, size: 12))
+                    .font(AppTypography.footnote)
                     .foregroundColor(statusColor)
             }
 
@@ -235,7 +235,7 @@ struct TimerRow: View {
 
             VStack(alignment: .trailing, spacing: 4) {
                 Text("\(Int(timer.duration)) sec")
-                    .font(.custom(AppFonts.sans, size: 12))
+                    .font(AppTypography.footnote)
                     .foregroundColor(.secondary)
             }
 
@@ -271,7 +271,7 @@ struct TimerRow: View {
                 }
             } label: {
                 AppSymbol.image("ellipsis.circle.fill")
-                    .font(.custom(AppFonts.sansMedium, size: 20))
+                    .font(AppTypography.title3)
             }
         }
         .padding()

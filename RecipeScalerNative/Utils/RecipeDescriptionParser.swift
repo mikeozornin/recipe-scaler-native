@@ -36,9 +36,6 @@ enum RecipeDescriptionInlineRun: Equatable {
 }
 
 enum RecipeDescriptionParser {
-    private static let bodyFontSize: CGFloat = 17
-    static var bodyLineSpacing: CGFloat { bodyFontSize * 0.4 }
-
     static func parse(_ html: String) -> RecipeDescriptionDocument {
         let normalized = html
             .replacingOccurrences(of: "\r\n", with: "\n")

@@ -2,9 +2,13 @@
 
 **Ветка**: `008-collection-mutations`  
 **Дата**: 2026-06-02  
-**Статус**: Draft  
+**Статус**: ✅ Реализовано (аудит 2026-06-03)  
 **Зависимости**: `002-native-editing` (паттерн write + offline queue), `007-app-shell-navigation`  
 **Эталон**: `recipe-list.tsx`, `use-yjs-sync` collection writes, swipe gestures
+
+## Аудит реализации (2026-06-03)
+
+Реализовано полностью: `setRecipePinned` / `deleteRecipeFromCollection` / `createRecipe` в `YjsSyncService`, swipeActions (pin/delete) и кнопка создания в `RecipeListView`, инициализация v3-документа, offline-очередь, поиск без регрессий. US1–US5 закрыты.
 
 ## Контекст
 

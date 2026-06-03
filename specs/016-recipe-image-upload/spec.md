@@ -2,9 +2,23 @@
 
 **Ветка**: `016-recipe-image-upload`  
 **Дата**: 2026-06-02  
-**Статус**: Draft  
+**Статус**: 🟢 Реализовано почти полностью (аудит 2026-06-03)  
 **Зависимости**: `003-recipe-image-offline-cache`, `002` (v3 edit mode)  
 **Эталон**: PRD § Images, REST в `docs/PRD.md` §7
+
+## Аудит реализации (2026-06-03)
+
+Реализовано: `RecipeDetailImageSection` (PhotosPicker upload + delete), `RecipeImageUploadAPI`, `RecipeImageUploadPreprocessor`, патч Y.Doc + инвалидация кэша 003 через `applyRecipeImageUpload` / `applyRecipeImageDeletion`.
+
+| Требование | Статус |
+|------------|--------|
+| US1 upload photo | ✅ |
+| US2 delete image | ✅ |
+| US3 image from URL | 🟡 `RecipeImageUploadAPI.image-from-url` есть, **нет UI-кнопки** |
+| US4 list preview | ✅ (003) |
+| US5 офлайн | ✅ |
+
+Мелкий остаток (UI для image-from-url) — низкий приоритет; можно добавить в 020/отдельно при необходимости.
 
 ## Контекст
 

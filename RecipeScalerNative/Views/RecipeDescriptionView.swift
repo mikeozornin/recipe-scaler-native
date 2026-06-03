@@ -38,7 +38,7 @@ struct RecipeDescriptionView: View {
         case .bullet(_, let runs):
             HStack(alignment: .top, spacing: 8) {
                 Text("–")
-                    .font(.custom(AppFonts.sans, size: bodySize))
+                    .font(AppTypography.body)
                     .foregroundStyle(accentColor)
                     .frame(width: 12, alignment: .leading)
                 inlineText(runs)
@@ -46,7 +46,7 @@ struct RecipeDescriptionView: View {
             .padding(.vertical, 2)
         case .heading(_, let level, let runs):
             inlineText(runs)
-                .font(.custom(AppFonts.display, size: headingSize(level)))
+                .font(AppTypography.display(headingSize(level)))
         }
     }
 
@@ -71,7 +71,7 @@ struct RecipeDescriptionView: View {
 
     private func stepBadge(_ number: Int) -> some View {
         Text("\(number)")
-            .font(.custom(AppFonts.sansMedium, size: 14))
+            .font(AppTypography.sansMedium(AppTypography.compactSize))
             .foregroundStyle(accentColor)
             .frame(width: 22, height: 22)
             .background(

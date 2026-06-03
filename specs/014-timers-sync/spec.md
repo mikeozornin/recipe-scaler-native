@@ -2,9 +2,23 @@
 
 **Ветка**: `014-timers-sync`  
 **Дата**: 2026-06-02  
-**Статус**: Draft  
+**Статус**: 🔴 Заблокировано (аудит 2026-06-03) — отгружена только локальная панель. Остаток зафиксирован в [BLOCKER.md](./BLOCKER.md), спек остаётся открытым  
 **Зависимости**: `006` (timer nodes в описании), Phase 1 `TimerManager`  
 **Этален**: PRD § Timers, `llm/ARCHITECTURE.md`, mobile `TimerPanel`
+
+## Аудит реализации (2026-06-03)
+
+Отгружено: `MobileTimerPanel` — read-only список локальных таймеров `TimerManager` над tab bar; локальные уведомления Phase 1.
+
+| Требование | Статус |
+|------------|--------|
+| FR-TMR-003 mobile panel | ✅ |
+| US1 start from description | ❌ зависит от 018 (timer-ноды) |
+| US2 cross-device ≤3с | ❌ нет `TimerSyncService` / socket-событий |
+| US3 APNs >30 min | ❌ нет регистрации device token |
+| US4 pause/resume parity | ❌ |
+
+Остаток (кросс-девайс sync + APNs) уже детально описан в `BLOCKER.md`; новый спек не заводим — 014 остаётся живым спеком для этой работы (unblock-путь там же).
 
 ## Контекст
 

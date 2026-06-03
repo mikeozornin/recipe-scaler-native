@@ -1,0 +1,8 @@
+{
+  "name": "recipe-scaler-native-scripts",
+  "private": true,
+  "description": "Dev tooling for native app asset scripts",
+  "dependencies": {
+    "svg-outline-stroke": "^1.3.1"
+  }
+}

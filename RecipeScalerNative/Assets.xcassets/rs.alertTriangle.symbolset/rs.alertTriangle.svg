@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <g id="Guides">
+    <line id="Baseline-S" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="0" x2="100" y1="71.5" y2="71.5"/>
+    <line id="Capline-S" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="0" x2="100" y1="28.5" y2="28.5"/>
+    <line id="left-margin-Regular-S" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="12.0" x2="12.0" y1="18" y2="82"/>
+    <line id="right-margin-Regular-S" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="88.0" x2="88.0" y1="18" y2="82"/>
+    <line id="Baseline-M" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="0" x2="100" y1="75.0" y2="75.0"/>
+    <line id="Capline-M" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="0" x2="100" y1="25.0" y2="25.0"/>
+    <line id="left-margin-Regular-M" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="10.0" x2="10.0" y1="18" y2="82"/>
+    <line id="right-margin-Regular-M" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="90.0" x2="90.0" y1="18" y2="82"/>
+    <line id="Baseline-L" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="0" x2="100" y1="78.0" y2="78.0"/>
+    <line id="Capline-L" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="0" x2="100" y1="22.0" y2="22.0"/>
+    <line id="left-margin-Regular-L" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="8.0" x2="8.0" y1="18" y2="82"/>
+    <line id="right-margin-Regular-L" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="92.0" x2="92.0" y1="18" y2="82"/>
+  </g>
+  <g id="Symbols">
+    <g id="Regular-S">
+      <g transform="translate(28.5,28.5) scale(1.79167)">
+          <path d="M 6.067 10.389 C 3.280 15.003, 1 19.278, 1 19.889 C 1 20.636, 4.600 21, 12 21 C 19.400 21, 23 20.636, 23 19.889 C 23 18.246, 13.011 2, 12 2 C 11.524 2, 8.854 5.775, 6.067 10.389 M 7.229 11.713 L 3.177 18.500 7.589 18.805 C 10.015 18.972, 13.991 18.972, 16.423 18.805 L 20.847 18.500 16.932 12.003 C 14.779 8.430, 12.627 5.376, 12.149 5.216 C 11.671 5.057, 9.457 7.981, 7.229 11.713 M 11 11 C 11 12.100, 11.450 13, 12 13 C 12.550 13, 13 12.100, 13 11 C 13 9.900, 12.550 9, 12 9 C 11.450 9, 11 9.900, 11 11 M 11 16 C 11 16.550, 11.450 17, 12 17 C 12.550 17, 13 16.550, 13 16 C 13 15.450, 12.550 15, 12 15 C 11.450 15, 11 15.450, 11 16" fill="#000000" fill-rule="evenodd"/>
+      </g>
+    </g>
+    <g id="Regular-M">
+      <g transform="translate(25,25) scale(2.08333)">
+          <path d="M 6.067 10.389 C 3.280 15.003, 1 19.278, 1 19.889 C 1 20.636, 4.600 21, 12 21 C 19.400 21, 23 20.636, 23 19.889 C 23 18.246, 13.011 2, 12 2 C 11.524 2, 8.854 5.775, 6.067 10.389 M 7.229 11.713 L 3.177 18.500 7.589 18.805 C 10.015 18.972, 13.991 18.972, 16.423 18.805 L 20.847 18.500 16.932 12.003 C 14.779 8.430, 12.627 5.376, 12.149 5.216 C 11.671 5.057, 9.457 7.981, 7.229 11.713 M 11 11 C 11 12.100, 11.450 13, 12 13 C 12.550 13, 13 12.100, 13 11 C 13 9.900, 12.550 9, 12 9 C 11.450 9, 11 9.900, 11 11 M 11 16 C 11 16.550, 11.450 17, 12 17 C 12.550 17, 13 16.550, 13 16 C 13 15.450, 12.550 15, 12 15 C 11.450 15, 11 15.450, 11 16" fill="#000000" fill-rule="evenodd"/>
+      </g>
+    </g>
+    <g id="Regular-L">
+      <g transform="translate(22,22) scale(2.33333)">
+          <path d="M 6.067 10.389 C 3.280 15.003, 1 19.278, 1 19.889 C 1 20.636, 4.600 21, 12 21 C 19.400 21, 23 20.636, 23 19.889 C 23 18.246, 13.011 2, 12 2 C 11.524 2, 8.854 5.775, 6.067 10.389 M 7.229 11.713 L 3.177 18.500 7.589 18.805 C 10.015 18.972, 13.991 18.972, 16.423 18.805 L 20.847 18.500 16.932 12.003 C 14.779 8.430, 12.627 5.376, 12.149 5.216 C 11.671 5.057, 9.457 7.981, 7.229 11.713 M 11 11 C 11 12.100, 11.450 13, 12 13 C 12.550 13, 13 12.100, 13 11 C 13 9.900, 12.550 9, 12 9 C 11.450 9, 11 9.900, 11 11 M 11 16 C 11 16.550, 11.450 17, 12 17 C 12.550 17, 13 16.550, 13 16 C 13 15.450, 12.550 15, 12 15 C 11.450 15, 11 15.450, 11 16" fill="#000000" fill-rule="evenodd"/>
+      </g>
+    </g>
+  </g>
+</svg>

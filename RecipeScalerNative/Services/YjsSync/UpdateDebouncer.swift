@@ -26,15 +26,20 @@ actor UpdateDebouncer {
         }
     }
 
-    func flushNow(recipeId: String) async {
+    /// Drain pending bytes without calling `onFlush` (avoids MainActor ↔ actor deadlock when caller flushes on MainActor).
+    func drainPending(recipeId: String) -> Data? {
         tasks[recipeId]?.cancel()
         tasks[recipeId] = nil
-        await flush(recipeId: recipeId)
+        return pendingByRecipeId.removeValue(forKey: recipeId)
+    }
+
+    func flushNow(recipeId: String) async {
+        guard let payload = drainPending(recipeId: recipeId) else { return }
+        await onFlush(recipeId, payload)
     }
 
     private func flush(recipeId: String) async {
-        guard let payload = pendingByRecipeId.removeValue(forKey: recipeId) else { return }
-        tasks[recipeId] = nil
+        guard let payload = drainPending(recipeId: recipeId) else { return }
         await onFlush(recipeId, payload)
     }
 

@@ -55,9 +55,9 @@ struct AuthView: View {
                             } label: {
                                 HStack(spacing: 4) {
                                     AppSymbol.image("chevron.left")
-                                        .font(.system(size: 14))
+                                        .font(AppTypography.iconSize(AppTypography.compactSize))
                                     Text("Back")
-                                        .font(.custom(AppFonts.sans, size: 15))
+                                        .font(AppTypography.subheadline)
                                 }
                                 .foregroundColor(.secondary)
                             }
@@ -65,7 +65,7 @@ struct AuthView: View {
                             .accessibilityIdentifier(AccessibilityIdentifiers.authBackButton)
 
                             Text("Login")
-                                .font(.custom(AppFonts.display, size: 30))
+                                .font(AppTypography.display(AppTypography.authTitleSize))
                                 .padding(.top, 8)
 
                             VStack(alignment: .leading, spacing: 4) {
@@ -73,7 +73,7 @@ struct AuthView: View {
                                 Text("2. Press \"Login on another device\"")
                                 Text("3. Enter your seed phrase to login into your account")
                             }
-                            .font(.custom(AppFonts.sans, size: 16))
+                            .font(AppTypography.callout)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                         }
@@ -81,10 +81,10 @@ struct AuthView: View {
                     } else {
                         VStack(spacing: 8) {
                             Text("Welcome to\nRecipe Scaler")
-                                .font(.custom(AppFonts.display, size: 30))
+                                .font(AppTypography.display(AppTypography.authTitleSize))
 
                             Text("Create a new account\nor restore existing one")
-                                .font(.custom(AppFonts.sans, size: 16))
+                                .font(AppTypography.callout)
                                 .foregroundStyle(.secondary)
                         }
                         .multilineTextAlignment(.center)
@@ -92,7 +92,7 @@ struct AuthView: View {
 
                     if showError {
                         Text(errorMessage)
-                            .font(.custom(AppFonts.sans, size: 13))
+                            .font(AppTypography.footnote)
                             .foregroundStyle(.red)
                             .padding(12)
                             .frame(maxWidth: .infinity)
@@ -108,7 +108,7 @@ struct AuthView: View {
                         VStack(spacing: 12) {
                             ZStack(alignment: .topLeading) {
                                 TextEditor(text: $seedPhrase)
-                                    .font(.custom(AppFonts.sans, size: 16))
+                                    .font(AppTypography.callout)
                                     .frame(height: 120)
                                     .autocapitalization(.none)
                                     .autocorrectionDisabled()
@@ -121,7 +121,7 @@ struct AuthView: View {
 
                                 if seedPhrase.isEmpty {
                                     Text("Seed phrase consists of 12 words")
-                                        .font(.custom(AppFonts.sans, size: 16))
+                                        .font(AppTypography.callout)
                                         .foregroundStyle(.secondary)
                                         .padding(.leading, 17)
                                         .padding(.top, 20)
@@ -135,7 +135,7 @@ struct AuthView: View {
                                             showQRScanner = true
                                         } label: {
                                             AppSymbol.image("qrcode.viewfinder")
-                                                .font(.system(size: 20))
+                                                .font(AppTypography.iconSize(AppTypography.title3Size))
                                                 .foregroundColor(.primary)
                                         }
                                         .buttonStyle(.plain)
@@ -156,7 +156,7 @@ struct AuthView: View {
                                         ProgressView().tint(.white)
                                     } else {
                                         Text("Login")
-                                            .font(.custom(AppFonts.sansMedium, size: 18))
+                                            .font(AppTypography.sansMedium(18))
                                             .foregroundColor(.white)
                                     }
                                     Spacer()
@@ -183,7 +183,7 @@ struct AuthView: View {
                                         ProgressView().tint(.white)
                                     } else {
                                         Text("I'm new user")
-                                            .font(.custom(AppFonts.sansMedium, size: 18))
+                                            .font(AppTypography.sansMedium(18))
                                     }
                                     Spacer()
                                 }
@@ -199,7 +199,7 @@ struct AuthView: View {
                                 showSeedInput = true
                             } label: {
                                 Text("I used Recipe Scaler before")
-                                    .font(.custom(AppFonts.sansMedium, size: 18))
+                                    .font(AppTypography.sansMedium(18))
                                     .foregroundColor(.primary)
                                     .frame(maxWidth: .infinity)
                                 .frame(height: 56)

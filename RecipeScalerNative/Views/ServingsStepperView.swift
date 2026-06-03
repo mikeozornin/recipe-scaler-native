@@ -9,19 +9,19 @@ struct ServingsStepperView: View {
     var body: some View {
         HStack(spacing: 12) {
             Text(String(localized: "edit.servings"))
-                .font(.custom(AppFonts.sans, size: 17))
+                .font(AppTypography.body)
             Spacer()
             Button {
                 servings = max(1, servings - 1)
             } label: {
                 AppSymbol.image("minus")
-                    .font(.title3)
+                    .font(AppTypography.iconSize(AppTypography.title3Size))
             }
             .disabled(servings <= 1 || isLoading)
             .buttonStyle(.borderless)
 
             Text("\(servings)")
-                .font(.custom(AppFonts.sansMedium, size: 20))
+                .font(AppTypography.title3)
                 .foregroundStyle(accentColor)
                 .frame(minWidth: 32)
 
@@ -29,7 +29,7 @@ struct ServingsStepperView: View {
                 servings = min(99, servings + 1)
             } label: {
                 AppSymbol.image("plus")
-                    .font(.title3)
+                    .font(AppTypography.iconSize(AppTypography.title3Size))
             }
             .disabled(servings >= 99 || isLoading)
             .buttonStyle(.borderless)

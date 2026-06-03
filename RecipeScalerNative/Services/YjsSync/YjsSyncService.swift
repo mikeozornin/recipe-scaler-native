@@ -14,10 +14,13 @@ final class YjsSyncService: ObservableObject {
     @Published private(set) var shoppingSnapshot: ShoppingListSnapshot = .empty
     @Published private(set) var currentRecipe: RecipeData?
     @Published private(set) var connectionState: ConnectionState = .disconnected
+    /// Polling-first matches PWA `websocket-service` and avoids Starscream direct-WSS hangs on iOS.
+    @Published private(set) var connectionTransport: SyncConnectionTransport = .pollingAndWebsocket
     @Published private(set) var writeSyncStates: [String: WriteSyncState] = [:]
     @Published var syncErrorMessage: String?
     @Published private(set) var activeRecipeWasRemoved = false
     @Published private(set) var imageCacheStatus = RecipeImageCacheStatus()
+    @Published private(set) var recipeDocumentCacheStatus = RecipeDocumentCacheStatus()
 
     func acknowledgeRecipeRemoved() {
         activeRecipeWasRemoved = false
@@ -39,7 +42,14 @@ final class YjsSyncService: ObservableObject {
     private var hasRequestedCollectionLoad = false
     private var hasRequestedShoppingLoad = false
     private var collectionLoadTask: Task<Void, Never>?
+    private var recipeBatchLoadTask: Task<Void, Never>?
+    private var recipeBatchLoadInFlight = false
+    private var recipeBatchLoadCompleted = 0
+    private var recipeBatchLoadTotal = 0
+
     private var connectingWatchdogTask: Task<Void, Never>?
+    private var engineConnectTimeoutTask: Task<Void, Never>?
+    private var connectionTraceTask: Task<Void, Never>?
     private var activeRecipeId: String?
     private var disconnectTimestamp: Date?
     private var changeHandlersInstalled = false
@@ -117,6 +127,32 @@ final class YjsSyncService: ObservableObject {
         await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
     }
 
+    /// After REST image upload — patch local Y.Doc immediately (web `saveRecipeWithScaleFactor` parity).
+    func applyRecipeImageUpload(recipeId: String, result: RecipeImageUploadResult) async throws {
+        try await documentManager.updateRecipeImage(
+            recipeId: recipeId,
+            imageUrl: result.imageUrl,
+            aspectRatio: result.aspectRatio
+        )
+        await refreshCurrentRecipe(recipeId: recipeId)
+        await refreshCollectionEntries()
+        await RecipeImageService.shared.removeCache(recipeId: recipeId)
+        if connectionState == .connected {
+            await RecipeImageService.shared.prefetchFull(
+                recipeId: recipeId,
+                imageUrl: result.imageUrl,
+                allowNetwork: true
+            )
+        }
+    }
+
+    func applyRecipeImageDeletion(recipeId: String) async throws {
+        try await documentManager.clearRecipeImage(recipeId: recipeId)
+        await RecipeImageService.shared.removeCache(recipeId: recipeId)
+        await refreshCurrentRecipe(recipeId: recipeId)
+        await refreshCollectionEntries()
+    }
+
     func moveIngredient(fromIndex: Int, toIndex: Int) async throws {
         guard let recipeId = activeRecipeId else { throw RecipeEditError.documentNotLoaded }
         try await documentManager.moveIngredient(recipeId: recipeId, fromIndex: fromIndex, toIndex: toIndex)
@@ -124,8 +160,38 @@ final class YjsSyncService: ObservableObject {
     }
 
     func flushPendingEdits() async {
-        guard let recipeId = activeRecipeId else { return }
-        await updateDebouncer.flushNow(recipeId: recipeId)
+        guard activeRecipeId != nil else { return }
+        await flushPendingUpdates(for: pendingEditRecipeIds())
+    }
+
+    private func pendingEditRecipeIds() -> [String] {
+        var ids: [String] = []
+        if let recipeId = activeRecipeId {
+            ids.append(recipeId)
+        }
+        ids.append("collection")
+        return ids
+    }
+
+    private func flushPendingUpdates(for recipeIds: [String]) async {
+        for recipeId in recipeIds {
+            guard let payload = await updateDebouncer.drainPending(recipeId: recipeId) else { continue }
+            await sendDebouncedUpdate(recipeId: recipeId, update: payload)
+        }
+        for recipeId in recipeIds {
+            await documentManager.persistSnapshot(docKey: docKeyFor(recipeId: recipeId))
+        }
+    }
+
+    private func canSendLiveSync() -> Bool {
+        connectionState.isConnected && socket?.status == .connected && isSocketAuthenticated
+    }
+
+    private func reconcileStuckSyncingStates() {
+        guard !connectionState.isConnected else { return }
+        for (recipeId, state) in writeSyncStates where state == .syncing {
+            writeSyncStates[recipeId] = .queued
+        }
     }
 
     // MARK: - Description editor (006)
@@ -414,6 +480,19 @@ final class YjsSyncService: ObservableObject {
         await installChangeHandlersIfNeeded()
 
         let docKey = docKeyFor(recipeId: recipeId)
+        #if DEBUG
+        let snapshotBytes: Int = (try? await store.loadSnapshot(docKey: docKey))?.state.count ?? 0
+        AgentSyncDebugLog.write(
+            hypothesisId: "A",
+            location: "YjsSyncService.swift:loadRecipe",
+            message: "snapshot_before_open",
+            data: [
+                "recipeId": recipeId,
+                "snapshotBytes": String(snapshotBytes),
+                "connected": String(connectionState == .connected),
+            ]
+        )
+        #endif
         _ = try? await documentManager.getOrCreateDoc(key: docKey)
         await refreshCurrentRecipe(recipeId: recipeId)
 
@@ -437,6 +516,19 @@ final class YjsSyncService: ObservableObject {
         logger.info("Emitted load_document for recipe \(recipeId)")
     }
 
+    /// Full local teardown on logout (web: IndexedDB + realtime destroy).
+    func clearSessionForLogout() async {
+        stop()
+        collectionEntries = []
+        writeSyncStates = [:]
+        imageCacheStatus = RecipeImageCacheStatus()
+        await documentManager.resetSession()
+        try? await store.deleteAll()
+        try? await store.deleteAllOfflineQueue()
+    }
+
+    var currentDeviceId: String { deviceId }
+
     /// Stop synchronization and clean up.
     func stop() {
         logger.info("Stopping YjsSync")
@@ -452,7 +544,8 @@ final class YjsSyncService: ObservableObject {
         )
         // #endregion
         teardownSocket()
-        connectionState = .disconnected
+        setConnectionState(.disconnected, reason: "stop")
+        connectionTransport = .pollingAndWebsocket
         userId = nil
         activeRecipeId = nil
         currentRecipe = nil
@@ -466,6 +559,10 @@ final class YjsSyncService: ObservableObject {
         collectionLoadTask = nil
         connectingWatchdogTask?.cancel()
         connectingWatchdogTask = nil
+        engineConnectTimeoutTask?.cancel()
+        engineConnectTimeoutTask = nil
+        connectionTraceTask?.cancel()
+        connectionTraceTask = nil
         socket?.disconnect()
         socket = nil
         manager = nil
@@ -488,6 +585,7 @@ final class YjsSyncService: ObservableObject {
                 "sessionId": sessionId.uuidString,
                 "userId": userId,
                 "baseURL": Config.baseURL,
+                "transportMode": connectionTransport.rawValue,
             ]
         )
         // #endregion
@@ -500,17 +598,19 @@ final class YjsSyncService: ObservableObject {
         collectionLoadTask?.cancel()
         collectionLoadTask = nil
         let serverURL = URL(string: Config.baseURL)!
-        // Web client Yjs uses websocket-only; polling long-poll drops on iOS (-1005) and poisons reconnect.
-        manager = SocketManager(socketURL: serverURL, config: [
+        var socketConfig: SocketIOClientConfiguration = [
             .log(false),
             .compress,
-            .forceWebsockets(true),
             .reconnects(true),
             .reconnectAttempts(-1),
             .reconnectWait(1000),
             .reconnectWaitMax(5000),
             .connectParams(["userId": userId, "deviceId": deviceId]),
-        ])
+        ]
+        if connectionTransport == .websocketOnly {
+            socketConfig.insert(.forceWebsockets(true))
+        }
+        manager = SocketManager(socketURL: serverURL, config: socketConfig)
 
         let client = manager!.defaultSocket
         self.socket = client
@@ -531,7 +631,7 @@ final class YjsSyncService: ObservableObject {
                     ]
                 )
                 // #endregion
-                self.connectionState = .connecting
+                self.setConnectionState(.connecting, reason: "socket.connect")
                 self.isSocketAuthenticated = false
                 self.scheduleCollectionLoadAfterAuth()
                 self.scheduleConnectingWatchdog(sessionId: sessionId)
@@ -582,7 +682,7 @@ final class YjsSyncService: ObservableObject {
                     data: ["sessionId": sessionId.uuidString, "detail": detail]
                 )
                 // #endregion
-                self.connectionState = .error(detail)
+                self.setConnectionState(.error(detail), reason: "auth_error")
             }
         }
 
@@ -618,8 +718,13 @@ final class YjsSyncService: ObservableObject {
                 self.collectionLoadTask?.cancel()
                 self.collectionLoadTask = nil
                 self.disconnectTimestamp = Date()
+                self.recipeBatchLoadTask?.cancel()
+                self.recipeBatchLoadTask = nil
+                self.recipeBatchLoadInFlight = false
+                self.recipeBatchLoadCompleted = 0
+                self.recipeBatchLoadTotal = 0
                 // Auto-reconnect is enabled — show reconnecting, not "Offline".
-                self.connectionState = .reconnecting
+                self.setConnectionState(.reconnecting, reason: "socket.disconnect")
             }
         }
 
@@ -629,7 +734,7 @@ final class YjsSyncService: ObservableObject {
                 self.isSocketAuthenticated = false
                 self.hasRequestedCollectionLoad = false
                 self.hasRequestedShoppingLoad = false
-                self.connectionState = .reconnecting
+                self.setConnectionState(.reconnecting, reason: "reconnect_attempt")
             }
         }
 
@@ -638,7 +743,7 @@ final class YjsSyncService: ObservableObject {
             Task { @MainActor in
                 guard let self, self.isCurrentSocketSession(sessionId) else { return }
                 self.logger.info("Socket.IO reconnected (awaiting connect for auth)")
-                self.connectionState = .connecting
+                self.setConnectionState(.connecting, reason: "socket.reconnect")
                 self.isSocketAuthenticated = false
                 self.hasRequestedCollectionLoad = false
                 self.hasRequestedShoppingLoad = false
@@ -677,9 +782,9 @@ final class YjsSyncService: ObservableObject {
                 // #endregion
                 if self.isRecoverableSocketError(msg) {
                     self.isSocketAuthenticated = false
-                    self.connectionState = .reconnecting
+                    self.setConnectionState(.reconnecting, reason: "socket.error_recoverable")
                 } else {
-                    self.connectionState = .error(msg)
+                    self.setConnectionState(.error(msg), reason: "socket.error_fatal")
                 }
             }
         }
@@ -687,11 +792,76 @@ final class YjsSyncService: ObservableObject {
         // Register sync protocol event handlers
         eventHandler.registerHandlers(on: client)
         client.connect()
-        connectionState = .connecting
+        setConnectionState(.connecting, reason: "connect_socket_called")
+        scheduleCollectionLoadAfterAuth()
+        scheduleEngineConnectTimeout(sessionId: sessionId)
+        scheduleConnectingWatchdog(sessionId: sessionId)
     }
 
     private func isCurrentSocketSession(_ sessionId: UUID) -> Bool {
         socketSessionId == sessionId
+    }
+
+    private func setConnectionState(_ state: ConnectionState, reason: String) {
+        let previous = connectionState
+        connectionState = state
+        if !state.isConnected {
+            reconcileStuckSyncingStates()
+        }
+        var payload: [String: String] = [
+            "reason": reason,
+            "from": String(describing: previous),
+            "to": String(describing: state),
+            "socketStatus": socket.map { String(describing: $0.status) } ?? "nil",
+            "isSocketAuthenticated": String(isSocketAuthenticated),
+            "sessionId": socketSessionId.uuidString,
+        ]
+        if let userId { payload["userId"] = userId }
+        AgentSyncDebugLog.sync(
+            location: "YjsSyncService.setConnectionState",
+            message: "state_change",
+            data: payload
+        )
+        updateConnectionTrace(for: state)
+    }
+
+    private func updateConnectionTrace(for state: ConnectionState) {
+        connectionTraceTask?.cancel()
+        connectionTraceTask = nil
+
+        switch state {
+        case .connecting, .reconnecting:
+            break
+        default:
+            return
+        }
+
+        let traceSession = socketSessionId
+        connectionTraceTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                await MainActor.run {
+                    guard let self, self.socketSessionId == traceSession else { return }
+                    switch self.connectionState {
+                    case .connecting, .reconnecting:
+                        break
+                    default:
+                        return
+                    }
+                    AgentSyncDebugLog.sync(
+                        location: "YjsSyncService.connectionTrace",
+                        message: "heartbeat",
+                        data: [
+                            "connectionState": String(describing: self.connectionState),
+                            "socketStatus": self.socket.map { String(describing: $0.status) } ?? "nil",
+                            "isSocketAuthenticated": String(self.isSocketAuthenticated),
+                            "hasRequestedCollectionLoad": String(self.hasRequestedCollectionLoad),
+                            "transportMode": self.connectionTransport.rawValue,
+                        ]
+                    )
+                }
+            }
+        }
     }
 
     private func logSyncConnection(
@@ -700,12 +870,9 @@ final class YjsSyncService: ObservableObject {
         message: String,
         data: [String: String]
     ) {
-        AgentSyncDebugLog.write(
-            hypothesisId: hypothesisId,
-            location: location,
-            message: message,
-            data: data
-        )
+        var enriched = data
+        enriched["hypothesisId"] = hypothesisId
+        AgentSyncDebugLog.sync(location: location, message: message, data: enriched)
     }
 
     private func emitAuth() {
@@ -763,7 +930,18 @@ final class YjsSyncService: ObservableObject {
         return true
     }
 
-    /// Escapes prolonged `.connecting` when auth emit/ack never completes.
+    /// Engine never reaches `.connected` (WS handshake stuck on some networks).
+    private func scheduleEngineConnectTimeout(sessionId: UUID) {
+        engineConnectTimeoutTask?.cancel()
+        engineConnectTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 8_000_000_000)
+            await MainActor.run {
+                self?.handleStuckEngineConnect(sessionId: sessionId, trigger: "engine_connect_timeout")
+            }
+        }
+    }
+
+    /// Auth emit/ack never completes after engine is up.
     private func scheduleConnectingWatchdog(sessionId: UUID) {
         connectingWatchdogTask?.cancel()
         connectingWatchdogTask = Task { [weak self] in
@@ -771,20 +949,57 @@ final class YjsSyncService: ObservableObject {
             await MainActor.run {
                 guard let self, self.isCurrentSocketSession(sessionId) else { return }
                 guard !self.isSocketAuthenticated else { return }
-                guard case .connecting = self.connectionState else { return }
-                self.logger.warning("Connecting watchdog fired — forcing auth retry")
-                // #region agent log
-                self.logSyncConnection(
-                    hypothesisId: "G",
-                    location: "YjsSyncService.swift:connectingWatchdog",
-                    message: "watchdog_fired",
-                    data: ["socketStatus": self.socket.map { String(describing: $0.status) } ?? "nil"]
-                )
-                // #endregion
-                self.scheduleCollectionLoadAfterAuth()
-                self.emitAuth()
+                switch self.connectionState {
+                case .connecting, .reconnecting:
+                    break
+                default:
+                    return
+                }
+                if self.socket?.status == .connected {
+                    self.logger.warning("Connecting watchdog — auth retry")
+                    AgentSyncDebugLog.sync(
+                        location: "YjsSyncService.connectingWatchdog",
+                        message: "auth_watchdog",
+                        data: ["socketStatus": "connected"]
+                    )
+                    self.scheduleCollectionLoadAfterAuth()
+                    self.emitAuth()
+                } else {
+                    self.handleStuckEngineConnect(sessionId: sessionId, trigger: "connecting_watchdog")
+                }
             }
         }
+    }
+
+    private func handleStuckEngineConnect(sessionId: UUID, trigger: String) {
+        guard isCurrentSocketSession(sessionId) else { return }
+        guard !isSocketAuthenticated else { return }
+        guard socket?.status != .connected else {
+            scheduleCollectionLoadAfterAuth()
+            emitAuth()
+            return
+        }
+
+        AgentSyncDebugLog.sync(
+            location: "YjsSyncService.handleStuckEngineConnect",
+            message: "engine_connect_stuck",
+            data: [
+                "trigger": trigger,
+                "transportMode": connectionTransport.rawValue,
+                "socketStatus": socket.map { String(describing: $0.status) } ?? "nil",
+            ]
+        )
+
+        if connectionTransport == .websocketOnly {
+            logger.warning("Engine connect timeout — falling back to polling+websocket")
+            connectionTransport = .pollingAndWebsocket
+            connectSocket()
+            return
+        }
+
+        logger.warning("Engine connect still stuck after polling fallback — reconnecting")
+        setConnectionState(.reconnecting, reason: trigger)
+        socket?.disconnect()
     }
 
     /// Transient transport failures while Socket.IO auto-reconnects — do not surface as hard sync errors.
@@ -810,7 +1025,7 @@ final class YjsSyncService: ObservableObject {
             await MainActor.run {
                 guard let self else { return }
                 if self.isSocketAuthenticated { return }
-                guard self.socket != nil else { return }
+                guard self.socket?.status == .connected else { return }
                 self.logger.warning("Socket auth ack timeout; loading collection after delay")
                 // #region agent log
                 self.logSyncConnection(
@@ -828,13 +1043,15 @@ final class YjsSyncService: ObservableObject {
     private func markAuthenticatedAndLoadCollection() {
         connectingWatchdogTask?.cancel()
         connectingWatchdogTask = nil
+        engineConnectTimeoutTask?.cancel()
+        engineConnectTimeoutTask = nil
         isSocketAuthenticated = true
-        connectionState = .connected
+        setConnectionState(.connected, reason: "authenticated")
         // #region agent log
         logSyncConnection(
             hypothesisId: "C",
             location: "YjsSyncService.swift:markAuthenticatedAndLoadCollection",
-            message: "connection_state_connected",
+            message: "collection_load_begin",
             data: ["sessionId": socketSessionId.uuidString]
         )
         // #endregion
@@ -925,14 +1142,28 @@ final class YjsSyncService: ObservableObject {
         guard let userId else { return }
         let docKey = docKeyFor(recipeId: recipeId)
 
-        if socket?.status == .connected, isSocketAuthenticated {
+        if canSendLiveSync() {
             writeSyncStates[recipeId] = .syncing
             await emitSyncRequest(recipeId: recipeId, update: update, docKey: docKey)
         } else {
             writeSyncStates[recipeId] = .queued
             try? await offlineQueue.enqueue(docKey: docKey, recipeId: recipeId, yjsUpdate: update)
+            await documentManager.persistSnapshot(docKey: docKey)
             logger.info("Queued offline update for \(recipeId) (\(update.count) bytes)")
         }
+        #if DEBUG
+        AgentSyncDebugLog.write(
+            hypothesisId: "H",
+            location: "YjsSyncService.swift:sendDebouncedUpdate",
+            message: "update_dispatched",
+            data: [
+                "recipeId": recipeId,
+                "bytes": String(update.count),
+                "live": String(canSendLiveSync()),
+                "state": String(describing: writeSyncStates[recipeId] ?? .idle),
+            ]
+        )
+        #endif
     }
 
     private func handleLocalShoppingUpdate(update: Data) async {
@@ -1097,6 +1328,7 @@ final class YjsSyncService: ObservableObject {
 
     private func handleDocumentsLoaded(documents: [(String, Data, String?)]) async {
         var shouldRefreshCollection = false
+        var loadedRecipeIds: [String] = []
         for (recipeId, stateData, lastSyncedAt) in documents {
             let docKey = docKeyFor(recipeId: recipeId)
             do {
@@ -1115,14 +1347,92 @@ final class YjsSyncService: ObservableObject {
                 }
                 if recipeId == "collection" {
                     shouldRefreshCollection = true
+                } else if recipeId != ShoppingListConstants.offlineRecipeId {
+                    loadedRecipeIds.append(recipeId)
                 }
             } catch {
                 logger.error("Failed to apply batch doc \(docKey): \(error)")
             }
         }
+        #if DEBUG
+        AgentSyncDebugLog.write(
+            hypothesisId: "A",
+            location: "YjsSyncService.swift:handleDocumentsLoaded",
+            message: "batch_applied",
+            data: [
+                "documentCount": String(documents.count),
+                "recipeCount": String(loadedRecipeIds.count),
+                "activeRecipeId": activeRecipeId ?? "nil",
+            ]
+        )
+        #endif
         if shouldRefreshCollection {
             await refreshCollectionEntries()
         }
+        if !loadedRecipeIds.isEmpty {
+            recipeBatchLoadCompleted += loadedRecipeIds.count
+            if recipeBatchLoadCompleted >= recipeBatchLoadTotal {
+                recipeBatchLoadInFlight = false
+            }
+            await refreshRecipeDocumentCacheStatus()
+        }
+        if let active = activeRecipeId, loadedRecipeIds.contains(active) {
+            await refreshCurrentRecipe(recipeId: active)
+        }
+    }
+
+    /// Batch-fetch recipe Y.Docs missing from SQLite (web: `load_documents` after collection sync).
+    private func scheduleRecipeDocumentsBatchLoad(recipeIds: [String]) {
+        guard connectionState == .connected, isSocketAuthenticated else { return }
+        guard socket?.status == .connected else { return }
+        recipeBatchLoadTask?.cancel()
+        recipeBatchLoadTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled, let self else { return }
+            await self.emitRecipeDocumentsBatchLoad(recipeIds: recipeIds)
+        }
+    }
+
+    private func emitRecipeDocumentsBatchLoad(recipeIds: [String]) async {
+        guard connectionState == .connected, isSocketAuthenticated else { return }
+        guard socket?.status == .connected else { return }
+        let missing = await recipeIdsMissingLocalSnapshots(recipeIds)
+        guard !missing.isEmpty else {
+            recipeBatchLoadInFlight = false
+            recipeBatchLoadTotal = 0
+            recipeBatchLoadCompleted = 0
+            await refreshRecipeDocumentCacheStatus()
+            return
+        }
+        recipeBatchLoadInFlight = true
+        recipeBatchLoadTotal = missing.count
+        recipeBatchLoadCompleted = 0
+        await refreshRecipeDocumentCacheStatus()
+        socket?.emit("load_documents", ["recipeIds": missing])
+        logger.info("Emitted load_documents for \(missing.count) recipes")
+        #if DEBUG
+        AgentSyncDebugLog.write(
+            hypothesisId: "A",
+            location: "YjsSyncService.swift:emitRecipeDocumentsBatchLoad",
+            message: "load_documents_emitted",
+            data: [
+                "requested": String(missing.count),
+                "collectionSize": String(recipeIds.count),
+            ]
+        )
+        #endif
+    }
+
+    private func recipeIdsMissingLocalSnapshots(_ recipeIds: [String]) async -> [String] {
+        guard let userId else { return [] }
+        var missing: [String] = []
+        for recipeId in recipeIds {
+            let key = "\(userId):recipe:\(recipeId)"
+            if (try? await store.loadSnapshot(docKey: key)) == nil {
+                missing.append(recipeId)
+            }
+        }
+        return missing
     }
 
     private func handleRecipeUpdated(recipeId: String, updateData: Data) async {
@@ -1178,6 +1488,42 @@ final class YjsSyncService: ObservableObject {
         } catch {
             logger.error("Failed to read shopping list: \(error)")
         }
+    }
+
+    // MARK: - Recipe document cache
+
+    /// Re-fetch recipe Y.Docs missing from SQLite when online.
+    func retryRecipeDocumentsBatchLoad() {
+        scheduleRecipeDocumentsBatchLoad(recipeIds: collectionEntries.map(\.id))
+    }
+
+    func refreshRecipeDocumentCacheStatus() async {
+        guard let userId else {
+            recipeDocumentCacheStatus = RecipeDocumentCacheStatus()
+            return
+        }
+        let entries = collectionEntries
+        var cached = 0
+        var pending: [RecipeDocumentCachePendingEntry] = []
+        for entry in entries {
+            let key = "\(userId):recipe:\(entry.id)"
+            if (try? await store.loadSnapshot(docKey: key)) != nil {
+                cached += 1
+            } else {
+                pending.append(RecipeDocumentCachePendingEntry(id: entry.id, name: entry.name))
+            }
+        }
+        let downloadTotal = recipeBatchLoadInFlight
+            ? max(recipeBatchLoadTotal, pending.count)
+            : pending.count
+        recipeDocumentCacheStatus = RecipeDocumentCacheStatus(
+            totalRecipes: entries.count,
+            cachedRecipes: cached,
+            isDownloading: recipeBatchLoadInFlight,
+            downloadCompleted: recipeBatchLoadCompleted,
+            downloadTotal: downloadTotal,
+            pendingEntries: pending
+        )
     }
 
     // MARK: - Recipe image prefetch
@@ -1248,9 +1594,26 @@ final class YjsSyncService: ObservableObject {
             collectionEntries = filtered
             syncActiveRecipeFromCollection()
             scheduleImagePrefetch(for: filtered)
+            scheduleRecipeDocumentsBatchLoad(recipeIds: filtered.map(\.id))
             await refreshImageCacheStatus()
+            await refreshRecipeDocumentCacheStatus()
             logger.info("Collection refreshed: \(filtered.count) active entries (total \(entries.count))")
             #if DEBUG
+            if let userId {
+                let keys = (try? await store.allSnapshotKeys()) ?? []
+                let recipeSnapshotCount = keys.filter { $0.hasSuffix(":recipe:") == false && $0.contains(":recipe:") }.count
+                AgentSyncDebugLog.write(
+                    hypothesisId: "A",
+                    location: "YjsSyncService.swift:refreshCollectionEntries",
+                    message: "local_snapshot_inventory",
+                    data: [
+                        "activeEntries": String(filtered.count),
+                        "recipeSnapshots": String(recipeSnapshotCount),
+                        "totalSnapshots": String(keys.count),
+                        "connected": String(connectionState == .connected),
+                    ]
+                )
+            }
             if let userId, RecipeReadDiagnostics.launchRecipeId() != nil {
                 await RecipeReadDiagnostics.runAfterCollectionLoad(
                     documentManager: documentManager,
@@ -1281,6 +1644,8 @@ final class YjsSyncService: ObservableObject {
         guard let userId else { return }
         await installChangeHandlersIfNeeded()
         let collectionKey = "\(userId):collection"
+
+        await documentManager.applyOfflineQueueToLocalDocs()
 
         if (try? await documentManager.getOrCreateDoc(key: collectionKey)) != nil {
             await refreshCollectionEntries()
@@ -1394,7 +1759,7 @@ final class YjsSyncService: ObservableObject {
         }
 
         if message.contains("Ownership validation failed") {
-            connectionState = .error(message)
+            setConnectionState(.error(message), reason: "sync_error_ownership")
             return
         }
 

@@ -13,14 +13,15 @@ enum RecipeDescriptionStyle {
     static let linkColor = Color(red: 0, green: 114 / 255, blue: 245 / 255)
     static let linkUIColor = UIColor(red: 0, green: 114 / 255, blue: 245 / 255, alpha: 1)
 
-    static let bodyFontSize: CGFloat = 17
+    /// iOS Body — same as recipe list title and ingredient rows.
+    static let bodyFontSize: CGFloat = AppTypography.bodySize
     static var bodyLineSpacing: CGFloat { bodyFontSize * 0.4 }
 
     static func bodyFont() -> UIFont {
-        UIFont(name: AppFonts.sans, size: bodyFontSize) ?? .systemFont(ofSize: bodyFontSize)
+        AppTypography.uiFont(AppFonts.sans, size: bodyFontSize)
     }
 
     static func mediumFont() -> UIFont {
-        UIFont(name: AppFonts.sansMedium, size: bodyFontSize) ?? .boldSystemFont(ofSize: bodyFontSize)
+        AppTypography.uiFont(AppFonts.sansMedium, size: bodyFontSize, fallbackFamily: AppFonts.sansMedium)
     }
 }

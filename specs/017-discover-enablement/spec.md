@@ -1,0 +1,73 @@
+# Спецификация: включение Discover и публичные профили
+
+**Ветка**: `017-discover-enablement`  
+**Дата**: 2026-06-03  
+**Статус**: Draft (перенос недоделок из 007 + 011)  
+**Зависимости**: `007-app-shell-navigation`, `011-discover-public`  
+**Эталон**: `/discover` routes, `PublicProfileHeader`, `bottom-nav.tsx`
+
+## Контекст
+
+REST-слой Discover (`DiscoverAPI`) и экраны (`DiscoverRootView`, `DiscoverCollectionView`, `DiscoverRecipeView`) уже написаны в рамках 011, но:
+
+1. Вкладка Discover **закомментирована** в `AppShellView` (`AppShellView.swift:64`) — экраны недостижимы (нарушает US1 в 007: 5 вкладок).
+2. Экран публичного профиля — заглушка `Text("… open on web for full parity")` (US3 в 011 не закрыт).
+3. Превью-изображения curated-рецептов не загружаются в списках.
+
+## Цель
+
+Сделать вкладку Discover доступной и довести публичный профиль до read-only паритета с мобильным вебом.
+
+## Пользовательские сценарии
+
+### US1 — Вкладка Discover включена (P1)
+
+**Когда** пользователь авторизован, **тогда** в tab bar 5 вкладок (Discover первая), переключение без потери sync, reset по повторному tap (FR-NAV-002 в 007).
+
+### US2 — Публичный профиль (P1)
+
+**Когда** открыт профиль `/@username`, **тогда** grid рецептов автора, поиск по списку (правила `~/.claude/rules/search-behavior.md`), индикатор share-mode (`one_by_one` | `all` | `with_images_and_steps`) — всё read-only для гостя; CTA «Скопировать к себе» → clone (как US4 в 011).
+
+### US3 — Превью-картинки curated (P2)
+
+**Когда** показан список collections/recipes, **тогда** превью грузятся через `DiscoverAPI.discoverImageURL` с кэшированием (URLCache), офлайн — плейсхолдер.
+
+### US4 — VoiceOver и reset (P2)
+
+**Тогда** VoiceOver объявляет вкладку Discover и selected state; double-tap с вложенного экрана → корень Discover.
+
+## Требования
+
+### FR-017-001 — Включение вкладки
+
+Раскомментировать/восстановить `DiscoverRootView` в `AppShellView`, вернуть `AppTab.discover` в `TabView`, проверить `discoverPath` reset.
+
+### FR-017-002 — Public profile screen
+
+Заменить заглушку `DiscoverRoute.profile` на полноценный экран: `GET` публичного профиля (путь — в `contracts/discover-api.md`), grid + поиск + clone.
+
+### FR-017-003 — REST only, офлайн
+
+Без записи в пользовательский Y.Doc; кэш в URLCache; офлайн — последний кэш + сообщение.
+
+### FR-017-004 — i18n
+
+Все строки Discover/profile — локализованные ключи ru/en (см. 022), не литералы.
+
+## Вне scope
+
+- Редактирование своего public profile (013/020)
+- PDF cookbook публичного профиля
+- Universal links (опционально позже, см. 012)
+
+## Критерии успеха
+
+- **SC-001**: Вкладка Discover видна и переключается без потери sync.
+- **SC-002**: Открытие `/@username` показывает grid рецептов автора (не заглушку).
+- **SC-003**: Clone curated/public рецепта → появляется в «Мои рецепты» ≤ 10 с.
+- **SC-004**: VoiceOver объявляет все 5 вкладок.
+
+## Артефакты
+
+- `contracts/discover-api.md` (профиль + endpoints)
+- `quickstart.md` — сравнение с веб 390px

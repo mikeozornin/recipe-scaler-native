@@ -2,9 +2,26 @@
 
 **Ветка**: `006-description-editor`  
 **Дата**: 2026-06-02  
-**Статус**: Draft  
+**Статус**: 🟡 Частично реализовано (аудит 2026-06-03) — базовый rich-text MVP. Остаток → [018-description-editor-richtext](../018-description-editor-richtext/spec.md)  
 **Зависимости**: `004-description-read-only` (чтение v3), `002-native-editing` (sync write)  
 **Эталон веба**: `recipe-scaler-web/recipe-scaler` — Tiptap в `recipe-detail`, `Y.XmlFragment('description')`
+
+## Аудит реализации (2026-06-03)
+
+Реализовано: `DescriptionEditorView` + `DescriptionEditorWebView` (WKWebView) + `DescriptionEditorBridge` + bundle `Resources/DescriptionEditor/` (`description-editor.html`, `yjs.bundle.js`, `description-editor-bridge.js`). Редактор — `contentEditable` с мостом в `Y.XmlFragment` через yjs.bundle (US1, US4 offline-очередь, sync через `applyDescriptionEditorUpdate`).
+
+| Требование | Статус |
+|------------|--------|
+| US1 открыть редактор | ✅ |
+| US2 bold/italic/heading/список | 🟡 есть bold/italic/H1/bullet; **нет ссылок** |
+| US2 sync на веб | ✅ через мост + debounce |
+| US3 ingredient / timer nodes (вставка) | ❌ только CSS-рендер, вставка не реализована |
+| US4 офлайн | ✅ |
+| US5 remote edit (`applyRemoteUpdate`) | ✅ подключено |
+| FR-DESC-EDIT-005 запуск таймера из описания | ❌ |
+| Настоящий Tiptap/ProseMirror | ❌ это `contentEditable`, не Tiptap |
+
+Не сделано → перенесено в **018-description-editor-richtext**: ссылки, вставка ingredient/timer-нод, запуск таймеров из описания, проверка XML-паритета с Tiptap.
 
 ## Контекст
 

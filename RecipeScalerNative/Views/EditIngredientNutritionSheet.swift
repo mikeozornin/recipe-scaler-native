@@ -36,12 +36,12 @@ struct EditIngredientNutritionSheet: View {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(ingredient.name)
-                        .font(.custom(AppFonts.sans, size: 17))
+                        .font(AppTypography.body)
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     Text(String(localized: "nutrition.per-100g-note"))
-                        .font(.custom(AppFonts.sans, size: 13))
+                        .font(AppTypography.footnote)
                         .foregroundStyle(.tertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -65,24 +65,29 @@ struct EditIngredientNutritionSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(String(localized: "edit.cancel")) { dismiss() }
+                        .appToolbarTextButton()
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "edit.done")) { saveAndDismiss() }
+                        .appToolbarConfirmButton()
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Button { focusPrevious() } label: {
-                        AppSymbol.image("chevron.up")
+                        AppToolbarStyle.icon("chevron.up")
                     }
+                    .appToolbarIconButton()
                     .disabled(!canFocusPrevious)
 
                     Button { focusNext() } label: {
-                        AppSymbol.image("chevron.down")
+                        AppToolbarStyle.icon("chevron.down")
                     }
+                    .appToolbarIconButton()
                     .disabled(!canFocusNext)
 
                     Spacer()
 
                     Button(String(localized: "edit.done")) { focusedField = nil }
+                        .appToolbarTextButton()
                 }
             }
         }
@@ -130,7 +135,7 @@ struct EditIngredientNutritionSheet: View {
             TextField("0", text: text)
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)
-                .font(.custom(AppFonts.mono, size: 17))
+                .font(AppTypography.mono(AppTypography.bodySize))
                 .focused($focusedField, equals: focus)
         }
     }

@@ -2,9 +2,26 @@
 
 **Ветка**: `013-account-settings`  
 **Дата**: 2026-06-02  
-**Статус**: Draft  
+**Статус**: 🟡 Реализовано большинство (аудит 2026-06-03). Остаток → [020-account-telegram-export](../020-account-telegram-export/spec.md)  
 **Зависимости**: `007-app-shell-navigation`, auth Phase 1  
 **Эталон**: `/account` page, PRD § Assistant (settings subset), Telegram, export
+
+## Аудит реализации (2026-06-03)
+
+Реализовано: `AccountView` + `AccountSettingsViewModel` + `AccountAPI`, `SeedQRCodeView`, `AppLanguagePreference`, `AppThemePreference`.
+
+| Требование | Статус |
+|------------|--------|
+| US1 профиль (name, avatar) | ✅ |
+| US2 username / public profile / share-mode / allow-downloads | ✅ |
+| US3 seed phrase + биометрия + QR | ✅ |
+| US4 язык + тема | ✅ |
+| US5 nutrition toggle | ✅ |
+| US6 export / import файлов | ❌ заглушка `account.data.coming-soon` |
+| US7 Telegram connect/disconnect | ❌ (есть только `telegramUsername` в DTO) |
+| US8 logout (Keychain/SQLite/queue) | ✅ |
+
+Не сделано → **020-account-telegram-export**: Telegram connect/status/disconnect и export/import файлов (v1.3 zip/json, общий pipeline с импортом 010).
 
 ## Контекст
 

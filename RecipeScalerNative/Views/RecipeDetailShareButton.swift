@@ -16,8 +16,9 @@ struct RecipeDetailShareButton: View {
             shareURL = PublicURLBuilder.recipeShareURL(recipeId: recipeId)
             showShare = shareURL != nil
         } label: {
-            AppSymbol.image("square.and.arrow.up")
+            AppToolbarStyle.iconOnly(systemName: "square.and.arrow.up")
         }
+        .appToolbarIconButton()
         .accessibilityLabel(String(localized: "recipe.share"))
         #if DEBUG
         .onAppear {

@@ -737,6 +737,27 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertEqual(recipe?.ingredients.count, 0)
     }
 
+    func testUpdateRecipeNamePersistsInDocAndCollection() async throws {
+        let userId = "user-title-save"
+        let store = YDocStore(inMemory: true)
+        let manager = DocumentManager(store: store)
+        manager.setUserId(userId)
+
+        let recipeId = try await manager.createRecipe(name: "Before rename")
+        try await manager.updateRecipeName(recipeId: recipeId, name: "After rename")
+
+        let recipe = try await manager.readRecipeData(recipeId: recipeId, userId: userId)
+        XCTAssertEqual(recipe?.name, "After rename")
+
+        let entries = try await manager.readCollectionEntries()
+        let entry = try XCTUnwrap(entries.first { $0.id == recipeId })
+        XCTAssertEqual(entry.name, "After rename")
+
+        let snapshot = try await store.loadSnapshot(docKey: "\(userId):recipe:\(recipeId)")
+        XCTAssertNotNil(snapshot)
+        XCTAssertFalse(snapshot?.state.isEmpty ?? true)
+    }
+
     func testAppTabBarSymbolsExistInUIKit() {
         for tab in AppTab.allCases {
             XCTAssertNotNil(

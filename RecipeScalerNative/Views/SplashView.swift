@@ -27,7 +27,7 @@ struct SplashView: View {
                 }
 
                 Text("Recipe Scaler")
-                    .font(.custom(AppFonts.display, size: 24))
+                    .font(AppTypography.display(AppTypography.splashTitleSize))
             }
         }
         .accessibilityIdentifier(AccessibilityIdentifiers.splashView)

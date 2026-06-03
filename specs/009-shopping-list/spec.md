@@ -2,9 +2,26 @@
 
 **Ветка**: `009-shopping-list`  
 **Дата**: 2026-06-02  
-**Статус**: Draft  
+**Статус**: 🟢 Реализовано почти полностью (аудит 2026-06-03)  
 **Зависимости**: `007-app-shell-navigation`, `002` (sync patterns)  
 **Эталон**: `shopping-list-page.tsx`, `use-shopping-list-sync.ts`, `@shared/shopping-list/types`
+
+## Аудит реализации (2026-06-03)
+
+Реализовано: `ShoppingListView`, `ShoppingListData`, `DocumentManager+ShoppingList`, `ShoppingListFromRecipe`, sync через `shopping_list_updated` / `documentKind: shoppingList` в `YjsSyncService`, offline-очередь.
+
+| Требование | Статус |
+|------------|--------|
+| US1 просмотр + sort recipe/alphabet | ✅ |
+| US2 check/uncheck + sync | ✅ |
+| US3 add from recipe (все ингредиенты) | ✅ через `RecipeDetailActionsMenu` |
+| US3 выбор отдельных ингредиентов | ❌ `selectedIngredientIds` всегда nil (только «все») |
+| US4 ручной пункт | ✅ |
+| US5 swipe-delete | ✅ |
+| US6 офлайн | ✅ |
+| FR-SHOP-003 share placeholder | share не показан (логика → 012/019) |
+
+Мелкий остаток (выбор отдельных ингредиентов) — низкий приоритет; при желании добавить в 019. Шаринг списка покупок — в **019-sharing-shopping**.
 
 ## Контекст
 

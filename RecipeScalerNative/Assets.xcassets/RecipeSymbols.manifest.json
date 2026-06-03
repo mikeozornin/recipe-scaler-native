@@ -1,0 +1,258 @@
+[
+  {
+    "web": "Activity",
+    "asset": "rs.activity"
+  },
+  {
+    "web": "AiChatFace",
+    "asset": "rs.aiChatFace"
+  },
+  {
+    "web": "AlarmClock",
+    "asset": "rs.alarmClock"
+  },
+  {
+    "web": "AlertCircle",
+    "asset": "rs.alertCircle"
+  },
+  {
+    "web": "AlertTriangle",
+    "asset": "rs.alertTriangle"
+  },
+  {
+    "web": "ArrowDownFromLine",
+    "asset": "rs.arrowDownFromLine"
+  },
+  {
+    "web": "ArrowLeft",
+    "asset": "rs.arrowLeft"
+  },
+  {
+    "web": "Bell",
+    "asset": "rs.bell"
+  },
+  {
+    "web": "Bold",
+    "asset": "rs.bold"
+  },
+  {
+    "web": "BookOpen",
+    "asset": "rs.bookOpen"
+  },
+  {
+    "web": "Bowl",
+    "asset": "rs.bowl"
+  },
+  {
+    "web": "Check",
+    "asset": "rs.check"
+  },
+  {
+    "web": "CheckOffsetCircle",
+    "asset": "rs.checkOffsetCircle"
+  },
+  {
+    "web": "ChevronDown",
+    "asset": "rs.chevronDown"
+  },
+  {
+    "web": "ChevronRight",
+    "asset": "rs.chevronRight"
+  },
+  {
+    "web": "ChevronUp",
+    "asset": "rs.chevronUp"
+  },
+  {
+    "web": "Circle",
+    "asset": "rs.circle"
+  },
+  {
+    "web": "ClipboardText",
+    "asset": "rs.clipboardText"
+  },
+  {
+    "web": "ClockCcw",
+    "asset": "rs.clockCcw"
+  },
+  {
+    "web": "Coffee",
+    "asset": "rs.coffee"
+  },
+  {
+    "web": "Copy",
+    "asset": "rs.copy"
+  },
+  {
+    "web": "Download",
+    "asset": "rs.download"
+  },
+  {
+    "web": "ForkKnife",
+    "asset": "rs.forkKnife"
+  },
+  {
+    "web": "GripVertical",
+    "asset": "rs.gripVertical"
+  },
+  {
+    "web": "Heading01",
+    "asset": "rs.heading01"
+  },
+  {
+    "web": "Info",
+    "asset": "rs.info"
+  },
+  {
+    "web": "Link",
+    "asset": "rs.link"
+  },
+  {
+    "web": "ListOrdered",
+    "asset": "rs.listOrdered"
+  },
+  {
+    "web": "ListUnordered",
+    "asset": "rs.listUnordered"
+  },
+  {
+    "web": "LoaderCircle",
+    "asset": "rs.loaderCircle"
+  },
+  {
+    "web": "LogOut",
+    "asset": "rs.logOut"
+  },
+  {
+    "web": "MathOperations",
+    "asset": "rs.mathOperations"
+  },
+  {
+    "web": "Minus",
+    "asset": "rs.minus"
+  },
+  {
+    "web": "Moon",
+    "asset": "rs.moon"
+  },
+  {
+    "web": "MoreVertical",
+    "asset": "rs.moreVertical"
+  },
+  {
+    "web": "PaperPlane",
+    "asset": "rs.paperPlane"
+  },
+  {
+    "web": "Pause",
+    "asset": "rs.pause"
+  },
+  {
+    "web": "Pencil",
+    "asset": "rs.pencil"
+  },
+  {
+    "web": "Pin",
+    "asset": "rs.pin"
+  },
+  {
+    "web": "PinOff",
+    "asset": "rs.pinOff"
+  },
+  {
+    "web": "Play",
+    "asset": "rs.play"
+  },
+  {
+    "web": "Plus",
+    "asset": "rs.plus"
+  },
+  {
+    "web": "Printer",
+    "asset": "rs.printer"
+  },
+  {
+    "web": "Redo",
+    "asset": "rs.redo"
+  },
+  {
+    "web": "RefreshCw",
+    "asset": "rs.refreshCw"
+  },
+  {
+    "web": "Scan",
+    "asset": "rs.scan"
+  },
+  {
+    "web": "Search",
+    "asset": "rs.search"
+  },
+  {
+    "web": "Share",
+    "asset": "rs.share"
+  },
+  {
+    "web": "Share2",
+    "asset": "rs.share2"
+  },
+  {
+    "web": "ShoppingCart",
+    "asset": "rs.shoppingCart"
+  },
+  {
+    "web": "Sparkles",
+    "asset": "rs.sparkles"
+  },
+  {
+    "web": "Square",
+    "asset": "rs.square"
+  },
+  {
+    "web": "SquareImage",
+    "asset": "rs.squareImage"
+  },
+  {
+    "web": "Sun",
+    "asset": "rs.sun"
+  },
+  {
+    "web": "SunMoon",
+    "asset": "rs.sunMoon"
+  },
+  {
+    "web": "Trash",
+    "asset": "rs.trash"
+  },
+  {
+    "web": "TrendingUp",
+    "asset": "rs.trendingUp"
+  },
+  {
+    "web": "Undo",
+    "asset": "rs.undo"
+  },
+  {
+    "web": "Unplug",
+    "asset": "rs.unplug"
+  },
+  {
+    "web": "Upload",
+    "asset": "rs.upload"
+  },
+  {
+    "web": "User",
+    "asset": "rs.user"
+  },
+  {
+    "web": "Users",
+    "asset": "rs.users"
+  },
+  {
+    "web": "X",
+    "asset": "rs.x"
+  },
+  {
+    "web": "XMarkCircle",
+    "asset": "rs.xMarkCircle"
+  }
+]

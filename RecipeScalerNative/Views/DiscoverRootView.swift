@@ -24,34 +24,39 @@ struct DiscoverRootView: View {
                     }
                 } else if let data {
                     List {
-                        Section("Collections") {
+                        Section {
                             ForEach(data.collections) { collection in
                                 NavigationLink(value: DiscoverRoute.collection(collection.slug)) {
                                     VStack(alignment: .leading) {
                                         Text(collection.title)
                                         if let desc = collection.description {
-                                            Text(desc).font(.caption).foregroundStyle(.secondary)
+                                            Text(desc).font(AppTypography.footnote).foregroundStyle(.secondary)
                                         }
                                     }
                                 }
                             }
+                        } header: {
+                            AppSectionHeader("Collections")
                         }
-                        Section("Public profiles") {
+                        Section {
                             ForEach(data.profiles) { profile in
                                 NavigationLink(value: DiscoverRoute.profile(profile.username)) {
                                     HStack {
                                         Text(profile.name ?? profile.username)
                                         Spacer()
                                         Text("\(profile.recipe_count)")
-                                            .font(.caption)
+                                            .font(AppTypography.footnote)
                                             .foregroundStyle(.secondary)
                                     }
                                 }
                             }
+                        } header: {
+                            AppSectionHeader("Public profiles")
                         }
                     }
                 }
             }
+            .appListBodyTypography()
             .navigationTitle("Discover")
             .navigationDestination(for: DiscoverRoute.self) { route in
                 switch route {
@@ -135,7 +140,7 @@ struct DiscoverRecipeView: View {
         ScrollView {
             if let recipe {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(recipe.name).font(.title2.bold())
+                    Text(recipe.name).font(AppTypography.title2)
                     if let description = recipe.description {
                         Text(description)
                     }
@@ -154,7 +159,7 @@ struct DiscoverRecipeView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     if let message {
-                        Text(message).font(.footnote)
+                        Text(message).font(AppTypography.footnote)
                     }
                 }
                 .padding()

@@ -12,13 +12,13 @@ struct RecipeImageUploadResult: Decodable, Sendable {
 
 @MainActor
 enum RecipeImageUploadAPI {
-    static func upload(recipeId: String, imageData: Data, fileName: String = "photo.jpg") async throws -> RecipeImageUploadResult {
+    static func upload(recipeId: String, payload: RecipeImageUploadPayload) async throws -> RecipeImageUploadResult {
         let data = try await APIClient.shared.uploadMultipart(
             path: "/api/recipes/\(recipeId)/image",
             fieldName: "image",
-            fileData: imageData,
-            fileName: fileName,
-            mimeType: "image/jpeg"
+            fileData: payload.data,
+            fileName: payload.fileName,
+            mimeType: payload.mimeType
         )
         let response = try JSONDecoder().decode(APIResponse<RecipeImageUploadResult>.self, from: data)
         guard response.success, let payload = response.data else {

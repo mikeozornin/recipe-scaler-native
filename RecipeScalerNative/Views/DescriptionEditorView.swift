@@ -53,12 +53,13 @@ struct DescriptionEditorView: View {
                     Button(String(localized: "edit.cancel")) {
                         Task { await closeEditor() }
                     }
+                    .appToolbarTextButton()
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "edit.done")) {
                         Task { await closeEditor() }
                     }
-                    .fontWeight(.semibold)
+                    .appToolbarConfirmButton()
                 }
                 ToolbarItem(placement: .principal) {
                     syncChip
@@ -93,19 +94,19 @@ struct DescriptionEditorView: View {
             EmptyView()
         case .pendingLocal:
             Text(String(localized: "edit.sync.pending"))
-                .font(.caption)
+                .font(AppTypography.footnote)
                 .foregroundStyle(.secondary)
         case .syncing:
             Text(String(localized: "edit.sync.syncing"))
-                .font(.caption)
+                .font(AppTypography.footnote)
                 .foregroundStyle(.secondary)
         case .queued:
             Text(String(localized: "edit.sync.queued"))
-                .font(.caption)
+                .font(AppTypography.footnote)
                 .foregroundStyle(.secondary)
         case .error:
             Text(String(localized: "edit.sync.error"))
-                .font(.caption)
+                .font(AppTypography.footnote)
                 .foregroundStyle(.red)
         }
     }
@@ -128,16 +129,13 @@ struct DescriptionEditorEntrySection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "description.editor.section"))
-                .font(.custom(AppFonts.display, size: 20))
-                .foregroundStyle(accentColor)
-
             if let description = recipe.description, !description.isEmpty {
                 StepsSection(htmlContent: description, accentColor: accentColor)
             } else {
                 Text(String(localized: "description.editor.empty"))
-                    .font(.subheadline)
+                    .font(AppTypography.subheadline)
                     .foregroundStyle(.secondary)
+                    .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
             }
 
             Button(action: onEdit) {
@@ -146,8 +144,8 @@ struct DescriptionEditorEntrySection: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(accentColor)
+            .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
         }
-        .padding(.horizontal)
         .accessibilityIdentifier("description_editor_entry")
     }
 }

@@ -7,21 +7,37 @@ import SwiftUI
 
 struct SyncStatusSheet: View {
     let connectionState: ConnectionState
+    let connectionTransport: SyncConnectionTransport
     let imageCacheStatus: RecipeImageCacheStatus
+    let recipeDocumentCacheStatus: RecipeDocumentCacheStatus
     let onRetryImageDownload: () -> Void
+    let onRetryRecipeDocumentsDownload: () -> Void
 
     var body: some View {
         NavigationStack {
             List {
-                Section(String(localized: "sync.status.section.connection")) {
+                Section {
                     Label {
                         Text(connectionState.displayLabel)
                     } icon: {
                         connectionIcon
                     }
+
+                    #if DEBUG
+                    HStack {
+                        Text(String(localized: "sync.status.transport.label"))
+                        Spacer()
+                        Text(connectionTransport.displayLabel)
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(AppTypography.footnote)
+                    .accessibilityIdentifier(AccessibilityIdentifiers.syncStatusTransport)
+                    #endif
+                } header: {
+                    AppSectionHeader(String(localized: "sync.status.section.connection"))
                 }
 
-                Section(String(localized: "sync.status.section.images")) {
+                Section {
                     cacheRow(
                         title: String(localized: "sync.status.images.preview"),
                         cached: imageCacheStatus.previewCached,
@@ -35,7 +51,7 @@ struct SyncStatusSheet: View {
 
                     if imageCacheStatus.recipesWithImage == 0 {
                         Text(String(localized: "sync.status.images.none"))
-                            .font(.footnote)
+                            .font(AppTypography.footnote)
                             .foregroundStyle(.secondary)
                     } else if imageCacheStatus.isDownloading {
                         HStack(spacing: 8) {
@@ -48,12 +64,12 @@ struct SyncStatusSheet: View {
                                     imageCacheStatus.downloadTotal
                                 )
                             )
-                            .font(.footnote)
+                            .font(AppTypography.footnote)
                             .foregroundStyle(.secondary)
                         }
                     } else if !imageCacheStatus.isFullyCached {
                         Text(imageCacheHint)
-                            .font(.footnote)
+                            .font(AppTypography.footnote)
                             .foregroundStyle(.secondary)
                     } else {
                         Label {
@@ -69,10 +85,85 @@ struct SyncStatusSheet: View {
                             onRetryImageDownload()
                         }
                     }
+                } header: {
+                    AppSectionHeader(String(localized: "sync.status.section.images"))
+                }
+
+                Section {
+                    cacheRow(
+                        title: String(localized: "sync.status.recipes.cached"),
+                        cached: recipeDocumentCacheStatus.cachedRecipes,
+                        total: recipeDocumentCacheStatus.totalRecipes
+                    )
+
+                    if recipeDocumentCacheStatus.totalRecipes == 0 {
+                        Text(String(localized: "sync.status.recipes.none"))
+                            .font(AppTypography.footnote)
+                            .foregroundStyle(.secondary)
+                    } else if recipeDocumentCacheStatus.isDownloading {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                            Text(
+                                String(
+                                    format: String(localized: "sync.status.recipes.downloading"),
+                                    locale: .current,
+                                    recipeDocumentCacheStatus.downloadCompleted,
+                                    recipeDocumentCacheStatus.downloadTotal
+                                )
+                            )
+                            .font(AppTypography.footnote)
+                            .foregroundStyle(.secondary)
+                        }
+                    } else if !recipeDocumentCacheStatus.isFullyCached {
+                        Text(recipeDocumentHint)
+                            .font(AppTypography.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Label {
+                            Text(String(localized: "sync.status.recipes.ready"))
+                        } icon: {
+                            AppSymbol.image("checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        }
+                    }
+
+                    if connectionState.isConnected, recipeDocumentCacheStatus.pendingCount > 0 {
+                        Button(String(localized: "sync.status.recipes.retry")) {
+                            onRetryRecipeDocumentsDownload()
+                        }
+                    }
+                } header: {
+                    AppSectionHeader(String(localized: "sync.status.section.recipes"))
+                }
+
+                if !recipeDocumentCacheStatus.pendingEntries.isEmpty {
+                    Section {
+                        ForEach(recipeDocumentCacheStatus.pendingEntries.prefix(30)) { entry in
+                            HStack {
+                                Text(displayName(for: entry.name))
+                                    .lineLimit(1)
+                                Spacer()
+                                badge(String(localized: "sync.status.badge.recipe"))
+                            }
+                        }
+                        if recipeDocumentCacheStatus.pendingEntries.count > 30 {
+                            Text(
+                                String(
+                                    format: String(localized: "sync.status.pending.more"),
+                                    locale: .current,
+                                    recipeDocumentCacheStatus.pendingEntries.count - 30
+                                )
+                            )
+                            .font(AppTypography.footnote)
+                            .foregroundStyle(.secondary)
+                        }
+                    } header: {
+                        AppSectionHeader(String(localized: "sync.status.section.recipes.pending"))
+                    }
                 }
 
                 if !imageCacheStatus.pendingEntries.isEmpty {
-                    Section(String(localized: "sync.status.section.pending")) {
+                    Section {
                         ForEach(imageCacheStatus.pendingEntries.prefix(30)) { entry in
                             HStack {
                                 Text(displayName(for: entry.name))
@@ -89,14 +180,17 @@ struct SyncStatusSheet: View {
                                     imageCacheStatus.pendingEntries.count - 30
                                 )
                             )
-                            .font(.footnote)
+                            .font(AppTypography.footnote)
                             .foregroundStyle(.secondary)
                         }
+                    } header: {
+                        AppSectionHeader(String(localized: "sync.status.section.pending"))
                     }
                 }
             }
             .navigationTitle(String(localized: "sync.status.title"))
             .navigationBarTitleDisplayMode(.inline)
+            .appListBodyTypography()
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
@@ -127,6 +221,17 @@ struct SyncStatusSheet: View {
         )
     }
 
+    private var recipeDocumentHint: String {
+        if connectionState.isConnected {
+            return String(localized: "sync.status.recipes.hint.online")
+        }
+        return String(
+            format: String(localized: "sync.status.recipes.hint.offline"),
+            locale: .current,
+            recipeDocumentCacheStatus.pendingCount
+        )
+    }
+
     private func cacheRow(title: String, cached: Int, total: Int) -> some View {
         HStack {
             Text(title)
@@ -151,7 +256,7 @@ struct SyncStatusSheet: View {
 
     private func badge(_ label: String) -> some View {
         Text(label)
-            .font(.caption2)
+            .font(AppTypography.footnote)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(Color.secondary.opacity(0.15))

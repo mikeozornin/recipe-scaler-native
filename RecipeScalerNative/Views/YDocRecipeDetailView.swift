@@ -21,6 +21,10 @@ struct YDocRecipeDetailView: View {
     @State private var didApplyStartInEditMode = false
     @State private var showsDescriptionEditor = false
     @State private var didApplyStartDescriptionEdit = false
+    @State private var dismissRecipeTitleKeyboard = false
+    @State private var commitTitleNonce = 0
+    @State private var titleSaveTask: Task<Void, Never>?
+    @State private var isFinishingEdit = false
 
     private var recipe: RecipeData? {
         guard syncService.currentRecipe?.id == recipeId else { return nil }
@@ -54,8 +58,9 @@ struct YDocRecipeDetailView: View {
         return nil
     }
 
-    private var showsHeaderImage: Bool {
-        headerImageUrl != nil
+    private var showsRecipeImageSection: Bool {
+        if headerImageUrl != nil { return true }
+        return isEditing && canEnterEditMode
     }
 
     private var allowsImageNetworkRefresh: Bool {
@@ -65,18 +70,15 @@ struct YDocRecipeDetailView: View {
     var body: some View {
         ScrollViewReader { scrollProxy in
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                if showsHeaderImage, let headerImageUrl {
-                    RecipeCachedImageView(
+            VStack(alignment: .leading, spacing: 0) {
+                if showsRecipeImageSection {
+                    RecipeDetailImageSection(
                         recipeId: recipeId,
                         imageUrl: headerImageUrl,
-                        variant: .full,
-                        allowsNetworkRefresh: allowsImageNetworkRefresh,
-                        layoutAspectRatio: recipe?.imageAspectRatio.map { CGFloat($0) },
-                        preservesAspectRatio: true,
-                        maxHeight: 400
+                        imageAspectRatio: recipe?.imageAspectRatio.map { CGFloat($0) },
+                        isEditing: isEditing && canEnterEditMode,
+                        allowsNetworkRefresh: allowsImageNetworkRefresh
                     )
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 VStack(alignment: .leading, spacing: 16) {
@@ -89,11 +91,11 @@ struct YDocRecipeDetailView: View {
                         RecipeLegacyBanner()
                     }
 
-                    if isEditing, let editViewModel {
-                        editHeader(editViewModel)
+                    if isEditing, let editViewModel, let recipe {
+                        editHeader(editViewModel, recipe: recipe)
                     } else {
                         Text(recipe?.name ?? "")
-                            .font(.custom(AppFonts.display, size: 28))
+                            .font(AppTypography.display(AppTypography.recipeTitleSize))
                             .lineLimit(nil)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal)
@@ -105,11 +107,20 @@ struct YDocRecipeDetailView: View {
                                 .padding(.horizontal)
                         }
 
-                        servingsBlock(recipe: recipe)
+                        if !isEditing {
+                            servingsBlock(recipe: recipe)
+                        }
 
                         if isEditing, let editViewModel {
                             YDocIngredientsEditSection(
                                 recipe: recipe,
+                                draftServings: Binding(
+                                    get: { editViewModel.draftServings },
+                                    set: { editViewModel.draftServings = max(1, min(99, $0)) }
+                                ),
+                                scaledServingsPreview: scaledServingsCount(
+                                    base: max(1, editViewModel.draftServings)
+                                ),
                                 baseServings: max(1, recipe.servings),
                                 viewServings: scaledServingsCount(base: max(1, editViewModel.draftServings)),
                                 accentColor: accentColor,
@@ -173,17 +184,12 @@ struct YDocRecipeDetailView: View {
                                 .id("recipe_instructions")
                         }
 
-                        if let link = recipe.originalRecipeLink,
-                           let url = URL(string: link) {
-                            Link(destination: url) {
-                                AppLabel.make("Original Recipe", symbol: "link")
-                            }
-                            .padding(.horizontal)
-                        }
                     }
                 }
+                .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
             }
         }
+        .contentMargins(.horizontal, 0, for: .scrollContent)
         #if DEBUG
         .onChange(of: recipe?.description) { _, description in
             guard description != nil,
@@ -199,31 +205,38 @@ struct YDocRecipeDetailView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                if let recipe {
-                    RecipeDetailActionsMenu(
-                        recipeId: recipeId,
-                        recipeName: recipe.name,
-                        ingredients: recipe.ingredients,
-                        isPublic: recipe.isPublic,
-                        isEditing: isEditing,
-                        isOnline: allowsImageNetworkRefresh
-                    )
-                    if !isEditing {
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 0) {
+                    if let recipe, !isEditing {
+                        RecipeDetailActionsMenu(
+                            recipeId: recipeId,
+                            recipeName: recipe.name,
+                            ingredients: recipe.ingredients,
+                            isPublic: recipe.isPublic,
+                            isEditing: false
+                        )
                         RecipeDetailShareButton(recipeId: recipeId)
                         ScreenAwakeToggle()
-                    }
-                }
-                if canEnterEditMode {
-                    Button {
-                        Task { await toggleEditMode() }
-                    } label: {
-                        if isEditing {
-                            Text(String(localized: "edit.done"))
-                        } else {
-                            AppLabel.make(String(localized: "edit.edit"), symbol: "pencil")
+                        if canEnterEditMode {
+                            Button {
+                                Task { await toggleEditMode() }
+                            } label: {
+                                AppToolbarStyle.labeledIcon(
+                                    systemName: "pencil",
+                                    title: String(localized: "edit.edit")
+                                )
+                            }
+                            .appToolbarIconButton()
                         }
                     }
+                }
+            }
+            if canEnterEditMode, isEditing {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(String(localized: "edit.done")) {
+                        Task { await toggleEditMode() }
+                    }
+                    .appToolbarConfirmButton()
                 }
             }
         }
@@ -253,6 +266,19 @@ struct YDocRecipeDetailView: View {
             scaleFactor = RecipeScaleStorage.loadScaleFactor(recipeId: recipeId)
             syncService.acknowledgeRecipeRemoved()
             await syncService.loadRecipe(recipeId: recipeId)
+            #if DEBUG
+            AgentSyncDebugLog.write(
+                hypothesisId: "G",
+                location: "YDocRecipeDetailView.swift:task",
+                message: "after_load_recipe",
+                data: [
+                    "recipeId": recipeId,
+                    "hasRecipe": String(syncService.currentRecipe?.id == recipeId),
+                    "ingredientCount": String(syncService.currentRecipe?.ingredients.count ?? 0),
+                    "hasHeaderImage": String(headerImageUrl != nil),
+                ]
+            )
+            #endif
         }
         .task(id: "\(recipeId)-\(headerImageUrl ?? "")-\(allowsImageNetworkRefresh)") {
             guard let imageUrl = headerImageUrl else { return }
@@ -269,6 +295,19 @@ struct YDocRecipeDetailView: View {
             applyStartInEditModeIfNeeded()
         }
         .onChange(of: recipe?.id) { _, _ in
+            #if DEBUG
+            AgentSyncDebugLog.write(
+                hypothesisId: "H4",
+                location: "YDocRecipeDetailView.swift:onChange(recipe.id)",
+                message: "recipe_id_changed",
+                data: [
+                    "recipeId": recipeId,
+                    "isEditing": String(isEditing),
+                    "isEditingTitle": String(editViewModel?.isEditingTitleField ?? false),
+                ]
+            )
+            #endif
+            guard editViewModel?.isEditingTitleField != true else { return }
             if let recipe {
                 let vm = RecipeEditViewModel(recipe: recipe, syncService: syncService)
                 editViewModel = vm
@@ -358,14 +397,10 @@ struct YDocRecipeDetailView: View {
 
     @ViewBuilder
     private func servingsBlock(recipe: RecipeData) -> some View {
-        if isEditing, let editViewModel {
-            ServingsStepperBindable(viewModel: editViewModel, accentColor: accentColor)
-        } else {
-            ServingsStepperView(
-                servings: scaledServingsBinding(base: max(1, recipe.servings)),
-                accentColor: accentColor
-            )
-        }
+        ServingsStepperView(
+            servings: scaledServingsBinding(base: max(1, recipe.servings)),
+            accentColor: accentColor
+        )
     }
 
     private func scaledServingsCount(base: Int) -> Int {
@@ -385,28 +420,132 @@ struct YDocRecipeDetailView: View {
     }
 
     @ViewBuilder
-    private func editHeader(_ vm: RecipeEditViewModel) -> some View {
-        RecipeEditHeaderBindable(viewModel: vm, pickerColor: $pickerColor)
+    private func editHeader(_ vm: RecipeEditViewModel, recipe: RecipeData) -> some View {
+        RecipeEditHeaderBindable(
+            viewModel: vm,
+            initialTitle: recipe.name,
+            pickerColor: $pickerColor,
+            dismissTitleKeyboard: $dismissRecipeTitleKeyboard,
+            commitTitleNonce: commitTitleNonce,
+            onTitleBlur: { name in
+                scheduleTitleSave(name, editViewModel: vm)
+            },
+            onEditingActiveChanged: { vm.isEditingTitleField = $0 }
+        )
+    }
+
+    private func scheduleTitleSave(_ name: String, editViewModel: RecipeEditViewModel) {
+        titleSaveTask?.cancel()
+        titleSaveTask = Task { @MainActor in
+            await saveRecipeTitle(name, editViewModel: editViewModel)
+        }
+    }
+
+    private func saveRecipeTitle(_ name: String, editViewModel: RecipeEditViewModel) async {
+        guard let current = syncService.currentRecipe, current.id == recipeId else { return }
+        do {
+            try await editViewModel.saveRecipeName(name, against: current)
+            #if DEBUG
+            AgentSyncDebugLog.write(
+                hypothesisId: "W",
+                location: "YDocRecipeDetailView.swift:saveRecipeTitle",
+                message: "title_blur_save_done",
+                data: [
+                    "recipeId": recipeId,
+                    "nameLen": String(syncService.currentRecipe?.name.count ?? 0),
+                ]
+            )
+            #endif
+        } catch {
+            editErrorMessage = error.localizedDescription
+            #if DEBUG
+            AgentSyncDebugLog.write(
+                hypothesisId: "W",
+                location: "YDocRecipeDetailView.swift:saveRecipeTitle",
+                message: "title_blur_save_error",
+                data: ["recipeId": recipeId, "error": error.localizedDescription]
+            )
+            #endif
+        }
+    }
+
+    private func awaitPendingTitleSave() async {
+        for _ in 0 ..< 40 {
+            if let task = titleSaveTask {
+                if !task.isCancelled {
+                    await task.value
+                }
+                break
+            }
+            await Task.yield()
+        }
+        if let task = titleSaveTask, !task.isCancelled {
+            await task.value
+        }
+        titleSaveTask = nil
     }
 
     private func toggleEditMode() async {
         if isEditing {
-            guard let recipe, let editViewModel else {
+            guard !isFinishingEdit else { return }
+            isFinishingEdit = true
+            defer { isFinishingEdit = false }
+            commitTitleNonce += 1
+            dismissRecipeTitleKeyboard = true
+            await Task.yield()
+            await awaitPendingTitleSave()
+            #if DEBUG
+            AgentSyncDebugLog.write(
+                hypothesisId: "H",
+                location: "YDocRecipeDetailView.swift:toggleEditMode",
+                message: "commit_begin",
+                data: [
+                    "recipeId": recipeId,
+                    "hasRecipe": String(recipe != nil),
+                    "titleLen": String(syncService.currentRecipe?.name.count ?? 0),
+                ]
+            )
+            #endif
+            guard let editViewModel else {
                 isEditing = false
                 return
             }
-            guard !saveInFlight else { return }
+            guard let current = syncService.currentRecipe, current.id == recipeId else {
+                editViewModel.isEditingTitleField = false
+                isEditing = false
+                return
+            }
             saveInFlight = true
             defer { saveInFlight = false }
             do {
-                try await editViewModel.commit(against: recipe)
+                try await editViewModel.finishEditing(against: current)
+                editViewModel.isEditingTitleField = false
                 isEditing = false
                 if let updated = syncService.currentRecipe {
                     editViewModel.reset(from: updated)
                     pickerColor = RecipeAccentColor.color(from: updated.color)
                 }
+                #if DEBUG
+                AgentSyncDebugLog.write(
+                    hypothesisId: "H",
+                    location: "YDocRecipeDetailView.swift:toggleEditMode",
+                    message: "commit_done",
+                    data: [
+                        "recipeId": recipeId,
+                        "syncState": String(describing: syncService.writeSyncState(for: recipeId)),
+                    ]
+                )
+                #endif
             } catch {
                 editErrorMessage = error.localizedDescription
+                #if DEBUG
+                AgentSyncDebugLog.write(
+                    hypothesisId: "H",
+                    location: "YDocRecipeDetailView.swift:toggleEditMode",
+                    message: "commit_error",
+                    data: ["recipeId": recipeId, "error": error.localizedDescription]
+                )
+                #endif
             }
         } else {
             if let recipe {
@@ -415,6 +554,18 @@ struct YDocRecipeDetailView: View {
                 pickerColor = RecipeAccentColor.color(from: vm.draftColor)
             }
             isEditing = true
+            editViewModel?.isEditingTitleField = false
+            #if DEBUG
+            AgentSyncDebugLog.write(
+                hypothesisId: "H6",
+                location: "YDocRecipeDetailView.swift:toggleEditMode",
+                message: "edit_mode_on",
+                data: [
+                    "recipeId": recipeId,
+                    "titleLen": String(syncService.currentRecipe?.name.count ?? 0),
+                ]
+            )
+            #endif
         }
     }
 
@@ -487,44 +638,33 @@ struct YDocRecipeDetailView: View {
     }
 }
 
-private struct ServingsStepperBindable: View {
-    @ObservedObject var viewModel: RecipeEditViewModel
-    let accentColor: Color
-
-    var body: some View {
-        ServingsStepperView(
-            servings: Binding(
-                get: { viewModel.draftServings },
-                set: { viewModel.draftServings = max(1, min(99, $0)) }
-            ),
-            accentColor: accentColor
-        )
-    }
-}
-
 private struct RecipeEditHeaderBindable: View {
     @ObservedObject var viewModel: RecipeEditViewModel
+    let initialTitle: String
     @Binding var pickerColor: Color
-    @FocusState private var isNameFocused: Bool
+    @Binding var dismissTitleKeyboard: Bool
+    var commitTitleNonce: Int
+    var onTitleBlur: (String) -> Void
+    var onEditingActiveChanged: (Bool) -> Void
+
+    private var titleUIFont: UIFont {
+        AppTypography.uiFont(AppFonts.display, size: AppTypography.recipeTitleSize)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 10) {
-                TextField(
-                    String(localized: "edit.name.placeholder"),
-                    text: Binding(
-                        get: { viewModel.draftName },
-                        set: { viewModel.draftName = $0 }
-                    ),
-                    axis: .vertical
+                RecipeTitleTextField(
+                    initialText: initialTitle,
+                    dismissKeyboard: $dismissTitleKeyboard,
+                    commitTitleNonce: commitTitleNonce,
+                    placeholder: String(localized: "edit.name.placeholder"),
+                    font: titleUIFont,
+                    onBlur: onTitleBlur,
+                    onEditingActiveChanged: onEditingActiveChanged
                 )
-                    .font(.custom(AppFonts.display, size: 28))
-                    .lineLimit(1...)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .id("recipe-title-editor")
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .focused($isNameFocused)
-                    .submitLabel(.done)
-                    .onSubmit { isNameFocused = false }
 
                 ColorPicker("", selection: $pickerColor, supportsOpacity: false)
                     .labelsHidden()

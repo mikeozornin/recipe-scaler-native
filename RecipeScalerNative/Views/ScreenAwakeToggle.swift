@@ -6,7 +6,7 @@
 import SwiftUI
 import UIKit
 
-/// Keeps the screen on while cooking (web `useWakeLock` / `cup.and.heat.waves.fill`).
+/// Keeps the screen on while cooking (web `useWakeLock` / `sun.max.fill`).
 struct ScreenAwakeToggle: View {
     @State private var isActive = false
 
@@ -15,12 +15,12 @@ struct ScreenAwakeToggle: View {
             isActive.toggle()
             UIApplication.shared.isIdleTimerDisabled = isActive
         } label: {
-            AppSymbol.image("cup.and.heat.waves.fill")
-                .symbolRenderingMode(.monochrome)
-                .foregroundStyle(Color.accentColor)
-                .opacity(isActive ? 1 : 0.85)
+            AppToolbarStyle.iconOnly(
+                systemName: "sun.max.fill",
+                isActive: isActive
+            )
         }
-        .buttonStyle(.plain)
+        .appToolbarIconButton()
         .accessibilityLabel(
             isActive
                 ? String(localized: "common.disable-wake-lock")

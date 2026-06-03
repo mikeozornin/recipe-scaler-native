@@ -24,30 +24,37 @@ struct ShoppingListView: View {
     var body: some View {
         NavigationStack(path: $path) {
             List {
-                Picker(String(localized: "shopping.sort"), selection: sortBinding) {
-                    Text(String(localized: "shopping.sort.by-recipe")).tag(ShoppingSortMode.recipe)
-                    Text(String(localized: "shopping.sort.az")).tag(ShoppingSortMode.alphabet)
-                }
-                .pickerStyle(.segmented)
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
+                AppSegmentedControl(
+                    segments: [
+                        .init(value: ShoppingSortMode.recipe, title: String(localized: "shopping.sort.by-recipe")),
+                        .init(value: ShoppingSortMode.alphabet, title: String(localized: "shopping.sort.az")),
+                    ],
+                    selection: sortBinding
+                )
+                .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
+                .accessibilityLabel(String(localized: "shopping.sort"))
 
                 if !toBuy.isEmpty {
-                    Section(String(localized: "shopping.section.to-buy")) {
+                    Section {
                         ForEach(toBuy) { item in
                             shoppingRow(item)
                         }
                         .onDelete(perform: deleteToBuy)
+                    } header: {
+                        AppSectionHeader(String(localized: "shopping.section.to-buy"))
                     }
                 }
 
                 if !purchased.isEmpty {
-                    Section(String(localized: "shopping.section.purchased")) {
+                    Section {
                         ForEach(purchased) { item in
                             shoppingRow(item)
                         }
                         .onDelete(perform: deletePurchased)
+                    } header: {
+                        AppSectionHeader(String(localized: "shopping.section.purchased"))
                     }
                 }
 
@@ -60,7 +67,7 @@ struct ShoppingListView: View {
                 }
             }
             .navigationTitle(String(localized: "discover.nav.shopping"))
-
+            .appListBodyTypography()
             .accessibilityIdentifier(AccessibilityIdentifiers.shoppingList)
         }
     }
@@ -90,7 +97,6 @@ struct ShoppingListView: View {
                     .strikethrough(item.purchased)
                 if !item.recipeName.isEmpty {
                     Text(item.recipeName)
-                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }

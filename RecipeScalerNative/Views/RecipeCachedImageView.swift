@@ -14,8 +14,10 @@ struct RecipeCachedImageView: View {
     var allowsNetworkRefresh: Bool = true
     /// Stored width/height ratio from Y.Doc (`imageAspectRatio`). Used when `preservesAspectRatio` is true.
     var layoutAspectRatio: CGFloat?
-    /// When true, image keeps its proportions (web `object-contain`); list thumbnails keep default fill crop.
+    /// When true, image keeps its proportions (web `object-contain`).
     var preservesAspectRatio: Bool = false
+    /// Recipe detail hero: full width, `object-cover` in aspect-ratio box (web `RecipeImageUpload` + `edgeToEdge`).
+    var fullWidthHero: Bool = false
     var maxHeight: CGFloat?
 
     @State private var uiImage: UIImage?
@@ -27,7 +29,9 @@ struct RecipeCachedImageView: View {
 
     var body: some View {
         Group {
-            if let uiImage {
+            if fullWidthHero {
+                heroImageBody
+            } else if let uiImage {
                 if preservesAspectRatio {
                     Image(uiImage: uiImage)
                         .resizable()
@@ -67,6 +71,34 @@ struct RecipeCachedImageView: View {
         let size = image.size
         guard size.height > 0 else { return 1 }
         return size.width / size.height
+    }
+
+    private var heroAspectRatio: CGFloat {
+        if let layoutAspectRatio, layoutAspectRatio > 0 {
+            return layoutAspectRatio
+        }
+        if let uiImage {
+            return effectiveAspectRatio(for: uiImage)
+        }
+        return 4 / 3
+    }
+
+    @ViewBuilder
+    private var heroImageBody: some View {
+        let cap = maxHeight ?? 400
+        ZStack {
+            Color(.secondarySystemBackground)
+            if let uiImage {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+            }
+        }
+        .frame(maxWidth: .infinity)
+        // `.fill` keeps full width when height is capped (web: `w-full` + `max-height` + `object-cover`).
+        .aspectRatio(heroAspectRatio, contentMode: .fill)
+        .frame(maxHeight: cap)
+        .clipped()
     }
 
     private func reloadImage() async {

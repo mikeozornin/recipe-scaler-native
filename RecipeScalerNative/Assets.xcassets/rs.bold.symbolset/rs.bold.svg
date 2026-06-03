@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <g id="Guides">
+    <line id="Baseline-S" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="0" x2="100" y1="71.5" y2="71.5"/>
+    <line id="Capline-S" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="0" x2="100" y1="28.5" y2="28.5"/>
+    <line id="left-margin-Regular-S" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="12.0" x2="12.0" y1="18" y2="82"/>
+    <line id="right-margin-Regular-S" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="88.0" x2="88.0" y1="18" y2="82"/>
+    <line id="Baseline-M" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="0" x2="100" y1="75.0" y2="75.0"/>
+    <line id="Capline-M" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="0" x2="100" y1="25.0" y2="25.0"/>
+    <line id="left-margin-Regular-M" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="10.0" x2="10.0" y1="18" y2="82"/>
+    <line id="right-margin-Regular-M" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="90.0" x2="90.0" y1="18" y2="82"/>
+    <line id="Baseline-L" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="0" x2="100" y1="78.0" y2="78.0"/>
+    <line id="Capline-L" style="fill:none;stroke:#27AAE1;opacity:1;stroke-width:0.5;" x1="0" x2="100" y1="22.0" y2="22.0"/>
+    <line id="left-margin-Regular-L" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="8.0" x2="8.0" y1="18" y2="82"/>
+    <line id="right-margin-Regular-L" style="fill:none;stroke:#00AEEF;stroke-width:0.5;opacity:1.0;" x1="92.0" x2="92.0" y1="18" y2="82"/>
+  </g>
+  <g id="Symbols">
+    <g id="Regular-S">
+      <g transform="translate(28.5,28.5) scale(1.79167)">
+          <path d="M 6 12.127 L 6 22.254 10.967 21.777 C 13.699 21.515, 16.624 20.727, 17.467 20.028 C 19.366 18.452, 19.479 12.642, 17.640 11.116 C 16.832 10.446, 16.486 8.911, 16.786 7.337 C 17.438 3.928, 14.917 2, 9.809 2 L 6 2 6 12.127 M 8 6.500 C 8 8.571, 8.480 9, 10.800 9 C 12.340 9, 14.105 8.495, 14.722 7.878 C 16.652 5.948, 14.979 4, 11.393 4 C 8.440 4, 8 4.325, 8 6.500 M 8 15.500 C 8 19.962, 8.029 20, 11.443 20 C 14.594 20, 18 17.324, 18 14.849 C 18 13.035, 14.525 11, 11.429 11 C 8.032 11, 8 11.042, 8 15.500" fill="#000000" fill-rule="evenodd"/>
+      </g>
+    </g>
+    <g id="Regular-M">
+      <g transform="translate(25,25) scale(2.08333)">
+          <path d="M 6 12.127 L 6 22.254 10.967 21.777 C 13.699 21.515, 16.624 20.727, 17.467 20.028 C 19.366 18.452, 19.479 12.642, 17.640 11.116 C 16.832 10.446, 16.486 8.911, 16.786 7.337 C 17.438 3.928, 14.917 2, 9.809 2 L 6 2 6 12.127 M 8 6.500 C 8 8.571, 8.480 9, 10.800 9 C 12.340 9, 14.105 8.495, 14.722 7.878 C 16.652 5.948, 14.979 4, 11.393 4 C 8.440 4, 8 4.325, 8 6.500 M 8 15.500 C 8 19.962, 8.029 20, 11.443 20 C 14.594 20, 18 17.324, 18 14.849 C 18 13.035, 14.525 11, 11.429 11 C 8.032 11, 8 11.042, 8 15.500" fill="#000000" fill-rule="evenodd"/>
+      </g>
+    </g>
+    <g id="Regular-L">
+      <g transform="translate(22,22) scale(2.33333)">
+          <path d="M 6 12.127 L 6 22.254 10.967 21.777 C 13.699 21.515, 16.624 20.727, 17.467 20.028 C 19.366 18.452, 19.479 12.642, 17.640 11.116 C 16.832 10.446, 16.486 8.911, 16.786 7.337 C 17.438 3.928, 14.917 2, 9.809 2 L 6 2 6 12.127 M 8 6.500 C 8 8.571, 8.480 9, 10.800 9 C 12.340 9, 14.105 8.495, 14.722 7.878 C 16.652 5.948, 14.979 4, 11.393 4 C 8.440 4, 8 4.325, 8 6.500 M 8 15.500 C 8 19.962, 8.029 20, 11.443 20 C 14.594 20, 18 17.324, 18 14.849 C 18 13.035, 14.525 11, 11.429 11 C 8.032 11, 8 11.042, 8 15.500" fill="#000000" fill-rule="evenodd"/>
+      </g>
+    </g>
+  </g>
+</svg>

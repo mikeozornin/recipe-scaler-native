@@ -77,7 +77,7 @@ struct RecipeNutritionBlockView: View {
     private var modeHeader: some View {
         HStack(alignment: .center, spacing: 8) {
             Text(String(localized: "nutrition.label-prefix"))
-                .font(.custom(AppFonts.sansMedium, size: 17))
+                .font(AppTypography.bodySemibold)
 
             if showsModeToggle {
                 NutritionModeSegmentedControl(
@@ -180,7 +180,7 @@ private struct NutritionModeSegmentedControl: View {
             selection = segment.mode
         } label: {
             Text(segment.title)
-                .font(.custom(AppFonts.sansMedium, size: 16))
+                .font(AppTypography.sansMedium(AppTypography.calloutSize))
                 .foregroundStyle(isSelected ? Color.primary : segment.unselectedTitleColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)

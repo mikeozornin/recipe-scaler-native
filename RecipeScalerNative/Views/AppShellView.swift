@@ -40,6 +40,7 @@ private struct AppTabBarLabel: View {
 
     var body: some View {
         Label(tab.title, systemImage: tab.tabBarSymbol)
+            .font(AppTypography.tabBar)
     }
 }
 
@@ -60,25 +61,28 @@ struct AppShellView: View {
                 .environmentObject(timerManager)
 
             TabView(selection: tabSelection) {
-                DiscoverRootView(path: $discoverPath)
-                    .tabItem { AppTabBarLabel(tab: .discover) }
-                    .tag(AppTab.discover)
-                    .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
+                // TEMPORARY: Discover tab hidden (re-enable when ready).
+                // DiscoverRootView(path: $discoverPath)
+                //     .tabItem { AppTabBarLabel(tab: .discover) }
+                //     .tag(AppTab.discover)
+                //     .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
 
-                Color.clear
-                    .tabItem { AppTabBarLabel(tab: .importTab) }
-                    .tag(AppTab.importTab)
-                    .accessibilityIdentifier(AccessibilityIdentifiers.tabImport)
+                // TEMPORARY: Import tab hidden (re-enable when ready).
+                // Color.clear
+                //     .tabItem { AppTabBarLabel(tab: .importTab) }
+                //     .tag(AppTab.importTab)
+                //     .accessibilityIdentifier(AccessibilityIdentifiers.tabImport)
 
                 RecipeListView(navigationPath: $recipesPath)
                     .tabItem { AppTabBarLabel(tab: .recipes) }
                     .tag(AppTab.recipes)
                     .accessibilityIdentifier(AccessibilityIdentifiers.tabRecipes)
 
-                ShoppingListView(path: $shoppingPath)
-                    .tabItem { AppTabBarLabel(tab: .shopping) }
-                    .tag(AppTab.shopping)
-                    .accessibilityIdentifier(AccessibilityIdentifiers.tabShopping)
+                // TEMPORARY: Shopping tab hidden (re-enable when ready).
+                // ShoppingListView(path: $shoppingPath)
+                //     .tabItem { AppTabBarLabel(tab: .shopping) }
+                //     .tag(AppTab.shopping)
+                //     .accessibilityIdentifier(AccessibilityIdentifiers.tabShopping)
 
                 AccountView()
                     .tabItem { AppTabBarLabel(tab: .profile) }
@@ -86,32 +90,34 @@ struct AppShellView: View {
                     .accessibilityIdentifier(AccessibilityIdentifiers.tabProfile)
             }
         }
-        .sheet(isPresented: $showImportSheet) {
-            ImportRecipeSheet { result in
-                showImportSheet = false
-                selectedTab = .recipes
-                if let id = result.primaryRecipeId {
-                    recipesPath.append(id)
-                }
-            }
-        }
-        .sheet(isPresented: $showAssistant) {
-            AssistantSheet()
-        }
-        .overlay(alignment: .bottomTrailing) {
-            Button {
-                showAssistant = true
-            } label: {
-                AppSymbol.image("sparkles")
-                    .font(.title2)
-                    .foregroundStyle(.white)
-                    .padding(14)
-                    .background(Circle().fill(Color.accentColor))
-            }
-            .padding(.trailing, 16)
-            .padding(.bottom, 72)
-            .accessibilityIdentifier(AccessibilityIdentifiers.assistantFab)
-        }
+        // TEMPORARY: Import sheet hidden (re-enable when ready).
+        // .sheet(isPresented: $showImportSheet) {
+        //     ImportRecipeSheet { result in
+        //         showImportSheet = false
+        //         selectedTab = .recipes
+        //         if let id = result.primaryRecipeId {
+        //             recipesPath.append(id)
+        //         }
+        //     }
+        // }
+        // TEMPORARY: Assistant button hidden (re-enable when ready).
+        // .sheet(isPresented: $showAssistant) {
+        //     AssistantSheet()
+        // }
+        // .overlay(alignment: .bottomTrailing) {
+        //     Button {
+        //         showAssistant = true
+        //     } label: {
+        //         AppSymbol.image("sparkles")
+        //             .font(AppTypography.iconSize(AppTypography.title2Size))
+        //             .foregroundStyle(.white)
+        //             .padding(14)
+        //             .background(Circle().fill(Color.accentColor))
+        //     }
+        //     .padding(.trailing, 16)
+        //     .padding(.bottom, 72)
+        //     .accessibilityIdentifier(AccessibilityIdentifiers.assistantFab)
+        // }
         .onChange(of: selectedTab) { old, new in
             if new == .importTab {
                 showImportSheet = true
@@ -167,6 +173,8 @@ struct AppShellView: View {
         if tab == .importTab {
             selectedTab = .recipes
             showImportSheet = true
+        } else if tab == .discover {
+            selectedTab = .recipes
         } else {
             selectedTab = tab
         }

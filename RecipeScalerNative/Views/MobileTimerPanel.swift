@@ -18,9 +18,9 @@ struct MobileTimerPanel: View {
                     ForEach(timerManager.activeTimers) { timer in
                         HStack(spacing: 6) {
                             Text(timer.name)
-                                .font(.caption.weight(.medium))
+                                .font(AppTypography.footnoteSemibold)
                             Text(formatRemaining(timer.remainingTime ?? timer.duration))
-                                .font(.caption.monospacedDigit())
+                                .font(AppTypography.monoFootnoteDigits)
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)

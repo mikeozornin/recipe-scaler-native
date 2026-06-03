@@ -42,6 +42,7 @@ struct AssistantSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
+                        .appToolbarTextButton()
                 }
             }
             .task { await ensureThread() }

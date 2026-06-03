@@ -164,7 +164,12 @@ actor DocumentManager {
 
     func readRecipeData(recipeId: String, userId: String) async throws -> RecipeData? {
         let key = "\(userId):recipe:\(recipeId)"
-        guard let doc = docs[key] else {
+        let doc: YrsDocument
+        if let existing = docs[key] {
+            doc = existing
+        } else if let restored = try? await getOrCreateDoc(key: key) {
+            doc = restored
+        } else {
             Self.logger.info("Recipe doc \(key) not loaded")
             // #region agent log
             AgentSyncDebugLog.write(
@@ -263,6 +268,14 @@ actor DocumentManager {
         try? await store.deleteAllOfflineQueue()
     }
 
+    /// Drop in-memory docs after logout or account switch.
+    func resetSession() {
+        docs.removeAll()
+        observerTokens.removeAll()
+        currentUserId = nil
+        currentCollectionKey = ""
+    }
+
     // MARK: - Recipe writes (Phase 3, v3 only)
 
     func updateRecipeName(recipeId: String, name: String) async throws {
@@ -288,6 +301,34 @@ actor DocumentManager {
     func updateRecipeIsPublic(recipeId: String, isPublic: Bool) async throws {
         try await mutateRecipe(recipeId: recipeId) { map, txn in
             map.insert(key: "isPublic", value: .bool(isPublic), txn: txn)
+        }
+    }
+
+    func updateRecipeImage(recipeId: String, imageUrl: String, aspectRatio: Double?) async throws {
+        let trimmed = imageUrl.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let touchedAt = Self.isoTimestamp()
+        try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { map, txn in
+            map.insert(key: "imageUrl", value: .string(trimmed), txn: txn)
+            if let aspectRatio {
+                map.insert(key: "imageAspectRatio", value: .double(aspectRatio), txn: txn)
+            }
+        }
+        try await updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
+            entryMap.insert(key: "imageUrl", value: .string(trimmed), txn: txn)
+            entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
+        }
+    }
+
+    func clearRecipeImage(recipeId: String) async throws {
+        let touchedAt = Self.isoTimestamp()
+        try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { map, txn in
+            _ = map.remove(key: "imageUrl", txn: txn)
+            _ = map.remove(key: "imageAspectRatio", txn: txn)
+        }
+        try await updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
+            _ = entryMap.remove(key: "imageUrl", txn: txn)
+            entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
         }
     }
 
@@ -413,7 +454,57 @@ actor DocumentManager {
                 }
             }
         }
+        await persistSnapshot(docKey: currentCollectionKey)
         await deliverPendingLocalUpdate(recipeId: "collection")
+    }
+
+    /// Merge queued offline Yjs updates into loaded docs and persist (restart before reconnect).
+    func applyOfflineQueueToLocalDocs() async {
+        guard let entries = try? await store.fetchOfflineQueue(), !entries.isEmpty else { return }
+        let sorted = entries.sorted { $0.createdAt < $1.createdAt }
+        for entry in sorted {
+            do {
+                try await applyUpdate(
+                    key: entry.docKey,
+                    data: entry.yjsUpdate,
+                    suppressRecipeChangeNotification: true
+                )
+            } catch {
+                Self.logger.warning("Failed to apply offline queue update for \(entry.docKey): \(error)")
+            }
+        }
+        Self.logger.info("Applied \(sorted.count) offline queue updates to local docs")
+        #if DEBUG
+        AgentSyncDebugLog.write(
+            hypothesisId: "P",
+            location: "DocumentManager.swift:applyOfflineQueueToLocalDocs",
+            message: "offline_queue_applied",
+            data: ["entryCount": String(sorted.count)]
+        )
+        #endif
+    }
+
+    func persistSnapshot(docKey: String) async {
+        guard let doc = docs[docKey],
+              let state = await doc.encodeStateAsUpdate(),
+              !state.isEmpty else { return }
+        let lastSyncedAt = try? await store.loadSnapshot(docKey: docKey)?.lastSyncedAt
+        do {
+            try await store.saveSnapshot(docKey: docKey, state: state, lastSyncedAt: lastSyncedAt)
+            #if DEBUG
+            AgentSyncDebugLog.write(
+                hypothesisId: "P",
+                location: "DocumentManager.swift:persistSnapshot",
+                message: "snapshot_saved",
+                data: [
+                    "docKeySuffix": docKey.split(separator: ":").suffix(2).joined(separator: ":"),
+                    "bytes": String(state.count),
+                ]
+            )
+            #endif
+        } catch {
+            Self.logger.warning("Failed to persist snapshot for \(docKey): \(error)")
+        }
     }
 
     // MARK: - Collection writes (008)
@@ -572,6 +663,7 @@ actor DocumentManager {
             map.insert(key: "updatedAt", value: .string(now), txn: txn)
         }
 
+        await persistSnapshot(docKey: key)
         await deliverPendingLocalUpdate(recipeId: recipeId)
     }
 

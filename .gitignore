@@ -53,6 +53,9 @@ xcuserdata/
 # Documentation
 *.generated.swift
 
+# scripts/ npm deps (svg-outline-stroke for symbol pack build)
+scripts/node_modules/
+
 # Spec Kit agent dirs (skills live globally in ~/.agents/skills)
 .agents/
 .cursor/

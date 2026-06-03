@@ -2,9 +2,22 @@
 
 **Ветка**: `012-sharing`  
 **Дата**: 2026-06-02  
-**Статус**: Draft  
+**Статус**: 🟡 Частично реализовано (аудит 2026-06-03). Остаток → [019-sharing-shopping](../019-sharing-shopping/spec.md)  
 **Зависимости**: `008` (`isPublic` в recipe doc), `009` (shopping share API), `011` (public URLs)  
 **Эталон**: share popover на recipe + shopping, PRD § Public Sharing
+
+## Аудит реализации (2026-06-03)
+
+Реализовано: `RecipeDetailShareButton` (ShareLink + `PublicURLBuilder`), toggle public в `RecipeDetailActionsMenu` → `updateRecipeIsPublic`. `SharingAPI` для shopping написан, **но не подключён в UI**.
+
+| Требование | Статус |
+|------------|--------|
+| US1 share recipe link | ✅ |
+| US2 toggle public рецепта | ✅ |
+| US3 shopping list share | ❌ `SharingAPI.updateShoppingListShare` есть, нет UI |
+| US4 text export shopping | ❌ |
+
+Не сделано → **019-sharing-shopping**: UI шаринга списка покупок (toggle + публичный URL) и text-export секции «to buy». Строки кнопок — на английском (см. 022).
 
 ## Контекст
 

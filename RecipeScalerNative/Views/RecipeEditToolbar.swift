@@ -22,10 +22,10 @@ struct RecipeEditToolbar: View {
 
     private var syncChip: some View {
         HStack(spacing: 6) {
-            AppSymbol.image( iconName)
-                .font(.caption)
+            AppSymbol.image(iconName)
+                .font(AppTypography.iconSize(AppTypography.footnoteSize))
             Text(label)
-                .font(.custom(AppFonts.sans, size: 13))
+                .font(AppTypography.footnote)
         }
         .foregroundStyle(foregroundColor)
         .padding(.horizontal, 10)

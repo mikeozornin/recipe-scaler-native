@@ -3,13 +3,14 @@ import SwiftUI
 
 @MainActor
 final class RecipeEditViewModel: ObservableObject {
-    @Published var draftName: String = ""
     @Published var draftServings: Int = 1
     @Published var draftColor: String = "oklch(0.65 0.25 270)"
     private var colorBaseline: String = "oklch(0.65 0.25 270)"
 
     private let syncService: YjsSyncService
     private let recipeId: String
+    /// Web `isEditingTitleRef` — not `@Published` (avoids full detail view re-layout on title focus).
+    var isEditingTitleField = false
 
     init(recipe: RecipeData, syncService: YjsSyncService) {
         self.recipeId = recipe.id
@@ -18,22 +19,30 @@ final class RecipeEditViewModel: ObservableObject {
     }
 
     func reset(from recipe: RecipeData) {
-        draftName = recipe.name
         draftServings = max(1, recipe.servings)
         draftColor = recipe.color
         colorBaseline = recipe.color
     }
 
-    func commit(against recipe: RecipeData) async throws {
+    /// Web parity: title writes on textarea `blur`, not on Done.
+    func saveRecipeName(_ raw: String, against recipe: RecipeData) async throws {
+        guard RecipeEditPolicy.canEdit(recipe: recipe) else {
+            throw RecipeEditError.legacyFormatReadOnly
+        }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let effectiveName = trimmed.isEmpty ? recipe.name : trimmed
+        guard !effectiveName.isEmpty, effectiveName != recipe.name else { return }
+        try await withSuspendedRecipeRefresh {
+            try await syncService.updateRecipeName(effectiveName)
+        }
+    }
+
+    /// Done: flush debounced Yjs + servings/color not yet written on blur.
+    func finishEditing(against recipe: RecipeData) async throws {
         guard RecipeEditPolicy.canEdit(recipe: recipe) else {
             throw RecipeEditError.legacyFormatReadOnly
         }
         try await withSuspendedRecipeRefresh {
-            let trimmed = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
-            let effectiveName = trimmed.isEmpty ? recipe.name : trimmed
-            if !effectiveName.isEmpty, effectiveName != recipe.name {
-                try await syncService.updateRecipeName(effectiveName)
-            }
             if draftServings != recipe.servings {
                 try await syncService.updateRecipeServings(draftServings)
             }

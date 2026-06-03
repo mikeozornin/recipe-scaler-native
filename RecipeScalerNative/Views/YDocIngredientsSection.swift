@@ -33,18 +33,21 @@ struct YDocIngredientsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(String(localized: "Ingredients"))
-                .font(.custom(AppFonts.display, size: 22))
+                .font(AppTypography.title2)
                 .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
                 .accessibilityIdentifier(AccessibilityIdentifiers.ingredientsSection)
 
             if sorted.isEmpty {
                 Text(String(localized: "No ingredients"))
-                    .font(.custom(AppFonts.sans, size: RecipeRowLayoutMetrics.titleFontSize))
+                    .font(AppTypography.body)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
             } else {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(sorted, id: \.id) { ingredient in
+                    ForEach(Array(sorted.enumerated()), id: \.element.id) { index, ingredient in
+                        if index > 0 {
+                            IngredientListRowSeparator()
+                        }
                         YDocIngredientViewRow(
                             ingredient: ingredient,
                             baseServings: baseServings,
@@ -93,13 +96,8 @@ private struct YDocIngredientViewRow: View {
 
     @ViewBuilder
     private var ingredientContent: some View {
-        if nutritionSummary != nil {
-            ingredientNameAmountRow(nutritionSummary: nutritionSummary)
-                .ingredientListRowChromeCompact()
-        } else {
-            ingredientNameAmountRow(nutritionSummary: nil)
-                .ingredientListRowChrome()
-        }
+        ingredientNameAmountRow(nutritionSummary: nutritionSummary)
+            .ingredientListRowChrome()
     }
 
     private func ingredientNameAmountRow(nutritionSummary: String?) -> some View {
@@ -108,7 +106,7 @@ private struct YDocIngredientViewRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(ingredient.name)
-                    .font(.custom(AppFonts.sans, size: RecipeRowLayoutMetrics.titleFontSize))
+                    .font(AppTypography.body)
                     .foregroundStyle(.primary)
                     .lineSpacing(RecipeRowLayoutMetrics.wrappedLineSpacing)
                     .fixedSize(horizontal: false, vertical: true)
@@ -116,7 +114,7 @@ private struct YDocIngredientViewRow: View {
 
                 if let nutritionSummary {
                     Text(nutritionSummary)
-                        .font(.custom(AppFonts.sans, size: 13))
+                        .font(AppTypography.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -124,7 +122,7 @@ private struct YDocIngredientViewRow: View {
 
             if !amountText.isEmpty {
                 Text(amountText)
-                    .font(.custom(AppFonts.mono, size: RecipeRowLayoutMetrics.titleFontSize))
+                    .font(AppTypography.mono(AppTypography.bodySize))
                     .foregroundStyle(accentColor)
                     .multilineTextAlignment(.trailing)
                     .lineLimit(1)
@@ -134,10 +132,77 @@ private struct YDocIngredientViewRow: View {
     }
 }
 
+// MARK: - Servings (edit)
+
+/// Base servings row before ingredients — same grid as edit rows, not draggable (web edit `ServingsControl`).
+private struct ServingsEditRow: View {
+    @Binding var servings: Int
+    let scaledPreview: Int
+    let accentColor: Color
+
+    @State private var draftText = ""
+    @FocusState private var isFocused: Bool
+
+    private var showsScaledPreview: Bool {
+        scaledPreview != servings
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
+            IngredientRowMarkerSlot(label: nil)
+
+            Text(String(localized: "edit.servings"))
+                .font(AppTypography.body)
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            TextField("", text: $draftText)
+                .font(AppTypography.mono(AppTypography.bodySize))
+                .foregroundStyle(accentColor)
+                .multilineTextAlignment(.trailing)
+                .keyboardType(.numberPad)
+                .frame(width: RecipeRowLayoutMetrics.amountColumnWidth, alignment: .trailing)
+                .focused($isFocused)
+                .onSubmit(commitDraft)
+                .onChange(of: draftText) { _, _ in
+                    guard isFocused, let parsed = RecipeServings.normalize(draftText) else { return }
+                    servings = min(99, parsed)
+                }
+
+            if showsScaledPreview {
+                Text("\(scaledPreview)")
+                    .font(AppTypography.mono(AppTypography.bodySize))
+                    .foregroundStyle(accentColor)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: RecipeRowLayoutMetrics.amountColumnWidth, alignment: .trailing)
+            }
+        }
+        .ingredientListRowChrome()
+        .onAppear { draftText = String(servings) }
+        .onChange(of: servings) { _, newValue in
+            guard !isFocused else { return }
+            draftText = String(newValue)
+        }
+        .onChange(of: isFocused) { _, focused in
+            if !focused { commitDraft() }
+        }
+        .accessibilityIdentifier(AccessibilityIdentifiers.recipeEditServingsRow)
+    }
+
+    private func commitDraft() {
+        if let parsed = RecipeServings.normalize(draftText) {
+            servings = min(99, parsed)
+        }
+        draftText = String(servings)
+    }
+}
+
 // MARK: - Edit mode
 
 struct YDocIngredientsEditSection: View {
     let recipe: RecipeData
+    @Binding var draftServings: Int
+    let scaledServingsPreview: Int
     let baseServings: Int
     let viewServings: Int
     let accentColor: Color
@@ -188,11 +253,19 @@ struct YDocIngredientsEditSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(String(localized: "Ingredients"))
-                .font(.custom(AppFonts.display, size: 22))
+                .font(AppTypography.title2)
                 .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
 
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(numberedRows, id: \.ingredient.id) { row in
+                ServingsEditRow(
+                    servings: $draftServings,
+                    scaledPreview: scaledServingsPreview,
+                    accentColor: accentColor
+                )
+
+                ForEach(Array(numberedRows.enumerated()), id: \.element.ingredient.id) { _, row in
+                    IngredientListRowSeparator()
+
                     let ingredient = row.ingredient
                     let draft = drafts[ingredient.id] ?? IngredientDraft(ingredient: ingredient)
                     YDocIngredientEditRow(
@@ -216,16 +289,9 @@ struct YDocIngredientsEditSection: View {
                             reorderDropped(draggedId: draggedId, onto: ingredient.id)
                         }
                     )
-                    .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
-
-                    if ingredient.id != sorted.last?.id {
-                        Divider()
-                            .padding(.leading, RecipeRowLayoutMetrics.listHorizontalInset)
-                    }
                 }
 
-                Divider()
-                    .padding(.leading, RecipeRowLayoutMetrics.listHorizontalInset)
+                IngredientListRowSeparator()
 
                 YDocNewIngredientRow(
                     name: $newName,
@@ -236,8 +302,8 @@ struct YDocIngredientsEditSection: View {
                         await submitNewIngredient()
                     }
                 )
-                .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
             }
+            .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
         }
         .toolbar {
             if focusedField != nil {
@@ -245,15 +311,17 @@ struct YDocIngredientsEditSection: View {
                     Button {
                         focusPrevious()
                     } label: {
-                        AppSymbol.image("chevron.up")
+                        AppToolbarStyle.icon("chevron.up")
                     }
+                    .appToolbarIconButton()
                     .disabled(!canFocusPrevious)
 
                     Button {
                         focusNext()
                     } label: {
-                        AppSymbol.image("chevron.down")
+                        AppToolbarStyle.icon("chevron.down")
                     }
+                    .appToolbarIconButton()
                     .disabled(!canFocusNext)
 
                     Spacer()
@@ -261,6 +329,7 @@ struct YDocIngredientsEditSection: View {
                     Button(String(localized: "edit.done")) {
                         focusedField = nil
                     }
+                    .appToolbarTextButton()
                 }
             }
         }
@@ -424,7 +493,7 @@ private struct IngredientRowMarkerSlot: View {
         Group {
             if let label {
                 Text(label)
-                    .font(.custom(AppFonts.sans, size: RecipeRowLayoutMetrics.titleFontSize))
+                    .font(AppTypography.body)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .trailing)
@@ -432,7 +501,7 @@ private struct IngredientRowMarkerSlot: View {
         }
         .frame(
             width: RecipeRowLayoutMetrics.markerSlotWidth,
-            height: RecipeRowLayoutMetrics.titleLineHeight,
+            height: RecipeRowLayoutMetrics.ingredientBodyLineHeight,
             alignment: .trailing
         )
     }
@@ -446,7 +515,7 @@ private struct IngredientRowHeaderLabel: View {
             IngredientRowMarkerSlot(label: nil)
 
             Text(text)
-                .font(.custom(AppFonts.sansMedium, size: 14))
+                .font(AppTypography.sansMedium(AppTypography.compactSize))
                 .textCase(.uppercase)
                 .tracking(0.5)
                 .foregroundStyle(.secondary)
@@ -483,7 +552,7 @@ private struct ExpandingIngredientNameField: View {
 
     var body: some View {
         TextField(placeholder, text: $text, axis: .vertical)
-            .font(.custom(AppFonts.sans, size: RecipeRowLayoutMetrics.titleFontSize))
+            .font(AppTypography.body)
             .lineSpacing(RecipeRowLayoutMetrics.wrappedLineSpacing)
             .lineLimit(1...)
             .fixedSize(horizontal: false, vertical: true)
@@ -555,7 +624,7 @@ private struct YDocIngredientEditRow: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     TextField(String(localized: "edit.ingredient.amount"), text: $amount)
-                        .font(.custom(AppFonts.mono, size: RecipeRowLayoutMetrics.titleFontSize))
+                        .font(AppTypography.mono(AppTypography.bodySize))
                         .foregroundStyle(accentColor)
                         .multilineTextAlignment(.trailing)
                         .keyboardType(.decimalPad)
@@ -573,19 +642,18 @@ private struct YDocIngredientEditRow: View {
                                 Text(String(localized: "nutrition.ingredient.tap-to-edit"))
                             }
                             AppSymbol.image("pencil")
-                                .font(.system(size: 11))
+                                .font(AppTypography.footnote)
                         }
-                        .font(.custom(AppFonts.sans, size: 13))
+                        .font(AppTypography.footnote)
                         .foregroundStyle(.secondary)
                         .underline(pattern: .dot, color: Color.secondary.opacity(0.5))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .buttonStyle(.plain)
                     .padding(.leading, RecipeRowLayoutMetrics.markerSlotWidth + RecipeRowLayoutMetrics.rowMarkerSpacing)
-                    .padding(.bottom, RecipeRowLayoutMetrics.nutritionLineBottomInset)
                 }
             }
-            .modifier(IngredientEditRowChrome(showsNutritionLine: nutritionEnabled))
+            .ingredientListRowChrome()
             .draggable(ingredient.id)
             .dropDestination(for: String.self) { items, _ in
                 guard let draggedId = items.first else { return false }
@@ -620,7 +688,7 @@ private struct YDocNewIngredientRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             TextField(String(localized: "edit.ingredient.amount"), text: $amount)
-                .font(.custom(AppFonts.mono, size: RecipeRowLayoutMetrics.titleFontSize))
+                .font(AppTypography.mono(AppTypography.bodySize))
                 .foregroundStyle(accentColor)
                 .multilineTextAlignment(.trailing)
                 .keyboardType(.decimalPad)
@@ -631,14 +699,12 @@ private struct YDocNewIngredientRow: View {
                 Task { await onSubmit() }
             } label: {
                 AppSymbol.image("return")
-                    .font(.body.weight(.semibold))
+                    .font(AppTypography.bodySemibold)
                     .frame(width: 28, height: 28)
             }
             .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             .buttonStyle(.borderless)
         }
-        .padding(.top, 4)
-        .frame(minHeight: RecipeRowLayoutMetrics.rowHeight, alignment: .top)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .ingredientListRowChrome()
     }
 }

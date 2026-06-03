@@ -2,9 +2,25 @@
 
 **Ветка**: `015-assistant`  
 **Дата**: 2026-06-02  
-**Статус**: Draft  
+**Статус**: 🔴 MVP-чат (аудит 2026-06-03). Остаток → [021-assistant-full](../021-assistant-full/spec.md)  
 **Зависимости**: `007`, `013` (account), recipe context from 001/002  
 **Эталон**: `assistant-sheet.tsx`, PRD § Assistant
+
+## Аудит реализации (2026-06-03)
+
+Реализовано: `AssistantSheet` + `AssistantAPI` (createThread, respond-stream), FAB-launcher в `AppShellView`.
+
+| Требование | Статус |
+|------------|--------|
+| US1 chat stream | 🟡 стрим читается, но UI обновляется **только финалом** (нет инкрементального рендера, SC-002 не выполнен) |
+| US2 recipe attachment (context) | ❌ |
+| US3 widgets | ❌ |
+| US4 voice | ❌ |
+| US5 actions (scale/add to shopping) | ❌ |
+| US6 follow-up suggestions | ❌ |
+| FR-AST-003 FAB position | ✅ |
+
+Не сделано → **021-assistant-full**: инкрементальный рендер стрима, attachment рецепта с sanitization, виджеты, voice, подтверждаемые actions, follow-up. Строки — на английском (см. 022).
 
 ## Контекст
 

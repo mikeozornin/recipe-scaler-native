@@ -36,9 +36,13 @@ enum AccessibilityIdentifiers {
     static let scalePlusButton = "scale_plus_button"
     static let scaleSlider = "scale_slider"
     static let ingredientsSection = "ingredients_section"
+    static let recipeEditServingsRow = "recipe_edit_servings_row"
     static let stepsSection = "steps_section"
     static let descriptionEditor = "description_editor"
     static let recipeDetailMenu = "recipe_detail_menu"
+    static let recipeImageUpload = "recipe_image_upload"
+    static let recipeTitleKeyboardDone = "recipe_title_keyboard_done"
+    static let syncStatusTransport = "sync_status_transport"
 
     static func recipeRow(id: String) -> String {
         "\(recipeRowPrefix)\(id)"

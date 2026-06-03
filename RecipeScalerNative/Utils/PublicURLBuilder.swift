@@ -10,6 +10,11 @@ enum PublicURLBuilder {
         URL(string: "\(Config.baseURL)/#/public/\(recipeId)")
     }
 
+    static func publicProfileURL(username: String) -> URL? {
+        let encoded = username.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? username
+        return URL(string: "\(Config.baseURL)/#/public/@/\(encoded)")
+    }
+
     static func profileRecipeURL(username: String, recipeId: String) -> URL? {
         let encoded = username.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? username
         return URL(string: "\(Config.baseURL)/#/public/@/\(encoded)/\(recipeId)")

@@ -6,7 +6,7 @@ struct RecipeLegacyBanner: View {
             AppSymbol.image("info.circle.fill")
                 .foregroundStyle(.secondary)
             Text(String(localized: "edit.legacy.banner"))
-                .font(.custom(AppFonts.sans, size: 14))
+                .font(AppTypography.compact)
                 .foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true)
         }

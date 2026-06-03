@@ -1,9 +1,20 @@
 import Foundation
 import OSLog
 
-/// NDJSON debug trace for sync/color investigations (`/debug` workflow).
+/// NDJSON debug trace (`/debug` workflow). Filter device logs by `[sync]` or `topic":"sync"`.
 enum AgentSyncDebugLog {
     private static let logger = Logger(subsystem: "com.recipescaler.native", category: "AgentSyncDebug")
+
+    /// Socket.IO connection lifecycle (send these lines when reporting sync bugs).
+    static func sync(
+        location: String,
+        message: String,
+        data: [String: String] = [:]
+    ) {
+        var enriched = data
+        enriched["topic"] = "sync"
+        write(hypothesisId: "sync", location: location, message: message, data: enriched)
+    }
 
     static func write(
         hypothesisId: String,
@@ -13,7 +24,7 @@ enum AgentSyncDebugLog {
     ) {
         #if DEBUG
         var payload: [String: Any] = [
-            "sessionId": "sync-color-native",
+            "sessionId": "sync-connection-native",
             "location": location,
             "message": message,
             "hypothesisId": hypothesisId,
@@ -22,7 +33,8 @@ enum AgentSyncDebugLog {
         payload["data"] = data
         guard let json = try? JSONSerialization.data(withJSONObject: payload),
               let line = String(data: json, encoding: .utf8) else { return }
-        logger.info("\(line, privacy: .public)")
+        let topic = (data["topic"] == "sync") ? "[sync] " : ""
+        logger.info("\(topic)\(line, privacy: .public)")
         appendToSessionFile(line + "\n")
         #endif
     }

@@ -69,12 +69,12 @@ struct QRScannerView: View {
     private func errorView(_ error: QRScannerError) -> some View {
         VStack(spacing: 16) {
             Text(errorTitle(error))
-                .font(.custom(AppFonts.sansMedium, size: 18))
+                .font(AppTypography.sansMedium(18))
                 .foregroundColor(.red)
                 .multilineTextAlignment(.center)
 
             Text(errorDescription(error))
-                .font(.custom(AppFonts.sans, size: 15))
+                .font(AppTypography.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
@@ -84,7 +84,7 @@ struct QRScannerView: View {
                     setupError = nil
                     retryCount += 1
                 }
-                .font(.custom(AppFonts.sansMedium, size: 16))
+                .font(AppTypography.sansMedium(AppTypography.calloutSize))
                 .padding(.top, 8)
             }
         }

@@ -88,6 +88,7 @@ struct RecipeListView: View {
                 }
             }
             .navigationTitle("Recipes")
+            .appListBodyTypography()
             .navigationDestination(for: String.self) { recipeId in
                 YDocRecipeDetailView(
                     recipeId: recipeId,
@@ -112,15 +113,17 @@ struct RecipeListView: View {
                     Button {
                         Task { await handleAddRecipe() }
                     } label: {
-                        AppSymbol.image("plus")
+                        AppToolbarStyle.iconOnly(systemName: "plus")
                     }
+                    .appToolbarIconButton()
                     .disabled(isCreatingRecipe)
                     .accessibilityIdentifier(AccessibilityIdentifiers.recipeListAdd)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     SyncStatusIndicator(
                         connectionState: syncService.connectionState,
-                        imageCacheStatus: syncService.imageCacheStatus
+                        imageCacheStatus: syncService.imageCacheStatus,
+                        recipeDocumentCacheStatus: syncService.recipeDocumentCacheStatus
                     ) {
                         showingSyncStatus = true
                     }
@@ -129,9 +132,14 @@ struct RecipeListView: View {
             .sheet(isPresented: $showingSyncStatus) {
                 SyncStatusSheet(
                     connectionState: syncService.connectionState,
+                    connectionTransport: syncService.connectionTransport,
                     imageCacheStatus: syncService.imageCacheStatus,
+                    recipeDocumentCacheStatus: syncService.recipeDocumentCacheStatus,
                     onRetryImageDownload: {
                         syncService.retryImagePrefetch()
+                    },
+                    onRetryRecipeDocumentsDownload: {
+                        syncService.retryRecipeDocumentsBatchLoad()
                     }
                 )
             }
@@ -341,7 +349,7 @@ private struct RecipeListSectionHeader: View {
         HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
             if isPinnedSection {
                 AppSymbol.image("pin")
-                    .font(.system(size: 16))
+                    .font(AppTypography.iconSize(AppTypography.calloutSize))
                     .frame(
                         width: RecipeRowLayoutMetrics.markerSlotWidth,
                         height: RecipeRowLayoutMetrics.titleLineHeight,
@@ -356,7 +364,7 @@ private struct RecipeListSectionHeader: View {
             )
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .font(.custom(AppFonts.sans, size: 14))
+        .font(AppTypography.compact)
         .foregroundStyle(.secondary)
     }
 }
@@ -384,21 +392,28 @@ private extension View {
 private struct SyncStatusIndicator: View {
     let connectionState: ConnectionState
     let imageCacheStatus: RecipeImageCacheStatus
+    let recipeDocumentCacheStatus: RecipeDocumentCacheStatus
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
-            ZStack(alignment: .bottomTrailing) {
+            ZStack {
                 connectionGlyph
-                    .font(.caption)
+                    .font(AppTypography.footnote)
+
+                if recipeDocumentCacheStatus.totalRecipes > 0 {
+                    recipeDocumentBadge
+                        .font(AppTypography.footnote)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
 
                 if imageCacheStatus.recipesWithImage > 0 {
                     imageCacheBadge
-                        .font(.system(size: 9))
-                        .offset(x: 4, y: 4)
+                        .font(AppTypography.footnote)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                 }
             }
-            .frame(minWidth: 28, minHeight: 28)
+            .frame(minWidth: 32, minHeight: 32)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
@@ -423,6 +438,22 @@ private struct SyncStatusIndicator: View {
     }
 
     @ViewBuilder
+    private var recipeDocumentBadge: some View {
+        if recipeDocumentCacheStatus.isDownloading {
+            AppSymbol.image("arrow.down.doc.fill")
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, .indigo)
+        } else if recipeDocumentCacheStatus.isFullyCached {
+            AppSymbol.image("doc.fill")
+                .foregroundStyle(.green)
+        } else {
+            AppSymbol.image("doc.badge.exclamationmark.fill")
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, .orange)
+        }
+    }
+
+    @ViewBuilder
     private var imageCacheBadge: some View {
         if imageCacheStatus.isDownloading {
             AppSymbol.image("arrow.down.circle.fill")
@@ -439,6 +470,9 @@ private struct SyncStatusIndicator: View {
     }
 
     private var connectionTint: Color {
+        if recipeDocumentCacheStatus.totalRecipes > 0, !recipeDocumentCacheStatus.isFullyCached {
+            return .orange
+        }
         if imageCacheStatus.recipesWithImage > 0, !imageCacheStatus.isFullyCached {
             return .orange
         }
@@ -447,6 +481,16 @@ private struct SyncStatusIndicator: View {
 
     private var accessibilityLabel: String {
         var parts = [connectionState.displayLabel]
+        if recipeDocumentCacheStatus.totalRecipes > 0 {
+            parts.append(
+                String(
+                    format: String(localized: "sync.status.a11y.recipes"),
+                    locale: .current,
+                    recipeDocumentCacheStatus.cachedRecipes,
+                    recipeDocumentCacheStatus.totalRecipes
+                )
+            )
+        }
         if imageCacheStatus.recipesWithImage > 0 {
             parts.append(
                 String(
@@ -526,7 +570,7 @@ struct RecipeRow: View {
             )
 
             Text(titleText)
-                .font(.custom(AppFonts.sans, size: RecipeRowLayoutMetrics.titleFontSize))
+                .font(AppTypography.body)
                 .foregroundColor(.primary)
                 .lineSpacing(RecipeRowLayoutMetrics.wrappedLineSpacing)
                 .fixedSize(horizontal: false, vertical: true)

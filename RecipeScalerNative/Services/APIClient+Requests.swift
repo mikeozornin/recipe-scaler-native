@@ -53,9 +53,22 @@ extension APIClient {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+            if let apiError = Self.parseAPIFailureBody(data) {
+                throw APIError.serverError(message: apiError)
+            }
             throw APIError.httpError(statusCode: code)
         }
         return data
+    }
+
+    private static func parseAPIFailureBody(_ data: Data) -> String? {
+        struct Empty: Decodable {}
+        guard let json = try? JSONDecoder().decode(APIResponse<Empty>.self, from: data),
+              !json.success,
+              let error = json.error, !error.isEmpty else {
+            return nil
+        }
+        return error
     }
 }
 

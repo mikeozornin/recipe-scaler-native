@@ -32,12 +32,15 @@ struct ImportRecipeSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Picker("Mode", selection: $mode) {
-                    Text("URL").tag(ImportMode.url)
-                    Text("Text").tag(ImportMode.text)
-                    Text("Photo").tag(ImportMode.photo)
-                }
-                .pickerStyle(.segmented)
+                AppSegmentedControl(
+                    segments: [
+                        .init(value: ImportMode.url, title: "URL"),
+                        .init(value: ImportMode.text, title: "Text"),
+                        .init(value: ImportMode.photo, title: "Photo"),
+                    ],
+                    selection: $mode
+                )
+                .accessibilityLabel("Mode")
 
                 switch mode {
                 case .url:
@@ -52,24 +55,27 @@ struct ImportRecipeSheet: View {
                         AppLabel.make("Choose photos", symbol: "photo")
                     }
                     Text("\(photoItems.count) selected (max 8)")
-                        .font(.caption)
+                        .font(AppTypography.footnote)
                         .foregroundStyle(.secondary)
                 }
 
                 if let errorMessage {
                     Text(errorMessage)
                         .foregroundStyle(.red)
-                        .font(.footnote)
+                        .font(AppTypography.footnote)
                 }
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.importSheet)
             .navigationTitle("Import recipe")
+            .appListBodyTypography()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .appToolbarTextButton()
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Import") { Task { await submit() } }
+                        .appToolbarConfirmButton()
                         .disabled(isProcessing || !canSubmit)
                 }
             }

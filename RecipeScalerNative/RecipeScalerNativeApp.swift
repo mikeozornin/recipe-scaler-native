@@ -15,7 +15,7 @@ import Agentation
 struct RecipeScalerNativeApp: App {
     init() {
         TimerManager.registerBackgroundTasksIfNeeded()
-        configureNavigationBarFonts()
+        AppChromeAppearance.configure()
         #if DEBUG
         Agentation.shared.install()
         #endif
@@ -51,18 +51,4 @@ struct RecipeScalerNativeApp: App {
         .modelContainer(sharedModelContainer)
     }
 
-    private func configureNavigationBarFonts() {
-        let largeTitleFont = UIFont(name: AppFonts.display, size: 34) ?? UIFont.systemFont(ofSize: 34, weight: .bold)
-        let inlineTitleFont = UIFont(name: AppFonts.sansMedium, size: 17) ?? UIFont.systemFont(ofSize: 17, weight: .semibold)
-
-        let navBar = UINavigationBar.appearance()
-        navBar.largeTitleTextAttributes = [
-            .font: largeTitleFont,
-            .foregroundColor: UIColor.label
-        ]
-        navBar.titleTextAttributes = [
-            .font: inlineTitleFont,
-            .foregroundColor: UIColor.label
-        ]
-    }
 }
