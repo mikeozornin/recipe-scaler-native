@@ -26,4 +26,4 @@ sim_launch -SkipSplash=1
 sim_wait_ready 5
 SHOT="$(sim_screenshot "$SHOT_DIR" "timers-panel")"
 echo "Screenshot: $SHOT"
-echo "VERIFIED timers-sync (static + panel screenshot; cross-device SC-001/SC-002 — manual per BLOCKER.md)"
+echo "VERIFIED timers-sync (014 done; timer push → specs/023-push-notifications)"

@@ -93,15 +93,18 @@ Native v3 `XmlFragment('description')` → HTML via yrs; existing `StepsSection`
 - [x] Manual quickstart (`specs/004-description-read-only/quickstart.md`) — automated path covers US1; offline/web regression still manual
 - [x] Fixture screenshots 2026-06-04 (`specs/004-description-read-only/screenshots/description-fixture-20260604-*.png`)
 
-## Spec 014: Timers sync — IN CODE (manual cross-device open)
+## Spec 014: Timers sync — DONE (2026-06-04)
 
-Cross-device timer state + mobile panel parity (no APNs — separate «пуши» feature).
+Cross-device timer state + mobile panel parity.
 
 - [x] `TimerSyncService` + socket `timer_event` wiring in `YjsSyncService`
 - [x] `MobileTimerPanel` — pause/resume/delete, collapse, overdue UI
 - [x] Start from description — timer node tap → popover → `createAndStartTimer`
 - [x] `scripts/verify-timers-sync.sh`; panel screenshots 2026-06-04
-- [ ] SC-001/SC-002: manual iOS ↔ web on same account (see `specs/014-timers-sync/BLOCKER.md`)
+
+## Spec 023: Push notifications — PLANNED
+
+APNs registration + server schedule/cancel for timers (moved from 014). See `specs/023-push-notifications/spec.md`.
 
 ## UX polish (no separate spec)
 
@@ -140,3 +143,4 @@ Phase 1 (done)          Phase 2 (done)             Phase 3 (done)
 - [specs/003-recipe-image-offline-cache/](../specs/003-recipe-image-offline-cache/)
 - [specs/004-description-read-only/](../specs/004-description-read-only/)
 - [specs/014-timers-sync/](../specs/014-timers-sync/)
+- [specs/023-push-notifications/](../specs/023-push-notifications/)

@@ -18,7 +18,8 @@
 | 001 | yrs + чтение коллекции/рецепта, офлайн-снимки | ✅ |
 | 002 | Редактирование v3 (поля, ингредиенты, nutrition), офлайн-очередь | ✅ |
 | 003 | Офлайн-кэш изображений (REST → диск) | ✅ |
-| 004 | Просмотр описания v3 (XmlFragment → HTML, без WKWebView) | 🔄 в работе |
+| 004 | Просмотр описания v3 (XmlFragment → HTML, без WKWebView) | ✅ |
+| 014 | Синк таймеров + mobile panel | ✅ |
 | — | Auth BIP39, таймеры локальные, i18n ru/en, масштаб порций UI-local | ✅ Phase 1 |
 
 ## Этапы (после 004)
@@ -92,7 +93,8 @@ flowchart LR
 | Spec | Название | Зачем |
 |------|----------|-------|
 | [013-account-settings](../013-account-settings/spec.md) | Профиль, настройки, Telegram, export/import файлов | Вкладка Profile |
-| [014-timers-sync](../014-timers-sync/spec.md) | Синк таймеров + server push (паритет push-правил PRD) | Кросс-девайс готовка |
+| [014-timers-sync](../014-timers-sync/spec.md) | Синк таймеров + mobile panel | ✅ Done |
+| [023-push-notifications](../023-push-notifications/spec.md) | APNs + push для таймеров (schedule/cancel, reminder PRD) | После 014 |
 | [015-assistant](../015-assistant/spec.md) | AI-ассистент (stream, voice, widgets) | Отдельный launcher на мобильном вебе |
 
 ## Матрица: мобильный веб vs iOS (2026-06-02)
@@ -123,7 +125,8 @@ flowchart LR
 | Telegram connect | PRD § Telegram | ❌ | 013 |
 | Export JSON/ZIP, PDF | account + public | ❌ PDF в Phase 6 PRD | 013 (export), PDF позже |
 | Таймеры локальные | + mobile `TimerPanel` | ✅ Phase 1 | — |
-| Таймеры sync + push | ARCHITECTURE + PRD | локально только | 014 |
+| Таймеры sync | ARCHITECTURE + PRD | ✅ 014 | — |
+| Таймеры push (фон) | PRD reminder + completion | локально UN только | 023 |
 | Auth seed + QR | web + native | seed ✅, QR частично | 013 |
 | OAuth | web | ➖ out of scope | — |
 | PWA install | web | ➖ N/A | — |

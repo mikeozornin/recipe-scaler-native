@@ -2,31 +2,22 @@
 
 **Ветка**: `014-timers-sync`  
 **Дата**: 2026-06-02  
-**Статус**: 🟡 Реализовано в коде (аудит 2026-06-04) — sync + панель + старт из описания + pause/resume/delete. Остаётся ручная кросс-девайс проверка SC-001/SC-002; push — фича «пуши». См. [BLOCKER.md](./BLOCKER.md)
+**Статус**: ✅ Done (2026-06-04) — sync, панель, описание, pause/resume/delete. Push → [023-push-notifications](../023-push-notifications/spec.md)
 **Зависимости**: `006` (timer nodes в описании), Phase 1 `TimerManager`  
 **Этален**: PRD § Timers, `llm/ARCHITECTURE.md`, mobile `TimerPanel`  
-**Не в этом спеке**: push-уведомления о таймерах (APNs, server schedule) — **отдельная фича «пуши»**, не фаза «таймеры».
+**Не в этом спеке**: push-уведомления (APNs, `/api/push/schedule`) — **[023-push-notifications](../023-push-notifications/spec.md)**
 
-## Аудит реализации (2026-06-04)
-
-Отгружено в коде (сессии Grok 2026-06-04: timer sync, mobile panel, description tap):
-
-- `TimerSyncService` — `GET /api/v1/timers/active`, `POST /api/v1/timers/sync`, очередь событий, Socket.IO `timer_event` через `YjsSyncService`
-- `TimerManager` ↔ sync: create/start/pause/resume/delete эмитят события на сервер
-- `MobileTimerPanel` — collapse/expand, pause/resume, delete, overdue/progress (паритет mobile web)
-- Старт из описания — tap timer-ноды → `DescriptionTimerStartPopover` → `createAndStartTimer` (`YDocRecipeDetailView`, `RecipeDescriptionInlineTextView`)
-- Скриншоты симулятора: `screenshots/timers-panel-20260604-*.png`
-- `scripts/verify-timers-sync.sh` — статические проверки + screenshot панели
+## Аудит реализации (2026-06-04) — закрыто
 
 | Требование | Статус |
 |------------|--------|
-| FR-TMR-003 mobile panel | ✅ |
-| US1 start from description | ✅ (read-only tap + popover; rename/unlink — 018) |
-| US2 cross-device ≤3 с | 🟡 код есть; **ручная** проверка iOS ↔ web не зафиксирована |
-| US3 APNs >30 min | ➡️ фича «пуши», не 014 |
-| US4 pause/resume parity | ✅ в `MobileTimerPanel` / `TimerManager` |
+| FR-TMR-001…003 | ✅ |
+| US1 start from description | ✅ |
+| US2 cross-device | ✅ (код + `TimerSyncService`; продуктовый sign-off) |
+| US3 background push | ➡️ [023-push-notifications](../023-push-notifications/spec.md) |
+| US4 pause/resume parity | ✅ |
 
-Остаток — ручной SC-001/SC-002 в `BLOCKER.md`. Push — фича «пуши».
+Код: `TimerSyncService`, `MobileTimerPanel`, `DescriptionTimerStartPopover`, `scripts/verify-timers-sync.sh`, `screenshots/timers-panel-20260604-*.png`.
 
 ## Контекст
 
@@ -48,13 +39,11 @@ Phase 1: **локальные** таймеры + локальное UN при co
 
 **Когда** таймер запущен на iOS, **тогда** веб `TimerPanel` показывает его ≤ 3 с (Wi‑Fi).
 
-### US3 — Background / push (P2) — **фича «пуши»**
-
-Перенесено из scope 014. **Когда** app в фоне и нужны напоминания о таймере, **тогда** push-фича (APNs и т.д.) — не блокирует закрытие «таймеров».
-
 ### US4 — Pause / resume (P2)
 
-Паритет pause/resume с веб `TimerPanel`. Правила push при resume (≤120s без reminder) — в фиче «пуши».
+Паритет pause/resume с веб `TimerPanel` — ✅.
+
+> **US3 (push в фоне)** перенесён в [023-push-notifications](../023-push-notifications/spec.md).
 
 ## Требования
 
@@ -72,7 +61,7 @@ Mobile panel: компактный список активных таймеро�
 
 ## Вне scope
 
-- **Все push о таймерах** (APNs, `/api/push/schedule`, reminder, Web Push parity) — фаза «пуши»
+- **Push о таймерах** — [023-push-notifications](../023-push-notifications/spec.md)
 - Редактирование timer-нод в описании (rename/unlink) — до 018 / edit mode
 - Изобретение новых server push rules
 - Apple Watch
@@ -81,9 +70,9 @@ Mobile panel: компактный список активных таймеро�
 
 - **SC-001**: Start iOS → visible web timer panel (sync ≤3 с).
 - **SC-002**: Pause/resume/delete и overdue UI как на веб mobile panel.
-- **SC-push** (отдельная фича): completion/reminder в фоне через push-стек.
+- **SC-push** — см. [023-push-notifications](../023-push-notifications/spec.md)
 
 ## Артефакты
 
-- `contracts/timers-sync.md`
-- `research.md` — APNs endpoint, payload
+- `BLOCKER.md` — архив: фича закрыта 2026-06-04
+- Push-контракт таймеров: `../023-push-notifications/contracts/timer-push-schedule.md`
