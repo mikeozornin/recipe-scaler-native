@@ -2,6 +2,7 @@ import Combine
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
     @StateObject private var authService = AuthService.shared
     @StateObject private var syncService: YjsSyncService
     @State private var showSplash = true
@@ -97,6 +98,10 @@ struct ContentView: View {
     private func appShell(syncService: YjsSyncService) -> some View {
         AppShellView()
             .environmentObject(syncService)
+            .environmentObject(TimerManager.shared)
+            .onAppear {
+                TimerManager.shared.configure(modelContext: modelContext)
+            }
             .task(id: effectiveUserId) {
                 #if DEBUG
                 AgentSyncDebugLog.sync(

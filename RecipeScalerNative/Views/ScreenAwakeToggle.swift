@@ -4,33 +4,23 @@
 //
 
 import SwiftUI
-import UIKit
 
-/// Keeps the screen on while cooking (web `useWakeLock` / `sun.max.fill`).
+/// Toolbar control for keep-awake (web `useWakeLock` / Coffee icon). State owned by parent screen.
 struct ScreenAwakeToggle: View {
-    @State private var isActive = false
+    @Binding var isActive: Bool
 
     var body: some View {
         Button {
             isActive.toggle()
-            UIApplication.shared.isIdleTimerDisabled = isActive
         } label: {
-            AppToolbarStyle.iconOnly(
-                systemName: "sun.max.fill",
-                isActive: isActive
-            )
+            AppToolbarStyle.iconOnly(.coffee, isActive: isActive)
         }
         .appToolbarIconButton()
+        .accessibilityIdentifier(AccessibilityIdentifiers.screenAwakeToggle)
         .accessibilityLabel(
             isActive
                 ? String(localized: "common.disable-wake-lock")
                 : String(localized: "common.enable-wake-lock")
         )
-        .onDisappear {
-            if isActive {
-                isActive = false
-                UIApplication.shared.isIdleTimerDisabled = false
-            }
-        }
     }
 }

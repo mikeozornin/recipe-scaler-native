@@ -36,13 +36,42 @@ enum AccessibilityIdentifiers {
     static let scalePlusButton = "scale_plus_button"
     static let scaleSlider = "scale_slider"
     static let ingredientsSection = "ingredients_section"
+    static let ingredientDragHandle = "ingredient_drag_handle"
     static let recipeEditServingsRow = "recipe_edit_servings_row"
+    static let recipeEditNewIngredientRow = "recipe_edit_new_ingredient_row"
+    static let recipeEditNewIngredientSubmit = "recipe_edit_new_ingredient_submit"
     static let stepsSection = "steps_section"
     static let descriptionEditor = "description_editor"
     static let recipeDetailMenu = "recipe_detail_menu"
+    static let screenAwakeToggle = "screen_awake_toggle"
+    static let screenAwakeBanner = "screen_awake_banner"
     static let recipeImageUpload = "recipe_image_upload"
     static let recipeTitleKeyboardDone = "recipe_title_keyboard_done"
     static let syncStatusTransport = "sync_status_transport"
+    static let mobileTimerPanel = "mobile_timer_panel"
+    static let mobileTimerPanelHeader = "mobile_timer_panel_header"
+    static let descriptionTimerStartPopover = "description_timer_start_popover"
+    static let descriptionTimerStartConfirm = "description_timer_start_confirm"
+
+    static func mobileTimerChip(timerId: String) -> String {
+        "mobile_timer_chip_\(timerId)"
+    }
+
+    static func mobileTimerToggle(timerId: String) -> String {
+        "mobile_timer_toggle_\(timerId)"
+    }
+
+    static func mobileTimerDelete(timerId: String) -> String {
+        "mobile_timer_delete_\(timerId)"
+    }
+
+    static func descriptionTimerRun(displayText: String) -> String {
+        let slug = displayText
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+            .filter { $0.isLetter || $0.isNumber || $0 == "_" }
+        return "description_timer_\(slug.prefix(40))"
+    }
 
     static func recipeRow(id: String) -> String {
         "\(recipeRowPrefix)\(id)"

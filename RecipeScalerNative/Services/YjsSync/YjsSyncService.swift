@@ -368,6 +368,14 @@ final class YjsSyncService: ObservableObject {
         self.userId = userId
         await documentManager.setUserId(userId)
         APIClient.shared.configure(userId: userId)
+        TimerSyncService.shared.configure(
+            userId: userId,
+            deviceId: deviceId,
+            timerManager: TimerManager.shared
+        )
+        TimerSyncService.shared.sendTimerEvent = { [weak self] type, timerId, payload in
+            await self?.emitTimerEvent(type: type, timerId: timerId, eventData: payload) ?? false
+        }
         installImageCacheObserversIfNeeded()
 
         // Connect before SQLite snapshot IO so UI is not stuck on "Offline" while docs load.
@@ -665,6 +673,14 @@ final class YjsSyncService: ObservableObject {
                 )
                 // #endregion
                 self.markAuthenticatedAndLoadCollection()
+            }
+        }
+
+        client.on("timer_event") { [weak self] data, _ in
+            Task { @MainActor in
+                guard let self, self.isCurrentSocketSession(sessionId) else { return }
+                guard let payload = data.first as? [String: Any] else { return }
+                TimerSyncService.shared.handleWebSocketPayload(payload)
             }
         }
 
@@ -1060,6 +1076,34 @@ final class YjsSyncService: ObservableObject {
             Task { await drainOfflineQueue() }
         } else {
             loadCollectionDocument()
+        }
+        TimerSyncService.shared.initializeAfterAuth()
+    }
+
+    /// Sends a timer sync event over Socket.IO (ack); used by `TimerSyncService`.
+    func emitTimerEvent(
+        type: SyncedTimerEventType,
+        timerId: String,
+        eventData: [String: Any]
+    ) async -> Bool {
+        guard let socket, socket.status == .connected, isSocketAuthenticated else { return false }
+        let payload: [String: Any] = [
+            "eventType": type.rawValue,
+            "timerId": timerId,
+            "timestamp": Int(Date().timeIntervalSince1970 * 1000),
+            "eventData": eventData,
+        ]
+        return await withCheckedContinuation { continuation in
+            socket.emitWithAck("timer_event", payload).timingOut(after: 5) { data in
+                let ok: Bool
+                if let first = data.first as? [String: Any],
+                   let success = first["success"] as? Bool {
+                    ok = success
+                } else {
+                    ok = !data.isEmpty
+                }
+                continuation.resume(returning: ok)
+            }
         }
     }
 

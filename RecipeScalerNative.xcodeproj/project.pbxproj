@@ -145,6 +145,13 @@
 		E5F60718293A4B70A1B2C3E5 /* RecipeImageUploadPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */; };
 		E5F60718293A4B7069A26F71 /* AccountCheckmarkSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */; };
 		E5F60718293A4B7058D1A50A /* AccountOptionLabels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70E32FCAE0 /* AccountOptionLabels.swift */; };
+		E5F60718293A4B70321FB5DD /* ScreenAwakeStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */; };
+		E5F60718293A4B701757B9DA /* ScreenAwakeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B701A6B5339 /* ScreenAwakeController.swift */; };
+		E5F60718293A4B703C4C8B66 /* TimerUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7066BF06C8 /* TimerUtils.swift */; };
+		E5F60718293A4B709664372C /* TimerSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A0433F17 /* TimerSyncService.swift */; };
+		E5F60718293A4B7002D26536 /* RecipeDescriptionTimerReference.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B707F339DC6 /* RecipeDescriptionTimerReference.swift */; };
+		E5F60718293A4B703037711D /* DescriptionTimerPopoverState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70309B38A2 /* DescriptionTimerPopoverState.swift */; };
+		E5F60718293A4B70F59549AC /* DescriptionTimerStartPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7004E397E0 /* DescriptionTimerStartPopover.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -289,6 +296,13 @@
 		E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeImageUploadPreprocessor.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountCheckmarkSelectionView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70E32FCAE0 /* AccountOptionLabels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountOptionLabels.swift; sourceTree = "<group>"; };
+		E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenAwakeStatusBanner.swift; sourceTree = "<group>"; };
+		E5F60718293A4B701A6B5339 /* ScreenAwakeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenAwakeController.swift; sourceTree = "<group>"; };
+		E5F60718293A4B7066BF06C8 /* TimerUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerUtils.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70A0433F17 /* TimerSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSyncService.swift; sourceTree = "<group>"; };
+		E5F60718293A4B707F339DC6 /* RecipeDescriptionTimerReference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDescriptionTimerReference.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70309B38A2 /* DescriptionTimerPopoverState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionTimerPopoverState.swift; sourceTree = "<group>"; };
+		E5F60718293A4B7004E397E0 /* DescriptionTimerStartPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionTimerStartPopover.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -369,6 +383,7 @@
 				E5F60718293A4B7000000055 /* RecipeDescriptionView.swift */,
 				E5F60718293A4B700000005B /* RecipeDescriptionInlineTextView.swift */,
 				E5F60718293A4B7000000057 /* DescriptionFixturePreviewView.swift */,
+				E5F60718293A4B7004E397E0 /* DescriptionTimerStartPopover.swift */,
 				E5F60718293A4B7000000071 /* DescriptionEditorBridge.swift */,
 				E5F60718293A4B7000000073 /* DescriptionEditorWebView.swift */,
 				E5F60718293A4B7000000075 /* DescriptionEditorView.swift */,
@@ -399,6 +414,7 @@
 				E5F60718293A4B70C1A2B3D3 /* RecipeDetailImageSection.swift */,
 				E5F60718293A4B708354CFBC /* RecipeDetailShareButton.swift */,
 				E5F60718293A4B7065B733F2 /* ScreenAwakeToggle.swift */,
+				E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -545,6 +561,8 @@
 				E5F60718293A4B7000000043 /* RecipeReadDiagnostics.swift */,
 				E5F60718293A4B700000005D /* DebugLaunchOptions.swift */,
 				E5F60718293A4B7000000051 /* RecipeDescriptionFixture.swift */,
+				E5F60718293A4B707F339DC6 /* RecipeDescriptionTimerReference.swift */,
+				E5F60718293A4B70309B38A2 /* DescriptionTimerPopoverState.swift */,
 				E5F60718293A4B7000000053 /* RecipeDescriptionParser.swift */,
 				E5F60718293A4B7000000059 /* RecipeDescriptionStyle.swift */,
 				E5F60718293A4B700000000D /* AgentSyncDebugLog.swift */,
@@ -552,6 +570,8 @@
 				E5F60718293A4B70219947AF /* ShoppingListConstants.swift */,
 				E5F60718293A4B7040751435 /* ShoppingListFromRecipe.swift */,
 				E5F60718293A4B70898823B7 /* PublicURLBuilder.swift */,
+				E5F60718293A4B701A6B5339 /* ScreenAwakeController.swift */,
+				E5F60718293A4B7066BF06C8 /* TimerUtils.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -575,6 +595,7 @@
 				E5F60718293A4B7000000024 /* RecipeImageDiskCache.swift */,
 				E5F60718293A4B7000000026 /* RecipeImageDecoder.swift */,
 				1D90E06DB664829F1CEFCCD5 /* TimerManager.swift */,
+				E5F60718293A4B70A0433F17 /* TimerSyncService.swift */,
 				D0574E4BB4D0DE3B5AE7CFAB /* Yrs */,
 				E49E6DAE77BDA02267796630 /* YjsSync */,
 				6C814AF9AA15A89BCAC1A9E4 /* Storage */,
@@ -793,7 +814,13 @@
 				E5F60718293A4B70C1A2B3D4 /* RecipeDetailImageSection.swift in Sources */,
 				E5F60718293A4B70E425B385 /* RecipeDetailShareButton.swift in Sources */,
 				E5F60718293A4B70CC88F2B7 /* ScreenAwakeToggle.swift in Sources */,
-			
+				E5F60718293A4B70321FB5DD /* ScreenAwakeStatusBanner.swift in Sources */,
+				E5F60718293A4B701757B9DA /* ScreenAwakeController.swift in Sources */,
+				E5F60718293A4B703C4C8B66 /* TimerUtils.swift in Sources */,
+				E5F60718293A4B709664372C /* TimerSyncService.swift in Sources */,
+				E5F60718293A4B70F59549AC /* DescriptionTimerStartPopover.swift in Sources */,
+				E5F60718293A4B703037711D /* DescriptionTimerPopoverState.swift in Sources */,
+				E5F60718293A4B7002D26536 /* RecipeDescriptionTimerReference.swift in Sources */,
 				E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */,
 				E5F60718293A4B70F68BDA71 /* AppThemePreference.swift in Sources */,
 				E5F60718293A4B70E6687EC7 /* AppLanguagePreference.swift in Sources */,

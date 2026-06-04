@@ -1,6 +1,6 @@
 # План реализации: нативное редактирование рецепта (Phase 3)
 
-**Ветка**: `002-native-editing` | **Дата**: 2026-06-01 | **Спека**: [spec.md](./spec.md) | **Статус**: реализация в процессе (MVP US0+US1 в коде)
+**Ветка**: `002-native-editing` | **Дата**: 2026-06-01 | **Спека**: [spec.md](./spec.md) | **Статус**: ✅ реализовано в коде (2026-06-04); открыты T034 quickstart и T045 SC-002a (ручной parity + скриншот сетки)
 
 **Вход**: спецификация `/specs/002-native-editing/spec.md`
 
@@ -69,8 +69,11 @@ Phase 3 добавляет **путь записи** поверх чтения/�
 | Название (edit) | `recipe-detail.tsx` ~2207 — mobile `textarea` 32px | iOS: `TextField` или многострочное поле той же заметности |
 | Цвет (edit) | `recipe-detail.tsx` ~2264 — `<input type="color">` | iOS: чипы пресетов или `ColorPicker` → `recipe.color` |
 | Порции + слайдер масштаба | `servings-control.tsx` + `useRecipeScale` | В edit меняется **базовый** `servings`; слайдер — UI-local scale (FR-007) |
-| Список ингредиентов | `ingredients-section.tsx` | View: `ViewOnlyIngredientRow`; edit: inline + строка добавления; на iOS — **sheet** на один ингредиент |
-| Swipe delete | `swipeable-row.tsx`, `draggable-ingredient-row.tsx` | iOS: `swipeActions` |
+| Список ингредиентов | `ingredients-section.tsx`, `view-only-ingredient-row.tsx`, `draggable-ingredient-row.tsx` | Две колонки qty (base + scaled), заголовки Ingredient/Qty; см. **`contracts/ingredients-grid-ui.md`** |
+| Просмотр: правка scaled qty | `use-recipe-scale.ts` | Пересчёт локального `scaleFactor`, не Y.Doc |
+| Edit: inline CRUD | `draggable-ingredient-row.tsx` | Inline name/amount; строка «+»; nutrition — sheet по tap на КБЖУ |
+| Swipe delete | `swipeable-row.tsx` | iOS: **`List` + `swipeActions(trailing)`** — нативный iOS, без context menu |
+| Reorder | dnd-kit на вебе / drag handle | iOS: **`List` + `onMove`** + системный призрак (Reminders), reorder control справа |
 | Nutrition | `nutrition-section.tsx`, `nutrition-block.tsx` | Поля read-only / editable; LLM-пересчёт в Phase 3 не обязателен |
 | Legacy / миграция | `migration-alert.tsx` | **Только веб** — кнопка миграции в v3. iOS: **баннер read-only** без миграции (спека) |
 | Debounced save | `use-recipe-persistence.ts` (`SAVE_DEBOUNCE_MS`) | ~1 с перед `sync_request` |
@@ -85,14 +88,14 @@ Phase 3 добавляет **путь записи** поверх чтения/�
 |-----------|-------|-----|
 | **Legacy read-only** | `version` v1 или v2 | Верхний **баннер** (info): «Старый формат рецепта — только просмотр. Обновите рецепт в веб-приложении.» Без Edit. Слайдер масштаба работает (UI-local). |
 | **Просмотр v3** | v3, не edit | Toolbar: **Edit** (карандаш). Поля текстом. Ингредиенты read-only. Nutrition read-only. **Чип sync записи**: idle / synced. |
-| **Редактирование v3** | v3, edit | Toolbar: **Done** (фиксирует локальные изменения → debouncer). Название → `TextField`. Порции → `Stepper` или числовое поле → `servings`. Цвет → горизонтальные **чипы пресетов** (палитра как на вебе). Ингредиенты: строка **+**, swipe-delete, tap → **sheet** (имя, количество, order). Nutrition: числовые поля inline. Чип sync: pending / syncing / error. |
+| **Редактирование v3** | v3, edit | Toolbar: **Done**. Название → `TextField`. Порции в сетке ингредиентов + степпер в просмотре. Цвет → чипы. Ингредиенты: **inline** сетка (`YDocIngredientsEditSection`), swipe-delete, **List reorder**; nutrition строки — tap → sheet. Чип sync: pending / syncing / error. |
 
 ### Правила взаимодействия
 
 - **Без autosave на сервер на каждый символ** — локальная запись yrs по Done или commit поля; на сервер — debounced пакет.
 - **Done** выходит из edit; debouncer отправляет в течение ~1 с.
 - **Cancel** (опционально) откатывает черновик UI к последнему `currentRecipe` без yrs write.
-- **Sheet ингредиента**: Save — одна мутация map; Delete — удаление из `Y.Array`.
+- **Ингредиенты inline**: commit по blur/смене фокуса; Delete — swipe; reorder — `onMove`. **Sheet** — только nutrition ингредиента (КБЖУ).
 - Баннер legacy скрывается сразу, когда после `recipe_updated` `version` стала v3.
 
 ### Новые компоненты SwiftUI (планируемые пути)
@@ -102,7 +105,8 @@ RecipeScalerNative/Views/
 ├── YDocRecipeDetailView.swift      # расширение: режимы, баннер, toolbar
 ├── RecipeLegacyBanner.swift        # NEW
 ├── RecipeEditToolbar.swift         # NEW — чип статуса sync
-└── IngredientEditSheet.swift       # NEW
+├── YDocIngredientsSection.swift    # view + edit grid (web parity)
+└── EditIngredientNutritionSheet.swift  # nutrition per ingredient
 
 RecipeScalerNative/ViewModels/
 └── RecipeEditViewModel.swift       # NEW — черновик, мутации через sync service
@@ -121,7 +125,8 @@ specs/002-native-editing/
 ├── quickstart.md
 ├── contracts/
 │   ├── yffi-write-api.md
-│   └── sync-write-protocol.md
+│   ├── sync-write-protocol.md
+│   └── ingredients-grid-ui.md
 └── checklists/
     └── requirements.md
 ```

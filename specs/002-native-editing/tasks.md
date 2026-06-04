@@ -232,9 +232,26 @@ T020 — мутации полей в YjsSyncService
 
 ---
 
+## Фаза 6: US2a — Сетка ингредиентов (mobile web parity)
+
+**Цель**: зафиксировать и реализовать UI сетки по `contracts/ingredients-grid-ui.md` (обсуждение 2026-06-04).
+
+**Независимый тест**: тот же v3-рецепт на iOS (mobile) и веб (viewport &lt;640px) — две колонки qty, заголовки, scale в view, swipe delete, List reorder.
+
+- [x] T040 [US2a] Документация: `contracts/ingredients-grid-ui.md` + FR-ING / US2a в `spec.md`, обновление `plan.md`
+- [x] T041 [US2a] `YDocIngredientsSection.swift` — две колонки qty, заголовки Ingredient/Qty, нумерация, KBJU под именем
+- [x] T042 [US2a] Просмотр: редактируемое scaled qty → `scaleFactor` (`YDocRecipeDetailView` + `RecipeScaleStorage`)
+- [x] T043 [US2a] Edit: `List` + `swipeActions` delete + `onMove` reorder; убрать context menu / кастомный swipe
+- [x] T044 [US2a] `RecipeRowLayoutMetrics` — ширина колонок под `280.8`, Qty над base-колонкой
+- [ ] T045 [US2a] Ручной parity + скриншот: iOS vs mobile web (SC-002a); при расхождении — правка до совпадения. Авто: `scripts/verify-ingredients-edit-grid.sh` (edit grid screenshot); side-by-side с вебом — вручную
+
+**Контрольная точка**: SC-002a; `xcodebuild` зелёный.
+
+---
+
 ## Примечания
 
-- **Референс UI**: веб mobile в `../recipe-scaler-web/recipe-scaler` — см. `plan.md`, § «Референс дизайна»
+- **Референс UI**: веб mobile в `../recipe-scaler-web/recipe-scaler` — см. `plan.md`, § «Референс дизайна» и **`contracts/ingredients-grid-ui.md`**
 - Расширять `YDocRecipeDetailView` Phase 2, не новый корень навигации
 - XmlFragment описания read-only даже для v3 (FR-013)
 - CRUD коллекции и создание рецепта — вне scope (FR-014)

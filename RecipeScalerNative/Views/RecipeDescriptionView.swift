@@ -10,6 +10,7 @@ import SwiftUI
 struct RecipeDescriptionView: View {
     let document: RecipeDescriptionDocument
     var accentColor: Color = RecipeAccentColor.color(from: "oklch(0.65 0.25 270)")
+    var onTimerTap: ((RecipeDescriptionTimerReference, CGRect) -> Void)?
 
     private let bodySize: CGFloat = RecipeDescriptionStyle.bodyFontSize
     private var lineSpacing: CGFloat { RecipeDescriptionStyle.bodyLineSpacing }
@@ -82,6 +83,10 @@ struct RecipeDescriptionView: View {
     }
 
     private func inlineText(_ runs: [RecipeDescriptionInlineRun]) -> some View {
-        RecipeDescriptionInlineTextView(runs: runs, accentColor: accentColor)
+        RecipeDescriptionInlineTextView(
+            runs: runs,
+            accentColor: accentColor,
+            onTimerTap: onTimerTap
+        )
     }
 }

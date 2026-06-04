@@ -2,7 +2,7 @@
 
 **Ветка**: `004-description-read-only`  
 **Дата**: 2026-06-02  
-**Статус**: ✅ Verified (simulator 2026-06-02; повторный аудит кода 2026-06-03 — `XmlFragmentToHTML` + рендер в `StepsSection` на месте)  
+**Статус**: ✅ Verified (simulator 2026-06-02; аудит кода 2026-06-03; fixture screenshots 2026-06-04 в `screenshots/description-fixture-20260604-*.png`)  
 **Связано**: Phase 3 (`002-native-editing`), схема `docs/YJS-SCHEMA.md`  
 **Следующая фаза**: `005-description-editor` — редактирование (WKWebView + Tiptap или нативный редактор)
 

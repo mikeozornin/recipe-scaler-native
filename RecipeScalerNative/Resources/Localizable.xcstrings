@@ -4,6 +4,9 @@
     "–" : {
 
     },
+    "·" : {
+
+    },
     "%.1f×" : {
 
     },
@@ -938,6 +941,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Не гасить экран"
+          }
+        }
+      }
+    },
+    "common.screen-always-on" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always on screen enabled"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не гасить экран включено"
           }
         }
       }
@@ -2401,7 +2421,6 @@
         }
       }
     },
-
     "recipe.image.upload.title" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2674,6 +2693,40 @@
         }
       }
     },
+    "recipes.ingredient-header" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingredient"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ингредиент"
+          }
+        }
+      }
+    },
+    "recipes.qty-header" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qty"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Клв"
+          }
+        }
+      }
+    },
     "Scale" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2867,6 +2920,23 @@
         }
       }
     },
+    "Start timer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запустить таймер"
+          }
+        }
+      }
+    },
     "sync.error.invalid_update" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2918,23 +2988,6 @@
         }
       }
     },
-    "sync.status.a11y.recipes" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recipe data cached %lld of %lld"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Данные рецептов в кэше %lld из %lld"
-          }
-        }
-      }
-    },
     "sync.status.a11y.images" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2952,19 +3005,19 @@
         }
       }
     },
-    "sync.status.badge.recipe" : {
+    "sync.status.a11y.recipes" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recipe"
+            "value" : "Recipe data cached %lld of %lld"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Рецепт"
+            "value" : "Данные рецептов в кэше %lld из %lld"
           }
         }
       }
@@ -2999,6 +3052,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "preview"
+          }
+        }
+      }
+    },
+    "sync.status.badge.recipe" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рецепт"
           }
         }
       }
@@ -3156,23 +3226,6 @@
         }
       }
     },
-    "sync.status.section.connection" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sync"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Синхронизация"
-          }
-        }
-      }
-    },
     "sync.status.recipes.cached" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3292,6 +3345,23 @@
         }
       }
     },
+    "sync.status.section.connection" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизация"
+          }
+        }
+      }
+    },
     "sync.status.section.images" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3305,6 +3375,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Кэш изображений"
+          }
+        }
+      }
+    },
+    "sync.status.section.pending" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not cached yet"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ещё не в кэше"
           }
         }
       }
@@ -3339,23 +3426,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Рецепты ещё не в кэше"
-          }
-        }
-      }
-    },
-    "sync.status.section.pending" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not cached yet"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ещё не в кэше"
           }
         }
       }

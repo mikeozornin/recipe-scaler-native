@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Navigation bar actions: 17 pt body, accent tint.
+/// Navigation bar actions: 16 pt body, accent tint.
 enum AppToolbarStyle {
     static let iconSide: CGFloat = 20
     static let minimumTapSide: CGFloat = 44

@@ -9,10 +9,11 @@ final class RecipeScalerNativeTests: XCTestCase {
     }
 
     func testRecipeEditPolicyV3Only() {
-        XCTAssertTrue(RecipeEditPolicy.canEdit(version: "3"))
-        XCTAssertFalse(RecipeEditPolicy.canEdit(version: "1"))
-        XCTAssertFalse(RecipeEditPolicy.canEdit(version: "2"))
-        XCTAssertFalse(RecipeEditPolicy.canEdit(version: nil))
+        XCTAssertTrue(RecipeEditPolicy.supportsEditFormat(version: "3"))
+        XCTAssertFalse(RecipeEditPolicy.supportsEditFormat(version: "1"))
+        XCTAssertFalse(RecipeEditPolicy.supportsEditFormat(version: "2"))
+        XCTAssertFalse(RecipeEditPolicy.supportsEditFormat(version: nil))
+        XCTAssertFalse(RecipeEditPolicy.canEdit(version: "3"))
     }
 
     func testIngredientAmountLikeBasqueCheesecake() {
@@ -33,6 +34,37 @@ final class RecipeScalerNativeTests: XCTestCase {
         )
         XCTAssertTrue(header.isHeaderRow)
         XCTAssertEqual(header.scaledDisplay(targetServings: 4, baseServings: 4), "")
+    }
+
+    func testIngredientEditListEstimatedHeightIsPositiveForTypicalRecipe() {
+        let rows: [(number: Int?, ingredient: IngredientData)] = (1 ... 6).map { index in
+            (
+                index,
+                IngredientData(
+                    id: "ing-\(index)",
+                    name: "Ingredient \(index)",
+                    originalAmount: "\(index * 100)",
+                    order: index
+                )
+            )
+        }
+        let height = IngredientEditList.estimatedContentHeight(
+            rows: rows,
+            nutritionEnabled: true
+        )
+        XCTAssertGreaterThan(height, RecipeRowLayoutMetrics.rowHeight * 6)
+    }
+
+    func testIngredientEditListMeasuredContentHeightRequiresAllRows() {
+        let ids = ["a", "b", "c"]
+        let partial = IngredientEditList.measuredContentHeight(rowIds: ids, heights: ["a": 44, "b": 50])
+        XCTAssertEqual(partial, 0)
+
+        let full = IngredientEditList.measuredContentHeight(
+            rowIds: ids,
+            heights: ["a": 44, "b": 50, "c": 60]
+        )
+        XCTAssertEqual(full, 44 + 50 + 60 + 2)
     }
 
     func testRecipeTitleEmojiLeading() {
@@ -182,7 +214,12 @@ final class RecipeScalerNativeTests: XCTestCase {
         })
         XCTAssertTrue(doc.blocks.contains { block in
             if case .orderedStep(_, _, let runs) = block {
-                return runs.contains { if case .timer = $0 { return true }; return false }
+                return runs.contains { run in
+                    if case .timer(let ref) = run {
+                        return ref.durationSeconds == 1800 && ref.resolvedName == "Bake"
+                    }
+                    return false
+                }
             }
             return false
         })
@@ -192,6 +229,51 @@ final class RecipeScalerNativeTests: XCTestCase {
             }
             return false
         })
+    }
+
+    func testTimerReferenceLinkRoundTrip() {
+        let ref = RecipeDescriptionTimerReference(
+            displayText: "30 minutes",
+            durationSeconds: 1800,
+            type: .minutes,
+            name: "Bake"
+        )
+        let url = try XCTUnwrap(ref.linkURL())
+        let parsed = try XCTUnwrap(RecipeDescriptionTimerReference.from(link: url))
+        XCTAssertEqual(parsed, ref)
+    }
+
+    func testTimerReferenceMenuSubtitleMatchesWebDropdown() {
+        let named = RecipeDescriptionTimerReference(
+            displayText: "60 minutes",
+            durationSeconds: 3600,
+            type: .minutes,
+            name: "Выпекаем"
+        )
+        XCTAssertEqual(named.menuSubtitle, "Выпекаем, 60 minutes")
+
+        let unnamed = RecipeDescriptionTimerReference(
+            displayText: "30 minutes",
+            durationSeconds: 1800,
+            type: .minutes,
+            name: nil
+        )
+        XCTAssertEqual(unnamed.menuSubtitle, "30 minutes")
+    }
+
+    func testTimerUtilsRemainingAndFormat() {
+        let timer = RecipeTimer(
+            id: "t1",
+            name: "Bake",
+            duration: 3600,
+            type: .minutes,
+            isRunning: true,
+            isPaused: false
+        )
+        timer.endTime = Date().addingTimeInterval(125)
+        XCTAssertEqual(TimerUtils.remainingSeconds(for: timer), 125)
+        XCTAssertEqual(TimerUtils.formatTime(seconds: 125), "02:05")
+        XCTAssertEqual(TimerUtils.formatTime(seconds: -5), "-00:05")
     }
 
     func testXmlFragmentHTMLIncludesLinkAndTimerSpans() {
@@ -735,6 +817,44 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertEqual(recipe?.version, "v3")
         XCTAssertEqual(recipe?.servings, 1)
         XCTAssertEqual(recipe?.ingredients.count, 0)
+    }
+
+    func testUpdateRecipeServingsPersistsAsJSONNumber() async throws {
+        let userId = "user-servings"
+        let store = YDocStore(inMemory: true)
+        let manager = DocumentManager(store: store)
+        manager.setUserId(userId)
+
+        let recipeId = try await manager.createRecipe(name: "Scale me")
+        try await manager.updateRecipeServings(recipeId: recipeId, servings: 20)
+
+        let recipe = try await manager.readRecipeData(recipeId: recipeId, userId: userId)
+        XCTAssertEqual(recipe?.servings, 20)
+
+        try await manager.updateRecipeServings(recipeId: recipeId, servings: 10)
+        let updated = try await manager.readRecipeData(recipeId: recipeId, userId: userId)
+        XCTAssertEqual(updated?.servings, 10)
+    }
+
+    func testLegacyIntServingsStillReadable() async throws {
+        let userId = "user-legacy-servings"
+        let store = YDocStore(inMemory: true)
+        let manager = DocumentManager(store: store)
+        manager.setUserId(userId)
+
+        let recipeId = try await manager.createRecipe(name: "Legacy")
+        let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
+        try await doc.withWriteTransaction { rawDoc, txn in
+            guard let mapBranch = ymap(rawDoc, "recipe") else {
+                XCTFail("missing recipe map")
+                return
+            }
+            let map = YrsMap(branch: mapBranch)
+            map.insert(key: "servings", value: .int(20), txn: txn)
+        }
+
+        let recipe = try await manager.readRecipeData(recipeId: recipeId, userId: userId)
+        XCTAssertEqual(recipe?.servings, 20)
     }
 
     func testUpdateRecipeNamePersistsInDocAndCollection() async throws {

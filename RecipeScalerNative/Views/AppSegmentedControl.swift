@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Segmented control with uniform 17 pt labels (avoids UISegmentedControl normal/selected size mismatch).
+/// Segmented control with uniform 16 pt labels (avoids UISegmentedControl normal/selected size mismatch).
 struct AppSegmentedControl<Value: Hashable>: View {
     struct Segment: Identifiable {
         let value: Value

@@ -1,34 +1,42 @@
-# Спецификация: синхронизация таймеров и push
+# Спецификация: синхронизация таймеров
 
 **Ветка**: `014-timers-sync`  
 **Дата**: 2026-06-02  
-**Статус**: 🔴 Заблокировано (аудит 2026-06-03) — отгружена только локальная панель. Остаток зафиксирован в [BLOCKER.md](./BLOCKER.md), спек остаётся открытым  
+**Статус**: 🟡 Реализовано в коде (аудит 2026-06-04) — sync + панель + старт из описания + pause/resume/delete. Остаётся ручная кросс-девайс проверка SC-001/SC-002; push — фича «пуши». См. [BLOCKER.md](./BLOCKER.md)
 **Зависимости**: `006` (timer nodes в описании), Phase 1 `TimerManager`  
-**Этален**: PRD § Timers, `llm/ARCHITECTURE.md`, mobile `TimerPanel`
+**Этален**: PRD § Timers, `llm/ARCHITECTURE.md`, mobile `TimerPanel`  
+**Не в этом спеке**: push-уведомления о таймерах (APNs, server schedule) — **отдельная фича «пуши»**, не фаза «таймеры».
 
-## Аудит реализации (2026-06-03)
+## Аудит реализации (2026-06-04)
 
-Отгружено: `MobileTimerPanel` — read-only список локальных таймеров `TimerManager` над tab bar; локальные уведомления Phase 1.
+Отгружено в коде (сессии Grok 2026-06-04: timer sync, mobile panel, description tap):
+
+- `TimerSyncService` — `GET /api/v1/timers/active`, `POST /api/v1/timers/sync`, очередь событий, Socket.IO `timer_event` через `YjsSyncService`
+- `TimerManager` ↔ sync: create/start/pause/resume/delete эмитят события на сервер
+- `MobileTimerPanel` — collapse/expand, pause/resume, delete, overdue/progress (паритет mobile web)
+- Старт из описания — tap timer-ноды → `DescriptionTimerStartPopover` → `createAndStartTimer` (`YDocRecipeDetailView`, `RecipeDescriptionInlineTextView`)
+- Скриншоты симулятора: `screenshots/timers-panel-20260604-*.png`
+- `scripts/verify-timers-sync.sh` — статические проверки + screenshot панели
 
 | Требование | Статус |
 |------------|--------|
 | FR-TMR-003 mobile panel | ✅ |
-| US1 start from description | ❌ зависит от 018 (timer-ноды) |
-| US2 cross-device ≤3с | ❌ нет `TimerSyncService` / socket-событий |
-| US3 APNs >30 min | ❌ нет регистрации device token |
-| US4 pause/resume parity | ❌ |
+| US1 start from description | ✅ (read-only tap + popover; rename/unlink — 018) |
+| US2 cross-device ≤3 с | 🟡 код есть; **ручная** проверка iOS ↔ web не зафиксирована |
+| US3 APNs >30 min | ➡️ фича «пуши», не 014 |
+| US4 pause/resume parity | ✅ в `MobileTimerPanel` / `TimerManager` |
 
-Остаток (кросс-девайс sync + APNs) уже детально описан в `BLOCKER.md`; новый спек не заводим — 014 остаётся живым спеком для этой работы (unblock-путь там же).
+Остаток — ручной SC-001/SC-002 в `BLOCKER.md`. Push — фича «пуши».
 
 ## Контекст
 
-Phase 1: **локальные** таймеры + local notifications.
+Phase 1: **локальные** таймеры + локальное UN при completion (не server push).
 
-Веб: таймеры в описании sync между устройствами; server push для длинных таймеров (>30 min: reminder 2 min before + completion; `resume_timer` rules).
+Веб: таймеры в описании sync между устройствами. Server/Web Push для длинных таймеров — **контракт пушей**, реализуется в фазе «пуши» на iOS (другие правила/транспорт, чем веб).
 
 ## Цель
 
-Кросс-девайс состояние активных таймеров + APNs там, где веб использует Web Push (без изменения server contract — клиент регистрирует token).
+Кросс-девайс **состояние** активных таймеров (Socket + HTTP sync) и паритет mobile `TimerPanel` + старт из описания (read-only tap).
 
 ## Пользовательские сценарии
 
@@ -40,13 +48,13 @@ Phase 1: **локальные** таймеры + local notifications.
 
 **Когда** таймер запущен на iOS, **тогда** веб `TimerPanel` показывает его ≤ 3 с (Wi‑Fi).
 
-### US3 — Background / push (P2)
+### US3 — Background / push (P2) — **фича «пуши»**
 
-**Когда** app в фоне и timer > 30 min, **тогда** APNs по правилам PRD (если сервер поддерживает iOS token — endpoint TBD в `docs/PRD.md`).
+Перенесено из scope 014. **Когда** app в фоне и нужны напоминания о таймере, **тогда** push-фича (APNs и т.д.) — не блокирует закрытие «таймеров».
 
 ### US4 — Pause / resume (P2)
 
-Паритет `resume_timer` без reminder если ≤120s left.
+Паритет pause/resume с веб `TimerPanel`. Правила push при resume (≤120s без reminder) — в фиче «пуши».
 
 ## Требования
 
@@ -64,13 +72,16 @@ Mobile panel: компактный список активных таймеро�
 
 ## Вне scope
 
+- **Все push о таймерах** (APNs, `/api/push/schedule`, reminder, Web Push parity) — фаза «пуши»
+- Редактирование timer-нод в описании (rename/unlink) — до 018 / edit mode
 - Изобретение новых server push rules
 - Apple Watch
 
 ## Критерии успеха
 
-- **SC-001**: Start iOS → visible web timer panel.
-- **SC-002**: Complete в фоне → local notification (минимум); APNs если token зарегистрирован.
+- **SC-001**: Start iOS → visible web timer panel (sync ≤3 с).
+- **SC-002**: Pause/resume/delete и overdue UI как на веб mobile panel.
+- **SC-push** (отдельная фича): completion/reminder в фоне через push-стек.
 
 ## Артефакты
 

@@ -15,6 +15,32 @@ final class RecipeScalerNativeUITests: XCTestCase {
         XCTAssertTrue(newUserButton.waitForExistence(timeout: 5.0))
     }
 
+    func testDescriptionTimerTapShowsStartPopover() {
+        let app = XCUIApplication()
+        app.launchArguments = ["ui-testing", "-SkipSplash=1", "-ShowDescriptionFixture"]
+        app.launch()
+
+        let fixture = app.otherElements["description-fixture-preview"]
+        XCTAssertTrue(fixture.waitForExistence(timeout: 10))
+
+        let timerText = app.staticTexts["30 minutes"]
+        XCTAssertTrue(
+            timerText.waitForExistence(timeout: 5),
+            "Timer reference should be visible in description"
+        )
+        timerText.tap()
+
+        let popover = app.otherElements["description_timer_start_popover"]
+        XCTAssertTrue(
+            popover.waitForExistence(timeout: 5),
+            "Tap on timer reference should present start popover"
+        )
+
+        let startButton = app.buttons["description_timer_start_confirm"]
+        XCTAssertTrue(startButton.waitForExistence(timeout: 2))
+        XCTAssertTrue(startButton.frame.height >= 40, "Start timer control should be at least ~44pt tap height")
+    }
+
     func testOpenRecipeEnterEditAndDoneWithoutCrash() throws {
         let app = XCUIApplication()
         app.launch()
@@ -38,12 +64,21 @@ final class RecipeScalerNativeUITests: XCTestCase {
         editButton.tap()
 
         XCTAssertTrue(
-            app.staticTexts["Ingredients"].waitForExistence(timeout: 10),
-            "Ingredients section missing in edit mode"
+            app.staticTexts["Ingredient"].waitForExistence(timeout: 10)
+                || app.staticTexts["Ингредиент"].waitForExistence(timeout: 1),
+            "Ingredient column header missing in edit mode"
         )
 
-        let dragHandles = app.images.matching(identifier: "line.3.horizontal")
-        XCTAssertEqual(dragHandles.count, 0, "Custom drag handle should not appear alongside List reorder")
+        let reorderControls = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS[c] %@ OR identifier CONTAINS[c] %@", "Reorder", "Reorder")
+        )
+        XCTAssertGreaterThan(
+            reorderControls.count,
+            0,
+            "List reorder controls should appear on ingredient rows in edit mode"
+        )
+
+        add(XCTAttachment(screenshot: XCUIScreen.main.screenshot(), name: "ingredients-edit-grid"))
 
         let doneButton = app.navigationBars.buttons["Done"]
         XCTAssertTrue(doneButton.waitForExistence(timeout: 5))

@@ -5,6 +5,8 @@ import UIKit
 enum AppSymbol {
     private static let configuration = UIImage.SymbolConfiguration(weight: .semibold)
     private static let toolbarConfiguration = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+    /// Timer panel controls — footnote-scale SF Symbols (~17 pt).
+    private static let compactControlConfiguration = UIImage.SymbolConfiguration(pointSize: 17, weight: .semibold)
 
     static func image(_ systemName: String) -> Image {
         symbolImage(systemName, configuration: configuration)
@@ -13,6 +15,10 @@ enum AppSymbol {
     /// Recipe detail nav bar actions (web `w-5 h-5`, stroke semibold).
     static func toolbarImage(_ systemName: String) -> Image {
         symbolImage(systemName, configuration: toolbarConfiguration)
+    }
+
+    static func compactControlImage(_ systemName: String) -> Image {
+        symbolImage(systemName, configuration: compactControlConfiguration)
     }
 
     private static func symbolImage(_ systemName: String, configuration: UIImage.SymbolConfiguration) -> Image {

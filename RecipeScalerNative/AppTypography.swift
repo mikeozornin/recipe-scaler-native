@@ -8,7 +8,7 @@ import UIKit
 
 /// Martian text styles aligned with iOS Dynamic Type default metrics (Large).
 enum AppTypography {
-    static let bodySize: CGFloat = 17
+    static let bodySize: CGFloat = 16
     static let subheadlineSize: CGFloat = 15
     static let footnoteSize: CGFloat = 13
     static let compactSize: CGFloat = 14
@@ -61,7 +61,7 @@ enum AppTypography {
 }
 
 extension View {
-    /// Default text (17 pt Martian Grotesk) for List/Form and unstyled `Text`.
+    /// Default text (16 pt Martian Grotesk) for List/Form and unstyled `Text`.
     func appListBodyTypography() -> some View {
         font(AppTypography.body)
     }

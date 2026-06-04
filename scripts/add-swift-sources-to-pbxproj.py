@@ -32,6 +32,10 @@ NEW_FILES = [
     "RecipeScalerNative/Views/RecipeDetailActionsMenu.swift",
     "RecipeScalerNative/Views/RecipeDetailShareButton.swift",
     "RecipeScalerNative/Views/ScreenAwakeToggle.swift",
+    "RecipeScalerNative/Views/ScreenAwakeStatusBanner.swift",
+    "RecipeScalerNative/Utils/ScreenAwakeController.swift",
+    "RecipeScalerNative/Utils/TimerUtils.swift",
+    "RecipeScalerNative/Services/TimerSyncService.swift",
 ]
 
 

@@ -38,7 +38,7 @@ Native read from Y.Doc via yrs + Socket.IO. No editing mutations yet.
 
 - [ ] SC-002 parity: compare v1/v2/v3 sample recipes with web client (T031a)
 
-## Phase 3: Native Editing — DONE
+## Phase 3: Native Editing — DONE (code)
 
 Edit v3 recipe fields (except description) through yrs mutations, debounced sync, offline queue.
 
@@ -51,12 +51,14 @@ Edit v3 recipe fields (except description) through yrs mutations, debounced sync
 - [x] SQLite `offline_sync_queue` + `OfflineWriteQueue`; drain on reconnect; purge on user change
 - [x] UI: `YDocRecipeDetailView` edit mode, `RecipeEditToolbar`, `IngredientEditSheet`
 - [x] `sync_error` → localized alerts; tombstone removes recipe and pops navigation
+- [x] **US2a ingredients grid** — `YDocIngredientsSection`, `RecipeRowLayoutMetrics`, swipe delete + `List` reorder, scaled qty in view (`contracts/ingredients-grid-ui.md`)
 
 ### Manual validation (see `specs/002-native-editing/quickstart.md`)
 
-- [ ] iOS → web field parity with live backend + web client
+- [ ] iOS → web field parity with live backend + web client (T034)
 - [ ] Offline edit → reconnect → web within 10 s
 - [ ] Debounce: ≤2 `sync_request` per 10 s rapid typing
+- [ ] SC-002a: side-by-side ingredients grid vs mobile web + screenshot (T045)
 
 ### Out of scope (later phases)
 
@@ -89,6 +91,21 @@ Native v3 `XmlFragment('description')` → HTML via yrs; existing `StepsSection`
 - [x] `XmlFragmentToHTML` + `DocumentManager` v3 read path
 - [x] Simulator verify: `scripts/verify-recipe-description-native.sh` (recipe `7daed53b`, screenshot + `description_html_ready` / `readRecipeData_done`)
 - [x] Manual quickstart (`specs/004-description-read-only/quickstart.md`) — automated path covers US1; offline/web regression still manual
+- [x] Fixture screenshots 2026-06-04 (`specs/004-description-read-only/screenshots/description-fixture-20260604-*.png`)
+
+## Spec 014: Timers sync — IN CODE (manual cross-device open)
+
+Cross-device timer state + mobile panel parity (no APNs — separate «пуши» feature).
+
+- [x] `TimerSyncService` + socket `timer_event` wiring in `YjsSyncService`
+- [x] `MobileTimerPanel` — pause/resume/delete, collapse, overdue UI
+- [x] Start from description — timer node tap → popover → `createAndStartTimer`
+- [x] `scripts/verify-timers-sync.sh`; panel screenshots 2026-06-04
+- [ ] SC-001/SC-002: manual iOS ↔ web on same account (see `specs/014-timers-sync/BLOCKER.md`)
+
+## UX polish (no separate spec)
+
+- [x] **Keep screen on** — `ScreenAwakeController`, toggle on recipe detail, status banner (web parity, 2026-06-04)
 
 ## Phase 4b: Description Editor (planned as 005)
 
@@ -122,3 +139,4 @@ Phase 1 (done)          Phase 2 (done)             Phase 3 (done)
 - [specs/002-native-editing/](../specs/002-native-editing/)
 - [specs/003-recipe-image-offline-cache/](../specs/003-recipe-image-offline-cache/)
 - [specs/004-description-read-only/](../specs/004-description-read-only/)
+- [specs/014-timers-sync/](../specs/014-timers-sync/)

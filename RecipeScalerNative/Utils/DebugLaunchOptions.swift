@@ -29,6 +29,14 @@ enum DebugLaunchOptions {
         return false
     }
 
+    /// `-ScrollToNewIngredient=1` — scroll edit grid to the «+» row (verify scripts).
+    static var scrollToNewIngredient: Bool {
+        for arg in ProcessInfo.processInfo.arguments {
+            if arg == "-ScrollToNewIngredient=1" || arg == "-ScrollToNewIngredient" { return true }
+        }
+        return false
+    }
+
     /// `-StartInEditMode=1` — recipe detail opens in edit mode.
     static var startInEditMode: Bool {
         for arg in ProcessInfo.processInfo.arguments {

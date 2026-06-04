@@ -30,7 +30,7 @@ enum RecipeDescriptionInlineRun: Equatable {
     case strong(String)
     case em(String)
     case link(url: String, text: String)
-    case timer(String)
+    case timer(RecipeDescriptionTimerReference)
     case ingredient(String)
     case lineBreak
 }
@@ -216,7 +216,22 @@ enum RecipeDescriptionParser {
             case "span":
                 if tagSource.contains("timer-reference") {
                     let text = stripTags(inner)
-                    if !text.isEmpty { runs.append(.timer(text)) }
+                    if !text.isEmpty {
+                        let durationSeconds = Int(attribute(named: "data-duration", in: tagSource) ?? "") ?? 0
+                        let typeRaw = attribute(named: "data-type", in: tagSource) ?? RecipeTimer.TimerType.minutes.rawValue
+                        let type = RecipeTimer.TimerType(rawValue: typeRaw) ?? .minutes
+                        let name = attribute(named: "data-name", in: tagSource)
+                        runs.append(
+                            .timer(
+                                RecipeDescriptionTimerReference(
+                                    displayText: text,
+                                    durationSeconds: durationSeconds,
+                                    type: type,
+                                    name: name
+                                )
+                            )
+                        )
+                    }
                 } else if tagSource.contains("ingredient-reference") {
                     let text = stripTags(inner)
                     if !text.isEmpty { runs.append(.ingredient(text)) }

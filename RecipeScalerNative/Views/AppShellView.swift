@@ -56,40 +56,7 @@ struct AppShellView: View {
     @State private var shoppingPath = NavigationPath()
 
     var body: some View {
-        VStack(spacing: 0) {
-            MobileTimerPanel()
-                .environmentObject(timerManager)
-
-            TabView(selection: tabSelection) {
-                // TEMPORARY: Discover tab hidden (re-enable when ready).
-                // DiscoverRootView(path: $discoverPath)
-                //     .tabItem { AppTabBarLabel(tab: .discover) }
-                //     .tag(AppTab.discover)
-                //     .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
-
-                // TEMPORARY: Import tab hidden (re-enable when ready).
-                // Color.clear
-                //     .tabItem { AppTabBarLabel(tab: .importTab) }
-                //     .tag(AppTab.importTab)
-                //     .accessibilityIdentifier(AccessibilityIdentifiers.tabImport)
-
-                RecipeListView(navigationPath: $recipesPath)
-                    .tabItem { AppTabBarLabel(tab: .recipes) }
-                    .tag(AppTab.recipes)
-                    .accessibilityIdentifier(AccessibilityIdentifiers.tabRecipes)
-
-                // TEMPORARY: Shopping tab hidden (re-enable when ready).
-                // ShoppingListView(path: $shoppingPath)
-                //     .tabItem { AppTabBarLabel(tab: .shopping) }
-                //     .tag(AppTab.shopping)
-                //     .accessibilityIdentifier(AccessibilityIdentifiers.tabShopping)
-
-                AccountView()
-                    .tabItem { AppTabBarLabel(tab: .profile) }
-                    .tag(AppTab.profile)
-                    .accessibilityIdentifier(AccessibilityIdentifiers.tabProfile)
-            }
-        }
+        tabView
         // TEMPORARY: Import sheet hidden (re-enable when ready).
         // .sheet(isPresented: $showImportSheet) {
         //     ImportRecipeSheet { result in
@@ -137,6 +104,54 @@ struct AppShellView: View {
             }
         }
         #endif
+    }
+
+    private var mobileTimerPanel: some View {
+        MobileTimerPanel()
+            .environmentObject(timerManager)
+    }
+
+    private var tabView: some View {
+        TabView(selection: tabSelection) {
+            // TEMPORARY: Discover tab hidden (re-enable when ready).
+            // tabRoot(DiscoverRootView(path: $discoverPath)) { AppTabBarLabel(tab: .discover) }
+            //     .tag(AppTab.discover)
+            //     .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
+
+            // TEMPORARY: Import tab hidden (re-enable when ready).
+            // tabRoot(Color.clear) { AppTabBarLabel(tab: .importTab) }
+            //     .tag(AppTab.importTab)
+            //     .accessibilityIdentifier(AccessibilityIdentifiers.tabImport)
+
+            tabRoot(RecipeListView(navigationPath: $recipesPath)) {
+                AppTabBarLabel(tab: .recipes)
+            }
+            .tag(AppTab.recipes)
+            .accessibilityIdentifier(AccessibilityIdentifiers.tabRecipes)
+
+            // TEMPORARY: Shopping tab hidden (re-enable when ready).
+            // tabRoot(ShoppingListView(path: $shoppingPath)) { AppTabBarLabel(tab: .shopping) }
+            //     .tag(AppTab.shopping)
+            //     .accessibilityIdentifier(AccessibilityIdentifiers.tabShopping)
+
+            tabRoot(AccountView()) {
+                AppTabBarLabel(tab: .profile)
+            }
+            .tag(AppTab.profile)
+            .accessibilityIdentifier(AccessibilityIdentifiers.tabProfile)
+        }
+    }
+
+    /// Web mobile: timer panel between scroll content and tab bar (inset on tab root, not on TabView).
+    private func tabRoot<Content: View, Label: View>(
+        _ content: Content,
+        @ViewBuilder tabItem: () -> Label
+    ) -> some View {
+        content
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                mobileTimerPanel
+            }
+            .tabItem { tabItem() }
     }
 
     private var tabSelection: Binding<AppTab> {

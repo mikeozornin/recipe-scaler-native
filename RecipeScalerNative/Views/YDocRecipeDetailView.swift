@@ -8,6 +8,7 @@ struct YDocRecipeDetailView: View {
 
     @EnvironmentObject private var syncService: YjsSyncService
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     /// UI-only scale (web `recipe-scale:{id}` in localStorage). Not written to Y.Doc.
     @State private var scaleFactor: Double = 1
     @AppStorage(NutritionSettings.globalEnabledKey) private var showNutritionGlobal = true
@@ -25,6 +26,8 @@ struct YDocRecipeDetailView: View {
     @State private var commitTitleNonce = 0
     @State private var titleSaveTask: Task<Void, Never>?
     @State private var isFinishingEdit = false
+    @State private var isScreenAwakeActive = false
+    @State private var descriptionTimerPopover: DescriptionTimerPopoverState?
 
     private var recipe: RecipeData? {
         guard syncService.currentRecipe?.id == recipeId else { return nil }
@@ -33,7 +36,7 @@ struct YDocRecipeDetailView: View {
 
     private var isLegacyReadOnly: Bool {
         guard let recipe else { return false }
-        return !RecipeEditPolicy.canEdit(recipe: recipe)
+        return !RecipeEditPolicy.supportsEditFormat(version: recipe.version)
     }
 
     private var canEnterEditMode: Bool {
@@ -155,6 +158,9 @@ struct YDocRecipeDetailView: View {
                                 baseServings: max(1, recipe.servings),
                                 viewServings: scaledServingsCount(base: max(1, recipe.servings)),
                                 accentColor: accentColor,
+                                onScaledQuantityEdited: { ingredient, text in
+                                    applyViewModeScaledQuantityEdit(ingredient: ingredient, text: text)
+                                },
                                 nutritionEnabled: showNutritionGlobal,
                                 nutritionViewMode: nutritionViewMode
                             )
@@ -180,7 +186,12 @@ struct YDocRecipeDetailView: View {
                             )
                             .id("recipe_instructions")
                         } else if let description = recipe.description, !description.isEmpty {
-                            StepsSection(htmlContent: description, accentColor: accentColor)
+                            StepsSection(
+                                htmlContent: description,
+                                accentColor: accentColor,
+                                recipeId: recipeId,
+                                timerPopover: $descriptionTimerPopover
+                            )
                                 .id("recipe_instructions")
                         }
 
@@ -189,21 +200,55 @@ struct YDocRecipeDetailView: View {
                 .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
             }
         }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 10).onChanged { _ in
+                if descriptionTimerPopover != nil {
+                    descriptionTimerPopover = nil
+                }
+            }
+        )
         .contentMargins(.horizontal, 0, for: .scrollContent)
         #if DEBUG
         .onChange(of: recipe?.description) { _, description in
             guard description != nil,
-                  DebugLaunchOptions.openRecipeId == recipeId else { return }
+                  DebugLaunchOptions.openRecipeId == recipeId,
+                  !DebugLaunchOptions.startInEditMode else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                 withAnimation(.easeOut(duration: 0.25)) {
                     scrollProxy.scrollTo("recipe_instructions", anchor: .top)
                 }
             }
         }
+        .onChange(of: isEditing) { _, editing in
+            guard editing, DebugLaunchOptions.scrollToNewIngredient else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    scrollProxy.scrollTo(
+                        AccessibilityIdentifiers.recipeEditNewIngredientRow,
+                        anchor: .bottom
+                    )
+                }
+            }
+        }
         #endif
+        }
+        .overlay {
+            if let popover = descriptionTimerPopover {
+                DescriptionTimerPopoverOverlay(
+                    state: popover,
+                    accentColor: accentColor,
+                    onStart: { startDescriptionTimer(from: popover.reference) },
+                    onDismiss: { descriptionTimerPopover = nil }
+                )
+            }
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if isScreenAwakeActive {
+                ScreenAwakeStatusBanner()
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 0) {
@@ -216,7 +261,7 @@ struct YDocRecipeDetailView: View {
                             isEditing: false
                         )
                         RecipeDetailShareButton(recipeId: recipeId)
-                        ScreenAwakeToggle()
+                        ScreenAwakeToggle(isActive: $isScreenAwakeActive)
                         if canEnterEditMode {
                             Button {
                                 Task { await toggleEditMode() }
@@ -260,7 +305,28 @@ struct YDocRecipeDetailView: View {
                 dismiss()
             }
         }
+        .onChange(of: isScreenAwakeActive) { _, active in
+            ScreenAwakeController.setActive(active)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .background:
+                // Real leave (home / switch app) — like web `document.hidden`.
+                deactivateScreenAwake()
+            case .active:
+                // Control Center / notification shade is `.inactive`, not `.background`.
+                if isScreenAwakeActive {
+                    ScreenAwakeController.setActive(true)
+                }
+            default:
+                break
+            }
+        }
+        .onDisappear {
+            deactivateScreenAwake()
+        }
         .task(id: recipeId) {
+            deactivateScreenAwake()
             isLoading = true
             defer { isLoading = false }
             scaleFactor = RecipeScaleStorage.loadScaleFactor(recipeId: recipeId)
@@ -336,6 +402,13 @@ struct YDocRecipeDetailView: View {
         }
     }
 
+    private func deactivateScreenAwake() {
+        if isScreenAwakeActive {
+            isScreenAwakeActive = false
+        }
+        ScreenAwakeController.deactivate()
+    }
+
     private func applyStartInEditModeIfNeeded() {
         #if DEBUG
         let wantsEdit = startInEditMode
@@ -403,9 +476,30 @@ struct YDocRecipeDetailView: View {
         )
     }
 
+    private func startDescriptionTimer(from reference: RecipeDescriptionTimerReference) {
+        guard reference.isStartable else { return }
+        _ = TimerManager.shared.createAndStartTimer(
+            name: reference.resolvedName,
+            duration: TimeInterval(reference.durationSeconds),
+            type: reference.type,
+            recipeId: recipeId
+        )
+    }
+
     private func scaledServingsCount(base: Int) -> Int {
         let normalizedBase = max(1, base)
         return max(1, Int((Double(normalizedBase) * scaleFactor).rounded()))
+    }
+
+    /// View-mode scaled qty edit recalculates UI scale (web `useRecipeScale.handleAmountChange`).
+    private func applyViewModeScaledQuantityEdit(ingredient: IngredientData, text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let normalized = trimmed.replacingOccurrences(of: ",", with: ".")
+        guard let scaled = Double(normalized), scaled.isFinite else { return }
+        guard let original = ingredient.numericValue, original > 0 else { return }
+        scaleFactor = scaled / original
+        RecipeScaleStorage.saveScaleFactor(recipeId: recipeId, scaleFactor: scaleFactor)
     }
 
     private func scaledServingsBinding(base: Int) -> Binding<Int> {
@@ -517,10 +611,16 @@ struct YDocRecipeDetailView: View {
             }
             saveInFlight = true
             defer { saveInFlight = false }
+            let servingsChanged = editViewModel.draftServings != current.servings
             do {
                 try await editViewModel.finishEditing(against: current)
                 editViewModel.isEditingTitleField = false
                 isEditing = false
+                if servingsChanged {
+                    // Base servings are persisted in Y.Doc; local scale is UI-only (web parity).
+                    scaleFactor = 1
+                    RecipeScaleStorage.saveScaleFactor(recipeId: recipeId, scaleFactor: 1)
+                }
                 if let updated = syncService.currentRecipe {
                     editViewModel.reset(from: updated)
                     pickerColor = RecipeAccentColor.color(from: updated.color)

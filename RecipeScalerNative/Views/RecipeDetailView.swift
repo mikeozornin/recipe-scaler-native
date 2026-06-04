@@ -377,8 +377,23 @@ struct IngredientRow: View {
 struct StepsSection: View {
     let htmlContent: String
     var accentColor: Color = RecipeAccentColor.color(from: "oklch(0.65 0.25 270)")
+    var recipeId: String?
+    @Binding var timerPopover: DescriptionTimerPopoverState?
 
+    @EnvironmentObject private var timerManager: TimerManager
     @State private var document: RecipeDescriptionDocument?
+
+    init(
+        htmlContent: String,
+        accentColor: Color = RecipeAccentColor.color(from: "oklch(0.65 0.25 270)"),
+        recipeId: String? = nil,
+        timerPopover: Binding<DescriptionTimerPopoverState?> = .constant(nil)
+    ) {
+        self.htmlContent = htmlContent
+        self.accentColor = accentColor
+        self.recipeId = recipeId
+        _timerPopover = timerPopover
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -387,14 +402,30 @@ struct StepsSection: View {
                 .padding(.horizontal)
 
             if let document {
-                RecipeDescriptionView(document: document, accentColor: accentColor)
-                    .padding(.horizontal)
+                RecipeDescriptionView(
+                    document: document,
+                    accentColor: accentColor,
+                    onTimerTap: { reference, anchor in
+                        timerPopover = DescriptionTimerPopoverState(reference: reference, anchor: anchor)
+                    }
+                )
+                .padding(.horizontal)
             }
         }
         .accessibilityIdentifier(AccessibilityIdentifiers.stepsSection)
         .task(id: htmlContent) {
             document = RecipeDescriptionParser.parse(htmlContent)
         }
+    }
+
+    private func startTimer(from reference: RecipeDescriptionTimerReference) {
+        guard reference.isStartable else { return }
+        _ = timerManager.createAndStartTimer(
+            name: reference.resolvedName,
+            duration: TimeInterval(reference.durationSeconds),
+            type: reference.type,
+            recipeId: recipeId
+        )
     }
 }
 
