@@ -29,12 +29,6 @@ struct RecipeDetailActionsMenu: View {
                 } label: {
                     AppLabel.make(String(localized: "shopping.detail-add-all"), symbol: "cart.badge.plus")
                 }
-
-                Button {
-                    NotificationCenter.default.post(name: .openAppShoppingTab, object: nil)
-                } label: {
-                    AppLabel.make(String(localized: "shopping.detail-open-list"), symbol: "cart")
-                }
             }
         } label: {
             AppToolbarStyle.iconOnly(systemName: "ellipsis")

@@ -3122,23 +3122,6 @@
         }
       }
     },
-    "shopping.detail-open-list" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open shopping list"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открыть список"
-          }
-        }
-      }
-    },
     "shopping.empty-to-buy" : {
       "extractionState" : "stale",
       "localizations" : {

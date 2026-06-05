@@ -122,6 +122,5 @@ enum ShoppingAddFeedback {
 }
 
 extension Notification.Name {
-    static let openAppShoppingTab = Notification.Name("RecipeScaler.openAppShoppingTab")
     static let shoppingStatusMessage = Notification.Name("RecipeScaler.shoppingStatusMessage")
 }

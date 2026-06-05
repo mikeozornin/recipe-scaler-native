@@ -107,9 +107,6 @@ struct AppShellView: View {
             }
             previousTab = old
         }
-        .onReceive(NotificationCenter.default.publisher(for: .openAppShoppingTab)) { _ in
-            selectedTab = .shopping
-        }
         .onReceive(NotificationCenter.default.publisher(for: .shoppingStatusMessage)) { notification in
             guard let message = notification.object as? String, !message.isEmpty else { return }
             transientStatusDismissTask?.cancel()
