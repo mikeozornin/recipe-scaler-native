@@ -86,7 +86,6 @@ struct RecipeListView: View {
                     }
                     .listStyle(.plain)
                     .listSectionSpacing(0)
-                    .padding(.top, -10)
                     .accessibilityIdentifier(AccessibilityIdentifiers.recipeList)
                     .searchable(text: $searchText, prompt: "Search recipes")
                 }
@@ -353,10 +352,10 @@ private struct RecipeListSectionHeader: View {
         HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
             if isPinnedSection {
                 AppSymbol.image("pin")
-                    .font(AppTypography.iconSize(AppTypography.calloutSize))
+                    .font(AppTypography.iconSize(AppTypography.footnoteSize))
                     .frame(
                         width: RecipeRowLayoutMetrics.markerSlotWidth,
-                        height: RecipeRowLayoutMetrics.titleLineHeight,
+                        height: RecipeRowLayoutMetrics.footnoteLineHeight,
                         alignment: .center
                     )
             }
@@ -368,18 +367,20 @@ private struct RecipeListSectionHeader: View {
             )
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .font(AppTypography.compact)
+        .font(AppTypography.footnote)
         .foregroundStyle(.secondary)
+        .tracking(AppSectionHeader.letterSpacing)
+        .textCase(.uppercase)
     }
 }
 
 private extension View {
-    /// Web: `px-4 pt-2 pb-0 text-sm` — same leading grid as recipe rows (16 + 22 pt slot).
+    /// Web: `px-4 pt-0 pb-0 text-sm` — same leading grid as recipe rows (16 + 22 pt slot).
     func recipeListSectionHeaderRow() -> some View {
-        fixedSize(horizontal: false, vertical: true)
+        self
             .listRowInsets(
                 EdgeInsets(
-                    top: 8,
+                    top: 0,
                     leading: RecipeRowLayoutMetrics.listHorizontalInset,
                     bottom: 0,
                     trailing: RecipeRowLayoutMetrics.listHorizontalInset
@@ -388,6 +389,7 @@ private extension View {
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
             .environment(\.defaultMinListRowHeight, 1)
+            .padding(.bottom, -RecipeRowLayoutMetrics.rowVerticalPadding)
     }
 }
 

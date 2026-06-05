@@ -7,6 +7,9 @@
     "·" : {
 
     },
+    "@%@" : {
+
+    },
     "/connect %@" : {
 
     },
@@ -45,7 +48,6 @@
 
     },
     "account.allow-downloads" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -57,6 +59,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Разрешить посетителям копировать и скачивать PDF с рецептами"
+          }
+        }
+      }
+    },
+    "account.avatar.delete" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete photo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить фото"
           }
         }
       }
@@ -296,8 +315,23 @@
         }
       }
     },
+    "account.profile.edit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Профиль"
+          }
+        }
+      }
+    },
     "account.profile.name" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -309,6 +343,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Имя"
+          }
+        }
+      }
+    },
+    "account.profile.set-photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set photo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установить фото"
           }
         }
       }
@@ -330,7 +380,6 @@
       }
     },
     "account.public-profile.switch" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -769,6 +818,22 @@
         }
       }
     },
+    "account.username.placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nickname"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Никнейм"
+          }
+        }
+      }
+    },
     "account.username.save" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -838,7 +903,6 @@
       }
     },
     "account.your-public-recipes" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

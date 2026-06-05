@@ -4,7 +4,6 @@
 //
 
 import LocalAuthentication
-import PhotosUI
 import SwiftUI
 
 struct AccountView: View {
@@ -14,9 +13,7 @@ struct AccountView: View {
 
     @State private var showingLogoutConfirmation = false
     @State private var showLoginOnDevice = false
-    @State private var avatarItem: PhotosPickerItem?
     @State private var appLanguage: AppLanguagePreference = .current
-    @State private var usernameDraft = ""
     @State private var isTelegramConnected = false
 
     var body: some View {
@@ -36,7 +33,7 @@ struct AccountView: View {
                 }
 
                 accountSection
-                // publicRecipesSection
+                publicRecipesSection
                 telegramSection
                 preferencesSection
                 // dataSection
@@ -72,19 +69,11 @@ struct AccountView: View {
             .accessibilityIdentifier(AccessibilityIdentifiers.accountRoot)
             .task {
                 await viewModel.refresh(syncService: syncService)
-                usernameDraft = viewModel.username ?? ""
                 appLanguage = .current
             }
             .onChange(of: syncService.connectionState) { _, _ in
                 Task { @MainActor in
                     viewModel.bind(syncService: syncService)
-                }
-            }
-            .onChange(of: avatarItem) { _, item in
-                Task { @MainActor in
-                    guard let item,
-                          let data = try? await item.loadTransferable(type: Data.self) else { return }
-                    await viewModel.uploadAvatar(data: data, syncService: syncService)
                 }
             }
         }
@@ -130,15 +119,33 @@ struct AccountView: View {
             } else if viewModel.isLoading {
                 ProgressView()
             } else {
-                Toggle("account.public-profile.switch", isOn: Binding(
+                Toggle(isOn: Binding(
                     get: { viewModel.publicProfileEnabled },
                     set: { newValue in
                         Task { @MainActor in await viewModel.setPublicProfileEnabled(newValue) }
                     }
-                ))
+                )) {
+                    Text("account.public-profile.switch").appBody()
+                }
                 .disabled(viewModel.isUpdatingSharing)
 
                 if viewModel.publicProfileEnabled {
+                    NavigationLink {
+                        AccountProfileEditView(viewModel: viewModel)
+                    } label: {
+                        HStack {
+                            Text("account.profile.edit")
+                                .appBody()
+                            Spacer()
+                            Text(viewModel.displayName.isEmpty
+                                ? (viewModel.username.map { "@\($0)" } ?? "")
+                                : viewModel.displayName)
+                                .appBody()
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+
                     NavigationLink {
                         AccountCheckmarkSelectionView(
                             navigationTitle: "account.share-mode.label",
@@ -157,34 +164,21 @@ struct AccountView: View {
                     }
                     .disabled(viewModel.isUpdatingSharing)
 
-                    TextField("account.profile.name", text: $viewModel.displayName)
-                        .onSubmit { viewModel.scheduleNameSave() }
-                    PhotosPicker(selection: $avatarItem, matching: .images) {
-                        AppLabel.make("account.profile.change-avatar", symbol: "person.crop.circle")
-                    }
-
-                    if viewModel.canChangeUsername {
-                        TextField("account.username.label", text: $usernameDraft)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                        Button("account.username.save") {
-                            Task { @MainActor in await viewModel.saveUsername(usernameDraft) }
-                        }
-                    } else if let username = viewModel.username {
-                        LabeledContent("account.username.label", value: "@\(username)")
-                    }
-
-                    Toggle("account.allow-downloads", isOn: Binding(
+                    Toggle(isOn: Binding(
                         get: { viewModel.allowRecipeDownloads },
                         set: { enabled in
                             Task { @MainActor in await viewModel.setAllowRecipeDownloads(enabled) }
                         }
-                    ))
+                    )) {
+                        Text("account.allow-downloads").appBody()
+                    }
                     .disabled(viewModel.isUpdatingSharing)
 
                     if let username = viewModel.username,
                        let url = PublicURLBuilder.publicProfileURL(username: username) {
-                        Link("account.your-public-recipes", destination: url)
+                        Link(destination: url) {
+                            Text("account.your-public-recipes").appBody()
+                        }
                     }
                 }
             }
@@ -285,16 +279,7 @@ struct AccountView: View {
     private var accountAvatar: some View {
         Group {
             if let url = viewModel.avatarURL {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    default:
-                        Image(systemName: "person.circle.fill")
-                            .resizable()
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                AuthAvatarImage(url: url)
             } else {
                 Image(systemName: "person.circle.fill")
                     .resizable()

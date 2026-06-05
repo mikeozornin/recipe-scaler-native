@@ -150,6 +150,8 @@
 		E5F60718293A4B70A1B2C3E5 /* RecipeImageUploadPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */; };
 		E5F60718293A4B7069A26F71 /* AccountCheckmarkSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */; };
 		E5F60718293A4B7058D1A50A /* AccountOptionLabels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70E32FCAE0 /* AccountOptionLabels.swift */; };
+		E5F60718293A4B70ACE05678 /* AccountProfileEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70ACE01234 /* AccountProfileEditView.swift */; };
+		E5F60718293A4B70AAV01234 /* AuthAvatarImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70AAV00001 /* AuthAvatarImage.swift */; };
 		E5F60718293A4B70321FB5DD /* ScreenAwakeStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */; };
 		E5F60718293A4B701757B9DA /* ScreenAwakeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B701A6B5339 /* ScreenAwakeController.swift */; };
 		E5F60718293A4B703C4C8B66 /* TimerUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7066BF06C8 /* TimerUtils.swift */; };
@@ -312,6 +314,8 @@
 		E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeImageUploadPreprocessor.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountCheckmarkSelectionView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70E32FCAE0 /* AccountOptionLabels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountOptionLabels.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70ACE01234 /* AccountProfileEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountProfileEditView.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70AAV00001 /* AuthAvatarImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthAvatarImage.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenAwakeStatusBanner.swift; sourceTree = "<group>"; };
 		E5F60718293A4B701A6B5339 /* ScreenAwakeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenAwakeController.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7066BF06C8 /* TimerUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerUtils.swift; sourceTree = "<group>"; };
@@ -432,6 +436,8 @@
 				E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */,
 				E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */,
 				E5F60718293A4B70E32FCAE0 /* AccountOptionLabels.swift */,
+				E5F60718293A4B70ACE01234 /* AccountProfileEditView.swift */,
+				E5F60718293A4B70AAV00001 /* AuthAvatarImage.swift */,
 				E5F60718293A4B7001851F51 /* AssistantSheet.swift */,
 				E5F60718293A4B70E374EEFC /* MobileTimerPanel.swift */,
 				E5F60718293A4B709EBF9E6E /* RecipeDetailActionsMenu.swift */,
@@ -872,6 +878,8 @@
 				E5F60718293A4B70A1B2C3E5 /* RecipeImageUploadPreprocessor.swift in Sources */,
 				E5F60718293A4B7069A26F71 /* AccountCheckmarkSelectionView.swift in Sources */,
 				E5F60718293A4B7058D1A50A /* AccountOptionLabels.swift in Sources */,
+				E5F60718293A4B70ACE05678 /* AccountProfileEditView.swift in Sources */,
+				E5F60718293A4B70AAV01234 /* AuthAvatarImage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

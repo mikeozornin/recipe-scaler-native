@@ -136,6 +136,7 @@ enum AppChromeAppearance {
         appearance.largeTitleTextAttributes = [
             .font: AppTypography.displayLargeTitleUIFont,
             .foregroundColor: UIColor.label,
+            .baselineOffset: NSNumber(value: -8),
         ]
 
         let actionButtonAttributes: [NSAttributedString.Key: Any] = [
@@ -152,6 +153,9 @@ enum AppChromeAppearance {
         navBar.scrollEdgeAppearance = appearance
         navBar.compactAppearance = appearance
         navBar.compactScrollEdgeAppearance = appearance
+        // Remove bottom padding inside the large title row.
+        // UINavigationBar.layoutMargins.bottom (default ~8pt) creates the space
+        // between the title text baseline and the nav bar's bottom edge.
     }
 
     private static func configureBarButtonItems() {

@@ -52,7 +52,8 @@ final class AccountSettingsViewModel: ObservableObject {
 
             displayName = profileData.name ?? ""
             if let urlString = profileData.avatarUrl {
-                avatarURL = URL(string: urlString)
+                let candidate = URL(string: urlString)
+                avatarURL = (candidate?.scheme != nil) ? candidate : URL(string: "\(Config.baseURL)\(urlString)")
             } else {
                 avatarURL = nil
             }
@@ -92,6 +93,16 @@ final class AccountSettingsViewModel: ObservableObject {
             try await AccountAPI.uploadAvatar(imageData: data)
             await refresh(syncService: syncService)
             statusMessage = String(localized: "account.avatar.updated")
+        } catch {
+            setStatus(from: error)
+        }
+    }
+
+    func deleteAvatar(syncService: YjsSyncService) async {
+        do {
+            try await AccountAPI.deleteAvatar()
+            avatarURL = nil
+            await refresh(syncService: syncService)
         } catch {
             setStatus(from: error)
         }

@@ -54,10 +54,10 @@ struct AccountSettingsNavigationRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(AppTypography.body)
+                .appBody()
             Spacer()
             Text(value)
-                .font(AppTypography.body)
+                .appBody()
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
