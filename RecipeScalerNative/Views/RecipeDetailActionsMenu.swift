@@ -14,6 +14,8 @@ struct RecipeDetailActionsMenu: View {
 
     @EnvironmentObject private var syncService: YjsSyncService
 
+    @State private var recipePendingDelete = false
+
     var body: some View {
         Menu {
             if !isEditing {
@@ -33,6 +35,12 @@ struct RecipeDetailActionsMenu: View {
                         symbol: isPinned ? "pin.slash" : "pin"
                     )
                 }
+
+                Button(role: .destructive) {
+                    recipePendingDelete = true
+                } label: {
+                    AppLabel.make(String(localized: "recipe.list.delete"), symbol: "trash")
+                }
             }
         } label: {
             AppToolbarStyle.iconOnly(systemName: "ellipsis")
@@ -40,6 +48,23 @@ struct RecipeDetailActionsMenu: View {
         .appToolbarIconButton()
         .accessibilityLabel(String(localized: "recipe.detail.more-actions"))
         .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailMenu)
+        .alert(
+            String(localized: "recipe.list.delete.confirm.title"),
+            isPresented: $recipePendingDelete
+        ) {
+            Button(String(localized: "recipe.list.delete.confirm.action"), role: .destructive) {
+                Task { await deleteRecipe() }
+            }
+            Button(String(localized: "recipe.list.delete.confirm.cancel"), role: .cancel) { }
+        } message: {
+            Text(
+                String(
+                    format: String(localized: "recipe.list.delete.confirm.message"),
+                    locale: .current,
+                    recipeName
+                )
+            )
+        }
     }
 
     private func addAllToShopping() async {
@@ -73,6 +98,14 @@ struct RecipeDetailActionsMenu: View {
     private func togglePin() async {
         do {
             try await syncService.setRecipePinned(recipeId: recipeId, isPinned: !isPinned)
+        } catch {
+            postShoppingMessage(error.localizedDescription)
+        }
+    }
+
+    private func deleteRecipe() async {
+        do {
+            try await syncService.deleteRecipeFromCollection(recipeId: recipeId)
         } catch {
             postShoppingMessage(error.localizedDescription)
         }
