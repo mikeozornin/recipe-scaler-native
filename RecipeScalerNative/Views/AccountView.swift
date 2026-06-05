@@ -17,6 +17,7 @@ struct AccountView: View {
     @State private var avatarItem: PhotosPickerItem?
     @State private var appLanguage: AppLanguagePreference = .current
     @State private var usernameDraft = ""
+    @State private var isTelegramConnected = false
 
     var body: some View {
         NavigationStack {
@@ -30,11 +31,13 @@ struct AccountView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .font(AppTypography.subheadline)
+                        .padding(.top, 8)
                     }
                 }
 
                 accountSection
                 // publicRecipesSection
+                telegramSection
                 preferencesSection
                 // dataSection
 
@@ -49,7 +52,7 @@ struct AccountView: View {
                 footerSection
             }
             .navigationTitle("account.title")
-            .navigationBarTitleDisplayMode(.inline)
+            .listSectionSpacing(12)
             .appListBodyTypography()
             .overlay {
                 if viewModel.isLoading {
@@ -97,11 +100,13 @@ struct AccountView: View {
     @ViewBuilder
     private var accountSection: some View {
         Section {
+            AppSectionHeader("account.section.account")
+                .accountSectionLabelRow()
             if let userId = authService.userId {
                 HStack(spacing: 12) {
                     accountAvatar
                     Text(UserIdFormatter.format(userId))
-                        .font(AppTypography.mono(AppTypography.subheadlineSize))
+                        .font(AppTypography.body)
                     Spacer(minLength: 8)
                     Button(role: .destructive) {
                         showingLogoutConfirmation = true
@@ -117,8 +122,6 @@ struct AccountView: View {
             Button("auth.login-with-another") {
                 showLoginOnDevice = true
             }
-        } header: {
-            AppSectionHeader("account.section.account")
         }
     }
 
@@ -196,8 +199,27 @@ struct AccountView: View {
     }
 
     @ViewBuilder
+    private var telegramSection: some View {
+        Section {
+            AppSectionHeader("telegram.accordion-title")
+                .accountSectionLabelRow()
+            if !isTelegramConnected {
+                Text("telegram.benefits-description-1")
+                    .font(AppTypography.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            TelegramConnectionView(
+                isOnline: viewModel.isOnline,
+                onStatusChange: { isTelegramConnected = $0 }
+            )
+        }
+    }
+
+    @ViewBuilder
     private var preferencesSection: some View {
         Section {
+            AppSectionHeader("account.section.preferences")
+                .accountSectionLabelRow()
             NavigationLink {
                 AccountCheckmarkSelectionView(
                     navigationTitle: "account.language.label",
@@ -237,8 +259,15 @@ struct AccountView: View {
                     Task { @MainActor in await viewModel.setShowNutrition(value) }
                 }
             ))
-        } header: {
-            AppSectionHeader("account.section.preferences")
+
+            Toggle("account.timer-notifications.label", isOn: Binding(
+                get: { viewModel.timerNotificationsEnabled },
+                set: { value in
+                    Task { @MainActor in await viewModel.setTimerNotificationsEnabled(value) }
+                }
+            ))
+            .disabled(viewModel.timerNotificationsDenied)
+            .accessibilityIdentifier(AccessibilityIdentifiers.accountTimerNotificationsToggle)
         }
     }
 
@@ -371,6 +400,24 @@ private struct AccountSeedPhraseSheet: View {
         } catch {
             authError = error.localizedDescription
         }
+    }
+}
+
+private extension View {
+    /// Renders section header as plain row (matches shopping list "TO BUY" style).
+    func accountSectionLabelRow() -> some View {
+        fixedSize(horizontal: false, vertical: true)
+            .listRowInsets(
+                EdgeInsets(
+                    top: 8,
+                    leading: RecipeRowLayoutMetrics.listHorizontalInset,
+                    bottom: 0,
+                    trailing: RecipeRowLayoutMetrics.listHorizontalInset
+                )
+            )
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .environment(\.defaultMinListRowHeight, 1)
     }
 }
 

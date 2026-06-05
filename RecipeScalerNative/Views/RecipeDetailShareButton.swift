@@ -33,7 +33,11 @@ struct RecipeDetailShareButton: View {
         .sheet(isPresented: $showShare) {
             if let shareURL {
                 ShareLink(item: shareURL) {
-                    Text(String(localized: "recipe.share.link"))
+                    Text("recipe.share.link")
+                        .font(AppTypography.footnote)
+                        .foregroundStyle(.primary)
+                        .lineLimit(3)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .presentationDetents([.medium])
             }

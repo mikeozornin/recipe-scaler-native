@@ -20,6 +20,7 @@
 | 003 | Офлайн-кэш изображений (REST → диск) | ✅ |
 | 004 | Просмотр описания v3 (XmlFragment → HTML, без WKWebView) | ✅ |
 | 014 | Синк таймеров + mobile panel | ✅ |
+| 024 | Список покупок + share/export + вкладка Shopping | ✅ (2026-06-04) |
 | — | Auth BIP39, таймеры локальные, i18n ru/en, масштаб порций UI-local | ✅ Phase 1 |
 
 ## Этапы (после 004)
@@ -33,6 +34,7 @@ flowchart LR
     S002[002 edit]
     S003[003 images cache]
     S004[004 desc read]
+    S024[024 shopping]
   end
   subgraph core [Ядро UX]
     S006[006 desc editor]
@@ -40,7 +42,6 @@ flowchart LR
     S008[008 collection CRUD]
   end
   subgraph daily [Ежедневное]
-    S009[009 shopping]
     S010[010 import]
     S016[016 image upload]
   end
@@ -55,11 +56,11 @@ flowchart LR
   end
   S004 --> S006
   S002 --> S008
-  S007 --> S009
+  S007 --> S024
   S007 --> S010
   S007 --> S011
   S002 --> S016
-  S009 --> S012
+  S024 --> S012
   S011 --> S012
 ```
 
@@ -77,7 +78,7 @@ flowchart LR
 
 | Spec | Название | Зачем |
 |------|----------|-------|
-| [009-shopping-list](../009-shopping-list/spec.md) | Список покупок Y.Doc + UI | Вкладка Shopping, add-from-recipe |
+| [024-shopping-list-completion](../024-shopping-list-completion/spec.md) | Список покупок + share/export | ✅ Готово (2026-06-04) |
 | [010-recipe-import](../010-recipe-import/spec.md) | Импорт URL / текст / фото | Центральная вкладка Import |
 | [016-recipe-image-upload](../016-recipe-image-upload/spec.md) | Загрузка/удаление фото рецепта | REST + инвалидация кэша 003 |
 
@@ -111,15 +112,15 @@ flowchart LR
 | Деталь: описание read | Tiptap render | 🔄 004 | 004 |
 | Деталь: описание edit | Tiptap + XmlFragment | ❌ | 006 |
 | Деталь: таймеры в тексте | timer nodes | read-only в 004; запуск локальных таймеров — уточнить в 006/014 | 006, 014 |
-| Деталь: add to shopping | swipe + batch | ❌ | 009 |
+| Деталь: add to shopping | swipe + batch | ✅ | 024 |
 | Изображения: просмотр офлайн | proxy + cache | ✅ 003 | — |
 | Изображения: upload/delete | REST multipart | ❌ | 016 |
-| Список покупок | `shopping-list-page` | ❌ | 009 |
+| Список покупок | `shopping-list-page` | ✅ | 024 |
 | Импорт URL/текст/фото | `ImportRecipeSheet` | ❌ | 010 |
 | Discover / curated | `/discover` | ❌ | 011 |
 | Публичный профиль `/@user` | `public-profile` routes | ❌ | 011 |
 | Clone / Copy to my recipes | API clone | ❌ | 011 |
-| Share recipe / shopping | share popover + API | ❌ | 012 |
+| Share recipe / shopping | share popover + API | 🟡 recipe ✅ / shopping ✅ (024) | 012, 024 |
 | Assistant chat + voice | `assistant-sheet` | ❌ | 015 |
 | Account: имя, аватар, язык | `/account` | частично auth | 013 |
 | Telegram connect | PRD § Telegram | ❌ | 013 |

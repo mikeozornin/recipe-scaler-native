@@ -19,6 +19,24 @@ enum DebugLaunchOptions {
             || startInEditMode
             || showRecipeShare
             || showAssistant
+            || openShoppingShare
+            || shoppingShareAutoCopyText
+    }
+
+    /// `-OpenShoppingShare=1` — opens shopping share sheet (verify scripts).
+    static var openShoppingShare: Bool {
+        for arg in ProcessInfo.processInfo.arguments {
+            if arg == "-OpenShoppingShare=1" || arg == "-OpenShoppingShare" { return true }
+        }
+        return false
+    }
+
+    /// `-ShoppingShareAutoCopyText=1` — copies list as text from share sheet (verify scripts).
+    static var shoppingShareAutoCopyText: Bool {
+        for arg in ProcessInfo.processInfo.arguments {
+            if arg == "-ShoppingShareAutoCopyText=1" || arg == "-ShoppingShareAutoCopyText" { return true }
+        }
+        return false
     }
 
     /// `-ShowAssistant=1` — opens assistant sheet on launch (verify 015).

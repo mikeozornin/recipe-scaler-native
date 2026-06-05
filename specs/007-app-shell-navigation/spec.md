@@ -70,7 +70,7 @@
 | discover | DiscoverRootView | 011 |
 | import | sheet only | 010 |
 | recipes | RecipeListView (существует) | 008 |
-| shopping | ShoppingListRootView | 009 |
+| shopping | ShoppingListRootView | 024 |
 | profile | AccountRootView | 013 |
 
 ### FR-NAV-002 — Ширина подписей

@@ -29,6 +29,7 @@ struct YDocRecipeDetailView: View {
     @State private var isScreenAwakeActive = false
     @State private var descriptionTimerPopover: DescriptionTimerPopoverState?
 
+
     private var recipe: RecipeData? {
         guard syncService.currentRecipe?.id == recipeId else { return nil }
         return syncService.currentRecipe
@@ -161,6 +162,11 @@ struct YDocRecipeDetailView: View {
                                 onScaledQuantityEdited: { ingredient, text in
                                     applyViewModeScaledQuantityEdit(ingredient: ingredient, text: text)
                                 },
+                                onAddIngredientToShopping: isLegacyReadOnly
+                                    ? nil
+                                    : { ingredient in
+                                        Task { await addIngredientToShopping(ingredient) }
+                                    },
                                 nutritionEnabled: showNutritionGlobal,
                                 nutritionViewMode: nutritionViewMode
                             )
@@ -296,6 +302,7 @@ struct YDocRecipeDetailView: View {
         } message: {
             Text(editErrorMessage ?? "")
         }
+
         .onChange(of: syncService.syncErrorMessage) { _, message in
             if let message { editErrorMessage = message }
         }
@@ -708,6 +715,31 @@ struct YDocRecipeDetailView: View {
             try await editViewModel.deleteIngredient(id: id)
         } catch {
             editErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func addIngredientToShopping(_ ingredient: IngredientData) async {
+        guard let recipe else { return }
+        let items = ShoppingListFromRecipe.makeItems(
+            recipeId: recipeId,
+            recipeName: recipe.name,
+            ingredients: recipe.ingredients,
+            ingredientIds: [ingredient.id]
+        )
+        guard !items.isEmpty else {
+            ShoppingFeedback.postStatus(String(localized: "shopping.no-items-to-add"))
+            return
+        }
+        do {
+            try await syncService.addRecipeToShoppingList(
+                recipeId: recipeId,
+                recipeName: recipe.name,
+                ingredients: recipe.ingredients,
+                selectedIngredientIds: [ingredient.id]
+            )
+            ShoppingFeedback.postStatus(ShoppingAddFeedback.message(for: items.count))
+        } catch {
+            ShoppingFeedback.postStatus(error.localizedDescription)
         }
     }
 

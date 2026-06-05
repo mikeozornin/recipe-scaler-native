@@ -12,6 +12,7 @@ struct RecipeListView: View {
     @State private var isCreatingRecipe = false
     @State private var recipeIdToOpenInEditMode: String?
 
+
     init(navigationPath: Binding<NavigationPath> = .constant(NavigationPath())) {
         _navigationPath = navigationPath
     }
@@ -113,7 +114,10 @@ struct RecipeListView: View {
                     Button {
                         Task { await handleAddRecipe() }
                     } label: {
-                        AppToolbarStyle.iconOnly(systemName: "plus")
+                        AppToolbarStyle.labeledIcon(
+                            systemName: "plus",
+                            title: String(localized: "recipe.list.add")
+                        )
                     }
                     .appToolbarIconButton()
                     .disabled(isCreatingRecipe)
@@ -171,6 +175,7 @@ struct RecipeListView: View {
                     )
                 )
             }
+
         }
     }
 
@@ -196,6 +201,19 @@ struct RecipeListView: View {
         } catch {
             errorMessage = error.localizedDescription
             showingError = true
+        }
+    }
+
+    private func addRecipeToShopping(_ item: RecipeRowData) async {
+        do {
+            let added = try await syncService.addWholeRecipeToShoppingList(recipeId: item.id)
+            if added > 0 {
+                ShoppingFeedback.postStatus(ShoppingAddFeedback.message(for: added))
+            } else {
+                ShoppingFeedback.postStatus(String(localized: "shopping.no-items-to-add"))
+            }
+        } catch {
+            ShoppingFeedback.postStatus(error.localizedDescription)
         }
     }
 
@@ -240,6 +258,16 @@ struct RecipeListView: View {
             .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
             .accessibilityIdentifier(AccessibilityIdentifiers.recipeRow(id: item.id))
             .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                Button {
+                    Task { await addRecipeToShopping(item) }
+                } label: {
+                    Label(
+                        String(localized: "shopping.detail-add-all"),
+                        systemImage: "cart.badge.plus"
+                    )
+                }
+                .tint(.green)
+
                 Button {
                     Task { await togglePin(for: item) }
                 } label: {

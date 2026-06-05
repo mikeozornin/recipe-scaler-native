@@ -43,7 +43,7 @@ final class TimerManager: NSObject, ObservableObject {
 
     override init() {
         super.init()
-        setupNotifications()
+        notificationCenter.delegate = self
     }
 
     func configure(modelContext: ModelContext) {
@@ -52,15 +52,22 @@ final class TimerManager: NSObject, ObservableObject {
         TimerSyncService.shared.timerManager = self
     }
 
-    // MARK: - Setup
+    func notificationAuthorizationStatus() async -> UNAuthorizationStatus {
+        await notificationCenter.notificationSettings().authorizationStatus
+    }
 
-    private func setupNotifications() {
-        notificationCenter.requestAuthorization(options: [.alert, .sound, .badge]) { _, error in
-            if let error {
-                print("Notification authorization error: \(error.localizedDescription)")
+    @discardableResult
+    func requestNotificationAuthorization() async -> Bool {
+        do {
+            let granted = try await notificationCenter.requestAuthorization(options: [.alert, .sound, .badge])
+            if granted {
+                UIApplication.shared.registerForRemoteNotifications()
             }
+            return granted
+        } catch {
+            print("Notification authorization error: \(error.localizedDescription)")
+            return false
         }
-        notificationCenter.delegate = self
     }
 
     private func loadTimers() {
@@ -291,6 +298,15 @@ final class TimerManager: NSObject, ObservableObject {
     // MARK: - Notifications
 
     private func sendCompletionNotification(for timer: RecipeTimer) {
+        guard TimerNotificationPreferences.isEnabled else { return }
+        Task { @MainActor in
+            let status = await notificationAuthorizationStatus()
+            guard status == .authorized else { return }
+            deliverCompletionNotification(for: timer)
+        }
+    }
+
+    private func deliverCompletionNotification(for timer: RecipeTimer) {
         let content = UNMutableNotificationContent()
         content.title = "Timer Complete"
         content.body = "\(timer.name) has finished"
@@ -395,6 +411,15 @@ final class TimerManager: NSObject, ObservableObject {
         Task { @MainActor in
             stopUpdateTimer()
         }
+    }
+}
+
+enum TimerNotificationPreferences {
+    private static let enabledKey = "timerNotificationsEnabled"
+
+    static var isEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: enabledKey) }
+        set { UserDefaults.standard.set(newValue, forKey: enabledKey) }
     }
 }
 
