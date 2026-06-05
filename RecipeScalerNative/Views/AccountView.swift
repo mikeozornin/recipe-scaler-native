@@ -107,6 +107,7 @@ struct AccountView: View {
         } header: {
             AppSectionHeader("account.section.account")
         }
+        .appListSectionHeaderStyle()
     }
 
     @ViewBuilder
@@ -185,6 +186,7 @@ struct AccountView: View {
         } header: {
             AppSectionHeader("account.section.public-recipes")
         }
+        .appListSectionHeaderStyle()
     }
 
     @ViewBuilder
@@ -202,6 +204,7 @@ struct AccountView: View {
         } header: {
             AppSectionHeader("telegram.accordion-title")
         }
+        .appListSectionHeaderStyle()
     }
 
     @ViewBuilder
@@ -251,6 +254,7 @@ struct AccountView: View {
         } header: {
             AppSectionHeader("account.section.preferences")
         }
+        .appListSectionHeaderStyle()
     }
 
     @ViewBuilder
@@ -262,6 +266,7 @@ struct AccountView: View {
         } header: {
             AppSectionHeader("account.section.data")
         }
+        .appListSectionHeaderStyle()
     }
 
     @ViewBuilder

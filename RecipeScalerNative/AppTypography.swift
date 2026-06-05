@@ -95,13 +95,20 @@ struct AppSectionHeader: View {
     var body: some View {
         Text(title)
             .font(AppTypography.footnote)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color(.secondaryLabel))
             .tracking(AppSectionHeader.letterSpacing)
             .textCase(.uppercase)
     }
 
     /// ~0.06 em at 13 pt (web section label rhythm).
     static let letterSpacing: CGFloat = 0.8
+}
+
+extension View {
+    /// Keeps `AppSectionHeader` footnote + secondary color in insetGrouped `Section` headers.
+    func appListSectionHeaderStyle() -> some View {
+        headerProminence(.standard)
+    }
 }
 
 /// Invisible section header placeholder — keeps spacing above a headerless list group.
@@ -176,9 +183,11 @@ enum AppChromeAppearance {
 
     private static func configureListSectionHeaders() {
         let headerFont = AppTypography.uiFont(AppFonts.sans, size: AppTypography.footnoteSize)
-        UILabel.appearance(
+        let headerLabel = UILabel.appearance(
             whenContainedInInstancesOf: [UITableViewHeaderFooterView.self]
-        ).font = headerFont
+        )
+        headerLabel.font = headerFont
+        headerLabel.textColor = .secondaryLabel
     }
 
     private static func configureTextInputs() {
