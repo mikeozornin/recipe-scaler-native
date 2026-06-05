@@ -78,8 +78,13 @@ struct YDocIngredientsSection: View {
                                 nutritionEnabled: nutritionEnabled,
                                 nutritionViewMode: nutritionViewMode
                             )
+                            .overlay(alignment: .top) {
+                                if index > 0 {
+                                    Divider()
+                                }
+                            }
                             .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
-                            .listRowSeparator(index > 0 ? .visible : .hidden)
+                            .listRowSeparator(.hidden)
                             .listRowBackground(Color(.systemBackground))
                         }
                     }
@@ -718,7 +723,7 @@ private struct IngredientGridIngredientsColumn<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
+        HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.ingredientMarkerSpacing) {
             IngredientRowMarkerSlot(label: markerLabel)
             content()
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -780,14 +785,13 @@ private struct IngredientRowMarkerSlot: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .frame(
-            width: RecipeRowLayoutMetrics.markerSlotWidth,
-            height: RecipeRowLayoutMetrics.ingredientBodyLineHeight,
-            alignment: .trailing
+            minWidth: RecipeRowLayoutMetrics.markerSlotWidth,
+            alignment: .leading
         )
+        .frame(height: RecipeRowLayoutMetrics.ingredientBodyLineHeight, alignment: .top)
     }
 }
 

@@ -17,6 +17,8 @@ enum RecipeRowLayoutMetrics {
     static var wrappedLineSpacing: CGFloat { AppTypography.bodyLineSpacing }
     /// Gap between row number and ingredient name (web `mr-2` ≈ 8pt; half of prior 12pt grid).
     static let rowMarkerSpacing: CGFloat = 6
+    /// Tighter gap between marker and ingredient name (recipe detail, list of ingredients).
+    static let ingredientMarkerSpacing: CGFloat = 2
     /// Gap between the ingredients block (marker + name) and qty columns.
     static let gridIngredientsToQtySpacing: CGFloat = 8
     /// Gap between base and scaled qty.
@@ -24,11 +26,11 @@ enum RecipeRowLayoutMetrics {
     /// Name → KBJU line (view and edit).
     static let nutritionLineSpacing: CGFloat = 4
 
-    /// Leading slot: row number / «+» — tight to digit width.
+    /// Leading slot: row number / «+» — tight to body digit width.
     static var markerSlotWidth: CGFloat {
         let font = AppTypography.uiFont(AppFonts.sans, size: ingredientBodyFontSize)
         let width = ("99" as NSString).size(withAttributes: [.font: font]).width
-        return ceil(width) + 2
+        return ceil(width) - 2
     }
 
     /// Base (non-scaled) qty column — header «Qty» and black amounts align here.
