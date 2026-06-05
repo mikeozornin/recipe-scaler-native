@@ -86,6 +86,7 @@ struct RecipeListView: View {
                     }
                     .listStyle(.plain)
                     .listSectionSpacing(0)
+                    .environment(\.defaultMinListRowHeight, 1)
                     .accessibilityIdentifier(AccessibilityIdentifiers.recipeList)
                     .searchable(text: $searchText, prompt: "Search recipes")
                 }
@@ -375,9 +376,9 @@ private struct RecipeListSectionHeader: View {
 }
 
 private extension View {
-    /// Web: `px-4 pt-0 pb-0 text-sm` — same leading grid as recipe rows (16 + 22 pt slot).
     func recipeListSectionHeaderRow() -> some View {
         self
+            .padding(.top, 14)
             .listRowInsets(
                 EdgeInsets(
                     top: 0,
@@ -388,8 +389,6 @@ private extension View {
             )
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
-            .environment(\.defaultMinListRowHeight, 1)
-            .padding(.bottom, -RecipeRowLayoutMetrics.rowVerticalPadding)
     }
 }
 

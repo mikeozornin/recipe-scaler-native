@@ -136,7 +136,6 @@ enum AppChromeAppearance {
         appearance.largeTitleTextAttributes = [
             .font: AppTypography.displayLargeTitleUIFont,
             .foregroundColor: UIColor.label,
-            .baselineOffset: NSNumber(value: -8),
         ]
 
         let actionButtonAttributes: [NSAttributedString.Key: Any] = [
