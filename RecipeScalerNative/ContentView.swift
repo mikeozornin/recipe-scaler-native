@@ -58,6 +58,14 @@ struct ContentView: View {
             #if DEBUG
             if isUITesting || DebugLaunchOptions.shouldSkipSplash {
                 showSplash = false
+                if ShoppingSmokeTest.shouldRun, let userId = effectiveUserId {
+                    Task.detached { @MainActor in
+                        await ShoppingSmokeTest.Launcher.launchIfNeeded(
+                            syncService: syncService,
+                            userId: userId
+                        )
+                    }
+                }
                 return
             }
             #else
@@ -77,8 +85,18 @@ struct ContentView: View {
             NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
                 .receive(on: DispatchQueue.main)
         ) { _ in
-            appTheme = AppThemePreference.current
-            appLanguage = AppLanguagePreference.current
+            // Only mutate @State when theme/language actually changed. UserDefaults.didChangeNotification
+            // fires on every defaults write (sync layer writes constantly), and an unconditional
+            // reassignment thrashes the root view — re-creating the YjsSyncService and tearing down a
+            // live socket on a ~30s cadence.
+            let newTheme = AppThemePreference.current
+            if newTheme != appTheme {
+                appTheme = newTheme
+            }
+            let newLanguage = AppLanguagePreference.current
+            if newLanguage != appLanguage {
+                appLanguage = newLanguage
+            }
         }
         #if !targetEnvironment(simulator)
         .onChange(of: authService.isAuthenticated) { _, authenticated in
@@ -88,8 +106,18 @@ struct ContentView: View {
         }
         #endif
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background || phase == .inactive {
+            switch phase {
+            case .background:
+                // Persist, then drop the socket so suspended requests don't time out on resume.
                 Task { await syncService.persistAll() }
+                syncService.handleEnteredBackground()
+            case .inactive:
+                // Transient (app switcher, notification shade) — persist but keep the socket.
+                Task { await syncService.persistAll() }
+            case .active:
+                syncService.handleEnteredForeground()
+            @unknown default:
+                break
             }
         }
     }
@@ -104,6 +132,7 @@ struct ContentView: View {
             }
             .task(id: effectiveUserId) {
                 #if DEBUG
+                if ShoppingSmokeTest.shouldRun { return }
                 AgentSyncDebugLog.sync(
                     location: "ContentView.swift:appShell",
                     message: "app_shell_start",

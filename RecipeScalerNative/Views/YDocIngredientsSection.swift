@@ -36,11 +36,19 @@ struct YDocIngredientsSection: View {
     let viewServings: Int
     let accentColor: Color
     var onScaledQuantityEdited: ((IngredientData, String) -> Void)?
+    var onAddIngredientToShopping: ((IngredientData) -> Void)?
     var nutritionEnabled: Bool = false
     var nutritionViewMode: IngredientNutritionViewMode = .dish
 
     private var numberedRows: [(number: Int?, ingredient: IngredientData)] {
         numberedIngredientRows(from: ingredients)
+    }
+
+    private var viewListHeight: CGFloat {
+        IngredientEditList.estimatedContentHeight(
+            rows: numberedRows,
+            nutritionEnabled: nutritionEnabled
+        )
     }
 
     var body: some View {
@@ -55,24 +63,34 @@ struct YDocIngredientsSection: View {
                 VStack(alignment: .leading, spacing: 0) {
                     IngredientColumnHeaderRow()
                         .accessibilityIdentifier(AccessibilityIdentifiers.ingredientsSection)
+                        .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
 
-                    ForEach(Array(numberedRows.enumerated()), id: \.element.ingredient.id) { index, row in
-                        if index > 0 {
-                            IngredientListRowSeparator()
+                    List {
+                        ForEach(Array(numberedRows.enumerated()), id: \.element.ingredient.id) { index, row in
+                            YDocIngredientViewRow(
+                                ingredient: row.ingredient,
+                                rowNumber: row.number,
+                                baseServings: baseServings,
+                                viewServings: viewServings,
+                                accentColor: accentColor,
+                                onScaledQuantityEdited: onScaledQuantityEdited,
+                                onAddToShopping: onAddIngredientToShopping,
+                                nutritionEnabled: nutritionEnabled,
+                                nutritionViewMode: nutritionViewMode
+                            )
+                            .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
+                            .listRowSeparator(index > 0 ? .visible : .hidden)
+                            .listRowBackground(Color(.systemBackground))
                         }
-                        YDocIngredientViewRow(
-                            ingredient: row.ingredient,
-                            rowNumber: row.number,
-                            baseServings: baseServings,
-                            viewServings: viewServings,
-                            accentColor: accentColor,
-                            onScaledQuantityEdited: onScaledQuantityEdited,
-                            nutritionEnabled: nutritionEnabled,
-                            nutritionViewMode: nutritionViewMode
-                        )
                     }
+                    .listStyle(.plain)
+                    .listRowSpacing(0)
+                    .listSectionSpacing(0)
+                    .frame(height: viewListHeight)
+                    .scrollDisabled(true)
+                    .scrollContentBackground(.hidden)
+                    .environment(\.defaultMinListRowHeight, RecipeRowLayoutMetrics.rowHeight)
                 }
-                .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
             }
         }
     }
@@ -95,6 +113,7 @@ private struct YDocIngredientViewRow: View {
     let viewServings: Int
     let accentColor: Color
     var onScaledQuantityEdited: ((IngredientData, String) -> Void)?
+    var onAddToShopping: ((IngredientData) -> Void)?
     let nutritionEnabled: Bool
     let nutritionViewMode: IngredientNutritionViewMode
 
@@ -141,6 +160,19 @@ private struct YDocIngredientViewRow: View {
     private var ingredientContent: some View {
         ingredientNameAmountRow(nutritionSummary: nutritionSummary)
             .ingredientListRowChrome()
+            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                if let onAddToShopping, ShoppingListFromRecipe.isIngredientEligible(ingredient) {
+                    Button {
+                        onAddToShopping(ingredient)
+                    } label: {
+                        Label(
+                            String(localized: "shopping.ingredient-add"),
+                            systemImage: "cart.badge.plus"
+                        )
+                    }
+                    .tint(.green)
+                }
+            }
     }
 
     private func ingredientNameAmountRow(nutritionSummary: String?) -> some View {

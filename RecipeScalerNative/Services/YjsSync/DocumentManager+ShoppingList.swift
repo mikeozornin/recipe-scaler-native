@@ -17,8 +17,8 @@ extension DocumentManager {
         }
         let key = shoppingDocKey(userId: userId)
         let doc = try await getOrCreateDoc(key: key)
-        return try await doc.withReadTransaction { rawDoc, txn in
-            guard let rootBranch = ymap(rawDoc, ShoppingListConstants.rootMapKey) else {
+        return try await doc.withReadTransaction { _, txn in
+            guard let rootBranch = ytype_get(txn, ShoppingListConstants.rootMapKey) else {
                 return ShoppingListSnapshot.empty
             }
             let root = YrsMap(branch: rootBranch)
@@ -29,15 +29,16 @@ extension DocumentManager {
     }
 
     func setShoppingSortMode(_ mode: ShoppingSortMode) async throws {
-        try await mutateShopping { _, meta, txn in
+        let key = try await mutateShoppingItems { _, meta, txn in
             meta.insert(key: "sortMode", value: .string(mode.rawValue), txn: txn)
         }
+        await persistSnapshot(docKey: key)
         await deliverPendingShoppingUpdate()
     }
 
     func setShoppingItemPurchased(id: String, purchased: Bool) async throws {
         let now = Int64(Date().timeIntervalSince1970 * 1000)
-        try await mutateShopping { items, _, txn in
+        let key = try await mutateShoppingItems { items, _, txn in
             guard let index = shoppingItemIndex(items: items, id: id, txn: txn) else { return }
             items.withMap(at: index, txn: txn) { map in
                 map.insert(key: "purchased", value: .bool(purchased), txn: txn)
@@ -48,12 +49,13 @@ extension DocumentManager {
                 }
             }
         }
+        await persistSnapshot(docKey: key)
         await deliverPendingShoppingUpdate()
     }
 
     func addShoppingItems(_ newItems: [ShoppingListItem]) async throws {
         guard !newItems.isEmpty else { return }
-        try await mutateShopping { items, _, txn in
+        let key = try await mutateShoppingItems { items, _, txn in
             for item in newItems {
                 let index = items.length(txn: txn)
                 items.insert(value: .map([]), at: index, txn: txn)
@@ -62,6 +64,7 @@ extension DocumentManager {
                 }
             }
         }
+        await persistSnapshot(docKey: key)
         await deliverPendingShoppingUpdate()
     }
 
@@ -76,25 +79,60 @@ extension DocumentManager {
     }
 
     func removeShoppingItem(id: String) async throws {
-        try await mutateShopping { items, _, txn in
+        let key = try await mutateShoppingItems { items, _, txn in
             guard let index = shoppingItemIndex(items: items, id: id, txn: txn) else { return }
             items.remove(at: index, txn: txn)
         }
+        await persistSnapshot(docKey: key)
+        await deliverPendingShoppingUpdate()
+    }
+
+    func updateShoppingItemLabel(id: String, label: String) async throws {
+        let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            try await removeShoppingItem(id: id)
+            return
+        }
+        let key = try await mutateShoppingItems { items, _, txn in
+            guard let index = shoppingItemIndex(items: items, id: id, txn: txn) else { return }
+            items.withMap(at: index, txn: txn) { map in
+                map.insert(key: "label", value: .string(trimmed), txn: txn)
+            }
+        }
+        await persistSnapshot(docKey: key)
+        await deliverPendingShoppingUpdate()
+    }
+
+    func clearPurchasedShoppingItems() async throws {
+        let key = try await mutateShoppingItems { items, _, txn in
+            let count = items.length(txn: txn)
+            guard count > 0 else { return }
+            for index in stride(from: Int(count) - 1, through: 0, by: -1) {
+                let purchased = items.withMap(at: UInt32(index), txn: txn) { map in
+                    map.bool(key: "purchased", txn: txn) ?? false
+                }
+                if purchased == true {
+                    items.remove(at: UInt32(index), txn: txn)
+                }
+            }
+        }
+        await persistSnapshot(docKey: key)
         await deliverPendingShoppingUpdate()
     }
 
     // MARK: - Private
 
-    private func mutateShopping(
+    @discardableResult
+    private func mutateShoppingItems(
         _ body: (YrsArray, YrsMap, OpaquePointer) throws -> Void
-    ) async throws {
+    ) async throws -> String {
         guard let userId = getCurrentUserId() else {
             throw RecipeEditError.documentNotLoaded
         }
         let key = shoppingDocKey(userId: userId)
         let doc = try await getOrCreateDoc(key: key)
-        try await doc.withWriteTransaction { rawDoc, txn in
-            guard let rootBranch = ymap(rawDoc, ShoppingListConstants.rootMapKey) else {
+        try await doc.withWriteTransaction { _, txn in
+            guard let rootBranch = ytype_get(txn, ShoppingListConstants.rootMapKey) else {
                 throw RecipeEditError.documentNotLoaded
             }
             let root = YrsMap(branch: rootBranch)
@@ -104,6 +142,7 @@ extension DocumentManager {
             try body(items, meta, txn)
         }
         onShoppingChanged?()
+        return key
     }
 
     private func ensureShoppingStructure(root: YrsMap, txn: OpaquePointer) throws {
@@ -202,9 +241,13 @@ extension DocumentManager {
         guard let handler = onLocalShoppingUpdate,
               let userId = getCurrentUserId() else { return }
         let key = shoppingDocKey(userId: userId)
-        guard let doc = getDoc(key: key),
-              let update = await doc.encodeStateAsUpdate(),
-              !update.isEmpty else { return }
-        await handler(update)
+        guard let doc = getDoc(key: key) else { return }
+        var update = await doc.consumePendingLocalUpdates()
+        if update == nil || update?.isEmpty == true {
+            update = await doc.encodeStateAsUpdate()
+        }
+        guard let update, !update.isEmpty else { return }
+        // Do not await: handler hops to @MainActor YjsSyncService while caller may be blocked on this actor.
+        Task { await handler(update) }
     }
 }

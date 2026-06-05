@@ -12,6 +12,8 @@ PBX = ROOT / "RecipeScalerNative.xcodeproj" / "project.pbxproj"
 NEW_FILES = [
     "RecipeScalerNative/Utils/ShoppingListConstants.swift",
     "RecipeScalerNative/Utils/ShoppingListFromRecipe.swift",
+    "RecipeScalerNative/Utils/ShoppingListPlainText.swift",
+    "RecipeScalerNative/Utils/ShoppingSmokeTest.swift",
     "RecipeScalerNative/Utils/PublicURLBuilder.swift",
     "RecipeScalerNative/Models/YDoc/ShoppingListData.swift",
     "RecipeScalerNative/Services/YjsSync/DocumentManager+ShoppingList.swift",
@@ -33,6 +35,7 @@ NEW_FILES = [
     "RecipeScalerNative/Views/RecipeDetailShareButton.swift",
     "RecipeScalerNative/Views/ScreenAwakeToggle.swift",
     "RecipeScalerNative/Views/ScreenAwakeStatusBanner.swift",
+    "RecipeScalerNative/Views/TransientStatusBanner.swift",
     "RecipeScalerNative/Utils/ScreenAwakeController.swift",
     "RecipeScalerNative/Utils/TimerUtils.swift",
     "RecipeScalerNative/Services/TimerSyncService.swift",

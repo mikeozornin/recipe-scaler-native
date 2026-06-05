@@ -146,6 +146,11 @@ actor YrsDocument {
         updateObserverBoxRef?.pendingByteCount() ?? 0
     }
 
+    /// Ensures a root-level shared type exists. Call only when no Y transaction is open (`ymap(doc,)` deadlocks with active txn).
+    func ensureRootMap(named name: String) {
+        _ = ymap(doc, name)
+    }
+
     // ─── Transactions ────────────────────────────────────────────────────
 
     func withReadTransaction<T>(_ block: (UnsafeMutablePointer<YDoc>, OpaquePointer) throws -> T) throws -> T {

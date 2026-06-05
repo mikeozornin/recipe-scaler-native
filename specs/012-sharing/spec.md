@@ -2,8 +2,8 @@
 
 **Ветка**: `012-sharing`  
 **Дата**: 2026-06-02  
-**Статус**: 🟡 Частично реализовано (аудит 2026-06-03). Остаток → [019-sharing-shopping](../019-sharing-shopping/spec.md)  
-**Зависимости**: `008` (`isPublic` в recipe doc), `009` (shopping share API), `011` (public URLs)  
+**Статус**: 🟡 Частично реализовано (аудит 2026-06-03). Shopping list share/export → ✅ [024-shopping-list-completion](../024-shopping-list-completion/spec.md) (закрыто 2026-06-04)
+**Зависимости**: `008` (`isPublic` в recipe doc), `024` (shopping share UI), `011` (public URLs)  
 **Эталон**: share popover на recipe + shopping, PRD § Public Sharing
 
 ## Аудит реализации (2026-06-03)
@@ -14,10 +14,10 @@
 |------------|--------|
 | US1 share recipe link | ✅ |
 | US2 toggle public рецепта | ✅ |
-| US3 shopping list share | ❌ `SharingAPI.updateShoppingListShare` есть, нет UI |
-| US4 text export shopping | ❌ |
+| US3 shopping list share | ✅ `ShoppingListShareSheet` (024) |
+| US4 text export shopping | ✅ `ShoppingListPlainText` + copy (024) |
 
-Не сделано → **019-sharing-shopping**: UI шаринга списка покупок (toggle + публичный URL) и text-export секции «to buy». Строки кнопок — на английском (см. 022).
+Shopping list share/export закрыты в **024-shopping-list-completion** (2026-06-04).
 
 ## Контекст
 

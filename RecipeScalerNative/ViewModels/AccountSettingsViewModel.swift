@@ -24,6 +24,8 @@ final class AccountSettingsViewModel: ObservableObject {
 
     @Published var showNutrition = true
     @Published var appTheme: AppThemePreference = .current
+    @Published var timerNotificationsEnabled = false
+    @Published var timerNotificationsDenied = false
 
     private var nameSaveTask: Task<Void, Never>?
 
@@ -38,6 +40,7 @@ final class AccountSettingsViewModel: ObservableObject {
 
         showNutrition = NutritionSettings.isGlobalEnabled
         appTheme = .current
+        await refreshTimerNotificationState()
 
         guard AuthService.shared.userId != nil else { return }
 
@@ -67,7 +70,7 @@ final class AccountSettingsViewModel: ObservableObject {
                 UserDefaults.standard.set(enabled, forKey: NutritionSettings.globalEnabledKey)
             }
         } catch {
-            statusMessage = error.localizedDescription
+            setStatus(from: error)
         }
     }
 
@@ -80,7 +83,7 @@ final class AccountSettingsViewModel: ObservableObject {
             do {
                 try await AccountAPI.patchDisplayName(trimmed)
             } catch {
-                statusMessage = error.localizedDescription
+                setStatus(from: error)
             }
         }
     }
@@ -91,7 +94,7 @@ final class AccountSettingsViewModel: ObservableObject {
             await refresh(syncService: syncService)
             statusMessage = String(localized: "account.avatar.updated")
         } catch {
-            statusMessage = error.localizedDescription
+            setStatus(from: error)
         }
     }
 
@@ -115,7 +118,7 @@ final class AccountSettingsViewModel: ObservableObject {
             }
         } catch {
             publicProfileEnabled = previous
-            statusMessage = error.localizedDescription
+            setStatus(from: error)
         }
     }
 
@@ -130,7 +133,7 @@ final class AccountSettingsViewModel: ObservableObject {
             shareMode = PublicShareMode(apiValue: result.shareMode) ?? mode
         } catch {
             shareMode = previous
-            statusMessage = error.localizedDescription
+            setStatus(from: error)
         }
     }
 
@@ -145,7 +148,7 @@ final class AccountSettingsViewModel: ObservableObject {
             allowRecipeDownloads = result.allowRecipeDownloads != false
         } catch {
             allowRecipeDownloads = previous
-            statusMessage = error.localizedDescription
+            setStatus(from: error)
         }
     }
 
@@ -162,7 +165,7 @@ final class AccountSettingsViewModel: ObservableObject {
             canChangeUsername = false
             statusMessage = String(localized: "account.username.saved")
         } catch {
-            statusMessage = error.localizedDescription
+            setStatus(from: error)
         }
     }
 
@@ -175,13 +178,50 @@ final class AccountSettingsViewModel: ObservableObject {
         } catch {
             showNutrition = previous
             UserDefaults.standard.set(previous, forKey: NutritionSettings.globalEnabledKey)
-            statusMessage = error.localizedDescription
+            setStatus(from: error)
         }
     }
 
     func setAppTheme(_ theme: AppThemePreference) {
         appTheme = theme
         AppThemePreference.save(theme)
+    }
+
+    func refreshTimerNotificationState() async {
+        let status = await TimerManager.shared.notificationAuthorizationStatus()
+        timerNotificationsDenied = status == .denied
+        timerNotificationsEnabled = TimerNotificationPreferences.isEnabled && status == .authorized
+    }
+
+    func setTimerNotificationsEnabled(_ enabled: Bool) async {
+        if !enabled {
+            TimerNotificationPreferences.isEnabled = false
+            timerNotificationsEnabled = false
+            return
+        }
+
+        let status = await TimerManager.shared.notificationAuthorizationStatus()
+        if status == .denied {
+            timerNotificationsDenied = true
+            timerNotificationsEnabled = false
+            statusMessage = String(localized: "account.timer-notifications.denied")
+            return
+        }
+
+        var granted = status == .authorized
+        if status == .notDetermined {
+            granted = await TimerManager.shared.requestNotificationAuthorization()
+        }
+
+        if granted {
+            TimerNotificationPreferences.isEnabled = true
+            timerNotificationsEnabled = true
+            timerNotificationsDenied = false
+        } else {
+            TimerNotificationPreferences.isEnabled = false
+            timerNotificationsEnabled = false
+            statusMessage = String(localized: "account.timer-notifications.not-granted")
+        }
     }
 
     func logout(syncService: YjsSyncService) async {
@@ -193,7 +233,7 @@ final class AccountSettingsViewModel: ObservableObject {
         do {
             try AuthService.shared.logout()
         } catch {
-            statusMessage = error.localizedDescription
+            setStatus(from: error)
         }
     }
 
@@ -202,5 +242,12 @@ final class AccountSettingsViewModel: ObservableObject {
         result = result.replacingOccurrences(of: #"[^a-z0-9_.-]"#, with: "-", options: .regularExpression)
         result = result.replacingOccurrences(of: #"-+"#, with: "-", options: .regularExpression)
         return result.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+    }
+
+    /// Silently swallow cancellation errors (e.g. when a newer Task supersedes an in-flight one)
+    /// and surface real failures via `statusMessage`.
+    private func setStatus(from error: Error) {
+        if error is CancellationError { return }
+        statusMessage = error.localizedDescription
     }
 }

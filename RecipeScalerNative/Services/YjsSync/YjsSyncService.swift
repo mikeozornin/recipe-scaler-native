@@ -301,6 +301,16 @@ final class YjsSyncService: ObservableObject {
         await refreshShoppingSnapshot()
     }
 
+    func updateShoppingItemLabel(id: String, label: String) async throws {
+        try await documentManager.updateShoppingItemLabel(id: id, label: label)
+        await refreshShoppingSnapshot()
+    }
+
+    func clearPurchasedShoppingItems() async throws {
+        try await documentManager.clearPurchasedShoppingItems()
+        await refreshShoppingSnapshot()
+    }
+
     func addRecipeToShoppingList(
         recipeId: String,
         recipeName: String,
@@ -316,6 +326,25 @@ final class YjsSyncService: ObservableObject {
         guard !items.isEmpty else { return }
         try await documentManager.addShoppingItems(items)
         await refreshShoppingSnapshot()
+    }
+
+    /// Loads recipe Y.Doc from local snapshot, then adds all eligible ingredients (recipe list swipe / menu parity).
+    func addWholeRecipeToShoppingList(recipeId: String) async throws -> Int {
+        guard let userId else { throw RecipeEditError.documentNotLoaded }
+        _ = try? await documentManager.getOrCreateDoc(key: docKeyFor(recipeId: recipeId))
+        guard let recipe = try await documentManager.readRecipeData(recipeId: recipeId, userId: userId) else {
+            throw RecipeEditError.documentNotLoaded
+        }
+        let items = ShoppingListFromRecipe.makeItems(
+            recipeId: recipeId,
+            recipeName: recipe.name,
+            ingredients: recipe.ingredients,
+            ingredientIds: nil
+        )
+        guard !items.isEmpty else { return 0 }
+        try await documentManager.addShoppingItems(items)
+        await refreshShoppingSnapshot()
+        return items.count
     }
 
     func updateNutrition(
@@ -412,12 +441,11 @@ final class YjsSyncService: ObservableObject {
 
     private func beginSocketSession(isSameUser: Bool, userId: String) {
         if isSameUser {
-            // Re-login with the same account: always open a fresh socket (avoids stale session).
-            if socket != nil {
-                connectSocket()
-            } else {
-                resumeSocketSession()
-            }
+            // Same account: reconcile against the existing socket instead of tearing it down.
+            // `start()` is re-entered whenever the root view churns; an unconditional connectSocket()
+            // here drops a live, authenticated socket every time. resumeSocketSession() is idempotent:
+            // it no-ops when already connected/connecting and only reconnects when the socket is down.
+            resumeSocketSession()
             return
         }
 
@@ -558,6 +586,41 @@ final class YjsSyncService: ObservableObject {
         activeRecipeId = nil
         currentRecipe = nil
         shoppingSnapshot = .empty
+    }
+
+    // MARK: - App lifecycle
+
+    /// App moved to background. iOS suspends the process with the socket still open, so in-flight
+    /// long-poll / websocket requests stall and resurface as a burst of "request timed out" on resume.
+    /// Drop the socket cleanly instead; pending writes fall back to the offline queue.
+    func handleEnteredBackground() {
+        guard userId != nil else { return }
+        guard connectionState != .disconnected else { return }
+        logger.info("Entered background — disconnecting socket")
+        AgentSyncDebugLog.sync(
+            location: "YjsSyncService.handleEnteredBackground",
+            message: "background_disconnect",
+            data: ["connectionState": String(describing: connectionState)]
+        )
+        teardownSocket()
+        setConnectionState(.disconnected, reason: "app_background")
+    }
+
+    /// App returned to foreground. Re-establish proactively instead of waiting for the slow,
+    /// timeout-driven Socket.IO auto-reconnect (a fresh connect completes in ~0.5s).
+    func handleEnteredForeground() {
+        guard userId != nil else { return }
+        guard !canSendLiveSync() else { return }
+        logger.info("Entered foreground — reconnecting socket")
+        AgentSyncDebugLog.sync(
+            location: "YjsSyncService.handleEnteredForeground",
+            message: "foreground_reconnect",
+            data: [
+                "connectionState": String(describing: connectionState),
+                "socketStatus": socket.map { String(describing: $0.status) } ?? "nil",
+            ]
+        )
+        resumeSocketSession()
     }
 
     // MARK: - Socket.IO Connection
@@ -1241,8 +1304,9 @@ final class YjsSyncService: ObservableObject {
         var payload: [String: Any] = [
             "yjsUpdate": YjsPayloadBytes.array(from: update),
         ]
-        // Collection sync matches web: omit `recipeId` (server treats as collection doc).
-        if recipeId != "collection" {
+        // Collection and shopping list sync match web: omit `recipeId` (server rejects it for shopping).
+        let isShoppingList = documentKind == ShoppingListConstants.documentKind
+        if recipeId != "collection", !isShoppingList {
             payload["recipeId"] = recipeId
         }
         if let documentKind {
@@ -1413,6 +1477,9 @@ final class YjsSyncService: ObservableObject {
         if shouldRefreshCollection {
             await refreshCollectionEntries()
         }
+        if documents.contains(where: { $0.0 == ShoppingListConstants.offlineRecipeId }) {
+            await refreshShoppingSnapshot()
+        }
         if !loadedRecipeIds.isEmpty {
             recipeBatchLoadCompleted += loadedRecipeIds.count
             if recipeBatchLoadCompleted >= recipeBatchLoadTotal {
@@ -1526,13 +1593,50 @@ final class YjsSyncService: ObservableObject {
         await refreshShoppingSnapshot()
     }
 
-    private func refreshShoppingSnapshot() async {
+    func refreshShoppingSnapshot() async {
         do {
             shoppingSnapshot = try await documentManager.readShoppingListSnapshot()
         } catch {
             logger.error("Failed to read shopping list: \(error)")
         }
     }
+
+    #if DEBUG
+    /// Smoke test helper (same snapshot read as UI).
+    func refreshShoppingSnapshotForSmokeTest() async {
+        await refreshShoppingSnapshot()
+    }
+
+    /// Loads local SQLite docs for smoke test without waiting on socket `start()` to finish.
+    func readRecipeDataForShopping(recipeId: String) async throws -> RecipeData? {
+        guard let userId else { return nil }
+        _ = try? await documentManager.getOrCreateDoc(key: docKeyFor(recipeId: recipeId))
+        return try await documentManager.readRecipeData(recipeId: recipeId, userId: userId)
+    }
+
+    func prepareForShoppingSmokeTest(userId: String) async {
+        ShoppingSmokeTest.writeProgress("prepareStart")
+        self.userId = userId
+        await documentManager.setUserId(userId)
+        ShoppingSmokeTest.writeProgress("prepareUserId")
+        await installChangeHandlersIfNeeded()
+        ShoppingSmokeTest.writeProgress("prepareHandlers")
+        let collectionKey = "\(userId):collection"
+        if (try? await documentManager.getOrCreateDoc(key: collectionKey)) != nil,
+           let entries = try? await documentManager.readCollectionEntries() {
+            collectionEntries = entries.filter { !$0.deleted }
+        }
+        ShoppingSmokeTest.writeProgress(
+            "prepareCollection",
+            extra: ["collectionLoaded": !collectionEntries.isEmpty]
+        )
+        ShoppingSmokeTest.writeProgress(
+            "prepareDone",
+            itemCount: shoppingSnapshot.items.count,
+            extra: ["collectionLoaded": !collectionEntries.isEmpty]
+        )
+    }
+    #endif
 
     // MARK: - Recipe document cache
 

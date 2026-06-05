@@ -72,6 +72,9 @@ actor DocumentManager {
         }
 
         docs[key] = doc
+        if key.hasSuffix(":shoppingList") {
+            await doc.ensureRootMap(named: ShoppingListConstants.rootMapKey)
+        }
         await installLocalUpdateBridge(key: key, doc: doc)
         await installObservers(key: key, doc: doc)
         return doc
@@ -734,7 +737,8 @@ actor DocumentManager {
             Self.logger.warning("No local Yjs update to sync for \(key)")
             return
         }
-        await handler(recipeId, update)
+        // Do not await: handler hops to @MainActor YjsSyncService while caller may be blocked on this actor.
+        Task { await handler(recipeId, update) }
     }
 
     private func notifyRecipeChangedIfNeeded(recipeId: String) {

@@ -9,16 +9,14 @@ enum ShoppingListFromRecipe {
     static let labelSeparator = " · "
 
     static func isIngredientEligible(_ ingredient: IngredientData) -> Bool {
-        if ingredient.isSeparator { return false }
-        if ingredient.originalAmount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return false
-        }
-        return true
+        if ingredient.isSeparator || ingredient.isHeaderRow { return false }
+        return ingredient.hasQuantity
     }
 
     static func label(for ingredient: IngredientData) -> String {
         guard isIngredientEligible(ingredient) else { return "" }
-        let amountPart = [ingredient.originalAmount, ingredient.unit.trimmingCharacters(in: .whitespaces)]
+        let qty = ingredient.quantityText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let amountPart = [qty, ingredient.unit.trimmingCharacters(in: .whitespaces)]
             .filter { !$0.isEmpty }
             .joined(separator: " ")
         let name = ingredient.name.trimmingCharacters(in: .whitespacesAndNewlines)

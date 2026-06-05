@@ -54,9 +54,19 @@ struct AppShellView: View {
     @State private var recipesPath = NavigationPath()
     @State private var discoverPath = NavigationPath()
     @State private var shoppingPath = NavigationPath()
+    @State private var transientStatusMessage: String?
+    @State private var transientStatusDismissTask: Task<Void, Never>?
 
     var body: some View {
         tabView
+            .overlay(alignment: .bottom) {
+                if let transientStatusMessage {
+                    TransientStatusBanner(message: transientStatusMessage)
+                        .padding(.bottom, 72)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(.easeInOut(duration: 0.25), value: transientStatusMessage != nil)
         // TEMPORARY: Import sheet hidden (re-enable when ready).
         // .sheet(isPresented: $showImportSheet) {
         //     ImportRecipeSheet { result in
@@ -96,6 +106,31 @@ struct AppShellView: View {
             }
             previousTab = old
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openAppShoppingTab)) { _ in
+            selectedTab = .shopping
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .shoppingStatusMessage)) { notification in
+            guard let message = notification.object as? String, !message.isEmpty else { return }
+            transientStatusDismissTask?.cancel()
+            withAnimation(.easeInOut(duration: 0.25)) {
+                transientStatusMessage = message
+            }
+            let shownMessage = message
+            transientStatusDismissTask = Task { @MainActor in
+                do {
+                    try await Task.sleep(nanoseconds: 3_000_000_000)
+                } catch {
+                    // Cancelled by a newer toast — do not clear the banner here.
+                    return
+                }
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    if transientStatusMessage == shownMessage {
+                        transientStatusMessage = nil
+                    }
+                }
+            }
+        }
         #if DEBUG
         .onAppear {
             openDebugTabIfNeeded()
@@ -129,10 +164,11 @@ struct AppShellView: View {
             .tag(AppTab.recipes)
             .accessibilityIdentifier(AccessibilityIdentifiers.tabRecipes)
 
-            // TEMPORARY: Shopping tab hidden (re-enable when ready).
-            // tabRoot(ShoppingListView(path: $shoppingPath)) { AppTabBarLabel(tab: .shopping) }
-            //     .tag(AppTab.shopping)
-            //     .accessibilityIdentifier(AccessibilityIdentifiers.tabShopping)
+            tabRoot(ShoppingListView(path: $shoppingPath)) {
+                AppTabBarLabel(tab: .shopping)
+            }
+            .tag(AppTab.shopping)
+            .accessibilityIdentifier(AccessibilityIdentifiers.tabShopping)
 
             tabRoot(AccountView()) {
                 AppTabBarLabel(tab: .profile)
@@ -194,6 +230,7 @@ struct AppShellView: View {
             selectedTab = tab
         }
     }
+
     #endif
 }
 

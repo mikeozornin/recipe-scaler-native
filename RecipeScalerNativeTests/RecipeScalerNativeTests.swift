@@ -891,4 +891,31 @@ final class RecipeScalerNativeTests: XCTestCase {
             "square.and.arrow.down.fill is not a valid SF Symbol — use square.and.arrow.down in tabItem"
         )
     }
+
+    func testShoppingListManualAddPersistsInSnapshot() async throws {
+        let userId = "user-shopping"
+        let store = YDocStore(inMemory: true)
+        let manager = DocumentManager(store: store)
+        manager.setUserId(userId)
+
+        try await manager.addManualShoppingItem(label: "Milk")
+        let snapshot = try await manager.readShoppingListSnapshot()
+        XCTAssertEqual(snapshot.items.count, 1)
+        XCTAssertEqual(snapshot.items.first?.label, "Milk")
+        XCTAssertNil(snapshot.items.first?.recipeId)
+    }
+
+    func testShoppingListFromRecipeEligibilityMatchesWeb() {
+        let eligible = IngredientData(
+            id: "1",
+            name: "Sugar",
+            originalAmount: "100",
+            unit: "g",
+            order: 1
+        )
+        XCTAssertTrue(ShoppingListFromRecipe.isIngredientEligible(eligible))
+
+        let header = IngredientData(id: "h", name: "Section", hasQuantity: false)
+        XCTAssertFalse(ShoppingListFromRecipe.isIngredientEligible(header))
+    }
 }

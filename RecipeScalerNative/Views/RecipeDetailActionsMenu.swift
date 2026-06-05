@@ -13,7 +13,6 @@ struct RecipeDetailActionsMenu: View {
     let isEditing: Bool
 
     @EnvironmentObject private var syncService: YjsSyncService
-    @State private var statusMessage: String?
 
     var body: some View {
         Menu {
@@ -22,13 +21,19 @@ struct RecipeDetailActionsMenu: View {
                     get: { isPublic },
                     set: { value in Task { try? await syncService.updateRecipeIsPublic(value) } }
                 )) {
-                    AppLabel.make("Public recipe", symbol: "globe")
+                    AppLabel.make(String(localized: "recipe.detail.public"), symbol: "globe")
                 }
 
                 Button {
                     Task { await addAllToShopping() }
                 } label: {
-                    AppLabel.make("Add to shopping list", symbol: "cart.badge.plus")
+                    AppLabel.make(String(localized: "shopping.detail-add-all"), symbol: "cart.badge.plus")
+                }
+
+                Button {
+                    NotificationCenter.default.post(name: .openAppShoppingTab, object: nil)
+                } label: {
+                    AppLabel.make(String(localized: "shopping.detail-open-list"), symbol: "cart")
                 }
             }
         } label: {
@@ -40,6 +45,16 @@ struct RecipeDetailActionsMenu: View {
     }
 
     private func addAllToShopping() async {
+        let items = ShoppingListFromRecipe.makeItems(
+            recipeId: recipeId,
+            recipeName: recipeName,
+            ingredients: ingredients,
+            ingredientIds: nil
+        )
+        guard !items.isEmpty else {
+            postShoppingMessage(String(localized: "shopping.no-items-to-add"))
+            return
+        }
         do {
             try await syncService.addRecipeToShoppingList(
                 recipeId: recipeId,
@@ -47,10 +62,13 @@ struct RecipeDetailActionsMenu: View {
                 ingredients: ingredients,
                 selectedIngredientIds: nil
             )
-            statusMessage = "Added to shopping list"
+            postShoppingMessage(ShoppingAddFeedback.message(for: items.count))
         } catch {
-            statusMessage = error.localizedDescription
+            postShoppingMessage(error.localizedDescription)
         }
     }
 
+    private func postShoppingMessage(_ message: String) {
+        ShoppingFeedback.postStatus(message)
+    }
 }
