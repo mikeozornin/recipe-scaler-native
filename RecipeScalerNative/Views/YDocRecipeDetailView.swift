@@ -263,10 +263,15 @@ struct YDocRecipeDetailView: View {
                             recipeId: recipeId,
                             recipeName: recipe.name,
                             ingredients: recipe.ingredients,
-                            isPublic: recipe.isPublic,
-                            isEditing: false
+                            isEditing: false,
+                            isPinned: syncService.collectionEntries.first { $0.id == recipeId }?.isPinned ?? false
                         )
-                        RecipeDetailShareButton(recipeId: recipeId)
+                        RecipeDetailShareButton(
+                            recipeId: recipeId,
+                            isPublic: recipe.isPublic,
+                            hasImage: !(recipe.imageUrl?.isEmpty ?? true),
+                            hasSteps: recipe.hasSteps
+                        )
                         ScreenAwakeToggle(isActive: $isScreenAwakeActive)
                         if canEnterEditMode {
                             Button {

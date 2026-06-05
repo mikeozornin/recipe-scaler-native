@@ -9,25 +9,29 @@ struct RecipeDetailActionsMenu: View {
     let recipeId: String
     let recipeName: String
     let ingredients: [IngredientData]
-    let isPublic: Bool
     let isEditing: Bool
+    let isPinned: Bool
 
     @EnvironmentObject private var syncService: YjsSyncService
 
     var body: some View {
         Menu {
             if !isEditing {
-                Toggle(isOn: Binding(
-                    get: { isPublic },
-                    set: { value in Task { try? await syncService.updateRecipeIsPublic(value) } }
-                )) {
-                    AppLabel.make(String(localized: "recipe.detail.public"), symbol: "globe")
-                }
-
                 Button {
                     Task { await addAllToShopping() }
                 } label: {
                     AppLabel.make(String(localized: "shopping.detail-add-all"), symbol: "cart.badge.plus")
+                }
+
+                Button {
+                    Task { await togglePin() }
+                } label: {
+                    AppLabel.make(
+                        isPinned
+                            ? String(localized: "recipe.list.unpin")
+                            : String(localized: "recipe.list.pin"),
+                        symbol: isPinned ? "pin.slash" : "pin"
+                    )
                 }
             }
         } label: {
@@ -64,5 +68,13 @@ struct RecipeDetailActionsMenu: View {
 
     private func postShoppingMessage(_ message: String) {
         ShoppingFeedback.postStatus(message)
+    }
+
+    private func togglePin() async {
+        do {
+            try await syncService.setRecipePinned(recipeId: recipeId, isPinned: !isPinned)
+        } catch {
+            postShoppingMessage(error.localizedDescription)
+        }
     }
 }
