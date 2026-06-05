@@ -181,15 +181,14 @@ private struct YDocIngredientViewRow: View {
                 IngredientGridIngredientsColumn(markerLabel: rowNumber.map(String.init)) {
                     VStack(alignment: .leading, spacing: RecipeRowLayoutMetrics.nutritionLineSpacing) {
                         Text(ingredient.name)
-                            .font(AppTypography.body)
+                            .appBody()
                             .foregroundStyle(.primary)
-                            .lineSpacing(RecipeRowLayoutMetrics.wrappedLineSpacing)
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         if let nutritionSummary {
                             Text(nutritionSummary)
-                                .font(AppTypography.footnote)
+                                .appFootnote()
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -843,7 +842,7 @@ private struct ExpandingIngredientNameField: View {
     var body: some View {
         TextField(placeholder, text: $text, axis: .vertical)
             .font(AppTypography.body)
-            .lineSpacing(RecipeRowLayoutMetrics.wrappedLineSpacing)
+            .lineSpacing(AppTypography.bodyLineSpacing)
             .lineLimit(1...)
             .fixedSize(horizontal: false, vertical: true)
             .submitLabel(.next)

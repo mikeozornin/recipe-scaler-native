@@ -27,7 +27,7 @@ struct TimerExampleView: View {
                     HStack {
                         VStack(alignment: .leading) {
                             Text("Duration")
-                                .font(AppTypography.footnote)
+                                .appFootnote()
                             Stepper(value: $timerDuration, in: 1...120, step: 1) {
                                 Text("\(Int(timerDuration))")
                                     .font(AppTypography.title3)
@@ -227,7 +227,7 @@ struct TimerRow: View {
                 Text(timer.name)
                     .font(AppTypography.bodySemibold)
                 Text(statusText)
-                    .font(AppTypography.footnote)
+                    .appFootnote()
                     .foregroundColor(statusColor)
             }
 
@@ -235,7 +235,7 @@ struct TimerRow: View {
 
             VStack(alignment: .trailing, spacing: 4) {
                 Text("\(Int(timer.duration)) sec")
-                    .font(AppTypography.footnote)
+                    .appFootnote()
                     .foregroundColor(.secondary)
             }
 

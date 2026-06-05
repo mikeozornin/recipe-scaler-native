@@ -25,6 +25,8 @@ final class TimerManager: NSObject, ObservableObject {
     private let notificationCenter = UNUserNotificationCenter.current()
     private let timerUpdateInterval: TimeInterval = 0.5
 
+    private var serverScheduledPushTimerIds: Set<String> = []
+
     private static let backgroundTaskIdentifier = "com.recipescaler.timerUpdate"
     private static var didRegisterBackgroundTasks = false
 
@@ -44,6 +46,7 @@ final class TimerManager: NSObject, ObservableObject {
     override init() {
         super.init()
         notificationCenter.delegate = self
+        registerNotificationCategories()
     }
 
     func configure(modelContext: ModelContext) {
@@ -130,6 +133,7 @@ final class TimerManager: NSObject, ObservableObject {
         syncEnqueue(.timerCreated, timer: timer)
         startUpdateTimer()
         scheduleBackgroundTask()
+        pushSchedule(timer)
         return timer
     }
 
@@ -143,6 +147,7 @@ final class TimerManager: NSObject, ObservableObject {
         startUpdateTimer()
         scheduleBackgroundTask()
         syncEnqueue(.timerStarted, timer: timer, extra: ["endTime": millis(timer.endTime)])
+        pushSchedule(timer)
     }
 
     func pauseTimer(id: String) {
@@ -155,6 +160,7 @@ final class TimerManager: NSObject, ObservableObject {
         refreshPanelTimers()
         stopUpdateLoopIfIdle()
         syncEnqueue(.timerPaused, timer: timer, extra: ["remaining": remaining])
+        pushCancel(timer.id)
     }
 
     func resumeTimer(id: String) {
@@ -166,6 +172,7 @@ final class TimerManager: NSObject, ObservableObject {
         startUpdateTimer()
         scheduleBackgroundTask()
         syncEnqueue(.timerResumed, timer: timer, extra: ["endTime": millis(timer.endTime)])
+        pushSchedule(timer)
     }
 
     func deleteTimer(id: String) {
@@ -177,6 +184,7 @@ final class TimerManager: NSObject, ObservableObject {
         refreshPanelTimers()
         stopUpdateLoopIfIdle()
         syncEnqueue(.timerDeleted, timer: timer)
+        pushCancel(timer.id)
     }
 
     func resetTimer(id: String) {
@@ -186,6 +194,7 @@ final class TimerManager: NSObject, ObservableObject {
         persist(timer)
         refreshPanelTimers()
         stopUpdateLoopIfIdle()
+        pushCancel(timer.id)
     }
 
     // MARK: - Sync (TimerSyncService)
@@ -295,7 +304,47 @@ final class TimerManager: NSObject, ObservableObject {
         sendCompletionNotification(for: timer)
     }
 
+    // MARK: - Push schedule helpers
+
+    private func pushSchedule(_ timer: RecipeTimer) {
+        let timerId = timer.id
+        let name = timer.name
+        let recipeId = timer.recipeId
+        let durationSeconds: Int
+        if let endTime = timer.endTime, timer.isRunning {
+            durationSeconds = Int(max(1, endTime.timeIntervalSinceNow))
+        } else {
+            durationSeconds = Int(timer.duration)
+        }
+        Task {
+            let ok = await PushScheduleService.shared.schedule(
+                timerId: timerId,
+                name: name,
+                durationSeconds: durationSeconds,
+                recipeId: recipeId
+            )
+            if ok { serverScheduledPushTimerIds.insert(timerId) }
+        }
+    }
+
+    private func pushCancel(_ timerId: String) {
+        serverScheduledPushTimerIds.remove(timerId)
+        Task { await PushScheduleService.shared.cancel(timerId: timerId) }
+    }
+
     // MARK: - Notifications
+
+    private func registerNotificationCategories() {
+        let snooze = UNNotificationAction(identifier: "SNOOZE_ACTION", title: "Snooze 5 min", options: [])
+        let dismiss = UNNotificationAction(identifier: "DISMISS_ACTION", title: "Dismiss", options: [.destructive])
+        let timerComplete = UNNotificationCategory(
+            identifier: "TIMER_COMPLETE",
+            actions: [snooze, dismiss],
+            intentIdentifiers: [],
+            options: []
+        )
+        notificationCenter.setNotificationCategories([timerComplete])
+    }
 
     private func sendCompletionNotification(for timer: RecipeTimer) {
         guard TimerNotificationPreferences.isEnabled else { return }
@@ -307,6 +356,11 @@ final class TimerManager: NSObject, ObservableObject {
     }
 
     private func deliverCompletionNotification(for timer: RecipeTimer) {
+        // Skip local notification when server push was successfully scheduled — it will arrive via APNs.
+        if serverScheduledPushTimerIds.contains(timer.id) {
+            serverScheduledPushTimerIds.remove(timer.id)
+            return
+        }
         let content = UNMutableNotificationContent()
         content.title = "Timer Complete"
         content.body = "\(timer.name) has finished"
@@ -440,18 +494,30 @@ extension TimerManager: UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
-        guard let timerId = userInfo["timerId"] as? String else {
-            completionHandler()
-            return
+        let timerId = userInfo["timerId"] as? String
+        let recipeId = userInfo["recipeId"] as? String
+
+        if let timerId {
+            switch response.actionIdentifier {
+            case "SNOOZE_ACTION":
+                Task { @MainActor in self.snoozeTimer(id: timerId) }
+            case "DISMISS_ACTION":
+                Task { @MainActor in self.deleteTimer(id: timerId) }
+            default:
+                break
+            }
         }
-        switch response.actionIdentifier {
-        case "SNOOZE_ACTION":
-            Task { @MainActor in self.snoozeTimer(id: timerId) }
-        case "DISMISS_ACTION":
-            Task { @MainActor in self.deleteTimer(id: timerId) }
-        default:
-            break
+
+        // Deep link to recipe on notification tap (works for both local and APNs notifications).
+        if response.actionIdentifier == UNNotificationDefaultActionIdentifier,
+           let recipeId, !recipeId.isEmpty {
+            NotificationCenter.default.post(
+                name: .openRecipe,
+                object: nil,
+                userInfo: ["recipeId": recipeId]
+            )
         }
+
         completionHandler()
     }
 

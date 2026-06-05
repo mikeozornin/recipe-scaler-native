@@ -3,6 +3,7 @@
 //  RecipeScalerNative
 //
 
+import Foundation
 import SwiftUI
 
 enum AppLanguagePreference: String, CaseIterable, Identifiable, Hashable {
@@ -16,13 +17,41 @@ enum AppLanguagePreference: String, CaseIterable, Identifiable, Hashable {
     static var current: AppLanguagePreference {
         guard let raw = UserDefaults.standard.string(forKey: storageKey),
               let value = AppLanguagePreference(rawValue: raw) else {
-            return .en
+            return systemDefault
         }
         return value
     }
 
+    /// Follow system language: Russian system → `.ru`, otherwise → `.en`.
+    private static var systemDefault: AppLanguagePreference {
+        let lang = Locale.current.language.languageCode?.identifier ?? "en"
+        return lang.hasPrefix("ru") ? .ru : .en
+    }
+
     static func save(_ language: AppLanguagePreference) {
+        // #region agent log
+        AgentSyncDebugLog.sync(
+            location: "AppLanguagePreference.save",
+            message: "language_save",
+            data: ["language": language.rawValue]
+        )
+        // #endregion
         UserDefaults.standard.set(language.rawValue, forKey: storageKey)
+        apply(language)
+    }
+
+    /// Apply the stored preference. Call once at app launch (after `Bundle.installLanguageOverrideSwizzle()`).
+    static func bootstrap() {
+        Bundle.installLanguageOverrideSwizzle()
+        apply(current)
+    }
+
+    /// Switch the live language bundle override. Views that already captured strings
+    /// (`String(localized:)` resolved at body-eval time) will refresh on the next
+    /// SwiftUI re-render — `ContentView` observes `UserDefaults.didChangeNotification`
+    /// and mutates `appLanguage`, which is enough to invalidate the tree.
+    static func apply(_ language: AppLanguagePreference) {
+        Bundle.setLanguageOverride(language.rawValue)
     }
 
     var locale: Locale {

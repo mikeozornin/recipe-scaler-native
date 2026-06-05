@@ -31,7 +31,7 @@ struct TelegramConnectionView: View {
 
             if let errorMessage {
                 Text(errorMessage)
-                    .font(AppTypography.footnote)
+                    .appFootnote()
                     .foregroundStyle(.secondary)
             }
 
@@ -102,7 +102,7 @@ struct TelegramConnectionView: View {
 
     @ViewBuilder
     private var connectButton: some View {
-        Button(String(localized: "telegram.connect")) {
+        Button("telegram.connect") {
             Task { await connect() }
         }
         .disabled(isLoading || !isOnline)

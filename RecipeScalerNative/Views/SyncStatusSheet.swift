@@ -34,7 +34,7 @@ struct SyncStatusSheet: View {
                     .accessibilityIdentifier(AccessibilityIdentifiers.syncStatusTransport)
                     #endif
                 } header: {
-                    AppSectionHeader(String(localized: "sync.status.section.connection"))
+                    AppSectionHeader("sync.status.section.connection")
                 }
 
                 Section {
@@ -51,7 +51,7 @@ struct SyncStatusSheet: View {
 
                     if imageCacheStatus.recipesWithImage == 0 {
                         Text(String(localized: "sync.status.images.none"))
-                            .font(AppTypography.footnote)
+                            .appFootnote()
                             .foregroundStyle(.secondary)
                     } else if imageCacheStatus.isDownloading {
                         HStack(spacing: 8) {
@@ -64,12 +64,12 @@ struct SyncStatusSheet: View {
                                     imageCacheStatus.downloadTotal
                                 )
                             )
-                            .font(AppTypography.footnote)
+                            .appFootnote()
                             .foregroundStyle(.secondary)
                         }
                     } else if !imageCacheStatus.isFullyCached {
                         Text(imageCacheHint)
-                            .font(AppTypography.footnote)
+                            .appFootnote()
                             .foregroundStyle(.secondary)
                     } else {
                         Label {
@@ -86,7 +86,7 @@ struct SyncStatusSheet: View {
                         }
                     }
                 } header: {
-                    AppSectionHeader(String(localized: "sync.status.section.images"))
+                    AppSectionHeader("sync.status.section.images")
                 }
 
                 Section {
@@ -98,7 +98,7 @@ struct SyncStatusSheet: View {
 
                     if recipeDocumentCacheStatus.totalRecipes == 0 {
                         Text(String(localized: "sync.status.recipes.none"))
-                            .font(AppTypography.footnote)
+                            .appFootnote()
                             .foregroundStyle(.secondary)
                     } else if recipeDocumentCacheStatus.isDownloading {
                         HStack(spacing: 8) {
@@ -111,12 +111,12 @@ struct SyncStatusSheet: View {
                                     recipeDocumentCacheStatus.downloadTotal
                                 )
                             )
-                            .font(AppTypography.footnote)
+                            .appFootnote()
                             .foregroundStyle(.secondary)
                         }
                     } else if !recipeDocumentCacheStatus.isFullyCached {
                         Text(recipeDocumentHint)
-                            .font(AppTypography.footnote)
+                            .appFootnote()
                             .foregroundStyle(.secondary)
                     } else {
                         Label {
@@ -133,7 +133,7 @@ struct SyncStatusSheet: View {
                         }
                     }
                 } header: {
-                    AppSectionHeader(String(localized: "sync.status.section.recipes"))
+                    AppSectionHeader("sync.status.section.recipes")
                 }
 
                 if !recipeDocumentCacheStatus.pendingEntries.isEmpty {
@@ -154,11 +154,11 @@ struct SyncStatusSheet: View {
                                     recipeDocumentCacheStatus.pendingEntries.count - 30
                                 )
                             )
-                            .font(AppTypography.footnote)
+                            .appFootnote()
                             .foregroundStyle(.secondary)
                         }
                     } header: {
-                        AppSectionHeader(String(localized: "sync.status.section.recipes.pending"))
+                        AppSectionHeader("sync.status.section.recipes.pending")
                     }
                 }
 
@@ -180,11 +180,11 @@ struct SyncStatusSheet: View {
                                     imageCacheStatus.pendingEntries.count - 30
                                 )
                             )
-                            .font(AppTypography.footnote)
+                            .appFootnote()
                             .foregroundStyle(.secondary)
                         }
                     } header: {
-                        AppSectionHeader(String(localized: "sync.status.section.pending"))
+                        AppSectionHeader("sync.status.section.pending")
                     }
                 }
             }
@@ -256,7 +256,7 @@ struct SyncStatusSheet: View {
 
     private func badge(_ label: String) -> some View {
         Text(label)
-            .font(AppTypography.footnote)
+            .appFootnote()
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(Color.secondary.opacity(0.15))

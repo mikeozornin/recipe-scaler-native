@@ -19,7 +19,7 @@ enum AppSegmentedControlStyle {
 struct AppSegmentedControl<Value: Hashable>: View {
     struct Segment: Identifiable {
         let value: Value
-        let title: String
+        let title: LocalizedStringKey
         var id: Value { value }
     }
 
@@ -71,7 +71,6 @@ struct AppSegmentedControl<Value: Hashable>: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .accessibilityLabel(segment.title)
         .zIndex(isSelected ? 1 : 0)
     }
 

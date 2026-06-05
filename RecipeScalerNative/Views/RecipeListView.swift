@@ -9,7 +9,6 @@ struct RecipeListView: View {
     @State private var errorMessage = ""
     @State private var showingSyncStatus = false
     @State private var recipePendingDelete: RecipeRowData?
-    @State private var isCreatingRecipe = false
     @State private var recipeIdToOpenInEditMode: String?
 
 
@@ -57,12 +56,14 @@ struct RecipeListView: View {
             Group {
                 if syncService.connectionState == .connecting && syncService.collectionEntries.isEmpty {
                     ProgressView(String(localized: "recipe.list.loading"))
+                        .mobileTimerPanelBottomPadding()
                 } else if !hasAnyRows {
                     ContentUnavailableView {
                         AppLabel.make(String(localized: "recipe.list.empty.title"), symbol: "fork.knife")
                     } description: {
                         Text(String(localized: "Your recipes will appear here"))
                     }
+                    .mobileTimerPanelBottomPadding()
                 } else {
                     List {
                         if !pinnedRowItems.isEmpty {
@@ -80,6 +81,8 @@ struct RecipeListView: View {
 
                             recipeRows(unpinnedRowItems)
                         }
+
+                        MobileTimerPanelListSpacerRow()
                     }
                     .listStyle(.plain)
                     .listSectionSpacing(0)
@@ -88,7 +91,7 @@ struct RecipeListView: View {
                     .searchable(text: $searchText, prompt: "Search recipes")
                 }
             }
-            .navigationTitle("Recipes")
+            .localizedNavigationTitle("Recipes")
             .appListBodyTypography()
             .navigationDestination(for: String.self) { recipeId in
                 YDocRecipeDetailView(
@@ -110,19 +113,6 @@ struct RecipeListView: View {
             }
             #endif
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task { await handleAddRecipe() }
-                    } label: {
-                        AppToolbarStyle.labeledIcon(
-                            systemName: "plus",
-                            title: String(localized: "recipe.list.add")
-                        )
-                    }
-                    .appToolbarIconButton()
-                    .disabled(isCreatingRecipe)
-                    .accessibilityIdentifier(AccessibilityIdentifiers.recipeListAdd)
-                }
                 ToolbarItem(placement: .topBarTrailing) {
                     SyncStatusIndicator(
                         connectionState: syncService.connectionState,
@@ -180,20 +170,6 @@ struct RecipeListView: View {
     }
 
     // MARK: - Collection actions
-
-    private func handleAddRecipe() async {
-        guard !isCreatingRecipe else { return }
-        isCreatingRecipe = true
-        defer { isCreatingRecipe = false }
-        do {
-            let recipeId = try await syncService.createRecipe()
-            recipeIdToOpenInEditMode = recipeId
-            navigationPath.append(recipeId)
-        } catch {
-            errorMessage = error.localizedDescription
-            showingError = true
-        }
-    }
 
     private func togglePin(for item: RecipeRowData) async {
         do {
@@ -598,9 +574,8 @@ struct RecipeRow: View {
             )
 
             Text(titleText)
-                .font(AppTypography.body)
+                .appBody()
                 .foregroundColor(.primary)
-                .lineSpacing(RecipeRowLayoutMetrics.wrappedLineSpacing)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

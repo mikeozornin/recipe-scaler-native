@@ -92,7 +92,7 @@ struct RecipeDetailImageSection: View {
 
                 if !allowsNetworkRefresh {
                     Text(String(localized: "recipe.image.upload.offline"))
-                        .font(AppTypography.footnote)
+                        .appFootnote()
                         .foregroundStyle(Color(.secondaryLabel))
                         .multilineTextAlignment(.center)
                 }

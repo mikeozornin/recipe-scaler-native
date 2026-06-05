@@ -14,7 +14,7 @@ enum RecipeRowLayoutMetrics {
     /// Recipe list title, ingredient name/amount (`AppTypography.body`).
     static let titleFontSize: CGFloat = AppTypography.bodySize
     static let ingredientBodyFontSize: CGFloat = AppTypography.bodySize
-    static let wrappedLineSpacing: CGFloat = 4
+    static var wrappedLineSpacing: CGFloat { AppTypography.bodyLineSpacing }
     /// Gap between row number and ingredient name (web `mr-2` ≈ 8pt; half of prior 12pt grid).
     static let rowMarkerSpacing: CGFloat = 6
     /// Gap between the ingredients block (marker + name) and qty columns.

@@ -30,7 +30,7 @@ enum AppToolbarStyle {
     }
 
     @ViewBuilder
-    static func actionText(_ title: String) -> some View {
+    static func actionText(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(AppTypography.body)
             .foregroundStyle(Color.accentColor)
@@ -38,7 +38,7 @@ enum AppToolbarStyle {
     }
 
     @ViewBuilder
-    static func labeledIcon(systemName: String, title: String) -> some View {
+    static func labeledIcon(systemName: String, title: LocalizedStringKey) -> some View {
         HStack(spacing: 4) {
             icon(systemName)
             actionText(title)
@@ -51,7 +51,7 @@ enum AppToolbarStyle {
     }
 
     @ViewBuilder
-    static func labeledIcon(_ symbol: RecipeSymbol, title: String) -> some View {
+    static func labeledIcon(_ symbol: RecipeSymbol, title: LocalizedStringKey) -> some View {
         HStack(spacing: 4) {
             icon(symbol)
             actionText(title)

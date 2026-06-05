@@ -49,7 +49,7 @@ struct DescriptionTimerStartPopover: View {
                 }
 
                 Text(reference.menuSubtitle)
-                    .font(AppTypography.footnote)
+                    .appFootnote()
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
                     .padding(.leading, DescriptionTimerStartPopoverMetrics.subtitleLeadingInset)

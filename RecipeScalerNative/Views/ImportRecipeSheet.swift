@@ -55,14 +55,14 @@ struct ImportRecipeSheet: View {
                         AppLabel.make("Choose photos", symbol: "photo")
                     }
                     Text("\(photoItems.count) selected (max 8)")
-                        .font(AppTypography.footnote)
+                        .appFootnote()
                         .foregroundStyle(.secondary)
                 }
 
                 if let errorMessage {
                     Text(errorMessage)
                         .foregroundStyle(.red)
-                        .font(AppTypography.footnote)
+                        .appFootnote()
                 }
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.importSheet)

@@ -274,7 +274,7 @@ struct YDocRecipeDetailView: View {
                             } label: {
                                 AppToolbarStyle.labeledIcon(
                                     systemName: "pencil",
-                                    title: String(localized: "edit.edit")
+                                    title: "edit.edit"
                                 )
                             }
                             .appToolbarIconButton()

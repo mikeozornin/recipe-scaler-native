@@ -41,7 +41,7 @@ struct EditIngredientNutritionSheet: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     Text(String(localized: "nutrition.per-100g-note"))
-                        .font(AppTypography.footnote)
+                        .appFootnote()
                         .foregroundStyle(.tertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }

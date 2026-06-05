@@ -92,7 +92,7 @@ struct AuthView: View {
 
                     if showError {
                         Text(errorMessage)
-                            .font(AppTypography.footnote)
+                            .appFootnote()
                             .foregroundStyle(.red)
                             .padding(12)
                             .frame(maxWidth: .infinity)

@@ -34,7 +34,7 @@ struct RecipeDetailShareButton: View {
             if let shareURL {
                 ShareLink(item: shareURL) {
                     Text("recipe.share.link")
-                        .font(AppTypography.footnote)
+                        .appFootnote()
                         .foregroundStyle(.primary)
                         .lineLimit(3)
                         .frame(maxWidth: .infinity, alignment: .leading)

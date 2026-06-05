@@ -8,7 +8,7 @@ import SwiftUI
 
 @MainActor
 final class AccountSettingsViewModel: ObservableObject {
-    @Published var isLoading = true
+    @Published var isLoading = false
     @Published var isOnline = false
     @Published var statusMessage: String?
 
@@ -35,8 +35,6 @@ final class AccountSettingsViewModel: ObservableObject {
 
     func refresh(syncService: YjsSyncService) async {
         bind(syncService: syncService)
-        isLoading = true
-        defer { isLoading = false }
 
         showNutrition = NutritionSettings.isGlobalEnabled
         appTheme = .current
@@ -69,8 +67,9 @@ final class AccountSettingsViewModel: ObservableObject {
                 showNutrition = enabled
                 UserDefaults.standard.set(enabled, forKey: NutritionSettings.globalEnabledKey)
             }
+            statusMessage = nil
         } catch {
-            setStatus(from: error)
+            setStatus(from: error, isBackgroundRefresh: true)
         }
     }
 
@@ -244,10 +243,11 @@ final class AccountSettingsViewModel: ObservableObject {
         return result.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
     }
 
-    /// Silently swallow cancellation errors (e.g. when a newer Task supersedes an in-flight one)
-    /// and surface real failures via `statusMessage`.
-    private func setStatus(from error: Error) {
-        if error is CancellationError { return }
-        statusMessage = error.localizedDescription
+    /// Maps API/transport errors to localized account status text. Background refresh skips transient network noise.
+    private func setStatus(from error: Error, isBackgroundRefresh: Bool = false) {
+        statusMessage = UserFacingAPIError.accountStatusMessage(
+            for: error,
+            isBackgroundRefresh: isBackgroundRefresh
+        )
     }
 }

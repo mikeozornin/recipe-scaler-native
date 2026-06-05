@@ -94,19 +94,19 @@ struct DescriptionEditorView: View {
             EmptyView()
         case .pendingLocal:
             Text(String(localized: "edit.sync.pending"))
-                .font(AppTypography.footnote)
+                .appFootnote()
                 .foregroundStyle(.secondary)
         case .syncing:
             Text(String(localized: "edit.sync.syncing"))
-                .font(AppTypography.footnote)
+                .appFootnote()
                 .foregroundStyle(.secondary)
         case .queued:
             Text(String(localized: "edit.sync.queued"))
-                .font(AppTypography.footnote)
+                .appFootnote()
                 .foregroundStyle(.secondary)
         case .error:
             Text(String(localized: "edit.sync.error"))
-                .font(AppTypography.footnote)
+                .appFootnote()
                 .foregroundStyle(.red)
         }
     }

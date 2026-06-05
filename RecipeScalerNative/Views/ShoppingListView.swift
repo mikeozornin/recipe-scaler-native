@@ -64,7 +64,7 @@ struct ShoppingListView: View {
         Group {
             shoppingList
         }
-        .navigationTitle("shopping.title")
+        .localizedNavigationTitle("shopping.title")
         .appListBodyTypography()
         .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -73,7 +73,7 @@ struct ShoppingListView: View {
                     } label: {
                         AppToolbarStyle.labeledIcon(
                             systemName: "square.and.arrow.up",
-                            title: String(localized: "shopping.share-button")
+                            title: "shopping.share-button"
                         )
                     }
                     .appToolbarIconButton()
@@ -113,7 +113,7 @@ struct ShoppingListView: View {
                 emptyToBuyRow
             } else {
                 Section {
-                    AppSectionHeader(String(localized: "shopping.section.to-buy"))
+                    AppSectionHeader("shopping.section.to-buy")
                         .shoppingSectionLabelRow()
                     ForEach(toBuy) { item in
                         toBuyRow(item)
@@ -133,6 +133,8 @@ struct ShoppingListView: View {
                     .onDelete(perform: deletePurchased)
                 }
             }
+
+            MobileTimerPanelListSpacerRow()
         }
         .listStyle(.plain)
         .listSectionSpacing(0)
@@ -144,38 +146,39 @@ struct ShoppingListView: View {
     private var shoppingSortControl: some View {
         AppSegmentedControl(
             segments: [
-                .init(value: ShoppingSortMode.recipe, title: String(localized: "shopping.sort.by-recipe")),
-                .init(value: ShoppingSortMode.alphabet, title: String(localized: "shopping.sort.az")),
+                .init(value: ShoppingSortMode.recipe, title: "shopping.sort.by-recipe"),
+                .init(value: ShoppingSortMode.alphabet, title: "shopping.sort.az"),
             ],
             selection: sortBinding,
             style: .listHeader
         )
-        .accessibilityLabel(String(localized: "shopping.sort"))
+        .accessibilityLabel("shopping.sort")
     }
 
     private var purchasedSectionHeader: some View {
         HStack {
-            AppSectionHeader(String(localized: "shopping.section.purchased"))
+            AppSectionHeader("shopping.section.purchased")
             Spacer()
-            Button(String(localized: "shopping.clear-bought")) {
+            Button("shopping.clear-bought") {
                 Task {
                     await runShoppingMutation { try await syncService.clearPurchasedShoppingItems() }
                 }
             }
             .font(AppTypography.subheadline)
+            .foregroundStyle(Color.accentColor)
         }
     }
 
     private var emptyToBuyRow: some View {
         Section {
-            AppSectionHeader(String(localized: "shopping.section.to-buy"))
+            AppSectionHeader("shopping.section.to-buy")
                 .shoppingSectionLabelRow()
             Text(
                 purchased.isEmpty
-                    ? String(localized: "shopping.empty-to-buy")
-                    : String(localized: "shopping.empty-to-buy-all-done")
+                    ? "shopping.empty-to-buy"
+                    : "shopping.empty-to-buy-all-done"
             )
-            .font(AppTypography.body)
+            .appBody()
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .center)
             .listRowBackground(Color.clear)
@@ -270,11 +273,11 @@ struct ShoppingListView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.label)
-                    .font(AppTypography.body)
+                    .appBody()
                     .strikethrough(showChecked)
                 if !item.recipeName.isEmpty {
                     Text(item.recipeName)
-                        .font(AppTypography.footnote)
+                        .appFootnote()
                         .foregroundStyle(.secondary)
                 }
             }
@@ -490,7 +493,7 @@ private struct ShoppingListShareSheet: View {
                     if shareEnabled, let shareURL {
                         ShareLink(item: shareURL) {
                             Text(shareURL.absoluteString)
-                                .font(AppTypography.footnote)
+                                .appBody()
                                 .foregroundStyle(Color.accentColor)
                                 .lineLimit(3)
                                 .frame(maxWidth: .infinity, alignment: .leading)

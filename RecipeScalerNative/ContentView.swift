@@ -18,6 +18,13 @@ struct ContentView: View {
         let database = try! YrsDatabase()
         let store = YDocStore(dbQueue: database.dbQueue)
         _syncService = StateObject(wrappedValue: YjsSyncService(store: store))
+        // #region agent log
+        AgentSyncDebugLog.sync(
+            location: "ContentView.init",
+            message: "contentview_init",
+            data: [:]
+        )
+        // #endregion
     }
 
     private var effectiveUserId: String? {
@@ -92,10 +99,24 @@ struct ContentView: View {
             let newTheme = AppThemePreference.current
             if newTheme != appTheme {
                 appTheme = newTheme
+                // #region agent log
+                AgentSyncDebugLog.sync(
+                    location: "ContentView.defaultsChanged",
+                    message: "root_state_mutated",
+                    data: ["field": "theme", "value": String(describing: newTheme)]
+                )
+                // #endregion
             }
             let newLanguage = AppLanguagePreference.current
             if newLanguage != appLanguage {
                 appLanguage = newLanguage
+                // #region agent log
+                AgentSyncDebugLog.sync(
+                    location: "ContentView.defaultsChanged",
+                    message: "root_state_mutated",
+                    data: ["field": "language", "value": newLanguage.rawValue]
+                )
+                // #endregion
             }
         }
         #if !targetEnvironment(simulator)

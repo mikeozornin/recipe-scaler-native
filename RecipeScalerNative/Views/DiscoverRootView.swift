@@ -30,7 +30,7 @@ struct DiscoverRootView: View {
                                     VStack(alignment: .leading) {
                                         Text(collection.title)
                                         if let desc = collection.description {
-                                            Text(desc).font(AppTypography.footnote).foregroundStyle(.secondary)
+                                            Text(desc).appFootnote().foregroundStyle(.secondary)
                                         }
                                     }
                                 }
@@ -45,7 +45,7 @@ struct DiscoverRootView: View {
                                         Text(profile.name ?? profile.username)
                                         Spacer()
                                         Text("\(profile.recipe_count)")
-                                            .font(AppTypography.footnote)
+                                            .appFootnote()
                                             .foregroundStyle(.secondary)
                                     }
                                 }
@@ -57,7 +57,7 @@ struct DiscoverRootView: View {
                 }
             }
             .appListBodyTypography()
-            .navigationTitle("Discover")
+            .localizedNavigationTitle("Discover")
             .navigationDestination(for: DiscoverRoute.self) { route in
                 switch route {
                 case .collection(let slug):
@@ -159,7 +159,7 @@ struct DiscoverRecipeView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     if let message {
-                        Text(message).font(AppTypography.footnote)
+                        Text(message).appFootnote()
                     }
                 }
                 .padding()

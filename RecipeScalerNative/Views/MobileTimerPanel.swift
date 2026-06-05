@@ -8,11 +8,11 @@ import SwiftUI
 /// Active timers above tab bar (local + cross-device sync). Compact mobile layout.
 struct MobileTimerPanel: View {
     @EnvironmentObject private var timerManager: TimerManager
-    @State private var isCollapsed = true
+    @Binding var isCollapsed: Bool
 
     private var expandedListMaxHeight: CGFloat {
         let rowCount = CGFloat(timerManager.activeTimers.count)
-        return min(rowCount, CGFloat(TimerPanelMetrics.maxVisibleRows)) * TimerPanelMetrics.barHeight
+        return min(rowCount, CGFloat(MobileTimerPanelLayout.maxVisibleRows)) * MobileTimerPanelLayout.barHeight
     }
 
     var body: some View {
@@ -28,7 +28,7 @@ struct MobileTimerPanel: View {
                             ForEach(timerManager.activeTimers, id: \.id) { timer in
                                 MobileTimerRow(timer: timer)
                                 if timer.id != timerManager.activeTimers.last?.id {
-                                    Divider().padding(.leading, TimerPanelMetrics.barHeight)
+                                    Divider().padding(.leading, MobileTimerPanelLayout.barHeight)
                                 }
                             }
                         }
@@ -36,7 +36,7 @@ struct MobileTimerPanel: View {
                     .frame(maxHeight: expandedListMaxHeight)
                 }
             }
-            .frame(height: isCollapsed ? TimerPanelMetrics.barHeight : nil, alignment: .top)
+            .frame(height: isCollapsed ? MobileTimerPanelLayout.barHeight : nil, alignment: .top)
             .clipped()
             .background(Color(.systemBackground))
             .overlay(alignment: .top) { Divider() }
@@ -62,13 +62,13 @@ struct MobileTimerPanel: View {
                         Text("·")
                             .font(AppTypography.body)
                             .foregroundStyle(.secondary)
-                        HStack(spacing: TimerPanelMetrics.runningIndicatorLeadingInset) {
+                        HStack(spacing: MobileTimerPanelLayout.runningIndicatorLeadingInset) {
                             Text("\(timerManager.activeTimers.count)")
                                 .font(AppTypography.bodySemibold)
                             if timerManager.activeTimers.contains(where: \.isRunning) {
                                 TimerPanelPulsingIndicator(
                                     color: .red,
-                                    size: TimerPanelMetrics.runningIndicatorSize
+                                    size: MobileTimerPanelLayout.runningIndicatorSize
                                 )
                             }
                         }
@@ -77,8 +77,8 @@ struct MobileTimerPanel: View {
                 Spacer(minLength: 0)
                 TimerPanelIcon.chevron(isCollapsed ? .up : .down)
             }
-            .padding(.horizontal, TimerPanelMetrics.horizontalInset)
-            .frame(height: TimerPanelMetrics.barHeight, alignment: .center)
+            .padding(.horizontal, MobileTimerPanelLayout.horizontalInset)
+            .frame(height: MobileTimerPanelLayout.barHeight, alignment: .center)
             .clipped()
             .contentShape(Rectangle())
         }
@@ -106,10 +106,10 @@ struct MobileTimerPanel: View {
                     }
                 }
             }
-            .frame(height: TimerPanelMetrics.barHeight)
+            .frame(height: MobileTimerPanelLayout.barHeight)
         }
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-        .frame(height: TimerPanelMetrics.barHeight)
+        .frame(height: MobileTimerPanelLayout.barHeight)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -120,19 +120,27 @@ struct MobileTimerPanel: View {
     }
 }
 
-// MARK: - Metrics & SF icons
+// MARK: - Layout metrics (shared with scroll insets)
 
-private enum TimerPanelMetrics {
+enum MobileTimerPanelLayout {
     /// iOS minimum comfortable tap height; collapsed bar uses this exactly.
     static let barHeight: CGFloat = 44
     static let horizontalInset: CGFloat = 12
-    static let controlIconSide: CGFloat = 17
     static let maxVisibleRows = 3
-    /// Gap between timer title row and progress (ingredient name → KBJU uses 4pt; slightly more here).
     static let titleToProgressSpacing: CGFloat = 6
     static let runningIndicatorSize: CGFloat = 8
     static let runningIndicatorLeadingInset: CGFloat = 8
+
+    /// Matches visible panel height (web `--mobile-timer-panel-h`).
+    static func height(timerCount: Int, isExpanded: Bool) -> CGFloat {
+        guard timerCount > 0 else { return 0 }
+        if !isExpanded { return barHeight }
+        let rows = min(timerCount, maxVisibleRows)
+        return barHeight + CGFloat(rows) * barHeight
+    }
 }
+
+// MARK: - SF icons
 
 /// Pulsing dot — same rhythm as `ScreenAwakeStatusBanner`.
 private struct TimerPanelPulsingIndicator: View {
@@ -202,14 +210,14 @@ private struct MobileTimerRow: View {
         HStack(spacing: 0) {
             Button(action: toggleTimer) {
                 TimerPanelIcon.playPause(isRunning: timer.isRunning && !timer.isPaused)
-                    .frame(width: TimerPanelMetrics.barHeight, height: TimerPanelMetrics.barHeight)
+                    .frame(width: MobileTimerPanelLayout.barHeight, height: MobileTimerPanelLayout.barHeight)
             }
             .buttonStyle(.plain)
             .disabled(remaining < 0)
             .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerToggle(timerId: timer.id))
             .accessibilityLabel(toggleAccessibilityLabel)
 
-            VStack(alignment: .leading, spacing: TimerPanelMetrics.titleToProgressSpacing) {
+            VStack(alignment: .leading, spacing: MobileTimerPanelLayout.titleToProgressSpacing) {
                 HStack(spacing: 4) {
                     Text(timer.name)
                         .font(AppTypography.body)
@@ -228,13 +236,13 @@ private struct MobileTimerRow: View {
 
             Button(role: .destructive, action: { timerManager.deleteTimer(id: timer.id) }) {
                 TimerPanelIcon.close()
-                    .frame(width: TimerPanelMetrics.barHeight, height: TimerPanelMetrics.barHeight)
+                    .frame(width: MobileTimerPanelLayout.barHeight, height: MobileTimerPanelLayout.barHeight)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerDelete(timerId: timer.id))
             .accessibilityLabel("Delete timer")
         }
-        .frame(height: TimerPanelMetrics.barHeight)
+        .frame(height: MobileTimerPanelLayout.barHeight)
         .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerChip(timerId: timer.id))
     }
 
@@ -259,6 +267,66 @@ private struct MobileTimerRow: View {
             timerManager.resumeTimer(id: timer.id)
         } else {
             timerManager.startTimer(id: timer.id)
+        }
+    }
+}
+
+// MARK: - Scroll content inset (List inside NavigationStack ignores tab-root safeAreaInset)
+
+private struct MobileTimerPanelIsCollapsedKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var mobileTimerPanelIsCollapsed: Bool {
+        get { self[MobileTimerPanelIsCollapsedKey.self] }
+        set { self[MobileTimerPanelIsCollapsedKey.self] = newValue }
+    }
+}
+
+/// Padding for non-list tab roots (empty/loading states).
+struct MobileTimerPanelBottomPaddingModifier: ViewModifier {
+    @EnvironmentObject private var timerManager: TimerManager
+    @Environment(\.mobileTimerPanelIsCollapsed) private var isCollapsed
+
+    private var height: CGFloat {
+        MobileTimerPanelLayout.height(
+            timerCount: timerManager.activeTimers.count,
+            isExpanded: !isCollapsed
+        )
+    }
+
+    func body(content: Content) -> some View {
+        content.padding(.bottom, height)
+    }
+}
+
+extension View {
+    func mobileTimerPanelBottomPadding() -> some View {
+        modifier(MobileTimerPanelBottomPaddingModifier())
+    }
+}
+
+/// Bottom list row so the last cells stay above the shared timer panel (UITableView-safe).
+struct MobileTimerPanelListSpacerRow: View {
+    @EnvironmentObject private var timerManager: TimerManager
+    @Environment(\.mobileTimerPanelIsCollapsed) private var isCollapsed
+
+    private var height: CGFloat {
+        MobileTimerPanelLayout.height(
+            timerCount: timerManager.activeTimers.count,
+            isExpanded: !isCollapsed
+        )
+    }
+
+    var body: some View {
+        if height > 0 {
+            Color.clear
+                .frame(height: height)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                .accessibilityHidden(true)
         }
     }
 }

@@ -56,6 +56,7 @@ struct AppShellView: View {
     @State private var shoppingPath = NavigationPath()
     @State private var transientStatusMessage: String?
     @State private var transientStatusDismissTask: Task<Void, Never>?
+    @State private var mobileTimerPanelCollapsed = true
 
     var body: some View {
         tabView
@@ -142,7 +143,7 @@ struct AppShellView: View {
     }
 
     private var mobileTimerPanel: some View {
-        MobileTimerPanel()
+        MobileTimerPanel(isCollapsed: $mobileTimerPanelCollapsed)
             .environmentObject(timerManager)
     }
 
@@ -178,12 +179,13 @@ struct AppShellView: View {
         }
     }
 
-    /// Web mobile: timer panel between scroll content and tab bar (inset on tab root, not on TabView).
+    /// Timer panel between tab content and tab bar (must be on tab root, not on `TabView` — otherwise tab bar is hidden).
     private func tabRoot<Content: View, Label: View>(
         _ content: Content,
         @ViewBuilder tabItem: () -> Label
     ) -> some View {
         content
+            .environment(\.mobileTimerPanelIsCollapsed, mobileTimerPanelCollapsed)
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 mobileTimerPanel
             }

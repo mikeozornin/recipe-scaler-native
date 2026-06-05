@@ -111,6 +111,40 @@
         }
       }
     },
+    "account.error.generic" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong. Try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что-то пошло не так. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "account.error.unreachable" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't reach the server. Check your connection and try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось связаться с сервером. Проверьте подключение и попробуйте снова."
+          }
+        }
+      }
+    },
     "account.language.en" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2509,6 +2543,23 @@
         }
       }
     },
+    "recipe.list.add" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add recipes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить рецепты"
+          }
+        }
+      }
+    },
     "recipe.list.delete" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2573,23 +2624,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Удалить «%@»? Это действие нельзя отменить."
-          }
-        }
-      }
-    },
-    "recipe.list.add" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add recipes"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавить рецепты"
           }
         }
       }

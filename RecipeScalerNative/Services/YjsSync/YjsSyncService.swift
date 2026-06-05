@@ -34,6 +34,10 @@ final class YjsSyncService: ObservableObject {
     private var socket: SocketIOClient?
     /// Guards socket handlers: stale clients must not overwrite `connectionState` after reconnect.
     private var socketSessionId = UUID()
+    // #region agent log
+    /// Debug: identifies this service instance to detect @StateObject re-creation (hypothesis A/B).
+    private let debugInstanceId = UUID()
+    // #endregion
     private let logger = Logger(subsystem: "com.recipescaler.native", category: "YjsSyncService")
 
     private var userId: String?
@@ -78,7 +82,25 @@ final class YjsSyncService: ObservableObject {
         }
 
         wireEventHandler()
+
+        // #region agent log
+        AgentSyncDebugLog.sync(
+            location: "YjsSyncService.init",
+            message: "service_init",
+            data: ["instanceId": debugInstanceId.uuidString]
+        )
+        // #endregion
     }
+
+    // #region agent log
+    deinit {
+        AgentSyncDebugLog.sync(
+            location: "YjsSyncService.deinit",
+            message: "service_deinit",
+            data: ["instanceId": debugInstanceId.uuidString]
+        )
+    }
+    // #endregion
 
     // MARK: - Public API
 
@@ -386,6 +408,7 @@ final class YjsSyncService: ObservableObject {
                 "userId": userId,
                 "priorUserId": self.userId ?? "nil",
                 "connectionState": String(describing: connectionState),
+                "instanceId": debugInstanceId.uuidString,
             ]
         )
         // #endregion
@@ -855,16 +878,16 @@ final class YjsSyncService: ObservableObject {
                     data: [
                         "sessionId": sessionId.uuidString,
                         "detail": msg,
-                        "recoverable": String(self.isRecoverableSocketError(msg)),
                     ]
                 )
                 // #endregion
-                if self.isRecoverableSocketError(msg) {
-                    self.isSocketAuthenticated = false
-                    self.setConnectionState(.reconnecting, reason: "socket.error_recoverable")
-                } else {
-                    self.setConnectionState(.error(msg), reason: "socket.error_fatal")
-                }
+                // Engine/transport errors are always transient here: infinite auto-reconnect retries
+                // them, and genuine fatal failures (auth) arrive via the dedicated `auth_error` event.
+                // The payload is a localized NSError description (e.g. "Сетевое соединение потеряно."),
+                // so matching against fixed English fragments misclassified them as fatal on non-English
+                // devices and surfaced a stuck "Offline" instead of a silent reconnect.
+                self.isSocketAuthenticated = false
+                self.setConnectionState(.reconnecting, reason: "socket.error")
             }
         }
 
@@ -1081,21 +1104,6 @@ final class YjsSyncService: ObservableObject {
         socket?.disconnect()
     }
 
-    /// Transient transport failures while Socket.IO auto-reconnects — do not surface as hard sync errors.
-    private func isRecoverableSocketError(_ message: String) -> Bool {
-        let normalized = message.lowercased()
-        if normalized == "error" { return true }
-        let recoverableFragments = [
-            "network connection was lost",
-            "request timed out",
-            "not connected",
-            "tried emitting when not connected",
-            "could not connect",
-            "connection lost",
-        ]
-        return recoverableFragments.contains { normalized.contains($0) }
-    }
-
     /// Server `auth` runs async (validate/repair). Load collection after a short delay or sooner on server `connected` ack.
     private func scheduleCollectionLoadAfterAuth() {
         collectionLoadTask?.cancel()
@@ -1141,6 +1149,7 @@ final class YjsSyncService: ObservableObject {
             loadCollectionDocument()
         }
         TimerSyncService.shared.initializeAfterAuth()
+        Task { await PushRegistrationService.shared.registerIfNeeded() }
     }
 
     /// Sends a timer sync event over Socket.IO (ack); used by `TimerSyncService`.

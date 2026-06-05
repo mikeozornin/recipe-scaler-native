@@ -143,6 +143,9 @@
 		E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */; };
 		E5F60718293A4B70F68BDA71 /* AppThemePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */; };
 		E5F60718293A4B70E6687EC7 /* AppLanguagePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */; };
+		E5F60718293A4B70E6687EC8 /* Bundle+Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094871 /* Bundle+Language.swift */; };
+		E5F60718293A4B70CD094881 /* LocalizedNavigationTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */; };
+		E5F60718293A4B70CD094891 /* UserFacingAPIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */; };
 		E5F60718293A4B70374F8F19 /* SeedQRCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70F25813BA /* SeedQRCodeView.swift */; };
 		E5F60718293A4B70A1B2C3E5 /* RecipeImageUploadPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */; };
 		E5F60718293A4B7069A26F71 /* AccountCheckmarkSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */; };
@@ -157,6 +160,8 @@
 		E5F60718293A4B707BD2B9B5 /* ShoppingListPlainText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B703691736C /* ShoppingListPlainText.swift */; };
 		E5F60718293A4B70C440D93D /* ShoppingSmokeTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7024E554ED /* ShoppingSmokeTest.swift */; };
 		E5F60718293A4B7005B62F9C /* TransientStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B707F3A30E0 /* TransientStatusBanner.swift */; };
+		CC0002AA0002BB0002CC0002 /* PushRegistrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0001AA0001BB0001CC0001 /* PushRegistrationService.swift */; };
+		CC0004AA0004BB0004CC0004 /* PushScheduleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0003AA0003BB0003CC0003 /* PushScheduleService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -171,6 +176,7 @@
 		1A2C8350A32724EACB324178 /* RecipeScalerNativeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeScalerNativeUITests.swift; sourceTree = "<group>"; };
 		1D90E06DB664829F1CEFCCD5 /* TimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerManager.swift; sourceTree = "<group>"; };
 		2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeScalerNativeTests.swift; sourceTree = "<group>"; };
+		2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationConsistencyTests.swift; sourceTree = "<group>"; };
 		24D8ACC6DE6F3FE3D4AE9C40 /* IngredientData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientData.swift; sourceTree = "<group>"; };
 		296450B0B341AB25920D2100 /* RecipeScalerNativeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeScalerNativeApp.swift; sourceTree = "<group>"; };
 		29D8A66A55727AFFC954CC62 /* YrsMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YrsMap.swift; sourceTree = "<group>"; };
@@ -299,6 +305,9 @@
 		E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingsViewModel.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppThemePreference.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguagePreference.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70CD094871 /* Bundle+Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Language.swift"; sourceTree = "<group>"; };
+		E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedNavigationTitle.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserFacingAPIError.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70F25813BA /* SeedQRCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeedQRCodeView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeImageUploadPreprocessor.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountCheckmarkSelectionView.swift; sourceTree = "<group>"; };
@@ -313,6 +322,9 @@
 		E5F60718293A4B703691736C /* ShoppingListPlainText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListPlainText.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7024E554ED /* ShoppingSmokeTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingSmokeTest.swift; sourceTree = "<group>"; };
 		E5F60718293A4B707F3A30E0 /* TransientStatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransientStatusBanner.swift; sourceTree = "<group>"; };
+		CC0001AA0001BB0001CC0001 /* PushRegistrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushRegistrationService.swift; sourceTree = "<group>"; };
+		CC0003AA0003BB0003CC0003 /* PushScheduleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushScheduleService.swift; sourceTree = "<group>"; };
+		CC0005AA0005BB0005CC0005 /* RecipeScalerNative.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RecipeScalerNative.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -344,6 +356,7 @@
 				E4BC1DF4500B18B5CC3AFC71 /* Config.swift */,
 				EA4BEBE2780DE29A70E2D8AC /* ContentView.swift */,
 				296450B0B341AB25920D2100 /* RecipeScalerNativeApp.swift */,
+				CC0005AA0005BB0005CC0005 /* RecipeScalerNative.entitlements */,
 				565720722B00D99641496ED4 /* Models */,
 				EDE97F98D203CDB041112403 /* Services */,
 				D60774181BE9BA4A89FEDEAD /* ViewModels */,
@@ -503,6 +516,7 @@
 			children = (
 				94F6EEB0522CF5E6241A73B1 /* Info.plist */,
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
+				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
 				CDC8307193209458433B2DAF /* SnapshotTests.swift */,
 				1056FC9B5113FFE50B50E8AB /* TestSupport.swift */,
 			);
@@ -562,6 +576,9 @@
 				E5F60718293A4B70F25813BA /* SeedQRCodeView.swift */,
 				E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */,
 				E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */,
+				E5F60718293A4B70CD094871 /* Bundle+Language.swift */,
+				E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */,
+				E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */,
 				E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */,
 				E5F60718293A4B7000000002 /* IngredientNutritionDisplay.swift */,
 				E5F60718293A4B700000000F /* RecipeNutritionDisplay.swift */,
@@ -611,6 +628,8 @@
 				E5F60718293A4B7000000026 /* RecipeImageDecoder.swift */,
 				1D90E06DB664829F1CEFCCD5 /* TimerManager.swift */,
 				E5F60718293A4B70A0433F17 /* TimerSyncService.swift */,
+				CC0001AA0001BB0001CC0001 /* PushRegistrationService.swift */,
+				CC0003AA0003BB0003CC0003 /* PushScheduleService.swift */,
 				D0574E4BB4D0DE3B5AE7CFAB /* Yrs */,
 				E49E6DAE77BDA02267796630 /* YjsSync */,
 				6C814AF9AA15A89BCAC1A9E4 /* Storage */,
@@ -746,6 +765,8 @@
 				B73279F40D2B240855EFBF6E /* SplashView.swift in Sources */,
 				3784074202890D721AEDB2D0 /* TimerExampleView.swift in Sources */,
 				FA05529205968797A04D7590 /* TimerManager.swift in Sources */,
+				CC0002AA0002BB0002CC0002 /* PushRegistrationService.swift in Sources */,
+				CC0004AA0004BB0004CC0004 /* PushScheduleService.swift in Sources */,
 				DD2201AABB000100000001 /* YrsObserver.swift in Sources */,
 				DD2201AABB000100000002 /* RecipeDetailViewModel.swift in Sources */,
 				DD2201AABB000100000003 /* YDocRecipeDetailView.swift in Sources */,
@@ -844,6 +865,9 @@
 				E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */,
 				E5F60718293A4B70F68BDA71 /* AppThemePreference.swift in Sources */,
 				E5F60718293A4B70E6687EC7 /* AppLanguagePreference.swift in Sources */,
+				E5F60718293A4B70E6687EC8 /* Bundle+Language.swift in Sources */,
+				E5F60718293A4B70CD094881 /* LocalizedNavigationTitle.swift in Sources */,
+				E5F60718293A4B70CD094891 /* UserFacingAPIError.swift in Sources */,
 				E5F60718293A4B70374F8F19 /* SeedQRCodeView.swift in Sources */,
 				E5F60718293A4B70A1B2C3E5 /* RecipeImageUploadPreprocessor.swift in Sources */,
 				E5F60718293A4B7069A26F71 /* AccountCheckmarkSelectionView.swift in Sources */,
@@ -915,6 +939,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = RecipeScalerNative/RecipeScalerNative.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = 2L5JDYE2L7;
 				INFOPLIST_FILE = RecipeScalerNative/Info.plist;
@@ -996,6 +1021,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = RecipeScalerNative/RecipeScalerNative.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = 2L5JDYE2L7;
 				INFOPLIST_FILE = RecipeScalerNative/Info.plist;

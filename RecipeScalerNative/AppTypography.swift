@@ -20,6 +20,9 @@ enum AppTypography {
     static let splashTitleSize: CGFloat = 24
     static let tabBarSize: CGFloat = 10
 
+    static let bodyLineSpacing: CGFloat = 4
+    static let footnoteLineSpacing: CGFloat = 2
+
     static var body: Font { sans(bodySize) }
     static var subheadline: Font { sans(subheadlineSize) }
     static var footnote: Font { sans(footnoteSize) }
@@ -67,16 +70,26 @@ extension View {
     }
 }
 
+extension Text {
+    func appBody() -> some View {
+        self
+            .font(AppTypography.body)
+            .lineSpacing(AppTypography.bodyLineSpacing)
+    }
+
+    func appFootnote() -> some View {
+        self
+            .font(AppTypography.footnote)
+            .lineSpacing(AppTypography.footnoteLineSpacing)
+    }
+}
+
 /// List/Form section title (iOS Settings style: footnote, caps, tracking).
 struct AppSectionHeader: View {
     let title: LocalizedStringKey
 
     init(_ title: LocalizedStringKey) {
         self.title = title
-    }
-
-    init(_ title: String) {
-        self.title = LocalizedStringKey(title)
     }
 
     var body: some View {
@@ -89,6 +102,18 @@ struct AppSectionHeader: View {
 
     /// ~0.06 em at 13 pt (web section label rhythm).
     static let letterSpacing: CGFloat = 0.8
+}
+
+/// Invisible section header placeholder — keeps spacing above a headerless list group.
+struct AppSectionHeaderSpacer: View {
+    var body: some View {
+        Text(verbatim: " ")
+            .font(AppTypography.footnote)
+            .tracking(AppSectionHeader.letterSpacing)
+            .textCase(.uppercase)
+            .accessibilityHidden(true)
+            .opacity(0)
+    }
 }
 
 enum AppChromeAppearance {

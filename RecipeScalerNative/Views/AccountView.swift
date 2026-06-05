@@ -44,23 +44,18 @@ struct AccountView: View {
                 if let statusMessage = viewModel.statusMessage {
                     Section {
                         Text(statusMessage)
-                            .font(AppTypography.footnote)
+                            .appFootnote()
                             .foregroundStyle(.secondary)
                     }
                 }
 
                 footerSection
+
+                MobileTimerPanelListSpacerRow()
             }
-            .navigationTitle("account.title")
+            .localizedNavigationTitle("account.title")
             .listSectionSpacing(12)
             .appListBodyTypography()
-            .overlay {
-                if viewModel.isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(.systemBackground).opacity(0.6))
-                }
-            }
             .sheet(isPresented: $showLoginOnDevice) {
                 AccountSeedPhraseSheet()
             }
@@ -100,8 +95,6 @@ struct AccountView: View {
     @ViewBuilder
     private var accountSection: some View {
         Section {
-            AppSectionHeader("account.section.account")
-                .accountSectionLabelRow()
             if let userId = authService.userId {
                 HStack(spacing: 12) {
                     accountAvatar
@@ -122,6 +115,8 @@ struct AccountView: View {
             Button("auth.login-with-another") {
                 showLoginOnDevice = true
             }
+        } header: {
+            AppSectionHeader("account.section.account")
         }
     }
 
@@ -201,25 +196,23 @@ struct AccountView: View {
     @ViewBuilder
     private var telegramSection: some View {
         Section {
-            AppSectionHeader("telegram.accordion-title")
-                .accountSectionLabelRow()
             if !isTelegramConnected {
                 Text("telegram.benefits-description-1")
-                    .font(AppTypography.subheadline)
+                    .appBody()
                     .foregroundStyle(.secondary)
             }
             TelegramConnectionView(
                 isOnline: viewModel.isOnline,
                 onStatusChange: { isTelegramConnected = $0 }
             )
+        } header: {
+            AppSectionHeader("telegram.accordion-title")
         }
     }
 
     @ViewBuilder
     private var preferencesSection: some View {
         Section {
-            AppSectionHeader("account.section.preferences")
-                .accountSectionLabelRow()
             NavigationLink {
                 AccountCheckmarkSelectionView(
                     navigationTitle: "account.language.label",
@@ -260,14 +253,9 @@ struct AccountView: View {
                 }
             ))
 
-            Toggle("account.timer-notifications.label", isOn: Binding(
-                get: { viewModel.timerNotificationsEnabled },
-                set: { value in
-                    Task { @MainActor in await viewModel.setTimerNotificationsEnabled(value) }
-                }
-            ))
-            .disabled(viewModel.timerNotificationsDenied)
-            .accessibilityIdentifier(AccessibilityIdentifiers.accountTimerNotificationsToggle)
+
+        } header: {
+            AppSectionHeader("account.section.preferences")
         }
     }
 
@@ -288,6 +276,8 @@ struct AccountView: View {
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
                 LabeledContent("account.version", value: version)
             }
+        } header: {
+            AppSectionHeaderSpacer()
         }
     }
 
@@ -367,7 +357,7 @@ private struct AccountSeedPhraseSheet: View {
                     }
                 }
             }
-            .navigationTitle("account.secret-phrase")
+            .navigationTitle(Text("account.secret-phrase"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -400,24 +390,6 @@ private struct AccountSeedPhraseSheet: View {
         } catch {
             authError = error.localizedDescription
         }
-    }
-}
-
-private extension View {
-    /// Renders section header as plain row (matches shopping list "TO BUY" style).
-    func accountSectionLabelRow() -> some View {
-        fixedSize(horizontal: false, vertical: true)
-            .listRowInsets(
-                EdgeInsets(
-                    top: 8,
-                    leading: RecipeRowLayoutMetrics.listHorizontalInset,
-                    bottom: 0,
-                    trailing: RecipeRowLayoutMetrics.listHorizontalInset
-                )
-            )
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
-            .environment(\.defaultMinListRowHeight, 1)
     }
 }
 
