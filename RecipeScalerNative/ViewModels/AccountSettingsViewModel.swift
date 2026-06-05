@@ -64,6 +64,13 @@ final class AccountSettingsViewModel: ObservableObject {
             shareMode = PublicShareMode(apiValue: sharingData.shareMode) ?? .one_by_one
             allowRecipeDownloads = sharingData.allowRecipeDownloads != false
 
+            // Persist for offline use in the recipe share sheet
+            SharingSettingsCache.save(
+                publicProfileEnabled: publicProfileEnabled,
+                shareMode: shareMode,
+                username: username ?? ""
+            )
+
             if let settings, let enabled = settings.nutritionEnabled {
                 showNutrition = enabled
                 UserDefaults.standard.set(enabled, forKey: NutritionSettings.globalEnabledKey)

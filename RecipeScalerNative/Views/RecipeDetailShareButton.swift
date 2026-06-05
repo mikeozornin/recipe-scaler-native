@@ -7,14 +7,15 @@ import SwiftUI
 
 struct RecipeDetailShareButton: View {
     let recipeId: String
+    let isPublic: Bool
+    let hasImage: Bool
+    let hasSteps: Bool
 
     @State private var showShare = false
-    @State private var shareURL: URL?
 
     var body: some View {
         Button {
-            shareURL = PublicURLBuilder.recipeShareURL(recipeId: recipeId)
-            showShare = shareURL != nil
+            showShare = true
         } label: {
             AppToolbarStyle.iconOnly(systemName: "square.and.arrow.up")
         }
@@ -23,24 +24,200 @@ struct RecipeDetailShareButton: View {
         #if DEBUG
         .onAppear {
             if DebugLaunchOptions.showRecipeShare {
-                shareURL = PublicURLBuilder.recipeShareURL(recipeId: recipeId)
-                if shareURL != nil {
-                    showShare = true
-                }
+                showShare = true
             }
         }
         #endif
         .sheet(isPresented: $showShare) {
-            if let shareURL {
-                ShareLink(item: shareURL) {
-                    Text("recipe.share.link")
-                        .appFootnote()
-                        .foregroundStyle(.primary)
-                        .lineLimit(3)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+            RecipeShareSheet(
+                recipeId: recipeId,
+                initialIsPublic: isPublic,
+                hasImage: hasImage,
+                hasSteps: hasSteps
+            )
+        }
+    }
+}
+
+// MARK: - Sheet
+
+private struct RecipeShareSheet: View {
+    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(\.dismiss) private var dismiss
+
+    let recipeId: String
+    let initialIsPublic: Bool
+    let hasImage: Bool
+    let hasSteps: Bool
+
+    @State private var isPublic: Bool
+    @State private var publicProfileEnabled: Bool
+    @State private var shareMode: PublicShareMode
+    @State private var username: String
+    @State private var isOnline = false
+    @State private var isUpdating = false
+
+    init(recipeId: String, initialIsPublic: Bool, hasImage: Bool, hasSteps: Bool) {
+        self.recipeId = recipeId
+        self.initialIsPublic = initialIsPublic
+        self.hasImage = hasImage
+        self.hasSteps = hasSteps
+        _isPublic = State(initialValue: initialIsPublic)
+        // Seed from cache so the link is correct even before the network responds
+        _publicProfileEnabled = State(initialValue: SharingSettingsCache.publicProfileEnabled)
+        _shareMode = State(initialValue: SharingSettingsCache.shareMode)
+        _username = State(initialValue: SharingSettingsCache.username)
+    }
+
+    // MARK: Computed
+
+    /// Whether to show the public/private toggle (vs. a read-only mode description).
+    private var showToggle: Bool {
+        !publicProfileEnabled || shareMode == .one_by_one
+    }
+
+    /// Whether this recipe is effectively accessible via its public link.
+    private var isEffectivelyPublic: Bool {
+        if !publicProfileEnabled { return isPublic }
+        switch shareMode {
+        case .all:                  return true
+        case .with_images_and_steps: return hasImage && hasSteps
+        case .one_by_one:            return isPublic
+        }
+    }
+
+    private var shareURL: URL? {
+        if publicProfileEnabled, !username.isEmpty {
+            return PublicURLBuilder.profileRecipeURL(username: username, recipeId: recipeId)
+        }
+        return PublicURLBuilder.recipeShareURL(recipeId: recipeId)
+    }
+
+    // MARK: Body
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if !isOnline && showToggle {
+                    Section {
+                        Text("recipe.share.offline-message")
+                            .font(AppTypography.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                .presentationDetents([.medium])
+
+                Section {
+                    if showToggle {
+                        Toggle(isOn: toggleBinding) {
+                            Text("recipe.detail.public")
+                        }
+                        .disabled(!isOnline || isUpdating)
+                    } else {
+                        shareModeDescription
+                    }
+
+                    if isEffectivelyPublic, let url = shareURL {
+                        ShareLink(item: url) {
+                            Text(url.absoluteString)
+                                .appBody()
+                                .foregroundStyle(Color.accentColor)
+                                .lineLimit(3)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .tint(Color.accentColor)
+
+                        Button(String(localized: "shopping.copy-link")) {
+                            copyLink(url.absoluteString)
+                        }
+                    }
+                }
             }
+            .navigationTitle(Text("recipe.share"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(String(localized: "common.done")) { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .task { await loadSettings() }
+    }
+
+    // MARK: Mode description (shown when toggle is hidden)
+
+    @ViewBuilder
+    private var shareModeDescription: some View {
+        let key: LocalizedStringKey = switch shareMode {
+        case .all:
+            "recipe.share.all-mode"
+        case .with_images_and_steps:
+            (hasImage && hasSteps)
+                ? "recipe.share.with-images-steps-mode"
+                : "recipe.share.not-with-images-steps-mode"
+        case .one_by_one:
+            "recipe.detail.public"  // fallback; shouldn't happen since showToggle covers .one_by_one
+        }
+        Text(key)
+            .font(AppTypography.subheadline)
+            .lineSpacing(AppTypography.bodyLineSpacing)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    // MARK: Toggle binding
+
+    private var toggleBinding: Binding<Bool> {
+        Binding(
+            get: { isPublic },
+            set: { newValue in
+                Task { await setPublic(newValue) }
+            }
+        )
+    }
+
+    // MARK: Actions
+
+    private func loadSettings() async {
+        isOnline = syncService.connectionState == .connected
+        guard isOnline else { return }
+        if let data = try? await AccountAPI.fetchSharingSettings() {
+            let ppe = data.publicProfileEnabled ?? false
+            let mode = PublicShareMode(apiValue: data.shareMode) ?? .one_by_one
+            let uname = data.username ?? ""
+            publicProfileEnabled = ppe
+            shareMode = mode
+            username = uname
+            // Also update the local cache so next open is instant
+            SharingSettingsCache.save(
+                publicProfileEnabled: ppe,
+                shareMode: mode,
+                username: uname
+            )
+        }
+    }
+
+    private func setPublic(_ enabled: Bool) async {
+        guard isOnline else { return }
+        let previous = isPublic
+        isPublic = enabled
+        isUpdating = true
+        defer { isUpdating = false }
+        do {
+            try await syncService.updateRecipeIsPublic(enabled)
+        } catch {
+            isPublic = previous
+        }
+    }
+
+    private func copyLink(_ text: String) {
+        #if os(iOS)
+        UIPasteboard.general.string = text
+        #endif
+        dismiss()
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            ShoppingFeedback.postStatus(String(localized: "shopping.link-copied"))
         }
     }
 }

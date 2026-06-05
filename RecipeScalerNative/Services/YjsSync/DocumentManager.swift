@@ -303,7 +303,9 @@ actor DocumentManager {
     }
 
     func updateRecipeIsPublic(recipeId: String, isPublic: Bool) async throws {
-        try await mutateRecipe(recipeId: recipeId) { map, txn in
+        // isPublic is recipe metadata (sharing), not a content edit.
+        // It must be writable on v1/v2 too — web parity: web writes `recipeMap.set('isPublic', bool)` without a version gate.
+        try await mutateRecipeMetadata(recipeId: recipeId) { map, txn in
             map.insert(key: "isPublic", value: .bool(isPublic), txn: txn)
         }
     }
@@ -653,6 +655,34 @@ actor DocumentManager {
         guard RecipeEditPolicy.canEdit(version: version) else {
             throw RecipeEditError.legacyFormatReadOnly
         }
+
+        suppressRecipeObserverDepth += 1
+        defer { suppressRecipeObserverDepth -= 1 }
+
+        let now = touchedAt ?? Self.isoTimestamp()
+        try await doc.withWriteTransaction { _, txn in
+            guard let mapBranch = ytype_get(txn, "recipe") else {
+                throw RecipeEditError.documentNotLoaded
+            }
+            let map = YrsMap(branch: mapBranch)
+            try body(map, txn)
+            map.insert(key: "updatedAt", value: .string(now), txn: txn)
+        }
+
+        await persistSnapshot(docKey: key)
+        await deliverPendingLocalUpdate(recipeId: recipeId)
+    }
+
+    /// Writes a recipe metadata field (e.g. `isPublic`) without the v3-only edit gate.
+    /// These fields exist on v1/v2/v3 and are safe to mutate regardless of `nativeEditingEnabled`.
+    private func mutateRecipeMetadata(
+        recipeId: String,
+        touchedAt: String? = nil,
+        _ body: (YrsMap, OpaquePointer) throws -> Void
+    ) async throws {
+        guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
+        let key = "\(userId):recipe:\(recipeId)"
+        let doc = try await getOrCreateDoc(key: key)
 
         suppressRecipeObserverDepth += 1
         defer { suppressRecipeObserverDepth -= 1 }

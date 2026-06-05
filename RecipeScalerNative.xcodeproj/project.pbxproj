@@ -141,7 +141,8 @@
 		E5F60718293A4B70E425B385 /* RecipeDetailShareButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B708354CFBC /* RecipeDetailShareButton.swift */; };
 		E5F60718293A4B70CC88F2B7 /* ScreenAwakeToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7065B733F2 /* ScreenAwakeToggle.swift */; };
 		E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */; };
-		E5F60718293A4B70F68BDA71 /* AppThemePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */; };
+		E5F60718293A4B70DEADB002 /* SharingSettingsCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70DEADB001 /* SharingSettingsCache.swift */; };
+			E5F60718293A4B70F68BDA71 /* AppThemePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */; };
 		E5F60718293A4B70E6687EC7 /* AppLanguagePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */; };
 		E5F60718293A4B70E6687EC8 /* Bundle+Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094871 /* Bundle+Language.swift */; };
 		E5F60718293A4B70CD094881 /* LocalizedNavigationTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */; };
@@ -305,7 +306,8 @@
 		E5F60718293A4B708354CFBC /* RecipeDetailShareButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailShareButton.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7065B733F2 /* ScreenAwakeToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenAwakeToggle.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingsViewModel.swift; sourceTree = "<group>"; };
-		E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppThemePreference.swift; sourceTree = "<group>"; };
+					E5F60718293A4B70DEADB001 /* SharingSettingsCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingSettingsCache.swift; sourceTree = "<group>"; };
+			E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppThemePreference.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguagePreference.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094871 /* Bundle+Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Language.swift"; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedNavigationTitle.swift; sourceTree = "<group>"; };
@@ -609,6 +611,7 @@
 				E5F60718293A4B70898823B7 /* PublicURLBuilder.swift */,
 				E5F60718293A4B701A6B5339 /* ScreenAwakeController.swift */,
 				E5F60718293A4B7066BF06C8 /* TimerUtils.swift */,
+					E5F60718293A4B70DEADB001 /* SharingSettingsCache.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -864,6 +867,7 @@
 				E5F60718293A4B7005B62F9C /* TransientStatusBanner.swift in Sources */,
 				E5F60718293A4B701757B9DA /* ScreenAwakeController.swift in Sources */,
 				E5F60718293A4B703C4C8B66 /* TimerUtils.swift in Sources */,
+					E5F60718293A4B70DEADB002 /* SharingSettingsCache.swift in Sources */,
 				E5F60718293A4B709664372C /* TimerSyncService.swift in Sources */,
 				E5F60718293A4B70F59549AC /* DescriptionTimerStartPopover.swift in Sources */,
 				E5F60718293A4B703037711D /* DescriptionTimerPopoverState.swift in Sources */,

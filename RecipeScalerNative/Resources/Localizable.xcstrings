@@ -2489,7 +2489,6 @@
       }
     },
     "recipe.detail.public" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2829,7 +2828,6 @@
       }
     },
     "recipe.share" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2845,7 +2843,25 @@
         }
       }
     },
+    "recipe.share.all-mode" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe is public (all recipes are shared)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рецепт публичный (все рецепты публичны)"
+          }
+        }
+      }
+    },
     "recipe.share.link" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2857,6 +2873,56 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Поделиться ссылкой на рецепт"
+          }
+        }
+      }
+    },
+    "recipe.share.not-with-images-steps-mode" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe is private (only recipes with images and steps are shared)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рецепт приватный (публичны только рецепты с изображениями и шагами)"
+          }
+        }
+      }
+    },
+    "recipe.share.offline-message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go online to share"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выйдите в онлайн, чтобы поделиться"
+          }
+        }
+      }
+    },
+    "recipe.share.with-images-steps-mode" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe is public (recipes with images and steps are shared)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рецепт публичный (рецепты с изображениями и шагами публичны)"
           }
         }
       }
