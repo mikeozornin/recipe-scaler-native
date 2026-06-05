@@ -302,15 +302,15 @@ private struct AccountSeedPhraseSheet: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("account.secret-phrase")
-                                .font(AppTypography.headline)
+                                .font(AppTypography.body)
                             if let seed = try? authService.getSeedPhrase() {
                                 Text(seed)
-                                    .font(AppTypography.mono(AppTypography.subheadlineSize))
+                                    .font(AppTypography.mono(AppTypography.bodySize))
                                     .textSelection(.enabled)
-                                SeedQRCodeView(text: seed)
-                                Button("account.seed.copy") {
-                                    UIPasteboard.general.string = seed
+                                ShareLink(item: seed) {
+                                    Label("account.seed.copy", systemImage: "doc.on.doc")
                                 }
+                                SeedQRCodeView(text: seed)
                             } else {
                                 Text("account.no-seed")
                                     .font(AppTypography.body)
