@@ -8,10 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C45A57EDAC270C757266F8FA /* AuthService.swift */; };
+		D4E5F6A7B8C9D0E1F2A3B4C6 /* SharedAuthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* SharedAuthStore.swift */; };
 		0B897FD6085B1E738ED5302B /* NutritionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA2CE2F227482882F3F3C07 /* NutritionData.swift */; };
 		0E2206C1B11DB3E5FF441BD4 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80636F48545B3EEDBF6BA3C5 /* APIClient.swift */; };
 		10BCBB2DF22F499D73F18C5F /* YrsText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AAC7B96B6455F2AD36DDE9 /* YrsText.swift */; };
 		179F96A874E4A191DFC84958 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 0A5A136ADBF870BFBD1C3902 /* Localizable.xcstrings */; };
+		D4E5F6A7B8C9D0E1F2A3B4D2 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4D1 /* InfoPlist.xcstrings */; };
 		1A53619D3D6AF4AF6CD2CDE8 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 397972E3080EA1238A19CE9C /* KeychainAccess */; };
 		2D50E94419BB114AE83F8C41 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3297FDC9814D7043F3A05E04 /* Database.swift */; };
 		2DD6149EDF9BC8DA18E52FDD /* DocumentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D966868028D4B6CFD6DE498 /* DocumentManager.swift */; };
@@ -23,8 +25,11 @@
 		E5F60718293A4B7000000029 /* RecipeDocumentCacheStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000028 /* RecipeDocumentCacheStatus.swift */; };
 		E5F60718293A4B7000000025 /* RecipeImageDiskCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000024 /* RecipeImageDiskCache.swift */; };
 		E5F60718293A4B7000000027 /* RecipeImageDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000026 /* RecipeImageDecoder.swift */; };
+		8E988A9C80C04F009435D353 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EF2B3F0EB5A4599AE467921 /* DeepLinkRouter.swift */; };
+		D5796382221C4D669FEB7155 /* SpotlightIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96ECDC1C61704BD8AF111FBD /* SpotlightIndexer.swift */; };
 		E5F60718293A4B7000000012 /* RecipeCachedImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000013 /* RecipeCachedImageView.swift */; };
 		E5F60718293A4B7000000023 /* SyncStatusSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000022 /* SyncStatusSheet.swift */; };
+		E5F60718293A4B7000000030 /* PrivacyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000031 /* PrivacyView.swift */; };
 		E5F60718293A4B700000002B /* RecipeTitleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700000002A /* RecipeTitleTextField.swift */; };
 		42667C91A6DD160819A90989 /* YrsValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7951C990E84C9EFE9685023 /* YrsValue.swift */; };
 		4A7854A4A9AD73FD8FC6BA63 /* YrsError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A14EFAC19F16EB6D5C3B232 /* YrsError.swift */; };
@@ -174,12 +179,14 @@
 		REMINDERS0003AA0003BB03 /* RemindersMapStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0004AA0004BB04 /* RemindersMapStore.swift */; };
 		REMINDERS0005AA0005BB05 /* RemindersSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0006AA0006BB06 /* RemindersSyncService.swift */; };
 		REMINDERS0007AA0007BB07 /* RemindersListPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0008AA0008BB08 /* RemindersListPickerView.swift */; };
+		SCTA00002AA000200000002 /* ShortcutItemsUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		082DDFB9F64449A7BCF4D3FA /* WriteSyncState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WriteSyncState.swift; sourceTree = "<group>"; };
 		0913FBEDF877DA9B6F52F552 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0A5A136ADBF870BFBD1C3902 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		D4E5F6A7B8C9D0E1F2A3B4D1 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		1056FC9B5113FFE50B50E8AB /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
 		10B70ADFDAFB46C18446F390 /* YrsXCFramework.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = YrsXCFramework.xcframework; path = Frameworks/YrsXCFramework.xcframework; sourceTree = "<group>"; };
 		11665252A14BBEBAF0D694C4 /* RecipeTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeTimer.swift; sourceTree = "<group>"; };
@@ -232,11 +239,15 @@
 		E5F60718293A4B7000000028 /* RecipeDocumentCacheStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDocumentCacheStatus.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000024 /* RecipeImageDiskCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeImageDiskCache.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000026 /* RecipeImageDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeImageDecoder.swift; sourceTree = "<group>"; };
+		0EF2B3F0EB5A4599AE467921 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
+		96ECDC1C61704BD8AF111FBD /* SpotlightIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexer.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000022 /* SyncStatusSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusSheet.swift; sourceTree = "<group>"; };
+		E5F60718293A4B7000000031 /* PrivacyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B700000002A /* RecipeTitleTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeTitleTextField.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000013 /* RecipeCachedImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeCachedImageView.swift; sourceTree = "<group>"; };
 		C38C9866A5142170D549D605 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		C45A57EDAC270C757266F8FA /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		D4E5F6A7B8C9D0E1F2A3B4C5 /* SharedAuthStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAuthStore.swift; sourceTree = "<group>"; };
 		C46C342D35721B88D83D58BB /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		C72EF414B1E9D2F706A7CE30 /* RecipeScalerNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RecipeScalerNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CC1101AABB000200000001 /* SyncEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncEventHandler.swift; sourceTree = "<group>"; };
@@ -349,6 +360,7 @@
 		REMINDERS0004AA0004BB04 /* RemindersMapStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersMapStore.swift; sourceTree = "<group>"; };
 		REMINDERS0006AA0006BB06 /* RemindersSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersSyncService.swift; sourceTree = "<group>"; };
 		REMINDERS0008AA0008BB08 /* RemindersListPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersListPickerView.swift; sourceTree = "<group>"; };
+		SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutItemsUpdater.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -395,6 +407,7 @@
 			isa = PBXGroup;
 			children = (
 				0A5A136ADBF870BFBD1C3902 /* Localizable.xcstrings */,
+				D4E5F6A7B8C9D0E1F2A3B4D1 /* InfoPlist.xcstrings */,
 				730272E874E00B45C15ED736 /* Fonts */,
 				E5F60718293A4B700000007E /* DescriptionEditor */,
 			);
@@ -441,6 +454,7 @@
 				F0E7DB29212A4BCAA61019F1 /* RecipeEditToolbar.swift */,
 				480DCDACDCA0402582631501 /* RecipeLegacyBanner.swift */,
 				B2FD0DF0B71C1B50552D1B2F /* RecipeListView.swift */,
+				E5F60718293A4B7000000031 /* PrivacyView.swift */,
 				E5F60718293A4B7000000022 /* SyncStatusSheet.swift */,
 				E5F60718293A4B700000002A /* RecipeTitleTextField.swift */,
 				E5F60718293A4B7000000013 /* RecipeCachedImageView.swift */,
@@ -640,6 +654,7 @@
 				E5F60718293A4B703691736C /* ShoppingListPlainText.swift */,
 				E5F60718293A4B7024E554ED /* ShoppingSmokeTest.swift */,
 				E5F60718293A4B70898823B7 /* PublicURLBuilder.swift */,
+				0EF2B3F0EB5A4599AE467921 /* DeepLinkRouter.swift */,
 				E5F60718293A4B701A6B5339 /* ScreenAwakeController.swift */,
 				E5F60718293A4B7066BF06C8 /* TimerUtils.swift */,
 				E5F60718293A4B70DEADB001 /* SharingSettingsCache.swift */,
@@ -647,6 +662,7 @@
 				E5F60718293A4B7099AAB003 /* ImportPhotoValidator.swift */,
 				E5F60718293A4B7099AAB005 /* ImportErrorLocalizer.swift */,
 				REMINDERS0002AA0002BB02 /* RemindersSyncPreferences.swift */,
+				SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -664,12 +680,14 @@
 				E5F60718293A4B70A0E4855E /* AssistantAPI.swift */,
 				E5F60718293A4B705F98774E /* TelegramAPI.swift */,
 				C45A57EDAC270C757266F8FA /* AuthService.swift */,
+				D4E5F6A7B8C9D0E1F2A3B4C5 /* SharedAuthStore.swift */,
 				BDFDC56713A0842CA6B33517 /* ImageCacheService.swift */,
 				E5F60718293A4B7000000011 /* RecipeImageService.swift */,
 				E5F60718293A4B7000000020 /* RecipeImageCacheStatus.swift */,
 				E5F60718293A4B7000000028 /* RecipeDocumentCacheStatus.swift */,
 				E5F60718293A4B7000000024 /* RecipeImageDiskCache.swift */,
 				E5F60718293A4B7000000026 /* RecipeImageDecoder.swift */,
+				96ECDC1C61704BD8AF111FBD /* SpotlightIndexer.swift */,
 				1D90E06DB664829F1CEFCCD5 /* TimerManager.swift */,
 				E5F60718293A4B70A0433F17 /* TimerSyncService.swift */,
 				CC0001AA0001BB0001CC0001 /* PushRegistrationService.swift */,
@@ -759,6 +777,7 @@
 			files = (
 				9FDEE4997A883F4D9F33BC39 /* Assets.xcassets in Resources */,
 				179F96A874E4A191DFC84958 /* Localizable.xcstrings in Resources */,
+				D4E5F6A7B8C9D0E1F2A3B4D2 /* InfoPlist.xcstrings in Resources */,
 				556AAEB995E9C8AE4A19A4C8 /* MartianGrotesk-NrLt.otf in Resources */,
 				A71A768B1F09607B3D20EF78 /* MartianGrotesk-NrMd.otf in Resources */,
 				C7880733D37729C2239DFD52 /* MartianGrotesk-StdLt.otf in Resources */,
@@ -785,6 +804,7 @@
 				E5F60718293A4B70000A003 /* AppSymbol.swift in Sources */,
 				E5F60718293A4B70000B003 /* RecipeSymbol.swift in Sources */,
 				0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */,
+				D4E5F6A7B8C9D0E1F2A3B4C6 /* SharedAuthStore.swift in Sources */,
 				4CE1EBBF8B610A4B091090FF /* AuthView.swift in Sources */,
 				897E98ADC8B4B1C64BF6AA54 /* Config.swift in Sources */,
 				72BCE454FF7ECB782A54D4ED /* ContentView.swift in Sources */,
@@ -794,6 +814,8 @@
 				E5F60718293A4B7000000029 /* RecipeDocumentCacheStatus.swift in Sources */,
 				E5F60718293A4B7000000025 /* RecipeImageDiskCache.swift in Sources */,
 				E5F60718293A4B7000000027 /* RecipeImageDecoder.swift in Sources */,
+				D5796382221C4D669FEB7155 /* SpotlightIndexer.swift in Sources */,
+				8E988A9C80C04F009435D353 /* DeepLinkRouter.swift in Sources */,
 				E5F60718293A4B7000000012 /* RecipeCachedImageView.swift in Sources */,
 				5594D8A196C0A1A13D3EFEBB /* Ingredient.swift in Sources */,
 
@@ -803,6 +825,7 @@
 				6DA6652C9384DA29190921B5 /* RecipeDetailView.swift in Sources */,
 				99B7BAFEF20D4EBBF5CAC721 /* RecipeListView.swift in Sources */,
 				E5F60718293A4B7000000023 /* SyncStatusSheet.swift in Sources */,
+				E5F60718293A4B7000000030 /* PrivacyView.swift in Sources */,
 				E5F60718293A4B700000002B /* RecipeTitleTextField.swift in Sources */,
 				B52E1B8024F0FF293817C6F4 /* RecipeListViewModel.swift in Sources */,
 				69CA5B8741F33C2F92CD0048 /* RecipeScalerNativeApp.swift in Sources */,
@@ -928,6 +951,7 @@
 				REMINDERS0003AA0003BB03 /* RemindersMapStore.swift in Sources */,
 				REMINDERS0005AA0005BB05 /* RemindersSyncService.swift in Sources */,
 				REMINDERS0007AA0007BB07 /* RemindersListPickerView.swift in Sources */,
+				SCTA00002AA000200000002 /* ShortcutItemsUpdater.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

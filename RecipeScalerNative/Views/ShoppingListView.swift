@@ -180,7 +180,8 @@ struct ShoppingListView: View {
             )
             .appBody()
             .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .center)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, minHeight: 176, alignment: .center)
             .listRowBackground(Color.clear)
             addItemRow
         }

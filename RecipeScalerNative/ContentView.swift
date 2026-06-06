@@ -6,6 +6,7 @@ struct ContentView: View {
     @StateObject private var authService = AuthService.shared
     @StateObject private var syncService: YjsSyncService
     @StateObject private var remindersService: RemindersSyncService
+    @StateObject private var spotlightIndexer: SpotlightIndexer
     @State private var showSplash = true
     @State private var appTheme = AppThemePreference.current
     @State private var appLanguage = AppLanguagePreference.current
@@ -19,8 +20,15 @@ struct ContentView: View {
         let database = try! YrsDatabase()
         let store = YDocStore(dbQueue: database.dbQueue)
         let mapStore = RemindersMapStore(dbQueue: database.dbQueue)
-        _syncService = StateObject(wrappedValue: YjsSyncService(store: store))
+        let sync = YjsSyncService(store: store)
+        _syncService = StateObject(wrappedValue: sync)
         _remindersService = StateObject(wrappedValue: RemindersSyncService(mapStore: mapStore))
+        _spotlightIndexer = StateObject(wrappedValue: SpotlightIndexer(syncService: sync))
+        // Sync APIClient credentials from SharedAuthStore so that Share/Action
+        // extensions can configure the same client via App Group UserDefaults.
+        if let sharedUserId = SharedAuthStore.userId {
+            APIClient.shared.configure(userId: sharedUserId)
+        }
         // #region agent log
         AgentSyncDebugLog.sync(
             location: "ContentView.init",
@@ -126,6 +134,10 @@ struct ContentView: View {
         .onChange(of: authService.isAuthenticated) { _, authenticated in
             if !authenticated {
                 syncService.stop()
+                Task { @MainActor in
+                    spotlightIndexer.stop()
+                    await spotlightIndexer.clearAll()
+                }
             }
         }
         #endif
@@ -153,6 +165,7 @@ struct ContentView: View {
             .environmentObject(syncService)
             .environmentObject(TimerManager.shared)
             .environmentObject(remindersService)
+            .environmentObject(spotlightIndexer)
             .onAppear {
                 TimerManager.shared.configure(modelContext: modelContext)
             }
@@ -168,9 +181,16 @@ struct ContentView: View {
                 if let userId = effectiveUserId {
                     await syncService.start(userId: userId)
                     remindersService.attach(to: syncService)
+                    spotlightIndexer.start()
+                    ShortcutItemsUpdater.update(from: syncService.collectionEntries)
                 } else {
                     syncService.stop()
+                    spotlightIndexer.stop()
+                    await spotlightIndexer.clearAll()
                 }
+            }
+            .onChange(of: syncService.collectionEntries) { _, entries in
+                ShortcutItemsUpdater.update(from: entries)
             }
     }
 }

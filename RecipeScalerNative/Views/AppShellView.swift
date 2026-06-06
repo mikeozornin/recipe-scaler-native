@@ -47,6 +47,7 @@ private struct AppTabBarLabel: View {
 struct AppShellView: View {
     @EnvironmentObject private var syncService: YjsSyncService
     @StateObject private var timerManager = TimerManager.shared
+    @StateObject private var deepLinkRouter = DeepLinkRouter.shared
     @State private var selectedTab: AppTab = .recipes
     @State private var previousTab: AppTab = .recipes
     @State private var showImportSheet = false
@@ -57,6 +58,7 @@ struct AppShellView: View {
     @State private var transientStatusMessage: String?
     @State private var transientStatusDismissTask: Task<Void, Never>?
     @State private var mobileTimerPanelCollapsed = true
+    @State private var spotlightOpenRecipeId: String?
 
     var body: some View {
         tabView
@@ -143,14 +145,45 @@ struct AppShellView: View {
                 }
             }
         }
+        .onReceive(deepLinkRouter.$pending) { link in
+            guard let link else { return }
+            handleDeepLink(link)
+        }
+        .onChange(of: syncService.collectionEntries) { _, entries in
+            // If a Spotlight open is pending and the recipe just landed in the
+            // collection, navigate now. Covers both first-sync after cold start
+            // and offline → online transitions.
+            guard let pendingId = spotlightOpenRecipeId else { return }
+            if entries.contains(where: { $0.id == pendingId && !$0.deleted }) {
+                spotlightOpenRecipeId = nil
+                selectedTab = .recipes
+                recipesPath.append(pendingId)
+            }
+        }
         #if DEBUG
         .onAppear {
             openDebugTabIfNeeded()
             if DebugLaunchOptions.showAssistant {
                 showAssistant = true
             }
+            consumePendingDeepLinkIfNeeded()
+        }
+        #else
+        .onAppear {
+            consumePendingDeepLinkIfNeeded()
         }
         #endif
+        .onReceive(NotificationCenter.default.publisher(for: .openRecipeRequested)) { _ in
+            consumePendingDeepLinkIfNeeded()
+        }
+    }
+
+    /// Open the recipe requested via `recipe-scaler://recipe/{id}` deep link,
+    /// if any. Called on appear (cold start) and on `.openRecipeRequested` (warm start).
+    private func consumePendingDeepLinkIfNeeded() {
+        guard let id = DeepLinkRouter.consumePendingRecipeId() else { return }
+        selectedTab = .recipes
+        recipesPath.append(id)
     }
 
     private var mobileTimerPanel: some View {
@@ -232,6 +265,39 @@ struct AppShellView: View {
 
     private func postTransientStatus(_ message: String) {
         NotificationCenter.default.post(name: .shoppingStatusMessage, object: message)
+    }
+
+    // MARK: - Deep linking (Spotlight, future URL scheme / Universal Links)
+
+    private func handleDeepLink(_ link: DeepLink) {
+        switch link {
+        case .openRecipe(let recipeId):
+            selectedTab = .recipes
+            if syncService.collectionEntries.contains(where: { $0.id == recipeId && !$0.deleted }) {
+                spotlightOpenRecipeId = nil
+                recipesPath.append(recipeId)
+            } else {
+                // Recipe not yet in the loaded collection (cold start / offline
+                // → online). Stash the id; `onChange(collectionEntries)` will
+                // append it once it lands.
+                spotlightOpenRecipeId = recipeId
+            }
+            deepLinkRouter.clear()
+        case .addToShopping(let recipeId):
+            Task { @MainActor in
+                do {
+                    let added = try await syncService.addWholeRecipeToShoppingList(recipeId: recipeId)
+                    if added > 0 {
+                        ShoppingFeedback.postStatus(ShoppingAddFeedback.message(for: added))
+                    } else {
+                        ShoppingFeedback.postStatus(String(localized: "shopping.no-items-to-add"))
+                    }
+                } catch {
+                    ShoppingFeedback.postStatus(error.localizedDescription)
+                }
+            }
+            deepLinkRouter.clear()
+        }
     }
 
     #if DEBUG

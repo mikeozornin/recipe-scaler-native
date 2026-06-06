@@ -4,6 +4,7 @@
 //
 //
 
+import CoreSpotlight
 import SwiftUI
 import SwiftData
 import UIKit
@@ -21,6 +22,22 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         print("[APNs] Registration failed: \(error.localizedDescription)")
+    }
+
+    // MARK: - Home Screen Quick Actions
+
+    func application(
+        _ application: UIApplication,
+        performActionFor shortcutItem: UIApplicationShortcutItem,
+        completionHandler: @escaping (Bool) -> Void
+    ) {
+        guard shortcutItem.type == ShortcutItemType.openRecipe,
+              let recipeId = shortcutItem.userInfo?["recipeId"] as? String else {
+            completionHandler(false)
+            return
+        }
+        DeepLinkRouter.shared.handle(.openRecipe(recipeId: recipeId))
+        completionHandler(true)
     }
 }
 
@@ -65,8 +82,29 @@ struct RecipeScalerNativeApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onOpenURL { url in
+                    DeepLinkRouter.handle(url)
+                }
+                .onContinueUserActivity(CSSearchableItemActionType) { activity in
+                    handleSpotlightActivity(activity)
+                }
         }
         .modelContainer(sharedModelContainer)
     }
 
+    /// Decode Spotlight tap: card itself → `.openRecipe`, action button → `.addToShopping`.
+    private func handleSpotlightActivity(_ activity: NSUserActivity) {
+        guard let recipeId = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
+              !recipeId.isEmpty else {
+            return
+        }
+        if let actionId = activity.userInfo?[CSActionIdentifier] as? String,
+           actionId == SpotlightIndexer.actionAddToShopping {
+            DeepLinkRouter.shared.handle(.addToShopping(recipeId: recipeId))
+        } else {
+            DeepLinkRouter.shared.handle(.openRecipe(recipeId: recipeId))
+        }
+    }
+
 }
+

@@ -20,6 +20,17 @@
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>ru.recipescaler.RecipeScalerNative</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>recipe-scaler</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
@@ -77,5 +88,16 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>CoreSpotlightActions</key>
+	<array>
+		<dict>
+			<key>CoreSpotlightActionIdentifier</key>
+			<string>addToShopping</string>
+			<key>CoreSpotlightActionTitle</key>
+			<string>spotlight.action.addToShopping.title</string>
+			<key>CoreSpotlightActionSystemImageName</key>
+			<string>cart.badge.plus</string>
+		</dict>
+	</array>
 </dict>
 </plist>

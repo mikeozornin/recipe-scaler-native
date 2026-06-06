@@ -121,6 +121,9 @@ class AuthService: ObservableObject {
             deleteTokenFromUserDefaults()
 
             apiClient.configure(userId: restoredUserId)
+
+            // Mirror to App Group so Share/Action extensions can read it.
+            SharedAuthStore.userId = restoredUserId
         }
     }
 
@@ -254,6 +257,9 @@ class AuthService: ObservableObject {
         // Configure API client with user id
         apiClient.configure(userId: data.user.id)
 
+        // Mirror to App Group so Share/Action extensions can read it.
+        SharedAuthStore.userId = data.user.id
+
         return (userId: data.user.id, seedPhrase: data.seedPhrase, token: "")
     }
 
@@ -300,6 +306,9 @@ class AuthService: ObservableObject {
         // Configure API client with user id
         apiClient.configure(userId: data.user.id)
 
+        // Mirror to App Group so Share/Action extensions can read it.
+        SharedAuthStore.userId = data.user.id
+
         return (userId: data.user.id, token: "")
     }
 
@@ -320,6 +329,9 @@ class AuthService: ObservableObject {
         // Reset API client
         apiClient.configure(authToken: nil)
         apiClient.configure(userId: nil)
+
+        // Clear the App Group mirror so extensions can no longer authenticate.
+        SharedAuthStore.clear()
     }
 
     /// Get the current authentication status

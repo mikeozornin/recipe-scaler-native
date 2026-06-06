@@ -3129,6 +3129,406 @@
         }
       }
     },
+    "privacy.aiServices.1" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Both when importing recipes from the internet and when marking up your text, we use external LLM services (via OpenRouter)."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как при импорте рецептов из интернета, так и при разметке вашего текста мы используем внешние LLM-сервисы (через OpenRouter)."
+          }
+        }
+      }
+    },
+    "privacy.aiServices.2" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We only use models that promise not to save, process, or use your data for training. This costs more than selling your data to them, but we don't do that."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Используются только модели, которые обещают не сохранять, не обрабатывать и не использовать для тренировки ваши данные. Это стоит дороже, чем продать им ваши данные, но мы ваши данные не продаем."
+          }
+        }
+      }
+    },
+    "privacy.aiServices.3" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe text is sent to models for processing, but is not stored on our servers. Recipe URLs are also not stored anywhere except in your recipe text."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Текст рецептов передается в модели для обработки, но не сохраняется на наших серверах. Адреса рецептов тоже не сохраняются нигде, кроме вашего текста рецепта."
+          }
+        }
+      }
+    },
+    "privacy.aiServices.4" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When importing from a recipe site, our server connects to it. Therefore, in normal circumstances, the recipe site won't know anything about you. As a consequence, you won't be able to save a recipe from a non-public site."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "При импорте рецепта с внешнего сайта к нему подключается наш сервер. Поэтому в обычной ситуации сайт с рецептами не будет о вас ничего знать. Как следствие, сохранить рецепт с непубличного сайта не получится."
+          }
+        }
+      }
+    },
+    "privacy.feedback.text" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If you feel something is missing here or have questions, write to"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если вам здесь чего-то не хватает или остались вопросы, напишите на"
+          }
+        }
+      }
+    },
+    "privacy.feedback.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feedback"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обратная связь"
+          }
+        }
+      }
+    },
+    "privacy.intro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Here are some important points about privacy and your data storage. This is not a legal document, but what we think is important to tell you."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вот некоторые важные моменты о приватности и хранении ваших данных. Это не юридический документ, а то, что нам кажется важным рассказать."
+          }
+        }
+      }
+    },
+    "privacy.link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy & Security"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Конфиденциальность"
+          }
+        }
+      }
+    },
+    "privacy.point.1" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The app communicates with the server over a secure (HTTPS) connection."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приложение общается с сервером по защищенному (HTTPS) соединению."
+          }
+        }
+      }
+    },
+    "privacy.point.2" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All recipes are first stored in your browser, then synchronized with the server. Here's what else the server knows about you:"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все рецепты сначала сохраняются в вашем браузере, а затем синхронизируются с сервером. Вот что ещё сервер знает о вас:"
+          }
+        }
+      }
+    },
+    "privacy.point.3" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IP address, user-agent and other web session data are not logged intentionally, though they may appear in web server logs. After log rotation, the data is not stored, aggregated, or analyzed. Your app actions are not stored or used for analytics. We have no analytics or error tracking systems."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Данные об IP-адресе, user-agent и другие данные веб-сессий не журналируются намеренно, хотя и могут попадать в журналы веб-сервера. После ротации журналов данные не сохраняются, не агрегируются и не анализируются. Ваши действия с приложением не сохраняются и не используются для аналитики. У нас нет ни аналитики, ни даже автоматической системы сбора ошибок."
+          }
+        }
+      }
+    },
+    "privacy.point.4" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe import and markup using AI services."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт и разметка рецептов с помощью ИИ-сервисов."
+          }
+        }
+      }
+    },
+    "privacy.point.5" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your recipes are not analyzed or sold to Michelin restaurants."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши рецепты не анализируются и не продаются мишленовским ресторанам."
+          }
+        }
+      }
+    },
+    "privacy.point.6" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If you want, we can delete all your data. You'll need to do part yourself: log out on all devices except one. Then send a code phrase to mike.ozornin@gmail.com. We'll delete all your data. You can even verify us - log in with the same phrase and see an empty account."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если хотите, можем удалить все ваши данные. Часть нужно будет сделать вам самим: вылогиниться на всех устройствах, кроме одного. Потом пришлите кодовую фразу на mike.ozornin@gmail.com. Мы удалим все ваши данные. Вы даже сможете нас проверить - зайти под той же фразой и увидеть пустой аккаунт."
+          }
+        }
+      }
+    },
+    "privacy.point.7" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We don't use cookies, but store data in localStorage and IndexedDB. This data is stored on your device. If you delete localStorage data, you'll be logged out on that device, but recipes on the server will not be deleted."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы не используем куки, но храним данные в localStorage и IndexedDB. Эти данные хранятся на вашем устройстве. Если вы удалите данные из localStorage, вы разлогинитесь на устройстве, но рецепты на сервере удалены не будут."
+          }
+        }
+      }
+    },
+    "privacy.point.8" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Push notifications are delivered through the standard browser mechanism, without using third-party services. What Google, Apple, and Mozilla do with push notification text while delivering it, we don't know."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пуши доставляются через стандартный браузерный механизм, без использования сторонних сервисов. Что Гугл, Эпл и Мозилла делают с текстом пушей, пока доставляют их, мы не знаем."
+          }
+        }
+      }
+    },
+    "privacy.point.9" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The author is primarily a designer, though he understands a bit about information security. Therefore, the security system can be hacked. Don't store passwords, bitcoin wallet keys, or that famous Coca-Cola recipe in your recipes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автор - в первую очередь дизайнер, хоть и чуть-чуть понимает в ИБ. Поэтому систему безопасности можно взломать. Не храните в рецептах пароли, ключи от биткоин-кошелька или тот самый рецепт кока-колы."
+          }
+        }
+      }
+    },
+    "privacy.serverKnows.1" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your random identifier - something like ff19d164-4a82-4775-9b1f-1e7f8115d4aa."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш случайный идентификатор - что-то типа ff19d164-4a82-4775-9b1f-1e7f8115d4aa."
+          }
+        }
+      }
+    },
+    "privacy.serverKnows.2" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your recipes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши рецепты"
+          }
+        }
+      }
+    },
+    "privacy.serverKnows.3" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selected app language"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбранный язык приложения"
+          }
+        }
+      }
+    },
+    "privacy.serverKnows.4" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running timers. Timer data is deleted immediately after you delete the timer in the app."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запущенные таймеры. Данные о таймерах удаляются сразу же после удаления таймера в приложении."
+          }
+        }
+      }
+    },
+    "privacy.serverKnows.5" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parameters that you set in the app."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Параметры, которые вы установили в приложении."
+          }
+        }
+      }
+    },
+    "privacy.serverKnows.6" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Service identifiers if you enabled push notifications."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Служебные идентификаторы для push-уведомлений, если вы их включили."
+          }
+        }
+      }
+    },
+    "privacy.serverKnows.7" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telegram connection data (Telegram user ID, username, connection date) if you linked your Telegram account."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Данные о подключении Telegram (ID пользователя в Telegram, имя пользователя, дата подключения), если вы привязали аккаунт Telegram."
+          }
+        }
+      }
+    },
+    "privacy.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy & Security"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Конфиденциальность и безопасность"
+          }
+        }
+      }
+    },
     "Public profile (read-only) — open on web for full parity" : {
 
     },
@@ -3882,6 +4282,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "В список покупок"
+          }
+        }
+      }
+    },
+    "spotlight.action.addToShopping.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Shopping"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить в покупки"
           }
         }
       }

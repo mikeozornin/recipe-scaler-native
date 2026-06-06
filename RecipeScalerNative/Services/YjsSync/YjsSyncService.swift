@@ -592,6 +592,19 @@ final class YjsSyncService: ObservableObject {
         try? await store.deleteAllOfflineQueue()
     }
 
+    /// Read-only access to a recipe snapshot without activating it as the current
+    /// editing session. Used by Spotlight indexer to pull `description` and
+    /// ingredient names for indexing. Returns nil if the snapshot is not yet
+    /// synced locally — the caller may retry on the next reindex tick.
+    func peekRecipeData(recipeId: String) async -> RecipeData? {
+        guard let userId else { return nil }
+        _ = try? await documentManager.getOrCreateDoc(key: docKeyFor(recipeId: recipeId))
+        return try? await documentManager.readRecipeData(recipeId: recipeId, userId: userId)
+    }
+
+    /// The current user id, exposed read-only for indexing layers (Spotlight, etc.).
+    var currentUserId: String? { userId }
+
     var currentDeviceId: String { deviceId }
 
     /// Stop synchronization and clean up.

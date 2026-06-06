@@ -365,6 +365,15 @@ struct AccountView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
+            NavigationLink {
+                PrivacyView()
+                    .localizedNavigationTitle("privacy.title")
+                    .navigationBarTitleDisplayMode(.inline)
+            } label: {
+                Text("privacy.link")
+                    .appBody()
+            }
+
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
                 LabeledContent("account.version", value: version)
             }

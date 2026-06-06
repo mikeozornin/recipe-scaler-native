@@ -2,7 +2,7 @@ import Foundation
 
 /// Recipe metadata entry from the collection Y.Doc.
 /// Read from `Y.Array('recipes')` → `Y.Map` per entry.
-struct CollectionEntry: Identifiable, Sendable {
+struct CollectionEntry: Identifiable, Sendable, Equatable {
     let id: String
     let name: String
     let color: String
