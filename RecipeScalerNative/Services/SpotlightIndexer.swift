@@ -106,9 +106,7 @@ final class SpotlightIndexer: ObservableObject {
 
         let attrs = CSSearchableItemAttributeSet(itemContentType: UTType.text.identifier)
         attrs.title = recipe.name
-        // Description is HTML for v3; spotlight shows it as plain text. Strip tags
-        // so the snippet is readable. For nil description we leave it empty.
-        attrs.contentDescription = Self.plainText(fromHTML: recipe.description)
+        attrs.contentDescription = Self.buildPreview(recipe: recipe)
         attrs.identifier = recipe.id
 
         let ingredientKeywords = recipe.ingredients
@@ -158,17 +156,34 @@ final class SpotlightIndexer: ObservableObject {
         return f
     }()
 
-    /// Best-effort HTML → plain text for Spotlight snippets.
+    /// Build a readable preview string for the Spotlight card.
+    ///
+    /// Prefers a structured ingredient list (one per line, "amount unit name"),
+    /// falling back to the plain-text HTML description when no ingredients exist.
+    private static func buildPreview(recipe: RecipeData) -> String? {
+        let items = recipe.ingredients
+            .filter { !$0.isSeparator && !$0.name.isEmpty }
+            .prefix(8)
+            .map { ingredient -> String in
+                let parts = [ingredient.amount, ingredient.unit, ingredient.name]
+                    .filter { !$0.isEmpty }
+                return parts.joined(separator: " ")
+            }
+        if !items.isEmpty {
+            let suffix = recipe.ingredients.count > 8 ? " …" : ""
+            return items.joined(separator: "\n") + suffix
+        }
+        return plainText(fromHTML: recipe.description)
+    }
+
+    /// Best-effort HTML → plain text fallback.
     private static func plainText(fromHTML html: String?) -> String? {
         guard let html, !html.isEmpty else { return nil }
-        // Strip tags. Spotlight snippet is plain text — keeping HTML makes the
-        // preview unreadable and wastes the limited visible space.
         let stripped = html.replacingOccurrences(
             of: "<[^>]+>",
             with: " ",
             options: .regularExpression
         )
-        // Collapse whitespace.
         let collapsed = stripped.replacingOccurrences(
             of: "\\s+",
             with: " ",

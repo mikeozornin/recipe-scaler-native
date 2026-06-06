@@ -62,7 +62,11 @@ final class LocalizationConsistencyTests: XCTestCase {
             "account.reminders.list.label",
             "account.reminders.list.create-dedicated",
             "account.reminders.list.existing-header",
-            "account.reminders.note.from"
+            "account.reminders.note.from",
+            "privacy.title",
+            "privacy.link",
+            "privacy.serverKnows.1",
+            "privacy.aiServices.1"
         ]
 
         for lang in ["en", "ru"] {

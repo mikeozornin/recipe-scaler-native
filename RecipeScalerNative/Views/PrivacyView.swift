@@ -9,8 +9,12 @@
 import SwiftUI
 
 struct PrivacyView: View {
+    @Environment(\.locale) private var locale
+
     var body: some View {
-        ScrollView {
+        // Read locale so the view re-evaluates on language switch.
+        _ = locale
+        return ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 introSection
                 pointsSection
@@ -57,13 +61,15 @@ struct PrivacyView: View {
         }
     }
 
-    @ViewBuilder
-    private func point(number: Int, key: LocalizedStringKey) -> some View {
-        Text(verbatim: "\(number). ")
-            .font(AppTypography.body)
-            .fontWeight(.medium)
-        + Text(key)
-            .appBody()
+    private func point(number: Int, key: String) -> some View {
+        HStack(alignment: .top, spacing: 4) {
+            Text(verbatim: "\(number).")
+                .font(AppTypography.body)
+                .fontWeight(.medium)
+                .frame(minWidth: 20, alignment: .trailing)
+            Text(verbatim: localized(key))
+                .appBody()
+        }
     }
 
     // MARK: - Sub-lists
@@ -72,7 +78,13 @@ struct PrivacyView: View {
     private var serverKnowsList: some View {
         VStack(alignment: .leading, spacing: 6) {
             ForEach(1...7, id: \.self) { index in
-                bullet(key: LocalizedStringKey("privacy.serverKnows.\(index)"))
+                HStack(alignment: .top, spacing: 6) {
+                    Text(verbatim: "\u{2022}")
+                        .font(AppTypography.body)
+                        .frame(minWidth: 12, alignment: .center)
+                    Text(verbatim: localized("privacy.serverKnows.\(index)"))
+                        .appBody()
+                }
             }
         }
         .padding(.leading, 24)
@@ -82,22 +94,17 @@ struct PrivacyView: View {
     private var aiServicesList: some View {
         VStack(alignment: .leading, spacing: 6) {
             ForEach(1...4, id: \.self) { index in
-                Text(verbatim: "4.\(index). ")
-                    .font(AppTypography.body)
-                    .fontWeight(.medium)
-                + Text(LocalizedStringKey("privacy.aiServices.\(index)"))
-                    .appBody()
+                HStack(alignment: .top, spacing: 4) {
+                    Text(verbatim: "4.\(index).")
+                        .font(AppTypography.body)
+                        .fontWeight(.medium)
+                        .frame(minWidth: 28, alignment: .trailing)
+                    Text(verbatim: localized("privacy.aiServices.\(index)"))
+                        .appBody()
+                }
             }
         }
         .padding(.leading, 24)
-    }
-
-    @ViewBuilder
-    private func bullet(key: LocalizedStringKey) -> some View {
-        Text(verbatim: "\u{2022} ")
-            .font(AppTypography.body)
-        + Text(key)
-            .appBody()
     }
 
     // MARK: - Feedback
@@ -113,12 +120,22 @@ struct PrivacyView: View {
 
             (
                 Text("privacy.feedback.text")
-                    .appBody()
+                    .font(AppTypography.body)
                 + Text(verbatim: " ")
                 + Text("[mike.ozornin@gmail.com](mailto:mike.ozornin@gmail.com)")
-                    .appBody()
+                    .font(AppTypography.body)
             )
         }
+    }
+
+    // MARK: - Helpers
+
+    /// Resolves a localization key through `Bundle.currentLocalizedString`
+    /// which honors the runtime language override (`AppLanguagePreference`).
+    /// `LocalizedStringKey(stringInterpolation:)` with variables does NOT
+    /// pick up the bundle override — hence this helper.
+    private func localized(_ key: String) -> String {
+        Bundle.currentLocalizedString(key)
     }
 }
 

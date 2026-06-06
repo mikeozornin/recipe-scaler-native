@@ -7,6 +7,9 @@
     "·" : {
 
     },
+    "[mike.ozornin@gmail.com](mailto:mike.ozornin@gmail.com)" : {
+
+    },
     "@%@" : {
 
     },
@@ -3130,6 +3133,7 @@
       }
     },
     "privacy.aiServices.1" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3146,6 +3150,7 @@
       }
     },
     "privacy.aiServices.2" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3162,6 +3167,7 @@
       }
     },
     "privacy.aiServices.3" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3178,6 +3184,7 @@
       }
     },
     "privacy.aiServices.4" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3258,6 +3265,7 @@
       }
     },
     "privacy.point.1" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3274,6 +3282,7 @@
       }
     },
     "privacy.point.2" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3290,6 +3299,7 @@
       }
     },
     "privacy.point.3" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3306,6 +3316,7 @@
       }
     },
     "privacy.point.4" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3322,6 +3333,7 @@
       }
     },
     "privacy.point.5" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3338,6 +3350,7 @@
       }
     },
     "privacy.point.6" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3354,6 +3367,7 @@
       }
     },
     "privacy.point.7" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3370,6 +3384,7 @@
       }
     },
     "privacy.point.8" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3386,6 +3401,7 @@
       }
     },
     "privacy.point.9" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3402,6 +3418,7 @@
       }
     },
     "privacy.serverKnows.1" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3418,6 +3435,7 @@
       }
     },
     "privacy.serverKnows.2" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3434,6 +3452,7 @@
       }
     },
     "privacy.serverKnows.3" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3450,6 +3469,7 @@
       }
     },
     "privacy.serverKnows.4" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3466,6 +3486,7 @@
       }
     },
     "privacy.serverKnows.5" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3482,6 +3503,7 @@
       }
     },
     "privacy.serverKnows.6" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3498,6 +3520,7 @@
       }
     },
     "privacy.serverKnows.7" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3514,6 +3537,7 @@
       }
     },
     "privacy.title" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4286,23 +4310,6 @@
         }
       }
     },
-    "spotlight.action.addToShopping.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to Shopping"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавить в покупки"
-          }
-        }
-      }
-    },
     "shopping.empty-to-buy" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4621,6 +4628,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Список покупок"
+          }
+        }
+      }
+    },
+    "spotlight.action.addToShopping.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Shopping"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить в покупки"
           }
         }
       }
