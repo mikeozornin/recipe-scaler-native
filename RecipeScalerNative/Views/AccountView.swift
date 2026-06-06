@@ -15,6 +15,7 @@ struct AccountView: View {
     @State private var showLoginOnDevice = false
     @State private var appLanguage: AppLanguagePreference = .current
     @State private var isTelegramConnected = false
+    @State private var showingAbout = false
 
     var body: some View {
         NavigationStack {
@@ -55,6 +56,10 @@ struct AccountView: View {
             .appListBodyTypography()
             .sheet(isPresented: $showLoginOnDevice) {
                 AccountSeedPhraseSheet()
+            }
+            .sheet(isPresented: $showingAbout) {
+                InAppSafariView(url: PublicURLBuilder.aboutURL)
+                    .ignoresSafeArea()
             }
             .confirmationDialog(
                 String(localized: "account.logout.confirm"),
@@ -272,6 +277,15 @@ struct AccountView: View {
     @ViewBuilder
     private var footerSection: some View {
         Section {
+            Button {
+                showingAbout = true
+            } label: {
+                Text("account.about-link")
+                    .appBody()
+                    .foregroundStyle(.tint)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
                 LabeledContent("account.version", value: version)
             }

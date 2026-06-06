@@ -902,6 +902,22 @@
         }
       }
     },
+    "account.about-link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About app"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "О приложении"
+          }
+        }
+      }
+    },
     "account.your-public-recipes" : {
       "localizations" : {
         "en" : {

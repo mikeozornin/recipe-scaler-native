@@ -146,6 +146,7 @@
 		E5F60718293A4B70E6687EC7 /* AppLanguagePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */; };
 		E5F60718293A4B70E6687EC8 /* Bundle+Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094871 /* Bundle+Language.swift */; };
 		E5F60718293A4B70CD094881 /* LocalizedNavigationTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */; };
+		AB1234567890ABCDEF123451 /* InAppSafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1234567890ABCDEF123450 /* InAppSafariView.swift */; };
 		E5F60718293A4B70CD094891 /* UserFacingAPIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */; };
 		E5F60718293A4B70374F8F19 /* SeedQRCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70F25813BA /* SeedQRCodeView.swift */; };
 		E5F60718293A4B70A1B2C3E5 /* RecipeImageUploadPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */; };
@@ -311,6 +312,7 @@
 		E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguagePreference.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094871 /* Bundle+Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Language.swift"; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedNavigationTitle.swift; sourceTree = "<group>"; };
+		AB1234567890ABCDEF123450 /* InAppSafariView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InAppSafariView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserFacingAPIError.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70F25813BA /* SeedQRCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeedQRCodeView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeImageUploadPreprocessor.swift; sourceTree = "<group>"; };
@@ -586,6 +588,7 @@
 				E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */,
 				E5F60718293A4B70CD094871 /* Bundle+Language.swift */,
 				E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */,
+				AB1234567890ABCDEF123450 /* InAppSafariView.swift */,
 				E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */,
 				E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */,
 				E5F60718293A4B7000000002 /* IngredientNutritionDisplay.swift */,
@@ -877,6 +880,7 @@
 				E5F60718293A4B70E6687EC7 /* AppLanguagePreference.swift in Sources */,
 				E5F60718293A4B70E6687EC8 /* Bundle+Language.swift in Sources */,
 				E5F60718293A4B70CD094881 /* LocalizedNavigationTitle.swift in Sources */,
+				AB1234567890ABCDEF123451 /* InAppSafariView.swift in Sources */,
 				E5F60718293A4B70CD094891 /* UserFacingAPIError.swift in Sources */,
 				E5F60718293A4B70374F8F19 /* SeedQRCodeView.swift in Sources */,
 				E5F60718293A4B70A1B2C3E5 /* RecipeImageUploadPreprocessor.swift in Sources */,

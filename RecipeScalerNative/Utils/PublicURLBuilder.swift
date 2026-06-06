@@ -23,4 +23,8 @@ enum PublicURLBuilder {
     static func shoppingListShareURL(publicId: String) -> URL? {
         URL(string: "\(Config.baseURL)/#/public/shopping-list/\(publicId)")
     }
+
+    static var aboutURL: URL {
+        URL(string: "\(Config.baseURL)/#/about")!
+    }
 }
