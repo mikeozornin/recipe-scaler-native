@@ -15,7 +15,7 @@ enum AppTab: String, CaseIterable, Hashable {
     var title: LocalizedStringKey {
         switch self {
         case .discover: "discover.nav.discover"
-        case .importTab: "Import"
+        case .importTab: "discover.nav.import"
         case .recipes: "discover.nav.my-recipes"
         case .shopping: "discover.nav.shopping"
         case .profile: "discover.nav.profile"
@@ -68,16 +68,30 @@ struct AppShellView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.25), value: transientStatusMessage != nil)
-        // TEMPORARY: Import sheet hidden (re-enable when ready).
-        // .sheet(isPresented: $showImportSheet) {
-        //     ImportRecipeSheet { result in
-        //         showImportSheet = false
-        //         selectedTab = .recipes
-        //         if let id = result.primaryRecipeId {
-        //             recipesPath.append(id)
-        //         }
-        //     }
-        // }
+            .sheet(isPresented: $showImportSheet) {
+                ImportRecipeSheet { result in
+                    showImportSheet = false
+                    selectedTab = .recipes
+                    if let id = result.primaryRecipeId {
+                        recipesPath.append(id)
+                    }
+                    if result.importedCount > 0 {
+                        let message: String
+                        if result.importedCount == 1 {
+                            message = Bundle.currentLocalizedString("import.success")
+                        } else {
+                            let template = Bundle.currentLocalizedString("import.success-multiple")
+                            message = String(
+                                format: template,
+                                locale: AppLanguagePreference.current.locale,
+                                result.importedCount
+                            )
+                        }
+                        postTransientStatus(message)
+                    }
+                }
+                .presentationDetents([.large])
+            }
         // TEMPORARY: Assistant button hidden (re-enable when ready).
         // .sheet(isPresented: $showAssistant) {
         //     AssistantSheet()
@@ -151,10 +165,9 @@ struct AppShellView: View {
             //     .tag(AppTab.discover)
             //     .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
 
-            // TEMPORARY: Import tab hidden (re-enable when ready).
-            // tabRoot(Color.clear) { AppTabBarLabel(tab: .importTab) }
-            //     .tag(AppTab.importTab)
-            //     .accessibilityIdentifier(AccessibilityIdentifiers.tabImport)
+            tabRoot(Color.clear) { AppTabBarLabel(tab: .importTab) }
+                .tag(AppTab.importTab)
+                .accessibilityIdentifier(AccessibilityIdentifiers.tabImport)
 
             tabRoot(RecipeListView(navigationPath: $recipesPath)) {
                 AppTabBarLabel(tab: .recipes)
@@ -215,6 +228,10 @@ struct AppShellView: View {
         default:
             break
         }
+    }
+
+    private func postTransientStatus(_ message: String) {
+        NotificationCenter.default.post(name: .shoppingStatusMessage, object: message)
     }
 
     #if DEBUG

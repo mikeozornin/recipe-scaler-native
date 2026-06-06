@@ -40,6 +40,8 @@ struct YDocIngredientsSection: View {
     var nutritionEnabled: Bool = false
     var nutritionViewMode: IngredientNutritionViewMode = .dish
 
+    @FocusState private var focusedScaledQuantityId: String?
+
     private var numberedRows: [(number: Int?, ingredient: IngredientData)] {
         numberedIngredientRows(from: ingredients)
     }
@@ -76,7 +78,8 @@ struct YDocIngredientsSection: View {
                                 onScaledQuantityEdited: onScaledQuantityEdited,
                                 onAddToShopping: onAddIngredientToShopping,
                                 nutritionEnabled: nutritionEnabled,
-                                nutritionViewMode: nutritionViewMode
+                                nutritionViewMode: nutritionViewMode,
+                                focusedId: $focusedScaledQuantityId
                             )
                             .overlay(alignment: .top) {
                                 if index > 0 {
@@ -96,6 +99,15 @@ struct YDocIngredientsSection: View {
                     .scrollContentBackground(.hidden)
                     .environment(\.defaultMinListRowHeight, RecipeRowLayoutMetrics.rowHeight)
                 }
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button(String(localized: "edit.done")) {
+                    focusedScaledQuantityId = nil
+                }
+                .appToolbarTextButton()
             }
         }
     }
@@ -121,9 +133,13 @@ private struct YDocIngredientViewRow: View {
     var onAddToShopping: ((IngredientData) -> Void)?
     let nutritionEnabled: Bool
     let nutritionViewMode: IngredientNutritionViewMode
+    var focusedId: FocusState<String?>.Binding
 
     @State private var scaledDraft = ""
-    @FocusState private var isScaledQuantityFocused: Bool
+
+    private var isScaledQuantityFocused: Bool {
+        focusedId.wrappedValue == ingredient.id
+    }
 
     private var baseQuantityText: String {
         ingredient.quantityText
@@ -210,7 +226,8 @@ private struct YDocIngredientViewRow: View {
                         IngredientScaledQuantityField(
                             text: scaledQuantityBinding,
                             accentColor: accentColor,
-                            isFocused: $isScaledQuantityFocused
+                            focusedId: focusedId,
+                            ingredientId: ingredient.id
                         )
                     } else {
                         IngredientMonoQuantityText(text: scaledQuantityText, color: accentColor)
@@ -646,7 +663,8 @@ private struct IngredientColumnHeaderRow: View {
 private struct IngredientScaledQuantityField: View {
     @Binding var text: String
     let accentColor: Color
-    var isFocused: FocusState<Bool>.Binding
+    var focusedId: FocusState<String?>.Binding
+    let ingredientId: String
 
     var body: some View {
         TextField("", text: $text)
@@ -655,7 +673,7 @@ private struct IngredientScaledQuantityField: View {
             .multilineTextAlignment(.trailing)
             .keyboardType(.decimalPad)
             .frame(maxWidth: .infinity, alignment: .trailing)
-            .focused(isFocused)
+            .focused(focusedId, equals: ingredientId)
     }
 }
 

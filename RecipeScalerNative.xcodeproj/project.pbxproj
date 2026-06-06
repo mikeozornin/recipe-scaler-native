@@ -142,6 +142,9 @@
 		E5F60718293A4B70CC88F2B7 /* ScreenAwakeToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7065B733F2 /* ScreenAwakeToggle.swift */; };
 		E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */; };
 		E5F60718293A4B70DEADB002 /* SharingSettingsCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70DEADB001 /* SharingSettingsCache.swift */; };
+		E5F60718293A4B7099AAB002 /* ImportContentClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7099AAB001 /* ImportContentClassifier.swift */; };
+		E5F60718293A4B7099AAB004 /* ImportPhotoValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7099AAB003 /* ImportPhotoValidator.swift */; };
+		E5F60718293A4B7099AAB006 /* ImportErrorLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7099AAB005 /* ImportErrorLocalizer.swift */; };
 			E5F60718293A4B70F68BDA71 /* AppThemePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */; };
 		E5F60718293A4B70E6687EC7 /* AppLanguagePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */; };
 		E5F60718293A4B70E6687EC8 /* Bundle+Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094871 /* Bundle+Language.swift */; };
@@ -166,6 +169,11 @@
 		E5F60718293A4B7005B62F9C /* TransientStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B707F3A30E0 /* TransientStatusBanner.swift */; };
 		CC0002AA0002BB0002CC0002 /* PushRegistrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0001AA0001BB0001CC0001 /* PushRegistrationService.swift */; };
 		CC0004AA0004BB0004CC0004 /* PushScheduleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0003AA0003BB0003CC0003 /* PushScheduleService.swift */; };
+		EK00020001BB000200EK0001 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EK00010001BB000100EK0001 /* EventKit.framework */; };
+		REMINDERS0001AA0001BB01 /* RemindersSyncPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0002AA0002BB02 /* RemindersSyncPreferences.swift */; };
+		REMINDERS0003AA0003BB03 /* RemindersMapStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0004AA0004BB04 /* RemindersMapStore.swift */; };
+		REMINDERS0005AA0005BB05 /* RemindersSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0006AA0006BB06 /* RemindersSyncService.swift */; };
+		REMINDERS0007AA0007BB07 /* RemindersListPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0008AA0008BB08 /* RemindersListPickerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -308,6 +316,9 @@
 		E5F60718293A4B7065B733F2 /* ScreenAwakeToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenAwakeToggle.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingsViewModel.swift; sourceTree = "<group>"; };
 					E5F60718293A4B70DEADB001 /* SharingSettingsCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingSettingsCache.swift; sourceTree = "<group>"; };
+		E5F60718293A4B7099AAB001 /* ImportContentClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportContentClassifier.swift; sourceTree = "<group>"; };
+		E5F60718293A4B7099AAB003 /* ImportPhotoValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPhotoValidator.swift; sourceTree = "<group>"; };
+		E5F60718293A4B7099AAB005 /* ImportErrorLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportErrorLocalizer.swift; sourceTree = "<group>"; };
 			E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppThemePreference.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguagePreference.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094871 /* Bundle+Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Language.swift"; sourceTree = "<group>"; };
@@ -333,6 +344,11 @@
 		CC0001AA0001BB0001CC0001 /* PushRegistrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushRegistrationService.swift; sourceTree = "<group>"; };
 		CC0003AA0003BB0003CC0003 /* PushScheduleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushScheduleService.swift; sourceTree = "<group>"; };
 		CC0005AA0005BB0005CC0005 /* RecipeScalerNative.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RecipeScalerNative.entitlements; sourceTree = "<group>"; };
+		EK00010001BB000100EK0001 /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
+		REMINDERS0002AA0002BB02 /* RemindersSyncPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersSyncPreferences.swift; sourceTree = "<group>"; };
+		REMINDERS0004AA0004BB04 /* RemindersMapStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersMapStore.swift; sourceTree = "<group>"; };
+		REMINDERS0006AA0006BB06 /* RemindersSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersSyncService.swift; sourceTree = "<group>"; };
+		REMINDERS0008AA0008BB08 /* RemindersListPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersListPickerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -345,6 +361,7 @@
 				1A53619D3D6AF4AF6CD2CDE8 /* KeychainAccess in Frameworks */,
 				B21E98DE40075926FE4CF18B /* GRDB in Frameworks */,
 				A1B2C3D4E5F60718293A4B72 /* Agentation in Frameworks */,
+				EK00020001BB000200EK0001 /* EventKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -450,6 +467,7 @@
 				E5F60718293A4B7065B733F2 /* ScreenAwakeToggle.swift */,
 				E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */,
 				E5F60718293A4B707F3A30E0 /* TransientStatusBanner.swift */,
+				REMINDERS0008AA0008BB08 /* RemindersListPickerView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -463,6 +481,7 @@
 				12BC0C7130AD1DC5DE1D7D8C /* Resources */,
 				76B3DA4533E03AE5D9E730B3 /* Products */,
 				10B70ADFDAFB46C18446F390 /* YrsXCFramework.xcframework */,
+				EK00010001BB000100EK0001 /* EventKit.framework */,
 			);
 			sourceTree = "<group>";
 		};
@@ -497,8 +516,17 @@
 				3297FDC9814D7043F3A05E04 /* Database.swift */,
 				70E7F92B6DBC42B4B2690FF6 /* OfflineSyncEntry.swift */,
 				5E420A114755D01EE96F560A /* YDocStore.swift */,
+				REMINDERS0004AA0004BB04 /* RemindersMapStore.swift */,
 			);
 			path = Storage;
+			sourceTree = "<group>";
+		};
+		REMINDERS00A0AA00A0BB0A /* Reminders */ = {
+			isa = PBXGroup;
+			children = (
+				REMINDERS0006AA0006BB06 /* RemindersSyncService.swift */,
+			);
+			path = Reminders;
 			sourceTree = "<group>";
 		};
 		730272E874E00B45C15ED736 /* Fonts */ = {
@@ -614,7 +642,11 @@
 				E5F60718293A4B70898823B7 /* PublicURLBuilder.swift */,
 				E5F60718293A4B701A6B5339 /* ScreenAwakeController.swift */,
 				E5F60718293A4B7066BF06C8 /* TimerUtils.swift */,
-					E5F60718293A4B70DEADB001 /* SharingSettingsCache.swift */,
+				E5F60718293A4B70DEADB001 /* SharingSettingsCache.swift */,
+				E5F60718293A4B7099AAB001 /* ImportContentClassifier.swift */,
+				E5F60718293A4B7099AAB003 /* ImportPhotoValidator.swift */,
+				E5F60718293A4B7099AAB005 /* ImportErrorLocalizer.swift */,
+				REMINDERS0002AA0002BB02 /* RemindersSyncPreferences.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -645,6 +677,7 @@
 				D0574E4BB4D0DE3B5AE7CFAB /* Yrs */,
 				E49E6DAE77BDA02267796630 /* YjsSync */,
 				6C814AF9AA15A89BCAC1A9E4 /* Storage */,
+				REMINDERS00A0AA00A0BB0A /* Reminders */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -870,7 +903,10 @@
 				E5F60718293A4B7005B62F9C /* TransientStatusBanner.swift in Sources */,
 				E5F60718293A4B701757B9DA /* ScreenAwakeController.swift in Sources */,
 				E5F60718293A4B703C4C8B66 /* TimerUtils.swift in Sources */,
-					E5F60718293A4B70DEADB002 /* SharingSettingsCache.swift in Sources */,
+				E5F60718293A4B70DEADB002 /* SharingSettingsCache.swift in Sources */,
+				E5F60718293A4B7099AAB002 /* ImportContentClassifier.swift in Sources */,
+				E5F60718293A4B7099AAB004 /* ImportPhotoValidator.swift in Sources */,
+				E5F60718293A4B7099AAB006 /* ImportErrorLocalizer.swift in Sources */,
 				E5F60718293A4B709664372C /* TimerSyncService.swift in Sources */,
 				E5F60718293A4B70F59549AC /* DescriptionTimerStartPopover.swift in Sources */,
 				E5F60718293A4B703037711D /* DescriptionTimerPopoverState.swift in Sources */,
@@ -888,6 +924,10 @@
 				E5F60718293A4B7058D1A50A /* AccountOptionLabels.swift in Sources */,
 				E5F60718293A4B70ACE05678 /* AccountProfileEditView.swift in Sources */,
 				E5F60718293A4B70AAV01234 /* AuthAvatarImage.swift in Sources */,
+				REMINDERS0001AA0001BB01 /* RemindersSyncPreferences.swift in Sources */,
+				REMINDERS0003AA0003BB03 /* RemindersMapStore.swift in Sources */,
+				REMINDERS0005AA0005BB05 /* RemindersSyncService.swift in Sources */,
+				REMINDERS0007AA0007BB07 /* RemindersListPickerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

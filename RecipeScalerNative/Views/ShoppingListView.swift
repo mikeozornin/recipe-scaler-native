@@ -259,7 +259,7 @@ struct ShoppingListView: View {
                 handlePurchaseToggle(item: item, phase: purchasePhase)
             } label: {
                 AppSymbol.image(showChecked ? "checkmark.circle" : "circle")
-                    .foregroundStyle(showChecked ? Color.secondary : Color.primary)
+                    .foregroundStyle(Color.primary)
                     .opacity(showChecked ? 0.5 : 1)
                     .contentTransition(.symbolEffect(.replace))
             }
@@ -325,6 +325,15 @@ struct ShoppingListView: View {
             return
         }
 
+        #if os(iOS)
+        if item.purchased {
+            UISelectionFeedbackGenerator().selectionChanged()
+        } else {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+        #endif
+
         if item.purchased {
             Task {
                 await runShoppingMutation {
@@ -333,11 +342,6 @@ struct ShoppingListView: View {
             }
             return
         }
-
-        #if os(iOS)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
-        #endif
 
         purchasePhases[item.id] = .staging
         Task { @MainActor in

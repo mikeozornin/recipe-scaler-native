@@ -21,6 +21,7 @@ final class YjsSyncService: ObservableObject {
     @Published private(set) var activeRecipeWasRemoved = false
     @Published private(set) var imageCacheStatus = RecipeImageCacheStatus()
     @Published private(set) var recipeDocumentCacheStatus = RecipeDocumentCacheStatus()
+    @Published private(set) var lastSuccessfulSyncAt: Date?
 
     func acknowledgeRecipeRemoved() {
         activeRecipeWasRemoved = false
@@ -315,6 +316,11 @@ final class YjsSyncService: ObservableObject {
 
     func addManualShoppingItem(label: String) async throws {
         try await documentManager.addManualShoppingItem(label: label)
+        await refreshShoppingSnapshot()
+    }
+
+    func addShoppingItem(_ item: ShoppingListItem) async throws {
+        try await documentManager.addShoppingItems([item])
         await refreshShoppingSnapshot()
     }
 
@@ -1349,6 +1355,7 @@ final class YjsSyncService: ObservableObject {
 
     private func handleSyncConfirmed(recipeId: String, lastSyncedAt: String?) async {
         guard recipeId != "unknown" else { return }
+        lastSuccessfulSyncAt = Date()
         let docKey = docKeyFor(recipeId: recipeId)
         if recipeId != "collection", recipeId != ShoppingListConstants.offlineRecipeId {
             writeSyncStates[recipeId] = .synced
@@ -1415,6 +1422,7 @@ final class YjsSyncService: ObservableObject {
     private func handleDocumentLoaded(recipeId: String, stateData: Data, lastSyncedAt: String?) async {
         let docKey = docKeyFor(recipeId: recipeId)
         logger.info("document_loaded: \(docKey), \(stateData.count) bytes")
+        lastSuccessfulSyncAt = Date()
 
         do {
             if recipeId == "collection" {
@@ -1446,6 +1454,7 @@ final class YjsSyncService: ObservableObject {
     private func handleDocumentsLoaded(documents: [(String, Data, String?)]) async {
         var shouldRefreshCollection = false
         var loadedRecipeIds: [String] = []
+        if !documents.isEmpty { lastSuccessfulSyncAt = Date() }
         for (recipeId, stateData, lastSyncedAt) in documents {
             let docKey = docKeyFor(recipeId: recipeId)
             do {
@@ -1558,6 +1567,7 @@ final class YjsSyncService: ObservableObject {
     private func handleRecipeUpdated(recipeId: String, updateData: Data) async {
         let docKey = docKeyFor(recipeId: recipeId)
         logger.debug("recipe_updated: \(docKey), \(updateData.count) bytes")
+        lastSuccessfulSyncAt = Date()
 
         let suppressObserver = recipeRefreshSuspended > 0 && activeRecipeId == recipeId
         do {
@@ -1594,6 +1604,7 @@ final class YjsSyncService: ObservableObject {
         guard let userId else { return }
         let key = Self.shoppingDocKey(userId: userId)
         logger.debug("shopping_list_updated: \(updateData.count) bytes")
+        lastSuccessfulSyncAt = Date()
         do {
             try await documentManager.applyUpdate(key: key, data: updateData)
         } catch {

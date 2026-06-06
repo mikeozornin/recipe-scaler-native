@@ -2,6 +2,9 @@
   "name": "recipe-scaler-native-scripts",
   "private": true,
   "description": "Dev tooling for native app asset scripts",
+  "scripts": {
+    "typograf": "bun run typograf.mjs"
+  },
   "dependencies": {
     "svg-outline-stroke": "^1.3.1"
   }

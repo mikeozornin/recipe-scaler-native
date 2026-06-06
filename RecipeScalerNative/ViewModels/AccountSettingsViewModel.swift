@@ -5,6 +5,7 @@
 
 import Foundation
 import SwiftUI
+import EventKit
 
 @MainActor
 final class AccountSettingsViewModel: ObservableObject {
@@ -27,6 +28,11 @@ final class AccountSettingsViewModel: ObservableObject {
     @Published var timerNotificationsEnabled = false
     @Published var timerNotificationsDenied = false
 
+    @Published var remindersSyncEnabled = false
+    @Published var remindersSyncDenied = false
+    @Published var remindersListName: String = ""
+    @Published var availableRemindersLists: [EKCalendar] = []
+
     private var nameSaveTask: Task<Void, Never>?
 
     func bind(syncService: YjsSyncService) {
@@ -39,6 +45,7 @@ final class AccountSettingsViewModel: ObservableObject {
         showNutrition = NutritionSettings.isGlobalEnabled
         appTheme = .current
         await refreshTimerNotificationState()
+        refreshRemindersState()
 
         guard AuthService.shared.userId != nil else { return }
 
@@ -239,6 +246,78 @@ final class AccountSettingsViewModel: ObservableObject {
             timerNotificationsEnabled = false
             statusMessage = String(localized: "account.timer-notifications.not-granted")
         }
+    }
+
+    // MARK: - Apple Reminders sync
+
+    func refreshRemindersState() {
+        let status = EKEventStore.authorizationStatus(for: .reminder)
+        remindersSyncDenied = status == .denied || status == .restricted
+        remindersSyncEnabled = RemindersSyncPreferences.isEnabled && status == .fullAccess
+        remindersListName = resolveRemindersListName()
+    }
+
+    func setRemindersSyncEnabled(
+        _ enabled: Bool,
+        syncService: YjsSyncService,
+        remindersService: RemindersSyncService
+    ) async {
+        if !enabled {
+            remindersService.disable()
+            remindersSyncEnabled = false
+            return
+        }
+
+        let status = EKEventStore.authorizationStatus(for: .reminder)
+        if status == .denied || status == .restricted {
+            remindersSyncDenied = true
+            remindersSyncEnabled = false
+            statusMessage = String(localized: "account.reminders.denied")
+            return
+        }
+
+        let granted = await remindersService.enable(syncService: syncService)
+        if granted {
+            remindersSyncEnabled = true
+            remindersSyncDenied = false
+            remindersService.loadAvailableLists()
+            availableRemindersLists = remindersService.availableLists
+            remindersListName = resolveRemindersListName()
+        } else if EKEventStore.authorizationStatus(for: .reminder) == .denied {
+            remindersSyncDenied = true
+            remindersSyncEnabled = false
+            statusMessage = String(localized: "account.reminders.denied")
+        }
+    }
+
+    func loadRemindersLists(remindersService: RemindersSyncService) {
+        remindersService.loadAvailableLists()
+        availableRemindersLists = remindersService.availableLists
+    }
+
+    func selectRemindersList(
+        _ identifier: String,
+        syncService: YjsSyncService,
+        remindersService: RemindersSyncService
+    ) async {
+        await remindersService.selectList(identifier, syncService: syncService)
+        remindersListName = resolveRemindersListName(
+            lists: remindersService.availableLists,
+            identifier: identifier
+        )
+    }
+
+    private func resolveRemindersListName(
+        lists: [EKCalendar]? = nil,
+        identifier: String? = nil
+    ) -> String {
+        let id = identifier ?? RemindersSyncPreferences.listIdentifier
+        if id == RemindersSyncPreferences.dedicatedListSentinel {
+            return RemindersSyncService.dedicatedListName
+        }
+        let source = lists ?? availableRemindersLists
+        return source.first(where: { $0.calendarIdentifier == id })?.title
+            ?? RemindersSyncService.dedicatedListName
     }
 
     func logout(syncService: YjsSyncService) async {

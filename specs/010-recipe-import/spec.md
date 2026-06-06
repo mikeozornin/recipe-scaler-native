@@ -6,7 +6,24 @@
 **Зависимости**: `008-collection-mutations` (новый рецепт в коллекции), `007` (Import tab)  
 **Эталон**: `ImportRecipeSheet`, PRD § Import
 
-## Аудит реализации (2026-06-03)
+## Аудит реализации (2026-06-06)
+
+Вкладка Import и sheet раскомментированы в `AppShellView.swift`; flow импорта доведён до паритета с вебом (текст/URL/фото, multipart multi-image, batch URL, классификация контента, локализованные ошибки, offline «Try later», текстовый fileImporter). i18n ключи `import.*` добавлены в `Localizable.xcstrings`.
+
+| Требование | Статус |
+|------------|--------|
+| US1 импорт URL (1 или много, ≤25) | ✅ |
+| US2 импорт текста | ✅ |
+| US3 импорт фото (≤8, multipart multi-image) | ✅ |
+| US4 навигация после успеха (1 → detail, 2+ → список) | ✅ |
+| US5 локализованные ошибки | ✅ |
+| US6 offline «Попробовать позже» | ✅ |
+| US7 upload текстового файла (.txt / .md / .json / ...) | ✅ |
+| Sheet UX: `.presentationDetents([.large])` | ✅ |
+| Toast об успехе через `TransientStatusBanner` | ✅ |
+| Импорт файла export `.json/.zip` | ❌ не реализовано → spec **020** |
+
+## Прошлый аудит (2026-06-03)
 
 Реализовано: `ImportRecipeSheet` (URL/текст/фото), `RecipeImportAPI`, навигация на новый рецепт через `onImport`.
 

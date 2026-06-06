@@ -22,9 +22,6 @@
     "%@ sec" : {
 
     },
-    "%@ selected (max 8)" : {
-
-    },
     "%@/%@" : {
       "localizations" : {
         "en" : {
@@ -47,6 +44,22 @@
     "3. Enter your seed phrase to login into your account" : {
 
     },
+    "account.about-link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About app"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "О приложении"
+          }
+        }
+      }
+    },
     "account.allow-downloads" : {
       "localizations" : {
         "en" : {
@@ -58,7 +71,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Разрешить посетителям копировать и скачивать PDF с рецептами"
+            "value" : "Разрешить посетителям копировать и скачивать PDF с рецептами"
           }
         }
       }
@@ -125,7 +138,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Экспорт и импорт появятся в следующем обновлении."
+            "value" : "Экспорт и импорт появятся в следующем обновлении."
           }
         }
       }
@@ -142,7 +155,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Что-то пошло не так. Попробуйте ещё раз."
+            "value" : "Что-то пошло не так. Попробуйте ещё раз."
           }
         }
       }
@@ -159,7 +172,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось связаться с сервером. Проверьте подключение и попробуйте снова."
+            "value" : "Не удалось связаться с сервером. Проверьте подключение и попробуйте снова."
           }
         }
       }
@@ -244,7 +257,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выйти из аккаунта?"
+            "value" : "Выйти из аккаунта?"
           }
         }
       }
@@ -260,7 +273,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "На этом устройстве нет сохранённой фразы"
+            "value" : "На этом устройстве нет сохранённой фразы"
           }
         }
       }
@@ -293,7 +306,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Работа в оффлайн-режиме. Изменения синхронизируются, когда выйдете в онлайн."
+            "value" : "Работа в оффлайн-режиме. Изменения синхронизируются, когда выйдете в онлайн."
           }
         }
       }
@@ -374,7 +387,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выйдите в онлайн, чтобы получить доступ к публичному профилю"
+            "value" : "Выйдите в онлайн, чтобы получить доступ к публичному профилю"
           }
         }
       }
@@ -407,7 +420,122 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "QR-код с секретной фразой"
+            "value" : "QR-код с секретной фразой"
+          }
+        }
+      }
+    },
+    "account.reminders.denied" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Access to Reminders is blocked. Enable it in Settings → Privacy & Security → Reminders."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ к Напоминаниям заблокирован. Включите в Настройках → Конфиденциальность → Напоминания."
+          }
+        }
+      }
+    },
+    "account.reminders.list.create-dedicated" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create «Recipe Scaler» list"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать список «Recipe Scaler»"
+          }
+        }
+      }
+    },
+    "account.reminders.list.existing-header" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Existing lists"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Существующие списки"
+          }
+        }
+      }
+    },
+    "account.reminders.list.label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Список"
+          }
+        }
+      }
+    },
+    "account.reminders.note.from" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Из рецепта"
+          }
+        }
+      }
+    },
+    "account.reminders.sync" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync with Reminders"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать с Напоминаниями"
+          }
+        }
+      }
+    },
+    "account.reminders.sync.footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mirror your shopping list to Apple Reminders to check off items on Apple Watch or with Siri"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Список покупок отразится в Напоминаниях — удобно отмечать покупки на Apple Watch или через Siri"
           }
         }
       }
@@ -423,7 +551,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Секретная фраза для входа на другом устройстве"
+            "value" : "Секретная фраза для входа на другом устройстве"
           }
         }
       }
@@ -508,7 +636,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось пройти аутентификацию"
+            "value" : "Не удалось пройти аутентификацию"
           }
         }
       }
@@ -525,7 +653,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Подтвердите личность для просмотра секретной фразы"
+            "value" : "Подтвердите личность для просмотра секретной фразы"
           }
         }
       }
@@ -626,7 +754,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Какие из рецептов"
+            "value" : "Какие из рецептов"
           }
         }
       }
@@ -654,13 +782,47 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "With images and recipe steps"
+            "value" : "With images and recipe"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "С текстом рецепта и фото"
+            "value" : "С рецептом и фото"
+          }
+        }
+      }
+    },
+    "account.sync.never" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Никогда"
+          }
+        }
+      }
+    },
+    "account.sync.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизация"
           }
         }
       }
@@ -728,7 +890,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Как в системе"
+            "value" : "Как в системе"
           }
         }
       }
@@ -745,7 +907,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Уведомления заблокированы. Включите их в Настройках системы."
+            "value" : "Уведомления заблокированы. Включите их в Настройках системы."
           }
         }
       }
@@ -762,7 +924,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Уведомлять о завершении таймера"
+            "value" : "Уведомлять о завершении таймера"
           }
         }
       }
@@ -779,7 +941,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Разрешение на уведомления не выдано."
+            "value" : "Разрешение на уведомления не выдано."
           }
         }
       }
@@ -880,7 +1042,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Имя пользователя — минимум 3 символа"
+            "value" : "Имя пользователя — минимум 3 символа"
           }
         }
       }
@@ -898,22 +1060,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Версия"
-          }
-        }
-      }
-    },
-    "account.about-link" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About app"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "О приложении"
           }
         }
       }
@@ -952,7 +1098,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Произошла непредвиденная ошибка. Попробуйте ещё раз."
+            "value" : "Произошла непредвиденная ошибка. Попробуйте ещё раз."
           }
         }
       }
@@ -986,7 +1132,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Вход на другом устройстве"
+            "value" : "Вход на другом устройстве"
           }
         }
       }
@@ -1006,7 +1152,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Доступ к камере запрещён"
+            "value" : "Доступ к камере запрещён"
           }
         }
       }
@@ -1058,6 +1204,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отмена"
+          }
+        }
+      }
+    },
+    "common.delete-image" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete image"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить изображение"
           }
         }
       }
@@ -1239,7 +1401,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Инструкций пока нет. Нажмите «Изменить», чтобы добавить шаги."
+            "value" : "Инструкций пока нет. Нажмите «Изменить», чтобы добавить шаги."
           }
         }
       }
@@ -1531,7 +1693,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Рецепт ещё не загружен."
+            "value" : "Рецепт ещё не загружен."
           }
         }
       }
@@ -1548,7 +1710,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Порций должно быть не меньше 1."
+            "value" : "Порций должно быть не меньше 1."
           }
         }
       }
@@ -1582,7 +1744,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Этот формат рецепта нельзя редактировать на iOS."
+            "value" : "Этот формат рецепта нельзя редактировать на iOS."
           }
         }
       }
@@ -1616,7 +1778,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нет прав на редактирование этого рецепта."
+            "value" : "Нет прав на редактирование этого рецепта."
           }
         }
       }
@@ -1633,7 +1795,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось сохранить"
+            "value" : "Не удалось сохранить"
           }
         }
       }
@@ -1769,7 +1931,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Старый формат рецепта — только просмотр на iOS. Обновите рецепт в веб-приложении, чтобы редактировать здесь."
+            "value" : "Старый формат рецепта — только просмотр на iOS. Обновите рецепт в веб-приложении, чтобы редактировать здесь."
           }
         }
       }
@@ -1905,7 +2067,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В очереди офлайн"
+            "value" : "В очереди офлайн"
           }
         }
       }
@@ -1973,6 +2135,526 @@
     "I'm new user" : {
 
     },
+    "import.choose-photos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose photos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать фото"
+          }
+        }
+      }
+    },
+    "import.description" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste text, a link or a photo — the app will understand any format."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вставьте текст, ссылку или фото — приложение поймет любой формат."
+          }
+        }
+      }
+    },
+    "import.error" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to import recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось импортировать рецепт"
+          }
+        }
+      }
+    },
+    "import.error-captcha" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The page is protected by a captcha, robots won't pass. Please copy the recipe text from the site manually."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Страница защищена капчей, роботы не пройдут. Попробуйте скопировать текст рецепта с сайта вручную."
+          }
+        }
+      }
+    },
+    "import.error-file-binary" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This does not look like a text file."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Похоже, это не текстовый файл."
+          }
+        }
+      }
+    },
+    "import.error-file-decode" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to read the file as text."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось прочитать файл как текст."
+          }
+        }
+      }
+    },
+    "import.error-file-empty" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The file is empty or does not contain text."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл пустой или не содержит текста."
+          }
+        }
+      }
+    },
+    "import.error-invalid-response" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server returned an invalid response during import."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер вернул некорректный ответ при импорте."
+          }
+        }
+      }
+    },
+    "import.error-photo-corrupt" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not process one of the photos. Make sure the file is a valid image."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось обработать одну из фотографий. Убедитесь, что файл является изображением."
+          }
+        }
+      }
+    },
+    "import.error-photo-invalid-type" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only JPEG, PNG, WebP, HEIC, and HEIF photos are supported."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поддерживаются только фото JPEG, PNG, WebP, HEIC и HEIF."
+          }
+        }
+      }
+    },
+    "import.error-photo-too-large" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One of the photos exceeds the %d MB size limit."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Одна из фотографий превышает лимит в %d МБ."
+          }
+        }
+      }
+    },
+    "import.error-photos-empty" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add at least one photo to import a recipe."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавьте хотя бы одно фото для импорта рецепта."
+          }
+        }
+      }
+    },
+    "import.error-static" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not extract page content with the available static methods."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось извлечь содержимое страницы доступными статическими методами."
+          }
+        }
+      }
+    },
+    "import.error-too-many-photos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can import up to %d photos at a time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не более %d картинок"
+          }
+        }
+      }
+    },
+    "import.error-too-many-recipes" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can import up to %d recipes at a time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "За один раз можно импортировать не больше %d рецептов."
+          }
+        }
+      }
+    },
+    "import.lets-go" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировать"
+          }
+        }
+      }
+    },
+    "import.mode-accessibility" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Режим"
+          }
+        }
+      }
+    },
+    "import.offline-unavailable" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offline — import unavailable"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не в сети — импорт недоступен"
+          }
+        }
+      }
+    },
+    "import.photo-count" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d / %2$d photos selected"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрано фото: %1$d / %2$d"
+          }
+        }
+      }
+    },
+    "import.photo-helper" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One or several photos, but for one recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Одно или несколько фотографий, но для одного рецепта"
+          }
+        }
+      }
+    },
+    "import.success" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe imported successfully!"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рецепт импортирован"
+          }
+        }
+      }
+    },
+    "import.success-multiple" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imported recipes: %d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировано рецептов: %d"
+          }
+        }
+      }
+    },
+    "import.tab-photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото"
+          }
+        }
+      }
+    },
+    "import.tab-text" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Текст"
+          }
+        }
+      }
+    },
+    "import.text-file-hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe text or a link to a website (even several links)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Текст рецепта или ссылка на сайт (даже несколько ссылок)"
+          }
+        }
+      }
+    },
+    "import.text-placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borscht with beef, 4 servings\n\nBeef — 500 g\nBeets — 2\nCabbage — 300 g"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Борщ с говядиной, 4 порции\n\nГовядина — 500 г\nСвёкла — 2 шт.\nКапуста — 300 г"
+          }
+        }
+      }
+    },
+    "import.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт рецепта"
+          }
+        }
+      }
+    },
+    "import.try-later" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try later"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробовать позже"
+          }
+        }
+      }
+    },
+    "import.upload-text-file" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upload text file"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузить текстовый файл"
+          }
+        }
+      }
+    },
+    "import.validation.invalid-servings" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "servings must be a finite number greater than 0 if present"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "количество порций должно быть положительным числом"
+          }
+        }
+      }
+    },
+    "import.validation.recipe-import-failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to import recipe \"%@\": %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось импортировать рецепт «%@»: %@"
+          }
+        }
+      }
+    },
     "Ingredients" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2019,7 +2701,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Загрузка..."
+            "value" : "Загрузка…"
           }
         }
       }
@@ -2045,7 +2727,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Камера не найдена"
+            "value" : "Камера не найдена"
           }
         }
       }
@@ -2238,7 +2920,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld ккал · %@ Б · %@ Ж · %@ У"
+            "value" : "%lld ккал · %@ Б · %@ Ж · %@ У"
           }
         }
       }
@@ -2549,7 +3231,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось загрузить фото. Попробуйте ещё раз."
+            "value" : "Не удалось загрузить фото. Попробуйте ещё раз."
           }
         }
       }
@@ -2600,7 +3282,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Подключитесь к интернету, чтобы загрузить фото."
+            "value" : "Подключитесь к интернету, чтобы загрузить фото."
           }
         }
       }
@@ -2770,7 +3452,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Без названия"
+            "value" : "Без названия"
           }
         }
       }
@@ -2888,7 +3570,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Поделиться ссылкой на рецепт"
+            "value" : "Поделиться ссылкой на рецепт"
           }
         }
       }
@@ -2905,7 +3587,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Рецепт приватный (публичны только рецепты с изображениями и шагами)"
+            "value" : "Рецепт приватный (публичны только рецепты с изображениями и шагами)"
           }
         }
       }
@@ -2921,7 +3603,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выйдите в онлайн, чтобы поделиться"
+            "value" : "Выйдите в онлайн, чтобы поделиться"
           }
         }
       }
@@ -2938,7 +3620,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Рецепт публичный (рецепты с изображениями и шагами публичны)"
+            "value" : "Рецепт публичный (рецепты с изображениями и шагами публичны)"
           }
         }
       }
@@ -3165,7 +3847,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "И еще"
+            "value" : "И еще"
           }
         }
       }
@@ -3199,7 +3881,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В список покупок"
+            "value" : "В список покупок"
           }
         }
       }
@@ -3216,7 +3898,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В списке покупок пока пусто"
+            "value" : "В списке покупок пока пусто"
           }
         }
       }
@@ -3250,7 +3932,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В список"
+            "value" : "В список"
           }
         }
       }
@@ -3318,7 +4000,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Вернуть в список"
+            "value" : "Вернуть в список"
           }
         }
       }
@@ -3352,7 +4034,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В этом рецепте нечего добавить"
+            "value" : "В этом рецепте нечего добавить"
           }
         }
       }
@@ -3436,7 +4118,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось обновить настройки"
+            "value" : "Не удалось обновить настройки"
           }
         }
       }
@@ -3487,7 +4169,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "По рецепту"
+            "value" : "По рецепту"
           }
         }
       }
@@ -3572,7 +4254,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось проверить владельца документа"
+            "value" : "Не удалось проверить владельца документа"
           }
         }
       }
@@ -3606,7 +4288,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Полные фото в кэше %lld из %lld"
+            "value" : "Полные фото в кэше %lld из %lld"
           }
         }
       }
@@ -3623,7 +4305,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Данные рецептов в кэше %lld из %lld"
+            "value" : "Данные рецептов в кэше %lld из %lld"
           }
         }
       }
@@ -3691,7 +4373,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Загрузка %lld из %lld рецептов…"
+            "value" : "Загрузка %lld из %lld рецептов…"
           }
         }
       }
@@ -3708,7 +4390,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Полные фото (офлайн в деталке)"
+            "value" : "Полные фото (офлайн в деталке)"
           }
         }
       }
@@ -3725,7 +4407,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Офлайн: не в кэше %lld полных фото. Подключитесь для загрузки."
+            "value" : "Офлайн: не в кэше %lld полных фото. Подключитесь для загрузки."
           }
         }
       }
@@ -3742,7 +4424,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Часть фото ещё качается или не загрузилась. Нажмите «Повторить» ниже."
+            "value" : "Часть фото ещё качается или не загрузилась. Нажмите «Повторить» ниже."
           }
         }
       }
@@ -3759,7 +4441,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В коллекции нет рецептов с фото."
+            "value" : "В коллекции нет рецептов с фото."
           }
         }
       }
@@ -3776,7 +4458,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Превью в списке"
+            "value" : "Превью в списке"
           }
         }
       }
@@ -3793,7 +4475,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Все фото в кэше для офлайна"
+            "value" : "Все фото в кэше для офлайна"
           }
         }
       }
@@ -3844,7 +4526,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В локальном кэше"
+            "value" : "В локальном кэше"
           }
         }
       }
@@ -3878,7 +4560,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld рецептов недоступны офлайн. Подключитесь к сети для загрузки."
+            "value" : "%lld рецептов недоступны офлайн. Подключитесь к сети для загрузки."
           }
         }
       }
@@ -3895,7 +4577,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Данные рецептов загружаются в фоне."
+            "value" : "Данные рецептов загружаются в фоне."
           }
         }
       }
@@ -3912,7 +4594,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В коллекции пока нет рецептов."
+            "value" : "В коллекции пока нет рецептов."
           }
         }
       }
@@ -3929,7 +4611,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Все рецепты сохранены для офлайна"
+            "value" : "Все рецепты сохранены для офлайна"
           }
         }
       }
@@ -3997,7 +4679,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ещё не в кэше"
+            "value" : "Ещё не в кэше"
           }
         }
       }
@@ -4031,7 +4713,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Рецепты ещё не в кэше"
+            "value" : "Рецепты ещё не в кэше"
           }
         }
       }
@@ -4048,7 +4730,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Синхронизация и офлайн"
+            "value" : "Синхронизация и офлайн"
           }
         }
       }
@@ -4132,7 +4814,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "После подключения телеграм-аккаунта вы сможете легко сохранять рецепты из Telegram."
+            "value" : "После подключения телеграм-аккаунта вы сможете легко сохранять рецепты из Telegram."
           }
         }
       }
@@ -4217,7 +4899,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось отключить аккаунт"
+            "value" : "Не удалось отключить аккаунт"
           }
         }
       }
@@ -4234,7 +4916,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось получить код подключения"
+            "value" : "Не удалось получить код подключения"
           }
         }
       }
@@ -4268,7 +4950,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось получить доступ к камере. Возможно, она используется другим приложением."
+            "value" : "Не удалось получить доступ к камере. Возможно, она используется другим приложением."
           }
         }
       }
@@ -4302,7 +4984,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Разрешите доступ к камере в настройках для сканирования QR-кодов."
+            "value" : "Разрешите доступ к камере в настройках для сканирования QR-кодов."
           }
         }
       }
@@ -4336,7 +5018,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "На устройстве не найдена камера."
+            "value" : "На устройстве не найдена камера."
           }
         }
       }

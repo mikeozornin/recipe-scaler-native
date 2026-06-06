@@ -40,6 +40,10 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Recipe Scaler uses the camera to scan QR codes to log in with your seed phrase.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Recipe Scaler syncs your shopping list with Apple Reminders so you can check off items on Apple Watch, ask Siri, and access your list from any Apple device.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>Recipe Scaler syncs your shopping list with Apple Reminders so you can check off items on Apple Watch, ask Siri, and access your list from any Apple device.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

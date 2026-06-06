@@ -5,6 +5,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var authService = AuthService.shared
     @StateObject private var syncService: YjsSyncService
+    @StateObject private var remindersService: RemindersSyncService
     @State private var showSplash = true
     @State private var appTheme = AppThemePreference.current
     @State private var appLanguage = AppLanguagePreference.current
@@ -17,7 +18,9 @@ struct ContentView: View {
     init() {
         let database = try! YrsDatabase()
         let store = YDocStore(dbQueue: database.dbQueue)
+        let mapStore = RemindersMapStore(dbQueue: database.dbQueue)
         _syncService = StateObject(wrappedValue: YjsSyncService(store: store))
+        _remindersService = StateObject(wrappedValue: RemindersSyncService(mapStore: mapStore))
         // #region agent log
         AgentSyncDebugLog.sync(
             location: "ContentView.init",
@@ -137,6 +140,7 @@ struct ContentView: View {
                 Task { await syncService.persistAll() }
             case .active:
                 syncService.handleEnteredForeground()
+                Task { await remindersService.reconcileRemindersToUserSnapshot() }
             @unknown default:
                 break
             }
@@ -148,6 +152,7 @@ struct ContentView: View {
         AppShellView()
             .environmentObject(syncService)
             .environmentObject(TimerManager.shared)
+            .environmentObject(remindersService)
             .onAppear {
                 TimerManager.shared.configure(modelContext: modelContext)
             }
@@ -162,6 +167,7 @@ struct ContentView: View {
                 #endif
                 if let userId = effectiveUserId {
                     await syncService.start(userId: userId)
+                    remindersService.attach(to: syncService)
                 } else {
                     syncService.stop()
                 }

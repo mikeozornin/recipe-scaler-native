@@ -57,6 +57,22 @@ final class YrsDatabase {
             )
         }
 
+        migrator.registerMigration("v3_create_reminders_item_map") { db in
+            try db.create(table: "reminders_item_map") { t in
+                t.column("itemId", .text).primaryKey()
+                t.column("reminderId", .text).notNull()
+                t.column("listId", .text).notNull()
+                t.column("lastLabel", .text).notNull()
+                t.column("lastCompleted", .boolean).notNull().defaults(to: false)
+                t.column("updatedAt", .text).notNull()
+            }
+            try db.create(
+                index: "reminders_item_map_listId",
+                on: "reminders_item_map",
+                columns: ["listId"]
+            )
+        }
+
         try migrator.migrate(dbQueue)
     }
 }

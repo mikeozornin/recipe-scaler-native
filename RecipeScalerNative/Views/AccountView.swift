@@ -8,6 +8,8 @@ import SwiftUI
 
 struct AccountView: View {
     @EnvironmentObject private var syncService: YjsSyncService
+    @EnvironmentObject private var remindersService: RemindersSyncService
+    @Environment(\.locale) private var locale
     @StateObject private var authService = AuthService.shared
     @StateObject private var viewModel = AccountSettingsViewModel()
 
@@ -255,9 +257,63 @@ struct AccountView: View {
                 }
             ))
 
+            // MARK: Apple Reminders sync
+            Toggle(isOn: Binding(
+                get: { viewModel.remindersSyncEnabled },
+                set: { value in
+                    Task { @MainActor in
+                        await viewModel.setRemindersSyncEnabled(
+                            value,
+                            syncService: syncService,
+                            remindersService: remindersService
+                        )
+                    }
+                }
+            )) {
+                Text("account.reminders.sync").appBody()
+            }
+            .disabled(viewModel.remindersSyncDenied)
+
+            if viewModel.remindersSyncEnabled {
+                NavigationLink {
+                    RemindersListPickerView(
+                        availableLists: viewModel.availableRemindersLists,
+                        currentIdentifier: RemindersSyncPreferences.listIdentifier
+                    ) { identifier in
+                        Task { @MainActor in
+                            await viewModel.selectRemindersList(
+                                identifier,
+                                syncService: syncService,
+                                remindersService: remindersService
+                            )
+                        }
+                    }
+                    .onAppear {
+                        viewModel.loadRemindersLists(remindersService: remindersService)
+                    }
+                } label: {
+                    HStack {
+                        Text("account.reminders.list.label")
+                            .appBody()
+                        Spacer()
+                        Text(verbatim: viewModel.remindersListName)
+                            .appBody()
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+            }
 
         } header: {
             AppSectionHeader("account.section.preferences")
+        } footer: {
+            if viewModel.remindersSyncDenied {
+                Text("account.reminders.denied")
+                    .appFootnote()
+            } else {
+                Text("account.reminders.sync.footer")
+                    .appFootnote()
+            }
         }
         .appListSectionHeaderStyle()
     }
@@ -277,6 +333,29 @@ struct AccountView: View {
     @ViewBuilder
     private var footerSection: some View {
         Section {
+            NavigationLink {
+                SyncStatusContent(
+                    connectionState: syncService.connectionState,
+                    connectionTransport: syncService.connectionTransport,
+                    imageCacheStatus: syncService.imageCacheStatus,
+                    recipeDocumentCacheStatus: syncService.recipeDocumentCacheStatus,
+                    onRetryImageDownload: { syncService.retryImagePrefetch() },
+                    onRetryRecipeDocumentsDownload: { syncService.retryRecipeDocumentsBatchLoad() }
+                )
+                .localizedNavigationTitle("account.sync.title")
+                .navigationBarTitleDisplayMode(.inline)
+            } label: {
+                HStack {
+                    Text("account.sync.title")
+                        .appBody()
+                    Spacer()
+                    Text(syncDateLabel)
+                        .appBody()
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+
             Button {
                 showingAbout = true
             } label: {
@@ -292,6 +371,19 @@ struct AccountView: View {
         } header: {
             AppSectionHeaderSpacer()
         }
+    }
+
+    /// Relative "5 min ago"-style label for the last successful sync.
+    /// Reads `\.locale` so the label recomputes when the user switches language.
+    private var syncDateLabel: String {
+        _ = locale
+        guard let date = syncService.lastSuccessfulSyncAt else {
+            return Bundle.currentLocalizedString("account.sync.never")
+        }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = locale
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 
     @ViewBuilder

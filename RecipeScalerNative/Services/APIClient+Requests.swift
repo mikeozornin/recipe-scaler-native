@@ -36,6 +36,20 @@ extension APIClient {
         fileName: String,
         mimeType: String
     ) async throws -> Data {
+        try await uploadMultipart(
+            path: path,
+            fieldName: fieldName,
+            files: [(fileName: fileName, data: fileData, mimeType: mimeType)]
+        )
+    }
+
+    /// Upload multiple files under the same form field name (e.g. `images[]`).
+    /// Mirrors the web `formData.append('images', file)` loop in `recipe-import-api.ts`.
+    func uploadMultipart(
+        path: String,
+        fieldName: String,
+        files: [(fileName: String, data: Data, mimeType: String)]
+    ) async throws -> Data {
         let boundary = "Boundary-\(UUID().uuidString)"
         var request = try buildRequest(
             path: path,
@@ -44,11 +58,19 @@ extension APIClient {
             headers: ["Content-Type": "multipart/form-data; boundary=\(boundary)"]
         )
         var body = Data()
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"\(fieldName)\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
-        body.append(fileData)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        let crlf = "\r\n"
+        let boundaryLine = "--\(boundary)\r\n".data(using: .utf8)!
+        for file in files {
+            body.append(boundaryLine)
+            body.append(
+                "Content-Disposition: form-data; name=\"\(fieldName)\"; filename=\"\(file.fileName)\"\r\n"
+                    .data(using: .utf8)!
+            )
+            body.append("Content-Type: \(file.mimeType)\r\n\r\n".data(using: .utf8)!)
+            body.append(file.data)
+            body.append(crlf.data(using: .utf8)!)
+        }
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
         request.httpBody = body
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
@@ -72,7 +94,7 @@ extension APIClient {
     }
 }
 
-private struct AnyEncodable: Encodable {
+struct AnyEncodable: Encodable {
     private let encode: (Encoder) throws -> Void
     init<T: Encodable>(_ value: T) {
         encode = value.encode

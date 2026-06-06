@@ -16,15 +16,19 @@ enum ConnectionState: Equatable, Sendable {
     var displayLabel: String {
         switch self {
         case .disconnected:
-            return String(localized: "connection.state.disconnected")
+            return Bundle.currentLocalizedString("connection.state.disconnected")
         case .connecting:
-            return String(localized: "connection.state.connecting")
+            return Bundle.currentLocalizedString("connection.state.connecting")
         case .connected:
-            return String(localized: "connection.state.connected")
+            return Bundle.currentLocalizedString("connection.state.connected")
         case .reconnecting:
-            return String(localized: "connection.state.reconnecting")
+            return Bundle.currentLocalizedString("connection.state.reconnecting")
         case .error(let message):
-            return String(format: String(localized: "connection.state.error"), locale: .current, message)
+            return String(
+                format: Bundle.currentLocalizedString("connection.state.error"),
+                locale: .current,
+                message
+            )
         }
     }
 }
@@ -37,9 +41,9 @@ enum SyncConnectionTransport: String, Sendable, Equatable {
     var displayLabel: String {
         switch self {
         case .websocketOnly:
-            return String(localized: "sync.status.transport.websocket")
+            return Bundle.currentLocalizedString("sync.status.transport.websocket")
         case .pollingAndWebsocket:
-            return String(localized: "sync.status.transport.polling")
+            return Bundle.currentLocalizedString("sync.status.transport.polling")
         }
     }
 }
