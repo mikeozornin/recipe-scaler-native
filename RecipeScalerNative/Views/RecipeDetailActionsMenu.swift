@@ -21,9 +21,9 @@ struct RecipeDetailActionsMenu: View {
         Menu {
             if !isEditing {
                 Button {
-                    Task { await addAllToShopping() }
+                    showingAssignSheet = true
                 } label: {
-                    AppLabel.make(String(localized: "shopping.detail-add-all"), symbol: "cart.badge.plus")
+                    AppLabel.make(String(localized: "collections.assign-tooltip"), symbol: "folder.badge.plus")
                 }
 
                 Button {
@@ -38,10 +38,12 @@ struct RecipeDetailActionsMenu: View {
                 }
 
                 Button {
-                    showingAssignSheet = true
+                    Task { await addAllToShopping() }
                 } label: {
-                    AppLabel.make(String(localized: "collections.assign-tooltip"), symbol: "folder.badge.plus")
+                    AppLabel.make(String(localized: "shopping.detail-add-all"), symbol: "cart.badge.plus")
                 }
+
+                Divider()
 
                 Button(role: .destructive) {
                     recipePendingDelete = true
