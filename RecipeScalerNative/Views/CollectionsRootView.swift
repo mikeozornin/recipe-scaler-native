@@ -322,7 +322,6 @@ struct CollectionsRootView: View {
         }
         .buttonStyle(.plain)
         .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
-        .listRowSeparator(.hidden)
         .accessibilityIdentifier(AccessibilityIdentifiers.collectionsRootRow(folderId: folderId))
     }
 
@@ -353,7 +352,6 @@ struct CollectionsRootView: View {
             }
             .ingredientListRowChrome()
             .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
-            .listRowSeparator(.hidden)
             .onAppear {
                 isNewFieldFocused = true
             }
@@ -383,7 +381,6 @@ struct CollectionsRootView: View {
             .buttonStyle(.plain)
             .tint(.primary)
             .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
-            .listRowSeparator(.hidden)
             .accessibilityIdentifier(AccessibilityIdentifiers.collectionsNewRow)
         }
     }
