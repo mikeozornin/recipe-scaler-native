@@ -27,7 +27,6 @@
 		D5796382221C4D669FEB7155 /* SpotlightIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96ECDC1C61704BD8AF111FBD /* SpotlightIndexer.swift */; };
 		E5F60718293A4B7000000012 /* RecipeCachedImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000013 /* RecipeCachedImageView.swift */; };
 		E5F60718293A4B7000000023 /* SyncStatusSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000022 /* SyncStatusSheet.swift */; };
-		E5F60718293A4B7000000032 /* PrivacyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000033 /* PrivacyView.swift */; };
 		E5F60718293A4B700000002B /* RecipeTitleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700000002A /* RecipeTitleTextField.swift */; };
 		42667C91A6DD160819A90989 /* YrsValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7951C990E84C9EFE9685023 /* YrsValue.swift */; };
 		4A7854A4A9AD73FD8FC6BA63 /* YrsError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A14EFAC19F16EB6D5C3B232 /* YrsError.swift */; };
@@ -265,7 +264,6 @@
 		0EF2B3F0EB5A4599AE467921 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
 		96ECDC1C61704BD8AF111FBD /* SpotlightIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexer.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000022 /* SyncStatusSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusSheet.swift; sourceTree = "<group>"; };
-		E5F60718293A4B7000000033 /* PrivacyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B700000002A /* RecipeTitleTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeTitleTextField.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000013 /* RecipeCachedImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeCachedImageView.swift; sourceTree = "<group>"; };
 		C38C9866A5142170D549D605 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
@@ -527,7 +525,6 @@
 				F0E7DB29212A4BCAA61019F1 /* RecipeEditToolbar.swift */,
 				480DCDACDCA0402582631501 /* RecipeLegacyBanner.swift */,
 				B2FD0DF0B71C1B50552D1B2F /* RecipeListView.swift */,
-				E5F60718293A4B7000000033 /* PrivacyView.swift */,
 				E5F60718293A4B7000000022 /* SyncStatusSheet.swift */,
 				E5F60718293A4B700000002A /* RecipeTitleTextField.swift */,
 				E5F60718293A4B7000000013 /* RecipeCachedImageView.swift */,
@@ -1102,7 +1099,6 @@
 				6DA6652C9384DA29190921B5 /* RecipeDetailView.swift in Sources */,
 				99B7BAFEF20D4EBBF5CAC721 /* RecipeListView.swift in Sources */,
 				E5F60718293A4B7000000023 /* SyncStatusSheet.swift in Sources */,
-				E5F60718293A4B7000000032 /* PrivacyView.swift in Sources */,
 				E5F60718293A4B700000002B /* RecipeTitleTextField.swift in Sources */,
 				B52E1B8024F0FF293817C6F4 /* RecipeListViewModel.swift in Sources */,
 				69CA5B8741F33C2F92CD0048 /* RecipeScalerNativeApp.swift in Sources */,

@@ -28,4 +28,8 @@ enum PublicURLBuilder {
     static var aboutURL: URL {
         URL(string: "\(Config.baseURL)/#/about")!
     }
+
+    static var privacyURL: URL {
+        URL(string: "\(Config.baseURL)/#/privacy")!
+    }
 }

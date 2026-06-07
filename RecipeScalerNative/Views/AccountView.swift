@@ -20,6 +20,7 @@ struct AccountView: View {
     private var collectionsLayoutRaw: String = RecipeFolderRoutes.CollectionsRootLayout.list.rawValue
     @State private var isTelegramConnected = false
     @State private var showingAbout = false
+    @State private var showingPrivacy = false
 
     private var collectionsLayout: RecipeFolderRoutes.CollectionsRootLayout {
         RecipeFolderRoutes.CollectionsRootLayout(rawValue: collectionsLayoutRaw) ?? .list
@@ -68,6 +69,10 @@ struct AccountView: View {
             }
             .sheet(isPresented: $showingAbout) {
                 InAppSafariView(url: PublicURLBuilder.aboutURL)
+                    .ignoresSafeArea()
+            }
+            .sheet(isPresented: $showingPrivacy) {
+                InAppSafariView(url: PublicURLBuilder.privacyURL)
                     .ignoresSafeArea()
             }
             .confirmationDialog(
@@ -393,13 +398,13 @@ struct AccountView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            NavigationLink {
-                PrivacyView()
-                    .localizedNavigationTitle("privacy.title")
-                    .navigationBarTitleDisplayMode(.inline)
+            Button {
+                showingPrivacy = true
             } label: {
                 Text("privacy.link")
                     .appBody()
+                    .foregroundStyle(.tint)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
