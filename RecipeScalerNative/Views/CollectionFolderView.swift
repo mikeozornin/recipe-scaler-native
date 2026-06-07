@@ -213,7 +213,7 @@ struct CollectionFolderView: View {
             Button {
                 showingManageRecipes = true
             } label: {
-                AppLabel.make(String(localized: "collections.select-recipes"), symbol: "checklist")
+                AppLabel.make(String(localized: "collections.select-recipes"), symbol: "folder.badge.plus")
             }
 
             Button(role: .destructive) {
