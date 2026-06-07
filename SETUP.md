@@ -2,6 +2,7 @@
 
 ## Prerequisites
 
+- Paid Apple Developer account: optional for simulator/dev; portal checklist for production — [docs/PAID-APPLE-DEVELOPER-REQUIRED.md](docs/PAID-APPLE-DEVELOPER-REQUIRED.md)
 - macOS with Xcode 16+
 - iOS 17+ device or simulator
 - Rust toolchain (for building yrs XCFramework)

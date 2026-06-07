@@ -7,6 +7,7 @@ import PhotosUI
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
+import RecipeScalerCore
 
 /// Recipe hero image with web-style delete overlay (edit) and upload dropzone when empty.
 struct RecipeDetailImageSection: View {

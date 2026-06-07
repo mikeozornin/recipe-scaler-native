@@ -9,7 +9,7 @@ import Foundation
 
 public enum ImportContentClassifier {
 
-    private static let trailingPunctuation = #/[),.;:!?]+$//
+    private static let trailingPunctuation = #/[),.;:!?]+$/#
 
     /// Extract deduplicated, trimmed URLs from arbitrary free-form text.
     public static func extractUrls(from input: String) -> [String] {

@@ -10,6 +10,30 @@ struct CollectionEntry: Identifiable, Sendable, Equatable {
     let updatedAt: String
     let deleted: Bool
     let isPinned: Bool
+    /// Ids of collections (folders) this recipe belongs to.
+    /// Empty when the underlying Y.Map has no `folderIds` key
+    /// (native 008 compat) or an empty array after normalization.
+    let folderIds: [String]
+
+    init(
+        id: String,
+        name: String,
+        color: String,
+        imageUrl: String?,
+        updatedAt: String,
+        deleted: Bool,
+        isPinned: Bool,
+        folderIds: [String] = []
+    ) {
+        self.id = id
+        self.name = name
+        self.color = color
+        self.imageUrl = imageUrl
+        self.updatedAt = updatedAt
+        self.deleted = deleted
+        self.isPinned = isPinned
+        self.folderIds = folderIds
+    }
 
     /// Sort entries: pinned first, then alphabetically by display name (emoji ignored), then id.
     static func sorted(_ entries: [CollectionEntry]) -> [CollectionEntry] {

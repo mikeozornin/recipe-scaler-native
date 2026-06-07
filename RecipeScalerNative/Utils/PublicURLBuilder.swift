@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 enum PublicURLBuilder {
     static func recipeShareURL(recipeId: String) -> URL? {

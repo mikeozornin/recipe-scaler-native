@@ -64,6 +64,19 @@ enum AccessibilityIdentifiers {
     static let descriptionTimerStartPopover = "description_timer_start_popover"
     static let descriptionTimerStartConfirm = "description_timer_start_confirm"
 
+    // MARK: - Collections (026)
+
+    static let collectionsRoot = "collections_root"
+    static let collectionsRootRowPrefix = "collection_row_"
+    static let collectionsNewRow = "collection_new_row"
+    static let collectionsViewModeToggle = "collections_view_mode_toggle"
+    static let collectionAssignSheet = "collection_assign_sheet"
+    static let manageCollectionRecipesSheet = "manage_collection_recipes_sheet"
+
+    static func collectionsRootRow(folderId: String) -> String {
+        "\(collectionsRootRowPrefix)\(folderId)"
+    }
+
     static func mobileTimerChip(timerId: String) -> String {
         "mobile_timer_chip_\(timerId)"
     }

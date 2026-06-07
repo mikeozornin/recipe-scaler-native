@@ -1,6 +1,7 @@
 import Foundation
 import OSLog
 import SocketIO
+import RecipeScalerCore
 
 /// Central service for Y.Doc synchronization via Socket.IO.
 ///
@@ -11,6 +12,12 @@ import SocketIO
 @MainActor
 final class YjsSyncService: ObservableObject {
     @Published private(set) var collectionEntries: [CollectionEntry] = []
+    /// Active (non-deleted) folders from the collection doc, sorted for display.
+    @Published private(set) var folders: [RecipeFolder] = []
+    /// Derived in-memory index for the collections view.
+    @Published private(set) var collectionIndex: CollectionRecipesIndex = CollectionRecipesIndex(
+        live: [], uncategorized: [], countByFolder: [:], folderRecipesById: [:]
+    )
     @Published private(set) var shoppingSnapshot: ShoppingListSnapshot = .empty
     @Published private(set) var currentRecipe: RecipeData?
     @Published private(set) var connectionState: ConnectionState = .disconnected
@@ -302,6 +309,37 @@ final class YjsSyncService: ObservableObject {
         return recipeId
     }
 
+    // MARK: - Collection folders (026)
+
+    /// Create a new user collection. Returns the new folder id.
+    @discardableResult
+    func createFolder(name: String, color: String? = nil) async throws -> String {
+        let id = try await documentManager.createFolder(name: name, color: color)
+        await refreshFolders()
+        return id
+    }
+
+    /// Rename an existing folder (active or tombstoned).
+    func renameFolder(id: String, name: String) async throws {
+        try await documentManager.renameFolder(id: id, name: name)
+        await refreshFolders()
+    }
+
+    /// Soft-delete a folder and strip its id from every recipe's `folderIds`.
+    /// Recipes are not deleted — only their membership in this collection.
+    func deleteFolder(id: String) async throws {
+        try await documentManager.deleteFolder(id: id)
+        await refreshFolders()
+        await refreshCollectionEntries()
+    }
+
+    /// Replace the set of collections a recipe belongs to.
+    /// Validates ids against active folders; writes the full set in one transaction.
+    func setRecipeFolders(recipeId: String, folderIds: [String]) async throws {
+        try await documentManager.setRecipeFolders(recipeId: recipeId, folderIds: folderIds)
+        await refreshCollectionEntries()
+    }
+
     // MARK: - Shopping list
 
     func setShoppingSortMode(_ mode: ShoppingSortMode) async throws {
@@ -585,6 +623,10 @@ final class YjsSyncService: ObservableObject {
     func clearSessionForLogout() async {
         stop()
         collectionEntries = []
+        folders = []
+        collectionIndex = CollectionRecipesIndex(
+            live: [], uncategorized: [], countByFolder: [:], folderRecipesById: [:]
+        )
         writeSyncStates = [:]
         imageCacheStatus = RecipeImageCacheStatus()
         await documentManager.resetSession()
@@ -1773,6 +1815,10 @@ final class YjsSyncService: ObservableObject {
                 activeRecipeWasRemoved = true
             }
             collectionEntries = filtered
+            // Rebuild the derived collections index and refresh folders so the
+            // collections view stays in sync after any recipes change.
+            collectionIndex = CollectionRecipesIndexBuilder.build(from: filtered)
+            await refreshFolders()
             syncActiveRecipeFromCollection()
             scheduleImagePrefetch(for: filtered)
             scheduleRecipeDocumentsBatchLoad(recipeIds: filtered.map(\.id))
@@ -1809,6 +1855,17 @@ final class YjsSyncService: ObservableObject {
 
     private func collectionEntry(for recipeId: String) -> CollectionEntry? {
         collectionEntries.first { $0.id == recipeId }
+    }
+
+    /// Re-read active folders from the collection doc.
+    /// Called after `refreshCollectionEntries` and after each folder mutation.
+    private func refreshFolders() async {
+        do {
+            let active = try await documentManager.readFolders()
+            folders = active
+        } catch {
+            logger.error("Failed to read folders: \(error)")
+        }
     }
 
     private func syncActiveRecipeFromCollection() {

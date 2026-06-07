@@ -13,6 +13,9 @@ enum YrsInput {
     case bool(Bool)
     case map([(String, YrsInput)])
     case yarray([YrsInput])
+    /// JSON-array of strings stored as a plain value (not a nested `Y.Array` shared type).
+    /// Used by recipe entry `folderIds` (see web `setRecipeFolderIds`).
+    case jsonStringArray([String])
 
     /// Materializes a `YInput` tree and keeps every borrowed pointer alive through `body`.
     static func withMaterialized<R>(_ input: YrsInput, _ body: (YInput) -> R) -> R {
@@ -96,6 +99,19 @@ enum YrsInput {
                     valuesPtr[index] = materialize(items[index])
                 }
                 return yinput_yarray(valuesPtr, UInt32(count))
+            case .jsonStringArray(let values):
+                // Stored as a JSON-array value (Y_JSON_ARR) on the parent map,
+                // matching how the web client writes `folderIds: string[]`.
+                if values.isEmpty {
+                    return yinput_json_array(nil, 0)
+                }
+                let count = values.count
+                let valuesPtr = UnsafeMutablePointer<YInput>.allocate(capacity: count)
+                ownedValueBuffers.append(valuesPtr)
+                for index in 0..<count {
+                    valuesPtr[index] = yinput_string(persist(values[index]))
+                }
+                return yinput_json_array(valuesPtr, UInt32(count))
             }
         }
 

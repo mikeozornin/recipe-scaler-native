@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 enum UserFacingAPIError {
     /// URLSession / transport failures that should not surface raw `localizedDescription` in UI.

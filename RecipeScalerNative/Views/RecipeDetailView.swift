@@ -7,6 +7,7 @@
 import SwiftUI
 import Foundation
 import UIKit
+import RecipeScalerCore
 
 // Simple struct for displaying ingredients (not SwiftData model)
 struct DisplayIngredient: Identifiable {

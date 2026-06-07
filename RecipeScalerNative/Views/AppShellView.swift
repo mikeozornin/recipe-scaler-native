@@ -75,7 +75,7 @@ struct AppShellView: View {
                     showImportSheet = false
                     selectedTab = .recipes
                     if let id = result.primaryRecipeId {
-                        recipesPath.append(id)
+                        recipesPath.append(RecipesRoute.recipe(recipeId: id, folderContext: nil))
                     }
                     if result.importedCount > 0 {
                         let message: String
@@ -157,7 +157,7 @@ struct AppShellView: View {
             if entries.contains(where: { $0.id == pendingId && !$0.deleted }) {
                 spotlightOpenRecipeId = nil
                 selectedTab = .recipes
-                recipesPath.append(pendingId)
+                recipesPath.append(RecipesRoute.recipe(recipeId: pendingId, folderContext: nil))
             }
         }
         #if DEBUG
@@ -183,7 +183,7 @@ struct AppShellView: View {
     private func consumePendingDeepLinkIfNeeded() {
         guard let id = DeepLinkRouter.consumePendingRecipeId() else { return }
         selectedTab = .recipes
-        recipesPath.append(id)
+        recipesPath.append(RecipesRoute.recipe(recipeId: id, folderContext: nil))
     }
 
     private var mobileTimerPanel: some View {
@@ -275,7 +275,7 @@ struct AppShellView: View {
             selectedTab = .recipes
             if syncService.collectionEntries.contains(where: { $0.id == recipeId && !$0.deleted }) {
                 spotlightOpenRecipeId = nil
-                recipesPath.append(recipeId)
+                recipesPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
             } else {
                 // Recipe not yet in the loaded collection (cold start / offline
                 // → online). Stash the id; `onChange(collectionEntries)` will

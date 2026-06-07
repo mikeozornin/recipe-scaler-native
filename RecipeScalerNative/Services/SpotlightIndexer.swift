@@ -3,6 +3,9 @@ import CoreSpotlight
 import Foundation
 import OSLog
 import UniformTypeIdentifiers
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// Indexes the user's recipe collection into the system Spotlight index.
 ///
@@ -18,6 +21,9 @@ final class SpotlightIndexer: ObservableObject {
 
     /// Mirrors `CoreSpotlightActionIdentifier` in Info.plist.
     static let actionAddToShopping = "addToShopping"
+
+    /// Bump when indexing payload shape changes so existing items reindex.
+    private static let previewFormatVersion = "1"
 
     private let syncService: YjsSyncService
     private let logger = Logger(subsystem: "com.recipescaler.native", category: "SpotlightIndexer")
@@ -65,7 +71,6 @@ final class SpotlightIndexer: ObservableObject {
 
     private func reindex(entries: [CollectionEntry]) async {
         guard !entries.isEmpty else {
-            // User has no recipes (e.g. fresh install / logout) → wipe index.
             await clearAll()
             return
         }
@@ -73,7 +78,6 @@ final class SpotlightIndexer: ObservableObject {
         let live = entries.filter { !$0.deleted }
         let liveIds = Set(live.map { $0.id })
 
-        // 1. Remove tombstoned / absent.
         let stale = Set(indexedFingerprints.keys).subtracting(liveIds)
         if !stale.isEmpty {
             do {
@@ -87,8 +91,7 @@ final class SpotlightIndexer: ObservableObject {
             }
         }
 
-        // 2. Index new / changed (by updatedAt fingerprint).
-        let dirty = live.filter { indexedFingerprints[$0.id] != $0.updatedAt }
+        let dirty = live.filter { indexedFingerprints[$0.id] != indexFingerprint(for: $0) }
         guard !dirty.isEmpty else { return }
 
         logger.info("Reindexing \(dirty.count) recipe(s); stale removed: \(stale.count)")
@@ -99,13 +102,18 @@ final class SpotlightIndexer: ObservableObject {
     }
 
     private func indexOne(entry: CollectionEntry) async {
-        guard let recipe = await syncService.peekRecipeData(recipeId: entry.id) else {
-            // Snapshot not yet synced — skip; next reindex tick will retry.
+        guard var recipe = await syncService.peekRecipeData(recipeId: entry.id) else {
             return
         }
 
+        recipe = RecipeCollectionMerge.merged(recipe, with: entry)
+
         let attrs = CSSearchableItemAttributeSet(itemContentType: UTType.text.identifier)
         attrs.title = recipe.name
+        let displayTitle = RecipeTitleEmoji.displayName(for: recipe.name)
+        if !displayTitle.isEmpty {
+            attrs.displayName = displayTitle
+        }
         attrs.contentDescription = Self.buildPreview(recipe: recipe)
         attrs.identifier = recipe.id
 
@@ -120,11 +128,8 @@ final class SpotlightIndexer: ObservableObject {
             attrs.contentModificationDate = updated
         }
 
-        // Action button "Add to Shopping" — Info.plist declares title + SF Symbol.
         attrs.actionIdentifiers = [Self.actionAddToShopping]
 
-        // Thumbnail: prefer local cached file, fall back to remote URL (Spotlight
-        // will fetch and cache on its own).
         if let localURL = RecipeImageDiskCache.existingFileURL(recipeId: entry.id, variant: .preview)
             ?? RecipeImageDiskCache.existingFileURL(recipeId: entry.id, variant: .full),
             let data = try? Data(contentsOf: localURL) {
@@ -142,7 +147,7 @@ final class SpotlightIndexer: ObservableObject {
 
         do {
             try await CSSearchableIndex.default().indexSearchableItems([item])
-            indexedFingerprints[entry.id] = entry.updatedAt
+            indexedFingerprints[entry.id] = indexFingerprint(for: entry)
         } catch {
             logger.warning("Index failed for \(entry.id): \(error.localizedDescription)")
         }
@@ -150,46 +155,93 @@ final class SpotlightIndexer: ObservableObject {
 
     // MARK: - Helpers
 
+    private func indexFingerprint(for entry: CollectionEntry) -> String {
+        "\(entry.updatedAt)|\(Self.previewFormatVersion)"
+    }
+
     private static let dateParser: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return f
     }()
 
-    /// Build a readable preview string for the Spotlight card.
-    ///
-    /// Prefers a structured ingredient list (one per line, "amount unit name"),
-    /// falling back to the plain-text HTML description when no ingredients exist.
+    /// Spotlight snippet: one line, middle-dot separated (multi-line `\n` is often hidden).
     private static func buildPreview(recipe: RecipeData) -> String? {
-        let items = recipe.ingredients
-            .filter { !$0.isSeparator && !$0.name.isEmpty }
-            .prefix(8)
-            .map { ingredient -> String in
-                let parts = [ingredient.amount, ingredient.unit, ingredient.name]
-                    .filter { !$0.isEmpty }
-                return parts.joined(separator: " ")
+        let ingredientLines = recipe.ingredients
+            .filter { !$0.isHeaderRow }
+            .compactMap { spotlightIngredientLine($0) }
+            .filter { !$0.isEmpty }
+
+        if !ingredientLines.isEmpty {
+            let maxItems = 6
+            var snippet = ingredientLines.prefix(maxItems).joined(separator: " · ")
+            if ingredientLines.count > maxItems {
+                snippet += " · …"
             }
-        if !items.isEmpty {
-            let suffix = recipe.ingredients.count > 8 ? " …" : ""
-            return items.joined(separator: "\n") + suffix
+            return truncateForSpotlight(snippet)
         }
-        return plainText(fromHTML: recipe.description)
+
+        if let fromDescription = plainText(fromHTML: recipe.description), !fromDescription.isEmpty {
+            return truncateForSpotlight(fromDescription)
+        }
+
+        return nil
     }
 
-    /// Best-effort HTML → plain text fallback.
+    private static func spotlightIngredientLine(_ ingredient: IngredientData) -> String? {
+        let name = ingredient.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return nil }
+
+        let qty = ingredient.quantityText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let unit = ingredient.unit.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        var parts: [String] = []
+        if !qty.isEmpty { parts.append(qty) }
+        if !unit.isEmpty { parts.append(unit) }
+        parts.append(name)
+        return parts.joined(separator: " ")
+    }
+
+    private static let spotlightSnippetMaxLength = 220
+
+    private static func truncateForSpotlight(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > spotlightSnippetMaxLength else { return trimmed }
+        let end = trimmed.index(trimmed.startIndex, offsetBy: spotlightSnippetMaxLength)
+        return String(trimmed[..<end]).trimmingCharacters(in: .whitespacesAndNewlines) + "…"
+    }
+
     private static func plainText(fromHTML html: String?) -> String? {
         guard let html, !html.isEmpty else { return nil }
-        let stripped = html.replacingOccurrences(
-            of: "<[^>]+>",
-            with: " ",
-            options: .regularExpression
-        )
-        let collapsed = stripped.replacingOccurrences(
-            of: "\\s+",
-            with: " ",
-            options: .regularExpression
-        )
-        .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        #if canImport(UIKit)
+        if let data = html.data(using: .utf8),
+           let attributed = try? NSAttributedString(
+               data: data,
+               options: [
+                   .documentType: NSAttributedString.DocumentType.html,
+                   .characterEncoding: String.Encoding.utf8.rawValue,
+               ],
+               documentAttributes: nil
+           ) {
+            let raw = attributed.string
+                .replacingOccurrences(of: "\u{00a0}", with: " ")
+            let collapsed = raw.replacingOccurrences(
+                of: "\\s+",
+                with: " ",
+                options: .regularExpression
+            )
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !collapsed.isEmpty { return collapsed }
+        }
+        #endif
+
+        var text = html
+        text = text.replacingOccurrences(of: "(?i)</p>|</li>|</div>|</h[1-6]>", with: " ", options: .regularExpression)
+        text = text.replacingOccurrences(of: "(?i)<br\\s*/?>", with: " ", options: .regularExpression)
+        text = text.replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
+        let collapsed = text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         return collapsed.isEmpty ? nil : collapsed
     }
 }

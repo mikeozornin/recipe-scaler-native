@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 struct AssistantThreadDTO: Decodable, Identifiable, Sendable {
     let id: String

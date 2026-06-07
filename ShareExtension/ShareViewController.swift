@@ -35,12 +35,4 @@ final class ShareViewController: UIViewController {
         hostingController = host
     }
 
-    override func didSelectCancel() {
-        extensionContext?.cancelRequest(withError: NSError(domain: "ShareExtension", code: 0))
-    }
-
-    override func didSelectPost() {
-        // No-op: submit happens from SwiftUI (`ShareView.submit()`).
-        // Keeping the default SLComposeServiceViewController-style hook silenced.
-    }
 }

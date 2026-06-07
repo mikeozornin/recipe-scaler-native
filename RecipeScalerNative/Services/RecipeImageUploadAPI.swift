@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 struct RecipeImageUploadResult: Decodable, Sendable {
     let imageUrl: String

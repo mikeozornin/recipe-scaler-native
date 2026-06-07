@@ -5,7 +5,7 @@
 //  SwiftUI interface shared by Share and Action extensions. Lifecycle:
 //    .loading → .preview → .importing → .success / .error
 //
-//  Localizes through `Bundle.module` (this framework's `Shared.xcstrings`).
+//  Localizes through the framework bundle (`Shared.xcstrings`).
 //
 
 import SwiftUI
@@ -33,8 +33,10 @@ public struct ShareView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button(Text(verbatim: Self.localized("share-extension.button-cancel"))) {
+                        Button {
                             cancel()
+                        } label: {
+                            Text(verbatim: Self.localized("share-extension.button-cancel"))
                         }
                     }
                 }
@@ -156,7 +158,7 @@ public struct ShareView: View {
             lastResult = dto
             phase = .success
         } catch {
-            errorMessage = ImportErrorLocalizer.localize(error, bundle: .module)
+            errorMessage = ImportErrorLocalizer.localize(error, bundle: Self.resourceBundle)
             phase = .error
         }
     }
@@ -190,8 +192,12 @@ public struct ShareView: View {
 
     // MARK: - Localization
 
+    private static var resourceBundle: Bundle {
+        Bundle(for: APIClient.self)
+    }
+
     public static func localized(_ key: String) -> String {
-        Bundle.module.localizedString(forKey: key, value: nil, table: nil)
+        resourceBundle.localizedString(forKey: key, value: nil, table: nil)
     }
 }
 

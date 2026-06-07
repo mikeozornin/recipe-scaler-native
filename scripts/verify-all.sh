@@ -10,6 +10,7 @@ scripts=(
   verify-app-shell.sh
   verify-collection-mutations.sh
   verify-description-editor.sh
+  verify-recipe-collections.sh
   verify-shopping-list.sh
   verify-recipe-import.sh
   verify-discover-public.sh

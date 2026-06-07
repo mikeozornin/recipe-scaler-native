@@ -6,6 +6,7 @@
 import SwiftUI
 import PhotosUI
 import UniformTypeIdentifiers
+import RecipeScalerCore
 
 struct ImportRecipesResult {
     let recipeIds: [String]

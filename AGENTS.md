@@ -108,5 +108,6 @@ rtk xcodebuild -scheme RecipeScalerNative \
 - Offline-first app, app must work in offline except some features like discover section.
 - Recipes **v1/v2** are read-only on iOS with a legacy banner; **v3** editing and v1/v2→v3 migration happen on web app only.
 - Feature verification scripts: `scripts/verify-<feature>.sh` and `scripts/verify-all.sh`.
+- Paid Apple Developer Program ($99/yr): optional for simulator/dev; TestFlight, App Store, App Groups on device, extensions — see `docs/PAID-APPLE-DEVELOPER-REQUIRED.md`.
 - Grok Build session transcripts: `~/.grok/sessions/%2FUsers%2F...%2Frecipe-scaler-native/<session-id>/` (`updates.jsonl`, `summary.json`).
 

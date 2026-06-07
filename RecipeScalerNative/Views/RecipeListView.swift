@@ -10,7 +10,16 @@ struct RecipeListView: View {
     @State private var showingSyncStatus = false
     @State private var recipePendingDelete: RecipeRowData?
     @State private var recipeIdToOpenInEditMode: String?
+    @State private var assignSheetRecipeId: String?
+    @State private var assignSheetRecipeName: String?
 
+    /// Persisted view mode: `nil` = default (collections).
+    @AppStorage(RecipeFolderRoutes.viewModeStorageKey)
+    private var viewModeRaw: String = RecipeFolderRoutes.ViewMode.collections.rawValue
+
+    private var viewMode: RecipeFolderRoutes.ViewMode {
+        RecipeFolderRoutes.ViewMode(rawValue: viewModeRaw) ?? .collections
+    }
 
     init(navigationPath: Binding<NavigationPath> = .constant(NavigationPath())) {
         _navigationPath = navigationPath
@@ -18,6 +27,10 @@ struct RecipeListView: View {
     #if DEBUG
     @State private var didOpenDebugRecipe = false
     #endif
+
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespaces).isEmpty
+    }
 
     private var filteredEntries: [CollectionEntry] {
         let sorted = RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
@@ -51,10 +64,17 @@ struct RecipeListView: View {
         !pinnedRowItems.isEmpty || !unpinnedRowItems.isEmpty
     }
 
+    /// Whether we should show the collections root instead of the flat list.
+    private var showsCollectionsRoot: Bool {
+        viewMode == .collections && !isSearching
+    }
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
             Group {
-                if syncService.connectionState == .connecting && syncService.collectionEntries.isEmpty {
+                if showsCollectionsRoot {
+                    CollectionsRootView(navigationPath: $navigationPath)
+                } else if syncService.connectionState == .connecting && syncService.collectionEntries.isEmpty {
                     ProgressView(String(localized: "recipe.list.loading"))
                         .mobileTimerPanelBottomPadding()
                 } else if !hasAnyRows {
@@ -88,19 +108,27 @@ struct RecipeListView: View {
                     .listSectionSpacing(0)
                     .environment(\.defaultMinListRowHeight, 1)
                     .accessibilityIdentifier(AccessibilityIdentifiers.recipeList)
-                    .searchable(text: $searchText, prompt: "Search recipes")
+                    .searchable(text: $searchText, prompt: String(localized: "search.recipes"))
                 }
             }
             .localizedNavigationTitle("Recipes")
             .appListBodyTypography()
-            .navigationDestination(for: String.self) { recipeId in
-                YDocRecipeDetailView(
-                    recipeId: recipeId,
-                    startInEditMode: recipeIdToOpenInEditMode == recipeId
-                )
-                .onAppear {
-                    if recipeIdToOpenInEditMode == recipeId {
-                        recipeIdToOpenInEditMode = nil
+            .navigationDestination(for: RecipesRoute.self) { route in
+                switch route {
+                case .folder(let folderId):
+                    CollectionFolderView(
+                        folderId: folderId,
+                        navigationPath: $navigationPath
+                    )
+                case .recipe(let recipeId, _):
+                    YDocRecipeDetailView(
+                        recipeId: recipeId,
+                        startInEditMode: recipeIdToOpenInEditMode == recipeId
+                    )
+                    .onAppear {
+                        if recipeIdToOpenInEditMode == recipeId {
+                            recipeIdToOpenInEditMode = nil
+                        }
                     }
                 }
             }
@@ -113,6 +141,9 @@ struct RecipeListView: View {
             }
             #endif
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    viewModeToggle
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     SyncStatusIndicator(
                         connectionState: syncService.connectionState,
@@ -136,6 +167,15 @@ struct RecipeListView: View {
                         syncService.retryRecipeDocumentsBatchLoad()
                     }
                 )
+            }
+            .sheet(item: Binding<RecipeListAssignSheetItem?>(
+                get: {
+                    guard let id = assignSheetRecipeId, let name = assignSheetRecipeName else { return nil }
+                    return RecipeListAssignSheetItem(recipeId: id, recipeName: name)
+                },
+                set: { if $0 == nil { assignSheetRecipeId = nil; assignSheetRecipeName = nil } }
+            )) { item in
+                CollectionAssignSheet(recipeId: item.recipeId, recipeName: item.recipeName)
             }
             .alert("Error", isPresented: $showingError) {
                 Button("OK", role: .cancel) { }
@@ -167,6 +207,35 @@ struct RecipeListView: View {
             }
 
         }
+    }
+
+    // MARK: - View mode toggle
+
+    @ViewBuilder
+    private var viewModeToggle: some View {
+        Picker(selection: Binding(
+            get: { viewMode },
+            set: { viewModeRaw = $0.rawValue }
+        )) {
+            Label {
+                Text("collections.view-flat")
+            } icon: {
+                AppSymbol.image("list.bullet")
+            }
+            .tag(RecipeFolderRoutes.ViewMode.flat)
+
+            Label {
+                Text("collections.view-collections")
+            } icon: {
+                AppSymbol.image("folder")
+            }
+            .tag(RecipeFolderRoutes.ViewMode.collections)
+        } label: {
+            EmptyView()
+        }
+        .pickerStyle(.segmented)
+        .fixedSize()
+        .accessibilityLabel(Text("collections.title"))
     }
 
     // MARK: - Collection actions
@@ -224,7 +293,7 @@ struct RecipeListView: View {
                     allowsNetworkRefresh: allowsImageNetworkRefresh
                 )
 
-                NavigationLink(value: item.id) {
+                NavigationLink(value: RecipesRoute.recipe(recipeId: item.id, folderContext: nil)) {
                     Color.clear
                 }
                 .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
@@ -245,6 +314,18 @@ struct RecipeListView: View {
                 .tint(.green)
 
                 Button {
+                    assignSheetRecipeId = item.id
+                    assignSheetRecipeName = item.displayName
+                } label: {
+                    Label(
+                        String(localized: "collections.assign-tooltip"),
+                        systemImage: "folder.badge.plus"
+                    )
+                }
+                .tint(.orange)
+            }
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                Button {
                     Task { await togglePin(for: item) }
                 } label: {
                     Label {
@@ -258,8 +339,7 @@ struct RecipeListView: View {
                     }
                 }
                 .tint(.orange)
-            }
-            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+
                 Button(role: .destructive) {
                     recipePendingDelete = item
                 } label: {
@@ -286,7 +366,7 @@ struct RecipeListView: View {
             return
         }
         didOpenDebugRecipe = true
-        navigationPath.append(recipeId)
+        navigationPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
     }
     #endif
 
@@ -338,15 +418,23 @@ struct RecipeListView: View {
     }
 }
 
+// MARK: - Assign sheet item (for .sheet(item:))
+
+private struct RecipeListAssignSheetItem: Identifiable {
+    let recipeId: String
+    let recipeName: String
+    var id: String { recipeId }
+}
+
 private enum RecipeListMetrics {
     static let colorDotSide: CGFloat = 12
     static let emojiFontSize: CGFloat = 18
     static let thumbnailSide: CGFloat = 44
 }
 
-// MARK: - Section chrome
+// MARK: - Section chrome (internal — shared with CollectionFolderView)
 
-private struct RecipeListSectionHeader: View {
+struct RecipeListSectionHeader: View {
     let isPinnedSection: Bool
 
     var body: some View {
@@ -375,7 +463,7 @@ private struct RecipeListSectionHeader: View {
     }
 }
 
-private extension View {
+extension View {
     func recipeListSectionHeaderRow() -> some View {
         self
             .padding(.top, 14)

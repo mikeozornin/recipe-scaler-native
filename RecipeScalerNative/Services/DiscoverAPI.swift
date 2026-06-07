@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 struct DiscoveryCollectionDTO: Decodable, Identifiable, Sendable {
     var id: String { slug }

@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 struct ShoppingListShareSettings: Decodable, Sendable {
     let public_id: String?

@@ -918,4 +918,315 @@ final class RecipeScalerNativeTests: XCTestCase {
         let header = IngredientData(id: "h", name: "Section", hasQuantity: false)
         XCTAssertFalse(ShoppingListFromRecipe.isIngredientEligible(header))
     }
+
+    // MARK: - Recipe collections folders (026)
+
+    func testCollectionVirtualFoldersDetectsKnownIds() {
+        XCTAssertTrue(CollectionVirtualFolders.isKnownVirtualFolderId("all"))
+        XCTAssertTrue(CollectionVirtualFolders.isKnownVirtualFolderId("uncategorized"))
+        XCTAssertFalse(CollectionVirtualFolders.isKnownVirtualFolderId("user-folder-1"))
+        XCTAssertFalse(CollectionVirtualFolders.isKnownVirtualFolderId(""))
+    }
+
+    func testRecipeFolderSortedActiveFiltersDeletedAndOrdersByName() {
+        let folders = [
+            RecipeFolder(id: "z", name: "Zeta", color: "oklch(0.65 0.25 270)", createdAt: "", updatedAt: "", deleted: false),
+            RecipeFolder(id: "a", name: "Apple", color: "oklch(0.65 0.25 270)", createdAt: "", updatedAt: "", deleted: false),
+            RecipeFolder(id: "g", name: "Ghost", color: "oklch(0.65 0.25 270)", createdAt: "", updatedAt: "", deleted: true),
+            RecipeFolder(id: "m", name: "Middle", color: "oklch(0.65 0.25 270)", createdAt: "", updatedAt: "", deleted: false),
+        ]
+        let sorted = RecipeFolder.sortedActive(folders)
+        XCTAssertEqual(sorted.map(\.id), ["a", "m", "z"])
+    }
+
+    func testRecipeFolderSortedActiveIgnoresLeadingEmojiAndIsCaseInsensitive() {
+        let folders = [
+            RecipeFolder(id: "1", name: "🍕 Pizza", color: "oklch(0.65 0.25 270)", createdAt: "", updatedAt: "", deleted: false),
+            RecipeFolder(id: "2", name: "apple", color: "oklch(0.65 0.25 270)", createdAt: "", updatedAt: "", deleted: false),
+            RecipeFolder(id: "3", name: "Banana", color: "oklch(0.65 0.25 270)", createdAt: "", updatedAt: "", deleted: false),
+        ]
+        let sorted = RecipeFolder.sortedActive(folders)
+        XCTAssertEqual(sorted.map(\.id), ["2", "3", "1"])
+    }
+
+    func testCollectionRecipesIndexBuildGroupsByFolderAndCounts() {
+        let entries = [
+            CollectionEntry(id: "r1", name: "A", color: "#000", imageUrl: nil, updatedAt: "", deleted: false, isPinned: false, folderIds: ["f1"]),
+            CollectionEntry(id: "r2", name: "B", color: "#000", imageUrl: nil, updatedAt: "", deleted: false, isPinned: false, folderIds: ["f1", "f2"]),
+            CollectionEntry(id: "r3", name: "C", color: "#000", imageUrl: nil, updatedAt: "", deleted: false, isPinned: false, folderIds: []),
+            CollectionEntry(id: "r4", name: "D", color: "#000", imageUrl: nil, updatedAt: "", deleted: true, isPinned: false, folderIds: ["f1"]),
+        ]
+        let index = CollectionRecipesIndexBuilder.build(from: entries)
+        XCTAssertEqual(index.live.map(\.id), ["r1", "r2", "r3"])
+        XCTAssertEqual(index.uncategorized.map(\.id), ["r3"])
+        XCTAssertEqual(index.countByFolder["f1"], 2)
+        XCTAssertEqual(index.countByFolder["f2"], 1)
+        XCTAssertNil(index.countByFolder["fX"])
+        XCTAssertEqual(index.folderRecipesById["f1"]?.map(\.id), ["r1", "r2"])
+        XCTAssertEqual(index.folderRecipesById["f2"]?.map(\.id), ["r2"])
+    }
+
+    func testCollectionRecipesIndexPinnedFirstThenByName() {
+        let entries = [
+            CollectionEntry(id: "z", name: "Zeta", color: "#000", imageUrl: nil, updatedAt: "", deleted: false, isPinned: false, folderIds: []),
+            CollectionEntry(id: "p", name: "Pinned", color: "#000", imageUrl: nil, updatedAt: "", deleted: false, isPinned: true, folderIds: []),
+            CollectionEntry(id: "a", name: "Apple", color: "#000", imageUrl: nil, updatedAt: "", deleted: false, isPinned: false, folderIds: []),
+        ]
+        let index = CollectionRecipesIndexBuilder.build(from: entries)
+        XCTAssertEqual(index.live.map(\.id), ["p", "a", "z"])
+    }
+
+    func testFolderDisplayNameReturnsLocalizedNoTitleForBlankNames() {
+        // Sentinel + whitespace storage both resolve to a non-empty localized title.
+        XCTAssertFalse(FolderDisplayName.displayName(forStoredName: "").isEmpty)
+        XCTAssertFalse(FolderDisplayName.displayName(forStoredName: "   ").isEmpty)
+        XCTAssertEqual(FolderDisplayName.displayName(forStoredName: "Desserts"), "Desserts")
+        XCTAssertEqual(FolderDisplayName.displayName(forStoredName: "  Spices  "), "Spices")
+    }
+
+    func testRecipeFolderRoutesShouldUseFolderRecipePathMatchesWeb() {
+        let flat = RecipeFolderRoutes.ViewMode.flat
+        let collections = RecipeFolderRoutes.ViewMode.collections
+
+        XCTAssertFalse(RecipeFolderRoutes.shouldUseFolderRecipePath(
+            activeFolderId: "f1", viewMode: flat, recipeFolderIds: ["f1"]
+        ))
+        XCTAssertFalse(RecipeFolderRoutes.shouldUseFolderRecipePath(
+            activeFolderId: nil, viewMode: collections, recipeFolderIds: ["f1"]
+        ))
+        XCTAssertTrue(RecipeFolderRoutes.shouldUseFolderRecipePath(
+            activeFolderId: "uncategorized", viewMode: collections, recipeFolderIds: []
+        ))
+        XCTAssertTrue(RecipeFolderRoutes.shouldUseFolderRecipePath(
+            activeFolderId: "all", viewMode: collections, recipeFolderIds: ["f1"]
+        ))
+        XCTAssertFalse(RecipeFolderRoutes.shouldUseFolderRecipePath(
+            activeFolderId: "all", viewMode: collections, recipeFolderIds: []
+        ))
+        XCTAssertTrue(RecipeFolderRoutes.shouldUseFolderRecipePath(
+            activeFolderId: "f1", viewMode: collections, recipeFolderIds: ["f1", "f2"]
+        ))
+        XCTAssertFalse(RecipeFolderRoutes.shouldUseFolderRecipePath(
+            activeFolderId: "f1", viewMode: collections, recipeFolderIds: ["f2"]
+        ))
+    }
+
+    func testRecipeFolderRoutesIsValidFolderIdAcceptsVirtualAndUserIds() {
+        XCTAssertTrue(RecipeFolderRoutes.isValidFolderId("all", userFolderIds: []))
+        XCTAssertTrue(RecipeFolderRoutes.isValidFolderId("uncategorized", userFolderIds: []))
+        XCTAssertTrue(RecipeFolderRoutes.isValidFolderId("f1", userFolderIds: ["f1"]))
+        XCTAssertFalse(RecipeFolderRoutes.isValidFolderId("f1", userFolderIds: []))
+    }
+
+    func testCreateFolderWritesActiveFolderEntry() async throws {
+        let userId = "user-folder-create"
+        let store = YDocStore(inMemory: true)
+        let manager = DocumentManager(store: store)
+        manager.setUserId(userId)
+
+        let id = try await manager.createFolder(name: "Desserts")
+        XCTAssertFalse(id.isEmpty)
+
+        let folders = try await manager.readFolders()
+        XCTAssertEqual(folders.count, 1)
+        XCTAssertEqual(folders.first?.name, "Desserts")
+        XCTAssertFalse(folders.first?.deleted ?? true)
+        XCTAssertEqual(folders.first?.color, RecipeFolderConstants.defaultFolderColor)
+    }
+
+    func testCreateFolderBlankNameStoresSentinel() async throws {
+        let userId = "user-folder-blank"
+        let store = YDocStore(inMemory: true)
+        let manager = DocumentManager(store: store)
+        manager.setUserId(userId)
+
+        let id = try await manager.createFolder(name: "   ")
+        let folders = try await manager.readFolders()
+        XCTAssertEqual(folders.first?.name, RecipeFolderConstants.untitledFolderNameSentinel)
+        XCTAssertFalse(id.isEmpty)
+    }
+
+    func testRenameFolderUpdatesStoredName() async throws {
+        let userId = "user-folder-rename"
+        let store = YDocStore(inMemory: true)
+        let manager = DocumentManager(store: store)
+        manager.setUserId(userId)
+
+        let id = try await manager.createFolder(name: "Old")
+        try await manager.renameFolder(id: id, name: "New")
+        let folders = try await manager.readFolders()
+        XCTAssertEqual(folders.first?.name, "New")
+    }
+
+    func testDeleteFolderSoftDeletesAndStripsMembership() async throws {
+        let userId = "user-folder-delete"
+        let recipeId = "recipe-folder-delete"
+        let store = YDocStore(inMemory: true)
+        let manager = DocumentManager(store: store)
+        manager.setUserId(userId)
+
+        // Seed collection entry.
+        let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
+        try await collectionDoc.withWriteTransaction { rawDoc, txn in
+            guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
+            let array = YrsArray(branch: arrayBranch)
+            array.insert(
+                value: .map([
+                    ("id", .string(recipeId)),
+                    ("name", .string("Pie")),
+                    ("color", .string("#3b82f6")),
+                    ("updatedAt", .string("2026-06-01T10:00:00Z")),
+                    ("deleted", .bool(false)),
+                    ("isPinned", .bool(false)),
+                ]),
+                at: 0,
+                txn: txn
+            )
+        }
+
+        let folderId = try await manager.createFolder(name: "ToDelete")
+
+        // Attach recipe → folder and verify it persisted.
+        try await manager.setRecipeFolders(recipeId: recipeId, folderIds: [folderId])
+        var entries = try await manager.readCollectionEntries()
+        XCTAssertEqual(entries.first { $0.id == recipeId }?.folderIds, [folderId])
+
+        // Delete folder: entry should be stripped in one transaction.
+        try await manager.deleteFolder(id: folderId)
+
+        let folders = try await manager.readFolders()
+        XCTAssertTrue(folders.isEmpty, "soft-deleted folder must not appear in active list")
+
+        entries = try await manager.readCollectionEntries()
+        let entry = try XCTUnwrap(entries.first { $0.id == recipeId })
+        XCTAssertTrue(entry.folderIds.isEmpty, "recipe membership must be stripped")
+        XCTAssertFalse(entry.deleted, "recipe itself must remain live")
+    }
+
+    func testSetRecipeFoldersValidatesAgainstActiveFolders() async throws {
+        let userId = "user-folder-validate"
+        let recipeId = "recipe-folder-validate"
+        let store = YDocStore(inMemory: true)
+        let manager = DocumentManager(store: store)
+        manager.setUserId(userId)
+
+        // Seed recipe entry.
+        let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
+        try await collectionDoc.withWriteTransaction { rawDoc, txn in
+            guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
+            let array = YrsArray(branch: arrayBranch)
+            array.insert(
+                value: .map([
+                    ("id", .string(recipeId)),
+                    ("name", .string("Soup")),
+                    ("color", .string("#3b82f6")),
+                    ("updatedAt", .string("2026-06-01T10:00:00Z")),
+                    ("deleted", .bool(false)),
+                    ("isPinned", .bool(false)),
+                ]),
+                at: 0,
+                txn: txn
+            )
+        }
+
+        let activeId = try await manager.createFolder(name: "Active")
+        let deletedId = try await manager.createFolder(name: "SoonDeleted")
+        try await manager.deleteFolder(id: deletedId)
+
+        // Validation: only the active id survives; duplicates are collapsed; invalid ids are dropped.
+        try await manager.setRecipeFolders(
+            recipeId: recipeId,
+            folderIds: [activeId, activeId, deletedId, "does-not-exist", "  "]
+        )
+        let entries = try await manager.readCollectionEntries()
+        XCTAssertEqual(entries.first { $0.id == recipeId }?.folderIds, [activeId])
+    }
+
+    func testSetRecipeFoldersRemovesKeyWhenEmpty() async throws {
+        let userId = "user-folder-empty"
+        let recipeId = "recipe-folder-empty"
+        let store = YDocStore(inMemory: true)
+        let manager = DocumentManager(store: store)
+        manager.setUserId(userId)
+
+        let folderId = try await manager.createFolder(name: "F")
+
+        let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
+        try await collectionDoc.withWriteTransaction { rawDoc, txn in
+            guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
+            let array = YrsArray(branch: arrayBranch)
+            array.insert(
+                value: .map([
+                    ("id", .string(recipeId)),
+                    ("name", .string("Cake")),
+                    ("color", .string("#3b82f6")),
+                    ("updatedAt", .string("2026-06-01T10:00:00Z")),
+                    ("deleted", .bool(false)),
+                    ("isPinned", .bool(false)),
+                ]),
+                at: 0,
+                txn: txn
+            )
+        }
+
+        try await manager.setRecipeFolders(recipeId: recipeId, folderIds: [folderId])
+        // After clearing, the Y.Map should no longer carry a `folderIds` key.
+        try await manager.setRecipeFolders(recipeId: recipeId, folderIds: [])
+        let entries = try await manager.readCollectionEntries()
+        let entry = try XCTUnwrap(entries.first { $0.id == recipeId })
+        XCTAssertTrue(entry.folderIds.isEmpty)
+
+        // Confirm the underlying key is gone (not present as an empty array).
+        try await collectionDoc.withReadTransaction { _, txn in
+            guard let arrayBranch = ytype_get(txn, "recipes") else { return }
+            let array = YrsArray(branch: arrayBranch)
+            let hasKey = array.withMap(at: 0, txn: txn) { map -> Bool in
+                map.hasJSONArray(key: RecipeFolderConstants.folderIdsKey, txn: txn)
+            } ?? false
+            XCTAssertFalse(hasKey, "folderIds key should be removed when empty")
+        }
+    }
+
+    func testPinAndTombstoneDoNotStripFolderIds() async throws {
+        let userId = "user-folder-preserve"
+        let recipeId = "recipe-folder-preserve"
+        let store = YDocStore(inMemory: true)
+        let manager = DocumentManager(store: store)
+        manager.setUserId(userId)
+
+        let folderId = try await manager.createFolder(name: "F")
+
+        let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
+        try await collectionDoc.withWriteTransaction { rawDoc, txn in
+            guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
+            let array = YrsArray(branch: arrayBranch)
+            array.insert(
+                value: .map([
+                    ("id", .string(recipeId)),
+                    ("name", .string("Tart")),
+                    ("color", .string("#3b82f6")),
+                    ("updatedAt", .string("2026-06-01T10:00:00Z")),
+                    ("deleted", .bool(false)),
+                    ("isPinned", .bool(false)),
+                ]),
+                at: 0,
+                txn: txn
+            )
+        }
+
+        try await manager.setRecipeFolders(recipeId: recipeId, folderIds: [folderId])
+
+        // Pin should not strip folderIds (do-no-harm).
+        try await manager.setCollectionEntryPinned(recipeId: recipeId, isPinned: true)
+        var entries = try await manager.readCollectionEntries()
+        XCTAssertEqual(entries.first { $0.id == recipeId }?.folderIds, [folderId])
+        XCTAssertTrue(entries.first { $0.id == recipeId }?.isPinned ?? false)
+
+        // Tombstone should preserve folderIds too (web parity).
+        try await manager.tombstoneCollectionEntry(recipeId: recipeId)
+        let allEntries = try await manager.readCollectionEntries()
+        let tombstoned = try XCTUnwrap(allEntries.first { $0.id == recipeId })
+        XCTAssertTrue(tombstoned.deleted)
+        XCTAssertEqual(tombstoned.folderIds, [folderId])
+    }
 }

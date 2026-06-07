@@ -125,6 +125,7 @@ struct PrivacyView: View {
                 + Text("[mike.ozornin@gmail.com](mailto:mike.ozornin@gmail.com)")
                     .font(AppTypography.body)
             )
+            .lineSpacing(AppTypography.bodyLineSpacing)
         }
     }
 

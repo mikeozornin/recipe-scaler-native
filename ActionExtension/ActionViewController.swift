@@ -104,7 +104,4 @@ final class ActionViewController: UIViewController {
         hostingController = host
     }
 
-    override func didSelectCancel() {
-        extensionContext?.cancelRequest(withError: NSError(domain: "ActionExtension", code: 0))
-    }
 }

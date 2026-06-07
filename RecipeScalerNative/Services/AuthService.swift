@@ -6,6 +6,7 @@
 
 import Foundation
 import KeychainAccess
+import RecipeScalerCore
 
 // MARK: - Auth Models
 struct AuthResponse: Decodable {

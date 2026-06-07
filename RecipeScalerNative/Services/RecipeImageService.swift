@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 extension Notification.Name {
     /// Posted when a recipe image file was written to disk. `userInfo`: `recipeId`, `variant` (CachedImageVariant rawValue).

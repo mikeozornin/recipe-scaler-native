@@ -1,5 +1,6 @@
 import Combine
 import SwiftUI
+import RecipeScalerCore
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext

@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 struct TelegramConnectionCodeDTO: Decodable, Sendable {
     let code: String

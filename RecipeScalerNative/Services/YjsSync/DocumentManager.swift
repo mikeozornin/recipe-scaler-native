@@ -8,7 +8,7 @@ import YrsC
 /// (`{userId}:collection` or `{userId}:recipe:{recipeId}`).
 actor DocumentManager {
     private var docs: [String: YrsDocument] = [:]
-    private var observerTokens: [String: YrsObserverToken] = [:]
+    private var observerTokens: [String: [YrsObserverToken]] = [:]
     private let store: YDocStore
     private static let logger = Logger(subsystem: "com.recipescaler.native", category: "DocumentManager")
 
@@ -533,6 +533,270 @@ actor DocumentManager {
         }
     }
 
+    // MARK: - Collection folders (026 — collections parity)
+
+    /// Read all active (non-deleted) folders from the collection doc,
+    /// sorted by display name (case-insensitive, leading emoji ignored),
+    /// tie-break by id. Mirrors web `readFolders`.
+    func readFolders() async throws -> [RecipeFolder] {
+        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        let folders: [RecipeFolder] = try await doc.withReadTransaction { _, txn in
+            guard let arrayBranch = ytype_get(txn, RecipeFolderConstants.foldersArrayKey) else {
+                return []
+            }
+            let array = YrsArray(branch: arrayBranch)
+            var result: [RecipeFolder] = []
+            try array.forEachMap(txn: txn) { map in
+                if let folder = Self.parseRecipeFolder(from: map, txn: txn) {
+                    result.append(folder)
+                }
+            }
+            return result
+        }
+        return RecipeFolder.sortedActive(folders)
+    }
+
+    /// Create a new folder Y.Map and append it to the `folders` array.
+    /// Returns the new folder id. Web `createFolder` parity.
+    @discardableResult
+    func createFolder(name: String, color: String? = nil) async throws -> String {
+        guard !currentCollectionKey.isEmpty else { throw RecipeEditError.documentNotLoaded }
+        let id = UUID().uuidString
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let storedName = trimmedName.isEmpty
+            ? RecipeFolderConstants.untitledFolderNameSentinel
+            : trimmedName
+        let resolvedColor = color?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let finalColor = (resolvedColor?.isEmpty == false)
+            ? resolvedColor!
+            : RecipeFolderConstants.defaultFolderColor
+        let now = Self.isoTimestamp()
+
+        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        try await doc.withWriteTransaction { rawDoc, txn in
+            let array: YrsArray
+            if let branch = ytype_get(txn, RecipeFolderConstants.foldersArrayKey) {
+                array = YrsArray(branch: branch)
+            } else if let branch = yarray(rawDoc, RecipeFolderConstants.foldersArrayKey) {
+                array = YrsArray(branch: branch)
+            } else {
+                throw RecipeEditError.documentNotLoaded
+            }
+            // Insert an empty map, then mutate its keys in place (same pattern
+            // as `appendIngredient` — avoids the UTF-8 panic in `yinput_ymap`
+            // when values reference transient buffers).
+            let insertAt = array.length(txn: txn)
+            array.insert(value: .map([]), at: insertAt, txn: txn)
+            let wrote = array.withMap(at: insertAt, txn: txn) { map -> Bool in
+                map.insert(key: "id", value: .string(id), txn: txn)
+                map.insert(key: "name", value: .string(storedName), txn: txn)
+                map.insert(key: "color", value: .string(finalColor), txn: txn)
+                map.insert(key: "createdAt", value: .string(now), txn: txn)
+                map.insert(key: "updatedAt", value: .string(now), txn: txn)
+                map.insert(key: "deleted", value: .bool(false), txn: txn)
+                return true
+            }
+            guard wrote == true else {
+                throw RecipeEditError.documentNotLoaded
+            }
+        }
+        await persistSnapshot(docKey: currentCollectionKey)
+        await deliverPendingLocalUpdate(recipeId: "collection")
+        return id
+    }
+
+    /// Rename a folder (and bump `updatedAt`).
+    func renameFolder(id: String, name: String) async throws {
+        try await mutateFolderEntry(id: id) { map, txn in
+            let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let stored = trimmed.isEmpty
+                ? RecipeFolderConstants.untitledFolderNameSentinel
+                : trimmed
+            map.insert(key: "name", value: .string(stored), txn: txn)
+        }
+    }
+
+    /// Soft-delete a folder: tombstone + strip its id from every recipe
+    /// entry's `folderIds` in one transaction (web `deleteFolder` parity).
+    /// Recipes themselves are untouched — only membership.
+    func deleteFolder(id: String) async throws {
+        guard !currentCollectionKey.isEmpty else { throw RecipeEditError.documentNotLoaded }
+        let now = Self.isoTimestamp()
+        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        try await doc.withWriteTransaction { rawDoc, txn in
+            guard let foldersBranch = ytype_get(txn, RecipeFolderConstants.foldersArrayKey) else { return }
+            let foldersArray = YrsArray(branch: foldersBranch)
+
+            // Locate the target folder map (including soft-deleted).
+            var folderIndex: UInt32? = nil
+            let folderCount = foldersArray.length(txn: txn)
+            for index in 0..<folderCount {
+                let matches = foldersArray.withMap(at: index, txn: txn) { map -> Bool in
+                    map.scalarString(key: "id", txn: txn) == id
+                } ?? false
+                if matches {
+                    folderIndex = index
+                    break
+                }
+            }
+            guard let targetIndex = folderIndex else { return }
+
+            foldersArray.withMap(at: targetIndex, txn: txn) { map in
+                map.insert(key: "deleted", value: .bool(true), txn: txn)
+                map.insert(key: "updatedAt", value: .string(now), txn: txn)
+            }
+
+            // Strip membership from every recipe entry in one transaction.
+            guard let recipesBranch = ytype_get(txn, RecipeFolderConstants.recipesArrayKey) else { return }
+            let recipesArray = YrsArray(branch: recipesBranch)
+            let recipesCount = recipesArray.length(txn: txn)
+            for recipeIndex in 0..<recipesCount {
+                recipesArray.withMap(at: recipeIndex, txn: txn) { map in
+                    let ids = map.stringArray(key: RecipeFolderConstants.folderIdsKey, txn: txn)
+                    guard ids.contains(id) else { return }
+                    let remaining = ids.filter { $0 != id }
+                    Self.writeRecipeFolderIds(map: map, folderIds: remaining, txn: txn)
+                    map.insert(key: "updatedAt", value: .string(now), txn: txn)
+                }
+            }
+        }
+        await persistSnapshot(docKey: currentCollectionKey)
+        await deliverPendingLocalUpdate(recipeId: "collection")
+    }
+
+    /// Replace the set of folders a recipe belongs to.
+    /// Validates ids against active folders, dedupes, and removes the key when empty.
+    func setRecipeFolders(recipeId: String, folderIds: [String]) async throws {
+        guard !currentCollectionKey.isEmpty else { throw RecipeEditError.documentNotLoaded }
+        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        // Validate ids against active folders before the write transaction.
+        let activeFolderIds = try await activeFolderIdSet()
+        let validIds = Self.normalizeFolderIds(folderIds, activeFolderIds: activeFolderIds)
+        let now = Self.isoTimestamp()
+
+        try await doc.withWriteTransaction { rawDoc, txn in
+            guard let arrayBranch = ytype_get(txn, RecipeFolderConstants.recipesArrayKey) else { return }
+            let array = YrsArray(branch: arrayBranch)
+            let count = array.length(txn: txn)
+            for index in 0..<count {
+                let matches = array.withMap(at: index, txn: txn) { map -> Bool in
+                    map.scalarString(key: "id", txn: txn) == recipeId
+                } ?? false
+                guard matches else { continue }
+                array.withMap(at: index, txn: txn) { map in
+                    Self.writeRecipeFolderIds(map: map, folderIds: validIds, txn: txn)
+                    map.insert(key: "updatedAt", value: .string(now), txn: txn)
+                }
+                break
+            }
+        }
+        await persistSnapshot(docKey: currentCollectionKey)
+        await deliverPendingLocalUpdate(recipeId: "collection")
+    }
+
+    /// Set of active (non-deleted) folder ids — used to validate `folderIds` writes.
+    private func activeFolderIdSet() async throws -> Set<String> {
+        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        return try await doc.withReadTransaction { _, txn in
+            guard let arrayBranch = ytype_get(txn, RecipeFolderConstants.foldersArrayKey) else {
+                return Set<String>()
+            }
+            let array = YrsArray(branch: arrayBranch)
+            var ids = Set<String>()
+            try array.forEachMap(txn: txn) { map in
+                guard let id = map.scalarString(key: "id", txn: txn),
+                      !id.isEmpty,
+                      (map.bool(key: "deleted", txn: txn) ?? false) == false else {
+                    return
+                }
+                ids.insert(id)
+            }
+            return ids
+        }
+    }
+
+    /// Find a folder Y.Map by id (including soft-deleted) and run `body` on it.
+    private func mutateFolderEntry(id: String, _ body: (YrsMap, OpaquePointer) throws -> Void) async throws {
+        guard !currentCollectionKey.isEmpty else { throw RecipeEditError.documentNotLoaded }
+        let now = Self.isoTimestamp()
+        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        try await doc.withWriteTransaction { _, txn in
+            guard let arrayBranch = ytype_get(txn, RecipeFolderConstants.foldersArrayKey) else { return }
+            let array = YrsArray(branch: arrayBranch)
+            let count = array.length(txn: txn)
+            for index in 0..<count {
+                let matches = array.withMap(at: index, txn: txn) { map -> Bool in
+                    map.scalarString(key: "id", txn: txn) == id
+                } ?? false
+                guard matches else { continue }
+                try array.withMap(at: index, txn: txn) { map in
+                    try body(map, txn)
+                    map.insert(key: "updatedAt", value: .string(now), txn: txn)
+                }
+                break
+            }
+        }
+        await persistSnapshot(docKey: currentCollectionKey)
+        await deliverPendingLocalUpdate(recipeId: "collection")
+    }
+
+    /// Parse a folder Y.Map into `RecipeFolder`. Returns nil when the entry
+    /// is missing an `id` or the id is empty (matches web `folderEntryToObject`).
+    private static func parseRecipeFolder(from map: YrsMap, txn: OpaquePointer) -> RecipeFolder? {
+        guard let id = map.scalarString(key: "id", txn: txn), !id.isEmpty else {
+            return nil
+        }
+        let updatedAt = map.scalarString(key: "updatedAt", txn: txn) ?? Self.isoTimestamp()
+        let rawName = map.scalarString(key: "name", txn: txn) ?? ""
+        let trimmedName = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let storedName = trimmedName.isEmpty
+            ? RecipeFolderConstants.untitledFolderNameSentinel
+            : trimmedName
+        let color = map.scalarString(key: "color", txn: txn) ?? RecipeFolderConstants.defaultFolderColor
+        let createdAt = map.scalarString(key: "createdAt", txn: txn) ?? updatedAt
+        let deleted = map.bool(key: "deleted", txn: txn) ?? false
+        return RecipeFolder(
+            id: id,
+            name: storedName,
+            color: color,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deleted: deleted
+        )
+    }
+
+    /// Dedupe and trim requested folder ids, keeping only those that refer to
+    /// active (non-deleted) folders. Mirrors web `validateActiveCollectionIds`.
+    private static func normalizeFolderIds(_ raw: [String], activeFolderIds: Set<String>) -> [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for value in raw {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, !seen.contains(trimmed) else { continue }
+            guard activeFolderIds.contains(trimmed) else { continue }
+            seen.insert(trimmed)
+            result.append(trimmed)
+        }
+        return result
+    }
+
+    /// Write the `folderIds` JSON-array value on a recipe entry map.
+    /// Removes the key when the normalized list is empty (web `setRecipeFolderIds`).
+    /// Important: this is a *replacement* of the whole array (last-write-wins per recipe).
+    private static func writeRecipeFolderIds(map: YrsMap, folderIds: [String], txn: OpaquePointer) {
+        if folderIds.isEmpty {
+            if map.hasJSONArray(key: RecipeFolderConstants.folderIdsKey, txn: txn) {
+                _ = map.remove(key: RecipeFolderConstants.folderIdsKey, txn: txn)
+            }
+            return
+        }
+        map.insert(
+            key: RecipeFolderConstants.folderIdsKey,
+            value: .jsonStringArray(folderIds),
+            txn: txn
+        )
+    }
+
     /// Creates a v3 recipe document and collection entry (web `createRecipe` parity).
     func createRecipe(
         recipeId: String = UUID().uuidString,
@@ -791,15 +1055,25 @@ actor DocumentManager {
         observerTokens.removeValue(forKey: key)
 
         if key.hasSuffix(":collection"), let handler = onCollectionChanged {
-            if let token = try? await doc.addDeepObserver(rootKey: "recipes", handler: handler) {
-                observerTokens[key] = token
+            var tokens: [YrsObserverToken] = []
+            // Deep-observe `recipes` (008) so pin/delete/name/folderIds changes fire.
+            if let token = try? await doc.addDeepObserver(rootKey: RecipeFolderConstants.recipesArrayKey, handler: handler) {
+                tokens.append(token)
+            }
+            // Also deep-observe `folders` (026) so rename/delete/create without
+            // touching recipe entries still refreshes the UI.
+            if let token = try? await doc.addDeepObserver(rootKey: RecipeFolderConstants.foldersArrayKey, handler: handler) {
+                tokens.append(token)
+            }
+            if !tokens.isEmpty {
+                observerTokens[key] = tokens
             }
             return
         }
 
         if key.hasSuffix(":shoppingList"), let handler = onShoppingChanged {
             if let token = try? await doc.addDeepObserver(rootKey: ShoppingListConstants.rootMapKey, handler: handler) {
-                observerTokens[key] = token
+                observerTokens[key] = [token]
             }
             return
         }
@@ -809,7 +1083,7 @@ actor DocumentManager {
             Task { await self.handleRecipeObserverFire(recipeId: recipeId) }
         }
         if let token = try? await doc.addDeepObserver(rootKey: "recipe", handler: recipeHandler) {
-            observerTokens[key] = token
+            observerTokens[key] = [token]
         }
     }
 
@@ -828,6 +1102,9 @@ actor DocumentManager {
     private func parseCollectionEntry(from map: YrsMap, txn: OpaquePointer) -> CollectionEntry {
         let id = map.scalarString(key: "id", txn: txn) ?? UUID().uuidString
         let deleted = map.bool(key: "deleted", txn: txn) ?? false
+        // `folderIds` is a plain JSON-array primitive on the map (not a Y.Array).
+        // Missing key / non-array value → empty array (web `getRecipeFolderIds`).
+        let folderIds = map.stringArray(key: RecipeFolderConstants.folderIdsKey, txn: txn)
 
         return CollectionEntry(
             id: id,
@@ -836,7 +1113,8 @@ actor DocumentManager {
             imageUrl: map.scalarString(key: "imageUrl", txn: txn),
             updatedAt: map.scalarString(key: "updatedAt", txn: txn) ?? "",
             deleted: deleted,
-            isPinned: map.bool(key: "isPinned", txn: txn) ?? false
+            isPinned: map.bool(key: "isPinned", txn: txn) ?? false,
+            folderIds: folderIds
         )
     }
 

@@ -15,6 +15,7 @@ struct RecipeDetailActionsMenu: View {
     @EnvironmentObject private var syncService: YjsSyncService
 
     @State private var recipePendingDelete = false
+    @State private var showingAssignSheet = false
 
     var body: some View {
         Menu {
@@ -36,6 +37,12 @@ struct RecipeDetailActionsMenu: View {
                     )
                 }
 
+                Button {
+                    showingAssignSheet = true
+                } label: {
+                    AppLabel.make(String(localized: "collections.assign-tooltip"), symbol: "folder.badge.plus")
+                }
+
                 Button(role: .destructive) {
                     recipePendingDelete = true
                 } label: {
@@ -48,6 +55,9 @@ struct RecipeDetailActionsMenu: View {
         .appToolbarIconButton()
         .accessibilityLabel(String(localized: "recipe.detail.more-actions"))
         .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailMenu)
+        .sheet(isPresented: $showingAssignSheet) {
+            CollectionAssignSheet(recipeId: recipeId, recipeName: recipeName)
+        }
         .alert(
             String(localized: "recipe.list.delete.confirm.title"),
             isPresented: $recipePendingDelete

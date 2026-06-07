@@ -74,6 +74,39 @@ struct YrsMap {
         return YrsValue(output)
     }
 
+    /// Read a JSON-array-of-strings primitive stored under `key`
+    /// (e.g. recipe entry `folderIds`). Returns `[]` when the key is absent,
+    /// null/undefined, or not a JSON array; non-string elements are skipped.
+    ///
+    /// This is distinct from a nested `Y.Array` shared type — the value is a
+    /// plain `Y_JSON_ARR` payload on the map (matches web `getRecipeFolderIds`).
+    func stringArray(key: String, txn: OpaquePointer) -> [String] {
+        guard let output = ymap_get(branch, txn, key) else { return [] }
+        defer { youtput_destroy(output) }
+        guard output.pointee.tag == YrsValue.Y_JSON_ARR else { return [] }
+        guard let arrayPtr = youtput_read_json_array(output) else { return [] }
+        let count = Int(output.pointee.len)
+        guard count > 0 else { return [] }
+        var result: [String] = []
+        result.reserveCapacity(count)
+        for index in 0..<count {
+            let element = arrayPtr.advanced(by: index)
+            guard element.pointee.tag == YrsValue.Y_JSON_STR,
+                  let cStr = youtput_read_string(element) else {
+                continue
+            }
+            result.append(String(cString: cStr))
+        }
+        return result
+    }
+
+    /// Whether the key carries a JSON-array value (used by `folderIds` checks).
+    func hasJSONArray(key: String, txn: OpaquePointer) -> Bool {
+        guard let output = ymap_get(branch, txn, key) else { return false }
+        defer { youtput_destroy(output) }
+        return output.pointee.tag == YrsValue.Y_JSON_ARR
+    }
+
     // ─── Nested Type Reads ───────────────────────────────────────────────
 
     func withNestedMap<T>(key: String, txn: OpaquePointer, _ body: (YrsMap) throws -> T) rethrows -> T? {

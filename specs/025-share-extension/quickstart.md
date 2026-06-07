@@ -5,6 +5,8 @@
 
 Этот документ — чеклист настройки Xcode + ручной smoke для проверки Share/Action Extension.
 
+> **Платный Apple Developer Program:** единый чеклист по всей нативке — [docs/PAID-APPLE-DEVELOPER-REQUIRED.md](../../docs/PAID-APPLE-DEVELOPER-REQUIRED.md).
+
 ## Часть 1. Настройка Xcode (выполняется один раз)
 
 > **Важно**: эти шаги выполняются вручную в Xcode UI. Агент не может надёжно редактировать `project.pbxproj` под создание target'ов.

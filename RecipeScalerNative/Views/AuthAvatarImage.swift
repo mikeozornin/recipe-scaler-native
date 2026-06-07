@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import RecipeScalerCore
 
 /// Loads an avatar URL with the app's auth header (x-user-id / Bearer).
 /// AsyncImage uses bare URLSession and won't pass auth — use this instead.

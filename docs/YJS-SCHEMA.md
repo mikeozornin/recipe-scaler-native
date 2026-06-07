@@ -6,6 +6,8 @@ iOS implementation must replicate this schema exactly for binary compatibility.
 Source files:
 - `recipe-scaler-web/recipe-scaler/src/hooks/use-yjs-sync.ts` — recipe schema, mutations
 - `recipe-scaler-web/recipe-scaler/src/utils/collection-v2.ts` — collection schema
+- `recipe-scaler-web/shared/utils/folders-yjs.ts` — folders + `folderIds` (026)
+- `recipe-scaler-web/llm/NATIVE_APP_COLLECTIONS.md` — native integration guide
 - `recipe-scaler-web/recipe-scaler/src/utils/shopping-list-yjs.ts` — shopping list schema
 - `recipe-scaler-web/shared/shopping-list/constants.ts` — shopping list key constants
 
@@ -15,7 +17,7 @@ Three document types per user, identified by doc key:
 
 | Document | Doc Key | Description |
 |----------|---------|-------------|
-| Collection | `{userId}:collection` | Recipe metadata, order, tombstones |
+| Collection | `{userId}:collection` | Recipe metadata, folders (collections), tombstones |
 | Recipe | `{userId}:recipe:{recipeId}` | Full recipe data |
 | Shopping list | `{userId}:shoppingList` (via `documentKind`) | Shopping items |
 
@@ -23,9 +25,12 @@ Three document types per user, identified by doc key:
 
 ## 1. Collection Document
 
-Top-level shared type: `Y.Array('recipes')`
+Top-level shared types:
 
-Each entry is a `Y.Map` with these keys:
+- `Y.Array('recipes')` — recipe index entries
+- `Y.Array('folders')` — user collections (026; optional until first folder on web)
+
+### `recipes` entry (`Y.Map`)
 
 ```
 Y.Array('recipes')
@@ -36,15 +41,33 @@ Y.Array('recipes')
         ├── imageUrl: string?   — optional image URL
         ├── updatedAt: string   — ISO 8601 timestamp
         ├── deleted: boolean    — tombstone flag (true = deleted)
-        └── isPinned: boolean   — pinned to top
+        ├── isPinned: boolean   — pinned to top
+        └── folderIds: string[]? — collection membership (plain array on map; omit until assigned)
 ```
+
+### `folders` entry (`Y.Map`) — one per user collection
+
+```
+Y.Array('folders')
+  └── Y.Map (per collection)
+        ├── id: string          — collection UUID
+        ├── name: string        — display name ('' = untitled; map to i18n at UI)
+        ├── color: string       — default oklch(0.65 0.25 270)
+        ├── createdAt: string   — ISO 8601 UTC
+        ├── updatedAt: string
+        └── deleted: boolean    — soft-delete tombstone (keep entry)
+```
+
+Spec: `specs/026-recipe-collections/`.
 
 ### Notes
 
 - Deleted recipes are **not removed** from the array — they get `deleted: true` (tombstone)
+- Deleted folders are **not removed** from `folders` — `deleted: true`
 - Server checks tombstones before accepting recipe updates
 - Order in the array determines display order (index = position)
 - `isPinned` is on the collection entry, NOT on the recipe Y.Map
+- Native writes must **preserve** unknown keys on recipe maps (especially `folderIds`) — see Do-No-Harm in `NATIVE_APP_COLLECTIONS.md`
 
 ### Reading
 
@@ -281,6 +304,18 @@ Phase 2 parsers live in `RecipeScalerNative/Services/YjsSync/DocumentManager.swi
 | `updatedAt` | `updatedAt` | `String` |
 | `deleted` | `deleted` | `Bool` |
 | `isPinned` | `isPinned` | `Bool` |
+| `folderIds` | `folderIds` | `[String]` (optional; 026) |
+
+### `RecipeFolder` ← `Y.Array('folders')` entry `Y.Map` (026)
+
+| Y.Map key | Swift property | Type |
+|-----------|----------------|------|
+| `id` | `id` | `String` |
+| `name` | `name` | `String` |
+| `color` | `color` | `String` |
+| `createdAt` | `createdAt` | `String` |
+| `updatedAt` | `updatedAt` | `String` |
+| `deleted` | `deleted` | `Bool` |
 
 Doc key: `{userId}:collection`
 

@@ -46,7 +46,7 @@ public final class APIClient: ObservableObject, @unchecked Sendable {
         var authToken: String?
         var userId: String?
     }
-    private let authLock = Mutex(AuthState(authToken: nil, userId: nil))
+    private let authLock = OSAllocatedUnfairLock(initialState: AuthState(authToken: nil, userId: nil))
 
     private init() {
         self.baseURL = Config.baseURL
@@ -55,15 +55,11 @@ public final class APIClient: ObservableObject, @unchecked Sendable {
     // MARK: - Configuration
 
     public func configure(authToken: String?) {
-        authLock.withLock { state in
-            state.authToken = authToken
-        }
+        authLock.withLock { $0.authToken = authToken }
     }
 
     public func configure(userId: String?) {
-        authLock.withLock { state in
-            state.userId = userId
-        }
+        authLock.withLock { $0.userId = userId }
     }
 
     // MARK: - Image URL Helpers

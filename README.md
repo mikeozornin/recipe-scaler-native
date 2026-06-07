@@ -4,6 +4,7 @@ Native iOS app for Recipe Scaler with CRDT-based offline-first sync.
 
 ## Requirements
 
+- Apple Developer Program ($99/yr) — **not required** for local/simulator dev; see [docs/PAID-APPLE-DEVELOPER-REQUIRED.md](docs/PAID-APPLE-DEVELOPER-REQUIRED.md) for TestFlight, App Store, App Groups on device, extensions.
 - Xcode 16.0+
 - iOS 17.0+
 - Swift 5.9+
@@ -58,7 +59,7 @@ Detailed architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 Three document types per user, identical structure to web client:
 
-- **Collection**: `Y.Array('recipes')` of `Y.Map` entries (id, name, color, imageUrl, updatedAt, deleted, isPinned)
+- **Collection**: `Y.Array('recipes')` (recipe index, optional `folderIds` per entry) + `Y.Array('folders')` (user collections). See `specs/026-recipe-collections/` and [NATIVE_APP_COLLECTIONS.md](../recipe-scaler-web/llm/NATIVE_APP_COLLECTIONS.md).
 - **Recipe**: `Y.Map('recipe')` (name, servings, scaleFactor, ingredients, nutrition, version...) + `Y.XmlFragment('description')` for v3
 - **Shopping list**: `Y.Map('shopping')` → items + meta
 
