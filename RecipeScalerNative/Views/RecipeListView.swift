@@ -75,7 +75,7 @@ struct RecipeListView: View {
                 if showsCollectionsRoot {
                     CollectionsRootView(navigationPath: $navigationPath)
                 } else if syncService.connectionState == .connecting && syncService.collectionEntries.isEmpty {
-                    ProgressView(String(localized: "recipe.list.loading"))
+                    ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
                         .mobileTimerPanelBottomPadding()
                 } else if !hasAnyRows {
                     ContentUnavailableView {
