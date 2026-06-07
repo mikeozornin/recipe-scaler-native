@@ -16,7 +16,7 @@
 | **Deep link** `recipe-scaler://` в main app | То же |
 | **TestFlight**, **App Store**, публичное распространение | Да |
 | **App Groups** в портале + общие данные app ↔ extension на **реальном iPhone** | Нужно для production |
-| Полноценный **Push** (APNs) в проде | Capability + ключи в портале (когда включим push в релизе) |
+| Полноценный **Push** (APNs) в проде | Capability + ключи в портале (когда включим push в релизе; **после Activity Charts**) |
 
 Большую часть нативки можно вести и собирать **без** платного аккаунта. Ниже — всё, что для **продакшена на устройствах пользователей** или для **расширений системы** требует платной программы.
 
@@ -61,7 +61,7 @@
 
 - Main + Share + Action — все три с одним App Group.
 
-**На будущее** (spec `023-push-notifications`, когда пойдём в прод с пушами):
+**На будущее** (spec `023-push-notifications`, когда пойдём в прод с пушами — **только после Activity Charts**):
 
 - На App ID main app включить **Push Notifications**.
 - Создать APNs key / сертификат в портале; настроить backend.
@@ -135,6 +135,6 @@
 - Платный аккаунт не заменяет код в репозитории; он **включает** портал и профили под уже прописанные entitlements.
 - Сменили Bundle ID extension в Xcode — обновить этот файл и App IDs в портале.
 
-**Связанные спеки**: `025-share-extension` (extensions, deep link), `023-push-notifications` (push — отдельно при релизе).
+**Связанные спеки**: `025-share-extension` (extensions, deep link), `023-push-notifications` (push — отдельно при релизе, **после Activity Charts**).
 
 **Дата фиксации**: 2026-06-06.
