@@ -25,7 +25,7 @@ struct TelegramConnectionView: View {
         VStack(alignment: .leading, spacing: 12) {
             if !isOnline {
                 Text("account.public-profile.offline")
-                    .font(AppTypography.subheadline)
+                    .appBody()
                     .foregroundStyle(.secondary)
             }
 
@@ -70,7 +70,7 @@ struct TelegramConnectionView: View {
     private var connectedContent: some View {
         Label {
             Text(connectedLabel)
-                .font(AppTypography.body)
+                .appBody()
         } icon: {
             AppSymbol.image("checkmark.circle.fill")
                 .foregroundStyle(.green)
@@ -113,7 +113,6 @@ struct TelegramConnectionView: View {
     private func codeContent(_ code: String) -> some View {
         if let instructions {
             instructionsView(instructions)
-                .font(AppTypography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -167,9 +166,9 @@ struct TelegramConnectionView: View {
         .accessibilityIdentifier(identifier)
     }
 
-    @ViewBuilder
     private func instructionsView(_ text: String) -> some View {
         Text(instructionsAttributedString(from: text))
+            .appBody()
     }
 
     private func instructionsAttributedString(from text: String) -> AttributedString {

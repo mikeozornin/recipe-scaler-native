@@ -32,11 +32,12 @@ struct AccountView: View {
                     Section {
                         Label {
                             Text("account.offline.alert")
+                                .appBody()
+                                .foregroundStyle(.secondary)
                         } icon: {
                             AppSymbol.image("wifi.slash")
                                 .foregroundStyle(.secondary)
                         }
-                        .font(AppTypography.subheadline)
                         .padding(.top, 8)
                     }
                 }
@@ -101,7 +102,7 @@ struct AccountView: View {
                 HStack(spacing: 12) {
                     accountAvatar
                     Text(UserIdFormatter.format(userId))
-                        .font(AppTypography.body)
+                        .appBody()
                     Spacer(minLength: 8)
                     Button(role: .destructive) {
                         showingLogoutConfirmation = true
@@ -114,8 +115,10 @@ struct AccountView: View {
                 }
             }
 
-            Button("auth.login-with-another") {
+            Button {
                 showLoginOnDevice = true
+            } label: {
+                Text("auth.login-with-another").appBody()
             }
         } header: {
             AppSectionHeader("account.section.account")
@@ -128,7 +131,7 @@ struct AccountView: View {
         Section {
             if !viewModel.isOnline {
                 Text("account.public-profile.offline")
-                    .font(AppTypography.subheadline)
+                    .appBody()
                     .foregroundStyle(.secondary)
             } else if viewModel.isLoading {
                 ProgressView()
@@ -273,12 +276,14 @@ struct AccountView: View {
                 )
             }
 
-            Toggle("account.nutrition.show", isOn: Binding(
+            Toggle(isOn: Binding(
                 get: { viewModel.showNutrition },
                 set: { value in
                     Task { @MainActor in await viewModel.setShowNutrition(value) }
                 }
-            ))
+            )) {
+                Text("account.nutrition.show").appBody()
+            }
 
             // MARK: Apple Reminders sync
             Toggle(isOn: Binding(
