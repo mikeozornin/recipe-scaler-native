@@ -43,8 +43,6 @@ struct RecipeDetailActionsMenu: View {
                     AppLabel.make(String(localized: "shopping.detail-add-all"), symbol: "cart.badge.plus")
                 }
 
-                Divider()
-
                 Button(role: .destructive) {
                     recipePendingDelete = true
                 } label: {
