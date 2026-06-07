@@ -26,6 +26,7 @@ import Foundation
 import Combine
 import EventKit
 import OSLog
+import UIKit
 
 @MainActor
 final class RemindersSyncService: ObservableObject {
@@ -350,6 +351,7 @@ final class RemindersSyncService: ObservableObject {
         // Create the dedicated list.
         let newCal = EKCalendar(for: .reminder, eventStore: store)
         newCal.title = Self.dedicatedListName
+        newCal.cgColor = UIColor(red: 1.0, green: 0.325, blue: 0.094, alpha: 1.0).cgColor // #FF5318
         newCal.source = store.defaultCalendarForNewReminders()?.source
             ?? store.sources.first(where: { $0.sourceType == .local })
             ?? store.sources.first
