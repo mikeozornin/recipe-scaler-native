@@ -11,6 +11,8 @@ enum RecipeRowLayoutMetrics {
     /// Matches web `px-4` and recipe `listRowInsets.leading`.
     static let listHorizontalInset: CGFloat = 16
     static let rowHeight: CGFloat = 44
+    /// Recipe list trailing preview (web 44×44 `object-cover`).
+    static let recipeListThumbnailSide: CGFloat = 44
     /// Recipe list title, ingredient name/amount (`AppTypography.body`).
     static let titleFontSize: CGFloat = AppTypography.bodySize
     static let ingredientBodyFontSize: CGFloat = AppTypography.bodySize

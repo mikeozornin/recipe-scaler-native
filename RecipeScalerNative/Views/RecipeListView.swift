@@ -292,6 +292,7 @@ struct RecipeListView: View {
                     data: item,
                     allowsNetworkRefresh: allowsImageNetworkRefresh
                 )
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 NavigationLink(value: RecipesRoute.recipe(recipeId: item.id, folderContext: nil)) {
                     Color.clear
@@ -429,7 +430,7 @@ private struct RecipeListAssignSheetItem: Identifiable {
 private enum RecipeListMetrics {
     static let colorDotSide: CGFloat = 12
     static let emojiFontSize: CGFloat = 18
-    static let thumbnailSide: CGFloat = 44
+    static let thumbnailSide: CGFloat = RecipeRowLayoutMetrics.recipeListThumbnailSide
 }
 
 // MARK: - Section chrome (internal — shared with CollectionFolderView)
@@ -644,18 +645,19 @@ struct RecipeRow: View {
     }
 
     var body: some View {
-        titleRow
+        titleContent
             .padding(.trailing, hasThumbnail ? RecipeListMetrics.thumbnailSide + 12 : 0)
             .overlay(alignment: .trailing) {
                 if hasThumbnail {
                     recipeThumbnail
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
     }
 
-    /// Height comes from title + marker only; thumbnail is overlaid (web: `self-center`, no stretch).
-    private var titleRow: some View {
+    /// Row height from marker + title only; thumbnail is overlaid (web: `self-center`, no stretch).
+    private var titleContent: some View {
         HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
             RecipeRowMarkerSlot(
                 emoji: data.leadingEmoji,

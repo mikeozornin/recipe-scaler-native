@@ -70,6 +70,18 @@ struct CollectionAssignSheet: View {
                     }
                     .disabled(isSaving)
                 }
+                if isCreatingNew && isNewFieldFocused {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button(String(localized: "collections.create")) {
+                            commitNewFolder()
+                        }
+                        .appToolbarTextButton()
+                        .disabled(
+                            newFolderName.trimmingCharacters(in: .whitespaces).isEmpty || isSavingFolder
+                        )
+                    }
+                }
             }
             .alert("Error", isPresented: $showingError) {
                 Button("OK", role: .cancel) { }
@@ -100,8 +112,9 @@ struct CollectionAssignSheet: View {
                     String(localized: "collections.new-placeholder"),
                     text: $newFolderName
                 )
-                .appBody()
+                .font(AppTypography.body)
                 .focused($isNewFieldFocused)
+                .submitLabel(.done)
                 .onSubmit {
                     commitNewFolder()
                 }
@@ -129,11 +142,12 @@ struct CollectionAssignSheet: View {
 
                     Text("collections.new")
                         .appBody()
-                        .foregroundColor(.accentColor)
                 }
+                .foregroundStyle(.primary)
                 .ingredientListRowChrome()
             }
             .buttonStyle(.plain)
+            .tint(.primary)
             .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
         }
     }
@@ -152,6 +166,9 @@ struct CollectionAssignSheet: View {
         } else {
             selectedFolderIds.insert(folderId)
         }
+        #if os(iOS)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        #endif
     }
 
     private func saveAndDismiss() async {
@@ -190,6 +207,9 @@ struct CollectionAssignSheet: View {
             do {
                 let newId = try await syncService.createFolder(name: trimmed)
                 selectedFolderIds.insert(newId)
+                #if os(iOS)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                #endif
             } catch {
                 errorMessage = error.localizedDescription
                 showingError = true

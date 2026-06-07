@@ -59,34 +59,44 @@ struct ManageCollectionRecipesSheet: View {
                     Button {
                         Task { await toggleMembership(recipeId: recipe.id, isMember: isMember) }
                     } label: {
-                        HStack(spacing: 12) {
+                        let hasThumbnail = recipe.imageUrl.map { !$0.isEmpty } ?? false
+                        HStack(alignment: .center, spacing: 12) {
                             AppSymbol.image(isMember ? "checkmark.circle.fill" : "circle")
                                 .foregroundColor(isMember ? .accentColor : .secondary)
                                 .font(.system(size: 20))
 
-                            if let imageUrl = recipe.imageUrl, !imageUrl.isEmpty {
+                            Text(RecipeTitleEmoji.displayName(for: recipe.name))
+                                .appBody()
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .ingredientListRowChrome()
+                        }
+                        .padding(.trailing, hasThumbnail ? RecipeRowLayoutMetrics.recipeListThumbnailSide + 12 : 0)
+                        .overlay(alignment: .trailing) {
+                            if hasThumbnail, let imageUrl = recipe.imageUrl {
                                 RecipeCachedImageView(
                                     recipeId: recipe.id,
                                     imageUrl: imageUrl,
                                     variant: .preview,
                                     allowsNetworkRefresh: false
                                 )
-                                .frame(width: 32, height: 32)
+                                .frame(
+                                    width: RecipeRowLayoutMetrics.recipeListThumbnailSide,
+                                    height: RecipeRowLayoutMetrics.recipeListThumbnailSide
+                                )
                                 .clipped()
-                                .cornerRadius(4)
                             }
-
-                            Text(FolderDisplayName.displayName(forStoredName: recipe.name))
-                                .appBody()
-                                .foregroundColor(.primary)
-                                .lineLimit(1)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
                 }
             }
             .listStyle(.plain)
+            .environment(\.defaultMinListRowHeight, 1)
             .searchable(text: $searchText, prompt: String(localized: "search.recipes"))
             .navigationTitle(Text(verbatim: folderDisplayName))
             .navigationBarTitleDisplayMode(.inline)
@@ -120,6 +130,9 @@ struct ManageCollectionRecipesSheet: View {
                 currentFolderIds.append(folderId)
             }
         }
+        #if os(iOS)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        #endif
 
         do {
             try await syncService.setRecipeFolders(recipeId: recipeId, folderIds: currentFolderIds)
