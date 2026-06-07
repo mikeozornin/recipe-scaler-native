@@ -567,13 +567,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sync with Reminders"
+            "value" : "Sync Shopping List with Reminders"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Синхронизировать с Напоминаниями"
+            "value" : "Синхронизировать список покупок с Напоминаниями"
           }
         }
       }
