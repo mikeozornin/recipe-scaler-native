@@ -20,6 +20,9 @@ final class YjsSyncService: ObservableObject {
     )
     @Published private(set) var shoppingSnapshot: ShoppingListSnapshot = .empty
     @Published private(set) var currentRecipe: RecipeData?
+    /// Whether the initial local snapshot load has completed. Used by collection views
+    /// to avoid rendering empty state during cold start.
+    @Published private(set) var isLocalDataLoaded = false
     @Published private(set) var connectionState: ConnectionState = .disconnected
     /// Polling-first matches PWA `websocket-service` and avoids Starscream direct-WSS hangs on iOS.
     @Published private(set) var connectionTransport: SyncConnectionTransport = .pollingAndWebsocket
@@ -666,6 +669,7 @@ final class YjsSyncService: ObservableObject {
         teardownSocket()
         setConnectionState(.disconnected, reason: "stop")
         connectionTransport = .pollingAndWebsocket
+        isLocalDataLoaded = false
         userId = nil
         activeRecipeId = nil
         currentRecipe = nil
@@ -1895,6 +1899,7 @@ final class YjsSyncService: ObservableObject {
             await refreshShoppingSnapshot()
             logger.info("Loaded shopping list from local snapshot")
         }
+        isLocalDataLoaded = true
     }
 
     private func installChangeHandlersIfNeeded() async {

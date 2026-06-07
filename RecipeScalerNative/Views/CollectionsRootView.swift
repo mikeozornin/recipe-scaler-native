@@ -4,18 +4,50 @@ import SwiftUI
 ///
 /// Shows virtual folders (All recipes, Uncategorized), user folders
 /// with recipe counts, and an inline "New collection" create row.
+/// Supports two layouts: plain list and folder grid (configurable in Profile).
 struct CollectionsRootView: View {
     @EnvironmentObject private var syncService: YjsSyncService
     @Binding var navigationPath: NavigationPath
+
+    @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)
+    private var layoutRaw: String = RecipeFolderRoutes.CollectionsRootLayout.list.rawValue
 
     @State private var isCreatingNew = false
     @State private var newFolderName = ""
     @State private var isSavingFolder = false
     @FocusState private var isNewFieldFocused: Bool
 
+    private var layout: RecipeFolderRoutes.CollectionsRootLayout {
+        RecipeFolderRoutes.CollectionsRootLayout(rawValue: layoutRaw) ?? .list
+    }
+
+    private var sortedFolders: [RecipeFolder] {
+        RecipeFolder.sortedActive(syncService.folders)
+    }
+
+    private var uncategorizedCount: Int {
+        syncService.collectionIndex.uncategorized.count
+    }
+
     var body: some View {
+        if !syncService.isLocalDataLoaded {
+            ProgressView(String(localized: "recipe.list.loading"))
+                .mobileTimerPanelBottomPadding()
+        } else {
+            switch layout {
+            case .list:
+                listContent
+            case .folders:
+                gridContent
+            }
+        }
+    }
+
+    // MARK: - List layout
+
+    @ViewBuilder
+    private var listContent: some View {
         List {
-            // Virtual: All recipes
             collectionRow(
                 folderId: CollectionVirtualFolders.allRecipesFolderId,
                 title: String(localized: "collections.all-recipes"),
@@ -23,8 +55,6 @@ struct CollectionsRootView: View {
                 count: syncService.collectionIndex.live.count
             )
 
-            // User folders
-            let sortedFolders = RecipeFolder.sortedActive(syncService.folders)
             ForEach(sortedFolders, id: \.id) { folder in
                 collectionRow(
                     folderId: folder.id,
@@ -34,15 +64,15 @@ struct CollectionsRootView: View {
                 )
             }
 
-            // Virtual: Uncategorized
-            collectionRow(
-                folderId: CollectionVirtualFolders.uncategorizedFolderId,
-                title: String(localized: "collections.uncategorized"),
-                icon: "folder",
-                count: syncService.collectionIndex.uncategorized.count
-            )
+            if uncategorizedCount > 0 {
+                collectionRow(
+                    folderId: CollectionVirtualFolders.uncategorizedFolderId,
+                    title: String(localized: "collections.uncategorized"),
+                    icon: "folder",
+                    count: uncategorizedCount
+                )
+            }
 
-            // Inline create
             newCollectionRow
 
             MobileTimerPanelListSpacerRow()
@@ -50,6 +80,211 @@ struct CollectionsRootView: View {
         .listStyle(.plain)
         .listSectionSpacing(0)
         .environment(\.defaultMinListRowHeight, 1)
+        .toolbar {
+            if isCreatingNew && isNewFieldFocused {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button(String(localized: "collections.create")) {
+                        commitNewFolder()
+                    }
+                    .appToolbarTextButton()
+                    .disabled(
+                        newFolderName.trimmingCharacters(in: .whitespaces).isEmpty || isSavingFolder
+                    )
+                }
+            }
+        }
+    }
+
+    // MARK: - Grid (folders) layout
+
+    @ViewBuilder
+    private var gridContent: some View {
+        ScrollView {
+            let columns = [
+                GridItem(.flexible(), spacing: 16),
+                GridItem(.flexible(), spacing: 16),
+                GridItem(.flexible(), spacing: 16),
+            ]
+
+            LazyVGrid(columns: columns, alignment: .center, spacing: 20) {
+                // Virtual "All recipes" — first tile
+                folderGridTile(
+                    folderId: CollectionVirtualFolders.allRecipesFolderId,
+                    color: RecipeFolderConstants.defaultFolderColor,
+                    title: String(localized: "collections.all-recipes"),
+                    count: syncService.collectionIndex.live.count,
+                    icon: "folder.fill"
+                )
+
+                // User folders
+                ForEach(sortedFolders, id: \.id) { folder in
+                    folderGridTile(
+                        folderId: folder.id,
+                        color: folder.color,
+                        title: FolderDisplayName.displayName(forStoredName: folder.name),
+                        count: syncService.collectionIndex.countByFolder[folder.id] ?? 0
+                    )
+                }
+
+                // Virtual "Without collection" — gray when present
+                if uncategorizedCount > 0 {
+                    folderGridTile(
+                        folderId: CollectionVirtualFolders.uncategorizedFolderId,
+                        color: RecipeFolderConstants.defaultFolderColor,
+                        title: String(localized: "collections.uncategorized"),
+                        count: uncategorizedCount,
+                        isGrayed: true
+                    )
+                }
+
+                // New collection tile
+                newCollectionGridTile
+            }
+            .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
+            .padding(.top, 16)
+
+            MobileTimerPanelListSpacerRow()
+        }
+        .toolbar {
+            if isCreatingNew && isNewFieldFocused {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button(String(localized: "collections.create")) {
+                        commitNewFolder()
+                    }
+                    .appToolbarTextButton()
+                    .disabled(
+                        newFolderName.trimmingCharacters(in: .whitespaces).isEmpty || isSavingFolder
+                    )
+                }
+            }
+        }
+    }
+
+    // MARK: - Folder grid tile
+
+    @ViewBuilder
+    private func folderGridTile(
+        folderId: String,
+        color: String,
+        title: String,
+        count: Int = 0,
+        icon: String = "folder.fill",
+        isGrayed: Bool = false
+    ) -> some View {
+        let usesGrayFolder = isGrayed || count == 0
+
+        Button {
+            navigationPath.append(RecipesRoute.folder(folderId))
+        } label: {
+            folderGridTileContent(
+                icon: icon,
+                iconColor: usesGrayFolder ? Color.secondary : RecipeAccentColor.color(from: color),
+                title: title,
+                count: count
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text(verbatim: "\(title), \(count)"))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(AccessibilityIdentifiers.collectionsRootGridTile(folderId: folderId))
+    }
+
+    @ViewBuilder
+    private func folderGridTileContent(
+        icon: String,
+        iconColor: Color,
+        title: String,
+        count: Int
+    ) -> some View {
+        VStack(spacing: CollectionGridTileMetrics.iconToTextSpacing) {
+            Image(systemName: icon)
+                .font(.system(size: 44))
+                .foregroundStyle(iconColor)
+                .frame(height: CollectionGridTileMetrics.iconHeight)
+
+            VStack(spacing: CollectionGridTileMetrics.labelSpacing) {
+                Text(title)
+                    .appFootnote()
+                    .foregroundColor(.primary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("\(count)")
+                    .font(AppTypography.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(
+                minHeight: CollectionGridTileMetrics.textBlockMinHeight,
+                alignment: .top
+            )
+        }
+    }
+
+    // MARK: - New collection grid tile
+
+    @ViewBuilder
+    private var newCollectionGridTile: some View {
+        if isCreatingNew {
+            VStack(spacing: CollectionGridTileMetrics.iconToTextSpacing) {
+                Image(systemName: "folder.badge.plus")
+                    .font(.system(size: 44))
+                    .foregroundStyle(.secondary)
+                    .frame(height: CollectionGridTileMetrics.iconHeight)
+
+                TextField(
+                    String(localized: "collections.new-placeholder"),
+                    text: $newFolderName
+                )
+                .font(AppTypography.footnote)
+                .focused($isNewFieldFocused)
+                .submitLabel(.done)
+                .multilineTextAlignment(.center)
+                .onSubmit {
+                    commitNewFolder()
+                }
+                .frame(
+                    minHeight: CollectionGridTileMetrics.textBlockMinHeight,
+                    alignment: .top
+                )
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .onAppear {
+                isNewFieldFocused = true
+            }
+        } else {
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    isCreatingNew = true
+                    newFolderName = ""
+                }
+            } label: {
+                VStack(spacing: CollectionGridTileMetrics.iconToTextSpacing) {
+                    Image(systemName: "folder.badge.plus")
+                        .font(.system(size: 44))
+                        .foregroundStyle(.secondary)
+                        .frame(height: CollectionGridTileMetrics.iconHeight)
+
+                    Text("collections.new")
+                        .appFootnote()
+                        .foregroundColor(.primary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                        .frame(
+                            minHeight: CollectionGridTileMetrics.textBlockMinHeight,
+                            alignment: .top
+                        )
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(Text("collections.new"))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier(AccessibilityIdentifiers.collectionsNewRow)
+        }
     }
 
     // MARK: - Collection row
@@ -92,7 +327,7 @@ struct CollectionsRootView: View {
         .buttonStyle(.plain)
         .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
         .listRowSeparator(.hidden)
-        .accessibilityIdentifier("collection_row_\(folderId)")
+        .accessibilityIdentifier(AccessibilityIdentifiers.collectionsRootRow(folderId: folderId))
     }
 
     // MARK: - New collection row
@@ -113,8 +348,9 @@ struct CollectionsRootView: View {
                     String(localized: "collections.new-placeholder"),
                     text: $newFolderName
                 )
-                .appBody()
+                .font(AppTypography.body)
                 .focused($isNewFieldFocused)
+                .submitLabel(.done)
                 .onSubmit {
                     commitNewFolder()
                 }
@@ -143,15 +379,16 @@ struct CollectionsRootView: View {
 
                     Text("collections.new")
                         .appBody()
-                        .foregroundColor(.accentColor)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .foregroundStyle(.primary)
                 .ingredientListRowChrome()
             }
             .buttonStyle(.plain)
+            .tint(.primary)
             .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
             .listRowSeparator(.hidden)
-            .accessibilityIdentifier("collection_new_row")
+            .accessibilityIdentifier(AccessibilityIdentifiers.collectionsNewRow)
         }
     }
 
@@ -185,4 +422,14 @@ struct CollectionsRootView: View {
             }
         }
     }
+}
+
+/// Fixed slot heights so folder icons top-align across a grid row.
+private enum CollectionGridTileMetrics {
+    static let iconHeight: CGFloat = 48
+    static let iconToTextSpacing: CGFloat = 4
+    /// Gap between title and recipe count.
+    static let labelSpacing: CGFloat = 4
+    /// Two-line title + 4pt gap + count; minHeight keeps row tops aligned, content hugs top.
+    static let textBlockMinHeight: CGFloat = 56
 }

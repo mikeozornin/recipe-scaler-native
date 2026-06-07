@@ -68,6 +68,7 @@ enum AccessibilityIdentifiers {
 
     static let collectionsRoot = "collections_root"
     static let collectionsRootRowPrefix = "collection_row_"
+    static let collectionsRootGridTilePrefix = "collection_grid_"
     static let collectionsNewRow = "collection_new_row"
     static let collectionsViewModeToggle = "collections_view_mode_toggle"
     static let collectionAssignSheet = "collection_assign_sheet"
@@ -75,6 +76,10 @@ enum AccessibilityIdentifiers {
 
     static func collectionsRootRow(folderId: String) -> String {
         "\(collectionsRootRowPrefix)\(folderId)"
+    }
+
+    static func collectionsRootGridTile(folderId: String) -> String {
+        "\(collectionsRootGridTilePrefix)\(folderId)"
     }
 
     static func mobileTimerChip(timerId: String) -> String {

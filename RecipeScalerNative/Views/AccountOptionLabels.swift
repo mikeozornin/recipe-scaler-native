@@ -56,3 +56,19 @@ extension AppThemePreference {
         }
     }
 }
+
+extension RecipeFolderRoutes.CollectionsRootLayout {
+    var localizedTitleKey: LocalizedStringKey {
+        switch self {
+        case .list: "account.collections-layout.list"
+        case .folders: "account.collections-layout.folders"
+        }
+    }
+
+    var localizedTitle: String {
+        switch self {
+        case .list: String(localized: LocalizedStringResource("account.collections-layout.list"))
+        case .folders: String(localized: LocalizedStringResource("account.collections-layout.folders"))
+        }
+    }
+}

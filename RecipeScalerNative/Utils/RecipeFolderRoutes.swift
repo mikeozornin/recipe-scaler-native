@@ -18,6 +18,17 @@ enum RecipeFolderRoutes {
     /// `UserDefaults` key for the saved view mode (default `collections`).
     static let viewModeStorageKey = "recipe-list-view-mode"
 
+    /// How the collections root is displayed: plain list or folder grid.
+    enum CollectionsRootLayout: String, CaseIterable, Identifiable, Hashable {
+        case list
+        case folders
+
+        var id: String { rawValue }
+    }
+
+    /// `UserDefaults` key for the saved collections root layout (default `list`).
+    static let collectionsRootLayoutStorageKey = "recipe-collections-root-layout"
+
     /// Whether opening a recipe from the current folder should use the nested
     /// folder route. Flat mode and recipes with no folder membership (except
     /// the virtual «uncategorized») keep the root `/recipe/:id` semantics.

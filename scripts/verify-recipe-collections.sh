@@ -11,12 +11,16 @@ mkdir -p "$SHOT_DIR"
 test -f "$ROOT/specs/026-recipe-collections/spec.md"
 test -f "$ROOT/specs/026-recipe-collections/contracts/collection-folders-yjs.md"
 
-# Swift symbols from steps §1–§5 (foundation/UI worker lands them in parallel).
-# Re-enable once YjsSyncService folders API and view files exist:
-# rg -q 'readFolders|createFolder|renameFolder|deleteFolder|setRecipeFolders' \
-#   RecipeScalerNative/Services/YjsSync/DocumentManager.swift
-# rg -q 'CollectionsRootView|CollectionFolderView|CollectionAssignSheet|ManageCollectionRecipesSheet' \
-#   RecipeScalerNative/Views/
+# Swift symbols from foundation + UI layers.
+rg -q 'readFolders|createFolder|renameFolder|deleteFolder|setRecipeFolders' \
+  RecipeScalerNative/Services/YjsSync/DocumentManager.swift
+rg -q 'CollectionsRootView|CollectionFolderView|CollectionAssignSheet|ManageCollectionRecipesSheet' \
+  RecipeScalerNative/Views/
+rg -q 'RecipesRoute' RecipeScalerNative/Models/RecipesRoute.swift
+rg -q 'CollectionVirtualFolders' RecipeScalerNative/Utils/CollectionVirtualFolders.swift
+rg -q 'CollectionRecipesIndex' RecipeScalerNative/Utils/CollectionRecipesIndex.swift
+rg -q 'RecipeFolder' RecipeScalerNative/Models/YDoc/RecipeFolder.swift
+rg -q 'CollectionsRootLayout' RecipeScalerNative/Utils/RecipeFolderRoutes.swift
 
 sim_build >/dev/null
 sim_prepare

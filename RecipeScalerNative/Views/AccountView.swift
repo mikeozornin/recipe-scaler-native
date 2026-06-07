@@ -16,8 +16,14 @@ struct AccountView: View {
     @State private var showingLogoutConfirmation = false
     @State private var showLoginOnDevice = false
     @State private var appLanguage: AppLanguagePreference = .current
+    @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)
+    private var collectionsLayoutRaw: String = RecipeFolderRoutes.CollectionsRootLayout.list.rawValue
     @State private var isTelegramConnected = false
     @State private var showingAbout = false
+
+    private var collectionsLayout: RecipeFolderRoutes.CollectionsRootLayout {
+        RecipeFolderRoutes.CollectionsRootLayout(rawValue: collectionsLayoutRaw) ?? .list
+    }
 
     var body: some View {
         NavigationStack {
@@ -247,6 +253,23 @@ struct AccountView: View {
                 AccountSettingsNavigationRow(
                     label: "account.theme.label",
                     value: viewModel.appTheme.localizedTitleKey
+                )
+            }
+
+            NavigationLink {
+                AccountCheckmarkSelectionView(
+                    navigationTitle: "account.collections-layout.label",
+                    options: RecipeFolderRoutes.CollectionsRootLayout.allCases,
+                    selection: collectionsLayout,
+                    title: { $0.localizedTitleKey },
+                    onSelect: { layout in
+                        collectionsLayoutRaw = layout.rawValue
+                    }
+                )
+            } label: {
+                AccountSettingsNavigationRow(
+                    label: "account.collections-layout.label",
+                    value: collectionsLayout.localizedTitleKey
                 )
             }
 

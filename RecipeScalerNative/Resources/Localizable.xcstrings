@@ -130,6 +130,57 @@
         }
       }
     },
+    "account.collections-layout.folders" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As folders"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Папками"
+          }
+        }
+      }
+    },
+    "account.collections-layout.label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collections layout"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отображение коллекций"
+          }
+        }
+      }
+    },
+    "account.collections-layout.list" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Список"
+          }
+        }
+      }
+    },
     "account.data.coming-soon" : {
       "localizations" : {
         "en" : {
