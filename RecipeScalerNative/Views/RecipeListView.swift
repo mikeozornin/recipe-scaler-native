@@ -324,8 +324,7 @@ struct RecipeListView: View {
                     )
                 }
                 .tint(.orange)
-            }
-            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+
                 Button {
                     Task { await togglePin(for: item) }
                 } label: {
@@ -339,8 +338,9 @@ struct RecipeListView: View {
                         AppSymbol.image(item.isPinned ? "pin.slash" : "pin")
                     }
                 }
-                .tint(.orange)
-
+                .tint(.blue)
+            }
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                 Button(role: .destructive) {
                     recipePendingDelete = item
                 } label: {
