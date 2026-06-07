@@ -369,7 +369,7 @@ struct CollectionsRootView: View {
                 }
             } label: {
                 HStack(spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
-                    AppSymbol.image("plus.circle")
+                    AppSymbol.image("plus")
                         .font(.system(size: RecipeRowLayoutMetrics.titleFontSize))
                         .frame(
                             width: RecipeRowLayoutMetrics.markerSlotWidth,
