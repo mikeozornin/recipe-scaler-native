@@ -5366,13 +5366,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "After connecting your Telegram account, you can easily save recipes from Telegram."
+            "value" : "After connecting your Telegram account, you can easily save recipes from Telegram"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "После подключения телеграм-аккаунта вы сможете легко сохранять рецепты из Telegram."
+            "value" : "После подключения телеграм-аккаунта вы сможете легко сохранять рецепты из Telegram"
           }
         }
       }
