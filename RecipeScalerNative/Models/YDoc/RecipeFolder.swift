@@ -46,4 +46,15 @@ enum RecipeFolderConstants {
     /// Stored in Yjs when the user leaves a collection name blank.
     /// Map to i18n at display time (see `FolderDisplayName`).
     static let untitledFolderNameSentinel = ""
+
+    /// Accent color string for a user folder icon; `nil` for virtual collections (use label color).
+    static func presentationStoredColor(folderId: String, folder: RecipeFolder?) -> String? {
+        guard !CollectionVirtualFolders.isKnownVirtualFolderId(folderId) else { return nil }
+        return folder?.color ?? defaultFolderColor
+    }
+
+    /// Outline when empty, filled when the folder has at least one recipe.
+    static func folderIconName(recipeCount: Int) -> String {
+        recipeCount == 0 ? "folder" : "folder.fill"
+    }
 }

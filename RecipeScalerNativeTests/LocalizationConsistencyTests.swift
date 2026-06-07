@@ -80,6 +80,7 @@ final class LocalizationConsistencyTests: XCTestCase {
             "collections.create-new",
             "collections.new-placeholder",
             "collections.create",
+            "collections.collection-color",
             "collections.rename",
             "collections.rename-placeholder",
             "collections.delete",

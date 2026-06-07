@@ -29,6 +29,14 @@ enum RecipeAccentColor {
         Color(uiColor(from: stored))
     }
 
+    /// User folders use their accent; virtual collections use the default label color.
+    static func folderIconColor(folderId: String, folder: RecipeFolder?) -> Color {
+        guard let stored = RecipeFolderConstants.presentationStoredColor(folderId: folderId, folder: folder) else {
+            return .primary
+        }
+        return color(from: stored)
+    }
+
     /// Safe sRGB hex for Y.Doc (ColorPicker colors may be non-RGB).
     static func storedValue(from color: Color) -> String {
         let ui = UIColor(color)

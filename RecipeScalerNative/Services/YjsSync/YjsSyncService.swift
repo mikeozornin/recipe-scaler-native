@@ -328,6 +328,12 @@ final class YjsSyncService: ObservableObject {
         await refreshFolders()
     }
 
+    /// Update an existing folder accent color.
+    func updateFolderColor(id: String, color: String) async throws {
+        try await documentManager.updateFolderColor(id: id, color: color)
+        await refreshFolders()
+    }
+
     /// Soft-delete a folder and strip its id from every recipe's `folderIds`.
     /// Recipes are not deleted — only their membership in this collection.
     func deleteFolder(id: String) async throws {

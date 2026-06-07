@@ -10,9 +10,10 @@ struct CollectionFolderView: View {
     @EnvironmentObject private var syncService: YjsSyncService
     @Binding var navigationPath: NavigationPath
 
-    @State private var searchText = ""
     @State private var isEditingName = false
     @State private var editingName = ""
+    @State private var editingColor = RecipeAccentColor.color(from: RecipeFolderConstants.defaultFolderColor)
+    @State private var isNameFieldFocused = false
     @State private var showingDeleteConfirm = false
     @State private var showingManageRecipes = false
     @State private var showingError = false
@@ -21,8 +22,6 @@ struct CollectionFolderView: View {
     @State private var recipeIdToOpenInEditMode: String?
     @State private var assignSheetRecipeId: String?
     @State private var assignSheetRecipeName: String?
-
-    @FocusState private var isNameFieldFocused: Bool
 
     private var isVirtual: Bool {
         CollectionVirtualFolders.isKnownVirtualFolderId(folderId)
@@ -35,9 +34,9 @@ struct CollectionFolderView: View {
     private var displayName: String {
         if isVirtual {
             if folderId == CollectionVirtualFolders.allRecipesFolderId {
-                return String(localized: "collections.all-recipes")
+                return Bundle.currentLocalizedString("collections.all-recipes")
             }
-            return String(localized: "collections.uncategorized")
+            return Bundle.currentLocalizedString("collections.uncategorized")
         }
         guard let folder = activeFolder else { return "" }
         return FolderDisplayName.displayName(forStoredName: folder.name)
@@ -56,15 +55,7 @@ struct CollectionFolderView: View {
     }
 
     private var filteredEntries: [CollectionEntry] {
-        let trimmed = searchText.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return folderRecipes }
-
-        let tokens = tokenizeQuery(trimmed)
-        return folderRecipes.filter { entry in
-            tokens.allSatisfy { token in
-                normalizeForSearch(entry.name).contains(token)
-            }
-        }
+        folderRecipes
     }
 
     private var pinnedRowItems: [RecipeRowData] {
@@ -79,15 +70,24 @@ struct CollectionFolderView: View {
         !pinnedRowItems.isEmpty || !unpinnedRowItems.isEmpty
     }
 
+    private var emptyStateFolderIconColor: Color {
+        RecipeAccentColor.folderIconColor(folderId: folderId, folder: activeFolder)
+    }
+
     var body: some View {
         Group {
-            if searchText.trimmingCharacters(in: .whitespaces).isEmpty && folderRecipes.isEmpty {
+            if folderRecipes.isEmpty {
                 ContentUnavailableView {
-                    AppLabel.make(String(localized: "collections.empty-folder"), symbol: "folder")
+                    Label {
+                        Text(String(localized: "collections.empty-folder"))
+                            .font(AppTypography.body)
+                    } icon: {
+                        Image(systemName: "folder")
+                            .font(.system(size: 40, weight: .light))
+                            .foregroundStyle(emptyStateFolderIconColor)
+                    }
                 }
                 .mobileTimerPanelBottomPadding()
-            } else if !hasAnyRows && !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
-                ContentUnavailableView.search
             } else {
                 List {
                     if !pinnedRowItems.isEmpty {
@@ -111,12 +111,12 @@ struct CollectionFolderView: View {
                 .listStyle(.plain)
                 .listSectionSpacing(0)
                 .environment(\.defaultMinListRowHeight, 1)
-                .searchable(text: $searchText, prompt: String(localized: "search.recipes"))
             }
         }
         .modifier(FolderNavigationTitleModifier(
             isEditingName: isEditingName,
             editingName: $editingName,
+            editingColor: $editingColor,
             displayName: displayName,
             isNameFieldFocused: $isNameFieldFocused,
             onCommit: commitRename,
@@ -124,7 +124,7 @@ struct CollectionFolderView: View {
         ))
         .appListBodyTypography()
         .toolbar {
-            if !isVirtual {
+            if !isVirtual && !isEditingName {
                 ToolbarItem(placement: .topBarTrailing) {
                     folderMenu
                 }
@@ -231,22 +231,45 @@ struct CollectionFolderView: View {
 
     private func startRename() {
         editingName = activeFolder?.name ?? ""
+        editingColor = RecipeAccentColor.color(
+            from: activeFolder?.color ?? RecipeFolderConstants.defaultFolderColor
+        )
         isEditingName = true
         isNameFieldFocused = true
     }
 
     private func commitRename() {
         let trimmed = editingName.trimmingCharacters(in: .whitespaces)
-        isEditingName = false
         isNameFieldFocused = false
 
-        guard !trimmed.isEmpty else { return }
-        guard trimmed != (activeFolder?.name ?? "") else { return }
+        guard !trimmed.isEmpty else {
+            isEditingName = false
+            return
+        }
+
+        let baselineColor = RecipeAccentColor.normalizedStored(
+            activeFolder?.color ?? RecipeFolderConstants.defaultFolderColor
+        )
+        let draftColor = RecipeAccentColor.storedValue(from: editingColor)
+        let nameChanged = trimmed != (activeFolder?.name ?? "")
+        let colorChanged = RecipeAccentColor.normalizedStored(draftColor) != baselineColor
+
+        guard nameChanged || colorChanged else {
+            isEditingName = false
+            return
+        }
 
         Task {
             do {
-                try await syncService.renameFolder(id: folderId, name: trimmed)
+                if nameChanged {
+                    try await syncService.renameFolder(id: folderId, name: trimmed)
+                }
+                if colorChanged {
+                    try await syncService.updateFolderColor(id: folderId, color: draftColor)
+                }
+                isEditingName = false
             } catch {
+                isEditingName = false
                 errorMessage = error.localizedDescription
                 showingError = true
             }
@@ -297,9 +320,6 @@ struct CollectionFolderView: View {
         recipePendingDelete = nil
         do {
             try await syncService.deleteRecipeFromCollection(recipeId: item.id)
-            if !navigationPath.isEmpty {
-                navigationPath = NavigationPath()
-            }
         } catch {
             errorMessage = error.localizedDescription
             showingError = true
@@ -325,6 +345,7 @@ struct CollectionFolderView: View {
                     data: item,
                     allowsNetworkRefresh: allowsImageNetworkRefresh
                 )
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 let route = RecipesRoute.recipe(
                     recipeId: item.id,
@@ -452,30 +473,110 @@ struct CollectionFolderView: View {
 private struct FolderNavigationTitleModifier: ViewModifier {
     let isEditingName: Bool
     @Binding var editingName: String
+    @Binding var editingColor: Color
     let displayName: String
-    var isNameFieldFocused: FocusState<Bool>.Binding
+    @Binding var isNameFieldFocused: Bool
     let onCommit: () -> Void
     let onCancel: () -> Void
 
-    @Environment(\.locale) private var locale
-
     func body(content: Content) -> some View {
-        _ = locale
-        if isEditingName {
-            content.navigationTitle {
-                TextField("", text: $editingName)
-                    .focused(isNameFieldFocused)
-                    .onSubmit { onCommit() }
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button(String(localized: "recipe.list.delete.confirm.cancel")) {
-                                onCancel()
-                            }
+        content
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(isEditingName)
+            .navigationTitle(Text(verbatim: isEditingName ? "" : displayName))
+            .toolbar {
+                if isEditingName {
+                    ToolbarItem(placement: .principal) {
+                        HStack(spacing: 8) {
+                            RenameTextField(
+                                text: $editingName,
+                                isFocused: $isNameFieldFocused,
+                                onSubmit: onCommit
+                            )
+                            .frame(maxWidth: .infinity)
+
+                            ColorPicker(
+                                String(localized: "collections.collection-color"),
+                                selection: $editingColor,
+                                supportsOpacity: false
+                            )
+                            .labelsHidden()
+                            .frame(width: 30, height: 30)
                         }
                     }
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(String(localized: "recipe.list.delete.confirm.cancel")) {
+                            onCancel()
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(String(localized: "collections.done")) {
+                            onCommit()
+                        }
+                    }
+                }
             }
-        } else {
-            content.navigationTitle(Text(verbatim: displayName))
+    }
+}
+
+// MARK: - Rename text field (UITextField wrapper with focus & select-all)
+
+private struct RenameTextField: UIViewRepresentable {
+    @Binding var text: String
+    @Binding var isFocused: Bool
+    var onSubmit: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIView(context: Context) -> UITextField {
+        let field = UITextField()
+        field.borderStyle = .none
+        field.textAlignment = .center
+        field.returnKeyType = .done
+        field.autocorrectionType = .no
+        field.font = AppTypography.sansMediumBodyUIFont
+        field.delegate = context.coordinator
+        field.addTarget(context.coordinator, action: #selector(Coordinator.textChanged), for: .editingChanged)
+        return field
+    }
+
+    func updateUIView(_ textField: UITextField, context: Context) {
+        if textField.text != text {
+            textField.text = text
+        }
+
+        if isFocused && !textField.isFirstResponder {
+            DispatchQueue.main.async {
+                guard textField.window != nil else { return }
+                textField.becomeFirstResponder()
+            }
+        }
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: RenameTextField
+
+        init(_ parent: RenameTextField) {
+            self.parent = parent
+        }
+
+        @objc func textChanged(_ sender: UITextField) {
+            parent.text = sender.text ?? ""
+        }
+
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            parent.onSubmit()
+            return true
+        }
+
+        func textFieldDidBeginEditing(_ textField: UITextField) {
+            textField.selectAll(nil)
+        }
+
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            parent.isFocused = false
         }
     }
 }

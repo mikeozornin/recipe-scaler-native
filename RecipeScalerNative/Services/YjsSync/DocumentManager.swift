@@ -616,6 +616,14 @@ actor DocumentManager {
         }
     }
 
+    /// Update a folder accent color (and bump `updatedAt`). Web `setFolderColor` parity.
+    func updateFolderColor(id: String, color: String) async throws {
+        let normalized = RecipeAccentColor.normalizedStored(color)
+        try await mutateFolderEntry(id: id) { map, txn in
+            map.insert(key: "color", value: .string(normalized), txn: txn)
+        }
+    }
+
     /// Soft-delete a folder: tombstone + strip its id from every recipe
     /// entry's `folderIds` in one transaction (web `deleteFolder` parity).
     /// Recipes themselves are untouched — only membership.

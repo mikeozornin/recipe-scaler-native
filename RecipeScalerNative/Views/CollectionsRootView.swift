@@ -31,7 +31,7 @@ struct CollectionsRootView: View {
 
     var body: some View {
         if !syncService.isLocalDataLoaded {
-            ProgressView(String(localized: "recipe.list.loading"))
+            ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
                 .mobileTimerPanelBottomPadding()
         } else {
             switch layout {
@@ -50,25 +50,26 @@ struct CollectionsRootView: View {
         List {
             collectionRow(
                 folderId: CollectionVirtualFolders.allRecipesFolderId,
-                title: String(localized: "collections.all-recipes"),
+                title: Bundle.currentLocalizedString("collections.all-recipes"),
                 icon: "list.bullet",
                 count: syncService.collectionIndex.live.count
             )
 
             ForEach(sortedFolders, id: \.id) { folder in
+                let count = syncService.collectionIndex.countByFolder[folder.id] ?? 0
                 collectionRow(
                     folderId: folder.id,
                     title: FolderDisplayName.displayName(forStoredName: folder.name),
-                    icon: "folder",
-                    count: syncService.collectionIndex.countByFolder[folder.id] ?? 0
+                    icon: RecipeFolderConstants.folderIconName(recipeCount: count),
+                    count: count
                 )
             }
 
             if uncategorizedCount > 0 {
                 collectionRow(
                     folderId: CollectionVirtualFolders.uncategorizedFolderId,
-                    title: String(localized: "collections.uncategorized"),
-                    icon: "folder",
+                    title: Bundle.currentLocalizedString("collections.uncategorized"),
+                    icon: RecipeFolderConstants.folderIconName(recipeCount: uncategorizedCount),
                     count: uncategorizedCount
                 )
             }
@@ -111,19 +112,17 @@ struct CollectionsRootView: View {
                 // Virtual "All recipes" — first tile
                 folderGridTile(
                     folderId: CollectionVirtualFolders.allRecipesFolderId,
-                    color: RecipeFolderConstants.defaultFolderColor,
-                    title: String(localized: "collections.all-recipes"),
-                    count: syncService.collectionIndex.live.count,
-                    icon: "folder.fill"
+                    title: Bundle.currentLocalizedString("collections.all-recipes"),
+                    count: syncService.collectionIndex.live.count
                 )
 
                 // User folders
                 ForEach(sortedFolders, id: \.id) { folder in
                     folderGridTile(
                         folderId: folder.id,
-                        color: folder.color,
                         title: FolderDisplayName.displayName(forStoredName: folder.name),
-                        count: syncService.collectionIndex.countByFolder[folder.id] ?? 0
+                        count: syncService.collectionIndex.countByFolder[folder.id] ?? 0,
+                        folder: folder
                     )
                 }
 
@@ -131,10 +130,8 @@ struct CollectionsRootView: View {
                 if uncategorizedCount > 0 {
                     folderGridTile(
                         folderId: CollectionVirtualFolders.uncategorizedFolderId,
-                        color: RecipeFolderConstants.defaultFolderColor,
-                        title: String(localized: "collections.uncategorized"),
-                        count: uncategorizedCount,
-                        isGrayed: true
+                        title: Bundle.currentLocalizedString("collections.uncategorized"),
+                        count: uncategorizedCount
                     )
                 }
 
@@ -167,20 +164,16 @@ struct CollectionsRootView: View {
     @ViewBuilder
     private func folderGridTile(
         folderId: String,
-        color: String,
         title: String,
         count: Int = 0,
-        icon: String = "folder.fill",
-        isGrayed: Bool = false
+        folder: RecipeFolder? = nil
     ) -> some View {
-        let usesGrayFolder = isGrayed || count == 0
-
         Button {
             navigationPath.append(RecipesRoute.folder(folderId))
         } label: {
             folderGridTileContent(
-                icon: icon,
-                iconColor: usesGrayFolder ? Color.secondary : RecipeAccentColor.color(from: color),
+                icon: RecipeFolderConstants.folderIconName(recipeCount: count),
+                iconColor: RecipeAccentColor.folderIconColor(folderId: folderId, folder: folder),
                 title: title,
                 count: count
             )
@@ -296,12 +289,15 @@ struct CollectionsRootView: View {
         icon: String,
         count: Int
     ) -> some View {
+        let folder = syncService.folders.first { $0.id == folderId }
+
         Button {
             navigationPath.append(RecipesRoute.folder(folderId))
         } label: {
             HStack(spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
                 AppSymbol.image(icon)
                     .font(.system(size: RecipeRowLayoutMetrics.titleFontSize))
+                    .foregroundStyle(RecipeAccentColor.folderIconColor(folderId: folderId, folder: folder))
                     .frame(
                         width: RecipeRowLayoutMetrics.markerSlotWidth,
                         height: RecipeRowLayoutMetrics.titleLineHeight,
