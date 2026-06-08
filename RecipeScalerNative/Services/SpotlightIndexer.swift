@@ -23,7 +23,7 @@ final class SpotlightIndexer: ObservableObject {
     static let actionAddToShopping = "addToShopping"
 
     /// Bump when indexing payload shape changes so existing items reindex.
-    private static let previewFormatVersion = "1"
+    private static let previewFormatVersion = "2"
 
     private let syncService: YjsSyncService
     private let logger = Logger(subsystem: "com.recipescaler.native", category: "SpotlightIndexer")
@@ -115,6 +115,9 @@ final class SpotlightIndexer: ObservableObject {
             attrs.displayName = displayTitle
         }
         attrs.contentDescription = Self.buildPreview(recipe: recipe)
+        if let fullText = Self.plainText(fromHTML: recipe.description), !fullText.isEmpty {
+            attrs.textContent = fullText
+        }
         attrs.identifier = recipe.id
 
         let ingredientKeywords = recipe.ingredients
@@ -165,27 +168,43 @@ final class SpotlightIndexer: ObservableObject {
         return f
     }()
 
-    /// Spotlight snippet: one line, middle-dot separated (multi-line `\n` is often hidden).
+    /// Spotlight snippet: ingredients on line 1, description on lines 2+.
     private static func buildPreview(recipe: RecipeData) -> String? {
+        let ingredientSnippet = buildIngredientSnippet(recipe: recipe)
+        let descriptionText = plainText(fromHTML: recipe.description)
+            .flatMap { $0.isEmpty ? nil : $0 }
+
+        switch (ingredientSnippet, descriptionText) {
+        case (let ingredients?, let description?):
+            let remaining = spotlightTotalMaxLength - ingredients.count - 1
+            let truncatedDesc = remaining > 0 ? truncateToLength(description, maxLength: remaining) : ""
+            if truncatedDesc.isEmpty {
+                return ingredients
+            }
+            return ingredients + "\n" + truncatedDesc
+        case (let ingredients?, nil):
+            return ingredients
+        case (nil, let description?):
+            return truncateToLength(description, maxLength: spotlightTotalMaxLength)
+        case (nil, nil):
+            return nil
+        }
+    }
+
+    private static func buildIngredientSnippet(recipe: RecipeData) -> String? {
         let ingredientLines = recipe.ingredients
             .filter { !$0.isHeaderRow }
             .compactMap { spotlightIngredientLine($0) }
             .filter { !$0.isEmpty }
 
-        if !ingredientLines.isEmpty {
-            let maxItems = 6
-            var snippet = ingredientLines.prefix(maxItems).joined(separator: " · ")
-            if ingredientLines.count > maxItems {
-                snippet += " · …"
-            }
-            return truncateForSpotlight(snippet)
-        }
+        guard !ingredientLines.isEmpty else { return nil }
 
-        if let fromDescription = plainText(fromHTML: recipe.description), !fromDescription.isEmpty {
-            return truncateForSpotlight(fromDescription)
+        let maxItems = 6
+        var snippet = ingredientLines.prefix(maxItems).joined(separator: " · ")
+        if ingredientLines.count > maxItems {
+            snippet += " · …"
         }
-
-        return nil
+        return truncateToLength(snippet, maxLength: spotlightSnippetMaxLength)
     }
 
     private static func spotlightIngredientLine(_ ingredient: IngredientData) -> String? {
@@ -203,11 +222,12 @@ final class SpotlightIndexer: ObservableObject {
     }
 
     private static let spotlightSnippetMaxLength = 220
+    private static let spotlightTotalMaxLength = 300
 
-    private static func truncateForSpotlight(_ text: String) -> String {
+    private static func truncateToLength(_ text: String, maxLength: Int) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count > spotlightSnippetMaxLength else { return trimmed }
-        let end = trimmed.index(trimmed.startIndex, offsetBy: spotlightSnippetMaxLength)
+        guard trimmed.count > maxLength else { return trimmed }
+        let end = trimmed.index(trimmed.startIndex, offsetBy: maxLength)
         return String(trimmed[..<end]).trimmingCharacters(in: .whitespacesAndNewlines) + "…"
     }
 
