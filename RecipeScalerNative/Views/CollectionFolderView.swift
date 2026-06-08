@@ -22,6 +22,11 @@ struct CollectionFolderView: View {
     @State private var recipeIdToOpenInEditMode: String?
     @State private var assignSheetRecipeId: String?
     @State private var assignSheetRecipeName: String?
+    @State private var searchText = ""
+    /// Lazy recipe loader + highlight cache scoped to this folder.
+    @StateObject private var searchStore = RecipeListSearchStore()
+    /// Tokens derived from `searchText` once per change.
+    @State private var searchTokens: [String] = []
 
     private var isVirtual: Bool {
         CollectionVirtualFolders.isKnownVirtualFolderId(folderId)
@@ -54,8 +59,17 @@ struct CollectionFolderView: View {
         return index.folderRecipesById[folderId] ?? []
     }
 
+    private var isSearching: Bool {
+        !searchTokens.isEmpty
+    }
+
+    /// Entries to render: precomputed filtered snapshot when searching, full
+    /// folder list otherwise. Reads the store's single published snapshot.
     private var filteredEntries: [CollectionEntry] {
-        folderRecipes
+        if isSearching {
+            return searchStore.filteredSnapshot
+        }
+        return folderRecipes
     }
 
     private var pinnedRowItems: [RecipeRowData] {
@@ -88,6 +102,9 @@ struct CollectionFolderView: View {
                     }
                 }
                 .mobileTimerPanelBottomPadding()
+            } else if filteredEntries.isEmpty && isSearching {
+                ContentUnavailableView.search(text: searchText)
+                    .mobileTimerPanelBottomPadding()
             } else {
                 List {
                     if !pinnedRowItems.isEmpty {
@@ -112,6 +129,18 @@ struct CollectionFolderView: View {
                 .listSectionSpacing(0)
                 .environment(\.defaultMinListRowHeight, 1)
             }
+        }
+        .searchable(text: $searchText, prompt: String(localized: "search.recipes"))
+        .onAppear {
+            searchStore.bind(syncService: syncService)
+        }
+        .onChange(of: searchText) { _, query in
+            searchTokens = RecipeSearchUtils.tokenizeQuery(query)
+            searchStore.refresh(entries: folderRecipes, query: query)
+        }
+        .onChange(of: folderRecipes.map(\.id)) { _, _ in
+            guard isSearching else { return }
+            searchStore.refresh(entries: folderRecipes, query: searchText)
         }
         .modifier(FolderNavigationTitleModifier(
             isEditingName: isEditingName,
@@ -343,6 +372,7 @@ struct CollectionFolderView: View {
             ZStack(alignment: .leading) {
                 RecipeRow(
                     data: item,
+                    highlight: isSearching ? searchStore.highlights[item.id] : nil,
                     allowsNetworkRefresh: allowsImageNetworkRefresh
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -421,51 +451,6 @@ struct CollectionFolderView: View {
         }
     }
 
-    // MARK: - Search helpers
-
-    private func tokenizeQuery(_ query: String) -> [String] {
-        var tokens: [String] = []
-        var remaining = query[...]
-
-        while !remaining.isEmpty {
-            remaining = Substring(remaining.trimmingCharacters(in: .whitespaces))
-            if remaining.isEmpty { break }
-
-            if remaining.hasPrefix("\"") {
-                remaining = remaining.dropFirst()
-                if let end = remaining.range(of: "\"") {
-                    let phrase = String(remaining[..<end.lowerBound])
-                    if !phrase.isEmpty {
-                        tokens.append(normalizeForSearch(phrase))
-                    }
-                    remaining = remaining[end.upperBound...]
-                } else {
-                    tokens.append(normalizeForSearch(String(remaining)))
-                    break
-                }
-            } else {
-                if let space = remaining.range(of: " ") {
-                    let word = String(remaining[..<space.lowerBound])
-                    tokens.append(normalizeForSearch(word))
-                    remaining = remaining[space.upperBound...]
-                } else {
-                    tokens.append(normalizeForSearch(String(remaining)))
-                    break
-                }
-            }
-        }
-
-        return tokens
-    }
-
-    private func normalizeForSearch(_ value: String) -> String {
-        value
-            .trimmingCharacters(in: .whitespaces)
-            .decomposedStringWithCanonicalMapping
-            .components(separatedBy: CharacterSet(charactersIn: "\u{0300}"..."\u{036F}"))
-            .joined()
-            .lowercased()
-    }
 }
 
 // MARK: - Navigation title modifier (supports inline rename)

@@ -12,6 +12,10 @@ struct RecipeListView: View {
     @State private var recipeIdToOpenInEditMode: String?
     @State private var assignSheetRecipeId: String?
     @State private var assignSheetRecipeName: String?
+    /// Lazy recipe loader + highlight cache for full-text search.
+    @StateObject private var searchStore = RecipeListSearchStore()
+    /// Tokens derived from `searchText` once per change, not per render.
+    @State private var searchTokens: [String] = []
 
     /// Persisted view mode: `nil` = default (collections).
     @AppStorage(RecipeFolderRoutes.viewModeStorageKey)
@@ -29,23 +33,17 @@ struct RecipeListView: View {
     #endif
 
     private var isSearching: Bool {
-        !searchText.trimmingCharacters(in: .whitespaces).isEmpty
+        !searchTokens.isEmpty
     }
 
+    /// Entries to render: precomputed filtered snapshot when searching, the full
+    /// sorted list otherwise. Reads the store's single published snapshot —
+    /// never re-filters or re-sorts in the render path.
     private var filteredEntries: [CollectionEntry] {
-        let sorted = RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
-        let trimmed = searchText.trimmingCharacters(in: .whitespaces)
-
-        guard !trimmed.isEmpty else {
-            return sorted
+        if isSearching {
+            return searchStore.filteredSnapshot
         }
-
-        let tokens = tokenizeQuery(trimmed)
-        return sorted.filter { entry in
-            tokens.allSatisfy { token in
-                normalizeForSearch(entry.name).contains(token)
-            }
-        }
+        return RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
     }
 
     private var pinnedRowItems: [RecipeRowData] {
@@ -108,8 +106,22 @@ struct RecipeListView: View {
                     .listSectionSpacing(0)
                     .environment(\.defaultMinListRowHeight, 1)
                     .accessibilityIdentifier(AccessibilityIdentifiers.recipeList)
-                    .searchable(text: $searchText, prompt: String(localized: "search.recipes"))
                 }
+            }
+            .searchable(text: $searchText, prompt: String(localized: "search.recipes"))
+            .onAppear {
+                searchStore.bind(syncService: syncService)
+            }
+            .onChange(of: searchText) { _, query in
+                // Tokens computed once per change (was: 16–26× per render).
+                searchTokens = RecipeSearchUtils.tokenizeQuery(query)
+                let sorted = RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
+                searchStore.refresh(entries: sorted, query: query)
+            }
+            .onChange(of: syncService.collectionEntries.map(\.id)) { _, _ in
+                guard isSearching else { return }
+                let sorted = RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
+                searchStore.refresh(entries: sorted, query: searchText)
             }
             .localizedNavigationTitle("Recipes")
             .appListBodyTypography()
@@ -290,6 +302,7 @@ struct RecipeListView: View {
             ZStack(alignment: .leading) {
                 RecipeRow(
                     data: item,
+                    highlight: isSearching ? searchStore.highlights[item.id] : nil,
                     allowsNetworkRefresh: allowsImageNetworkRefresh
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -370,53 +383,6 @@ struct RecipeListView: View {
         navigationPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
     }
     #endif
-
-    // MARK: - Search Helpers
-
-    private func tokenizeQuery(_ query: String) -> [String] {
-        var tokens: [String] = []
-        var remaining = query[...]
-
-        while !remaining.isEmpty {
-            remaining = Substring(remaining.trimmingCharacters(in: .whitespaces))
-            if remaining.isEmpty { break }
-
-            if remaining.hasPrefix("\"") {
-                remaining = remaining.dropFirst()
-                if let end = remaining.range(of: "\"") {
-                    let phrase = String(remaining[..<end.lowerBound])
-                    if !phrase.isEmpty {
-                        tokens.append(normalizeForSearch(phrase))
-                    }
-                    remaining = remaining[end.upperBound...]
-                } else {
-                    let phrase = String(remaining)
-                    tokens.append(normalizeForSearch(phrase))
-                    break
-                }
-            } else {
-                if let space = remaining.range(of: " ") {
-                    let word = String(remaining[..<space.lowerBound])
-                    tokens.append(normalizeForSearch(word))
-                    remaining = remaining[space.upperBound...]
-                } else {
-                    tokens.append(normalizeForSearch(String(remaining)))
-                    break
-                }
-            }
-        }
-
-        return tokens
-    }
-
-    private func normalizeForSearch(_ value: String) -> String {
-        return value
-            .trimmingCharacters(in: .whitespaces)
-            .decomposedStringWithCanonicalMapping
-            .components(separatedBy: CharacterSet(charactersIn: "\u{0300}"..."\u{036F}"))
-            .joined()
-            .lowercased()
-    }
 }
 
 // MARK: - Assign sheet item (for .sheet(item:))
@@ -632,6 +598,10 @@ private struct RecipeRowMarkerSlot: View {
 
 struct RecipeRow: View {
     let data: RecipeRowData
+    /// Pre-built highlighted title + snippet. Built once by
+    /// `RecipeListSearchStore` per query, not per render. `nil` when search is
+    /// inactive — the row renders a plain `Text` title.
+    var highlight: RecipeRowHighlight? = nil
     var allowsNetworkRefresh: Bool = true
 
     private var hasThumbnail: Bool { data.hasThumbnail }
@@ -644,34 +614,59 @@ struct RecipeRow: View {
         return trimmed
     }
 
-    var body: some View {
-        titleContent
-            .padding(.trailing, hasThumbnail ? RecipeListMetrics.thumbnailSide + 12 : 0)
-            .overlay(alignment: .trailing) {
-                if hasThumbnail {
-                    recipeThumbnail
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
+    /// Zero spacing when there is no snippet, so the row matches the old
+    /// title-only layout when search is inactive.
+    private var snippetSpacing: CGFloat {
+        guard highlight?.snippet != nil else { return 0 }
+        return RecipeRowLayoutMetrics.searchSnippetSpacing
     }
 
-    /// Row height from marker + title only; thumbnail is overlaid (web: `self-center`, no stretch).
-    private var titleContent: some View {
+    var body: some View {
         HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
             RecipeRowMarkerSlot(
                 emoji: data.leadingEmoji,
                 color: data.color
             )
 
+            VStack(alignment: .leading, spacing: snippetSpacing) {
+                titleLabel
+                if let snippet = highlight?.snippet {
+                    Text(snippet)
+                        .lineSpacing(AppTypography.footnoteLineSpacing)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .ingredientListRowChrome()
+        .padding(.trailing, hasThumbnail ? RecipeListMetrics.thumbnailSide + 12 : 0)
+        .overlay(alignment: .trailing) {
+            if hasThumbnail {
+                recipeThumbnail
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private var titleLabel: some View {
+        if let titleAttr = highlight?.title {
+            Text(titleAttr)
+                .lineSpacing(AppTypography.bodyLineSpacing)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
+        } else {
             Text(titleText)
                 .appBody()
                 .foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
         }
-        .ingredientListRowChrome()
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var recipeThumbnail: some View {

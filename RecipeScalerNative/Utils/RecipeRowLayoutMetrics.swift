@@ -27,6 +27,8 @@ enum RecipeRowLayoutMetrics {
     static let gridQtyColumnsSpacing: CGFloat = 4
     /// Name → KBJU line (view and edit).
     static let nutritionLineSpacing: CGFloat = 4
+    /// Recipe list search snippet directly under the title (web: stacked in one column).
+    static let searchSnippetSpacing: CGFloat = 2
 
     /// Leading slot: row number / «+» — tight to body digit width.
     static var markerSlotWidth: CGFloat {
