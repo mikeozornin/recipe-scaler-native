@@ -22,7 +22,7 @@ enum RecipeRowLayoutMetrics {
     /// Tighter gap between marker and ingredient name (recipe detail, list of ingredients).
     static let ingredientMarkerSpacing: CGFloat = 2
     /// Gap between the ingredients block (marker + name) and qty columns.
-    static let gridIngredientsToQtySpacing: CGFloat = 8
+    static let gridIngredientsToQtySpacing: CGFloat = 4
     /// Gap between base and scaled qty.
     static let gridQtyColumnsSpacing: CGFloat = 4
     /// Name → KBJU line (view and edit).
@@ -51,9 +51,28 @@ enum RecipeRowLayoutMetrics {
     static var scaledQtyColumnWidth: CGFloat { scaledQtyColumnMinWidth }
     static var qtyColumnMinWidth: CGFloat { baseQtyColumnWidth }
 
-    /// Trailing inset for `List` rows — room for ≡ only (not a layout column).
-    static let listReorderTrailingInset: CGFloat = 20
+    /// Trailing inset for view-mode `List` rows.
+    static let listReorderTrailingInset: CGFloat = 4
     static let listReorderColumnWidth: CGFloat = listReorderTrailingInset
+
+    // MARK: - Edit-mode ingredient grid (List + onMove + swipe delete)
+
+    /// Leading drag handle in edit ingredient rows (left slot, former minus-button area).
+    static let editListLeadingDragHandleWidth: CGFloat = 28
+    /// Approximate UITableView reorder control width in edit mode.
+    static let editListReorderControlWidth: CGFloat = 36
+    /// Gap between amount field and reorder handle inside edit `List`.
+    static let editRowQtyToReorderSpacing: CGFloat = 10
+
+    /// Leading padding for header/servings outside edit `List`.
+    static var editGridLeadingPadding: CGFloat {
+        listHorizontalInset
+    }
+
+    /// Trailing padding for header/servings — compensates reorder handle width so Qty header aligns with row amounts.
+    static var editGridTrailingPadding: CGFloat {
+        editRowQtyToReorderSpacing + editListReorderControlWidth
+    }
 
     private static func monoTextWidth(sample: String, trailingPadding: CGFloat) -> CGFloat {
         let font = AppTypography.uiFont(AppFonts.mono, size: AppTypography.bodySize)

@@ -2,7 +2,7 @@
 
 **Ветка**: `006-description-editor`  
 **Дата**: 2026-06-02  
-**Статус**: 🟡 Частично реализовано (аудит 2026-06-03) — базовый rich-text MVP. Остаток → [018-description-editor-richtext](../018-description-editor-richtext/spec.md)  
+**Статус**: 🟡 Частично реализовано (аудит 2026-06-03) — базовый rich-text MVP (sheet + contentEditable). Целевой UX и Tiptap inline → [019-recipe-description-inline-edit](../019-recipe-description-inline-edit/spec.md); функциональный остаток → [018](../018-description-editor-richtext/spec.md)  
 **Зависимости**: `004-description-read-only` (чтение v3), `002-native-editing` (sync write)  
 **Эталон веба**: `recipe-scaler-web/recipe-scaler` — Tiptap в `recipe-detail`, `Y.XmlFragment('description')`
 

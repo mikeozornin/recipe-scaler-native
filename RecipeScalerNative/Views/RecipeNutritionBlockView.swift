@@ -6,7 +6,11 @@ struct RecipeNutritionBlockView: View {
     let baseServings: Int
     let scaleFactor: Double
     let accentColor: Color
+    let isOnline: Bool
+    let onRecalculate: (() async -> Void)?
     @Binding var viewMode: IngredientNutritionViewMode
+
+    @State private var isCalculating = false
 
     private var totalWeight: Double? {
         RecipeNutritionDisplay.effectiveTotalWeight(from: recipe)
@@ -40,6 +44,9 @@ struct RecipeNutritionBlockView: View {
                 modeHeader
                 macrosRow(macros)
                     .id(viewMode)
+                if recipe.nutrition?.nutritionOutdated == true {
+                    outdatedBanner
+                }
             }
             .padding(.horizontal)
             .padding(.top, 8)
@@ -124,6 +131,35 @@ struct RecipeNutritionBlockView: View {
             )
             Spacer(minLength: 0)
         }
+    }
+
+    private var outdatedBanner: some View {
+        HStack(spacing: 8) {
+            Text(String(localized: "nutrition.may-be-outdated"))
+                .font(AppTypography.footnote)
+            if isOnline, let onRecalculate {
+                Button {
+                    guard !isCalculating else { return }
+                    Task {
+                        isCalculating = true
+                        await onRecalculate()
+                        isCalculating = false
+                    }
+                } label: {
+                    if isCalculating {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "repeat")
+                            .font(AppTypography.footnote)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(String(localized: "nutrition.recalculate")))
+            }
+        }
+        .foregroundStyle(.secondary)
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     private func macroColumn(value: String, label: String, valueColor: Color) -> some View {

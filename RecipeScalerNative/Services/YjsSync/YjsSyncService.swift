@@ -208,7 +208,30 @@ final class YjsSyncService: ObservableObject {
 
     private func flushPendingUpdates(for recipeIds: [String]) async {
         for recipeId in recipeIds {
-            guard let payload = await updateDebouncer.drainPending(recipeId: recipeId) else { continue }
+            guard let payload = await updateDebouncer.drainPending(recipeId: recipeId) else {
+                // #region agent log
+                if recipeId == activeRecipeId {
+                    DebugSessionNDJSONLog.write(
+                        hypothesisId: "H3",
+                        location: "YjsSyncService.swift:flushPendingUpdates",
+                        message: "drain_empty",
+                        data: ["recipeId": recipeId]
+                    )
+                }
+                // #endregion
+                continue
+            }
+            // #region agent log
+            DebugSessionNDJSONLog.write(
+                hypothesisId: "H3",
+                location: "YjsSyncService.swift:flushPendingUpdates",
+                message: "drain_ok",
+                data: [
+                    "recipeId": recipeId,
+                    "bytes": String(payload.count),
+                ]
+            )
+            // #endregion
             await sendDebouncedUpdate(recipeId: recipeId, update: payload)
         }
         for recipeId in recipeIds {
@@ -241,8 +264,23 @@ final class YjsSyncService: ObservableObject {
 
     func applyDescriptionEditorUpdate(recipeId: String, update: Data) async throws {
         guard activeRecipeId == recipeId else { throw RecipeEditError.documentNotLoaded }
+        let descBefore = currentRecipe?.description?.count ?? 0
         try await documentManager.applyDescriptionEditorUpdate(recipeId: recipeId, update: update)
         await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
+        // #region agent log
+        DebugSessionNDJSONLog.write(
+            hypothesisId: "H2",
+            location: "YjsSyncService.swift:applyDescriptionEditorUpdate",
+            message: "applied_description_update",
+            data: [
+                "recipeId": recipeId,
+                "bytes": String(update.count),
+                "descLenBefore": String(descBefore),
+                "descLenAfter": String(currentRecipe?.description?.count ?? 0),
+                "refreshSuspended": String(recipeRefreshSuspended),
+            ]
+        )
+        // #endregion
     }
 
     func registerDescriptionEditor(_ bridge: DescriptionEditorBridge) {
@@ -262,9 +300,13 @@ final class YjsSyncService: ObservableObject {
         await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
     }
 
-    func updateIngredient(_ ingredient: IngredientData) async throws {
+    func updateIngredient(_ ingredient: IngredientData, markNutritionOutdated: Bool = true) async throws {
         guard let recipeId = activeRecipeId else { throw RecipeEditError.documentNotLoaded }
-        try await documentManager.updateIngredient(recipeId: recipeId, ingredient: ingredient)
+        try await documentManager.updateIngredient(
+            recipeId: recipeId,
+            ingredient: ingredient,
+            markNutritionOutdated: markNutritionOutdated
+        )
         patchCurrentRecipe(ingredient: ingredient)
         await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
     }
@@ -429,6 +471,7 @@ final class YjsSyncService: ObservableObject {
         carbs: Double?
     ) async throws {
         guard let recipeId = activeRecipeId else { throw RecipeEditError.documentNotLoaded }
+        let currentOutdated = currentRecipe?.nutrition?.nutritionOutdated ?? false
         try await documentManager.updateNutrition(
             recipeId: recipeId,
             calories: calories,
@@ -442,6 +485,7 @@ final class YjsSyncService: ObservableObject {
                 protein: protein,
                 fat: fat,
                 carbs: carbs,
+                nutritionOutdated: currentOutdated,
                 extra: [:]
             )
         )
@@ -1946,17 +1990,30 @@ final class YjsSyncService: ObservableObject {
         await refreshCurrentRecipe(recipeId: recipeId)
     }
 
-    private func refreshCurrentRecipe(recipeId: String) async {
+    func refreshCurrentRecipe(recipeId: String) async {
         guard let userId else { return }
         guard activeRecipeId == recipeId else { return }
 
         do {
+            let descBefore = currentRecipe?.description?.count ?? 0
             guard var recipe = try await documentManager.readRecipeData(recipeId: recipeId, userId: userId) else {
                 currentRecipe = nil
                 return
             }
             recipe = RecipeCollectionMerge.merged(recipe, with: collectionEntry(for: recipeId))
             currentRecipe = recipe
+            // #region agent log
+            DebugSessionNDJSONLog.write(
+                hypothesisId: "H4",
+                location: "YjsSyncService.swift:refreshCurrentRecipe",
+                message: "recipe_refreshed",
+                data: [
+                    "recipeId": recipeId,
+                    "descLenBefore": String(descBefore),
+                    "descLenAfter": String(recipe.description?.count ?? 0),
+                ]
+            )
+            // #endregion
         } catch {
             logger.error("Failed to read recipe \(recipeId): \(error)")
             // #region agent log

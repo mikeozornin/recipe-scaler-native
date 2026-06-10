@@ -46,6 +46,7 @@ enum AccessibilityIdentifiers {
     static let ingredientsSection = "ingredients_section"
     static let ingredientDragHandle = "ingredient_drag_handle"
     static let recipeEditServingsRow = "recipe_edit_servings_row"
+    static let recipeEditIngredientReorderToggle = "recipe_edit_ingredient_reorder_toggle"
     static let recipeEditNewIngredientRow = "recipe_edit_new_ingredient_row"
     static let recipeEditNewIngredientSubmit = "recipe_edit_new_ingredient_submit"
     static let stepsSection = "steps_section"

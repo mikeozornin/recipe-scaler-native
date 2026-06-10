@@ -13,7 +13,9 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertFalse(RecipeEditPolicy.supportsEditFormat(version: "1"))
         XCTAssertFalse(RecipeEditPolicy.supportsEditFormat(version: "2"))
         XCTAssertFalse(RecipeEditPolicy.supportsEditFormat(version: nil))
-        XCTAssertFalse(RecipeEditPolicy.canEdit(version: "3"))
+        XCTAssertTrue(RecipeEditPolicy.canEdit(version: "3"))
+        XCTAssertFalse(RecipeEditPolicy.canEdit(version: "1"))
+        XCTAssertFalse(RecipeEditPolicy.canEdit(version: "2"))
     }
 
     func testIngredientAmountLikeBasqueCheesecake() {
@@ -48,11 +50,20 @@ final class RecipeScalerNativeTests: XCTestCase {
                 )
             )
         }
-        let height = IngredientEditList.estimatedContentHeight(
+        let editHeight = IngredientEditList.estimatedContentHeight(
             rows: rows,
-            nutritionEnabled: true
+            nutritionEnabled: true,
+            includesNewRow: true
         )
-        XCTAssertGreaterThan(height, RecipeRowLayoutMetrics.rowHeight * 6)
+        XCTAssertGreaterThan(editHeight, RecipeRowLayoutMetrics.rowHeight * 6)
+
+        let viewHeight = IngredientEditList.estimatedContentHeight(
+            rows: rows,
+            nutritionEnabled: true,
+            includesNewRow: false
+        )
+        XCTAssertGreaterThan(viewHeight, RecipeRowLayoutMetrics.rowHeight * 6)
+        XCTAssertGreaterThan(editHeight, viewHeight)
     }
 
     func testIngredientEditListMeasuredContentHeightRequiresAllRows() {
@@ -689,7 +700,7 @@ final class RecipeScalerNativeTests: XCTestCase {
                 IngredientData(id: "1", name: "A", calories: 300, protein: 10, fat: 5, carbs: 20),
                 IngredientData(id: "2", name: "B", calories: 150, protein: 5, fat: 2, carbs: 10),
             ],
-            nutrition: NutritionData(calories: 9999, protein: 0, fat: 0, carbs: 0, extra: [:]),
+            nutrition: NutritionData(calories: 9999, protein: 0, fat: 0, carbs: 0, nutritionOutdated: false, extra: [:]),
             isPublic: false,
             hasSteps: false,
             createdAt: "",

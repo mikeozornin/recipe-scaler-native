@@ -69,13 +69,9 @@ final class RecipeScalerNativeUITests: XCTestCase {
             "Ingredient column header missing in edit mode"
         )
 
-        let reorderControls = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS[c] %@ OR identifier CONTAINS[c] %@", "Reorder", "Reorder")
-        )
-        XCTAssertGreaterThan(
-            reorderControls.count,
-            0,
-            "List reorder controls should appear on ingredient rows in edit mode"
+        XCTAssertTrue(
+            app.otherElements[AccessibilityIdentifiers.recipeEditNewIngredientRow].waitForExistence(timeout: 5),
+            "New ingredient row missing in edit mode"
         )
 
         add(XCTAttachment(screenshot: XCUIScreen.main.screenshot(), name: "ingredients-edit-grid"))

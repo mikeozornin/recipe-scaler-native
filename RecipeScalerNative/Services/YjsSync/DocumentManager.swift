@@ -383,10 +383,11 @@ actor DocumentManager {
                 try Self.appendIngredient(ingredient, to: array, txn: txn)
                 Self.renumberIngredientOrders(in: array, txn: txn)
             }
+            map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
         }
     }
 
-    func updateIngredient(recipeId: String, ingredient: IngredientData) async throws {
+    func updateIngredient(recipeId: String, ingredient: IngredientData, markNutritionOutdated: Bool = true) async throws {
         try await mutateRecipe(recipeId: recipeId) { map, txn in
             try Self.withIngredientsArray(in: map, txn: txn) { array in
                 let len = array.length(txn: txn)
@@ -397,6 +398,9 @@ actor DocumentManager {
                         }
                     }
                 }
+            }
+            if markNutritionOutdated {
+                map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
             }
         }
     }
@@ -414,6 +418,7 @@ actor DocumentManager {
                     }
                 }
             }
+            map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
         }
     }
 
@@ -1210,16 +1215,21 @@ actor DocumentManager {
         txn: OpaquePointer,
         version: RecipeData.RecipeVersion
     ) -> NutritionData? {
+        // Root-level flag set by server edit API (recipe-edit-service.ts).
+        let rootOutdated = map.bool(key: "nutritionOutdated", txn: txn) ?? false
+
         if let parsed = try? map.withNestedMap(key: "nutrition", txn: txn, { nMap in
             var extra: [String: Double] = [:]
             if let totalWeight = nMap.double(key: "totalWeight", txn: txn) {
                 extra["totalWeight"] = totalWeight
             }
+            let nutritionOutdated = nMap.bool(key: "nutritionOutdated", txn: txn) ?? false
             return NutritionData(
                 calories: nMap.double(key: "calories", txn: txn),
                 protein: nMap.double(key: "protein", txn: txn),
                 fat: nMap.double(key: "fat", txn: txn),
                 carbs: nMap.double(key: "carbs", txn: txn),
+                nutritionOutdated: rootOutdated || nutritionOutdated,
                 extra: extra
             )
         }) {
@@ -1231,7 +1241,18 @@ actor DocumentManager {
               let json = val.stringValue else {
             return nil
         }
-        return parseJSONNutrition(json)
+        var result = parseJSONNutrition(json)
+        if rootOutdated, var modifiable = result {
+            result = NutritionData(
+                calories: modifiable.calories,
+                protein: modifiable.protein,
+                fat: modifiable.fat,
+                carbs: modifiable.carbs,
+                nutritionOutdated: true,
+                extra: modifiable.extra
+            )
+        }
+        return result
     }
 
     // ─── JSON Fallback Parsers (v1) ──────────────────────────────────────
@@ -1410,11 +1431,13 @@ actor DocumentManager {
         guard let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil
         }
+        let nutritionOutdated = dict["nutritionOutdated"] as? Bool ?? false
         return NutritionData(
             calories: dict["calories"] as? Double,
             protein: dict["protein"] as? Double,
             fat: dict["fat"] as? Double,
             carbs: dict["carbs"] as? Double,
+            nutritionOutdated: nutritionOutdated,
             extra: dict.compactMapValues { $0 as? Double }
                 .filter { !["calories", "protein", "fat", "carbs"].contains($0.key) }
         )

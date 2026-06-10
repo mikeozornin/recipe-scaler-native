@@ -19,7 +19,13 @@ struct DescriptionEditorView: View {
     init(recipeId: String, accentColor: Color, syncService: YjsSyncService) {
         self.recipeId = recipeId
         self.accentColor = accentColor
-        _bridge = StateObject(wrappedValue: DescriptionEditorBridge(recipeId: recipeId, syncService: syncService))
+        _bridge = StateObject(
+            wrappedValue: DescriptionEditorBridge(
+                recipeId: recipeId,
+                syncService: syncService,
+                presentation: .fullscreen
+            )
+        )
     }
 
     private var syncState: WriteSyncState {
@@ -29,7 +35,7 @@ struct DescriptionEditorView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                DescriptionEditorWebView(bridge: bridge)
+                DescriptionEditorWebView(bridge: bridge, allowsScrolling: true, accentColor: accentColor)
                     .opacity(bridge.phase == .ready ? 1 : 0.35)
 
                 if bridge.phase == .loading {

@@ -18,9 +18,8 @@ enum RecipeEditError: Error, LocalizedError {
 }
 
 enum RecipeEditPolicy {
-    // TEMPORARY: native v3 editing off while ingredients edit grid is in flux.
-    // Set to `true` to restore pencil / edit mode / Y.Doc writes on v3.
-    static let nativeEditingEnabled = false
+    /// Master switch for native v3 field/ingredient editing (v1/v2 stay read-only via `supportsEditFormat`).
+    static let nativeEditingEnabled = true
 
     /// v3 format supports editing when `nativeEditingEnabled` is on (not v1/v2).
     static func supportsEditFormat(version: String?) -> Bool {

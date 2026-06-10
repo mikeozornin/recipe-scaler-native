@@ -57,7 +57,7 @@ final class RecipeEditViewModel: ObservableObject {
     func saveIngredient(_ ingredient: IngredientData, existing: IngredientData?) async throws {
         try await withSuspendedRecipeRefresh {
             if let existing, existing.id == ingredient.id {
-                try await syncService.updateIngredient(ingredient)
+                try await syncService.updateIngredient(ingredient, markNutritionOutdated: true)
             } else {
                 try await syncService.addIngredient(ingredient)
             }
@@ -67,7 +67,7 @@ final class RecipeEditViewModel: ObservableObject {
 
     func saveIngredientNutrition(_ ingredient: IngredientData) async throws {
         try await withSuspendedRecipeRefresh {
-            try await syncService.updateIngredient(ingredient)
+            try await syncService.updateIngredient(ingredient, markNutritionOutdated: false)
             await syncAggregatedRecipeNutrition(replacing: ingredient)
         }
     }
@@ -101,11 +101,13 @@ final class RecipeEditViewModel: ObservableObject {
             ingredients[index] = updated
         }
         guard let totals = IngredientData.aggregatedMacros(from: ingredients) else { return }
+        let currentOutdated = syncService.currentRecipe?.nutrition?.nutritionOutdated ?? false
         let nutrition = NutritionData(
             calories: totals.calories,
             protein: totals.protein,
             fat: totals.fat,
             carbs: totals.carbs,
+            nutritionOutdated: currentOutdated,
             extra: [:]
         )
         syncService.patchCurrentRecipeForEditing(nutrition: nutrition)

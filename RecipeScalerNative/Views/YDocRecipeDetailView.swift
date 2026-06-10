@@ -1,4 +1,5 @@
 import SwiftUI
+import RecipeScalerCore
 
 /// Recipe detail backed by Y.Doc via `YjsSyncService`.
 struct YDocRecipeDetailView: View {
@@ -20,7 +21,7 @@ struct YDocRecipeDetailView: View {
     @State private var pickerColor: Color = RecipeAccentColor.color(from: "oklch(0.65 0.25 270)")
     @State private var saveInFlight = false
     @State private var didApplyStartInEditMode = false
-    @State private var showsDescriptionEditor = false
+    @StateObject private var descriptionChrome = DescriptionEditorChromeState()
     @State private var didApplyStartDescriptionEdit = false
     @State private var dismissRecipeTitleKeyboard = false
     @State private var commitTitleNonce = 0
@@ -28,6 +29,10 @@ struct YDocRecipeDetailView: View {
     @State private var isFinishingEdit = false
     @State private var isScreenAwakeActive = false
     @State private var descriptionTimerPopover: DescriptionTimerPopoverState?
+    @State private var descriptionTimerMarkupDraft: DescriptionTimerMarkupDraft?
+    @State private var descriptionIngredientPickerPresented = false
+    @State private var descriptionIngredientRatioTarget: IngredientData?
+    @State private var descriptionMarkupSelectedText = ""
 
 
     private var recipe: RecipeData? {
@@ -117,9 +122,6 @@ struct YDocRecipeDetailView: View {
                                     get: { editViewModel.draftServings },
                                     set: { editViewModel.draftServings = max(1, min(99, $0)) }
                                 ),
-                                scaledServingsPreview: scaledServingsCount(
-                                    base: max(1, editViewModel.draftServings)
-                                ),
                                 baseServings: max(1, recipe.servings),
                                 viewServings: scaledServingsCount(base: max(1, editViewModel.draftServings)),
                                 accentColor: accentColor,
@@ -170,20 +172,15 @@ struct YDocRecipeDetailView: View {
                         if !isEditing,
                            showNutritionGlobal,
                            RecipeNutritionDisplay.effectiveMacros(from: recipe) != nil {
-                            RecipeNutritionBlockView(
-                                recipe: recipe,
-                                baseServings: max(1, recipe.servings),
-                                scaleFactor: scaleFactor,
-                                accentColor: accentColor,
-                                viewMode: $nutritionViewMode
-                            )
+                            nutritionBlock(recipe: recipe)
                         }
 
                         if isEditing, canEnterEditMode {
-                            DescriptionEditorEntrySection(
-                                recipe: recipe,
+                            RecipeDescriptionEditorBlock(
+                                recipeId: recipeId,
                                 accentColor: accentColor,
-                                onEdit: { showsDescriptionEditor = true }
+                                syncService: syncService,
+                                chrome: descriptionChrome
                             )
                             .id("recipe_instructions")
                         } else if let description = recipe.description, !description.isEmpty {
@@ -201,13 +198,10 @@ struct YDocRecipeDetailView: View {
                 .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
             }
         }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 10).onChanged { _ in
-                if descriptionTimerPopover != nil {
-                    descriptionTimerPopover = nil
-                }
-            }
-        )
+        .modifier(RecipeDetailScrollSwipeProbe(isEditing: isEditing))
+        .dismissPopoverOnVerticalDrag(isActive: descriptionTimerPopover != nil) {
+            descriptionTimerPopover = nil
+        }
         .contentMargins(.horizontal, 0, for: .scrollContent)
         #if DEBUG
         .onChange(of: recipe?.description) { _, description in
@@ -248,6 +242,54 @@ struct YDocRecipeDetailView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             if isScreenAwakeActive {
                 ScreenAwakeStatusBanner()
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if isEditing,
+               descriptionChrome.showsFormattingBar,
+               let bridge = descriptionChrome.bridge {
+                DescriptionFormattingBar(
+                    bridge: bridge,
+                    accentColor: accentColor,
+                    onMarkTimer: beginDescriptionTimerMarkup,
+                    onMarkIngredient: beginDescriptionIngredientMarkup
+                )
+            }
+        }
+        .sheet(item: $descriptionTimerMarkupDraft) { draft in
+            DescriptionTimerTypeSheet(
+                selectedPreview: draft.selectedText,
+                parsedValue: draft.value
+            ) { unit in
+                applyDescriptionTimerMarkup(draft: draft, unit: unit)
+            }
+        }
+        .sheet(isPresented: $descriptionIngredientPickerPresented) {
+            if let recipe {
+                DescriptionIngredientPickerSheet(
+                    ingredients: DescriptionMarkupFlow.eligibleIngredients(
+                        from: recipe.ingredients,
+                        selectedText: descriptionMarkupSelectedText
+                    ),
+                    selectedText: descriptionMarkupSelectedText,
+                    onSelect: { ingredient, ratio in
+                        applyDescriptionIngredientMarkup(ingredient: ingredient, ratio: ratio)
+                        descriptionIngredientPickerPresented = false
+                    },
+                    onNeedsRatio: { ingredient in
+                        descriptionIngredientPickerPresented = false
+                        descriptionIngredientRatioTarget = ingredient
+                    }
+                )
+            }
+        }
+        .sheet(item: $descriptionIngredientRatioTarget) { ingredient in
+            DescriptionIngredientRatioSheet(
+                ingredient: ingredient,
+                selectedText: descriptionMarkupSelectedText
+            ) { ratio in
+                applyDescriptionIngredientMarkup(ingredient: ingredient, ratio: ratio)
+                descriptionIngredientRatioTarget = nil
             }
         }
         .toolbar {
@@ -389,7 +431,10 @@ struct YDocRecipeDetailView: View {
             applyStartInEditModeIfNeeded()
             applyStartDescriptionEditIfNeeded()
         }
-        .onChange(of: isEditing) { _, _ in
+        .onChange(of: isEditing) { _, editing in
+            if !editing {
+                descriptionChrome.reset()
+            }
             applyStartDescriptionEditIfNeeded()
         }
         .onAppear {
@@ -397,16 +442,26 @@ struct YDocRecipeDetailView: View {
             applyStartDescriptionEditIfNeeded()
             scheduleDebugDescriptionEditorIfNeeded()
         }
-        .sheet(isPresented: $showsDescriptionEditor) {
-            if let recipe {
-                DescriptionEditorView(
-                    recipeId: recipeId,
-                    accentColor: accentColor,
-                    syncService: syncService
-                )
-                .environmentObject(syncService)
-            }
-        }
+    }
+
+    private func nutritionBlock(recipe: RecipeData) -> some View {
+        let outdated = recipe.nutrition?.nutritionOutdated == true
+        return RecipeNutritionBlockView(
+            recipe: recipe,
+            baseServings: max(1, recipe.servings),
+            scaleFactor: scaleFactor,
+            accentColor: accentColor,
+            isOnline: syncService.connectionState.isConnected,
+            onRecalculate: outdated ? {
+                do {
+                    try await APIClient.shared.calculateNutrition(recipeId: recipeId)
+                    await syncService.refreshCurrentRecipe(recipeId: recipeId)
+                } catch {
+                    // Banner stays until next successful recalculation
+                }
+            } : nil,
+            viewMode: $nutritionViewMode
+        )
     }
 
     private func deactivateScreenAwake() {
@@ -447,12 +502,14 @@ struct YDocRecipeDetailView: View {
               isEditing,
               recipe != nil else { return }
         didApplyStartDescriptionEdit = true
-        showsDescriptionEditor = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            descriptionChrome.bridge?.sendCommand(name: "focus")
+        }
         #if DEBUG
         AgentSyncDebugLog.write(
-            hypothesisId: "006",
+            hypothesisId: "019",
             location: "YDocRecipeDetailView.swift:applyStartDescriptionEdit",
-            message: "description_editor_sheet_presented",
+            message: "description_editor_inline_focus",
             data: ["recipeId": recipeId]
         )
         #endif
@@ -491,6 +548,54 @@ struct YDocRecipeDetailView: View {
             type: reference.type,
             recipeId: recipeId
         )
+    }
+
+    private func beginDescriptionTimerMarkup() {
+        guard let bridge = descriptionChrome.bridge else { return }
+        let selectedText = bridge.selectionState.selectedText
+        guard let value = DescriptionMarkupFlow.parseTimerValue(from: selectedText) else { return }
+        descriptionTimerMarkupDraft = DescriptionTimerMarkupDraft(
+            selectedText: selectedText,
+            value: value
+        )
+    }
+
+    private func applyDescriptionTimerMarkup(draft: DescriptionTimerMarkupDraft, unit: DescriptionTimerUnit) {
+        guard let bridge = descriptionChrome.bridge else { return }
+        let duration = unit.durationSeconds(for: draft.value)
+        let timerId = "timer-\(Int(Date().timeIntervalSince1970 * 1000))"
+        bridge.sendCommand(
+            name: "markAsTimer",
+            args: [
+                "type": unit.rawValue,
+                "value": draft.value,
+                "duration": duration,
+                "timerId": timerId,
+            ]
+        )
+        descriptionTimerMarkupDraft = nil
+        bridge.sendCommand(name: "focus")
+    }
+
+    private func beginDescriptionIngredientMarkup() {
+        guard let bridge = descriptionChrome.bridge else { return }
+        let selectedText = bridge.selectionState.selectedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !selectedText.isEmpty else { return }
+        descriptionMarkupSelectedText = selectedText
+        descriptionIngredientPickerPresented = true
+    }
+
+    private func applyDescriptionIngredientMarkup(ingredient: IngredientData, ratio: Double) {
+        guard let bridge = descriptionChrome.bridge else { return }
+        let args: [String: Any] = [
+            "ingredientId": ingredient.id,
+            "originalAmount": ingredient.originalAmount,
+            "ratio": ratio,
+        ]
+        bridge.sendCommand(name: "markAsIngredient", args: args)
+        descriptionIngredientPickerPresented = false
+        descriptionIngredientRatioTarget = nil
+        bridge.sendCommand(name: "focus")
     }
 
     private func scaledServingsCount(base: Int) -> Int {
@@ -616,6 +721,18 @@ struct YDocRecipeDetailView: View {
                 isEditing = false
                 return
             }
+            // #region agent log
+            DebugSessionNDJSONLog.write(
+                hypothesisId: "H3",
+                location: "YDocRecipeDetailView.swift:toggleEditMode",
+                message: "done_before_finish",
+                data: [
+                    "recipeId": recipeId,
+                    "descLen": String(current.description?.count ?? 0),
+                    "hasDescription": String(current.description != nil && !(current.description?.isEmpty ?? true)),
+                ]
+            )
+            // #endregion
             saveInFlight = true
             defer { saveInFlight = false }
             let servingsChanged = editViewModel.draftServings != current.servings
@@ -632,6 +749,17 @@ struct YDocRecipeDetailView: View {
                     editViewModel.reset(from: updated)
                     pickerColor = RecipeAccentColor.color(from: updated.color)
                 }
+                // #region agent log
+                DebugSessionNDJSONLog.write(
+                    hypothesisId: "H4",
+                    location: "YDocRecipeDetailView.swift:toggleEditMode",
+                    message: "done_after_finish",
+                    data: [
+                        "recipeId": recipeId,
+                        "descLen": String(syncService.currentRecipe?.description?.count ?? 0),
+                    ]
+                )
+                // #endregion
                 #if DEBUG
                 AgentSyncDebugLog.write(
                     hypothesisId: "H",
@@ -809,6 +937,64 @@ private struct RecipeEditHeaderBindable: View {
             .onChange(of: pickerColor) { _, newColor in
                 viewModel.draftColor = RecipeAccentColor.storedValue(from: newColor)
             }
+        }
+    }
+}
+
+// #region agent log
+private struct RecipeDetailScrollSwipeProbe: ViewModifier {
+    let isEditing: Bool
+    @State private var loggedThisGesture = false
+
+    func body(content: Content) -> some View {
+        content.simultaneousGesture(
+            DragGesture(minimumDistance: 10)
+                .onChanged { value in
+                    guard isEditing, !loggedThisGesture else { return }
+                    let horizontal = abs(value.translation.width)
+                    let vertical = abs(value.translation.height)
+                    guard horizontal > vertical, horizontal > 12 else { return }
+                    loggedThisGesture = true
+                    DebugSessionNDJSONLog.write(
+                        hypothesisId: "H3",
+                        location: "YDocRecipeDetailView.swift:RecipeDetailScrollSwipeProbe",
+                        message: "horizontal_drag_on_parent_scroll",
+                        data: [
+                            "width": String(format: "%.1f", value.translation.width),
+                            "height": String(format: "%.1f", value.translation.height),
+                        ]
+                    )
+                }
+                .onEnded { _ in
+                    loggedThisGesture = false
+                }
+        )
+    }
+}
+// #endregion
+
+private extension View {
+    /// Dismisses an overlay on vertical scroll without stealing horizontal List row swipes.
+    func dismissPopoverOnVerticalDrag(isActive: Bool, onDismiss: @escaping () -> Void) -> some View {
+        modifier(DismissPopoverOnVerticalDragModifier(isActive: isActive, onDismiss: onDismiss))
+    }
+}
+
+private struct DismissPopoverOnVerticalDragModifier: ViewModifier {
+    let isActive: Bool
+    let onDismiss: () -> Void
+
+    func body(content: Content) -> some View {
+        if isActive {
+            content.simultaneousGesture(
+                DragGesture(minimumDistance: 10)
+                    .onChanged { value in
+                        guard abs(value.translation.height) > abs(value.translation.width) else { return }
+                        onDismiss()
+                    }
+            )
+        } else {
+            content
         }
     }
 }
