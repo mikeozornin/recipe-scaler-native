@@ -106,11 +106,6 @@ struct YDocRecipeDetailView: View {
                     }
 
                     if let recipe {
-                        if isEditing {
-                            RecipeEditToolbar(syncState: syncService.writeSyncState(for: recipeId))
-                                .padding(.horizontal)
-                        }
-
                         if !isEditing {
                             servingsBlock(recipe: recipe)
                         }
