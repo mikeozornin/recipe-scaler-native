@@ -61,3 +61,4 @@ scripts/node_modules/
 .cursor/
 .playwright-screenshots
 .debug-tabbar.ndjson
+.debug-session.ndjson
