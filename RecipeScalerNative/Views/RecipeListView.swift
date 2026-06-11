@@ -79,7 +79,7 @@ struct RecipeListView: View {
                     ContentUnavailableView {
                         AppLabel.make(String(localized: "recipe.list.empty.title"), symbol: "fork.knife")
                     } description: {
-                        Text(String(localized: "Your recipes will appear here"))
+                        Text("recipe.list.empty.description")
                     }
                     .mobileTimerPanelBottomPadding()
                 } else {

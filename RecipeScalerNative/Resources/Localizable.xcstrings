@@ -4219,6 +4219,23 @@
         }
       }
     },
+    "recipe.list.empty.description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your recipes will appear here"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Здесь появятся ваши рецепты"
+          }
+        }
+      }
+    },
     "recipe.list.loading" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -495,7 +495,7 @@ private struct AccountSeedPhraseSheet: View {
                     }
                 }
             }
-            .navigationTitle(Text("account.secret-phrase"))
+            .localizedNavigationTitle("account.secret-phrase")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
