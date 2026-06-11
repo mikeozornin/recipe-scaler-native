@@ -157,7 +157,7 @@
 **Цель**: документация, ручная валидация, сборка
 
 - [x] T032 [P] Обновить `docs/ARCHITECTURE.md` и `PROJECT_STATUS.md` — write path Phase 3, офлайн-очередь, политика v3-only
-- [x] T033 [P] Обновить `SETUP.md` — шаги ручных тестов из `specs/002-native-editing/quickstart.md`
+- [x] T033 [P] Обновить `docs/SETUP.md` — шаги ручных тестов из `specs/002-native-editing/quickstart.md`
 - [ ] T034 Полная сборка simulator + матрица тестов quickstart (iOS→web, баннер legacy, offline)
 
 ---

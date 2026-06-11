@@ -165,7 +165,7 @@
 - [X] T042 [P] Remove `RecipeScalerNative/Services/WebSocketService.swift` — all functionality replaced by YjsSyncService + SyncEventHandler
 - [X] T043 [P] Remove REST recipe fetch from `RecipeScalerNative/Services/APIClient.swift` — remove `fetchRecipesCached()` and `fetchRecipeFullCached()` methods, keep image and auth endpoints. Remove `RecipeDTO` and related response types
 - [X] T044 [P] Clean up `RecipeScalerNative/Models/ApiCacheEntry.swift` — remove REST-specific caching fields (etag, lastModified) that are no longer needed for recipe fetching. Keep if still used for image caching
-- [X] T045 Update `SETUP.md` — add yrs XCFramework build instructions (prerequisites, running build script, adding to Xcode). Add GRDB dependency note. Update build steps to reflect Phase 2 setup
+- [X] T045 Update `docs/SETUP.md` — add yrs XCFramework build instructions (prerequisites, running build script, adding to Xcode). Add GRDB dependency note. Update build steps to reflect Phase 2 setup
 - [X] T046 Update `RecipeScalerNative/PROJECT_STATUS.md` — mark Phase 2 scope items as done after verification
 - [X] T047 Verify all i18n strings use resource files — grep for hardcoded user-facing strings in new files, ensure none exist
 - [X] T048 [P] Update `docs/ARCHITECTURE.md` — add YjsSyncService to the sync architecture diagram, document Socket.IO event flow (auth → load_document → document_loaded → collection_updated/recipe_updated → sync_error), reference the new YrsDocument/YrsMap/YrsArray wrappers and the observer-driven reactivity path

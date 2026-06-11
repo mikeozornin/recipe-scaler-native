@@ -29,11 +29,13 @@ XmlFragmentToHTML.html(
 | `hardBreak` | `<br/>` |
 | `timer` | span с форматированной длительностью |
 | `ingredient` | текст количества + имя ингредиента |
-| `bold` / `italic` / `strike` / `code` | `<strong>` / `<em>` / `<s>` / `<code>` |
+| `bold` / `italic` / `strike` / `code` / `highlight` | `<strong>` / `<em>` / `<s>` / `<code>` / `<mark>` (element nodes) |
 | `link` + `href` | `<a href="…">…</a>` |
 | прочие | inner HTML детей |
 
-Текстовые узлы: `yxmltext_string`, HTML-escape.
+**Inline marks на `Y.XmlText` delta-чанках** (ProseMirror хранит bold/italic/strike/code/highlight как `attributes` на чанках, а не только как element nodes). `renderXmlText` через `ytext_chunks` → `wrapWithInlineMarks`: bold → italic → strike → code → highlight (parity с `description-editor-bridge.js:renderXmlText`). Link приоритетнее — не вкладывается в strong/em.
+
+Текстовые узлы: `ytext_chunks` + inline marks, fallback `yxmltext_string` + HTML-escape.
 
 ## UI
 
@@ -46,5 +48,7 @@ XmlFragmentToHTML.html(
 |------|----------|
 | `testXmlFragmentHTMLEscapes` | `<>&"` в тексте |
 | `testXmlFragmentIngredientReference` | mock ingredients + attrs (если есть fixture) |
+| `testXmlFragmentPreservesInlineBoldMarksFromYjsState` | bold mark на delta-чанках (fixture `recipe-adjaruli-yjs.bin`): `<h1>`, `<strong>ри му</strong>`, `<strong>Пеки аджарули</strong>`, parser `.heading` + `.strong` runs |
+| `testDescriptionParserHeadingWithInlineBold` | чистый парсер: `<h1>Бе<strong>ри му</strong>ку</h1>` → `.heading(level:1)` + `.strong("ри му")` + `.plain` |
 
 Ручной: `quickstart.md`.

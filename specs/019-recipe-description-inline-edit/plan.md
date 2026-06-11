@@ -58,7 +58,7 @@
 
 - [ ] `caretRect` + scroll к каретке (если нужно после QA)
 - [ ] Instruments: память WebView на длинном рецепте
-- [ ] Обновить `docs/ARCHITECTURE.md`, `006`/`018` статусы, `llm/DECISIONS.md` по запросу
+- [ ] Обновить `docs/ARCHITECTURE.md`, `006`/`018` статусы, `docs/DECISIONS.md` по запросу
 
 ## Компоненты (целевые пути)
 

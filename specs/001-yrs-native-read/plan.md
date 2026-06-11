@@ -46,7 +46,7 @@ Reference: [.specify/memory/constitution.md](../../.specify/memory/constitution.
 | Native UI | ✅ PASS | Все views — SwiftUI. WKWebView не используется (описание в v3 не рендерится в этой фазе, v1/v2 — plain text). |
 | Phased delivery | ✅ PASS | Scope точно соответствует Phase 2 из PROJECT_STATUS.md: yrs интеграция + нативное чтение. Редактирование (Phase 3), WebView (Phase 4), shopping list (Phase 5) исключены. |
 | i18n | ✅ PASS | Все новые пользовательские строки (ошибки синхронизации, индикатор офлайна) — через i18n ресурс файлы. |
-| Docs | ✅ PASS | SETUP.md обновляется при добавлении yrs XCFramework. AGENTS.md обновляется ссылкой на план. |
+| Docs | ✅ PASS | docs/SETUP.md обновляется при добавлении yrs XCFramework. AGENTS.md обновляется ссылкой на план. |
 
 No violations. No entries in Complexity Tracking.
 

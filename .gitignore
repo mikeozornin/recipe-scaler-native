@@ -62,3 +62,5 @@ scripts/node_modules/
 .playwright-screenshots
 .debug-tabbar.ndjson
 .debug-session.ndjson
+.playwright-mcp
+tmp
