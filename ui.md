@@ -39,7 +39,8 @@ Text("some key").appFootnote()   // 13 pt + lineSpacing 2
 ## View extension для List/Form
 
 ```swift
-.appListBodyTypography()  // font(AppTypography.body) на весь List
+.appListBodyTypography()   // font(AppTypography.body) на весь List
+.appBodyFieldTypography()  // body 16 pt + lineSpacing 4 для TextField
 ```
 
 Применяй к корневому view списка, чтобы все некастомные Text внутри наследовали body.
@@ -55,11 +56,52 @@ AppSectionHeaderSpacer()      // невидимый placeholder для отст�
 
 Глобально настраивает шрифты для NavigationBar, BarButtonItems, TabBar, UITextField, UISegmentedControl через `appearance()`. Вызывается один раз при старте приложения.
 
+## Keyboard toolbar
+
+Кастомная панель над клавиатурой — `ToolbarItemGroup(placement: .keyboard)`. Стили кнопок — `AppToolbarStyle` + `.appToolbarIconButton()` / `.appToolbarTextButton()`.
+
+### Отступы между кнопками
+
+SwiftUI не добавляет зазор между соседними icon-кнопками в одной группе. Между **соседними кнопками слева** (например, `chevron.up` и `chevron.down`) — **8 pt**:
+
+```swift
+ToolbarItemGroup(placement: .keyboard) {
+    Button { focusPrevious() } label: {
+        AppToolbarStyle.icon("chevron.up")
+    }
+    .appToolbarIconButton()
+    .disabled(!canFocusPrevious)
+
+    Color.clear.frame(width: 8)
+
+    Button { focusNext() } label: {
+        AppToolbarStyle.icon("chevron.down")
+    }
+    .appToolbarIconButton()
+    .disabled(!canFocusNext)
+
+    Spacer()
+
+    Button(String(localized: "edit.done")) { focusedField = nil }
+        .appToolbarTextButton()
+}
+```
+
+**Правила:**
+
+1. **8 pt** — стандартный горизонтальный зазор между соседними icon-кнопками в левой группе; реализуй через `Color.clear.frame(width: 8)`, не через `padding` на самих кнопках.
+2. **Левая группа / правая кнопка** — между ними `Spacer()` (как в примере выше).
+3. **Одна текстовая кнопка справа** (Done, Add, Create) — `Spacer()` слева, без дополнительных отступов.
+4. Новые keyboard toolbar с несколькими icon-кнопками подряд — тот же паттерн: `Color.clear.frame(width: 8)` между каждой парой соседних.
+
+Эталон: `YDocIngredientsSection`, `EditIngredientNutritionSheet`.
+
 ## Правила
 
 1. **Text view** → используй `.appBody()` / `.appFootnote()` вместо ручного `.font()` + `.lineSpacing()`.
 2. **Не-Text view** (SF Symbols, HStack, ZStack) → используй `.font(AppTypography.xxx)` напрямую.
-3. **TextField** → не Text extension, используй `.font(AppTypography.body)`.
+3. **TextField** → `.font(AppTypography.body)`; если нужна та же высота строки, что у `.appBody()` (поля названия ингредиента), — `.appBodyFieldTypography()`.
 4. **Toggle label** → передавай `Text(...)` с `.appBody()` вместо строкового ключа.
 5. **Новый стиль с lineSpacing** → добавь константу в `AppTypography` + `Text` extension, обнови `RecipeRowLayoutMetrics` если нужно.
 6. Не создавай fallback вроде `t('key') || 'Default'` — см. правило i18n в `AGENTS.md`.
+7. **Keyboard toolbar** — см. раздел выше; между соседними icon-кнопками слева всегда 8 pt.
