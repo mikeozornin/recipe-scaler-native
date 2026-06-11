@@ -230,19 +230,6 @@ actor DocumentManager {
            let html = XmlFragmentToHTML.html(fromSerializedXML: xml, ingredients: recipe.ingredients),
            !html.isEmpty {
             recipe = recipe.replacing(description: html)
-            // #region agent log
-            AgentSyncDebugLog.write(
-                hypothesisId: "D",
-                location: "DocumentManager.swift:readRecipeData",
-                message: "description_html_ready",
-                data: [
-                    "recipeId": recipeId,
-                    "htmlLen": String(html.count),
-                    "xmlLen": String(xml.count),
-                    "htmlHasHref": String(html.contains("href=\"")),
-                ]
-            )
-            // #endregion
         }
         return recipe
     }

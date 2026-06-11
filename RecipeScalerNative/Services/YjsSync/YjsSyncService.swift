@@ -1995,25 +1995,12 @@ final class YjsSyncService: ObservableObject {
         guard activeRecipeId == recipeId else { return }
 
         do {
-            let descBefore = currentRecipe?.description?.count ?? 0
             guard var recipe = try await documentManager.readRecipeData(recipeId: recipeId, userId: userId) else {
                 currentRecipe = nil
                 return
             }
             recipe = RecipeCollectionMerge.merged(recipe, with: collectionEntry(for: recipeId))
             currentRecipe = recipe
-            // #region agent log
-            DebugSessionNDJSONLog.write(
-                hypothesisId: "H4",
-                location: "YjsSyncService.swift:refreshCurrentRecipe",
-                message: "recipe_refreshed",
-                data: [
-                    "recipeId": recipeId,
-                    "descLenBefore": String(descBefore),
-                    "descLenAfter": String(recipe.description?.count ?? 0),
-                ]
-            )
-            // #endregion
         } catch {
             logger.error("Failed to read recipe \(recipeId): \(error)")
             // #region agent log

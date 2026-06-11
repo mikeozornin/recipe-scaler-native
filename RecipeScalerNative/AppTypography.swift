@@ -205,7 +205,9 @@ enum AppChromeAppearance {
 
     private static func configureTextInputs() {
         UITextField.appearance().font = AppTypography.bodyUIFont
-        UITextView.appearance().font = AppTypography.bodyUIFont
+        // Do not set UITextView.appearance().font — it rewrites per-run fonts in read-only
+        // attributed text (recipe description). Editable views set .font explicitly
+        // (e.g. GrowingTitleTextView in RecipeTitleTextField).
     }
 
     private static func configureSegmentedControl() {

@@ -1,5 +1,6 @@
 import UIKit
 import XCTest
+import YrsC
 @testable import RecipeScalerNative
 
 final class RecipeScalerNativeTests: XCTestCase {
@@ -207,6 +208,52 @@ final class RecipeScalerNativeTests: XCTestCase {
         let xml = "<paragraph>Mix flour</paragraph><paragraph>Bake</paragraph>"
         let html = XmlFragmentToHTML.html(fromSerializedXML: xml, ingredients: [])
         XCTAssertEqual(html, "<p>Mix flour</p><p>Bake</p>")
+    }
+
+    /// Tiptap stores bold as Y.XmlText delta marks (`attributes.bold`), not only as <bold> elements.
+    func testXmlFragmentPreservesInlineBoldMarksFromYjsState() throws {
+        let fixtureURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/recipe-adjaruli-yjs.bin")
+        guard FileManager.default.fileExists(atPath: fixtureURL.path) else {
+            throw XCTSkip("Fixture missing at \(fixtureURL.path)")
+        }
+
+        let state = try Data(contentsOf: fixtureURL)
+        let doc = try YrsDocument(state: state)
+        let serialized = try doc.withReadTransaction { _, txn in
+            XmlFragmentToHTML.serializedFragment(txn: txn)
+        }
+        let html = XmlFragmentToHTML.html(fromSerializedXML: serialized ?? "", ingredients: []) ?? ""
+
+        XCTAssertTrue(html.contains("<h1>"), "Expected heading block in \(html)")
+        XCTAssertTrue(html.contains("<strong>ри му</strong>"), "Expected inline bold in heading: \(html)")
+        XCTAssertTrue(html.contains("<strong>Пеки аджарули</strong>"), "Expected bold paragraph: \(html)")
+
+        let document = RecipeDescriptionParser.parse(html)
+        XCTAssertTrue(document.blocks.contains { block in
+            guard case .heading(_, let level, let runs) = block else { return false }
+            return level == 1 && runs.contains { if case .strong("ри му") = $0 { return true }; return false }
+        })
+        XCTAssertTrue(document.blocks.contains { block in
+            guard case .paragraph(_, let runs) = block else { return false }
+            return runs.contains { if case .strong("Пеки аджарули") = $0 { return true }; return false }
+        })
+    }
+
+    /// Pure parser test: `<h1>Бе<strong>ри му</strong>ку</h1>` → `.heading(level:1)` + `.strong("ри му")`.
+    func testDescriptionParserHeadingWithInlineBold() {
+        let html = "<h1>Бе<strong>ри му</strong>ку</h1>"
+        let doc = RecipeDescriptionParser.parse(html)
+        XCTAssertEqual(doc.blocks.count, 1)
+        guard case .heading(_, let level, let runs) = doc.blocks.first else {
+            XCTFail("Expected heading block, got \(doc.blocks)")
+            return
+        }
+        XCTAssertEqual(level, 1)
+        XCTAssertTrue(runs.contains(.plain("Бе")), "Expected plain 'Бе' in \(runs)")
+        XCTAssertTrue(runs.contains(.strong("ри му")), "Expected strong 'ри му' in \(runs)")
+        XCTAssertTrue(runs.contains(.plain("ку")), "Expected plain 'ку' in \(runs)")
     }
 
     func testDescriptionFixtureParsesAllElements() {
