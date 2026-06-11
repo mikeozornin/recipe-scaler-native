@@ -39,7 +39,7 @@ struct RecipeDescriptionView: View {
         case .bullet(_, let runs):
             HStack(alignment: .top, spacing: 8) {
                 Text("–")
-                    .font(AppTypography.body)
+                    .appBody()
                     .foregroundStyle(accentColor)
                     .frame(width: 12, alignment: .leading)
                 inlineText(runs)

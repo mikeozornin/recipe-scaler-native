@@ -4,31 +4,47 @@
 //
 
 import SwiftUI
+import UIKit
 import WebKit
+
+final class DescriptionEditorWKWebView: WKWebView {
+    var customInputAccessoryView: UIView?
+
+    override var inputAccessoryView: UIView? {
+        customInputAccessoryView
+    }
+}
 
 struct DescriptionEditorWebView: UIViewRepresentable {
     @ObservedObject var bridge: DescriptionEditorBridge
     var allowsScrolling: Bool
     var accentColor: Color = .purple
+    var onKeyboardDone: (() -> Void)?
 
-    init(bridge: DescriptionEditorBridge, allowsScrolling: Bool, accentColor: Color = .purple) {
+    init(
+        bridge: DescriptionEditorBridge,
+        allowsScrolling: Bool,
+        accentColor: Color = .purple,
+        onKeyboardDone: (() -> Void)? = nil
+    ) {
         self.bridge = bridge
         self.allowsScrolling = allowsScrolling
         self.accentColor = accentColor
+        self.onKeyboardDone = onKeyboardDone
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(bridge: bridge, accentColor: accentColor)
+        Coordinator(bridge: bridge, accentColor: accentColor, onKeyboardDone: onKeyboardDone)
     }
 
-    func makeUIView(context: Context) -> WKWebView {
+    func makeUIView(context: Context) -> DescriptionEditorWKWebView {
         let config = WKWebViewConfiguration()
         let controller = WKUserContentController()
         controller.add(context.coordinator, name: Coordinator.handlerName)
         config.userContentController = controller
-        config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+        config.preferences.setValue(false, forKey: "allowFileAccessFromFileURLs")
 
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = DescriptionEditorWKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.isOpaque = false
         webView.backgroundColor = .clear
@@ -37,15 +53,17 @@ struct DescriptionEditorWebView: UIViewRepresentable {
 
         context.coordinator.webView = webView
         bridge.attach(webView: context.coordinator)
+        webView.customInputAccessoryView = context.coordinator.makeKeyboardToolbar()
         context.coordinator.loadEditor(in: webView)
         return webView
     }
 
-    func updateUIView(_ uiView: WKWebView, context: Context) {
+    func updateUIView(_ uiView: DescriptionEditorWKWebView, context: Context) {
+        context.coordinator.onKeyboardDone = onKeyboardDone
         applyScrollPolicy(on: uiView, allowsScrolling: allowsScrolling)
     }
 
-    private func applyScrollPolicy(on webView: WKWebView, allowsScrolling: Bool) {
+    private func applyScrollPolicy(on webView: DescriptionEditorWKWebView, allowsScrolling: Bool) {
         let scrollView = webView.scrollView
         scrollView.isScrollEnabled = allowsScrolling
         scrollView.bounces = allowsScrolling
@@ -55,7 +73,7 @@ struct DescriptionEditorWebView: UIViewRepresentable {
         scrollView.contentInsetAdjustmentBehavior = .never
     }
 
-    static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
+    static func dismantleUIView(_ uiView: DescriptionEditorWKWebView, coordinator: Coordinator) {
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: Coordinator.handlerName)
         coordinator.bridge.detach(webView: coordinator)
     }
@@ -67,10 +85,12 @@ struct DescriptionEditorWebView: UIViewRepresentable {
         let bridge: DescriptionEditorBridge
         weak var webView: WKWebView?
         private let accentColor: Color
+        var onKeyboardDone: (() -> Void)?
 
-        init(bridge: DescriptionEditorBridge, accentColor: Color) {
+        init(bridge: DescriptionEditorBridge, accentColor: Color, onKeyboardDone: (() -> Void)?) {
             self.bridge = bridge
             self.accentColor = accentColor
+            self.onKeyboardDone = onKeyboardDone
         }
 
         func loadEditor(in webView: WKWebView) {
@@ -135,6 +155,10 @@ struct DescriptionEditorWebView: UIViewRepresentable {
             sendToJS(payload)
         }
 
+        func resignEditingKeyboard() {
+            webView?.resignFirstResponder()
+        }
+
         private func sendToJS(_ payload: [String: Any]) {
             guard let data = try? JSONSerialization.data(withJSONObject: payload),
                   let json = String(data: data, encoding: .utf8) else { return }
@@ -145,6 +169,29 @@ struct DescriptionEditorWebView: UIViewRepresentable {
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard message.name == Self.handlerName else { return }
             bridge.handleWebMessage(message.body)
+        }
+
+        func makeKeyboardToolbar() -> UIToolbar {
+            let toolbar = UIToolbar()
+            toolbar.sizeToFit()
+            let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+            let done = UIBarButtonItem(
+                title: Bundle.currentLocalizedString("edit.done"),
+                style: .done,
+                target: self,
+                action: #selector(keyboardDoneTapped)
+            )
+            done.accessibilityIdentifier = AccessibilityIdentifiers.descriptionEditorKeyboardDone
+            toolbar.items = [spacer, done]
+            return toolbar
+        }
+
+        @objc func keyboardDoneTapped() {
+            if let onKeyboardDone {
+                onKeyboardDone()
+            } else {
+                bridge.dismissEditingFocus()
+            }
         }
     }
 }

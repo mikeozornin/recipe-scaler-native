@@ -33,42 +33,44 @@ struct EditIngredientNutritionSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(ingredient.name)
-                        .font(AppTypography.body)
-                        .foregroundStyle(.primary)
+                    Text(verbatim: ingredient.name)
+                        .appBody()
+                        .foregroundStyle(Color(.label))
                         .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Text(String(localized: "nutrition.per-100g-note"))
+                    Text("nutrition.per-100g-note")
                         .appFootnote()
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 4)
-                .padding(.bottom, 12)
+                .padding(.top, 16)
 
                 Form {
                     Section {
-                        nutritionRow(String(localized: "nutrition.kcal"), text: $calories, focus: .calories)
-                        nutritionRow(String(localized: "nutrition.protein.label"), text: $protein, focus: .protein)
-                        nutritionRow(String(localized: "nutrition.fat.label"), text: $fat, focus: .fat)
-                        nutritionRow(String(localized: "nutrition.carbs.label"), text: $carbs, focus: .carbs)
+                        nutritionRow("nutrition.kcal", text: $calories, focus: .calories)
+                        nutritionRow("nutrition.protein.label", text: $protein, focus: .protein)
+                        nutritionRow("nutrition.fat.label", text: $fat, focus: .fat)
+                        nutritionRow("nutrition.carbs.label", text: $carbs, focus: .carbs)
                     }
                 }
+                .appListBodyTypography()
                 .scrollContentBackground(.hidden)
+                .contentMargins(.top, 0, for: .scrollContent)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(Color(.systemGroupedBackground))
-            .navigationTitle(String(localized: "nutrition.ingredient.edit.title"))
+            .localizedNavigationTitle("nutrition.ingredient.edit.title")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "edit.cancel")) { dismiss() }
+                    Button("edit.cancel") { dismiss() }
                         .appToolbarTextButton()
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "edit.done")) { saveAndDismiss() }
+                    Button("edit.done") { saveAndDismiss() }
                         .appToolbarConfirmButton()
                 }
                 ToolbarItemGroup(placement: .keyboard) {
@@ -78,6 +80,8 @@ struct EditIngredientNutritionSheet: View {
                     .appToolbarIconButton()
                     .disabled(!canFocusPrevious)
 
+                    Color.clear.frame(width: 8)
+
                     Button { focusNext() } label: {
                         AppToolbarStyle.icon("chevron.down")
                     }
@@ -86,7 +90,7 @@ struct EditIngredientNutritionSheet: View {
 
                     Spacer()
 
-                    Button(String(localized: "edit.done")) { focusedField = nil }
+                    Button("edit.done") { focusedField = nil }
                         .appToolbarTextButton()
                 }
             }
@@ -130,8 +134,8 @@ struct EditIngredientNutritionSheet: View {
         onSave(absolute.calories, absolute.protein, absolute.fat, absolute.carbs)
     }
 
-    private func nutritionRow(_ label: String, text: Binding<String>, focus: NutritionFieldFocus) -> some View {
-        LabeledContent(label) {
+    private func nutritionRow(_ labelKey: LocalizedStringKey, text: Binding<String>, focus: NutritionFieldFocus) -> some View {
+        LabeledContent(labelKey) {
             TextField("0", text: text)
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)

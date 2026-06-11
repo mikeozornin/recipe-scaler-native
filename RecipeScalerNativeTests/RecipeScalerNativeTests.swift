@@ -53,7 +53,7 @@ final class RecipeScalerNativeTests: XCTestCase {
         let editHeight = IngredientEditList.estimatedContentHeight(
             rows: rows,
             nutritionEnabled: true,
-            includesNewRow: true
+            includesNewRow: false
         )
         XCTAssertGreaterThan(editHeight, RecipeRowLayoutMetrics.rowHeight * 6)
 
@@ -62,8 +62,7 @@ final class RecipeScalerNativeTests: XCTestCase {
             nutritionEnabled: true,
             includesNewRow: false
         )
-        XCTAssertGreaterThan(viewHeight, RecipeRowLayoutMetrics.rowHeight * 6)
-        XCTAssertGreaterThan(editHeight, viewHeight)
+        XCTAssertEqual(editHeight, viewHeight)
     }
 
     func testIngredientEditListMeasuredContentHeightRequiresAllRows() {

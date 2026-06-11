@@ -5,8 +5,8 @@ struct RecipeLegacyBanner: View {
         HStack(alignment: .top, spacing: 12) {
             AppSymbol.image("info.circle.fill")
                 .foregroundStyle(.secondary)
-            Text(String(localized: "edit.legacy.banner"))
-                .font(AppTypography.compact)
+            Text("edit.legacy.banner")
+                .appBody()
                 .foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true)
         }

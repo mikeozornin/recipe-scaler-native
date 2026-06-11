@@ -137,7 +137,7 @@ Phase 1 (done)          Phase 2 (done)             Phase 3 (done)
 
 - [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)
 - [docs/YJS-SCHEMA.md](../docs/YJS-SCHEMA.md)
-- [SETUP.md](../SETUP.md)
+- [SETUP.md](../docs/SETUP.md)
 - [specs/001-yrs-native-read/](../specs/001-yrs-native-read/)
 - [specs/002-native-editing/](../specs/002-native-editing/)
 - [specs/003-recipe-image-offline-cache/](../specs/003-recipe-image-offline-cache/)

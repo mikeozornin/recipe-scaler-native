@@ -101,13 +101,12 @@ final class RecipeEditViewModel: ObservableObject {
             ingredients[index] = updated
         }
         guard let totals = IngredientData.aggregatedMacros(from: ingredients) else { return }
-        let currentOutdated = syncService.currentRecipe?.nutrition?.nutritionOutdated ?? false
         let nutrition = NutritionData(
             calories: totals.calories,
             protein: totals.protein,
             fat: totals.fat,
             carbs: totals.carbs,
-            nutritionOutdated: currentOutdated,
+            nutritionOutdated: false,
             extra: [:]
         )
         syncService.patchCurrentRecipeForEditing(nutrition: nutrition)

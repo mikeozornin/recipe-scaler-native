@@ -57,6 +57,26 @@ enum RecipeRowLayoutMetrics {
 
     // MARK: - Edit-mode ingredient grid (List + onMove + swipe delete)
 
+    /// Raises edit-list minus + first text line vs standard row chrome.
+    static let editListRowLift: CGFloat = 4
+    /// Gap between custom delete minus and ingredient text in edit `List`.
+    static let editListDeleteToContentSpacing: CGFloat = 6
+    /// Matches system `minus.circle.fill` control in edit lists.
+    static let editListDeleteControlSize: CGFloat = 22
+    /// Minus column + gap before ingredient name (aligns new-row fields with edit rows).
+    static var editListLeadingSlotWidth: CGFloat {
+        editListDeleteControlSize + editListDeleteToContentSpacing
+    }
+    /// «+» row: optical inset so «Name» lines up with edit-row titles (minus.circle is wider).
+    static let editListNewRowNameLeadingInset: CGFloat = 2
+    /// Top offset for reorder control — aligned with custom minus in edit rows.
+    static var editListReorderControlTopOffset: CGFloat {
+        ingredientRowVerticalPadding
+    }
+    /// Vertical center of reorder grip — aligned with minus.circle.fill center.
+    static var editListReorderControlTargetCenterY: CGFloat {
+        editListReorderControlTopOffset + editListDeleteControlSize * 0.5
+    }
     /// Leading drag handle in edit ingredient rows (left slot, former minus-button area).
     static let editListLeadingDragHandleWidth: CGFloat = 28
     /// Approximate UITableView reorder control width in edit mode.
@@ -204,6 +224,17 @@ extension View {
     func ingredientListRowChrome() -> some View {
         padding(.vertical, RecipeRowLayoutMetrics.ingredientRowVerticalPadding)
             .frame(minHeight: RecipeRowLayoutMetrics.rowHeight, alignment: .top)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Edit `List` row chrome — same vertical padding for rows with and without KBJU.
+    func ingredientEditListRowChrome() -> some View {
+        ingredientListRowChromeCompact()
+    }
+
+    /// Row with a KBJU line: symmetric vertical padding, no 44 pt min-height slack.
+    func ingredientListRowChromeCompact() -> some View {
+        padding(.vertical, RecipeRowLayoutMetrics.ingredientRowVerticalPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 

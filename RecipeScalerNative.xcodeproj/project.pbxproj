@@ -1152,7 +1152,6 @@
 				69260D31481836DE8DC2349C /* RecipeData.swift in Sources */,
 				C7D3ECB704B645D8926FB811 /* RecipeEditViewModel.swift in Sources */,
 				B2C3D4E5F60718293A4B64 /* YDocIngredientsSection.swift in Sources */,
-				E5F60719293A4B7000000091 /* IngredientEditReorderTableView.swift in Sources */,
 				E5F60718293A4B7000000001 /* IngredientNutritionDisplay.swift in Sources */,
 				E5F60718293A4B700000000E /* RecipeNutritionDisplay.swift in Sources */,
 				E5F60718293A4B70000A001 /* RecipeServings.swift in Sources */,

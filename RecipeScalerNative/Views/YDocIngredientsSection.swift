@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Focus & keyboard
 
@@ -68,8 +69,8 @@ struct YDocIngredientsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if numberedRows.isEmpty {
-                Text(String(localized: "No ingredients"))
-                    .font(AppTypography.body)
+                Text("No ingredients")
+                    .appBody()
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
                     .padding(.top, 12)
@@ -107,10 +108,7 @@ struct YDocIngredientsSection: View {
                                     Button {
                                         onAddIngredientToShopping(row.ingredient)
                                     } label: {
-                                        Label(
-                                            String(localized: "shopping.ingredient-add"),
-                                            systemImage: "cart.badge.plus"
-                                        )
+                                        Label("shopping.ingredient-add", systemImage: "cart.badge.plus")
                                     }
                                     .tint(.green)
                                 }
@@ -134,7 +132,7 @@ struct YDocIngredientsSection: View {
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button(String(localized: "edit.done")) {
+                Button("edit.done") {
                     focusedScaledQuantityId = nil
                 }
                 .appToolbarTextButton()
@@ -211,8 +209,13 @@ private struct YDocIngredientViewRow: View {
 
     @ViewBuilder
     private var ingredientContent: some View {
-        ingredientNameAmountRow(nutritionSummary: nutritionSummary)
-            .ingredientListRowChrome()
+        if nutritionSummary != nil {
+            ingredientNameAmountRow(nutritionSummary: nutritionSummary)
+                .ingredientListRowChromeCompact()
+        } else {
+            ingredientNameAmountRow(nutritionSummary: nutritionSummary)
+                .ingredientListRowChrome()
+        }
     }
 
     private func ingredientNameAmountRow(nutritionSummary: String?) -> some View {
@@ -261,7 +264,7 @@ private struct YDocIngredientViewRow: View {
 
 // MARK: - Servings (edit)
 
-/// Base servings row before ingredients — same grid as edit rows, not draggable (web edit `ServingsControl`).
+/// Base servings row above ingredient column headers — qty column alignment, not draggable (web `ServingsControl` above `IngredientsSection`).
 private struct ServingsEditRow: View {
     @Binding var servings: Int
     let accentColor: Color
@@ -271,8 +274,8 @@ private struct ServingsEditRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.gridIngredientsToQtySpacing) {
-            Text(String(localized: "edit.servings"))
-                .font(AppTypography.body)
+            Text("edit.servings")
+                .appBody()
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -325,15 +328,18 @@ struct YDocIngredientsEditSection: View {
     let onDelete: (String) async -> Void
     let onAdd: (String, String) async -> Void
     let onReorder: (Int, Int) async -> Void
+    var onIngredientFieldFocusChanged: ((Bool) -> Void)? = nil
+    var onKeyboardDone: (() -> Void)? = nil
+    var clearFocusToken: Int = 0
 
     @State private var drafts: [String: IngredientDraft] = [:]
     @State private var nutritionSheetTarget: IngredientNutritionTarget?
-    @State private var pendingCommitTask: Task<Void, Never>?
     @State private var newName = ""
     @State private var newAmount = ""
     @State private var isAdding = false
     @FocusState private var focusedField: IngredientFieldFocus?
     @State private var measuredRowHeights: [String: CGFloat] = [:]
+    @State private var deleteRevealRowId: String?
 
     private var sorted: [IngredientData] {
         recipe.ingredients.sorted { $0.order < $1.order }
@@ -351,17 +357,14 @@ struct YDocIngredientsEditSection: View {
         let estimated = IngredientEditList.estimatedContentHeight(
             rows: numberedRows,
             nutritionEnabled: nutritionEnabled,
-            includesNewRow: true
+            includesNewRow: false
         )
         let measured = IngredientEditList.measuredContentHeight(
             rowIds: ingredientRowIds,
             heights: measuredRowHeights
         )
-        // Measured heights omit the «+» row (not in `ingredientRowIds`).
-        let measuredWithNewRow = measured > 0
-            ? measured + RecipeRowLayoutMetrics.rowHeight + 1
-            : 0
-        return max(estimated, measuredWithNewRow)
+        // Prefer measured full-row heights — estimate can under-count nutrition edit rows.
+        return measured > 0 ? measured : estimated
     }
 
     private var fieldSequence: [IngredientFieldFocus] {
@@ -380,14 +383,19 @@ struct YDocIngredientsEditSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
-                IngredientColumnHeaderRow(showsDragHandle: true)
-
                 ServingsEditRow(
                     servings: $draftServings,
                     accentColor: accentColor
                 )
+                .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
+
+                IngredientColumnHeaderRow(showsDragHandle: true)
+                    .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
 
                 ingredientEditList
+
+                Divider()
+                    .padding(.leading, RecipeRowLayoutMetrics.listHorizontalInset)
 
                 YDocNewIngredientRow(
                     baseServings: baseServings,
@@ -402,22 +410,21 @@ struct YDocIngredientsEditSection: View {
                 .accessibilityIdentifier(AccessibilityIdentifiers.recipeEditNewIngredientRow)
                 .id(AccessibilityIdentifiers.recipeEditNewIngredientRow)
             }
-            .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
+        }
+        .onPreferenceChange(IngredientEditRowHeightKey.self) { heights in
+            measuredRowHeights = heights
         }
         .onAppear {
             syncDrafts(from: recipe)
         }
-        .onDisappear {
-            pendingCommitTask?.cancel()
-            pendingCommitTask = nil
-        }
         .onChange(of: recipe.ingredients.map(\.id)) { _, _ in syncDrafts(from: recipe) }
+        .onChange(of: clearFocusToken) { _, _ in
+            focusedField = nil
+        }
         .onChange(of: focusedField) { old, new in
+            onIngredientFieldFocusChanged?(new != nil)
             guard let old, old.rowKey != new?.rowKey else { return }
-            pendingCommitTask?.cancel()
-            pendingCommitTask = Task {
-                try? await Task.sleep(nanoseconds: 150_000_000)
-                guard !Task.isCancelled else { return }
+            Task {
                 await commitRowLeaving(old.rowKey)
             }
         }
@@ -454,12 +461,13 @@ struct YDocIngredientsEditSection: View {
                     Spacer()
 
                     if focusedField == .newName || focusedField == .newAmount {
-                        Button(String(localized: "edit.ingredient.add")) {
+                        Button("edit.ingredient.add") {
                             Task { await submitNewIngredient() }
                         }
                         .appToolbarTextButton()
                     } else {
-                        Button(String(localized: "edit.done")) {
+                        Button("edit.done") {
+                            onKeyboardDone?()
                             focusedField = nil
                         }
                         .appToolbarTextButton()
@@ -472,20 +480,27 @@ struct YDocIngredientsEditSection: View {
     private var ingredientEditList: some View {
         List {
             ForEach(Array(numberedRows.enumerated()), id: \.element.ingredient.id) { index, row in
-                editRow(for: row)
+                editListRow(for: row)
+                    .overlay(alignment: .top) {
+                        if index > 0 {
+                            Divider()
+                        }
+                    }
                     .listRowInsets(IngredientEditList.rowInsets)
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color(.systemBackground))
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            deleteRevealRowId = nil
+                            Task { await onDelete(row.ingredient.id) }
+                        } label: {
+                            Text("edit.ingredient.delete")
+                        }
+                    }
             }
             .onMove { from, to in
                 guard let fromIndex = from.first else { return }
                 Task { await onReorder(fromIndex, to) }
-            }
-            .onDelete { indexSet in
-                for index in indexSet {
-                    let id = numberedRows[index].ingredient.id
-                    deleteIngredient(at: id)
-                }
             }
         }
         .listStyle(.plain)
@@ -496,13 +511,63 @@ struct YDocIngredientsEditSection: View {
         .scrollContentBackground(.hidden)
         .contentMargins(.horizontal, 0, for: .scrollContent)
         .environment(\.defaultMinListRowHeight, RecipeRowLayoutMetrics.rowHeight)
+        .environment(\.editMode, .constant(.active))
+    }
+
+    private func editListRow(for row: (number: Int?, ingredient: IngredientData)) -> some View {
+        let ingredientId = row.ingredient.id
+        let isDeleteRevealed = deleteRevealRowId == ingredientId
+
+        return ZStack(alignment: .leading) {
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                Button(role: .destructive) {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        deleteRevealRowId = nil
+                    }
+                    Task { await onDelete(ingredientId) }
+                } label: {
+                    Text("edit.ingredient.delete")
+                        .appHeadline()
+                        .foregroundStyle(.white)
+                        .frame(maxHeight: .infinity)
+                        .frame(width: IngredientEditList.deleteRevealWidth)
+                }
+                .buttonStyle(.plain)
+                .background(Color.red)
+            }
+            .opacity(isDeleteRevealed ? 1 : 0)
+
+            HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.editListDeleteToContentSpacing) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        deleteRevealRowId = isDeleteRevealed ? nil : ingredientId
+                    }
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.system(size: RecipeRowLayoutMetrics.editListDeleteControlSize))
+                        .foregroundStyle(.red)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("edit.ingredient.delete"))
+
+                editRow(for: row)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.systemBackground))
+            .ingredientEditListRowChrome()
+            .offset(x: isDeleteRevealed ? -IngredientEditList.deleteRevealWidth : 0)
+            .background(IngredientEditListReorderAligner())
+        }
+        .clipped()
+        .reportIngredientEditRowHeight(rowId: ingredientId)
     }
 
     private func editRow(for row: (number: Int?, ingredient: IngredientData)) -> some View {
         let ingredient = row.ingredient
         let draft = drafts[ingredient.id] ?? IngredientDraft(ingredient: ingredient)
         return YDocIngredientEditRow(
-            rowNumber: row.number,
+            rowNumber: nil,
             ingredient: ingredient,
             name: bindingName(for: ingredient.id, fallback: draft.name),
             amount: bindingAmount(for: ingredient.id, fallback: draft.amount),
@@ -512,9 +577,9 @@ struct YDocIngredientsEditSection: View {
             nutritionEnabled: nutritionEnabled,
             nutritionViewMode: nutritionViewMode,
             focusedField: $focusedField,
+            appliesRowChrome: false,
             onNutritionTap: { nutritionSheetTarget = IngredientNutritionTarget(ingredient: ingredient) }
         )
-        .reportIngredientEditRowHeight(rowId: ingredient.id)
     }
 
     private func currentIngredient(for id: String) -> IngredientData? {
@@ -545,18 +610,6 @@ struct YDocIngredientsEditSection: View {
               let index = fieldSequence.firstIndex(of: focusedField),
               index < fieldSequence.count - 1 else { return }
         self.focusedField = fieldSequence[index + 1]
-    }
-
-    private func deleteIngredient(at id: String) {
-        // #region agent log
-        DebugSessionNDJSONLog.write(
-            hypothesisId: "H5",
-            location: "YDocIngredientsSection.swift:deleteIngredient",
-            message: "swipe_delete_action_fired",
-            data: ["ingredientId": id]
-        )
-        // #endregion
-        Task { await onDelete(id) }
     }
 
     private func bindingName(for id: String, fallback: String) -> Binding<String> {
@@ -658,13 +711,13 @@ private struct IngredientColumnHeaderRow: View {
         Group {
             if compactLayout {
                 HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.gridIngredientsToQtySpacing) {
-                    Text(String(localized: "recipes.ingredient-header"))
-                        .font(AppTypography.bodySemibold)
+                    Text("recipes.ingredient-header")
+                        .appHeadline()
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Text(String(localized: "recipes.qty-header"))
-                        .font(AppTypography.bodySemibold)
+                    Text("recipes.qty-header")
+                        .appHeadline()
                         .foregroundStyle(.primary)
                         .frame(width: RecipeRowLayoutMetrics.baseQtyColumnWidth, alignment: .trailing)
                 }
@@ -672,14 +725,14 @@ private struct IngredientColumnHeaderRow: View {
                 IngredientGridRow(
                     ingredients: {
                         IngredientGridIngredientsColumn(markerLabel: nil) {
-                            Text(String(localized: "recipes.ingredient-header"))
-                                .font(AppTypography.bodySemibold)
+                            Text("recipes.ingredient-header")
+                                .appHeadline()
                                 .foregroundStyle(.primary)
                         }
                     },
                     baseQty: {
-                        Text(String(localized: "recipes.qty-header"))
-                            .font(AppTypography.bodySemibold)
+                        Text("recipes.qty-header")
+                            .appHeadline()
                             .foregroundStyle(.primary)
                     },
                     scaledQty: { EmptyView() },
@@ -726,8 +779,121 @@ private struct IngredientMonoQuantityText: View {
     }
 }
 
+/// Marker in edit ingredient rows; triggers post-layout reorder alignment via swizzled `layoutSubviews`.
+private struct IngredientEditListReorderAligner: UIViewRepresentable {
+    func makeUIView(context: Context) -> IngredientEditListReorderAlignerView {
+        IngredientEditListReorderAlignerView()
+    }
+
+    func updateUIView(_ uiView: IngredientEditListReorderAlignerView, context: Context) {}
+}
+
+private final class IngredientEditListReorderAlignerView: UIView {
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        backgroundColor = .clear
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        guard window != nil, let cell = enclosingListCell() else { return }
+        IngredientEditListReorderLayoutHook.installIfNeeded(for: cell)
+        IngredientEditList.alignReorderControl(in: cell)
+    }
+}
+
+private enum IngredientEditListReorderLayoutHook {
+    private static var hookedClassNames = Set<String>()
+
+    static func installIfNeeded(for cell: UIView) {
+        let cellClass: AnyClass = type(of: cell)
+        let className = NSStringFromClass(cellClass)
+        guard !hookedClassNames.contains(className) else { return }
+        hookedClassNames.insert(className)
+        guard
+            let original = class_getInstanceMethod(cellClass, #selector(UIView.layoutSubviews)),
+            let swizzled = class_getInstanceMethod(
+                UICollectionViewCell.self,
+                #selector(UICollectionViewCell.ingredientEdit_alignReorderAfterLayout)
+            )
+        else { return }
+        method_exchangeImplementations(original, swizzled)
+    }
+}
+
+private extension UICollectionViewCell {
+    @objc func ingredientEdit_alignReorderAfterLayout() {
+        ingredientEdit_alignReorderAfterLayout()
+        guard reorderControlView() != nil, containsIngredientEditReorderAligner() else { return }
+        IngredientEditList.alignReorderControl(in: self)
+    }
+
+    func containsIngredientEditReorderAligner() -> Bool {
+        func search(_ view: UIView) -> Bool {
+            if view is IngredientEditListReorderAlignerView { return true }
+            return view.subviews.contains(where: search)
+        }
+        return search(contentView)
+    }
+}
+
+private extension UIView {
+    func enclosingListCell() -> UIView? {
+        var view: UIView? = self
+        while let current = view {
+            let typeName = String(describing: type(of: current))
+            if current is UITableViewCell
+                || current is UICollectionViewCell
+                || typeName.contains("ListCollectionViewCell") {
+                return current
+            }
+            view = current.superview
+        }
+        return nil
+    }
+
+}
+
+private extension UIView {
+    /// Vertical center of the visible grip inside `_UICollectionViewListCellReorderControl`.
+    var reorderGripCenterY: CGFloat {
+        if let grip = subviews.first(where: { $0 is UIImageView }) {
+            return grip.center.y
+        }
+        return bounds.midY
+    }
+
+    func reorderControlView() -> UIView? {
+        if let direct = subviews.first(where: {
+            String(describing: type(of: $0)).localizedCaseInsensitiveContains("ListCellReorder")
+        }) {
+            return direct
+        }
+        func search(_ view: UIView) -> UIView? {
+            let typeName = String(describing: type(of: view))
+            if typeName.localizedCaseInsensitiveContains("Reorder") {
+                return view
+            }
+            for child in view.subviews {
+                if let found = search(child) { return found }
+            }
+            return nil
+        }
+        return search(self)
+    }
+}
+
 enum IngredientEditList {
-    /// Edit `List` row insets: leading 16 (same as view), trailing gap before reorder.
+    /// Edit `List` row insets: leading matches servings row (`listHorizontalInset`), trailing gap before reorder.
+    /// Trailing delete affordance width when minus reveals delete (matches swipe action).
+    static let deleteRevealWidth: CGFloat = 80
+
     static let rowInsets = EdgeInsets(
         top: 0,
         leading: RecipeRowLayoutMetrics.listHorizontalInset,
@@ -735,17 +901,52 @@ enum IngredientEditList {
         trailing: RecipeRowLayoutMetrics.editRowQtyToReorderSpacing
     )
 
-    static func estimatedRowHeight(ingredient: IngredientData, nutritionEnabled: Bool) -> CGFloat {
-        guard !ingredient.isHeaderRow, nutritionEnabled else {
-            return RecipeRowLayoutMetrics.rowHeight + 4
+    static func alignReorderControl(in cell: UIView) {
+        guard let reorder = cell.reorderControlView() else { return }
+        deactivateReorderConstraints(reorder, in: cell)
+        let gripCenterY = reorder.reorderGripCenterY
+        let targetTop = RecipeRowLayoutMetrics.editListReorderControlTargetCenterY - gripCenterY
+        reorder.translatesAutoresizingMaskIntoConstraints = true
+        var frame = reorder.frame
+        frame.origin.y = targetTop
+        reorder.frame = frame
+        alignReorderGripImage(in: reorder, targetTop: targetTop)
+    }
+
+    private static func deactivateReorderConstraints(_ reorder: UIView, in cell: UIView) {
+        let related = { (constraint: NSLayoutConstraint) -> Bool in
+            constraint.firstItem as? UIView === reorder || constraint.secondItem as? UIView === reorder
         }
-        let content = 8
-            + RecipeRowLayoutMetrics.ingredientBodyLineHeight
+        NSLayoutConstraint.deactivate(reorder.constraints.filter(related))
+        if let superview = reorder.superview {
+            NSLayoutConstraint.deactivate(superview.constraints.filter(related))
+        }
+        NSLayoutConstraint.deactivate(cell.constraints.filter(related))
+    }
+
+    private static func alignReorderGripImage(in reorder: UIView, targetTop: CGFloat) {
+        guard let grip = reorder.subviews.first(where: { $0 is UIImageView }) else { return }
+        grip.translatesAutoresizingMaskIntoConstraints = true
+        let gripCenterInReorder = RecipeRowLayoutMetrics.editListReorderControlTargetCenterY - targetTop
+        var frame = grip.frame
+        frame.origin.y = gripCenterInReorder - frame.height * 0.5
+        grip.frame = frame
+    }
+
+    static func estimatedRowHeight(ingredient: IngredientData, nutritionEnabled: Bool) -> CGFloat {
+        let pad = RecipeRowLayoutMetrics.ingredientRowVerticalPadding
+        if ingredient.isHeaderRow {
+            return pad + RecipeRowLayoutMetrics.ingredientBodyLineHeight + pad
+        }
+        guard nutritionEnabled else {
+            return pad + RecipeRowLayoutMetrics.ingredientBodyLineHeight + pad
+        }
+        // Dotted-underline nutrition button is slightly taller than bare footnote line height.
+        let content = RecipeRowLayoutMetrics.ingredientBodyLineHeight
             + RecipeRowLayoutMetrics.nutritionLineSpacing
             + RecipeRowLayoutMetrics.footnoteLineHeight
-            + RecipeRowLayoutMetrics.nutritionLineBottomInset
-            + 8
-        return max(72, content)
+            + 2
+        return pad + content + pad
     }
 
     static func estimatedContentHeight(
@@ -837,20 +1038,18 @@ private struct IngredientRowMarkerSlot: View {
     let label: String?
 
     var body: some View {
-        Group {
-            if let label {
-                Text(label)
-                    .font(AppTypography.body)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-            }
+        if let label {
+            Text(label)
+                .appBody()
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .frame(
+                    minWidth: RecipeRowLayoutMetrics.markerSlotWidth,
+                    alignment: .leading
+                )
+                .frame(height: RecipeRowLayoutMetrics.ingredientBodyLineHeight, alignment: .top)
         }
-        .frame(
-            minWidth: RecipeRowLayoutMetrics.markerSlotWidth,
-            alignment: .leading
-        )
-        .frame(height: RecipeRowLayoutMetrics.ingredientBodyLineHeight, alignment: .top)
     }
 }
 
@@ -899,16 +1098,35 @@ struct IngredientDraft {
 }
 
 private struct ExpandingIngredientNameField: View {
-    let placeholder: String
+    let placeholderKey: String
     @Binding var text: String
+    @Environment(\.locale) private var locale
+
+    private var resolvedPlaceholder: String {
+        _ = locale
+        return Bundle.currentLocalizedString(placeholderKey)
+    }
+
+    /// Drives row height from text/placeholder metrics — empty `TextField` placeholder is taller than body line.
+    private var sizingText: String {
+        text.isEmpty ? resolvedPlaceholder : text
+    }
 
     var body: some View {
-        TextField(placeholder, text: $text, axis: .vertical)
-            .font(AppTypography.body)
-            .lineSpacing(AppTypography.bodyLineSpacing)
+        Text(sizingText)
+            .appBody()
             .lineLimit(1...)
             .fixedSize(horizontal: false, vertical: true)
-            .submitLabel(.next)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .hidden()
+            .overlay(alignment: .topLeading) {
+                TextField(resolvedPlaceholder, text: $text, axis: .vertical)
+                    .appBodyFieldTypography()
+                    .lineLimit(1...)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .submitLabel(.next)
+            }
     }
 }
 
@@ -923,6 +1141,7 @@ struct YDocIngredientEditRow: View {
     let nutritionEnabled: Bool
     let nutritionViewMode: IngredientNutritionViewMode
     var focusedField: FocusState<IngredientFieldFocus?>.Binding
+    var appliesRowChrome: Bool = true
     let onNutritionTap: () -> Void
 
     private var nutritionSummary: String? {
@@ -945,7 +1164,7 @@ struct YDocIngredientEditRow: View {
         if ingredient.isHeaderRow {
             HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.gridIngredientsToQtySpacing) {
                 ExpandingIngredientNameField(
-                    placeholder: String(localized: "edit.ingredient.name"),
+                    placeholderKey: "edit.ingredient.name",
                     text: $name
                 )
                 .focused(focusedField, equals: .name(ingredient.id))
@@ -954,14 +1173,14 @@ struct YDocIngredientEditRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .contentShape(Rectangle())
-            .ingredientListRowChrome()
+            .modifier(IngredientEditRowChrome(applies: appliesRowChrome))
         } else {
             IngredientGridRow(
                 ingredients: {
                     IngredientGridIngredientsColumn(markerLabel: rowNumber.map(String.init)) {
                         VStack(alignment: .leading, spacing: RecipeRowLayoutMetrics.nutritionLineSpacing) {
                             ExpandingIngredientNameField(
-                                placeholder: String(localized: "edit.ingredient.name"),
+                                placeholderKey: "edit.ingredient.name",
                                 text: $name
                             )
                             .focused(focusedField, equals: .name(ingredient.id))
@@ -971,13 +1190,14 @@ struct YDocIngredientEditRow: View {
                                     HStack(spacing: 4) {
                                         if let nutritionSummary {
                                             Text(nutritionSummary)
+                                                .appFootnote()
                                         } else {
-                                            Text(String(localized: "nutrition.ingredient.tap-to-edit"))
+                                            Text("nutrition.ingredient.tap-to-edit")
+                                                .appFootnote()
                                         }
                                         AppSymbol.image("pencil")
                                             .font(AppTypography.footnote)
                                     }
-                                    .font(AppTypography.footnote)
                                     .foregroundStyle(.secondary)
                                     .underline(pattern: .dot, color: Color.secondary.opacity(0.5))
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -988,7 +1208,7 @@ struct YDocIngredientEditRow: View {
                     }
                 },
                 baseQty: {
-                    TextField(String(localized: "edit.ingredient.amount"), text: $amount)
+                    TextField("edit.ingredient.amount", text: $amount)
                         .font(AppTypography.mono(AppTypography.bodySize))
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.trailing)
@@ -1002,7 +1222,19 @@ struct YDocIngredientEditRow: View {
                 trailing: { EmptyView() },
                 showsScaledColumn: false
             )
-            .ingredientListRowChrome()
+            .modifier(IngredientEditRowChrome(applies: appliesRowChrome))
+        }
+    }
+}
+
+private struct IngredientEditRowChrome: ViewModifier {
+    let applies: Bool
+
+    func body(content: Content) -> some View {
+        if applies {
+            content.ingredientListRowChrome()
+        } else {
+            content
         }
     }
 }
@@ -1020,41 +1252,62 @@ private struct YDocNewIngredientRow: View {
     }
 
     var body: some View {
-        IngredientGridRow(
-            ingredients: {
-                IngredientGridIngredientsColumn(markerLabel: "+") {
-                    ExpandingIngredientNameField(
-                        placeholder: String(localized: "edit.ingredient.name"),
-                        text: $name
-                    )
-                    .focused(focusedField, equals: .newName)
-                }
-            },
-            baseQty: {
-                TextField(String(localized: "edit.ingredient.amount"), text: $amount)
-                    .font(AppTypography.mono(AppTypography.bodySize))
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.trailing)
-                    .keyboardType(.decimalPad)
-                    .minimumScaleFactor(0.85)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .focused(focusedField, equals: .newAmount)
-            },
-            scaledQty: { EmptyView() },
-            trailing: {
-                Color.clear.frame(width: RecipeRowLayoutMetrics.editListReorderControlWidth)
-            },
-            showsScaledColumn: false
-        )
-        .ingredientListRowChrome()
-        .overlay(alignment: .trailing) {
+        HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.editListDeleteToContentSpacing) {
+            Text("+")
+                .appBody()
+                .foregroundStyle(.secondary)
+                .frame(
+                    width: RecipeRowLayoutMetrics.editListDeleteControlSize,
+                    height: RecipeRowLayoutMetrics.ingredientBodyLineHeight,
+                    alignment: .center
+                )
+
+            IngredientGridRow(
+                ingredients: {
+                    IngredientGridIngredientsColumn(markerLabel: nil) {
+                        ExpandingIngredientNameField(
+                            placeholderKey: "edit.ingredient.name",
+                            text: $name
+                        )
+                        .padding(.leading, RecipeRowLayoutMetrics.editListNewRowNameLeadingInset)
+                        .focused(focusedField, equals: .newName)
+                    }
+                },
+                baseQty: {
+                    TextField("edit.ingredient.amount", text: $amount)
+                        .font(AppTypography.mono(AppTypography.bodySize))
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.trailing)
+                        .keyboardType(.decimalPad)
+                        .minimumScaleFactor(0.85)
+                        .frame(
+                            minHeight: RecipeRowLayoutMetrics.ingredientBodyLineHeight,
+                            alignment: .trailing
+                        )
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .focused(focusedField, equals: .newAmount)
+                },
+                scaledQty: { EmptyView() },
+                trailing: { EmptyView() },
+                showsScaledColumn: false
+            )
+        }
+        .padding(.leading, RecipeRowLayoutMetrics.listHorizontalInset)
+        .padding(.trailing, RecipeRowLayoutMetrics.editGridTrailingPadding)
+        .ingredientEditListRowChrome()
+        .overlay(alignment: .topTrailing) {
             Button {
                 Task { await onSubmit() }
             } label: {
                 AppSymbol.image("return")
                     .font(AppTypography.bodySemibold)
             }
-            .frame(width: 24, height: RecipeRowLayoutMetrics.rowHeight)
+            .frame(
+                width: RecipeRowLayoutMetrics.editListReorderControlWidth,
+                height: RecipeRowLayoutMetrics.editListDeleteControlSize,
+                alignment: .center
+            )
+            .padding(.top, RecipeRowLayoutMetrics.editListReorderControlTopOffset)
             .disabled(!canSubmit)
             .buttonStyle(.borderless)
             .accessibilityIdentifier(AccessibilityIdentifiers.recipeEditNewIngredientSubmit)

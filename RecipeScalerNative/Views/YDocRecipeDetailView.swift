@@ -31,8 +31,11 @@ struct YDocRecipeDetailView: View {
     @State private var descriptionTimerPopover: DescriptionTimerPopoverState?
     @State private var descriptionTimerMarkupDraft: DescriptionTimerMarkupDraft?
     @State private var descriptionIngredientPickerPresented = false
-    @State private var descriptionIngredientRatioTarget: IngredientData?
     @State private var descriptionMarkupSelectedText = ""
+    @State private var descriptionTimerNodeMenu: DescriptionTimerNodeMenuState?
+    @State private var descriptionIngredientNodeMenu: DescriptionIngredientNodeMenuState?
+    @State private var ingredientFieldsFocused = false
+    @State private var clearIngredientFocusToken = 0
 
 
     private var recipe: RecipeData? {
@@ -148,7 +151,16 @@ struct YDocRecipeDetailView: View {
                                 },
                                 onReorder: { from, to in
                                     await reorderIngredients(from: from, to: to)
-                                }
+                                },
+                                onIngredientFieldFocusChanged: { focused in
+                                    ingredientFieldsFocused = focused
+                                    syncDescriptionChromeSuppression()
+                                },
+                                onKeyboardDone: {
+                                    descriptionChrome.blurEditor()
+                                    dismissRecipeTitleKeyboard = true
+                                },
+                                clearFocusToken: clearIngredientFocusToken
                             )
                         } else {
                             YDocIngredientsSection(
@@ -180,7 +192,10 @@ struct YDocRecipeDetailView: View {
                                 recipeId: recipeId,
                                 accentColor: accentColor,
                                 syncService: syncService,
-                                chrome: descriptionChrome
+                                chrome: descriptionChrome,
+                                onNodeClick: { click in
+                                    handleDescriptionNodeClick(click)
+                                }
                             )
                             .id("recipe_instructions")
                         } else if let description = recipe.description, !description.isEmpty {
@@ -256,7 +271,7 @@ struct YDocRecipeDetailView: View {
                 )
             }
         }
-        .sheet(item: $descriptionTimerMarkupDraft) { draft in
+        .sheet(item: $descriptionTimerMarkupDraft, onDismiss: finishDescriptionMarkupSheet) { draft in
             DescriptionTimerTypeSheet(
                 selectedPreview: draft.selectedText,
                 parsedValue: draft.value
@@ -264,33 +279,54 @@ struct YDocRecipeDetailView: View {
                 applyDescriptionTimerMarkup(draft: draft, unit: unit)
             }
         }
-        .sheet(isPresented: $descriptionIngredientPickerPresented) {
+        .sheet(isPresented: $descriptionIngredientPickerPresented, onDismiss: finishDescriptionMarkupSheet) {
             if let recipe {
-                DescriptionIngredientPickerSheet(
+                DescriptionIngredientMarkupSheet(
                     ingredients: DescriptionMarkupFlow.eligibleIngredients(
                         from: recipe.ingredients,
                         selectedText: descriptionMarkupSelectedText
                     ),
-                    selectedText: descriptionMarkupSelectedText,
-                    onSelect: { ingredient, ratio in
-                        applyDescriptionIngredientMarkup(ingredient: ingredient, ratio: ratio)
-                        descriptionIngredientPickerPresented = false
-                    },
-                    onNeedsRatio: { ingredient in
-                        descriptionIngredientPickerPresented = false
-                        descriptionIngredientRatioTarget = ingredient
-                    }
-                )
+                    selectedText: descriptionMarkupSelectedText
+                ) { ingredient, ratio in
+                    applyDescriptionIngredientMarkup(ingredient: ingredient, ratio: ratio)
+                    descriptionIngredientPickerPresented = false
+                }
             }
         }
-        .sheet(item: $descriptionIngredientRatioTarget) { ingredient in
-            DescriptionIngredientRatioSheet(
-                ingredient: ingredient,
-                selectedText: descriptionMarkupSelectedText
-            ) { ratio in
-                applyDescriptionIngredientMarkup(ingredient: ingredient, ratio: ratio)
-                descriptionIngredientRatioTarget = nil
-            }
+        .sheet(item: $descriptionTimerNodeMenu, onDismiss: {
+            descriptionTimerNodeMenu = nil
+            syncDescriptionChromeSuppression()
+        }) { menu in
+            DescriptionTimerNodeFlowSheet(
+                menu: menu,
+                onStart: {
+                    startDescriptionTimer(from: menu.reference)
+                    descriptionTimerNodeMenu = nil
+                },
+                onRenameSave: { name in
+                    renameDescriptionTimer(menu.click, name: name)
+                    descriptionTimerNodeMenu = nil
+                },
+                onUnlink: {
+                    unlinkDescriptionTimer(menu.click)
+                    descriptionTimerNodeMenu = nil
+                }
+            )
+            .id(menu.id)
+        }
+        .sheet(item: $descriptionIngredientNodeMenu, onDismiss: {
+            descriptionIngredientNodeMenu = nil
+            syncDescriptionChromeSuppression()
+        }) { menu in
+            DescriptionIngredientNodeFlowSheet(
+                menu: menu,
+                onRatioSave: { ratio in
+                    updateDescriptionIngredientRatio(menu.click, ratio: ratio)
+                },
+                onUnlink: {
+                    unlinkDescriptionIngredient(menu.click)
+                }
+            )
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -326,21 +362,42 @@ struct YDocRecipeDetailView: View {
             }
             if canEnterEditMode, isEditing {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "edit.done")) {
+                    Button("edit.done") {
                         Task { await toggleEditMode() }
                     }
                     .appToolbarConfirmButton()
                 }
             }
         }
+        .toolbar {
+            if isEditing,
+               canEnterEditMode,
+               descriptionChrome.isFocused,
+               !ingredientFieldsFocused,
+               !(editViewModel?.isEditingTitleField ?? false) {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("edit.done") {
+                        descriptionChrome.blurEditor()
+                    }
+                    .appToolbarTextButton()
+                    .accessibilityIdentifier(AccessibilityIdentifiers.descriptionEditorKeyboardDone)
+                }
+            }
+        }
+        .onChange(of: descriptionChrome.isFocused) { _, focused in
+            guard focused else { return }
+            clearIngredientFocusToken += 1
+            dismissRecipeTitleKeyboard = true
+        }
         .alert(
-            String(localized: "edit.error.title"),
+            Bundle.currentLocalizedString("edit.error.title"),
             isPresented: Binding(
                 get: { editErrorMessage != nil },
                 set: { if !$0 { editErrorMessage = nil } }
             )
         ) {
-            Button(String(localized: "edit.error.ok"), role: .cancel) {}
+            Button(Bundle.currentLocalizedString("edit.error.ok"), role: .cancel) {}
         } message: {
             Text(editErrorMessage ?? "")
         }
@@ -558,6 +615,7 @@ struct YDocRecipeDetailView: View {
             selectedText: selectedText,
             value: value
         )
+        syncDescriptionChromeSuppression()
     }
 
     private func applyDescriptionTimerMarkup(draft: DescriptionTimerMarkupDraft, unit: DescriptionTimerUnit) {
@@ -574,7 +632,7 @@ struct YDocRecipeDetailView: View {
             ]
         )
         descriptionTimerMarkupDraft = nil
-        bridge.sendCommand(name: "focus")
+        finishDescriptionMarkupSheet()
     }
 
     private func beginDescriptionIngredientMarkup() {
@@ -583,6 +641,7 @@ struct YDocRecipeDetailView: View {
         guard !selectedText.isEmpty else { return }
         descriptionMarkupSelectedText = selectedText
         descriptionIngredientPickerPresented = true
+        syncDescriptionChromeSuppression()
     }
 
     private func applyDescriptionIngredientMarkup(ingredient: IngredientData, ratio: Double) {
@@ -594,8 +653,149 @@ struct YDocRecipeDetailView: View {
         ]
         bridge.sendCommand(name: "markAsIngredient", args: args)
         descriptionIngredientPickerPresented = false
-        descriptionIngredientRatioTarget = nil
-        bridge.sendCommand(name: "focus")
+        finishDescriptionMarkupSheet()
+    }
+
+    private func finishDescriptionMarkupSheet() {
+        descriptionChrome.bridge?.sendCommand(name: "releaseMarkupSelection")
+        syncDescriptionChromeSuppression()
+    }
+
+    private func syncDescriptionChromeSuppression() {
+        let suppress = descriptionTimerMarkupDraft != nil
+            || descriptionIngredientPickerPresented
+            || descriptionTimerNodeMenu != nil
+            || descriptionIngredientNodeMenu != nil
+            || ingredientFieldsFocused
+            || (editViewModel?.isEditingTitleField ?? false)
+        descriptionChrome.setSuppressFormattingBar(suppress)
+
+        let shouldBlurEditor = ingredientFieldsFocused
+            || (editViewModel?.isEditingTitleField ?? false)
+            || descriptionTimerNodeMenu != nil
+            || descriptionIngredientNodeMenu != nil
+        if shouldBlurEditor {
+            descriptionChrome.blurEditor()
+        }
+    }
+
+    private func handleDescriptionNodeClick(_ click: DescriptionNodeClick) {
+        descriptionChrome.blurEditor()
+        syncDescriptionChromeSuppression()
+
+        let presentationId = descriptionChrome.bridge?.nodeClickSequence ?? 0
+
+        switch click.nodeType {
+        case .timer:
+            let durationSeconds = DescriptionMarkupFlow.parseDurationSeconds(click.duration)
+            let timerType = RecipeTimer.TimerType(rawValue: click.timerType) ?? .minutes
+            let displayText = click.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? click.value.trimmingCharacters(in: .whitespacesAndNewlines)
+                : click.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard durationSeconds > 0,
+                  !click.timerType.isEmpty,
+                  !displayText.isEmpty else { return }
+            let reference = RecipeDescriptionTimerReference(
+                displayText: displayText,
+                durationSeconds: durationSeconds,
+                type: timerType,
+                name: click.name.isEmpty ? nil : click.name
+            )
+            presentDescriptionTimerNodeMenu(
+                DescriptionTimerNodeMenuState(
+                    presentationId: presentationId,
+                    click: click,
+                    reference: reference
+                )
+            )
+        case .ingredient:
+            guard let recipe,
+                  let ingredient = recipe.ingredients.first(where: { $0.id == click.ingredientId }) else { return }
+            presentDescriptionIngredientNodeMenu(
+                DescriptionIngredientNodeMenuState(
+                    presentationId: presentationId,
+                    click: click,
+                    ingredient: ingredient
+                )
+            )
+        }
+    }
+
+    private func presentDescriptionTimerNodeMenu(_ menu: DescriptionTimerNodeMenuState) {
+        if descriptionTimerNodeMenu != nil {
+            descriptionTimerNodeMenu = nil
+            DispatchQueue.main.async {
+                descriptionTimerNodeMenu = menu
+                syncDescriptionChromeSuppression()
+            }
+        } else {
+            descriptionTimerNodeMenu = menu
+            syncDescriptionChromeSuppression()
+        }
+    }
+
+    private func presentDescriptionIngredientNodeMenu(_ menu: DescriptionIngredientNodeMenuState) {
+        if descriptionIngredientNodeMenu != nil {
+            descriptionIngredientNodeMenu = nil
+            DispatchQueue.main.async {
+                descriptionIngredientNodeMenu = menu
+                syncDescriptionChromeSuppression()
+            }
+        } else {
+            descriptionIngredientNodeMenu = menu
+            syncDescriptionChromeSuppression()
+        }
+    }
+
+    private func timerSpanCommandArgs(_ click: DescriptionNodeClick) -> [String: Any] {
+        var args: [String: Any] = [
+            "duration": click.duration,
+            "type": click.timerType,
+            "value": click.value,
+            "text": click.text.isEmpty ? click.value : click.text,
+        ]
+        if !click.timerId.isEmpty {
+            args["timerId"] = click.timerId
+        }
+        return args
+    }
+
+    private func unlinkDescriptionTimer(_ click: DescriptionNodeClick) {
+        var args = timerSpanCommandArgs(click)
+        args["text"] = click.text.isEmpty ? click.value : click.text
+        descriptionChrome.bridge?.sendCommand(name: "removeTimerMarkup", args: args)
+    }
+
+    private func unlinkDescriptionIngredient(_ click: DescriptionNodeClick) {
+        descriptionChrome.bridge?.sendCommand(
+            name: "removeIngredientMarkup",
+            args: [
+                "ingredientId": click.ingredientId,
+                "displayText": click.text,
+            ]
+        )
+    }
+
+    private func renameDescriptionTimer(_ click: DescriptionNodeClick, name: String) {
+        var args = timerSpanCommandArgs(click)
+        args["name"] = name
+        descriptionChrome.bridge?.sendCommand(name: "renameTimer", args: args)
+    }
+
+    private func updateDescriptionIngredientRatio(_ click: DescriptionNodeClick, ratio: Double) {
+        guard let ingredient = recipe?.ingredients.first(where: { $0.id == click.ingredientId }) else { return }
+        let displayText = DescriptionMarkupFlow.ingredientDisplayText(
+            originalAmount: ingredient.originalAmount,
+            ratio: ratio
+        )
+        descriptionChrome.bridge?.sendCommand(
+            name: "updateIngredientMarkup",
+            args: [
+                "ingredientId": click.ingredientId,
+                "ratio": ratio,
+                "displayText": displayText,
+            ]
+        )
     }
 
     private func scaledServingsCount(base: Int) -> Int {
@@ -608,7 +808,7 @@ struct YDocRecipeDetailView: View {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         let normalized = trimmed.replacingOccurrences(of: ",", with: ".")
-        guard let scaled = Double(normalized), scaled.isFinite else { return }
+        guard let scaled = Double(normalized), scaled > 0, scaled.isFinite else { return }
         guard let original = ingredient.numericValue, original > 0 else { return }
         scaleFactor = scaled / original
         RecipeScaleStorage.saveScaleFactor(recipeId: recipeId, scaleFactor: scaleFactor)
@@ -636,7 +836,10 @@ struct YDocRecipeDetailView: View {
             onTitleBlur: { name in
                 scheduleTitleSave(name, editViewModel: vm)
             },
-            onEditingActiveChanged: { vm.isEditingTitleField = $0 }
+            onEditingActiveChanged: { active in
+                vm.isEditingTitleField = active
+                syncDescriptionChromeSuppression()
+            }
         )
     }
 
@@ -855,7 +1058,7 @@ struct YDocRecipeDetailView: View {
             ingredientIds: [ingredient.id]
         )
         guard !items.isEmpty else {
-            ShoppingFeedback.postStatus(String(localized: "shopping.no-items-to-add"))
+            ShoppingFeedback.postStatus(Bundle.currentLocalizedString("shopping.no-items-to-add"))
             return
         }
         do {
@@ -906,9 +1109,15 @@ private struct RecipeEditHeaderBindable: View {
     var commitTitleNonce: Int
     var onTitleBlur: (String) -> Void
     var onEditingActiveChanged: (Bool) -> Void
+    @Environment(\.locale) private var locale
 
     private var titleUIFont: UIFont {
         AppTypography.uiFont(AppFonts.display, size: AppTypography.recipeTitleSize)
+    }
+
+    private var titlePlaceholder: String {
+        _ = locale
+        return Bundle.currentLocalizedString("edit.name.placeholder")
     }
 
     var body: some View {
@@ -918,7 +1127,7 @@ private struct RecipeEditHeaderBindable: View {
                     initialText: initialTitle,
                     dismissKeyboard: $dismissTitleKeyboard,
                     commitTitleNonce: commitTitleNonce,
-                    placeholder: String(localized: "edit.name.placeholder"),
+                    placeholder: titlePlaceholder,
                     font: titleUIFont,
                     onBlur: onTitleBlur,
                     onEditingActiveChanged: onEditingActiveChanged

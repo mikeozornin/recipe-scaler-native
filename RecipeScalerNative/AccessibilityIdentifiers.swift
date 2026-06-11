@@ -59,6 +59,7 @@ enum AccessibilityIdentifiers {
     static let shoppingCopyAsTextButton = "shopping_copy_as_text_button"
     static let recipeImageUpload = "recipe_image_upload"
     static let recipeTitleKeyboardDone = "recipe_title_keyboard_done"
+    static let descriptionEditorKeyboardDone = "description_editor_keyboard_done"
     static let syncStatusTransport = "sync_status_transport"
     static let mobileTimerPanel = "mobile_timer_panel"
     static let mobileTimerPanelHeader = "mobile_timer_panel_header"

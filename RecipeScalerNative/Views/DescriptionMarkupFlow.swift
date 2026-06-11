@@ -106,6 +106,20 @@ enum DescriptionMarkupFlow {
         }
         return selected / original
     }
+
+    static func ingredientDisplayText(originalAmount: String, ratio: Double) -> String {
+        guard let numeric = parseNumber(originalAmount) else { return originalAmount }
+        return IngredientData.formatScalarNumber(numeric * ratio)
+    }
+
+    static func parseDurationSeconds(_ raw: String) -> Int {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let intValue = Int(trimmed) { return intValue }
+        if let doubleValue = Double(trimmed.replacingOccurrences(of: ",", with: ".")) {
+            return Int(doubleValue.rounded())
+        }
+        return 0
+    }
 }
 
 // MARK: - Timer type sheet
@@ -153,34 +167,32 @@ struct DescriptionTimerTypeSheet: View {
     }
 }
 
-// MARK: - Ingredient picker sheet
+// MARK: - Ingredient markup sheet (picker → ratio in one NavigationStack)
 
-struct DescriptionIngredientPickerSheet: View {
+private enum DescriptionIngredientMarkupRoute: Hashable {
+    case ratio(String)
+}
+
+struct DescriptionIngredientMarkupSheet: View {
     let ingredients: [IngredientData]
     let selectedText: String
-    let onSelect: (IngredientData, Double) -> Void
-    var onNeedsRatio: (IngredientData) -> Void
+    let onComplete: (IngredientData, Double) -> Void
 
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             List(ingredients) { ingredient in
-                Button {
-                    if DescriptionMarkupFlow.shouldPromptRatio(selectedText: selectedText, ingredient: ingredient) {
-                        onNeedsRatio(ingredient)
-                    } else {
-                        onSelect(ingredient, 1.0)
-                        dismiss()
+                if DescriptionMarkupFlow.shouldPromptRatio(selectedText: selectedText, ingredient: ingredient) {
+                    NavigationLink(value: DescriptionIngredientMarkupRoute.ratio(ingredient.id)) {
+                        ingredientRow(ingredient)
                     }
-                } label: {
-                    HStack {
-                        Text(ingredient.name)
-                            .appBody()
-                        Spacer()
-                        Text(ingredientRowAmount(ingredient))
-                            .appBody()
-                            .foregroundStyle(.secondary)
+                } else {
+                    Button {
+                        onComplete(ingredient, 1.0)
+                        dismiss()
+                    } label: {
+                        ingredientRow(ingredient)
                     }
                 }
             }
@@ -193,8 +205,31 @@ struct DescriptionIngredientPickerSheet: View {
                         .appToolbarTextButton()
                 }
             }
+            .navigationDestination(for: DescriptionIngredientMarkupRoute.self) { route in
+                if case .ratio(let ingredientId) = route,
+                   let ingredient = ingredients.first(where: { $0.id == ingredientId }) {
+                    DescriptionIngredientRatioStepView(
+                        ingredient: ingredient,
+                        selectedText: selectedText
+                    ) { ratio in
+                        onComplete(ingredient, ratio)
+                        dismiss()
+                    }
+                }
+            }
         }
         .presentationDetents([.medium, .large])
+    }
+
+    private func ingredientRow(_ ingredient: IngredientData) -> some View {
+        HStack {
+            Text(ingredient.name)
+                .appBody()
+            Spacer()
+            Text(ingredientRowAmount(ingredient))
+                .appBody()
+                .foregroundStyle(.secondary)
+        }
     }
 
     private func ingredientRowAmount(_ ingredient: IngredientData) -> String {
@@ -205,14 +240,10 @@ struct DescriptionIngredientPickerSheet: View {
     }
 }
 
-// MARK: - Ingredient ratio sheet
-
-struct DescriptionIngredientRatioSheet: View {
+private struct DescriptionIngredientRatioStepView: View {
     let ingredient: IngredientData
     let selectedText: String
     let onSelect: (Double) -> Void
-
-    @Environment(\.dismiss) private var dismiss
 
     private var selectedAmount: Double? {
         DescriptionMarkupFlow.parseNumber(selectedText.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -224,35 +255,170 @@ struct DescriptionIngredientRatioSheet: View {
     }
 
     var body: some View {
+        List {
+            Button {
+                onSelect(1.0)
+            } label: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("ingredients.mark-as-100")
+                        .appBody()
+                    Text(ingredient.originalAmount)
+                        .appFootnote()
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if let percent = ratioPercent, let selected = selectedAmount {
+                Button {
+                    if let ratio = DescriptionMarkupFlow.ratio(for: selectedText, ingredient: ingredient) {
+                        onSelect(ratio)
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(String(format: Bundle.currentLocalizedString("ingredients.mark-as-percent"), percent))
+                            .appBody()
+                        Text(String(format: "%g", selected))
+                            .appFootnote()
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .localizedNavigationTitle("editor.mark-as-ingredient")
+        .navigationBarTitleDisplayMode(.inline)
+        .appListBodyTypography()
+    }
+}
+
+// MARK: - Existing node action menus (edit mode)
+
+struct DescriptionTimerNodeMenuState: Identifiable {
+    let presentationId: UInt
+    let click: DescriptionNodeClick
+    let reference: RecipeDescriptionTimerReference
+
+    var id: String { "\(presentationId)-\(click.timerMatchKey)" }
+}
+
+struct DescriptionIngredientNodeMenuState: Identifiable {
+    let presentationId: UInt
+    let click: DescriptionNodeClick
+    let ingredient: IngredientData
+
+    var id: String { "\(presentationId)-\(click.ingredientId)" }
+
+    var ratioLabel: String? {
+        guard let ratio = Double(click.ratio.replacingOccurrences(of: ",", with: ".")),
+              ratio != 1.0 else { return nil }
+        return String(format: Bundle.currentLocalizedString("ingredients.mark-as-percent"), Int((ratio * 100).rounded()))
+    }
+
+    var menuSubtitle: String {
+        if let ratioLabel {
+            return "\(ingredient.name), \(ratioLabel)"
+        }
+        return ingredient.name
+    }
+}
+
+private enum DescriptionTimerNodeRoute: Hashable {
+    case rename
+}
+
+struct DescriptionTimerNodeFlowSheet: View {
+    let menu: DescriptionTimerNodeMenuState
+    let onStart: () -> Void
+    let onRenameSave: (String) -> Void
+    let onUnlink: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
         NavigationStack {
             List {
                 Button {
-                    onSelect(1.0)
+                    onStart()
                     dismiss()
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("ingredients.mark-as-100")
-                            .appBody()
-                        Text(ingredient.originalAmount)
+                        HStack(spacing: 8) {
+                            AppSymbol.toolbarImage("alarm")
+                                .foregroundStyle(.primary)
+                                .frame(width: 20, height: 20)
+                            Text("Start timer")
+                                .appHeadline()
+                                .foregroundStyle(.primary)
+                        }
+                        Text(menu.reference.menuSubtitle)
                             .appFootnote()
                             .foregroundStyle(.secondary)
                     }
                 }
 
-                if let percent = ratioPercent, let selected = selectedAmount {
-                    Button {
-                        if let ratio = DescriptionMarkupFlow.ratio(for: selectedText, ingredient: ingredient) {
-                            onSelect(ratio)
-                            dismiss()
-                        }
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(String(format: String(localized: "ingredients.mark-as-percent"), percent))
-                                .appBody()
-                            Text(String(format: "%g", selected))
-                                .appFootnote()
-                                .foregroundStyle(.secondary)
-                        }
+                NavigationLink(value: DescriptionTimerNodeRoute.rename) {
+                    Text("timers.rename")
+                        .appBody()
+                }
+
+                Button(role: .destructive) {
+                    onUnlink()
+                    dismiss()
+                } label: {
+                    Text("timers.unlink")
+                        .appBody()
+                }
+            }
+            .localizedNavigationTitle("editor.mark-as-timer")
+            .navigationBarTitleDisplayMode(.inline)
+            .appListBodyTypography()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("edit.cancel") { dismiss() }
+                        .appToolbarTextButton()
+                }
+            }
+            .navigationDestination(for: DescriptionTimerNodeRoute.self) { route in
+                if case .rename = route {
+                    DescriptionTimerRenameStepView(initialName: menu.click.name) { name in
+                        onRenameSave(name)
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+}
+
+private enum DescriptionIngredientNodeRoute: Hashable {
+    case changeRatio
+}
+
+struct DescriptionIngredientNodeFlowSheet: View {
+    let menu: DescriptionIngredientNodeMenuState
+    let onRatioSave: (Double) -> Void
+    let onUnlink: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                NavigationLink(value: DescriptionIngredientNodeRoute.changeRatio) {
+                    Text("ingredients.change-ratio")
+                        .appBody()
+                }
+
+                Button(role: .destructive) {
+                    onUnlink()
+                    dismiss()
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("timers.unlink-from-value")
+                            .appBody()
+                        Text(menu.menuSubtitle)
+                            .appFootnote()
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -265,7 +431,107 @@ struct DescriptionIngredientRatioSheet: View {
                         .appToolbarTextButton()
                 }
             }
+            .navigationDestination(for: DescriptionIngredientNodeRoute.self) { route in
+                if case .changeRatio = route {
+                    DescriptionIngredientExistingRatioStepView(
+                        ingredient: menu.ingredient,
+                        currentRatio: Double(menu.click.ratio.replacingOccurrences(of: ",", with: ".")) ?? 1
+                    ) { ratio in
+                        onRatioSave(ratio)
+                        dismiss()
+                    }
+                }
+            }
         }
         .presentationDetents([.medium])
+    }
+}
+
+private struct DescriptionIngredientExistingRatioStepView: View {
+    let ingredient: IngredientData
+    let currentRatio: Double
+    let onSave: (Double) -> Void
+
+    @State private var amountText = ""
+
+    private var originalAmount: Double? {
+        DescriptionMarkupFlow.parseNumber(ingredient.originalAmount)
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                HStack(spacing: 8) {
+                    TextField("ingredients.ratio-placeholder", text: $amountText)
+                        .font(AppTypography.body)
+                        .keyboardType(.decimalPad)
+                    if let originalAmount {
+                        Text(String(format: Bundle.currentLocalizedString("ingredients.of-original"), IngredientData.formatScalarNumber(originalAmount)))
+                            .appFootnote()
+                            .foregroundStyle(.secondary)
+                            .fixedSize()
+                    }
+                }
+            }
+        }
+        .appListBodyTypography()
+        .localizedNavigationTitle("ingredients.change-ratio")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("edit.done") { save() }
+                    .appToolbarConfirmButton()
+                    .disabled(!canSave)
+            }
+        }
+        .onAppear {
+            if let originalAmount {
+                amountText = IngredientData.formatScalarNumber(originalAmount * currentRatio)
+            }
+        }
+    }
+
+    private var canSave: Bool {
+        guard let originalAmount, originalAmount > 0,
+              let entered = DescriptionMarkupFlow.parseNumber(amountText),
+              entered > 0 else { return false }
+        return true
+    }
+
+    private func save() {
+        guard let originalAmount, originalAmount > 0,
+              let entered = DescriptionMarkupFlow.parseNumber(amountText),
+              entered > 0 else { return }
+        onSave(entered / originalAmount)
+    }
+}
+
+private struct DescriptionTimerRenameStepView: View {
+    let initialName: String
+    let onSave: (String) -> Void
+
+    @State private var name = ""
+
+    var body: some View {
+        Form {
+            TextField("timers.timer-name", text: $name)
+                .font(AppTypography.body)
+        }
+        .localizedNavigationTitle("timers.rename")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("edit.done") {
+                    let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
+                    onSave(trimmed)
+                }
+                .appToolbarConfirmButton()
+                .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .onAppear {
+            name = initialName
+        }
     }
 }

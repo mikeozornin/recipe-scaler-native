@@ -72,6 +72,7 @@ struct DescriptionFormattingBar: View {
                     isActive: false,
                     isEnabled: selection.canMarkTimer
                 ) {
+                    bridge.sendCommand(name: "prepareMarkupSelection")
                     onMarkTimer?()
                 }
 
@@ -81,6 +82,7 @@ struct DescriptionFormattingBar: View {
                     isActive: false,
                     isEnabled: selection.canMarkIngredient
                 ) {
+                    bridge.sendCommand(name: "prepareMarkupSelection")
                     onMarkIngredient?()
                 }
 
@@ -119,8 +121,10 @@ struct DescriptionFormattingBar: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: systemName)
-                .font(.body.weight(.semibold))
+            AppSymbol.toolbarImage(systemName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: AppToolbarStyle.iconSide, height: AppToolbarStyle.iconSide)
                 .frame(width: 40, height: 36)
                 .foregroundStyle(isActive ? accentColor : Color.primary)
                 .background(

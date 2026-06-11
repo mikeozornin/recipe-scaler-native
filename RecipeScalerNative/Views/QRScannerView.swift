@@ -107,13 +107,13 @@ struct QRScannerView: View {
     private func errorDescription(_ error: QRScannerError) -> String {
         switch error {
         case .permissionDenied:
-            return String(localized: "To scan QR codes, please allow camera access in Settings.")
+            return String(localized: "qr-scanner.error.permission-denied")
         case .noCamera:
-            return String(localized: "We couldn't find a camera on your device.")
+            return String(localized: "qr-scanner.error.no-camera")
         case .notReadable:
-            return String(localized: "The camera couldn't be accessed. It might be in use by another app.")
+            return String(localized: "qr-scanner.error.not-readable")
         case .unknown:
-            return String(localized: "An unexpected error occurred. Please try again.")
+            return String(localized: "qr-scanner.error.unknown")
         }
     }
 }

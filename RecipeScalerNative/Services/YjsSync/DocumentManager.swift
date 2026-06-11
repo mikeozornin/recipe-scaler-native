@@ -295,10 +295,10 @@ actor DocumentManager {
     }
 
     func updateRecipeServings(recipeId: String, servings: Int) async throws {
-        guard servings >= 1 else { throw RecipeEditError.invalidServings }
+        let capped = max(1, min(999, servings))
         // Web Yjs stores servings as JS number (float). Yrs `Y_JSON_INT` is not read by `normalizeServingsValue`.
         try await mutateRecipe(recipeId: recipeId) { map, txn in
-            map.insert(key: "servings", value: .double(Double(servings)), txn: txn)
+            map.insert(key: "servings", value: .double(Double(capped)), txn: txn)
         }
     }
 

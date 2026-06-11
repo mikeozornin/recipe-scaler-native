@@ -48,6 +48,7 @@ struct DescriptionEditorView: View {
                         AppLabel.make(String(localized: "description.editor.error.title"), symbol: "exclamationmark.triangle")
                     } description: {
                         Text(message)
+                            .appBody()
                     }
                 }
             }
@@ -139,7 +140,7 @@ struct DescriptionEditorEntrySection: View {
                 StepsSection(htmlContent: description, accentColor: accentColor)
             } else {
                 Text(String(localized: "description.editor.empty"))
-                    .font(AppTypography.subheadline)
+                    .appBody()
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
             }

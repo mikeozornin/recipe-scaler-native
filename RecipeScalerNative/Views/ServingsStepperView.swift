@@ -8,8 +8,8 @@ struct ServingsStepperView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(String(localized: "edit.servings"))
-                .font(AppTypography.body)
+            Text("edit.servings")
+                .appBody()
             Spacer()
             Button {
                 servings = max(1, servings - 1)

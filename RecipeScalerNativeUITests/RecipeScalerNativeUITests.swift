@@ -41,6 +41,39 @@ final class RecipeScalerNativeUITests: XCTestCase {
         XCTAssertTrue(startButton.frame.height >= 40, "Start timer control should be at least ~44pt tap height")
     }
 
+    func testDescriptionKeyboardDoneHidesFormattingBar() throws {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "ui-testing",
+            "-SkipSplash=1",
+            "-OpenRecipeId=7daed53b-5e79-42e8-bd9a-bc74deea712d",
+            "-StartInEditMode=1",
+            "-StartDescriptionEdit=1",
+        ]
+        app.launch()
+
+        let formattingBar = app.otherElements["description_formatting_bar"]
+        XCTAssertTrue(
+            formattingBar.waitForExistence(timeout: 20),
+            "Formatting bar should appear when description editor is focused"
+        )
+
+        let keyboardDone = app.buttons[AccessibilityIdentifiers.descriptionEditorKeyboardDone]
+        let toolbarDone = app.toolbars.buttons["Done"].firstMatch
+        if keyboardDone.waitForExistence(timeout: 3) {
+            keyboardDone.tap()
+        } else if toolbarDone.waitForExistence(timeout: 3) {
+            toolbarDone.tap()
+        } else {
+            XCTFail("Keyboard Done button not found (description_editor_keyboard_done or toolbar Done)")
+        }
+
+        XCTAssertFalse(
+            formattingBar.waitForExistence(timeout: 3),
+            "Formatting bar should hide after keyboard Done"
+        )
+    }
+
     func testOpenRecipeEnterEditAndDoneWithoutCrash() throws {
         let app = XCUIApplication()
         app.launch()
