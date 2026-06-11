@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Paid Apple Developer account: optional for simulator/dev; portal checklist for production — [docs/PAID-APPLE-DEVELOPER-REQUIRED.md](docs/PAID-APPLE-DEVELOPER-REQUIRED.md)
+- Paid Apple Developer account: optional for simulator/dev; portal checklist for production — [PAID-APPLE-DEVELOPER-REQUIRED.md](PAID-APPLE-DEVELOPER-REQUIRED.md)
 - macOS with Xcode 16+
 - iOS 17+ device or simulator
 - Rust toolchain (for building yrs XCFramework)
@@ -218,7 +218,7 @@ xcodebuild test -scheme RecipeScalerNative \
 
 ### Phase 3 — native editing (manual)
 
-Requires backend + web client. Full matrix: [`specs/002-native-editing/quickstart.md`](specs/002-native-editing/quickstart.md).
+Requires backend + web client. Full matrix: [`specs/002-native-editing/quickstart.md`](../specs/002-native-editing/quickstart.md).
 
 1. Sign in on iOS (seed phrase) and open a **v3** recipe → **Edit** → change name/servings → verify on web within ~5 s.
 2. Open **v1/v2** recipe → legacy banner, no **Edit** button; scale slider still works locally.
