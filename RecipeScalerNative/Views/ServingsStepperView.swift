@@ -21,7 +21,7 @@ struct ServingsStepperView: View {
             .buttonStyle(.borderless)
 
             Text("\(servings)")
-                .font(AppTypography.title3)
+                .appHeadline()
                 .foregroundStyle(accentColor)
                 .frame(minWidth: 32)
 

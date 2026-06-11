@@ -76,14 +76,14 @@ struct AccountView: View {
                     .ignoresSafeArea()
             }
             .confirmationDialog(
-                String(localized: "account.logout.confirm"),
+                Bundle.currentLocalizedString("account.logout.confirm"),
                 isPresented: $showingLogoutConfirmation,
                 titleVisibility: .visible
             ) {
-                Button(String(localized: "account.logout"), role: .destructive) {
+                Button(Bundle.currentLocalizedString("account.logout"), role: .destructive) {
                     Task { @MainActor in await viewModel.logout(syncService: syncService) }
                 }
-                Button(String(localized: "common.cancel"), role: .cancel) { }
+                Button(Bundle.currentLocalizedString("common.cancel"), role: .cancel) { }
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.accountRoot)
             .task {
@@ -116,7 +116,7 @@ struct AccountView: View {
                             .font(AppTypography.body)
                     }
                     .buttonStyle(.borderless)
-                    .accessibilityLabel(String(localized: "account.logout"))
+                    .accessibilityLabel(Bundle.currentLocalizedString("account.logout"))
                 }
             }
 

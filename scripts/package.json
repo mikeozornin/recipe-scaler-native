@@ -3,9 +3,12 @@
   "private": true,
   "description": "Dev tooling for native app asset scripts",
   "scripts": {
-    "typograf": "bun run typograf.mjs"
+    "typograf": "bun run typograf.mjs",
+    "build:yjs-bundle": "node build-yjs-bundle.mjs"
   },
   "dependencies": {
-    "svg-outline-stroke": "^1.3.1"
+    "esbuild": "^0.25.8",
+    "svg-outline-stroke": "^1.3.1",
+    "yjs": "14.0.0-16"
   }
 }

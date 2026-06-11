@@ -39,13 +39,13 @@ struct DescriptionEditorView: View {
                     .opacity(bridge.phase == .ready ? 1 : 0.35)
 
                 if bridge.phase == .loading {
-                    ProgressView(String(localized: "description.editor.loading"))
+                    ProgressView("description.editor.loading")
                         .padding()
                 }
 
                 if case .error(let message) = bridge.phase {
                     ContentUnavailableView {
-                        AppLabel.make(String(localized: "description.editor.error.title"), symbol: "exclamationmark.triangle")
+                        AppLabel.make("description.editor.error.title", symbol: "exclamationmark.triangle")
                     } description: {
                         Text(message)
                             .appBody()
@@ -53,17 +53,17 @@ struct DescriptionEditorView: View {
                 }
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.descriptionEditor)
-            .navigationTitle(String(localized: "description.editor.title"))
+            .localizedNavigationTitle("description.editor.title")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "edit.cancel")) {
+                    Button("edit.cancel") {
                         Task { await closeEditor() }
                     }
                     .appToolbarTextButton()
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "edit.done")) {
+                    Button("edit.done") {
                         Task { await closeEditor() }
                     }
                     .appToolbarConfirmButton()
@@ -73,13 +73,13 @@ struct DescriptionEditorView: View {
                 }
             }
             .alert(
-                String(localized: "description.editor.syncInFlight.title"),
+                "description.editor.syncInFlight.title",
                 isPresented: Binding(
                     get: { dismissBlockedMessage != nil },
                     set: { if !$0 { dismissBlockedMessage = nil } }
                 )
             ) {
-                Button(String(localized: "edit.error.ok"), role: .cancel) {}
+                Button("edit.error.ok", role: .cancel) {}
             } message: {
                 Text(dismissBlockedMessage ?? "")
             }
@@ -100,19 +100,19 @@ struct DescriptionEditorView: View {
         case .idle, .synced:
             EmptyView()
         case .pendingLocal:
-            Text(String(localized: "edit.sync.pending"))
+            Text("edit.sync.pending")
                 .appFootnote()
                 .foregroundStyle(.secondary)
         case .syncing:
-            Text(String(localized: "edit.sync.syncing"))
+            Text("edit.sync.syncing")
                 .appFootnote()
                 .foregroundStyle(.secondary)
         case .queued:
-            Text(String(localized: "edit.sync.queued"))
+            Text("edit.sync.queued")
                 .appFootnote()
                 .foregroundStyle(.secondary)
         case .error:
-            Text(String(localized: "edit.sync.error"))
+            Text("edit.sync.error")
                 .appFootnote()
                 .foregroundStyle(.red)
         }
@@ -120,7 +120,7 @@ struct DescriptionEditorView: View {
 
     private func closeEditor() async {
         if syncState == .syncing || syncState == .pendingLocal {
-            dismissBlockedMessage = String(localized: "description.editor.syncInFlight.message")
+            dismissBlockedMessage = Bundle.currentLocalizedString("description.editor.syncInFlight.message")
             return
         }
         await bridge.flushPendingSync()
@@ -139,14 +139,14 @@ struct DescriptionEditorEntrySection: View {
             if let description = recipe.description, !description.isEmpty {
                 StepsSection(htmlContent: description, accentColor: accentColor)
             } else {
-                Text(String(localized: "description.editor.empty"))
+                Text("description.editor.empty")
                     .appBody()
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
             }
 
             Button(action: onEdit) {
-                AppLabel.make(String(localized: "description.editor.open"), symbol: "square.and.pencil")
+                AppLabel.make("description.editor.open", symbol: "square.and.pencil")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)

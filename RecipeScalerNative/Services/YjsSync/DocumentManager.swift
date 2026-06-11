@@ -231,6 +231,29 @@ actor DocumentManager {
            !html.isEmpty {
             recipe = recipe.replacing(description: html)
         }
+        // #region agent log
+        if recipeId == "7daed53b-5e79-42e8-bd9a-bc74deea712d" {
+            let linkInXml = xmlSnapshot?.contains("link") == true || xmlSnapshot?.contains("href") == true
+            let html = recipe.description ?? ""
+            var rendered: [String: String] = [
+                "recipeId": recipeId,
+                "xmlLen": String(xmlSnapshot?.count ?? 0),
+                "htmlLen": String(html.count),
+                "linkMarkInXml": String(linkInXml),
+                "linkCountInHtml": String(max(0, html.components(separatedBy: "<a ").count - 1)),
+                "hasHref": String(html.contains("href=")),
+            ]
+            // U1: capture the actual rendered text so we can verify the new web
+            // phrase is present in what native reads (length alone is ambiguous).
+            rendered.merge(CursorDebugIngestLog.fingerprint(html)) { _, new in new }
+            CursorDebugIngestLog.write(
+                hypothesisId: "U1",
+                location: "DocumentManager.swift:readRecipeData",
+                message: "description_rendered",
+                data: rendered
+            )
+        }
+        // #endregion
         return recipe
     }
 
@@ -993,9 +1016,41 @@ actor DocumentManager {
             throw RecipeEditError.legacyFormatReadOnly
         }
 
-        try await applyUpdateToDoc(doc: doc, key: key, data: update, lastSyncedAt: nil)
+        // The WebView now emits incremental, identity-preserving 'reconcile' diffs
+        // (description-editor-bridge.js). No oversized-update backstop needed: the
+        // old >2048 guard existed only to block the full clearFragment()+reinsert
+        // html-push that caused 5× duplication, which no longer happens.
+        do {
+            try await doc.applyLocalUpdate(update)
+        } catch {
+            Self.logger.warning("applyDescriptionEditorUpdate failed for \(key), deleting corrupted snapshot")
+            docs.removeValue(forKey: key)
+            observerTokens.removeValue(forKey: key)
+            try? await store.deleteSnapshot(docKey: key)
+            throw error
+        }
+        if let state = await doc.encodeStateAsUpdate() {
+            try? await store.saveSnapshot(docKey: key, state: state, lastSyncedAt: nil)
+        }
         notifyRecipeChangedIfNeeded(recipeId: recipeId)
-        await onLocalRecipeUpdate?(recipeId, update)
+
+        let yrsUpdate = await doc.consumePendingLocalUpdates()
+        let outbound = yrsUpdate ?? update
+        // #region agent log
+        CursorDebugIngestLog.write(
+            hypothesisId: "H4",
+            location: "DocumentManager.swift:applyDescriptionEditorUpdate",
+            message: "editor_sync_payload",
+            data: [
+                "recipeId": recipeId,
+                "rawWebViewBytes": String(update.count),
+                "yrsObserverBytes": String(yrsUpdate?.count ?? 0),
+                "outboundBytes": String(outbound.count),
+                "usedYrsObserver": String(yrsUpdate != nil),
+            ]
+        )
+        // #endregion
+        await onLocalRecipeUpdate?(recipeId, outbound)
     }
 
     private func deliverPendingLocalUpdate(recipeId: String) async {

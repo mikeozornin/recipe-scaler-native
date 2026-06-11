@@ -58,6 +58,14 @@ sim_launch() {
   sim_terminate
   local log="${LOG_FILE:-$ROOT/.debug-session.ndjson}"
   rm -f "$log"
+  local container
+  container="$(xcrun simctl get_app_container "$SIM_ID" "$BUNDLE_ID" data 2>/dev/null || true)"
+  if [[ -n "$container" ]]; then
+    rm -f \
+      "$container/Library/Application Support/debug-session.ndjson" \
+      "$container/Library/Caches/debug-session.ndjson" \
+      "$container/Library/Caches/$BUNDLE_ID/debug-session.ndjson" 2>/dev/null || true
+  fi
   # App sandbox cannot write to host paths; logs live under Library/Caches (see AgentSyncDebugLog).
   unset AGENT_DEBUG_LOG
   unset SIMCTL_CHILD_AGENT_DEBUG_LOG

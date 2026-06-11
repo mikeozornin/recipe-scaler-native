@@ -1,0 +1,249 @@
+Opening database at /var/mobile/Containers/Data/Application/D265E5B3-E929-42E9-A440-6234004AAB71/Library/Application Support/ydoc_snapshots.sqlite
+[sync] {"message":"service_init","hypothesisId":"sync","timestamp":1781211961175,"data":{"topic":"sync","instanceId":"75302244-674E-4276-9667-3A47C43E33BC"},"sessionId":"sync-connection-native","location":"YjsSyncService.init"}
+Couldn't read values in CFPrefsPlistSource<0x106d71e80> (Domain: group.ru.recipescaler.RecipeScalerNative, User: kCFPreferencesAnyUser, ByHost: Yes, Container: (null), Contents Need Refresh: Yes): Using kCFPreferencesAnyUser with a container is only allowed for System Containers, detaching from cfprefsd
+[sync] {"message":"contentview_init","hypothesisId":"sync","timestamp":1781211961178,"data":{"topic":"sync"},"sessionId":"sync-connection-native","location":"ContentView.init"}
+App is being debugged, do not track this hang
+Hang detected: 7.97s (debugger attached, not reporting)
+[sync] {"hypothesisId":"sync","sessionId":"sync-connection-native","timestamp":1781211970512,"data":{"userId":"cfcd839f-56f2-4411-9632-7795b75f96d1","topic":"sync"},"location":"ContentView.swift:appShell","message":"app_shell_start"}
+[sync] {"hypothesisId":"sync","sessionId":"sync-connection-native","timestamp":1781211970515,"data":{"hypothesisId":"D","priorUserId":"nil","userId":"cfcd839f-56f2-4411-9632-7795b75f96d1","topic":"sync","instanceId":"75302244-674E-4276-9667-3A47C43E33BC","connectionState":"disconnected"},"location":"YjsSyncService.swift:start","message":"start_enter"}
+Starting YjsSync for user cfcd839f-56f2-4411-9632-7795b75f96d1
+[sync] {"hypothesisId":"sync","sessionId":"sync-connection-native","message":"connect_begin","timestamp":1781211970518,"location":"YjsSyncService.swift:connectSocket","data":{"userId":"cfcd839f-56f2-4411-9632-7795b75f96d1","hypothesisId":"B","sessionId":"1B0A3F9D-9A1E-4B49-844A-C3D288D6DB3C","transportMode":"pollingAndWebsocket","baseURL":"https:\/\/recipe-scaler.ru","topic":"sync"}}
+[sync] {"hypothesisId":"sync","sessionId":"sync-connection-native","message":"state_change","timestamp":1781211970520,"location":"YjsSyncService.setConnectionState","data":{"from":"disconnected","userId":"cfcd839f-56f2-4411-9632-7795b75f96d1","reason":"connect_socket_called","isSocketAuthenticated":"false","sessionId":"1B0A3F9D-9A1E-4B49-844A-C3D288D6DB3C","socketStatus":"connecting","topic":"sync","to":"connecting"}}
+[sync] {"hypothesisId":"sync","sessionId":"sync-connection-native","message":"socket_session_begun","timestamp":1781211970715,"location":"YjsSyncService.swift:start","data":{"userId":"cfcd839f-56f2-4411-9632-7795b75f96d1","hypothesisId":"D","socketStatus":"connecting","isSameUser":"false","connectionState":"connecting","topic":"sync"}}
+App is being debugged, do not track this hang
+Hang detected: 0.47s (debugger attached, not reporting)
+App is being debugged, do not track this hang
+Hang detected: 0.46s (debugger attached, not reporting)
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:collection from SQLite snapshot (44735 bytes)
+Parsed 93 collection entries
+Collection refreshed: 46 active entries (total 93)
+{"timestamp":1781211971960,"data":{"activeEntries":"46","totalSnapshots":"48","connected":"false","recipeSnapshots":"46"},"hypothesisId":"A","location":"YjsSyncService.swift:refreshCollectionEntries","sessionId":"sync-connection-native","message":"local_snapshot_inventory"}
+Loaded collection from local snapshot
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:shoppingList from SQLite snapshot (8225 bytes)
+Loaded shopping list from local snapshot
+[sync] {"location":"YjsSyncService.swift:start","timestamp":1781211971966,"data":{"userId":"cfcd839f-56f2-4411-9632-7795b75f96d1","hypothesisId":"D","topic":"sync","connectionState":"connecting"},"message":"local_snapshots_loaded","sessionId":"sync-connection-native","hypothesisId":"sync"}
+Socket.IO connected
+[sync] {"message":"engine_connected","sessionId":"sync-connection-native","timestamp":1781211972444,"hypothesisId":"sync","data":{"hypothesisId":"C","sessionId":"1B0A3F9D-9A1E-4B49-844A-C3D288D6DB3C","socketStatus":"connected","topic":"sync"},"location":"YjsSyncService.swift:socket.connect"}
+[sync] {"location":"YjsSyncService.setConnectionState","data":{"to":"connecting","from":"connecting","topic":"sync","userId":"cfcd839f-56f2-4411-9632-7795b75f96d1","sessionId":"1B0A3F9D-9A1E-4B49-844A-C3D288D6DB3C","reason":"socket.connect","isSocketAuthenticated":"false","socketStatus":"connected"},"message":"state_change","hypothesisId":"sync","sessionId":"sync-connection-native","timestamp":1781211972445}
+Emitted auth for user cfcd839f-56f2-4411-9632-7795b75f96d1
+[sync] {"location":"YjsSyncService.connectionTrace","timestamp":1781211972452,"data":{"topic":"sync","isSocketAuthenticated":"false","socketStatus":"connected","connectionState":"connecting","hasRequestedCollectionLoad":"false","transportMode":"pollingAndWebsocket"},"message":"heartbeat","sessionId":"sync-connection-native","hypothesisId":"sync"}
+Socket auth ack timeout; loading collection after delay
+[sync] {"location":"YjsSyncService.swift:scheduleCollectionLoadAfterAuth","timestamp":1781211972452,"data":{"topic":"sync","hypothesisId":"G","socketStatus":"connected"},"message":"auth_ack_timeout_fallback","sessionId":"sync-connection-native","hypothesisId":"sync"}
+[sync] {"location":"YjsSyncService.setConnectionState","timestamp":1781211972453,"data":{"from":"connecting","userId":"cfcd839f-56f2-4411-9632-7795b75f96d1","sessionId":"1B0A3F9D-9A1E-4B49-844A-C3D288D6DB3C","isSocketAuthenticated":"true","reason":"authenticated","to":"connected","socketStatus":"connected","topic":"sync"},"message":"state_change","sessionId":"sync-connection-native","hypothesisId":"sync"}
+[sync] {"location":"YjsSyncService.swift:markAuthenticatedAndLoadCollection","timestamp":1781211972453,"data":{"topic":"sync","hypothesisId":"C","sessionId":"1B0A3F9D-9A1E-4B49-844A-C3D288D6DB3C"},"message":"collection_load_begin","sessionId":"sync-connection-native","hypothesisId":"sync"}
+Emitted load_document for collection
+Emitted load_document for shopping list
+Reindexing 46 recipe(s); stale removed: 0
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:b34477bf-471d-4bf2-adc9-8ffed4e1208d from SQLite snapshot (1788 bytes)
+{"sessionId":"sync-connection-native","data":{"hasRecipe":"true","recipeId":"b34477bf-471d-4bf2-adc9-8ffed4e1208d","ingredientCount":"7","version":"v3","xmlLen":"145","ms":"1"},"message":"map_read_done","hypothesisId":"C","timestamp":1781211972970,"location":"DocumentManager.swift:readRecipeData"}
+App is being debugged, do not track this hang
+Hang detected: 2.65s (debugger attached, not reporting)
+Loaded 0 active timer(s) from server
+document_loaded: __rs_shopping_list__, 8225 bytes
+document_loaded: collection, 44735 bytes
+collection document_loaded: 44735 bytes
+Socket.IO authenticated (server ack)
+[sync] {"sessionId":"sync-connection-native","location":"YjsSyncService.swift:socket.connected","hypothesisId":"sync","data":{"sessionId":"1B0A3F9D-9A1E-4B49-844A-C3D288D6DB3C","hypothesisId":"C","topic":"sync"},"message":"auth_ack","timestamp":1781211975925}
+[sync] {"sessionId":"sync-connection-native","location":"YjsSyncService.setConnectionState","hypothesisId":"sync","data":{"isSocketAuthenticated":"true","reason":"authenticated","sessionId":"1B0A3F9D-9A1E-4B49-844A-C3D288D6DB3C","userId":"cfcd839f-56f2-4411-9632-7795b75f96d1","to":"connected","from":"connected","topic":"sync","socketStatus":"connected"},"message":"state_change","timestamp":1781211975930}
+[sync] {"location":"YjsSyncService.swift:markAuthenticatedAndLoadCollection","data":{"sessionId":"1B0A3F9D-9A1E-4B49-844A-C3D288D6DB3C","hypothesisId":"C","topic":"sync"},"message":"collection_load_begin","timestamp":1781211975930,"sessionId":"sync-connection-native","hypothesisId":"sync"}
+document_loaded: cfcd839f-56f2-4411-9632-7795b75f96d1:shoppingList, 8225 bytes
+document_loaded: cfcd839f-56f2-4411-9632-7795b75f96d1:collection, 44735 bytes
+Replaced doc cfcd839f-56f2-4411-9632-7795b75f96d1:shoppingList from server snapshot (8225 bytes)
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:7daed53b-5e79-42e8-bd9a-bc74deea712d from SQLite snapshot (34732 bytes)
+Replaced doc cfcd839f-56f2-4411-9632-7795b75f96d1:collection from server snapshot (44735 bytes)
+Parsed 93 collection entries
+{"location":"DocumentManager.swift:readRecipeData","message":"map_read_done","sessionId":"sync-connection-native","timestamp":1781211975942,"data":{"version":"v3","xmlLen":"9524","ms":"2","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","hasRecipe":"true","ingredientCount":"7"},"hypothesisId":"C"}
+{"message":"description_rendered","data":{"htmlLen":"9524","linkCountInHtml":"3","linkMarkInXml":"true","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","debugSessionId":"d19d57","hasHref":"true","xmlLen":"9524"},"hypothesisId":"H3","location":"DocumentManager.swift:readRecipeData","timestamp":1781211975950,"sessionId":"sync-connection-native"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:297500d2-6ae6-4f95-964b-b3aad2022b10 from SQLite snapshot (12667 bytes)
+{"sessionId":"sync-connection-native","location":"DocumentManager.swift:readRecipeData","timestamp":1781211975993,"hypothesisId":"C","data":{"hasRecipe":"true","recipeId":"297500d2-6ae6-4f95-964b-b3aad2022b10","version":"v3","ingredientCount":"9","xmlLen":"2337","ms":"0"},"message":"map_read_done"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:08f41221-cfcf-4561-9305-4436484fe6e3 from SQLite snapshot (11723 bytes)
+{"location":"DocumentManager.swift:readRecipeData","sessionId":"sync-connection-native","message":"map_read_done","hypothesisId":"C","timestamp":1781211976023,"data":{"hasRecipe":"true","version":"v3","recipeId":"08f41221-cfcf-4561-9305-4436484fe6e3","ms":"0","xmlLen":"2829","ingredientCount":"2"}}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:7b1b8dab-55eb-437e-aa0a-c31fbca15307 from SQLite snapshot (11835 bytes)
+{"hypothesisId":"C","timestamp":1781211976054,"message":"map_read_done","sessionId":"sync-connection-native","location":"DocumentManager.swift:readRecipeData","data":{"hasRecipe":"true","ms":"0","version":"v3","ingredientCount":"10","recipeId":"7b1b8dab-55eb-437e-aa0a-c31fbca15307","xmlLen":"1284"}}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:612d5d91-db7c-41e8-bb2f-5f34c028b808 from SQLite snapshot (14787 bytes)
+{"hypothesisId":"C","timestamp":1781211976074,"sessionId":"sync-connection-native","message":"map_read_done","location":"DocumentManager.swift:readRecipeData","data":{"hasRecipe":"true","version":"v3","xmlLen":"3101","ingredientCount":"10","ms":"0","recipeId":"612d5d91-db7c-41e8-bb2f-5f34c028b808"}}
+Collection refreshed: 46 active entries (total 93)
+{"data":{"activeEntries":"46","recipeSnapshots":"46","totalSnapshots":"48","connected":"true"},"hypothesisId":"A","sessionId":"sync-connection-native","message":"local_snapshot_inventory","timestamp":1781211976078,"location":"YjsSyncService.swift:refreshCollectionEntries"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:aa532589-47e6-42f8-a35c-6b0a50bc93da from SQLite snapshot (8612 bytes)
+{"sessionId":"sync-connection-native","data":{"hasRecipe":"true","version":"v3","recipeId":"aa532589-47e6-42f8-a35c-6b0a50bc93da","ingredientCount":"9","xmlLen":"0","ms":"0"},"message":"map_read_done","location":"DocumentManager.swift:readRecipeData","hypothesisId":"C","timestamp":1781211976102}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:20a76695-0243-4129-b033-2bd7f0dbfcd0 from SQLite snapshot (14895 bytes)
+{"timestamp":1781211976106,"message":"map_read_done","data":{"ms":"0","recipeId":"20a76695-0243-4129-b033-2bd7f0dbfcd0","ingredientCount":"11","version":"v3","hasRecipe":"true","xmlLen":"3923"},"hypothesisId":"C","location":"DocumentManager.swift:readRecipeData","sessionId":"sync-connection-native"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:aedc31b5-7772-4a58-ad1c-01e668ef7c0d from SQLite snapshot (16023 bytes)
+{"location":"DocumentManager.swift:readRecipeData","message":"map_read_done","data":{"xmlLen":"2444","recipeId":"aedc31b5-7772-4a58-ad1c-01e668ef7c0d","hasRecipe":"true","ingredientCount":"20","ms":"0","version":"v3"},"sessionId":"sync-connection-native","hypothesisId":"C","timestamp":1781211976129}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:2cdd8db0-ceee-4337-8564-aced4a0ba264 from SQLite snapshot (12591 bytes)
+{"message":"map_read_done","data":{"ms":"0","recipeId":"2cdd8db0-ceee-4337-8564-aced4a0ba264","ingredientCount":"13","version":"v3","hasRecipe":"true","xmlLen":"1606"},"hypothesisId":"C","location":"DocumentManager.swift:readRecipeData","timestamp":1781211976151,"sessionId":"sync-connection-native"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:7a1b8880-8cb8-4b97-ad8d-d97aecc8ac6c from SQLite snapshot (12083 bytes)
+{"data":{"recipeId":"7a1b8880-8cb8-4b97-ad8d-d97aecc8ac6c","version":"v3","xmlLen":"1262","ms":"0","hasRecipe":"true","ingredientCount":"12"},"location":"DocumentManager.swift:readRecipeData","sessionId":"sync-connection-native","message":"map_read_done","hypothesisId":"C","timestamp":1781211976171}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:f2ddbe0e-1232-4604-ab22-eed10ddacabd from SQLite snapshot (13292 bytes)
+{"hypothesisId":"C","location":"DocumentManager.swift:readRecipeData","timestamp":1781211976191,"data":{"version":"v3","hasRecipe":"true","ingredientCount":"6","xmlLen":"3359","recipeId":"f2ddbe0e-1232-4604-ab22-eed10ddacabd","ms":"0"},"sessionId":"sync-connection-native","message":"map_read_done"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:0d6450f4-782d-4308-984a-334abde7b247 from SQLite snapshot (12312 bytes)
+{"location":"DocumentManager.swift:readRecipeData","message":"map_read_done","data":{"xmlLen":"1398","recipeId":"0d6450f4-782d-4308-984a-334abde7b247","hasRecipe":"true","ingredientCount":"13","ms":"0","version":"v3"},"sessionId":"sync-connection-native","hypothesisId":"C","timestamp":1781211976215}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:f7b2e2cf-2330-4e80-b52a-4772aa8facc0 from SQLite snapshot (11452 bytes)
+{"location":"DocumentManager.swift:readRecipeData","message":"map_read_done","data":{"ms":"0","ingredientCount":"11","version":"v3","xmlLen":"1073","recipeId":"f7b2e2cf-2330-4e80-b52a-4772aa8facc0","hasRecipe":"true"},"timestamp":1781211976235,"hypothesisId":"C","sessionId":"sync-connection-native"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:6db9a073-834f-4d24-bfc1-ef96c8a941b4 from SQLite snapshot (12063 bytes)
+{"location":"DocumentManager.swift:readRecipeData","sessionId":"sync-connection-native","message":"map_read_done","hypothesisId":"C","timestamp":1781211976255,"data":{"recipeId":"6db9a073-834f-4d24-bfc1-ef96c8a941b4","hasRecipe":"true","ms":"0","ingredientCount":"16","xmlLen":"1600","version":"v3"}}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:2fb238d8-7a52-45ad-8fcb-a7043d7254e3 from SQLite snapshot (13330 bytes)
+{"data":{"xmlLen":"2992","recipeId":"2fb238d8-7a52-45ad-8fcb-a7043d7254e3","hasRecipe":"true","ingredientCount":"7","ms":"0","version":"v3"},"location":"DocumentManager.swift:readRecipeData","sessionId":"sync-connection-native","message":"map_read_done","hypothesisId":"C","timestamp":1781211976276}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:01229174-e535-43c7-b49d-3f5efcff1320 from SQLite snapshot (14653 bytes)
+{"hypothesisId":"C","location":"DocumentManager.swift:readRecipeData","timestamp":1781211976299,"data":{"recipeId":"01229174-e535-43c7-b49d-3f5efcff1320","ingredientCount":"17","ms":"0","hasRecipe":"true","version":"v3","xmlLen":"3306"},"sessionId":"sync-connection-native","message":"map_read_done"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:4f62c47d-7bdf-43bf-92fe-36545b72d9db from SQLite snapshot (12118 bytes)
+{"sessionId":"sync-connection-native","location":"DocumentManager.swift:readRecipeData","timestamp":1781211976321,"hypothesisId":"C","data":{"hasRecipe":"true","version":"v3","recipeId":"4f62c47d-7bdf-43bf-92fe-36545b72d9db","ms":"0","ingredientCount":"10","xmlLen":"2459"},"message":"map_read_done"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:cbf1c022-e38d-4a6d-a6d1-172108ca743e from SQLite snapshot (9198 bytes)
+{"location":"DocumentManager.swift:readRecipeData","sessionId":"sync-connection-native","message":"map_read_done","hypothesisId":"C","timestamp":1781211976342,"data":{"recipeId":"cbf1c022-e38d-4a6d-a6d1-172108ca743e","xmlLen":"1273","ms":"0","hasRecipe":"true","version":"v3","ingredientCount":"4"}}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:d60454c9-5d96-42ee-8dce-92d299350f96 from SQLite snapshot (6885 bytes)
+{"hypothesisId":"C","timestamp":1781211976366,"data":{"ms":"0","hasRecipe":"true","recipeId":"d60454c9-5d96-42ee-8dce-92d299350f96","xmlLen":"132","ingredientCount":"2","version":"v3"},"message":"map_read_done","location":"DocumentManager.swift:readRecipeData","sessionId":"sync-connection-native"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:0e67bb7a-7cf8-4ac8-ac17-a43660d1347f from SQLite snapshot (17531 bytes)
+{"sessionId":"sync-connection-native","location":"DocumentManager.swift:readRecipeData","message":"map_read_done","hypothesisId":"C","timestamp":1781211976388,"data":{"version":"v3","ingredientCount":"17","xmlLen":"4294","hasRecipe":"true","recipeId":"0e67bb7a-7cf8-4ac8-ac17-a43660d1347f","ms":"0"}}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:85109882-404a-4864-9ee1-35d4a3ae841b from SQLite snapshot (6329 bytes)
+{"message":"map_read_done","hypothesisId":"C","timestamp":1781211976412,"data":{"ms":"0","recipeId":"85109882-404a-4864-9ee1-35d4a3ae841b","ingredientCount":"3","version":"v3","hasRecipe":"true","xmlLen":"0"},"sessionId":"sync-connection-native","location":"DocumentManager.swift:readRecipeData"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:0ee3007c-21c5-4a9e-b747-f622d0b7eb9a from SQLite snapshot (16530 bytes)
+{"hypothesisId":"C","timestamp":1781211976416,"sessionId":"sync-connection-native","location":"DocumentManager.swift:readRecipeData","message":"map_read_done","data":{"ms":"0","version":"v3","hasRecipe":"true","recipeId":"0ee3007c-21c5-4a9e-b747-f622d0b7eb9a","ingredientCount":"12","xmlLen":"3297"}}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:3b030350-4ed8-4e77-ab19-c5342487ca68 from SQLite snapshot (6590 bytes)
+{"hypothesisId":"C","timestamp":1781211976442,"sessionId":"sync-connection-native","data":{"ms":"0","hasRecipe":"true","version":"v3","ingredientCount":"2","xmlLen":"0","recipeId":"3b030350-4ed8-4e77-ab19-c5342487ca68"},"message":"map_read_done","location":"DocumentManager.swift:readRecipeData"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:66926429-513d-4029-b49a-ccbce1119b10 from SQLite snapshot (11713 bytes)
+{"hypothesisId":"C","timestamp":1781211976446,"sessionId":"sync-connection-native","data":{"recipeId":"66926429-513d-4029-b49a-ccbce1119b10","hasRecipe":"true","version":"v3","xmlLen":"1632","ingredientCount":"17","ms":"0"},"message":"map_read_done","location":"DocumentManager.swift:readRecipeData"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:b5aec0e4-9f44-4931-b9f0-370c5bf75a81 from SQLite snapshot (7240 bytes)
+{"message":"map_read_done","hypothesisId":"C","timestamp":1781211976469,"data":{"recipeId":"b5aec0e4-9f44-4931-b9f0-370c5bf75a81","ms":"0","ingredientCount":"2","hasRecipe":"true","version":"v3","xmlLen":"528"},"sessionId":"sync-connection-native","location":"DocumentManager.swift:readRecipeData"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:496918cc-fd7c-4048-b498-ffd7e8e56217 from SQLite snapshot (14284 bytes)
+{"hypothesisId":"C","timestamp":1781211976487,"sessionId":"sync-connection-native","data":{"ms":"0","ingredientCount":"13","recipeId":"496918cc-fd7c-4048-b498-ffd7e8e56217","xmlLen":"2746","version":"v3","hasRecipe":"true"},"message":"map_read_done","location":"DocumentManager.swift:readRecipeData"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:7224e294-64d9-4199-a70a-d6043792a1a9 from SQLite snapshot (8096 bytes)
+{"message":"map_read_done","hypothesisId":"C","timestamp":1781211976511,"data":{"ms":"0","version":"v3","hasRecipe":"true","recipeId":"7224e294-64d9-4199-a70a-d6043792a1a9","ingredientCount":"3","xmlLen":"920"},"sessionId":"sync-connection-native","location":"DocumentManager.swift:readRecipeData"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:a33df68f-b657-47f6-825d-da5ee5c2972a from SQLite snapshot (1592 bytes)
+{"data":{"ms":"0","ingredientCount":"0","recipeId":"a33df68f-b657-47f6-825d-da5ee5c2972a","xmlLen":"0","version":"v3","hasRecipe":"true"},"location":"DocumentManager.swift:readRecipeData","message":"map_read_done","sessionId":"sync-connection-native","hypothesisId":"C","timestamp":1781211976529}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:b5bf47a1-a135-40ac-9c88-d588b55584e3 from SQLite snapshot (9805 bytes)
+{"sessionId":"sync-connection-native","hypothesisId":"C","location":"DocumentManager.swift:readRecipeData","timestamp":1781211976534,"data":{"ms":"0","ingredientCount":"6","recipeId":"b5bf47a1-a135-40ac-9c88-d588b55584e3","xmlLen":"1974","version":"v3","hasRecipe":"true"},"message":"map_read_done"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:4f06a742-98e8-49b3-b04c-604db203c347 from SQLite snapshot (9118 bytes)
+{"location":"DocumentManager.swift:readRecipeData","message":"map_read_done","hypothesisId":"C","timestamp":1781211976555,"data":{"hasRecipe":"true","version":"v3","ingredientCount":"10","recipeId":"4f06a742-98e8-49b3-b04c-604db203c347","xmlLen":"2350","ms":"0"},"sessionId":"sync-connection-native"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:1ccf2ffd-7511-440e-8de6-66e0a5f36410 from SQLite snapshot (11068 bytes)
+{"timestamp":1781211976577,"sessionId":"sync-connection-native","location":"DocumentManager.swift:readRecipeData","hypothesisId":"C","message":"map_read_done","data":{"ingredientCount":"10","xmlLen":"3101","recipeId":"1ccf2ffd-7511-440e-8de6-66e0a5f36410","ms":"0","hasRecipe":"true","version":"v3"}}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:e4440c81-e56e-4c75-bf69-27f5d7093b38 from SQLite snapshot (6005 bytes)
+{"timestamp":1781211976601,"sessionId":"sync-connection-native","location":"DocumentManager.swift:readRecipeData","hypothesisId":"C","message":"map_read_done","data":{"ingredientCount":"7","xmlLen":"1192","recipeId":"e4440c81-e56e-4c75-bf69-27f5d7093b38","ms":"0","hasRecipe":"true","version":"v3"}}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:2fe5544c-829a-4695-bc6c-2ecc8ca5da81 from SQLite snapshot (8526 bytes)
+{"timestamp":1781211976622,"data":{"recipeId":"2fe5544c-829a-4695-bc6c-2ecc8ca5da81","ms":"0","ingredientCount":"8","hasRecipe":"true","version":"v3","xmlLen":"1811"},"location":"DocumentManager.swift:readRecipeData","message":"map_read_done","hypothesisId":"C","sessionId":"sync-connection-native"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:64981040-42ae-4286-ac3b-afaac94f7c4b from SQLite snapshot (6607 bytes)
+{"hypothesisId":"C","timestamp":1781211976643,"sessionId":"sync-connection-native","data":{"ms":"0","hasRecipe":"true","version":"v3","ingredientCount":"9","xmlLen":"1587","recipeId":"64981040-42ae-4286-ac3b-afaac94f7c4b"},"message":"map_read_done","location":"DocumentManager.swift:readRecipeData"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:5eae5edd-5a8f-4462-af41-b58088eb9fe0 from SQLite snapshot (4706 bytes)
+{"data":{"hasRecipe":"true","ms":"0","version":"v3","ingredientCount":"9","recipeId":"5eae5edd-5a8f-4462-af41-b58088eb9fe0","xmlLen":"0"},"timestamp":1781211976662,"location":"DocumentManager.swift:readRecipeData","sessionId":"sync-connection-native","message":"map_read_done","hypothesisId":"C"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:38e2ab6e-80f3-4e06-893a-ca055c9afb65 from SQLite snapshot (4053 bytes)
+{"sessionId":"sync-connection-native","hypothesisId":"C","location":"DocumentManager.swift:readRecipeData","timestamp":1781211976667,"data":{"hasRecipe":"true","ms":"0","version":"v3","ingredientCount":"9","recipeId":"38e2ab6e-80f3-4e06-893a-ca055c9afb65","xmlLen":"99"},"message":"map_read_done"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:17b84707-ffb9-4096-8bde-ee36ce2f7c67 from SQLite snapshot (6541 bytes)
+{"location":"DocumentManager.swift:readRecipeData","message":"map_read_done","hypothesisId":"C","timestamp":1781211976684,"data":{"recipeId":"17b84707-ffb9-4096-8bde-ee36ce2f7c67","hasRecipe":"true","version":"v3","xmlLen":"1579","ingredientCount":"9","ms":"0"},"sessionId":"sync-connection-native"}
+Loaded 0 active timer(s) from server
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:4754c6cf-a603-4690-8012-10053279194b from SQLite snapshot (5638 bytes)
+{"message":"map_read_done","timestamp":1781211976709,"location":"DocumentManager.swift:readRecipeData","data":{"ingredientCount":"6","ms":"0","xmlLen":"1318","recipeId":"4754c6cf-a603-4690-8012-10053279194b","hasRecipe":"true","version":"v3"},"hypothesisId":"C","sessionId":"sync-connection-native"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:2984408f-a5e0-462a-a8f1-e0616ad7bd24 from SQLite snapshot (2457 bytes)
+{"location":"DocumentManager.swift:readRecipeData","message":"map_read_done","data":{"hasRecipe":"true","ms":"0","version":"v3","ingredientCount":"2","recipeId":"2984408f-a5e0-462a-a8f1-e0616ad7bd24","xmlLen":"0"},"sessionId":"sync-connection-native","hypothesisId":"C","timestamp":1781211976729}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:2df68cf9-80b0-4ac1-943c-f591fa8777d1 from SQLite snapshot (4009 bytes)
+{"location":"DocumentManager.swift:readRecipeData","message":"map_read_done","data":{"recipeId":"2df68cf9-80b0-4ac1-943c-f591fa8777d1","version":"v3","ms":"0","hasRecipe":"true","ingredientCount":"7","xmlLen":"147"},"sessionId":"sync-connection-native","hypothesisId":"C","timestamp":1781211976732}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:6d0e29a4-d08d-423a-a420-118a35a2e5c5 from SQLite snapshot (16389 bytes)
+{"hypothesisId":"C","location":"DocumentManager.swift:readRecipeData","message":"map_read_done","timestamp":1781211976750,"data":{"hasRecipe":"true","ms":"0","version":"v3","ingredientCount":"22","recipeId":"6d0e29a4-d08d-423a-a420-118a35a2e5c5","xmlLen":"5723"},"sessionId":"sync-connection-native"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:cbc71d42-1bf7-4d1c-a40b-4107ce40dd27 from SQLite snapshot (4219 bytes)
+{"sessionId":"sync-connection-native","message":"map_read_done","timestamp":1781211976775,"location":"DocumentManager.swift:readRecipeData","data":{"ms":"0","ingredientCount":"6","hasRecipe":"true","recipeId":"cbc71d42-1bf7-4d1c-a40b-4107ce40dd27","version":"v3","xmlLen":"609"},"hypothesisId":"C"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:00af918b-4527-4f91-b797-414676b3e954 from SQLite snapshot (3859 bytes)
+{"data":{"hasRecipe":"true","version":"v3","xmlLen":"414","ingredientCount":"5","ms":"0","recipeId":"00af918b-4527-4f91-b797-414676b3e954"},"hypothesisId":"C","sessionId":"sync-connection-native","message":"map_read_done","timestamp":1781211976794,"location":"DocumentManager.swift:readRecipeData"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:62e23e35-e96b-4b19-bbbd-5ecb31b0e27e from SQLite snapshot (9899 bytes)
+{"hypothesisId":"C","location":"DocumentManager.swift:readRecipeData","timestamp":1781211976812,"data":{"ms":"0","ingredientCount":"14","hasRecipe":"true","recipeId":"62e23e35-e96b-4b19-bbbd-5ecb31b0e27e","version":"v3","xmlLen":"2346"},"sessionId":"sync-connection-native","message":"map_read_done"}
+Loading doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:ffac4945-200b-453b-8843-a5872e7f2b24 from SQLite snapshot (6754 bytes)
+{"data":{"ms":"0","ingredientCount":"14","hasRecipe":"true","recipeId":"ffac4945-200b-453b-8843-a5872e7f2b24","version":"v3","xmlLen":"1262"},"timestamp":1781211976834,"location":"DocumentManager.swift:readRecipeData","sessionId":"sync-connection-native","message":"map_read_done","hypothesisId":"C"}
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+App is being debugged, do not track this hang
+Hang detected: 0.47s (debugger attached, not reporting)
+App is being debugged, do not track this hang
+Hang detected: 0.25s (debugger attached, not reporting)
+{"hypothesisId":"F","data":{"recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d"},"timestamp":1781211981367,"sessionId":"sync-connection-native","location":"YjsSyncService.swift:loadRecipe","message":"start"}
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+{"hypothesisId":"A","data":{"recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","snapshotBytes":"34732","connected":"true"},"timestamp":1781211981389,"sessionId":"sync-connection-native","location":"YjsSyncService.swift:loadRecipe","message":"snapshot_before_open"}
+{"data":{"version":"v3","xmlLen":"9524","ingredientCount":"7","ms":"1","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","hasRecipe":"true"},"timestamp":1781211981391,"sessionId":"sync-connection-native","location":"DocumentManager.swift:readRecipeData","message":"map_read_done","hypothesisId":"C"}
+{"data":{"hasHref":"true","htmlLen":"9524","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","debugSessionId":"d19d57","linkMarkInXml":"true","xmlLen":"9524","linkCountInHtml":"3"},"timestamp":1781211981397,"sessionId":"sync-connection-native","location":"DocumentManager.swift:readRecipeData","message":"description_rendered","hypothesisId":"H3"}
+{"data":{"hasHref":"true","debugSessionId":"d19d57","descriptionLen":"9524","refreshSuspended":"0","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","linkCountInHtml":"3"},"timestamp":1781211981398,"sessionId":"sync-connection-native","location":"YjsSyncService.swift:refreshCurrentRecipe","message":"recipe_refreshed","hypothesisId":"H2"}
+{"data":{"ingredientCount":"7","ms":"31","hasCurrentRecipe":"true","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","currentRecipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d"},"timestamp":1781211981398,"sessionId":"sync-connection-native","location":"YjsSyncService.swift:loadRecipe","message":"after_refresh","hypothesisId":"F"}
+Emitted load_document for recipe 7daed53b-5e79-42e8-bd9a-bc74deea712d
+{"data":{"hasHeaderImage":"true","ingredientCount":"7","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","hasRecipe":"true"},"timestamp":1781211981398,"sessionId":"sync-connection-native","location":"YDocRecipeDetailView.swift:task","message":"after_load_recipe","hypothesisId":"G"}
+{"location":"YDocRecipeDetailView.swift:onChange(recipe.id)","message":"recipe_id_changed","timestamp":1781211981464,"hypothesisId":"H4","data":{"isEditingTitle":"false","isEditing":"false","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d"},"sessionId":"sync-connection-native"}
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+Invalid frame dimension (negative or non-finite).
+UITextView 0x1329d4000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1328af000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1328ae400 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1328ad800 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1328acc00 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1328ac000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132807000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132806400 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132805800 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132804c00 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132804000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132733000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132732400 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132731800 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132730c00 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132730000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132653000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132652400 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132651800 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132650c00 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132650000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1325b7000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1325b6400 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1325b5800 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1325b4c00 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1325b4000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1324a7000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1324a6400 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1324a5800 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1324a4c00 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1324a4000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1323db000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1323da400 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1323d9800 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1323d8c00 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1323d8000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x13234b000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x13234a400 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132349800 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132348c00 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x132348000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1140cf000 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1140ce400 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+UITextView 0x1140cd800 is switching to TextKit 1 compatibility mode because its layoutManager was accessed. Break on void _UITextViewEnablingCompatibilityMode(UITextView *__strong, BOOL) to debug.
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+document_loaded: 7daed53b-5e79-42e8-bd9a-bc74deea712d, 175445 bytes
+document_loaded: cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:7daed53b-5e79-42e8-bd9a-bc74deea712d, 175445 bytes
+{"message":"document_loaded","sessionId":"sync-connection-native","timestamp":1781211983591,"location":"YjsSyncService.swift:handleDocumentLoaded","data":{"recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","lastSyncedAt":"2026-06-11T21:06:22.429Z","debugSessionId":"d19d57","activeRecipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","stateBytes":"175445"},"hypothesisId":"H5"}
+Replaced doc cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:7daed53b-5e79-42e8-bd9a-bc74deea712d from server snapshot (175445 bytes)
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+{"timestamp":1781211983630,"location":"DocumentManager.swift:readRecipeData","hypothesisId":"C","data":{"hasRecipe":"true","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","ms":"1","xmlLen":"9524","ingredientCount":"7","version":"v3"},"sessionId":"sync-connection-native","message":"map_read_done"}
+{"timestamp":1781211983636,"location":"DocumentManager.swift:readRecipeData","hypothesisId":"H3","data":{"hasHref":"true","debugSessionId":"d19d57","linkMarkInXml":"true","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","linkCountInHtml":"3","xmlLen":"9524","htmlLen":"9524"},"sessionId":"sync-connection-native","message":"description_rendered"}
+{"timestamp":1781211983637,"location":"YjsSyncService.swift:refreshCurrentRecipe","hypothesisId":"H2","data":{"hasHref":"true","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","refreshSuspended":"0","descriptionLen":"9524","linkCountInHtml":"3","debugSessionId":"d19d57"},"sessionId":"sync-connection-native","message":"recipe_refreshed"}
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+collection_updated: 94 bytes
+collection_updated: 94 bytes
+Parsed 93 collection entries
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+Parsed 93 collection entries
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+Collection refreshed: 46 active entries (total 93)
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+{"sessionId":"sync-connection-native","location":"YjsSyncService.swift:refreshCollectionEntries","message":"local_snapshot_inventory","hypothesisId":"A","data":{"connected":"true","activeEntries":"46","recipeSnapshots":"46","totalSnapshots":"48"},"timestamp":1781211996824}
+Collection refreshed: 46 active entries (total 93)
+{"message":"local_snapshot_inventory","data":{"activeEntries":"46","recipeSnapshots":"46","totalSnapshots":"48","connected":"true"},"hypothesisId":"A","sessionId":"sync-connection-native","location":"YjsSyncService.swift:refreshCollectionEntries","timestamp":1781211996828}
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+recipe_updated: 7daed53b-5e79-42e8-bd9a-bc74deea712d, 95 bytes
+recipe_updated: cfcd839f-56f2-4411-9632-7795b75f96d1:recipe:7daed53b-5e79-42e8-bd9a-bc74deea712d, 95 bytes
+{"hypothesisId":"H1","location":"YjsSyncService.swift:handleRecipeUpdated","sessionId":"sync-connection-native","message":"recipe_updated_received","timestamp":1781211997126,"data":{"bytes":"95","connected":"true","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","refreshSuspended":"0","suppressObserver":"false","activeRecipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","debugSessionId":"d19d57"}}
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+{"location":"DocumentManager.swift:readRecipeData","message":"map_read_done","hypothesisId":"C","data":{"ingredientCount":"7","version":"v3","xmlLen":"9524","hasRecipe":"true","ms":"1","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d"},"timestamp":1781211997156,"sessionId":"sync-connection-native"}
+{"hypothesisId":"H3","location":"DocumentManager.swift:readRecipeData","sessionId":"sync-connection-native","message":"description_rendered","timestamp":1781211997161,"data":{"hasHref":"true","xmlLen":"9524","debugSessionId":"d19d57","linkCountInHtml":"3","htmlLen":"9524","linkMarkInXml":"true","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d"}}
+{"hypothesisId":"H2","location":"YjsSyncService.swift:refreshCurrentRecipe","sessionId":"sync-connection-native","message":"recipe_refreshed","timestamp":1781211997162,"data":{"linkCountInHtml":"3","refreshSuspended":"0","descriptionLen":"9524","debugSessionId":"d19d57","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","hasHref":"true"}}
+A navigationDestination for “RecipeScalerNative.RecipesRoute” was declared earlier on the stack. Only the destination declared closest to the root view of the stack will be used.
+Reindexing 1 recipe(s); stale removed: 0
+{"hypothesisId":"C","timestamp":1781211997643,"message":"map_read_done","sessionId":"sync-connection-native","location":"DocumentManager.swift:readRecipeData","data":{"hasRecipe":"true","ms":"9","ingredientCount":"7","version":"v3","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","xmlLen":"9524"}}
+{"location":"DocumentManager.swift:readRecipeData","timestamp":1781211997663,"hypothesisId":"H3","data":{"hasHref":"true","linkCountInHtml":"3","htmlLen":"9524","debugSessionId":"d19d57","recipeId":"7daed53b-5e79-42e8-bd9a-bc74deea712d","linkMarkInXml":"true","xmlLen":"9524"},"sessionId":"sync-connection-native","message":"description_rendered"}

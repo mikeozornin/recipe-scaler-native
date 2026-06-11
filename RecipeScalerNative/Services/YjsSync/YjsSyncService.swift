@@ -280,6 +280,18 @@ final class YjsSyncService: ObservableObject {
                 "refreshSuspended": String(recipeRefreshSuspended),
             ]
         )
+        let updatePrefix = update.prefix(8).map { String(format: "%02x", $0) }.joined(separator: " ")
+        CursorDebugIngestLog.write(
+            hypothesisId: "H4",
+            location: "YjsSyncService.swift:applyDescriptionEditorUpdate",
+            message: "editor_update_applied",
+            data: [
+                "recipeId": recipeId,
+                "bytes": String(update.count),
+                "updatePrefix": updatePrefix,
+                "descLenAfter": String(currentRecipe?.description?.count ?? 0),
+            ]
+        )
         // #endregion
     }
 
@@ -1459,6 +1471,18 @@ final class YjsSyncService: ObservableObject {
                 "hasLastSyncedAt": String(lastSyncedAt != nil),
             ]
         )
+        let updatePrefix = update.prefix(8).map { String(format: "%02x", $0) }.joined(separator: " ")
+        CursorDebugIngestLog.write(
+            hypothesisId: "H4",
+            location: "YjsSyncService.swift:emitSyncRequest",
+            message: "sync_request_emitted",
+            data: [
+                "target": target,
+                "payloadBytes": String(update.count),
+                "updatePrefix": updatePrefix,
+                "hasLastSyncedAt": String(lastSyncedAt != nil),
+            ]
+        )
         // #endregion
     }
 
@@ -1532,6 +1556,21 @@ final class YjsSyncService: ObservableObject {
         let docKey = docKeyFor(recipeId: recipeId)
         logger.info("document_loaded: \(docKey), \(stateData.count) bytes")
         lastSuccessfulSyncAt = Date()
+        // #region agent log
+        if recipeId != "collection", recipeId != ShoppingListConstants.offlineRecipeId {
+            CursorDebugIngestLog.write(
+                hypothesisId: "H5",
+                location: "YjsSyncService.swift:handleDocumentLoaded",
+                message: "document_loaded",
+                data: [
+                    "recipeId": recipeId,
+                    "stateBytes": String(stateData.count),
+                    "activeRecipeId": activeRecipeId ?? "nil",
+                    "lastSyncedAt": lastSyncedAt ?? "nil",
+                ]
+            )
+        }
+        // #endregion
 
         do {
             if recipeId == "collection" {
@@ -1679,6 +1718,21 @@ final class YjsSyncService: ObservableObject {
         lastSuccessfulSyncAt = Date()
 
         let suppressObserver = recipeRefreshSuspended > 0 && activeRecipeId == recipeId
+        // #region agent log
+        CursorDebugIngestLog.write(
+            hypothesisId: "H1",
+            location: "YjsSyncService.swift:handleRecipeUpdated",
+            message: "recipe_updated_received",
+            data: [
+                "recipeId": recipeId,
+                "bytes": String(updateData.count),
+                "activeRecipeId": activeRecipeId ?? "nil",
+                "suppressObserver": String(suppressObserver),
+                "refreshSuspended": String(recipeRefreshSuspended),
+                "connected": String(connectionState == .connected),
+            ]
+        )
+        // #endregion
         do {
             try await documentManager.applyUpdate(
                 key: docKey,
@@ -1687,6 +1741,14 @@ final class YjsSyncService: ObservableObject {
             )
         } catch {
             logger.error("Failed to apply recipe update for \(docKey): \(error)")
+            // #region agent log
+            CursorDebugIngestLog.write(
+                hypothesisId: "H1",
+                location: "YjsSyncService.swift:handleRecipeUpdated",
+                message: "apply_update_failed",
+                data: ["recipeId": recipeId, "error": error.localizedDescription]
+            )
+            // #endregion
             requestDocumentReload(recipeId: recipeId)
             return
         }
@@ -2001,6 +2063,24 @@ final class YjsSyncService: ObservableObject {
             }
             recipe = RecipeCollectionMerge.merged(recipe, with: collectionEntry(for: recipeId))
             currentRecipe = recipe
+            // #region agent log
+            var refreshData: [String: String] = [
+                "recipeId": recipeId,
+                "descriptionLen": String(recipe.description?.count ?? 0),
+                "refreshSuspended": String(recipeRefreshSuspended),
+            ]
+            if let html = recipe.description {
+                let linkCount = html.components(separatedBy: "<a ").count - 1
+                refreshData["linkCountInHtml"] = String(max(0, linkCount))
+                refreshData["hasHref"] = String(html.contains("href="))
+            }
+            CursorDebugIngestLog.write(
+                hypothesisId: "H2",
+                location: "YjsSyncService.swift:refreshCurrentRecipe",
+                message: "recipe_refreshed",
+                data: refreshData
+            )
+            // #endregion
         } catch {
             logger.error("Failed to read recipe \(recipeId): \(error)")
             // #region agent log

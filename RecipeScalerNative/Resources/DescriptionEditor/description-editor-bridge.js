@@ -18,15 +18,48 @@
   let savedSelectionRange = null;
   var holdSelectionForMarkup = false;
   let pendingRepairUpdate = null;
+  let skipHtmlPushFromInput = false;
 
   const editorEl = document.getElementById('editor');
 
   function isYXmlText(node) {
-    return node && typeof node.toDelta === 'function';
+    if (!node) return false;
+    if (node instanceof Y.XmlText) return true;
+    // yjs 13: toDelta; yjs 14: applyDelta + getContent, no .get()
+    return typeof node.applyDelta === 'function' && typeof node.get !== 'function';
   }
 
   function isYXmlElement(node) {
-    return node && typeof node.getAttributes === 'function' && typeof node.insert === 'function';
+    if (!node) return false;
+    if (node instanceof Y.XmlElement) return true;
+    return typeof node.get === 'function' && typeof node.nodeName === 'string';
+  }
+
+  function formatToLegacyAttributes(format) {
+    if (!format) return {};
+    const attributes = {};
+    Object.keys(format).forEach((key) => {
+      const value = format[key];
+      if (value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) {
+        attributes[key] = true;
+      } else {
+        attributes[key] = value;
+      }
+    });
+    return attributes;
+  }
+
+  function textNodeToLegacyDelta(textNode) {
+    if (typeof textNode.toDelta === 'function') return textNode.toDelta();
+    if (typeof textNode.getContent !== 'function') return [];
+    const delta = textNode.getContent();
+    if (!delta || !delta.children) return [];
+    const out = [];
+    for (const op of delta.children) {
+      if (op == null || op.insert == null) continue;
+      out.push({ insert: op.insert, attributes: formatToLegacyAttributes(op.format) });
+    }
+    return out;
   }
 
   function post(type, payload) {
@@ -34,6 +67,18 @@
     if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[handlerName]) {
       window.webkit.messageHandlers[handlerName].postMessage(msg);
     }
+  }
+
+  function debugIngest(hypothesisId, location, message, data) {
+    // #region agent log
+    post('debugLog', {
+      hypothesisId: hypothesisId,
+      location: location,
+      message: message,
+      data: data || {},
+      runId: 'pre-fix',
+    });
+    // #endregion
   }
 
   function escapeHtml(text) {
@@ -60,7 +105,7 @@
   }
 
   const TIMER_ATTRS = ['data-timer-id', 'data-duration', 'data-type', 'data-value', 'data-name'];
-  const INGREDIENT_ATTRS = ['data-ingredient-id', 'data-original-amount', 'data-ratio'];
+  const INGREDIENT_ATTRS = ['data-ingredient-id', 'data-original-amount', 'data-ratio', 'data-label'];
 
   function copyAllowedAttributesFromDom(node, allowed) {
     const out = {};
@@ -97,6 +142,7 @@
     var ratioN = parseAmount(ratio);
     if (origN != null && ratioN != null) return formatAmount(origN * ratioN);
     if (original != null && original !== '') return String(original);
+    if (attrs['data-label']) return String(attrs['data-label']);
     return '';
   }
 
@@ -189,7 +235,7 @@
   }
 
   function renderXmlText(textNode) {
-    const delta = textNode.toDelta ? textNode.toDelta() : [];
+    const delta = textNodeToLegacyDelta(textNode);
     if (!delta.length) {
       const plain = textNode.toString();
       return plain ? escapeHtml(plain) : '';
@@ -308,7 +354,10 @@
     }
   }
 
-  function appendParagraphFromElement(el) {
+  /// Build a detached Y.XmlElement for one top-level block DOM element.
+  /// Returns the node WITHOUT attaching it (caller inserts), so the same builder
+  /// feeds both full rebuilds and incremental reconciliation.
+  function buildBlockNode(el) {
     const tag = el.tagName.toLowerCase();
     if (tag === 'ul' || tag === 'ol') {
       const listTag = tag === 'ul' ? 'bulletList' : 'orderedList';
@@ -324,8 +373,7 @@
         item.insert(0, [para]);
         list.insert(list.length, [item]);
       });
-      fragment.insert(fragment.length, [list]);
-      return;
+      return list;
     }
 
     const pmTag =
@@ -342,7 +390,75 @@
     if (inline.length) {
       para.insert(0, inline);
     }
-    fragment.insert(fragment.length, [para]);
+    return para;
+  }
+
+  function appendParagraphFromElement(el) {
+    const node = buildBlockNode(el);
+    if (node) fragment.insert(fragment.length, [node]);
+  }
+
+  /// Build the desired top-level block nodes (detached) from editor HTML.
+  function buildDesiredBlocks(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    const nodes = [];
+    template.content.childNodes.forEach((node) => {
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+      const built = buildBlockNode(node);
+      if (built) nodes.push(built);
+    });
+    return nodes;
+  }
+
+  /// Incremental reconciliation: make `fragment` match `html` by replacing ONLY
+  /// the blocks that actually changed (common prefix/suffix kept by identity).
+  /// Structurally dup-proof: unchanged content is never re-inserted as new nodes,
+  /// so full-document copies can never accumulate (root cause of 5× duplication).
+  /// Emits a syncable 'reconcile' update (small), replacing the old full html-push.
+  function reconcileFragment(html) {
+    if (!ydoc || !fragment) return;
+    const desired = buildDesiredBlocks(html);
+    if (!desired.length) {
+      // Editor emptied → collapse to a single empty paragraph.
+      ydoc.transact(() => {
+        if (fragment.length > 0) fragment.delete(0, fragment.length);
+        fragment.insert(0, [new Y.XmlElement('paragraph')]);
+      }, 'reconcile');
+      return;
+    }
+
+    const desiredSig = desired.map(renderElement);
+    const curLen = fragment.length;
+    const curSig = [];
+    for (let i = 0; i < curLen; i++) curSig.push(renderElement(fragment.get(i)));
+
+    // Longest common prefix of unchanged blocks.
+    let prefix = 0;
+    while (prefix < curSig.length && prefix < desiredSig.length &&
+           curSig[prefix] === desiredSig[prefix]) prefix++;
+    // Longest common suffix that does not overlap the prefix.
+    let suffix = 0;
+    while (suffix < (curSig.length - prefix) && suffix < (desiredSig.length - prefix) &&
+           curSig[curSig.length - 1 - suffix] === desiredSig[desiredSig.length - 1 - suffix]) suffix++;
+
+    const deleteCount = curSig.length - prefix - suffix;
+    const insertNodes = desired.slice(prefix, desiredSig.length - suffix);
+    if (deleteCount === 0 && insertNodes.length === 0) return; // no change
+
+    ydoc.transact(() => {
+      if (deleteCount > 0) fragment.delete(prefix, deleteCount);
+      if (insertNodes.length) fragment.insert(prefix, insertNodes);
+    }, 'reconcile');
+
+    debugIngest('D1', 'description-editor-bridge.js:reconcile', 'reconcile_applied', {
+      curBlocks: String(curSig.length),
+      desiredBlocks: String(desiredSig.length),
+      prefix: String(prefix),
+      suffix: String(suffix),
+      deleted: String(deleteCount),
+      inserted: String(insertNodes.length),
+    });
   }
 
   function collectInlineNodes(root) {
@@ -461,6 +577,10 @@
         }
 
         if (tag === 'timer') {
+          while (child.length > 0) {
+            child.delete(0, 1);
+            changed = true;
+          }
           stripExtraAttrs(child, TIMER_ATTRS);
         }
 
@@ -488,17 +608,129 @@
   function htmlToFragment(html) {
     const template = document.createElement('template');
     template.innerHTML = html;
-    clearFragment();
-    const blocks = [];
-    template.content.childNodes.forEach((node) => {
-      if (node.nodeType === Node.ELEMENT_NODE) blocks.push(node);
-    });
-    if (!blocks.length) {
-      const para = new Y.XmlElement('paragraph');
-      fragment.insert(0, [para]);
-      return;
+    var backup = null;
+    if (fragment && fragment.length > 0) {
+      try { backup = fragment.clone(); } catch (_) { backup = null; }
     }
-    blocks.forEach((el) => appendParagraphFromElement(el));
+    try {
+      clearFragment();
+      const blocks = [];
+      template.content.childNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) blocks.push(node);
+      });
+      if (!blocks.length) {
+        const para = new Y.XmlElement('paragraph');
+        fragment.insert(0, [para]);
+        return;
+      }
+      blocks.forEach((el) => appendParagraphFromElement(el));
+    } catch (err) {
+      if (backup && fragment) {
+        try {
+          clearFragment();
+          for (var bi = 0; bi < backup.length; bi++) {
+            fragment.insert(bi, [backup.get(bi).clone()]);
+          }
+        } catch (_) {}
+      }
+    }
+  }
+
+  function collectFragmentTextSegments(parent, out) {
+    if (!parent || !parent.length) return;
+    for (let i = 0; i < parent.length; i++) {
+      const child = parent.get(i);
+      if (!child) continue;
+      if (isYXmlText(child)) {
+        out.push({ text: child, length: child.toString().length });
+        continue;
+      }
+      if (!isYXmlElement(child)) continue;
+      const tag = elementTag(child);
+      if (tag === 'timer' || tag === 'ingredient') {
+        out.push({ text: null, length: child.toString().length });
+        continue;
+      }
+      collectFragmentTextSegments(child, out);
+    }
+  }
+
+  function selectionFlatOffset(sel) {
+    if (!sel || sel.rangeCount === 0 || !editorEl) return 0;
+    const range = sel.getRangeAt(0);
+    if (!editorEl.contains(range.startContainer)) return 0;
+    const pre = document.createRange();
+    pre.selectNodeContents(editorEl);
+    pre.setEnd(range.startContainer, range.startOffset);
+    return pre.toString().length;
+  }
+
+  function resolveYjsInsertAtFlat(flatOffset) {
+    const segments = [];
+    collectFragmentTextSegments(fragment, segments);
+    let pos = 0;
+    for (let si = 0; si < segments.length; si++) {
+      const seg = segments[si];
+      if (!seg.text) {
+        pos += seg.length;
+        continue;
+      }
+      const len = seg.length;
+      if (flatOffset <= pos + len) {
+        return { text: seg.text, offset: flatOffset - pos };
+      }
+      pos += len;
+    }
+    const editable = segments.filter((s) => s.text);
+    const last = editable[editable.length - 1];
+    if (last && flatOffset === pos) {
+      return { text: last.text, offset: last.text.length };
+    }
+    return null;
+  }
+
+  function tryIncrementalTextEdit(e) {
+    if (!ready || applyingRemote || !ydoc || !fragment) return false;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !editorEl.contains(sel.anchorNode)) return false;
+
+    if (e.inputType === 'insertText' && e.data) {
+      const flat = selectionFlatOffset(sel);
+      const resolved = resolveYjsInsertAtFlat(flat);
+      if (!resolved) return false;
+      e.preventDefault();
+      ydoc.transact(() => {
+        resolved.text.insert(resolved.offset, e.data, {});
+      }, 'typing');
+      skipHtmlPushFromInput = true;
+      document.execCommand('insertText', false, e.data);
+      debugIngest('H4', 'description-editor-bridge.js:incremental', 'incremental_insert', {
+        chars: String(e.data.length),
+        flat: String(flat),
+      });
+      measureContentHeight();
+      return true;
+    }
+
+    if (e.inputType === 'deleteContentBackward' && sel.isCollapsed) {
+      const flat = selectionFlatOffset(sel);
+      if (flat <= 0) return false;
+      const resolved = resolveYjsInsertAtFlat(flat - 1);
+      if (!resolved) return false;
+      e.preventDefault();
+      ydoc.transact(() => {
+        resolved.text.delete(resolved.offset, 1);
+      }, 'typing');
+      skipHtmlPushFromInput = true;
+      document.execCommand('delete', false);
+      debugIngest('H4', 'description-editor-bridge.js:incremental', 'incremental_delete', {
+        flat: String(flat),
+      });
+      measureContentHeight();
+      return true;
+    }
+
+    return false;
   }
 
   function schedulePush() {
@@ -509,10 +741,10 @@
 
   function pushLocalEdit() {
     if (!ydoc || !fragment) return;
-    const html = editorEl.innerHTML;
-    ydoc.transact(() => {
-      htmlToFragment(html);
-    });
+    // Incremental reconciliation (syncable) instead of clearFragment()+reinsert.
+    // Preserves node identity for unchanged blocks → no full-document duplication,
+    // and formatting/list/paste edits now sync as small diffs.
+    reconcileFragment(editorEl.innerHTML);
   }
 
   function saveSelection() {
@@ -752,6 +984,7 @@
 
   function markAsIngredient(args) {
     const a = args || {};
+    const selectedText = getSelectedText();
     const span = document.createElement('span');
     span.className = 'ingredient-reference edit-mode';
     span.setAttribute('data-ingredient-id', a.ingredientId || '');
@@ -761,7 +994,10 @@
     if (a.ratio != null && a.ratio !== '') {
       span.setAttribute('data-ratio', String(a.ratio));
     }
-    // Compute displayed value: originalAmount * ratio
+    var fallbackLabel = selectedText || String(a.originalAmount || '');
+    if (fallbackLabel) {
+      span.setAttribute('data-label', fallbackLabel);
+    }
     if (a.ratio != null && a.originalAmount) {
       var numeric = parseFloat(String(a.originalAmount).replace(',', '.'));
       var ratio = parseFloat(String(a.ratio));
@@ -771,8 +1007,7 @@
         span.textContent = String(a.originalAmount);
       }
     } else {
-      var selectedText = getSelectedText();
-      span.textContent = selectedText || String(a.originalAmount || '');
+      span.textContent = fallbackLabel;
     }
     span.contentEditable = 'false';
     insertNodeAtSelection(span);
@@ -843,6 +1078,7 @@
         updateIngredientMarkup(a);
         break;
       case 'prepareMarkupSelection':
+        if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; }
         captureSelection();
         holdSelectionForMarkup = true;
         if (savedSelectionRange) restoreSelection();
@@ -875,22 +1111,22 @@
   function timerSpanMatches(span, args) {
     if (!span || !args) return false;
     var timerId = args.timerId ? String(args.timerId) : '';
-    if (timerId) {
-      var spanId = span.getAttribute('data-timer-id') || '';
-      if (spanId && spanId === timerId) return true;
-    }
-    var duration = args.duration != null ? String(args.duration) : '';
-    var type = args.type != null ? String(args.type) : '';
-    var value = args.value != null ? String(args.value) : '';
-    var text = args.text != null ? String(args.text).trim() : '';
-    var spanDuration = span.getAttribute('data-duration') || '';
-    var spanType = span.getAttribute('data-type') || '';
-    var spanValue = span.getAttribute('data-value') || '';
-    var spanText = (span.textContent || '').trim();
-    if (duration && spanDuration === duration && type && spanType === type) {
-      if (text && spanText === text) return true;
-      if (value && spanValue === value) return true;
-      if (!text && !value) return true;
+    var spanId = span.getAttribute('data-timer-id') || '';
+    if (timerId && spanId && spanId === timerId) return true;
+    if (!timerId && !spanId) {
+      var duration = args.duration != null ? String(args.duration) : '';
+      var type = args.type != null ? String(args.type) : '';
+      var value = args.value != null ? String(args.value) : '';
+      var text = args.text != null ? String(args.text).trim() : '';
+      var spanDuration = span.getAttribute('data-duration') || '';
+      var spanType = span.getAttribute('data-type') || '';
+      var spanValue = span.getAttribute('data-value') || '';
+      var spanText = (span.textContent || '').trim();
+      if (duration && spanDuration === duration && type && spanType === type) {
+        if (text && spanText === text) return true;
+        if (value && spanValue === value) return true;
+        if (!text && !value) return true;
+      }
     }
     return false;
   }
@@ -969,31 +1205,62 @@
         else applyTypography(msg);
         break;
       case 'init': {
-        const state = new Uint8Array(msg.state || []);
-        ydoc = new Y.Doc();
-        ydoc.on('update', (update, origin) => {
-          if (origin === 'remote') return;
-          if (origin === 'repair') {
-            pendingRepairUpdate = update;
-            return;
+        try {
+          const state = new Uint8Array(msg.state || []);
+          ydoc = new Y.Doc();
+          ydoc.on('update', (update, origin) => {
+            if (origin === 'remote') return;
+            if (origin === 'repair') {
+              pendingRepairUpdate = update;
+              return;
+            }
+            if (!ready || applyingRemote) return;
+            if (origin === 'html-push') {
+              debugIngest('H4', 'description-editor-bridge.js:onUpdate', 'html_push_not_synced', {
+                bytes: String(update.length),
+              });
+              return;
+            }
+            debugIngest('H4', 'description-editor-bridge.js:onUpdate', 'local_update_pushed', {
+              bytes: String(update.length),
+              origin: String(origin || ''),
+            });
+            if (origin === 'repair') return;
+            post('update', { update: Array.from(update) });
+          });
+          if (state.length) {
+            Y.applyUpdate(ydoc, state, 'remote');
           }
-          if (!ready || applyingRemote) return;
-          post('update', { update: Array.from(update) });
-        });
-        if (state.length) {
-          Y.applyUpdate(ydoc, state, 'remote');
+          fragment = ydoc.getXmlFragment('description');
+          normalizeFragmentForWeb(fragment);
+          editorEl.innerHTML = fragmentToHtml();
+          ready = true;
+          if (pendingRepairUpdate) {
+            debugIngest('H4', 'description-editor-bridge.js:init', 'repair_update_skipped', {
+              bytes: String(pendingRepairUpdate.length),
+            });
+            pendingRepairUpdate = null;
+          }
+          debugIngest('H3', 'description-editor-bridge.js:init', 'editor_init_done', {
+            fragmentLength: String(fragment.length),
+            editorPlainLen: String((editorEl.textContent || '').length),
+            anchorCount: String((editorEl.innerHTML.match(/<a\s/g) || []).length),
+          });
+          post('ready', {
+            fragmentLength: fragment.length,
+            editorPlainLen: (editorEl.textContent || '').length,
+          });
+          measureContentHeight();
+          postSelectionState();
+        } catch (err) {
+          editorEl.innerHTML = '<p><br></p>';
+          ready = true;
+          post('ready', {
+            fragmentLength: 0,
+            editorPlainLen: 0,
+            initError: String(err && err.message ? err.message : err),
+          });
         }
-        fragment = ydoc.getXmlFragment('description');
-        normalizeFragmentForWeb(fragment);
-        editorEl.innerHTML = fragmentToHtml();
-        ready = true;
-        if (pendingRepairUpdate) {
-          post('update', { update: Array.from(pendingRepairUpdate) });
-          pendingRepairUpdate = null;
-        }
-        post('ready', { fragmentLength: fragment.length });
-        measureContentHeight();
-        postSelectionState();
         break;
       }
       case 'applyUpdate': {
@@ -1001,8 +1268,16 @@
         applyingRemote = true;
         try {
           const beforePlain = (editorEl.textContent || '').length;
+          const beforeAnchors = (editorEl.innerHTML.match(/<a\s/g) || []).length;
           Y.applyUpdate(ydoc, new Uint8Array(msg.update || []), 'remote');
           if (fragment) editorEl.innerHTML = fragmentToHtml();
+          debugIngest('H1', 'description-editor-bridge.js:applyUpdate', 'remote_applied', {
+            bytes: String((msg.update || []).length),
+            beforePlain: String(beforePlain),
+            afterPlain: String((editorEl.textContent || '').length),
+            beforeAnchors: String(beforeAnchors),
+            afterAnchors: String((editorEl.innerHTML.match(/<a\s/g) || []).length),
+          });
           measureContentHeight();
         } finally {
           applyingRemote = false;
@@ -1012,6 +1287,37 @@
       case 'command':
         runCommand(msg.name, msg.args);
         break;
+      case 'simulateText': {
+        if (!ready || !editorEl || !ydoc || !fragment) return;
+        const text = String(msg.text || '');
+        if (!text) return;
+        editorEl.focus();
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(editorEl);
+        range.collapse(false);
+        if (sel) {
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        const flat = selectionFlatOffset(sel);
+        const resolved = resolveYjsInsertAtFlat(flat);
+        if (resolved) {
+          ydoc.transact(() => {
+            resolved.text.insert(resolved.offset, text, {});
+          }, 'typing');
+          skipHtmlPushFromInput = true;
+          document.execCommand('insertText', false, text);
+        } else {
+          document.execCommand('insertText', false, text);
+          editorEl.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        debugIngest('H4', 'description-editor-bridge.js:simulateText', 'simulated_keystroke', {
+          textLen: String(text.length),
+          incremental: String(!!resolved),
+        });
+        break;
+      }
       default:
         break;
     }
@@ -1020,6 +1326,11 @@
   window.__descriptionEditorReceive = handleNativeMessage;
 
   editorEl.addEventListener('input', () => {
+    if (skipHtmlPushFromInput) {
+      skipHtmlPushFromInput = false;
+      measureContentHeight();
+      return;
+    }
     schedulePush();
     measureContentHeight();
   });
@@ -1056,7 +1367,7 @@
   editorEl.addEventListener('pointerup', captureSelection);
   editorEl.addEventListener('keyup', captureSelection);
 
-  // Guard: prevent editing inside timer/ingredient spans
+  // Guard: prevent editing inside timer/ingredient spans; prefer incremental Yjs edits over html-push.
   editorEl.addEventListener('beforeinput', function (e) {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
@@ -1069,6 +1380,7 @@
       }
       node = node.parentNode;
     }
+    if (tryIncrementalTextEdit(e)) return;
   });
 
   function postNodeClick(span, payload) {

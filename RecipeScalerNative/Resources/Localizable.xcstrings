@@ -38,15 +38,6 @@
     "+" : {
 
     },
-    "1. Open Account page on Recipe Scaler app" : {
-
-    },
-    "2. Press \"Login on another device\"" : {
-
-    },
-    "3. Enter your seed phrase to login into your account" : {
-
-    },
     "account.about-link" : {
       "localizations" : {
         "en" : {
@@ -1189,18 +1180,36 @@
         }
       }
     },
-    "Back" : {
+    "auth.new-user" : {
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Back"
+            "value" : "I'm new user"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Назад"
+            "value" : "Я — новый пользователь"
+          }
+        }
+      }
+    },
+    "auth.seed-placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seed phrase consists of 12 words"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Секретная фраза состоит из 12 слов"
           }
         }
       }
@@ -1217,7 +1226,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1. Откройте раздел Аккаунт в приложении Recipe Scaler"
+            "value" : "1. Откройте раздел Аккаунт в приложении Recipe Scaler"
           }
         }
       }
@@ -1234,7 +1243,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "2. Нажмите «Вход на другом устройстве»"
+            "value" : "2. Нажмите «Вход на другом устройстве»"
           }
         }
       }
@@ -1251,7 +1260,24 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "3. Введите сид-фразу для входа в аккаунт"
+            "value" : "3. Введите сид-фразу для входа в аккаунт"
+          }
+        }
+      }
+    },
+    "auth.used-before" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I used Recipe Scaler"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Я пользовался Recipe Scaler"
           }
         }
       }
@@ -1268,7 +1294,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Создайте новый аккаунт\nили восстановите существующий"
+            "value" : "Создайте новый аккаунт\nили восстановите существующий"
           }
         }
       }
@@ -1279,13 +1305,30 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Welcome to\nRecipe Scaler"
+            "value" : "Welcome to Recipe Scaler"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добро пожаловать в\nRecipe Scaler"
+            "value" : "Добро пожаловать в Recipe Scaler"
+          }
+        }
+      }
+    },
+    "Back" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Назад"
           }
         }
       }
@@ -1370,7 +1413,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "У вас пока нет коллекций. Создайте, чтобы упорядочить рецепты."
+            "value" : "У вас пока нет коллекций. Создайте, чтобы упорядочить рецепты."
           }
         }
       }
@@ -1387,7 +1430,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавить в коллекцию"
+            "value" : "Добавить в коллекцию"
           }
         }
       }
@@ -1506,7 +1549,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Рецепты из этой коллекции не удалятся — они просто перестанут в неё входить."
+            "value" : "Рецепты из этой коллекции не удалятся — они просто перестанут в неё входить."
           }
         }
       }
@@ -1574,7 +1617,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В этой коллекции пока нет рецептов"
+            "value" : "В этой коллекции пока нет рецептов"
           }
         }
       }
@@ -1710,7 +1753,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Без коллекции"
+            "value" : "Без коллекции"
           }
         }
       }
@@ -1727,7 +1770,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "По коллекциям"
+            "value" : "По коллекциям"
           }
         }
       }
@@ -1744,7 +1787,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Сгруппировать рецепты по коллекциям"
+            "value" : "Сгруппировать рецепты по коллекциям"
           }
         }
       }
@@ -1878,7 +1921,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не гасить экран включено"
+            "value" : "Не гасить экран включено"
           }
         }
       }
@@ -1971,14 +2014,43 @@
     "Copy to my recipes" : {
 
     },
-    "Create a new account\nor restore existing one" : {
-
-    },
     "Create New Timer" : {
 
     },
     "Create Timer" : {
 
+    },
+    "database.error.in-memory-fallback.description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe data will not be saved after you close the app. Restart the app or free up storage on your device."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Данные рецептов не сохранятся после закрытия приложения. Перезапустите приложение или освободите место на устройстве."
+          }
+        }
+      }
+    },
+    "database.error.in-memory-fallback.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local storage unavailable"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Локальное хранилище недоступно"
+          }
+        }
+      }
     },
     "description.editor.empty" : {
       "extractionState" : "manual",
@@ -2099,40 +2171,25 @@
         }
       }
     },
-    "database.error.in-memory-fallback.description" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recipe data will not be saved after you close the app. Restart the app or free up storage on your device."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Данные рецептов не сохранятся после закрытия приложения. Перезапустите приложение или освободите место на устройстве."
-          }
-        }
-      }
-    },
-    "database.error.in-memory-fallback.title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Local storage unavailable"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Локальное хранилище недоступно"
-          }
-        }
-      }
-    },
     "description.editor.title" : {
       "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instructions"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Инструкции"
+          }
+        }
+      }
+    },
+    "description.instructions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2809,7 +2866,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Разметить как ингредиент"
+            "value" : "Разметить как ингредиент"
           }
         }
       }
@@ -2826,7 +2883,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выделите текст для разметки ингредиента"
+            "value" : "Выделите текст для разметки ингредиента"
           }
         }
       }
@@ -2843,7 +2900,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Разметить как таймер"
+            "value" : "Разметить как таймер"
           }
         }
       }
@@ -2860,7 +2917,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выделите текст для разметки таймера"
+            "value" : "Выделите текст для разметки таймера"
           }
         }
       }
@@ -2903,12 +2960,6 @@
 
     },
     "Hours" : {
-
-    },
-    "I used Recipe Scaler before" : {
-
-    },
-    "I'm new user" : {
 
     },
     "import.choose-photos" : {
@@ -3465,6 +3516,23 @@
         }
       }
     },
+    "ingredients.deleted" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingredient deleted"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ингредиент удалён"
+          }
+        }
+      }
+    },
     "ingredients.mark-as-100" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3529,6 +3597,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "100"
+          }
+        }
+      }
+    },
+    "ingredients.unlink" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlink"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отвязать"
           }
         }
       }
@@ -4088,6 +4173,193 @@
     "Public profile (read-only) — open on web for full parity" : {
 
     },
+    "qr-scanner.cancel" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отмена"
+          }
+        }
+      }
+    },
+    "qr-scanner.error.no-camera" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't find a camera on your device."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось найти камеру на вашем устройстве."
+          }
+        }
+      }
+    },
+    "qr-scanner.error.no-camera.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Camera Found"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Камера не найдена"
+          }
+        }
+      }
+    },
+    "qr-scanner.error.not-readable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The camera couldn't be accessed. It might be in use by another app."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось получить доступ к камере. Возможно, она используется другим приложением."
+          }
+        }
+      }
+    },
+    "qr-scanner.error.not-readable.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera Not Accessible"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Камера недоступна"
+          }
+        }
+      }
+    },
+    "qr-scanner.error.permission-denied" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To scan QR codes, please allow camera access in Settings."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для сканирования QR-кодов разрешите доступ к камере в Настройках."
+          }
+        }
+      }
+    },
+    "qr-scanner.error.permission-denied.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera Access Denied"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ к камере запрещён"
+          }
+        }
+      }
+    },
+    "qr-scanner.error.unknown" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An unexpected error occurred. Please try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Произошла непредвиденная ошибка. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "qr-scanner.error.unknown.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanner Error"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка сканера"
+          }
+        }
+      }
+    },
+    "qr-scanner.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan QR code"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сканировать QR-код"
+          }
+        }
+      }
+    },
+    "qr-scanner.try-again" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try Again"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробовать снова"
+          }
+        }
+      }
+    },
     "Recipe Scaler" : {
 
     },
@@ -4362,23 +4634,6 @@
         }
       }
     },
-    "recipe.list.empty.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Recipes"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нет рецептов"
-          }
-        }
-      }
-    },
     "recipe.list.empty.description" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4392,6 +4647,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Здесь появятся ваши рецепты"
+          }
+        }
+      }
+    },
+    "recipe.list.empty.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Recipes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет рецептов"
           }
         }
       }
@@ -4645,7 +4917,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Без названия"
+            "value" : "Без названия"
           }
         }
       }
@@ -4680,74 +4952,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Масштаб"
-          }
-        }
-      }
-    },
-    "qr-scanner.error.no-camera" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We couldn't find a camera on your device."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось найти камеру на вашем устройстве."
-          }
-        }
-      }
-    },
-    "qr-scanner.error.not-readable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The camera couldn't be accessed. It might be in use by another app."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось получить доступ к камере. Возможно, она используется другим приложением."
-          }
-        }
-      }
-    },
-    "qr-scanner.error.permission-denied" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "To scan QR codes, please allow camera access in Settings."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Для сканирования QR-кодов разрешите доступ к камере в Настройках."
-          }
-        }
-      }
-    },
-    "qr-scanner.error.unknown" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "An unexpected error occurred. Please try again."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Произошла непредвиденная ошибка. Попробуйте ещё раз."
           }
         }
       }
@@ -4821,9 +5025,6 @@
       }
     },
     "Seconds" : {
-
-    },
-    "Seed phrase consists of 12 words" : {
 
     },
     "shopping.add" : {
@@ -5167,6 +5368,7 @@
       }
     },
     "shopping.share-button" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5296,7 +5498,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавить в покупки"
+            "value" : "Добавить в покупки"
           }
         }
       }
@@ -6082,6 +6284,22 @@
         }
       }
     },
+    "timers.start" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запустить таймер"
+          }
+        }
+      }
+    },
     "timers.time-types.hours" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6234,9 +6452,6 @@
           }
         }
       }
-    },
-    "Welcome to\nRecipe Scaler" : {
-
     },
     "Your recipes will appear here" : {
       "extractionState" : "manual",

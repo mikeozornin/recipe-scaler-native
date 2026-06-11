@@ -16,16 +16,26 @@ sim_launch \
   -SkipSplash=1 \
   "-OpenRecipeId=$RECIPE_ID" \
   -StartDescriptionEdit=1 \
-  "-RecipeReadDiagnostics=$RECIPE_ID"
+  "-RecipeReadDiagnostics=$RECIPE_ID" \
+  "-DescriptionEditorSimulateText=."
 
-sim_wait_ready 18
+sim_wait_ready 22
 
 SHOT="$(sim_screenshot "$SHOT_DIR" "description-editor-${RECIPE_ID:0:8}")"
 echo "Screenshot: $SHOT"
 
 if [[ -f "$LOG_FILE" ]]; then
   echo "== Editor bridge =="
-  grep -E 'description_editor_init|description_editor_ready' "$LOG_FILE" || true
+  grep -E 'description_editor_init|description_editor_ready|simulated_keystroke|editor_sync_payload|dropped_oversized' "$LOG_FILE" || true
+  if grep -q 'dropped_oversized_webview_update' "$LOG_FILE"; then
+    echo "OK dropped_oversized_webview_update (html-push blocked from sync)"
+  elif grep -q 'editor_sync_payload' "$LOG_FILE"; then
+  oversized="$(grep 'editor_sync_payload' "$LOG_FILE" | tail -1 | python3 -c "import sys,json; d=json.loads(sys.stdin.read()); print(d.get('data',{}).get('outboundBytes','?'))" 2>/dev/null || echo '?')"
+    echo "OK editor_sync_payload outboundBytes=$oversized"
+    if [[ "$oversized" != "?" && "$oversized" -gt 2048 ]]; then
+      echo "WARN: outbound sync still >2048 bytes" >&2
+    fi
+  fi
   if grep -q 'description_editor_ready' "$LOG_FILE"; then
     echo "OK description_editor_ready"
   elif grep -q 'description_editor_sheet_presented' "$LOG_FILE"; then

@@ -345,7 +345,7 @@ struct DescriptionTimerNodeFlowSheet: View {
                             AppSymbol.toolbarImage("alarm")
                                 .foregroundStyle(.primary)
                                 .frame(width: 20, height: 20)
-                            Text("Start timer")
+                            Text("timers.start")
                                 .appHeadline()
                                 .foregroundStyle(.primary)
                         }
@@ -463,7 +463,7 @@ private struct DescriptionIngredientExistingRatioStepView: View {
             Section {
                 HStack(spacing: 8) {
                     TextField("ingredients.ratio-placeholder", text: $amountText)
-                        .font(AppTypography.body)
+                        .appBodyFieldTypography()
                         .keyboardType(.decimalPad)
                     if let originalAmount {
                         Text(String(format: Bundle.currentLocalizedString("ingredients.of-original"), IngredientData.formatScalarNumber(originalAmount)))
@@ -515,7 +515,7 @@ private struct DescriptionTimerRenameStepView: View {
     var body: some View {
         Form {
             TextField("timers.timer-name", text: $name)
-                .font(AppTypography.body)
+                .appBodyFieldTypography()
         }
         .localizedNavigationTitle("timers.rename")
         .navigationBarTitleDisplayMode(.inline)

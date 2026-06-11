@@ -155,6 +155,12 @@ struct DescriptionEditorWebView: UIViewRepresentable {
             sendToJS(payload)
         }
 
+        #if DEBUG
+        func sendSimulateText(_ text: String) {
+            sendToJS(["type": "simulateText", "text": text])
+        }
+        #endif
+
         func resignEditingKeyboard() {
             webView?.resignFirstResponder()
         }

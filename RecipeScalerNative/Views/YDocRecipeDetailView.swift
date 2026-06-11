@@ -709,15 +709,22 @@ struct YDocRecipeDetailView: View {
                 )
             )
         case .ingredient:
-            guard let recipe,
-                  let ingredient = recipe.ingredients.first(where: { $0.id == click.ingredientId }) else { return }
-            presentDescriptionIngredientNodeMenu(
-                DescriptionIngredientNodeMenuState(
-                    presentationId: presentationId,
-                    click: click,
-                    ingredient: ingredient
+            let ingredientExists = recipe?.ingredients.contains(where: { $0.id == click.ingredientId }) ?? false
+            if ingredientExists, let recipe,
+               let ingredient = recipe.ingredients.first(where: { $0.id == click.ingredientId }) {
+                presentDescriptionIngredientNodeMenu(
+                    DescriptionIngredientNodeMenuState(
+                        presentationId: presentationId,
+                        click: click,
+                        ingredient: ingredient
+                    )
                 )
-            )
+            } else {
+                presentDescriptionOrphanedIngredientNodeMenu(
+                    click: click,
+                    presentationId: presentationId
+                )
+            }
         }
     }
 
@@ -745,6 +752,15 @@ struct YDocRecipeDetailView: View {
             descriptionIngredientNodeMenu = menu
             syncDescriptionChromeSuppression()
         }
+    }
+
+    private func presentDescriptionOrphanedIngredientNodeMenu(click: DescriptionNodeClick, presentationId: UInt) {
+        descriptionIngredientNodeMenu = DescriptionIngredientNodeMenuState(
+            presentationId: presentationId,
+            click: click,
+            ingredient: IngredientData(id: click.ingredientId, name: Bundle.currentLocalizedString("ingredients.deleted"))
+        )
+        syncDescriptionChromeSuppression()
     }
 
     private func timerSpanCommandArgs(_ click: DescriptionNodeClick) -> [String: Any] {

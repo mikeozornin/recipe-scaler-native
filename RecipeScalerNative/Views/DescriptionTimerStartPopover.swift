@@ -43,7 +43,7 @@ struct DescriptionTimerStartPopover: View {
                             height: DescriptionTimerStartPopoverMetrics.titleIconSize
                         )
 
-                    Text("Start timer")
+                    Text("timers.start")
                         .appHeadline()
                         .foregroundStyle(.primary)
                 }
@@ -71,7 +71,7 @@ struct DescriptionTimerStartPopover: View {
                 .shadow(color: .black.opacity(0.1), radius: 8, y: 2)
         }
         .accessibilityLabel(
-            "\(Bundle.currentLocalizedString("Start timer")), \(reference.menuSubtitle)"
+            "\(Bundle.currentLocalizedString("timers.start")), \(reference.menuSubtitle)"
         )
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier(AccessibilityIdentifiers.descriptionTimerStartConfirm)

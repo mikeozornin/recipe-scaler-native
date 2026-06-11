@@ -180,6 +180,11 @@ actor YrsDocument {
         try Self.applyState(data, to: doc)
     }
 
+    /// Apply a local edit and let `ydoc_observe_updates_v1` capture outbound sync bytes (yjs v1).
+    func applyLocalUpdate(_ data: Data) throws {
+        try Self.applyState(data, to: doc)
+    }
+
     func encodeStateAsUpdate() -> Data? {
         var len: UInt32 = 0
         guard let txn = ydoc_read_transaction(doc) else { return nil }

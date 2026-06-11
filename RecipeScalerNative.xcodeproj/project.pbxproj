@@ -119,6 +119,7 @@
 		E5F60718293A4B700000005A /* RecipeDescriptionInlineTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700000005B /* RecipeDescriptionInlineTextView.swift */; };
 		E5F60718293A4B700000000C /* AgentSyncDebugLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700000000D /* AgentSyncDebugLog.swift */; };
 		E5F60719293A4B7000000089 /* DebugSessionNDJSONLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000088 /* DebugSessionNDJSONLog.swift */; };
+		E5F60719293A4B7000000091 /* CursorDebugIngestLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000090 /* CursorDebugIngestLog.swift */; };
 		ED63F0C4CB8144D1A7CDD374 /* WriteSyncState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 082DDFB9F64449A7BCF4D3FA /* WriteSyncState.swift */; };
 		FA05529205968797A04D7590 /* TimerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D90E06DB664829F1CEFCCD5 /* TimerManager.swift */; };
 		FE65CF9516F7EF7F3C31E708 /* RecipeTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11665252A14BBEBAF0D694C4 /* RecipeTimer.swift */; };
@@ -326,6 +327,7 @@
 		E5F60718293A4B700000005B /* RecipeDescriptionInlineTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDescriptionInlineTextView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B700000000D /* AgentSyncDebugLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSyncDebugLog.swift; sourceTree = "<group>"; };
 		E5F60719293A4B7000000088 /* DebugSessionNDJSONLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSessionNDJSONLog.swift; sourceTree = "<group>"; };
+		E5F60719293A4B7000000090 /* CursorDebugIngestLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorDebugIngestLog.swift; sourceTree = "<group>"; };
 		EA4BEBE2780DE29A70E2D8AC /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		EB452B44E6C61233D3482133 /* MartianGrotesk-NrLt.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MartianGrotesk-NrLt.otf"; sourceTree = "<group>"; };
 		F0E7DB29212A4BCAA61019F1 /* RecipeEditToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEditToolbar.swift; sourceTree = "<group>"; };
@@ -752,6 +754,7 @@
 				E5F60718293A4B7000000059 /* RecipeDescriptionStyle.swift */,
 				E5F60718293A4B700000000D /* AgentSyncDebugLog.swift */,
 				E5F60719293A4B7000000088 /* DebugSessionNDJSONLog.swift */,
+				E5F60719293A4B7000000090 /* CursorDebugIngestLog.swift */,
 				E5F60718293A4B7000000009 /* RecipeRowLayoutMetrics.swift */,
 				E5F60718293A4B70219947AF /* ShoppingListConstants.swift */,
 				E5F60718293A4B7040751435 /* ShoppingListFromRecipe.swift */,
@@ -1183,6 +1186,7 @@
 				E5F60718293A4B700000005A /* RecipeDescriptionInlineTextView.swift in Sources */,
 				E5F60718293A4B700000000C /* AgentSyncDebugLog.swift in Sources */,
 				E5F60719293A4B7000000089 /* DebugSessionNDJSONLog.swift in Sources */,
+				E5F60719293A4B7000000091 /* CursorDebugIngestLog.swift in Sources */,
 				E5F60718293A4B7000000003 /* EditIngredientNutritionSheet.swift in Sources */,
 				B2C3D4E5F60718293A4B62 /* ServingsStepperView.swift in Sources */,
 				B2C3D4E5F60718293A4B60 /* RecipeAccentColor.swift in Sources */,

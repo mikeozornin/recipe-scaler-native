@@ -152,15 +152,58 @@ final class DescriptionEditorBridge: ObservableObject {
         switch type {
         case "loaded":
             Task { await beginSession() }
+        case "debugLog":
+            #if DEBUG
+            var logData: [String: String] = [:]
+            if let nested = dict["data"] as? [String: Any] {
+                nested.forEach { key, value in
+                    logData[key] = String(describing: value)
+                }
+            }
+            if let hypothesisId = dict["hypothesisId"] as? String,
+               let location = dict["location"] as? String,
+               let message = dict["message"] as? String {
+                let runId = dict["runId"] as? String ?? "pre-fix"
+                CursorDebugIngestLog.write(
+                    hypothesisId: hypothesisId,
+                    location: location,
+                    message: message,
+                    data: logData,
+                    runId: runId
+                )
+            }
+            #endif
         case "ready":
             phase = .ready
             #if DEBUG
+            var readyData: [String: String] = ["recipeId": recipeId]
+            if let fragmentLength = dict["fragmentLength"] {
+                readyData["fragmentLength"] = String(describing: fragmentLength)
+            }
+            if let editorPlainLen = dict["editorPlainLen"] {
+                readyData["editorPlainLen"] = String(describing: editorPlainLen)
+            }
+            if let initError = dict["initError"] as? String, !initError.isEmpty {
+                readyData["initError"] = initError
+            }
             AgentSyncDebugLog.write(
                 hypothesisId: "019",
                 location: "DescriptionEditorBridge.swift:ready",
                 message: "description_editor_ready",
-                data: ["recipeId": recipeId]
+                data: readyData
             )
+            if let simulateText = DebugLaunchOptions.simulateDescriptionEditorText {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(400))
+                    webView?.sendSimulateText(simulateText)
+                }
+            }
+            if let simulateCommand = DebugLaunchOptions.simulateDescriptionEditorCommand {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(600))
+                    webView?.sendCommand(name: simulateCommand, args: nil)
+                }
+            }
             #endif
         case "update":
             guard let numbers = dict["update"] as? [NSNumber], !numbers.isEmpty else { return }
