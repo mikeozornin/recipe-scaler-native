@@ -67,9 +67,18 @@ struct RecipeListView: View {
         viewMode == .collections && !isSearching
     }
 
+    private var showsDatabaseInitFailedBanner: Bool {
+        YrsDatabase.dbInitFailed
+    }
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            Group {
+            VStack(spacing: 0) {
+                if showsDatabaseInitFailedBanner {
+                    DatabaseInitFailedBanner()
+                }
+
+                Group {
                 if showsCollectionsRoot {
                     CollectionsRootView(navigationPath: $navigationPath)
                 } else if syncService.connectionState == .connecting && syncService.collectionEntries.isEmpty {
@@ -106,6 +115,7 @@ struct RecipeListView: View {
                     .listSectionSpacing(0)
                     .environment(\.defaultMinListRowHeight, 1)
                     .accessibilityIdentifier(AccessibilityIdentifiers.recipeList)
+                }
                 }
             }
             .searchable(text: $searchText, prompt: String(localized: "search.recipes"))
@@ -591,6 +601,32 @@ private struct RecipeRowMarkerSlot: View {
             height: RecipeRowLayoutMetrics.titleLineHeight,
             alignment: .center
         )
+    }
+}
+
+// MARK: - Database init warning
+
+private struct DatabaseInitFailedBanner: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            AppSymbol.image("exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("database.error.in-memory-fallback.title")
+                    .appHeadline()
+                Text("database.error.in-memory-fallback.description")
+                    .appFootnote()
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .padding(.horizontal)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
     }
 }
 

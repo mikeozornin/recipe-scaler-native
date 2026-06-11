@@ -69,9 +69,9 @@ struct AuthView: View {
                                 .padding(.top, 8)
 
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("1. Open Account page on Recipe Scaler app")
-                                Text("2. Press \"Login on another device\"")
-                                Text("3. Enter your seed phrase to login into your account")
+                                Text("auth.step1-open-account")
+                                Text("auth.step2-press-login")
+                                Text("auth.step3-enter-seed")
                             }
                             .font(AppTypography.callout)
                             .foregroundStyle(.secondary)
@@ -80,10 +80,10 @@ struct AuthView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     } else {
                         VStack(spacing: 8) {
-                            Text("Welcome to\nRecipe Scaler")
+                            Text("auth.welcome-title")
                                 .font(AppTypography.display(AppTypography.authTitleSize))
 
-                            Text("Create a new account\nor restore existing one")
+                            Text("auth.welcome-subtitle")
                                 .font(AppTypography.callout)
                                 .foregroundStyle(.secondary)
                         }
@@ -255,8 +255,7 @@ struct AuthView: View {
         defer { isLoading = false }
 
         do {
-            let result = try await authService.registerAuto()
-            print("Registration successful! Seed phrase: \(result.seedPhrase)")
+            _ = try await authService.registerAuto()
         } catch {
             errorMessage = error.localizedDescription
             showError = true

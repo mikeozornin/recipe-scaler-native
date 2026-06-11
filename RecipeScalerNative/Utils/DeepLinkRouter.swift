@@ -51,8 +51,9 @@ final class DeepLinkRouter: ObservableObject {
         guard url.scheme == "recipe-scaler",
               url.host == "recipe",
               let id = url.pathComponents.dropFirst().first,
-              !id.isEmpty else { return }
-        shared.handle(.openRecipe(recipeId: id))
+              !id.isEmpty,
+              let recipeId = UUID(uuidString: id)?.uuidString else { return }
+        shared.handle(.openRecipe(recipeId: recipeId))
     }
 
     /// Legacy: consume recipe id written by extensions into UserDefaults.

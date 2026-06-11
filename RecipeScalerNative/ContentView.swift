@@ -18,7 +18,20 @@ struct ContentView: View {
     private let debugUserId = "cfcd839f-56f2-4411-9632-7795b75f96d1"
 
     init() {
-        let database = try! YrsDatabase()
+        let database: YrsDatabase
+        do {
+            database = try YrsDatabase()
+        } catch {
+            // Fallback to in-memory if on-disk DB is corrupted or write-protected.
+            // App will function but snapshots won't persist across launches.
+            YrsDatabase.logInitFailure(error)
+            do {
+                database = try YrsDatabase.makeInMemoryFallback()
+            } catch {
+                YrsDatabase.logInitFailure(error)
+                fatalError("Cannot initialize local database: \(error)")
+            }
+        }
         let store = YDocStore(dbQueue: database.dbQueue)
         let mapStore = RemindersMapStore(dbQueue: database.dbQueue)
         let sync = YjsSyncService(store: store)

@@ -42,6 +42,35 @@ enum DescriptionEditorLayoutMetrics {
     static let focusMinHeight: CGFloat = 320
 }
 
+/// Click on a timer or ingredient node in the description editor.
+struct DescriptionNodeClick: Equatable {
+    enum NodeType: String { case timer, ingredient }
+    let nodeType: NodeType
+    let timerId: String
+    let duration: String
+    let timerType: String
+    let value: String
+    let name: String
+    let ingredientId: String
+    let originalAmount: String
+    let ratio: String
+    let text: String
+    let anchorX: CGFloat
+    let anchorY: CGFloat
+    let anchorWidth: CGFloat
+    let anchorHeight: CGFloat
+
+    var anchorRect: CGRect {
+        CGRect(x: anchorX, y: anchorY, width: anchorWidth, height: anchorHeight)
+    }
+
+    /// Stable fallback key when `timerId` is missing from legacy markup.
+    var timerMatchKey: String {
+        if !timerId.isEmpty { return timerId }
+        return "\(duration)-\(timerType)-\(value)-\(text)"
+    }
+}
+
 @MainActor
 final class DescriptionEditorBridge: ObservableObject {
     enum Phase: Equatable {
@@ -54,11 +83,15 @@ final class DescriptionEditorBridge: ObservableObject {
     @Published private(set) var isFocused = false
     @Published private(set) var contentHeight: CGFloat = DescriptionEditorLayoutMetrics.minEmbeddedHeight
     @Published private(set) var selectionState = DescriptionEditorSelectionState()
+    @Published private(set) var lastNodeClick: DescriptionNodeClick?
+    @Published private(set) var nodeClickSequence: UInt = 0
+
+    private var suppressIncomingFocus = false
 
     let recipeId: String
     let presentation: DescriptionEditorPresentation
     private weak var syncService: YjsSyncService?
-    private var webView: DescriptionEditorWebView.Coordinator?
+    private weak var webView: DescriptionEditorWebView.Coordinator?
 
     var heightMode: DescriptionEditorHeightMode {
         contentHeight > DescriptionEditorLayoutMetrics.embeddedMaxHeight ? .focus : .embedded
@@ -132,23 +165,14 @@ final class DescriptionEditorBridge: ObservableObject {
         case "update":
             guard let numbers = dict["update"] as? [NSNumber], !numbers.isEmpty else { return }
             let data = Data(numbers.map { UInt8(truncating: $0) })
-            // #region agent log
-            DebugSessionNDJSONLog.write(
-                hypothesisId: "H1",
-                location: "DescriptionEditorBridge.swift:update",
-                message: "swift_received_js_update",
-                data: [
-                    "recipeId": recipeId,
-                    "bytes": String(data.count),
-                ]
-            )
-            // #endregion
             Task {
                 try? await syncService?.applyDescriptionEditorUpdate(recipeId: recipeId, update: data)
             }
         case "focus":
+            guard !suppressIncomingFocus else { return }
             isFocused = true
         case "blur":
+            suppressIncomingFocus = false
             isFocused = false
         case "contentHeight":
             if let height = dict["height"] as? Double, height > 0 {
@@ -158,6 +182,9 @@ final class DescriptionEditorBridge: ObservableObject {
             }
         case "selectionState":
             selectionState = Self.parseSelectionState(dict)
+        case "nodeClick":
+            lastNodeClick = Self.parseNodeClick(dict)
+            nodeClickSequence &+= 1
         default:
             break
         }
@@ -165,6 +192,14 @@ final class DescriptionEditorBridge: ObservableObject {
 
     func sendCommand(name: String, args: [String: Any]? = nil) {
         webView?.sendCommand(name: name, args: args)
+    }
+
+    /// Dismiss keyboard and clear focus (e.g. keyboard accessory Done).
+    func dismissEditingFocus() {
+        suppressIncomingFocus = true
+        isFocused = false
+        sendCommand(name: "blur")
+        webView?.resignEditingKeyboard()
     }
 
     func applyRemoteUpdate(_ update: Data) {
@@ -203,6 +238,36 @@ final class DescriptionEditorBridge: ObservableObject {
             canHighlight: dict["canHighlight"] == nil ? true : bool("canHighlight"),
             canBulletList: dict["canBulletList"] == nil ? true : bool("canBulletList"),
             canOrderedList: dict["canOrderedList"] == nil ? true : bool("canOrderedList")
+        )
+    }
+
+    private static func parseNodeClick(_ dict: [String: Any]) -> DescriptionNodeClick {
+        func string(_ key: String) -> String {
+            dict[key] as? String ?? ""
+        }
+        func cgFloat(_ key: String) -> CGFloat {
+            if let value = dict[key] as? Double { return CGFloat(value) }
+            if let value = dict[key] as? NSNumber { return CGFloat(truncating: value) }
+            return 0
+        }
+        let rawType = string("nodeType")
+        let nodeType = DescriptionNodeClick.NodeType(rawValue: rawType) ?? .timer
+        let timerTypeRaw = string("timerType")
+        return DescriptionNodeClick(
+            nodeType: nodeType,
+            timerId: string("timerId"),
+            duration: string("duration"),
+            timerType: timerTypeRaw.isEmpty ? string("type") : timerTypeRaw,
+            value: string("value"),
+            name: string("name"),
+            ingredientId: string("ingredientId"),
+            originalAmount: string("originalAmount"),
+            ratio: string("ratio"),
+            text: string("text"),
+            anchorX: cgFloat("anchorX"),
+            anchorY: cgFloat("anchorY"),
+            anchorWidth: cgFloat("anchorWidth"),
+            anchorHeight: cgFloat("anchorHeight")
         )
     }
 }
