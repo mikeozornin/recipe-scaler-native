@@ -83,6 +83,20 @@ extension APIClient {
         return data
     }
 
+    /// Generic decodable request — returns the decoded type directly (no `APIResponse` wrapper).
+    public func performDecodable<T: Decodable>(
+        path: String,
+        method: String = "GET",
+        body: Data? = nil
+    ) async throws -> T {
+        let request = try buildRequest(path: path, method: method, body: body)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw APIError.httpError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? -1)
+        }
+        return try JSONDecoder().decode(T.self, from: data)
+    }
+
     private static func parseAPIFailureBody(_ data: Data) -> String? {
         struct Empty: Decodable {}
         guard let json = try? JSONDecoder().decode(APIResponse<Empty>.self, from: data),

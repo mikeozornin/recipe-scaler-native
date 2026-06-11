@@ -65,7 +65,6 @@
 		B2C3D4E5F60718293A4B60 /* RecipeAccentColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B5F /* RecipeAccentColor.swift */; };
 		B2C3D4E5F60718293A4B62 /* ServingsStepperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B61 /* ServingsStepperView.swift */; };
 		B2C3D4E5F60718293A4B64 /* YDocIngredientsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B63 /* YDocIngredientsSection.swift */; };
-		E5F60719293A4B7000000091 /* IngredientEditReorderTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000090 /* IngredientEditReorderTableView.swift */; };
 		B52E1B8024F0FF293817C6F4 /* RecipeListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A2FBA494D4B821D6044FD6 /* RecipeListViewModel.swift */; };
 		B73279F40D2B240855EFBF6E /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EE8CD517E8068E7ECBF4A2 /* SplashView.swift */; };
 		BFBD67F13972B46AF2DCF378 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 209008F3F2C5E8241023341F /* SocketIO */; };
@@ -128,7 +127,6 @@
 		E5F60718293A4B70F4B04DF3 /* PublicURLBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70898823B7 /* PublicURLBuilder.swift */; };
 		E5F60718293A4B70267CA7BD /* ShoppingListData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A32A1501 /* ShoppingListData.swift */; };
 		E5F60718293A4B7055FFBBCC /* DocumentManager+ShoppingList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */; };
-		E5F60718293A4B702C6563FF /* APIClient+Requests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70AC40BCFC /* APIClient+Requests.swift */; };
 		E5F60718293A4B704B61748D /* DiscoverAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7011DA2DE4 /* DiscoverAPI.swift */; };
 		E5F60718293A4B70D9D24CAE /* RecipeImageUploadAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7097235780 /* RecipeImageUploadAPI.swift */; };
 		E5F60718293A4B709F00BE94 /* SharingAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7035E279C2 /* SharingAPI.swift */; };
@@ -261,7 +259,6 @@
 		B2C3D4E5F60718293A4B5F /* RecipeAccentColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeAccentColor.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60718293A4B61 /* ServingsStepperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServingsStepperView.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60718293A4B63 /* YDocIngredientsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YDocIngredientsSection.swift; sourceTree = "<group>"; };
-		E5F60719293A4B7000000090 /* IngredientEditReorderTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientEditReorderTableView.swift; sourceTree = "<group>"; };
 		B2FD0DF0B71C1B50552D1B2F /* RecipeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeListView.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.crashreport; };
 		B3AE1379BA360BCA84247C8D /* CollectionEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEntry.swift; sourceTree = "<group>"; };
 		B7951C990E84C9EFE9685023 /* YrsValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YrsValue.swift; sourceTree = "<group>"; };
@@ -340,7 +337,6 @@
 		E5F60718293A4B70898823B7 /* PublicURLBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicURLBuilder.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A32A1501 /* ShoppingListData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListData.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DocumentManager+ShoppingList.swift"; sourceTree = "<group>"; };
-		E5F60718293A4B70AC40BCFC /* APIClient+Requests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIClient+Requests.swift"; sourceTree = "<group>"; };
 		E5F60718293A4B7011DA2DE4 /* DiscoverAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverAPI.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7097235780 /* RecipeImageUploadAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeImageUploadAPI.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7035E279C2 /* SharingAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingAPI.swift; sourceTree = "<group>"; };
@@ -542,7 +538,6 @@
 				E5F60719293A4B7000000084 /* DescriptionEditorChromeState.swift */,
 				E5F60719293A4B7000000086 /* DescriptionMarkupFlow.swift */,
 				B2C3D4E5F60718293A4B63 /* YDocIngredientsSection.swift */,
-				E5F60719293A4B7000000090 /* IngredientEditReorderTableView.swift */,
 				E5F60718293A4B7000000004 /* EditIngredientNutritionSheet.swift */,
 				B2C3D4E5F60718293A4B61 /* ServingsStepperView.swift */,
 				F0E7DB29212A4BCAA61019F1 /* RecipeEditToolbar.swift */,
@@ -780,7 +775,6 @@
 		EDE97F98D203CDB041112403 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				E5F60718293A4B70AC40BCFC /* APIClient+Requests.swift */,
 				E5F60718293A4B7011DA2DE4 /* DiscoverAPI.swift */,
 				E5F60718293A4B7097235780 /* RecipeImageUploadAPI.swift */,
 				E5F60718293A4B7035E279C2 /* SharingAPI.swift */,
@@ -1208,7 +1202,6 @@
 				E5F60718293A4B70F4B04DF3 /* PublicURLBuilder.swift in Sources */,
 				E5F60718293A4B70267CA7BD /* ShoppingListData.swift in Sources */,
 				E5F60718293A4B7055FFBBCC /* DocumentManager+ShoppingList.swift in Sources */,
-				E5F60718293A4B702C6563FF /* APIClient+Requests.swift in Sources */,
 				E5F60718293A4B704B61748D /* DiscoverAPI.swift in Sources */,
 				E5F60718293A4B70D9D24CAE /* RecipeImageUploadAPI.swift in Sources */,
 				E5F60718293A4B709F00BE94 /* SharingAPI.swift in Sources */,

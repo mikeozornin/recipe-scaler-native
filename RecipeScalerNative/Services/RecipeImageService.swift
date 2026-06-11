@@ -249,7 +249,7 @@ actor RecipeImageService {
         defer { inFlight.remove(flightKey) }
 
         let version = RecipeImageVersion.token(from: imageUrl)
-        guard let remoteURL = await APIClient.shared.recipeImageURL(
+        guard let remoteURL = APIClient.shared.recipeImageURL(
             id: recipeId,
             preview: variant == .preview,
             version: version
@@ -257,7 +257,7 @@ actor RecipeImageService {
             return nil
         }
 
-        let request = await APIClient.shared.recipeImageDownloadRequest(
+        let request = APIClient.shared.recipeImageDownloadRequest(
             remoteURL: remoteURL,
             etag: storedEtag(recipeId: recipeId, variant: variant),
             lastModified: storedLastModified(recipeId: recipeId, variant: variant)
