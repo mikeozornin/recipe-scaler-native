@@ -12,6 +12,7 @@ struct RecipeDescriptionEditorBlock: View {
     let accentColor: Color
     let syncService: YjsSyncService
     @ObservedObject var chrome: DescriptionEditorChromeState
+    var onNodeClick: ((DescriptionNodeClick) -> Void)?
 
     @StateObject private var bridge: DescriptionEditorBridge
 
@@ -19,12 +20,14 @@ struct RecipeDescriptionEditorBlock: View {
         recipeId: String,
         accentColor: Color,
         syncService: YjsSyncService,
-        chrome: DescriptionEditorChromeState
+        chrome: DescriptionEditorChromeState,
+        onNodeClick: ((DescriptionNodeClick) -> Void)? = nil
     ) {
         self.recipeId = recipeId
         self.accentColor = accentColor
         self.syncService = syncService
         self.chrome = chrome
+        self.onNodeClick = onNodeClick
         _bridge = StateObject(
             wrappedValue: DescriptionEditorBridge(
                 recipeId: recipeId,
@@ -46,18 +49,23 @@ struct RecipeDescriptionEditorBlock: View {
                 .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
 
             ZStack(alignment: .top) {
-                DescriptionEditorWebView(bridge: bridge, allowsScrolling: false, accentColor: accentColor)
+                DescriptionEditorWebView(
+                    bridge: bridge,
+                    allowsScrolling: false,
+                    accentColor: accentColor,
+                    onKeyboardDone: { chrome.blurEditor() }
+                )
                     .frame(height: resolvedHeight)
                     .opacity(bridge.phase == .ready ? 1 : 0.35)
 
                 if bridge.phase == .loading {
-                    ProgressView(String(localized: "description.editor.loading"))
+                    ProgressView("description.editor.loading")
                         .frame(maxWidth: .infinity, minHeight: resolvedHeight)
                 }
 
                 if case .error(let message) = bridge.phase {
                     Text(message)
-                        .font(AppTypography.subheadline)
+                        .appBody()
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity, minHeight: resolvedHeight)
@@ -71,30 +79,12 @@ struct RecipeDescriptionEditorBlock: View {
             chrome.bind(bridge: bridge)
         }
         .onDisappear {
-            // #region agent log
-            DebugSessionNDJSONLog.write(
-                hypothesisId: "H1",
-                location: "RecipeDescriptionEditorBlock.swift:onDisappear",
-                message: "editor_block_disappeared",
-                data: [
-                    "recipeId": recipeId,
-                    "phase": String(describing: bridge.phase),
-                ]
-            )
-            // #endregion
             bridge.teardown()
             chrome.reset()
         }
-        .onReceive(bridge.$isFocused) { focused in
-            chrome.syncFocus(focused)
-            chrome.bind(bridge: bridge)
-        }
-        .onReceive(bridge.$phase) { phase in
-            chrome.syncPhase(phase)
-            chrome.bind(bridge: bridge)
-        }
-        .onReceive(bridge.$contentHeight) { _ in
-            chrome.bind(bridge: bridge)
+        .onChange(of: bridge.nodeClickSequence) { _, _ in
+            guard let click = bridge.lastNodeClick else { return }
+            onNodeClick?(click)
         }
     }
 }
