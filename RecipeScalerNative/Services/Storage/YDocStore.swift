@@ -117,4 +117,38 @@ actor YDocStore {
                 .deleteAll(db)
         }
     }
+
+    // MARK: - Yjs wire snapshots (description offline sync)
+
+    func saveYjsWireSnapshot(docKey: String, state: Data) throws {
+        let now = ISO8601DateFormatter().string(from: Date())
+        var snapshot = YjsWireSnapshot(docKey: docKey, state: state, updatedAt: now)
+        try dbQueue.write { db in
+            try snapshot.save(db)
+        }
+    }
+
+    func loadYjsWireSnapshot(docKey: String) throws -> YjsWireSnapshot? {
+        try dbQueue.read { db in
+            try YjsWireSnapshot.fetchOne(db, key: docKey)
+        }
+    }
+
+    func deleteYjsWireSnapshot(docKey: String) throws {
+        try dbQueue.write { db in
+            _ = try YjsWireSnapshot.deleteOne(db, key: docKey)
+        }
+    }
+
+    func deleteAllYjsWireSnapshots() throws {
+        try dbQueue.write { db in
+            try YjsWireSnapshot.deleteAll(db)
+        }
+    }
+
+    func allYjsWireSnapshotKeys() throws -> [String] {
+        try dbQueue.read { db in
+            try String.fetchAll(db, sql: "SELECT docKey FROM yjs_wire_snapshots")
+        }
+    }
 }

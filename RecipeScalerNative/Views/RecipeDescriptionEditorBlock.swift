@@ -82,13 +82,20 @@ struct RecipeDescriptionEditorBlock: View {
             .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
         }
         .accessibilityIdentifier("recipe_description_editor_inline")
+        .task {
+            await syncService.suspendRecipeRefresh()
+        }
         .onAppear {
             chrome.bind(bridge: bridge)
             pushScaleToEditor()
         }
         .onDisappear {
-            bridge.teardown()
-            chrome.reset()
+            Task { @MainActor in
+                await syncService.flushPendingEdits()
+                bridge.teardown()
+                chrome.reset()
+                await syncService.resumeRecipeRefresh()
+            }
         }
         .onChange(of: bridge.phase) { _, phase in
             if phase == .ready { pushScaleToEditor() }

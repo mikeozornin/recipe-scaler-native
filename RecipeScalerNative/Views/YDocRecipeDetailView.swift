@@ -402,6 +402,17 @@ struct YDocRecipeDetailView: View {
                 dismiss()
             }
         }
+        .onChange(of: syncService.connectionState) { _, newState in
+            guard newState == .connected else { return }
+            Task {
+                await syncService.syncPendingDocumentsAfterReconnect(recipeIds: [recipeId])
+            }
+        }
+        .background {
+            if !isEditing {
+                DescriptionWireExportHost(recipeId: recipeId, syncService: syncService)
+            }
+        }
         .onChange(of: isScreenAwakeActive) { _, active in
             ScreenAwakeController.setActive(active)
         }

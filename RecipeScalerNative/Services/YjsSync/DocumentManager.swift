@@ -16,9 +16,13 @@ actor DocumentManager {
     private var onRecipeChanged: (@Sendable (String) -> Void)?
     var onShoppingChanged: (@Sendable () -> Void)?
     private var onLocalRecipeUpdate: (@Sendable (String, Data) async -> Void)?
+    private var onDescriptionYjsUpdate: (@Sendable (String, Data) async -> Void)?
     var onLocalShoppingUpdate: (@Sendable (Data) async -> Void)?
     private var currentUserId: String?
     private var suppressRecipeObserverDepth = 0
+    /// Debounced SQLite persist for hot description-editor paths (avoid per-keystroke full encode).
+    private var snapshotPersistTasks: [String: Task<Void, Never>] = [:]
+    private static let snapshotPersistDebounceNs: UInt64 = 500_000_000
 
     init(store: YDocStore) {
         self.store = store
@@ -34,6 +38,10 @@ actor DocumentManager {
 
     func setLocalUpdateHandler(_ handler: @escaping @Sendable (String, Data) async -> Void) {
         onLocalRecipeUpdate = handler
+    }
+
+    func setDescriptionYjsUpdateHandler(_ handler: @escaping @Sendable (String, Data) async -> Void) {
+        onDescriptionYjsUpdate = handler
     }
 
     func setShoppingHandlers(
@@ -426,6 +434,23 @@ actor DocumentManager {
         } catch {
             Self.logger.warning("Failed to persist snapshot for \(docKey): \(error)")
         }
+    }
+
+    /// Schedule a debounced snapshot write (coalesces rapid description-editor keystrokes).
+    func scheduleSnapshotPersist(docKey: String) {
+        snapshotPersistTasks[docKey]?.cancel()
+        snapshotPersistTasks[docKey] = Task {
+            try? await Task.sleep(nanoseconds: Self.snapshotPersistDebounceNs)
+            guard !Task.isCancelled else { return }
+            await self.persistSnapshot(docKey: docKey)
+        }
+    }
+
+    /// Flush any pending debounced snapshot immediately (e.g. before leaving edit mode).
+    func flushScheduledSnapshotPersist(docKey: String) async {
+        snapshotPersistTasks[docKey]?.cancel()
+        snapshotPersistTasks[docKey] = nil
+        await persistSnapshot(docKey: docKey)
     }
 
     // MARK: - Collection writes (008)
@@ -902,7 +927,11 @@ actor DocumentManager {
     }
 
     /// Applies incremental update from the embedded Yjs editor; forwards bytes to sync debouncer.
-    func applyDescriptionEditorUpdate(recipeId: String, update: Data) async throws {
+    func applyDescriptionEditorUpdate(
+        recipeId: String,
+        update: Data,
+        forwardToSync: Bool = true
+    ) async throws {
         guard !update.isEmpty else { return }
         guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
         let key = "\(userId):recipe:\(recipeId)"
@@ -929,21 +958,28 @@ actor DocumentManager {
             try? await store.deleteSnapshot(docKey: key)
             throw error
         }
-        if let state = await doc.encodeStateAsUpdate() {
-            try? await store.saveSnapshot(docKey: key, state: state, lastSyncedAt: nil)
-        }
-        notifyRecipeChangedIfNeeded(recipeId: recipeId)
+        // Hot path: debounce SQLite encode; network debouncer + flushPendingEdits persist on Done.
+        scheduleSnapshotPersist(docKey: key)
+        // Description renders in WebView during edit — skip recipe observer refresh per keystroke.
 
-        let yrsUpdate = await doc.consumePendingLocalUpdates()
-        let outbound = yrsUpdate ?? update
-        var descAfter: [String: String] = [:]
-        if let xmlTail = try? await doc.withReadTransaction({ _, txn in
-            XmlFragmentToHTML.serializedFragment(txn: txn)
-        }) {
-            descAfter["xmlLen"] = String(xmlTail.count)
-            descAfter["xmlTail"] = String(xmlTail.suffix(160))
+        _ = await doc.consumePendingLocalUpdates()
+        // Forward yjs wire bytes from WebView — yrs re-encode breaks web XmlFragment parsing.
+        if forwardToSync {
+            await onDescriptionYjsUpdate?(recipeId, update)
         }
-        await onLocalRecipeUpdate?(recipeId, outbound)
+    }
+
+    func pendingSyncByteCount(recipeId: String) async -> Int {
+        guard let userId = currentUserId else { return 0 }
+        let key = "\(userId):recipe:\(recipeId)"
+        guard let doc = docs[key] else { return 0 }
+        return await doc.pendingLocalUpdateByteCount()
+    }
+
+    func localSnapshotByteCount(recipeId: String) async -> Int {
+        guard let userId = currentUserId else { return 0 }
+        let key = "\(userId):recipe:\(recipeId)"
+        return (try? await store.loadSnapshot(docKey: key))?.state.count ?? 0
     }
 
     private func deliverPendingLocalUpdate(recipeId: String) async {

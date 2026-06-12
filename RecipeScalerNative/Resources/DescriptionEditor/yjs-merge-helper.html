@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+</head>
+<body>
+  <script src="yjs.bundle.js"></script>
+  <script>
+    function toUint8Array(parts) {
+      return parts.map(function (p) { return new Uint8Array(p); });
+    }
+
+    function mergeUpdates(parts) {
+      var arrays = toUint8Array(parts || []);
+      if (!arrays.length) return [];
+      if (arrays.length === 1) return Array.from(arrays[0]);
+      return Array.from(Y.mergeUpdates(arrays));
+    }
+
+    function encodeFullState(bootstrap, parts) {
+      var doc = new Y.Doc();
+      if (bootstrap && bootstrap.length > 2) {
+        Y.applyUpdate(doc, new Uint8Array(bootstrap), 'remote');
+      }
+      var arrays = toUint8Array(parts || []);
+      for (var i = 0; i < arrays.length; i++) {
+        if (arrays[i].length > 2) {
+          Y.applyUpdate(doc, arrays[i], 'remote');
+        }
+      }
+      return Array.from(Y.encodeStateAsUpdate(doc));
+    }
+
+    window.__yjsMergeReady = true;
+    window.__yjsMerge = {
+      mergeUpdates: mergeUpdates,
+      encodeFullState: encodeFullState,
+    };
+  </script>
+</body>
+</html>

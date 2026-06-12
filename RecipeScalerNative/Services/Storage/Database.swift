@@ -93,6 +93,14 @@ final class YrsDatabase {
             )
         }
 
+        migrator.registerMigration("v4_create_yjs_wire_snapshots") { db in
+            try db.create(table: "yjs_wire_snapshots") { t in
+                t.column("docKey", .text).primaryKey()
+                t.column("state", .blob).notNull()
+                t.column("updatedAt", .text).notNull()
+            }
+        }
+
         try migrator.migrate(dbQueue)
     }
 }

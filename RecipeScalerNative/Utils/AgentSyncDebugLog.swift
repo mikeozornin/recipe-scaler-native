@@ -41,6 +41,15 @@ enum AgentSyncDebugLog {
         #endif
     }
 
+    /// On-device NDJSON session log, for export/sharing from the developer screen.
+    static func sessionLogFileURL() -> URL? {
+        #if DEBUG
+        return sessionLogURL
+        #else
+        return nil
+        #endif
+    }
+
     #if DEBUG
     private static var sessionLogURL: URL {
         let env = ProcessInfo.processInfo.environment

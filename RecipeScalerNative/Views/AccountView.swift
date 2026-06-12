@@ -57,6 +57,10 @@ struct AccountView: View {
                     }
                 }
 
+                #if DEBUG
+                developerDebugSection
+                #endif
+
                 footerSection
 
                 MobileTimerPanelListSpacerRow()
@@ -362,6 +366,25 @@ struct AccountView: View {
         }
         .appListSectionHeaderStyle()
     }
+
+    #if DEBUG
+    @ViewBuilder
+    private var developerDebugSection: some View {
+        Section {
+            if let url = AgentSyncDebugLog.sessionLogFileURL() {
+                ShareLink(item: url) {
+                    Text(verbatim: "Export sync debug log")
+                        .appBody()
+                }
+                Text(url.lastPathComponent)
+                    .appFootnote()
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text(verbatim: "Developer")
+        }
+    }
+    #endif
 
     @ViewBuilder
     private var footerSection: some View {

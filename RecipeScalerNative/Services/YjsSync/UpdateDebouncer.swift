@@ -48,10 +48,17 @@ actor UpdateDebouncer {
 
     private func flush(recipeId: String) async {
         guard let batch = drainPendingBatch(recipeId: recipeId) else { return }
-        for (index, payload) in batch.enumerated() {
-            guard payload.count > 2 else {
-                continue
-            }
+        let payloads = batch.filter { $0.count > 2 }
+        guard !payloads.isEmpty else { return }
+        if payloads.count == 1 {
+            await onFlush(recipeId, payloads[0])
+            return
+        }
+        if let merged = try? await YjsMergeHelper.shared.mergeUpdates(payloads) {
+            await onFlush(recipeId, merged)
+            return
+        }
+        for payload in payloads {
             await onFlush(recipeId, payload)
         }
     }

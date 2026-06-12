@@ -41,12 +41,15 @@ socket.emit("sync_request", [
 
 ## Drain офлайн-очереди
 
-После reconnect и `auth`:
+После reconnect и `auth` (паритет `processOfflineOperationsAfterLoad` на вебе):
 
-1. Загрузить `offline_sync_queue` по `createdAt`
-2. Для каждого `docKey` при нескольких строках — merge (опционально)
-3. Emit `sync_request` последовательно по рецептам
-4. Ждать `sync_confirmed` или `sync_error` перед следующим (или параллельно по doc с осторожностью)
+1. `applyOfflineQueueToLocalDocs()` — idempotent merge в yrs
+2. Для каждого recipe с unsynced local: `load_document` → CRDT-merge сервера в локальный doc (**не** skip при pending outbound; как `Y.applyUpdate` на вебе)
+3. Для каждого `docKey` с pending:
+   - **recipe v3 description**: push **полного yjs wire state** из `yjs_wire_snapshots` или `YjsMergeHelper.encodeFullState` (никогда yrs `encodeStateAsUpdate` на сервер)
+   - collection / shopping: yrs snapshot или последний queued update
+3. Emit `sync_request`; при `sync_confirmed` — очистить очередь и `yjs_wire_snapshots` для doc
+4. Глобальный scan коллекции при cold start — без открытия редактора
 
 ## Контракт debounce
 

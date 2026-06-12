@@ -92,6 +92,9 @@ final class DescriptionEditorBridge: ObservableObject {
     let presentation: DescriptionEditorPresentation
     private weak var syncService: YjsSyncService?
     private weak var webView: DescriptionEditorWebView.Coordinator?
+    /// Serializes WebView → yrs applies so flush can await the last keystroke.
+    private var applyChain: Task<Void, Never>?
+    private var outboundFlushContinuations: [CheckedContinuation<Void, Never>] = []
 
     var heightMode: DescriptionEditorHeightMode {
         contentHeight > DescriptionEditorLayoutMetrics.embeddedMaxHeight ? .focus : .embedded
@@ -156,12 +159,16 @@ final class DescriptionEditorBridge: ObservableObject {
                 }
             }
             #endif
+        case "syncState":
+            guard let numbers = dict["update"] as? [NSNumber], !numbers.isEmpty else { return }
+            let data = Data(numbers.map { UInt8(truncating: $0) })
+            enqueueDescriptionSyncState(data)
         case "update":
             guard let numbers = dict["update"] as? [NSNumber], !numbers.isEmpty else { return }
             let data = Data(numbers.map { UInt8(truncating: $0) })
-            Task { [recipeId] in
-                try? await syncService?.applyDescriptionEditorUpdate(recipeId: recipeId, update: data)
-            }
+            enqueueDescriptionUpdate(data)
+        case "outboundFlushed":
+            resumeOutboundFlushWaiters()
         case "focus":
             guard !suppressIncomingFocus else { return }
             isFocused = true
@@ -215,13 +222,56 @@ final class DescriptionEditorBridge: ObservableObject {
         webView?.sendApplyUpdate(update)
     }
 
-    /// Ask the WebView to flush its debounced reconcile *now* and give the posted
-    /// `update` message a moment to be applied to the doc before the caller drains.
-    /// Without this, the last <DEBOUNCE_MS of typing before Done never reaches Y.
+    /// Push debounced WebView Yjs bytes into yrs and wait until applied (Done / leave edit).
     func flushEditorEdits() async {
         guard phase == .ready else { return }
         sendCommand(name: "flush")
-        try? await Task.sleep(for: .milliseconds(160))
+        await waitForOutboundFlushed()
+        await applyChain?.value
+    }
+
+    private func enqueueDescriptionUpdate(_ data: Data) {
+        let service = syncService
+        let id = recipeId
+        let prior = applyChain
+        applyChain = Task { @MainActor in
+            await prior?.value
+            try? await service?.applyDescriptionEditorUpdate(recipeId: id, update: data)
+        }
+    }
+
+    private func enqueueDescriptionSyncState(_ data: Data) {
+        let service = syncService
+        let id = recipeId
+        let prior = applyChain
+        applyChain = Task { @MainActor in
+            await prior?.value
+            await service?.applyDescriptionSyncState(recipeId: id, state: data)
+        }
+    }
+
+    private func resumeOutboundFlushWaiters() {
+        let waiters = outboundFlushContinuations
+        outboundFlushContinuations.removeAll()
+        for waiter in waiters {
+            waiter.resume()
+        }
+    }
+
+    private func waitForOutboundFlushed(timeout: Duration = .seconds(2)) async {
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { @MainActor in
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    self.outboundFlushContinuations.append(continuation)
+                }
+            }
+            group.addTask {
+                try? await Task.sleep(for: timeout)
+            }
+            _ = await group.next()
+            group.cancelAll()
+            resumeOutboundFlushWaiters()
+        }
     }
 
     func flushPendingSync() async {

@@ -27,6 +27,12 @@
   let savedSelection = null;
   let holdSelectionForMarkup = false;
   let pendingScale = null;
+  let pendingOutboundUpdates = [];
+  let outboundFlushTimer = null;
+  let selectionStateTimer = null;
+  let contentHeightTimer = null;
+  const OUTBOUND_DEBOUNCE_MS = 50;
+  const UI_POST_DEBOUNCE_MS = 80;
 
   const editorEl = document.getElementById('editor');
 
@@ -134,7 +140,7 @@
     return editor.state.doc.textBetween(from, to);
   }
 
-  function postSelectionState() {
+  function postSelectionStateNow() {
     if (!editor) return;
     try {
       const { empty } = editor.state.selection;
@@ -158,11 +164,47 @@
     }
   }
 
-  function measureContentHeight() {
+  function postSelectionState() {
+    if (selectionStateTimer) clearTimeout(selectionStateTimer);
+    selectionStateTimer = setTimeout(function () {
+      selectionStateTimer = null;
+      postSelectionStateNow();
+    }, UI_POST_DEBOUNCE_MS);
+  }
+
+  function measureContentHeightNow() {
     const dom = editorDom();
     if (!dom) return;
     const height = Math.max(MIN_INLINE_HEIGHT, dom.scrollHeight + 8);
     post('contentHeight', { height: height });
+  }
+
+  function measureContentHeight() {
+    if (contentHeightTimer) clearTimeout(contentHeightTimer);
+    contentHeightTimer = setTimeout(function () {
+      contentHeightTimer = null;
+      measureContentHeightNow();
+    }, UI_POST_DEBOUNCE_MS);
+  }
+
+  function flushOutboundUpdates() {
+    if (outboundFlushTimer) {
+      clearTimeout(outboundFlushTimer);
+      outboundFlushTimer = null;
+    }
+    if (!pendingOutboundUpdates.length) return;
+    const merged =
+      pendingOutboundUpdates.length === 1
+        ? pendingOutboundUpdates[0]
+        : Y.mergeUpdates(pendingOutboundUpdates);
+    pendingOutboundUpdates = [];
+    post('update', { update: Array.from(merged) });
+  }
+
+  function scheduleOutboundUpdate(update) {
+    pendingOutboundUpdates.push(update);
+    if (outboundFlushTimer) clearTimeout(outboundFlushTimer);
+    outboundFlushTimer = setTimeout(flushOutboundUpdates, OUTBOUND_DEBOUNCE_MS);
   }
 
   function setupResizeObserver() {
@@ -451,7 +493,18 @@
         post('focus');
         return;
       case 'flush':
-        /* Collaboration writes to ydoc synchronously — nothing to debounce. */
+        flushOutboundUpdates();
+        if (ydoc) {
+          try {
+            var fullState = Y.encodeStateAsUpdate(ydoc);
+            if (fullState && fullState.length > 2) {
+              post('syncState', { update: Array.from(fullState) });
+            }
+          } catch (_flushErr) {
+            /* keep outboundFlushed */
+          }
+        }
+        post('outboundFlushed');
         return;
       case 'blur':
         holdSelectionForMarkup = false;
@@ -566,7 +619,7 @@
           ydoc.on('update', function (update, origin) {
             if (origin === 'remote') return;
             if (!ready || applyingRemote) return;
-            post('update', { update: Array.from(update) });
+            scheduleOutboundUpdate(update);
           });
           if (state.length) {
             Y.applyUpdate(ydoc, state, 'remote');
@@ -581,8 +634,8 @@
             fragmentLength: fragment.length,
             editorPlainLen: plainLen,
           });
-          measureContentHeight();
-          postSelectionState();
+          measureContentHeightNow();
+          postSelectionStateNow();
           applyPendingScale();
         } catch (err) {
           ready = true;

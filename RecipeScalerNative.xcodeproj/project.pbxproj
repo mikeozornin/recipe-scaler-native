@@ -106,12 +106,16 @@
 		E5F60718293A4B7000000074 /* DescriptionEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000075 /* DescriptionEditorView.swift */; };
 		E5F60718293A4B7000000076 /* DescriptionEditorSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000077 /* DescriptionEditorSession.swift */; };
 		E5F60719293A4B7000000081 /* RecipeDescriptionEditorBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000080 /* RecipeDescriptionEditorBlock.swift */; };
+		E5F6071A293A4B7000000090 /* DescriptionWireExportHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6071A293A4B7000000091 /* DescriptionWireExportHost.swift */; };
 		E5F60719293A4B7000000083 /* DescriptionFormattingBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000082 /* DescriptionFormattingBar.swift */; };
 		E5F60719293A4B7000000085 /* DescriptionEditorChromeState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000084 /* DescriptionEditorChromeState.swift */; };
 		E5F60719293A4B7000000087 /* DescriptionMarkupFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000086 /* DescriptionMarkupFlow.swift */; };
 		E5F60718293A4B7000000078 /* description-editor.html in Resources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000079 /* description-editor.html */; };
 		E5F60718293A4B700000007A /* description-editor-bridge.js in Resources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700000007B /* description-editor-bridge.js */; };
 		E5F60718293A4B700000007C /* yjs.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700000007D /* yjs.bundle.js */; };
+		F1A2B3C4D5E60718293A4B02 /* YjsWireSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E60718293A4B01 /* YjsWireSnapshot.swift */; };
+		F1A2B3C4D5E60718293A4B04 /* YjsMergeHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E60718293A4B03 /* YjsMergeHelper.swift */; };
+		F1A2B3C4D5E60718293A4B06 /* yjs-merge-helper.html in Resources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E60718293A4B05 /* yjs-merge-helper.html */; };
 		E5F60718293A4B7000000052 /* RecipeDescriptionParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000053 /* RecipeDescriptionParser.swift */; };
 		E5F60718293A4B7000000054 /* RecipeDescriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000055 /* RecipeDescriptionView.swift */; };
 		E5F60718293A4B7000000056 /* DescriptionFixturePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000057 /* DescriptionFixturePreviewView.swift */; };
@@ -315,12 +319,16 @@
 		E5F60718293A4B7000000075 /* DescriptionEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionEditorView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000077 /* DescriptionEditorSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionEditorSession.swift; sourceTree = "<group>"; };
 		E5F60719293A4B7000000080 /* RecipeDescriptionEditorBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDescriptionEditorBlock.swift; sourceTree = "<group>"; };
+		E5F6071A293A4B7000000091 /* DescriptionWireExportHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionWireExportHost.swift; sourceTree = "<group>"; };
 		E5F60719293A4B7000000082 /* DescriptionFormattingBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionFormattingBar.swift; sourceTree = "<group>"; };
 		E5F60719293A4B7000000084 /* DescriptionEditorChromeState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionEditorChromeState.swift; sourceTree = "<group>"; };
 		E5F60719293A4B7000000086 /* DescriptionMarkupFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionMarkupFlow.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000079 /* description-editor.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "description-editor.html"; sourceTree = "<group>"; };
 		E5F60718293A4B700000007B /* description-editor-bridge.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "description-editor-bridge.js"; sourceTree = "<group>"; };
 		E5F60718293A4B700000007D /* yjs.bundle.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = yjs.bundle.js; sourceTree = "<group>"; };
+		F1A2B3C4D5E60718293A4B01 /* YjsWireSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsWireSnapshot.swift; sourceTree = "<group>"; };
+		F1A2B3C4D5E60718293A4B03 /* YjsMergeHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsMergeHelper.swift; sourceTree = "<group>"; };
+		F1A2B3C4D5E60718293A4B05 /* yjs-merge-helper.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "yjs-merge-helper.html"; sourceTree = "<group>"; };
 		E5F60718293A4B7000000053 /* RecipeDescriptionParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDescriptionParser.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000055 /* RecipeDescriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDescriptionView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000057 /* DescriptionFixturePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionFixturePreviewView.swift; sourceTree = "<group>"; };
@@ -510,6 +518,7 @@
 				E5F60718293A4B7000000079 /* description-editor.html */,
 				E5F60718293A4B700000007B /* description-editor-bridge.js */,
 				E5F60718293A4B700000007D /* yjs.bundle.js */,
+				F1A2B3C4D5E60718293A4B05 /* yjs-merge-helper.html */,
 			);
 			path = DescriptionEditor;
 			sourceTree = "<group>";
@@ -538,6 +547,7 @@
 				E5F60718293A4B7000000073 /* DescriptionEditorWebView.swift */,
 				E5F60718293A4B7000000075 /* DescriptionEditorView.swift */,
 				E5F60719293A4B7000000080 /* RecipeDescriptionEditorBlock.swift */,
+				E5F6071A293A4B7000000091 /* DescriptionWireExportHost.swift */,
 				E5F60719293A4B7000000082 /* DescriptionFormattingBar.swift */,
 				E5F60719293A4B7000000084 /* DescriptionEditorChromeState.swift */,
 				E5F60719293A4B7000000086 /* DescriptionMarkupFlow.swift */,
@@ -631,6 +641,7 @@
 				3297FDC9814D7043F3A05E04 /* Database.swift */,
 				70E7F92B6DBC42B4B2690FF6 /* OfflineSyncEntry.swift */,
 				5E420A114755D01EE96F560A /* YDocStore.swift */,
+				F1A2B3C4D5E60718293A4B01 /* YjsWireSnapshot.swift */,
 				REMINDERS0004AA0004BB04 /* RemindersMapStore.swift */,
 			);
 			path = Storage;
@@ -724,6 +735,7 @@
 				082DDFB9F64449A7BCF4D3FA /* WriteSyncState.swift */,
 				E2C8DC8D63F14DC8A5436B59 /* RecipeEditPolicy.swift */,
 				E5F60718293A4B7000000077 /* DescriptionEditorSession.swift */,
+				F1A2B3C4D5E60718293A4B03 /* YjsMergeHelper.swift */,
 			);
 			path = YjsSync;
 			sourceTree = "<group>";
@@ -1039,6 +1051,7 @@
 				E5F60718293A4B7000000078 /* description-editor.html in Resources */,
 				E5F60718293A4B700000007A /* description-editor-bridge.js in Resources */,
 				E5F60718293A4B700000007C /* yjs.bundle.js in Resources */,
+				F1A2B3C4D5E60718293A4B06 /* yjs-merge-helper.html in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1149,6 +1162,8 @@
 				AC55326516F2DD99B42F0F6B /* ConnectionState.swift in Sources */,
 				CC1101AABB000100000001 /* SyncEventHandler.swift in Sources */,
 				CC1101AABB000100000002 /* YjsSyncService.swift in Sources */,
+				F1A2B3C4D5E60718293A4B04 /* YjsMergeHelper.swift in Sources */,
+				F1A2B3C4D5E60718293A4B02 /* YjsWireSnapshot.swift in Sources */,
 				CC1101AABB000100000003 /* YjsPayloadBytes.swift in Sources */,
 				2D50E94419BB114AE83F8C41 /* Database.swift in Sources */,
 				AB245CF76E7C618304E6E89E /* YDocStore.swift in Sources */,
@@ -1182,6 +1197,7 @@
 				E5F60718293A4B7000000074 /* DescriptionEditorView.swift in Sources */,
 				E5F60718293A4B7000000076 /* DescriptionEditorSession.swift in Sources */,
 				E5F60719293A4B7000000081 /* RecipeDescriptionEditorBlock.swift in Sources */,
+				E5F6071A293A4B7000000090 /* DescriptionWireExportHost.swift in Sources */,
 				E5F60719293A4B7000000083 /* DescriptionFormattingBar.swift in Sources */,
 				E5F60719293A4B7000000085 /* DescriptionEditorChromeState.swift in Sources */,
 				E5F60719293A4B7000000087 /* DescriptionMarkupFlow.swift in Sources */,

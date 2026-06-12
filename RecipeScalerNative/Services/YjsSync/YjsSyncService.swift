@@ -240,21 +240,6 @@ final class YjsSyncService: ObservableObject {
 
     func flushPendingEdits() async {
         guard let recipeId = activeRecipeId else { return }
-        // #region agent log
-        #if DEBUG
-        AgentSyncDebugLog.session3d01c4(
-            hypothesisId: "H3",
-            location: "YjsSyncService.flushPendingEdits",
-            message: "flush_start",
-            data: [
-                "recipeId": recipeId,
-                "hasBridge": descriptionEditorSessions[recipeId]?.bridge == nil ? "0" : "1",
-                "localSnapBytes": "\(await documentManager.localSnapshotByteCount(recipeId: recipeId))",
-                "lastServerBytes": "\(resolvedServerDocumentBytes(recipeId: recipeId) ?? -1)",
-            ]
-        )
-        #endif
-        // #endregion
         // 1) WebView debounced Yjs → yrs (waits for apply chain)
         if let bridge = descriptionEditorSessions[recipeId]?.bridge {
             await bridge.flushEditorEdits()
@@ -269,19 +254,6 @@ final class YjsSyncService: ObservableObject {
         for id in recipeIds {
             await documentManager.persistSnapshot(docKey: docKeyFor(recipeId: id))
         }
-        // #region agent log
-        #if DEBUG
-        AgentSyncDebugLog.session3d01c4(
-            hypothesisId: "H3",
-            location: "YjsSyncService.flushPendingEdits",
-            message: "flush_end",
-            data: [
-                "recipeId": recipeId,
-                "writeSyncState": String(describing: writeSyncStates[recipeId] ?? .idle),
-            ]
-        )
-        #endif
-        // #endregion
     }
 
     private func pendingEditRecipeIds() -> [String] {
@@ -361,19 +333,6 @@ final class YjsSyncService: ObservableObject {
         pendingReconnectSyncTask?.cancel()
         let task = Task { [weak self] in
             guard let self, !Task.isCancelled else { return }
-            // #region agent log
-            #if DEBUG
-            AgentSyncDebugLog.session3d01c4(
-                hypothesisId: "H7",
-                location: "YjsSyncService.syncPendingDocumentsAfterReconnect",
-                message: "reconnect_drain_start",
-                data: [
-                    "canSendLive": self.canSendLiveSync() ? "1" : "0",
-                    "recipeCount": "\(recipeIds?.count ?? self.collectionEntries.count)",
-                ]
-            )
-            #endif
-            // #endregion
             await self.flushPendingEdits()
             await self.documentManager.applyOfflineQueueToLocalDocs()
             let candidates = recipeIds ?? self.collectionEntries.map(\.id)
@@ -384,19 +343,6 @@ final class YjsSyncService: ObservableObject {
             if let active = self.activeRecipeId {
                 await self.refreshCurrentRecipeIfAllowed(recipeId: active)
             }
-            // #region agent log
-            #if DEBUG
-            AgentSyncDebugLog.session3d01c4(
-                hypothesisId: "H7",
-                location: "YjsSyncService.syncPendingDocumentsAfterReconnect",
-                message: "reconnect_drain_end",
-                data: [
-                    "canSendLive": self.canSendLiveSync() ? "1" : "0",
-                    "wireExportPending": "\(self.descriptionWireExportRecipeIds.count)",
-                ]
-            )
-            #endif
-            // #endregion
         }
         pendingReconnectSyncTask = task
         await task.value
@@ -408,42 +354,10 @@ final class YjsSyncService: ObservableObject {
             if canSendLiveSync() {
                 await drainOfflineQueue()
                 await pushUnsyncedWireSnapshots(recipeIds: recipeIds)
-                // #region agent log
-                #if DEBUG
-                AgentSyncDebugLog.session3d01c4(
-                    hypothesisId: "H7",
-                    location: "YjsSyncService.drainWhenLiveSyncReady",
-                    message: "drain_completed",
-                    data: ["attempt": "\(attempt)"]
-                )
-                #endif
-                // #endregion
                 return
-            }
-            if attempt == 0 {
-                // #region agent log
-                #if DEBUG
-                AgentSyncDebugLog.session3d01c4(
-                    hypothesisId: "H7",
-                    location: "YjsSyncService.drainWhenLiveSyncReady",
-                    message: "waiting_for_live_sync",
-                    data: [:]
-                )
-                #endif
-                // #endregion
             }
             try? await Task.sleep(nanoseconds: 100_000_000)
         }
-        // #region agent log
-        #if DEBUG
-        AgentSyncDebugLog.session3d01c4(
-            hypothesisId: "H7",
-            location: "YjsSyncService.drainWhenLiveSyncReady",
-            message: "drain_skipped_no_live_sync",
-            data: [:]
-        )
-        #endif
-        // #endregion
     }
 
     /// Web parity: pull server snapshot and CRDT-merge into local before pushing offline edits.
@@ -451,17 +365,7 @@ final class YjsSyncService: ObservableObject {
         guard canSendLiveSync() else { return }
         for recipeId in recipeIds where isRecipeDocument(recipeId: recipeId) {
             guard await hasUnsyncedLocalChanges(recipeId: recipeId) else { continue }
-            let merged = await fetchAndMergeServerDocument(recipeId: recipeId)
-            // #region agent log
-            #if DEBUG
-            AgentSyncDebugLog.session3d01c4(
-                hypothesisId: "H11",
-                location: "YjsSyncService.fetchAndMergeServerDocuments",
-                message: merged ? "server_merge_completed" : "server_merge_failed",
-                data: ["recipeId": recipeId]
-            )
-            #endif
-            // #endregion
+            _ = await fetchAndMergeServerDocument(recipeId: recipeId)
         }
     }
 
@@ -497,16 +401,6 @@ final class YjsSyncService: ObservableObject {
             guard await hasUnsyncedLocalChanges(recipeId: recipeId) else { continue }
             if descriptionEditorSessions[recipeId]?.bridge != nil { continue }
             requestDescriptionWireExport(recipeId: recipeId)
-            // #region agent log
-            #if DEBUG
-            AgentSyncDebugLog.session3d01c4(
-                hypothesisId: "H10",
-                location: "YjsSyncService.scheduleDescriptionWireExportIfNeeded",
-                message: "wire_export_requested",
-                data: ["recipeId": recipeId]
-            )
-            #endif
-            // #endregion
         }
     }
 
@@ -514,19 +408,6 @@ final class YjsSyncService: ObservableObject {
         guard isRecipeDocument(recipeId: recipeId), state.count > 2 else { return }
         let docKey = docKeyFor(recipeId: recipeId)
         try? await store.saveYjsWireSnapshot(docKey: docKey, state: state)
-        // #region agent log
-        #if DEBUG
-        AgentSyncDebugLog.session3d01c4(
-            hypothesisId: "H7",
-            location: "YjsSyncService.persistYjsWireSnapshot",
-            message: "wire_snapshot_persisted",
-            data: [
-                "recipeId": recipeId,
-                "bytes": "\(state.count)",
-            ]
-        )
-        #endif
-        // #endregion
     }
 
     private func startNetworkMonitorIfNeeded() {
@@ -941,20 +822,6 @@ final class YjsSyncService: ObservableObject {
         // Offline-first (web parity): local snapshot is shown immediately above; only pull
         // server state when there is nothing waiting to be pushed outward.
         if await hasUnsyncedLocalChanges(recipeId: recipeId) {
-            // #region agent log
-            #if DEBUG
-            AgentSyncDebugLog.session3d01c4(
-                hypothesisId: "H2",
-                location: "YjsSyncService.loadRecipe",
-                message: "skip_pull_unsynced_local",
-                data: [
-                    "recipeId": recipeId,
-                    "localSnapBytes": "\(await documentManager.localSnapshotByteCount(recipeId: recipeId))",
-                    "lastServerBytes": "\(resolvedServerDocumentBytes(recipeId: recipeId) ?? -1)",
-                ]
-            )
-            #endif
-            // #endregion
             await syncPendingDocumentsAfterReconnect(recipeIds: [recipeId])
             if await hasUnsyncedLocalChanges(recipeId: recipeId) {
                 logger.info("Skipping load_document for \(recipeId) — unsynced local changes")
@@ -1495,19 +1362,6 @@ final class YjsSyncService: ObservableObject {
         let wireBootstrap = try? await store.loadYjsWireSnapshot(docKey: docKey)?.state
         let yrsBootstrap = try? await store.loadSnapshot(docKey: docKey)?.state
         guard let bootstrap = wireBootstrap ?? yrsBootstrap, bootstrap.count > 2 else {
-            // #region agent log
-            #if DEBUG
-            AgentSyncDebugLog.session3d01c4(
-                hypothesisId: "H8",
-                location: "YjsSyncService.refreshWireSnapshotForRecipe",
-                message: "wire_snapshot_refresh_no_bootstrap",
-                data: [
-                    "recipeId": recipeId,
-                    "queueParts": "\(parts.count)",
-                ]
-            )
-            #endif
-            // #endregion
             return
         }
         let updates = parts
@@ -1515,35 +1369,9 @@ final class YjsSyncService: ObservableObject {
             bootstrap: bootstrap,
             updates: updates
         ), full.count > 2 else {
-            // #region agent log
-            #if DEBUG
-            AgentSyncDebugLog.session3d01c4(
-                hypothesisId: "H8",
-                location: "YjsSyncService.refreshWireSnapshotForRecipe",
-                message: "wire_snapshot_refresh_encode_failed",
-                data: [
-                    "recipeId": recipeId,
-                    "queueParts": "\(updates.count)",
-                    "bootstrapBytes": "\(bootstrap.count)",
-                ]
-            )
-            #endif
-            // #endregion
             return
         }
         try? await store.saveYjsWireSnapshot(docKey: docKey, state: full)
-        #if DEBUG
-        AgentSyncDebugLog.session3d01c4(
-            hypothesisId: "H8",
-            location: "YjsSyncService.refreshWireSnapshotForRecipe",
-            message: "wire_snapshot_refreshed",
-            data: [
-                "recipeId": recipeId,
-                "bytes": "\(full.count)",
-                "queueParts": "\(updates.count)",
-            ]
-        )
-        #endif
     }
 
     private func sendDebouncedUpdate(recipeId: String, update: Data) async {
@@ -1613,20 +1441,6 @@ final class YjsSyncService: ObservableObject {
             target = recipeId == "collection" ? "collection" : recipeId
         }
         logger.info("Emitted sync_request for \(target) (\(update.count) bytes)")
-        // #region agent log
-        #if DEBUG
-        AgentSyncDebugLog.session3d01c4(
-            hypothesisId: "H6",
-            location: "YjsSyncService.emitSyncRequest",
-            message: "sync_request_emitted",
-            data: [
-                "recipeId": recipeId,
-                "bytes": "\(update.count)",
-                "lastSyncedAt": lastSyncedAt ?? "nil",
-            ]
-        )
-        #endif
-        // #endregion
     }
 
     private func handleSyncConfirmed(recipeId: String, lastSyncedAt: String?) async {
@@ -1692,22 +1506,6 @@ final class YjsSyncService: ObservableObject {
             if recipeId != ShoppingListConstants.offlineRecipeId {
                 writeSyncStates[recipeId] = .syncing
             }
-            // #region agent log
-            #if DEBUG
-            if isRecipeDocument(recipeId: recipeId) {
-                AgentSyncDebugLog.session3d01c4(
-                    hypothesisId: "H7",
-                    location: "YjsSyncService.drainOfflineQueue",
-                    message: "wire_snapshot_push_bytes",
-                    data: [
-                        "recipeId": recipeId,
-                        "bytes": "\(pushData.count)",
-                        "queueEntries": "\(docEntries.count)",
-                    ]
-                )
-            }
-            #endif
-            // #endregion
             await emitSyncRequest(
                 recipeId: recipeId,
                 update: pushData,
@@ -1774,22 +1572,6 @@ final class YjsSyncService: ObservableObject {
            full.count > 2 {
             return full
         }
-        // #region agent log
-        #if DEBUG
-        AgentSyncDebugLog.session3d01c4(
-            hypothesisId: "H8",
-            location: "YjsSyncService.resolveYjsPushPayload",
-            message: "resolve_nil",
-            data: [
-                "recipeId": recipeId,
-                "queueParts": "\(parts.count)",
-                "hasWire": wireBootstrap != nil ? "1" : "0",
-                "hasYrs": yrsBootstrap != nil ? "1" : "0",
-                "localAhead": isLocalAheadOfServer(recipeId: recipeId) ? "1" : "0",
-            ]
-        )
-        #endif
-        // #endregion
         return nil
     }
 
@@ -1817,24 +1599,6 @@ final class YjsSyncService: ObservableObject {
         lastSyncedAt: String?
     ) async throws {
         // Web parity: CRDT-merge server state into local even when outbound queue is non-empty.
-        if recipeId != "collection",
-           recipeId != ShoppingListConstants.offlineRecipeId,
-           await hasUnsyncedLocalChanges(recipeId: recipeId) {
-            // #region agent log
-            #if DEBUG
-            AgentSyncDebugLog.session3d01c4(
-                hypothesisId: "H11",
-                location: "YjsSyncService.applyServerDocumentState",
-                message: "merge_server_with_unsynced_local",
-                data: [
-                    "recipeId": recipeId,
-                    "serverBytes": "\(stateData.count)",
-                ]
-            )
-            #endif
-            // #endregion
-        }
-
         let serverLooksEmpty = stateData.count <= 2
         var localState: Data?
         if let doc = await documentManager.getDoc(key: docKey) {
