@@ -33,6 +33,8 @@ final class YjsSyncService: ObservableObject {
     @Published private(set) var imageCacheStatus = RecipeImageCacheStatus()
     @Published private(set) var recipeDocumentCacheStatus = RecipeDocumentCacheStatus()
     @Published private(set) var lastSuccessfulSyncAt: Date?
+    /// Read-mode reconnect: headless WebView export when queue/wire push is insufficient.
+    @Published private(set) var descriptionWireExportRecipeIds: Set<String> = []
 
     func acknowledgeRecipeRemoved() {
         activeRecipeWasRemoved = false
@@ -63,6 +65,7 @@ final class YjsSyncService: ObservableObject {
     private var engineConnectTimeoutTask: Task<Void, Never>?
     private var activeRecipeId: String?
     private var disconnectTimestamp: Date?
+    private var pendingReconnectSyncTask: Task<Void, Never>?
     private var changeHandlersInstalled = false
     private var localUpdateHandlerInstalled = false
     private var recipeRefreshSuspended = 0
@@ -73,7 +76,68 @@ final class YjsSyncService: ObservableObject {
     private var imageCacheObserversInstalled = false
     private var descriptionEditorSessions: [String: DescriptionEditorSession] = [:]
     private var networkPathMonitor: NWPathMonitor?
+    private var networkRegainReconnectTask: Task<Void, Never>?
+    private var wireSnapshotRefreshTasks: [String: Task<Void, Never>] = [:]
+    private var documentLoadContinuations: [String: CheckedContinuation<Bool, Never>] = [:]
     private var isNetworkReachable = true
+    /// Last `document_loaded` payload size per recipe (detect local-ahead recovery).
+    private var lastServerDocumentBytes: [String: Int] = [:]
+
+    private func persistedServerDocumentBytes(recipeId: String) -> Int? {
+        let key = "lastServerDocBytes:\(recipeId)"
+        let value = UserDefaults.standard.integer(forKey: key)
+        return value > 0 ? value : nil
+    }
+
+    private func persistServerDocumentBytes(recipeId: String, bytes: Int) {
+        lastServerDocumentBytes[recipeId] = bytes
+        UserDefaults.standard.set(bytes, forKey: "lastServerDocBytes:\(recipeId)")
+    }
+
+    private func resolvedServerDocumentBytes(recipeId: String) -> Int? {
+        lastServerDocumentBytes[recipeId] ?? persistedServerDocumentBytes(recipeId: recipeId)
+    }
+
+    /// Deterministic replacement for the old `localBytes > serverBytes + 128` heuristic.
+    ///
+    /// A recipe is "unsynced / local-ahead" iff it carries an explicit flag set on every local
+    /// write and cleared only on `sync_confirmed`. The set is persisted to UserDefaults so it
+    /// survives an app kill (closes the cold-start gap the byte heuristic tried to guess at),
+    /// and CRDT byte sizes never feed the decision — removing the false "local ahead" that
+    /// wedged a doc into perpetual skip-pull after a merge.
+    private var unsyncedRecipeIds: Set<String> = []
+
+    private func unsyncedRecipeIdsKey() -> String? {
+        guard let userId else { return nil }
+        return "unsyncedRecipeIds:\(userId)"
+    }
+
+    private func loadUnsyncedRecipeIds() {
+        guard let key = unsyncedRecipeIdsKey(),
+              let stored = UserDefaults.standard.array(forKey: key) as? [String] else {
+            unsyncedRecipeIds = []
+            return
+        }
+        unsyncedRecipeIds = Set(stored)
+    }
+
+    private func persistUnsyncedRecipeIds() {
+        guard let key = unsyncedRecipeIdsKey() else { return }
+        UserDefaults.standard.set(Array(unsyncedRecipeIds), forKey: key)
+    }
+
+    /// Flag a recipe as having local edits the server has not confirmed yet.
+    private func markRecipeUnsynced(_ recipeId: String) {
+        guard isRecipeDocument(recipeId: recipeId) else { return }
+        guard unsyncedRecipeIds.insert(recipeId).inserted else { return }
+        persistUnsyncedRecipeIds()
+    }
+
+    /// Clear the unsynced flag once the server acknowledges the recipe (`sync_confirmed`/delete).
+    private func markRecipeSynced(_ recipeId: String) {
+        guard unsyncedRecipeIds.remove(recipeId) != nil else { return }
+        persistUnsyncedRecipeIds()
+    }
 
     init(store: YDocStore) {
         self.store = store
@@ -176,12 +240,48 @@ final class YjsSyncService: ObservableObject {
 
     func flushPendingEdits() async {
         guard let recipeId = activeRecipeId else { return }
-        // Flush the open description editor's debounced reconcile first, so its last
-        // edits are posted + applied to the doc before we drain the outbound queue.
+        // #region agent log
+        #if DEBUG
+        AgentSyncDebugLog.session3d01c4(
+            hypothesisId: "H3",
+            location: "YjsSyncService.flushPendingEdits",
+            message: "flush_start",
+            data: [
+                "recipeId": recipeId,
+                "hasBridge": descriptionEditorSessions[recipeId]?.bridge == nil ? "0" : "1",
+                "localSnapBytes": "\(await documentManager.localSnapshotByteCount(recipeId: recipeId))",
+                "lastServerBytes": "\(resolvedServerDocumentBytes(recipeId: recipeId) ?? -1)",
+            ]
+        )
+        #endif
+        // #endregion
+        // 1) WebView debounced Yjs → yrs (waits for apply chain)
         if let bridge = descriptionEditorSessions[recipeId]?.bridge {
             await bridge.flushEditorEdits()
         }
-        await flushPendingUpdates(for: pendingEditRecipeIds())
+        // 2) Local SQLite snapshot (description editor uses debounced persist)
+        await documentManager.flushScheduledSnapshotPersist(docKey: docKeyFor(recipeId: recipeId))
+        // 3) Drain debouncer (WebView flush posts yjs encodeStateAsUpdate via syncState)
+        let recipeIds = pendingEditRecipeIds()
+        for id in recipeIds {
+            await updateDebouncer.flushNow(recipeId: id)
+        }
+        for id in recipeIds {
+            await documentManager.persistSnapshot(docKey: docKeyFor(recipeId: id))
+        }
+        // #region agent log
+        #if DEBUG
+        AgentSyncDebugLog.session3d01c4(
+            hypothesisId: "H3",
+            location: "YjsSyncService.flushPendingEdits",
+            message: "flush_end",
+            data: [
+                "recipeId": recipeId,
+                "writeSyncState": String(describing: writeSyncStates[recipeId] ?? .idle),
+            ]
+        )
+        #endif
+        // #endregion
     }
 
     private func pendingEditRecipeIds() -> [String] {
@@ -198,8 +298,16 @@ final class YjsSyncService: ObservableObject {
             guard let batch = await updateDebouncer.drainPendingBatch(recipeId: recipeId) else {
                 continue
             }
-            for payload in batch where payload.count > 2 {
-                await sendDebouncedUpdate(recipeId: recipeId, update: payload)
+            let payloads = batch.filter { $0.count > 2 }
+            guard !payloads.isEmpty else { continue }
+            if payloads.count == 1 {
+                await sendDebouncedUpdate(recipeId: recipeId, update: payloads[0])
+            } else if let merged = try? await YjsMergeHelper.shared.mergeUpdates(payloads) {
+                await sendDebouncedUpdate(recipeId: recipeId, update: merged)
+            } else {
+                for payload in payloads {
+                    await sendDebouncedUpdate(recipeId: recipeId, update: payload)
+                }
             }
         }
         for recipeId in recipeIds {
@@ -215,17 +323,210 @@ final class YjsSyncService: ObservableObject {
     }
 
     /// Offline-first: local SQLite + in-memory Y.Doc may have edits not yet acknowledged by the server.
+    ///
+    /// Every signal here is deterministic: the explicit unsynced flag, the write-sync state, the
+    /// durable offline queue, and the in-memory observer. The old `localBytes > serverBytes + 128`
+    /// byte-size guess was removed — CRDT byte sizes do not reflect "who is ahead" (a delete can
+    /// grow the doc via tombstones), and after a server merge it produced a permanent false
+    /// positive that wedged the recipe into skip-pull.
     private func hasUnsyncedLocalChanges(recipeId: String) async -> Bool {
+        if unsyncedRecipeIds.contains(recipeId) { return true }
         switch writeSyncStates[recipeId] ?? .idle {
         case .queued, .syncing, .pendingLocal:
             return true
         case .idle, .synced, .error:
             break
         }
-        if let entries = try? await offlineQueue.fetchAll() {
-            return entries.contains { $0.recipeId == recipeId }
+        if let entries = try? await offlineQueue.fetchAll(),
+           entries.contains(where: { $0.recipeId == recipeId }) {
+            return true
         }
+        let pendingObserver = await documentManager.pendingSyncByteCount(recipeId: recipeId)
+        if pendingObserver > 0 { return true }
         return false
+    }
+
+    /// Deterministic: a recipe is "local-ahead" only when it carries an explicit unsynced flag.
+    private func isLocalAheadOfServer(recipeId: String) -> Bool {
+        unsyncedRecipeIds.contains(recipeId)
+    }
+
+    private func isRecipeDocument(recipeId: String) -> Bool {
+        recipeId != "collection" && recipeId != ShoppingListConstants.offlineRecipeId
+    }
+
+    /// Web parity: drain durable offline bytes and push full yjs wire state after reconnect.
+    func syncPendingDocumentsAfterReconnect(recipeIds: [String]? = nil) async {
+        guard userId != nil else { return }
+        pendingReconnectSyncTask?.cancel()
+        let task = Task { [weak self] in
+            guard let self, !Task.isCancelled else { return }
+            // #region agent log
+            #if DEBUG
+            AgentSyncDebugLog.session3d01c4(
+                hypothesisId: "H7",
+                location: "YjsSyncService.syncPendingDocumentsAfterReconnect",
+                message: "reconnect_drain_start",
+                data: [
+                    "canSendLive": self.canSendLiveSync() ? "1" : "0",
+                    "recipeCount": "\(recipeIds?.count ?? self.collectionEntries.count)",
+                ]
+            )
+            #endif
+            // #endregion
+            await self.flushPendingEdits()
+            await self.documentManager.applyOfflineQueueToLocalDocs()
+            let candidates = recipeIds ?? self.collectionEntries.map(\.id)
+            await self.fetchAndMergeServerDocuments(recipeIds: candidates)
+            await self.refreshWireSnapshotsForRecipes(recipeIds: candidates)
+            await self.drainWhenLiveSyncReady(recipeIds: candidates)
+            await self.scheduleDescriptionWireExportIfNeeded(recipeIds: candidates)
+            if let active = self.activeRecipeId {
+                await self.refreshCurrentRecipeIfAllowed(recipeId: active)
+            }
+            // #region agent log
+            #if DEBUG
+            AgentSyncDebugLog.session3d01c4(
+                hypothesisId: "H7",
+                location: "YjsSyncService.syncPendingDocumentsAfterReconnect",
+                message: "reconnect_drain_end",
+                data: [
+                    "canSendLive": self.canSendLiveSync() ? "1" : "0",
+                    "wireExportPending": "\(self.descriptionWireExportRecipeIds.count)",
+                ]
+            )
+            #endif
+            // #endregion
+        }
+        pendingReconnectSyncTask = task
+        await task.value
+    }
+
+    private func drainWhenLiveSyncReady(recipeIds: [String]) async {
+        let maxAttempts = 50
+        for attempt in 0..<maxAttempts {
+            if canSendLiveSync() {
+                await drainOfflineQueue()
+                await pushUnsyncedWireSnapshots(recipeIds: recipeIds)
+                // #region agent log
+                #if DEBUG
+                AgentSyncDebugLog.session3d01c4(
+                    hypothesisId: "H7",
+                    location: "YjsSyncService.drainWhenLiveSyncReady",
+                    message: "drain_completed",
+                    data: ["attempt": "\(attempt)"]
+                )
+                #endif
+                // #endregion
+                return
+            }
+            if attempt == 0 {
+                // #region agent log
+                #if DEBUG
+                AgentSyncDebugLog.session3d01c4(
+                    hypothesisId: "H7",
+                    location: "YjsSyncService.drainWhenLiveSyncReady",
+                    message: "waiting_for_live_sync",
+                    data: [:]
+                )
+                #endif
+                // #endregion
+            }
+            try? await Task.sleep(nanoseconds: 100_000_000)
+        }
+        // #region agent log
+        #if DEBUG
+        AgentSyncDebugLog.session3d01c4(
+            hypothesisId: "H7",
+            location: "YjsSyncService.drainWhenLiveSyncReady",
+            message: "drain_skipped_no_live_sync",
+            data: [:]
+        )
+        #endif
+        // #endregion
+    }
+
+    /// Web parity: pull server snapshot and CRDT-merge into local before pushing offline edits.
+    private func fetchAndMergeServerDocuments(recipeIds: [String]) async {
+        guard canSendLiveSync() else { return }
+        for recipeId in recipeIds where isRecipeDocument(recipeId: recipeId) {
+            guard await hasUnsyncedLocalChanges(recipeId: recipeId) else { continue }
+            let merged = await fetchAndMergeServerDocument(recipeId: recipeId)
+            // #region agent log
+            #if DEBUG
+            AgentSyncDebugLog.session3d01c4(
+                hypothesisId: "H11",
+                location: "YjsSyncService.fetchAndMergeServerDocuments",
+                message: merged ? "server_merge_completed" : "server_merge_failed",
+                data: ["recipeId": recipeId]
+            )
+            #endif
+            // #endregion
+        }
+    }
+
+    private func fetchAndMergeServerDocument(recipeId: String) async -> Bool {
+        guard canSendLiveSync() else { return false }
+        return await withTaskGroup(of: Bool.self) { group in
+            group.addTask { @MainActor in
+                await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+                    self.documentLoadContinuations[recipeId] = continuation
+                    self.socket?.emit("load_document", ["recipeId": recipeId])
+                    self.logger.info("Emitted load_document for merge \(recipeId)")
+                }
+            }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
+                return false
+            }
+            let result = await group.next() ?? false
+            group.cancelAll()
+            if !result {
+                self.completePendingDocumentLoad(recipeId: recipeId, merged: false)
+            }
+            return result
+        }
+    }
+
+    private func completePendingDocumentLoad(recipeId: String, merged: Bool) {
+        documentLoadContinuations.removeValue(forKey: recipeId)?.resume(returning: merged)
+    }
+
+    private func scheduleDescriptionWireExportIfNeeded(recipeIds: [String]) async {
+        for recipeId in recipeIds where isRecipeDocument(recipeId: recipeId) {
+            guard await hasUnsyncedLocalChanges(recipeId: recipeId) else { continue }
+            if descriptionEditorSessions[recipeId]?.bridge != nil { continue }
+            requestDescriptionWireExport(recipeId: recipeId)
+            // #region agent log
+            #if DEBUG
+            AgentSyncDebugLog.session3d01c4(
+                hypothesisId: "H10",
+                location: "YjsSyncService.scheduleDescriptionWireExportIfNeeded",
+                message: "wire_export_requested",
+                data: ["recipeId": recipeId]
+            )
+            #endif
+            // #endregion
+        }
+    }
+
+    func persistYjsWireSnapshot(recipeId: String, state: Data) async {
+        guard isRecipeDocument(recipeId: recipeId), state.count > 2 else { return }
+        let docKey = docKeyFor(recipeId: recipeId)
+        try? await store.saveYjsWireSnapshot(docKey: docKey, state: state)
+        // #region agent log
+        #if DEBUG
+        AgentSyncDebugLog.session3d01c4(
+            hypothesisId: "H7",
+            location: "YjsSyncService.persistYjsWireSnapshot",
+            message: "wire_snapshot_persisted",
+            data: [
+                "recipeId": recipeId,
+                "bytes": "\(state.count)",
+            ]
+        )
+        #endif
+        // #endregion
     }
 
     private func startNetworkMonitorIfNeeded() {
@@ -238,8 +539,20 @@ final class YjsSyncService: ObservableObject {
                 if self.isNetworkReachable != reachable {
                     self.isNetworkReachable = reachable
                     if !reachable {
+                        self.networkRegainReconnectTask?.cancel()
+                        self.networkRegainReconnectTask = nil
                         self.reconcileStuckSyncingStates()
                         Task { await self.flushPendingUpdates(for: self.pendingEditRecipeIds()) }
+                        Task { await self.flushPendingEdits() }
+                        self.teardownSocket()
+                        self.setConnectionState(.disconnected, reason: "network_lost")
+                    } else {
+                        self.networkRegainReconnectTask?.cancel()
+                        self.networkRegainReconnectTask = Task { @MainActor [weak self] in
+                            try? await Task.sleep(nanoseconds: 400_000_000)
+                            guard let self, !Task.isCancelled, self.isNetworkReachable else { return }
+                            self.reconnectAfterNetworkRegained()
+                        }
                     }
                 }
             }
@@ -248,7 +561,26 @@ final class YjsSyncService: ObservableObject {
         networkPathMonitor = monitor
     }
 
+    /// Fresh Socket.IO session after radio returns (web: network online → connect).
+    private func reconnectAfterNetworkRegained() {
+        guard userId != nil else { return }
+        guard !canSendLiveSync() else { return }
+        logger.info("Network regained — fresh socket connect")
+        connectionTransport = .pollingAndWebsocket
+        teardownSocket()
+        connectSocket()
+    }
+
+    private func reconnectIfNeeded(reason: String) {
+        guard userId != nil else { return }
+        guard !canSendLiveSync() else { return }
+        logger.info("\(reason) — reconnecting socket")
+        reconnectAfterNetworkRegained()
+    }
+
     private func stopNetworkMonitor() {
+        networkRegainReconnectTask?.cancel()
+        networkRegainReconnectTask = nil
         networkPathMonitor?.cancel()
         networkPathMonitor = nil
         isNetworkReachable = true
@@ -276,10 +608,45 @@ final class YjsSyncService: ObservableObject {
     func applyDescriptionEditorUpdate(recipeId: String, update: Data) async throws {
         guard activeRecipeId == recipeId else { throw RecipeEditError.documentNotLoaded }
         try await documentManager.applyDescriptionEditorUpdate(recipeId: recipeId, update: update)
-        await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
+    }
+
+    /// Full yjs wire state from WebView flush (`syncState`) — persist, push when online, replace stale queue rows.
+    func applyDescriptionSyncState(recipeId: String, state: Data) async {
+        guard isRecipeDocument(recipeId: recipeId), state.count > 2 else { return }
+        markRecipeUnsynced(recipeId)
+        let docKey = docKeyFor(recipeId: recipeId)
+        do {
+            try await documentManager.applyDescriptionEditorUpdate(
+                recipeId: recipeId,
+                update: state,
+                forwardToSync: false
+            )
+        } catch {
+            logger.warning("applyDescriptionSyncState apply failed for \(recipeId): \(error)")
+            return
+        }
+        await persistYjsWireSnapshot(recipeId: recipeId, state: state)
+        if canSendLiveSync() {
+            writeSyncStates[recipeId] = .syncing
+            await emitSyncRequest(recipeId: recipeId, update: state, docKey: docKey)
+        } else {
+            writeSyncStates[recipeId] = .queued
+            try? await offlineQueue.clear(forRecipeId: recipeId)
+            await documentManager.persistSnapshot(docKey: docKey)
+        }
+    }
+
+    func requestDescriptionWireExport(recipeId: String) {
+        guard isRecipeDocument(recipeId: recipeId) else { return }
+        descriptionWireExportRecipeIds.insert(recipeId)
+    }
+
+    func finishDescriptionWireExport(recipeId: String) {
+        descriptionWireExportRecipeIds.remove(recipeId)
     }
 
     func registerDescriptionEditor(_ bridge: DescriptionEditorBridge) {
+        finishDescriptionWireExport(recipeId: bridge.recipeId)
         let session = DescriptionEditorSession()
         session.bridge = bridge
         descriptionEditorSessions[bridge.recipeId] = session
@@ -339,6 +706,7 @@ final class YjsSyncService: ObservableObject {
             activeRecipeWasRemoved = true
         }
         writeSyncStates.removeValue(forKey: recipeId)
+        markRecipeSynced(recipeId)
         await refreshCollectionEntries()
     }
 
@@ -496,8 +864,10 @@ final class YjsSyncService: ObservableObject {
         if !isSameUser, self.userId != nil {
             await documentManager.clearOfflineQueueForAccountSwitch()
             writeSyncStates = [:]
+            unsyncedRecipeIds = []
         }
         self.userId = userId
+        loadUnsyncedRecipeIds()
         startNetworkMonitorIfNeeded()
         await documentManager.setUserId(userId)
         APIClient.shared.configure(userId: userId)
@@ -547,7 +917,9 @@ final class YjsSyncService: ObservableObject {
                 emitAuth()
             }
         case .connecting:
-            break
+            if isNetworkReachable {
+                connectSocket()
+            }
         case .notConnected, .disconnected:
             connectSocket()
         }
@@ -569,10 +941,21 @@ final class YjsSyncService: ObservableObject {
         // Offline-first (web parity): local snapshot is shown immediately above; only pull
         // server state when there is nothing waiting to be pushed outward.
         if await hasUnsyncedLocalChanges(recipeId: recipeId) {
-            await flushPendingUpdates(for: [recipeId])
-            if canSendLiveSync() {
-                await drainOfflineQueue()
-            }
+            // #region agent log
+            #if DEBUG
+            AgentSyncDebugLog.session3d01c4(
+                hypothesisId: "H2",
+                location: "YjsSyncService.loadRecipe",
+                message: "skip_pull_unsynced_local",
+                data: [
+                    "recipeId": recipeId,
+                    "localSnapBytes": "\(await documentManager.localSnapshotByteCount(recipeId: recipeId))",
+                    "lastServerBytes": "\(resolvedServerDocumentBytes(recipeId: recipeId) ?? -1)",
+                ]
+            )
+            #endif
+            // #endregion
+            await syncPendingDocumentsAfterReconnect(recipeIds: [recipeId])
             if await hasUnsyncedLocalChanges(recipeId: recipeId) {
                 logger.info("Skipping load_document for \(recipeId) — unsynced local changes")
                 return
@@ -585,6 +968,10 @@ final class YjsSyncService: ObservableObject {
 
     /// Full local teardown on logout (web: IndexedDB + realtime destroy).
     func clearSessionForLogout() async {
+        if let key = unsyncedRecipeIdsKey() {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+        unsyncedRecipeIds = []
         stop()
         collectionEntries = []
         folders = []
@@ -596,6 +983,7 @@ final class YjsSyncService: ObservableObject {
         await documentManager.resetSession()
         try? await store.deleteAll()
         try? await store.deleteAllOfflineQueue()
+        try? await store.deleteAllYjsWireSnapshots()
     }
 
     /// Read-only access to a recipe snapshot without activating it as the current
@@ -636,6 +1024,7 @@ final class YjsSyncService: ObservableObject {
         guard userId != nil else { return }
         guard connectionState != .disconnected else { return }
         logger.info("Entered background — disconnecting socket")
+        Task { await flushPendingEdits() }
         teardownSocket()
         setConnectionState(.disconnected, reason: "app_background")
     }
@@ -644,9 +1033,11 @@ final class YjsSyncService: ObservableObject {
     /// timeout-driven Socket.IO auto-reconnect (a fresh connect completes in ~0.5s).
     func handleEnteredForeground() {
         guard userId != nil else { return }
-        guard !canSendLiveSync() else { return }
-        logger.info("Entered foreground — reconnecting socket")
-        resumeSocketSession()
+        reconnectIfNeeded(reason: "Entered foreground")
+        Task {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            await syncPendingDocumentsAfterReconnect()
+        }
     }
 
     // MARK: - Socket.IO Connection
@@ -949,11 +1340,12 @@ final class YjsSyncService: ObservableObject {
         setConnectionState(.connected, reason: "authenticated")
         if disconnectTimestamp != nil {
             Task {
-                await drainOfflineQueue()
+                await syncPendingDocumentsAfterReconnect()
                 reloadStaleDocumentsAfterReconnect()
             }
         } else {
             loadCollectionDocument()
+            Task { await syncPendingDocumentsAfterReconnect() }
         }
         TimerSyncService.shared.initializeAfterAuth()
         Task { await PushRegistrationService.shared.registerIfNeeded() }
@@ -1057,8 +1449,101 @@ final class YjsSyncService: ObservableObject {
     }
 
     private func handleLocalRecipeUpdate(recipeId: String, update: Data) async {
+        markRecipeUnsynced(recipeId)
         writeSyncStates[recipeId] = .pendingLocal
         await updateDebouncer.schedule(recipeId: recipeId, update: update)
+    }
+
+    private func handleDescriptionYjsUpdate(recipeId: String, update: Data) async {
+        guard !update.isEmpty, update.count > 2 else { return }
+        markRecipeUnsynced(recipeId)
+        writeSyncStates[recipeId] = .pendingLocal
+        let docKey = docKeyFor(recipeId: recipeId)
+        if !canSendLiveSync() {
+            writeSyncStates[recipeId] = .queued
+            try? await offlineQueue.enqueue(docKey: docKey, recipeId: recipeId, yjsUpdate: update)
+            await documentManager.persistSnapshot(docKey: docKey)
+            scheduleWireSnapshotRefresh(recipeId: recipeId)
+            logger.info("Eager offline enqueue for description \(recipeId) (\(update.count) bytes)")
+            return
+        }
+        await updateDebouncer.schedule(recipeId: recipeId, update: update)
+    }
+
+    private func scheduleWireSnapshotRefresh(recipeId: String) {
+        wireSnapshotRefreshTasks[recipeId]?.cancel()
+        wireSnapshotRefreshTasks[recipeId] = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            guard !Task.isCancelled, let self else { return }
+            await self.refreshWireSnapshotForRecipe(recipeId: recipeId)
+            self.wireSnapshotRefreshTasks.removeValue(forKey: recipeId)
+        }
+    }
+
+    private func refreshWireSnapshotsForRecipes(recipeIds: [String]) async {
+        for recipeId in recipeIds where isRecipeDocument(recipeId: recipeId) {
+            guard await hasUnsyncedLocalChanges(recipeId: recipeId) else { continue }
+            await refreshWireSnapshotForRecipe(recipeId: recipeId)
+        }
+    }
+
+    /// Rebuild durable yjs wire bytes from wire/yrs bootstrap + queued incrementals (never stale wire alone).
+    private func refreshWireSnapshotForRecipe(recipeId: String) async {
+        let docKey = docKeyFor(recipeId: recipeId)
+        let queueEntries = (try? await offlineQueue.fetchAll())?.filter { $0.recipeId == recipeId } ?? []
+        let parts = queueEntries.map(\.yjsUpdate).filter { $0.count > 2 }
+        let wireBootstrap = try? await store.loadYjsWireSnapshot(docKey: docKey)?.state
+        let yrsBootstrap = try? await store.loadSnapshot(docKey: docKey)?.state
+        guard let bootstrap = wireBootstrap ?? yrsBootstrap, bootstrap.count > 2 else {
+            // #region agent log
+            #if DEBUG
+            AgentSyncDebugLog.session3d01c4(
+                hypothesisId: "H8",
+                location: "YjsSyncService.refreshWireSnapshotForRecipe",
+                message: "wire_snapshot_refresh_no_bootstrap",
+                data: [
+                    "recipeId": recipeId,
+                    "queueParts": "\(parts.count)",
+                ]
+            )
+            #endif
+            // #endregion
+            return
+        }
+        let updates = parts
+        guard let full = try? await YjsMergeHelper.shared.encodeFullState(
+            bootstrap: bootstrap,
+            updates: updates
+        ), full.count > 2 else {
+            // #region agent log
+            #if DEBUG
+            AgentSyncDebugLog.session3d01c4(
+                hypothesisId: "H8",
+                location: "YjsSyncService.refreshWireSnapshotForRecipe",
+                message: "wire_snapshot_refresh_encode_failed",
+                data: [
+                    "recipeId": recipeId,
+                    "queueParts": "\(updates.count)",
+                    "bootstrapBytes": "\(bootstrap.count)",
+                ]
+            )
+            #endif
+            // #endregion
+            return
+        }
+        try? await store.saveYjsWireSnapshot(docKey: docKey, state: full)
+        #if DEBUG
+        AgentSyncDebugLog.session3d01c4(
+            hypothesisId: "H8",
+            location: "YjsSyncService.refreshWireSnapshotForRecipe",
+            message: "wire_snapshot_refreshed",
+            data: [
+                "recipeId": recipeId,
+                "bytes": "\(full.count)",
+                "queueParts": "\(updates.count)",
+            ]
+        )
+        #endif
     }
 
     private func sendDebouncedUpdate(recipeId: String, update: Data) async {
@@ -1128,10 +1613,25 @@ final class YjsSyncService: ObservableObject {
             target = recipeId == "collection" ? "collection" : recipeId
         }
         logger.info("Emitted sync_request for \(target) (\(update.count) bytes)")
+        // #region agent log
+        #if DEBUG
+        AgentSyncDebugLog.session3d01c4(
+            hypothesisId: "H6",
+            location: "YjsSyncService.emitSyncRequest",
+            message: "sync_request_emitted",
+            data: [
+                "recipeId": recipeId,
+                "bytes": "\(update.count)",
+                "lastSyncedAt": lastSyncedAt ?? "nil",
+            ]
+        )
+        #endif
+        // #endregion
     }
 
     private func handleSyncConfirmed(recipeId: String, lastSyncedAt: String?) async {
         guard recipeId != "unknown" else { return }
+        markRecipeSynced(recipeId)
         lastSuccessfulSyncAt = Date()
         let docKey = docKeyFor(recipeId: recipeId)
         if recipeId != "collection", recipeId != ShoppingListConstants.offlineRecipeId {
@@ -1141,6 +1641,17 @@ final class YjsSyncService: ObservableObject {
         if let doc = await documentManager.getDoc(key: docKey),
            let state = await doc.encodeStateAsUpdate() {
             try? await store.saveSnapshot(docKey: docKey, state: state, lastSyncedAt: lastSyncedAt)
+            if isRecipeDocument(recipeId: recipeId) {
+                if let wire = try? await store.loadYjsWireSnapshot(docKey: docKey) {
+                    persistServerDocumentBytes(recipeId: recipeId, bytes: wire.state.count)
+                } else {
+                    persistServerDocumentBytes(recipeId: recipeId, bytes: state.count)
+                }
+            }
+        }
+
+        if isRecipeDocument(recipeId: recipeId) {
+            try? await store.deleteYjsWireSnapshot(docKey: docKey)
         }
 
         guard recipeId != "collection", recipeId != ShoppingListConstants.offlineRecipeId else { return }
@@ -1154,9 +1665,8 @@ final class YjsSyncService: ObservableObject {
     }
 
     private func drainOfflineQueue() async {
-        guard socket?.status == .connected, isSocketAuthenticated else { return }
+        guard canSendLiveSync() else { return }
         guard let entries = try? await offlineQueue.fetchAll(), !entries.isEmpty else { return }
-
 
         var byDocKey: [String: [OfflineSyncEntry]] = [:]
         for entry in entries {
@@ -1165,24 +1675,42 @@ final class YjsSyncService: ObservableObject {
 
         for (docKey, docEntries) in byDocKey {
             guard let recipeId = docEntries.first?.recipeId else { continue }
-            let merged: Data
-            if docEntries.count == 1 {
-                merged = docEntries[0].yjsUpdate
-            } else if let doc = await documentManager.getDoc(key: docKey),
-                      let snapshot = await doc.encodeStateAsUpdate() {
-                merged = snapshot
+            let pushData: Data?
+            if isRecipeDocument(recipeId: recipeId) {
+                pushData = await resolveYjsPushPayload(
+                    recipeId: recipeId,
+                    docKey: docKey,
+                    queueEntries: docEntries
+                )
             } else {
-                merged = docEntries.last!.yjsUpdate
+                pushData = await resolveNonRecipePushPayload(docKey: docKey, queueEntries: docEntries)
             }
+            guard let pushData, pushData.count > 2 else { continue }
             let documentKind = recipeId == ShoppingListConstants.offlineRecipeId
                 ? ShoppingListConstants.documentKind
                 : nil
             if recipeId != ShoppingListConstants.offlineRecipeId {
                 writeSyncStates[recipeId] = .syncing
             }
+            // #region agent log
+            #if DEBUG
+            if isRecipeDocument(recipeId: recipeId) {
+                AgentSyncDebugLog.session3d01c4(
+                    hypothesisId: "H7",
+                    location: "YjsSyncService.drainOfflineQueue",
+                    message: "wire_snapshot_push_bytes",
+                    data: [
+                        "recipeId": recipeId,
+                        "bytes": "\(pushData.count)",
+                        "queueEntries": "\(docEntries.count)",
+                    ]
+                )
+            }
+            #endif
+            // #endregion
             await emitSyncRequest(
                 recipeId: recipeId,
-                update: merged,
+                update: pushData,
                 docKey: docKey,
                 documentKind: documentKind
             )
@@ -1195,6 +1723,90 @@ final class YjsSyncService: ObservableObject {
         logger.info("Drained offline sync queue (\(entries.count) entries)")
     }
 
+    private func pushUnsyncedWireSnapshots(recipeIds: [String]) async {
+        guard canSendLiveSync() else { return }
+        let queued = (try? await offlineQueue.fetchAll()) ?? []
+        for recipeId in recipeIds {
+            guard isRecipeDocument(recipeId: recipeId) else { continue }
+            guard await hasUnsyncedLocalChanges(recipeId: recipeId) else { continue }
+            let docKey = docKeyFor(recipeId: recipeId)
+            let queueEntries = queued.filter { $0.recipeId == recipeId }
+            if !queueEntries.isEmpty { continue }
+            guard let pushData = await resolveYjsPushPayload(
+                recipeId: recipeId,
+                docKey: docKey,
+                queueEntries: []
+            ), pushData.count > 2 else { continue }
+            writeSyncStates[recipeId] = .syncing
+            await emitSyncRequest(recipeId: recipeId, update: pushData, docKey: docKey)
+        }
+    }
+
+    private func resolveYjsPushPayload(
+        recipeId: String,
+        docKey: String,
+        queueEntries: [OfflineSyncEntry]
+    ) async -> Data? {
+        let parts = queueEntries.map(\.yjsUpdate).filter { $0.count > 2 }
+        let wireBootstrap = try? await store.loadYjsWireSnapshot(docKey: docKey)?.state
+        let yrsBootstrap = try? await store.loadSnapshot(docKey: docKey)?.state
+        let bootstrap = wireBootstrap ?? yrsBootstrap
+
+        if !parts.isEmpty, let bootstrap {
+            if let full = try? await YjsMergeHelper.shared.encodeFullState(
+                bootstrap: bootstrap,
+                updates: parts
+            ), full.count > 2 {
+                return full
+            }
+            if parts.count == 1 { return parts[0] }
+            if let merged = try? await YjsMergeHelper.shared.mergeUpdates(parts) { return merged }
+            return parts.last
+        }
+
+        if let wire = wireBootstrap, wire.count > 2, isLocalAheadOfServer(recipeId: recipeId) {
+            return wire
+        }
+
+        if isLocalAheadOfServer(recipeId: recipeId),
+           let bootstrap,
+           let full = try? await YjsMergeHelper.shared.encodeFullState(bootstrap: bootstrap, updates: []),
+           full.count > 2 {
+            return full
+        }
+        // #region agent log
+        #if DEBUG
+        AgentSyncDebugLog.session3d01c4(
+            hypothesisId: "H8",
+            location: "YjsSyncService.resolveYjsPushPayload",
+            message: "resolve_nil",
+            data: [
+                "recipeId": recipeId,
+                "queueParts": "\(parts.count)",
+                "hasWire": wireBootstrap != nil ? "1" : "0",
+                "hasYrs": yrsBootstrap != nil ? "1" : "0",
+                "localAhead": isLocalAheadOfServer(recipeId: recipeId) ? "1" : "0",
+            ]
+        )
+        #endif
+        // #endregion
+        return nil
+    }
+
+    private func resolveNonRecipePushPayload(
+        docKey: String,
+        queueEntries: [OfflineSyncEntry]
+    ) async -> Data? {
+        if queueEntries.count == 1 {
+            return queueEntries[0].yjsUpdate
+        }
+        if let doc = await documentManager.getDoc(key: docKey),
+           let snapshot = await doc.encodeStateAsUpdate() {
+            return snapshot
+        }
+        return queueEntries.last?.yjsUpdate
+    }
+
     // MARK: - Event Handlers
 
     /// Web parity: merge server snapshot into local doc when local state exists; replace only when empty.
@@ -1204,12 +1816,23 @@ final class YjsSyncService: ObservableObject {
         stateData: Data,
         lastSyncedAt: String?
     ) async throws {
-        // Offline-first: never let a server snapshot clobber edits still queued locally.
+        // Web parity: CRDT-merge server state into local even when outbound queue is non-empty.
         if recipeId != "collection",
            recipeId != ShoppingListConstants.offlineRecipeId,
            await hasUnsyncedLocalChanges(recipeId: recipeId) {
-            logger.info("Skipping server document for \(docKey) — unsynced local changes")
-            return
+            // #region agent log
+            #if DEBUG
+            AgentSyncDebugLog.session3d01c4(
+                hypothesisId: "H11",
+                location: "YjsSyncService.applyServerDocumentState",
+                message: "merge_server_with_unsynced_local",
+                data: [
+                    "recipeId": recipeId,
+                    "serverBytes": "\(stateData.count)",
+                ]
+            )
+            #endif
+            // #endregion
         }
 
         let serverLooksEmpty = stateData.count <= 2
@@ -1254,8 +1877,12 @@ final class YjsSyncService: ObservableObject {
     private func handleDocumentLoaded(recipeId: String, stateData: Data, lastSyncedAt: String?) async {
         let docKey = docKeyFor(recipeId: recipeId)
         logger.info("document_loaded: \(docKey), \(stateData.count) bytes")
+        if recipeId != "collection", recipeId != ShoppingListConstants.offlineRecipeId {
+            persistServerDocumentBytes(recipeId: recipeId, bytes: stateData.count)
+        }
         lastSuccessfulSyncAt = Date()
 
+        var mergeSucceeded = false
         do {
             try await applyServerDocumentState(
                 recipeId: recipeId,
@@ -1263,8 +1890,16 @@ final class YjsSyncService: ObservableObject {
                 stateData: stateData,
                 lastSyncedAt: lastSyncedAt
             )
+            mergeSucceeded = true
         } catch {
             logger.error("Failed to apply document state for \(docKey): \(error)")
+        }
+
+        if isRecipeDocument(recipeId: recipeId) {
+            if mergeSucceeded {
+                descriptionEditorSessions[recipeId]?.bridge?.applyRemoteUpdate(stateData)
+            }
+            completePendingDocumentLoad(recipeId: recipeId, merged: mergeSucceeded)
         }
 
         if recipeId == ShoppingListConstants.offlineRecipeId {
@@ -1621,6 +2256,9 @@ final class YjsSyncService: ObservableObject {
             await documentManager.setLocalUpdateHandler { [weak self] recipeId, update in
                 await self?.handleLocalRecipeUpdate(recipeId: recipeId, update: update)
             }
+            await documentManager.setDescriptionYjsUpdateHandler { [weak self] recipeId, update in
+                await self?.handleDescriptionYjsUpdate(recipeId: recipeId, update: update)
+            }
         }
         guard !changeHandlersInstalled else { return }
         changeHandlersInstalled = true
@@ -1719,6 +2357,7 @@ final class YjsSyncService: ObservableObject {
             }
             try? await offlineQueue.clear(forRecipeId: recipeId)
             writeSyncStates.removeValue(forKey: recipeId)
+            markRecipeSynced(recipeId)
             await refreshCollectionEntries()
             return
         }
