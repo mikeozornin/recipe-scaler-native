@@ -242,16 +242,6 @@ struct YDocRecipeDetailView: View {
         }
         #endif
         }
-        .overlay {
-            if let popover = descriptionTimerPopover {
-                DescriptionTimerPopoverOverlay(
-                    state: popover,
-                    accentColor: accentColor,
-                    onStart: { startDescriptionTimer(from: popover.reference) },
-                    onDismiss: { descriptionTimerPopover = nil }
-                )
-            }
-        }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .top, spacing: 0) {
@@ -498,6 +488,18 @@ struct YDocRecipeDetailView: View {
             applyStartInEditModeIfNeeded()
             applyStartDescriptionEditIfNeeded()
             scheduleDebugDescriptionEditorIfNeeded()
+        }
+        .overlay {
+            DescriptionTimerPopoverOverlay(
+                state: descriptionTimerPopover,
+                accentColor: accentColor,
+                onStart: {
+                    if let popover = descriptionTimerPopover {
+                        startDescriptionTimer(from: popover.reference)
+                    }
+                },
+                onDismiss: { descriptionTimerPopover = nil }
+            )
         }
     }
 
@@ -1210,17 +1212,14 @@ private struct DismissPopoverOnVerticalDragModifier: ViewModifier {
     let onDismiss: () -> Void
 
     func body(content: Content) -> some View {
-        if isActive {
-            content.simultaneousGesture(
-                DragGesture(minimumDistance: 10)
-                    .onChanged { value in
-                        guard abs(value.translation.height) > abs(value.translation.width) else { return }
-                        onDismiss()
-                    }
-            )
-        } else {
-            content
-        }
+        content.simultaneousGesture(
+            DragGesture(minimumDistance: 10)
+                .onChanged { value in
+                    guard isActive else { return }
+                    guard abs(value.translation.height) > abs(value.translation.width) else { return }
+                    onDismiss()
+                }
+        )
     }
 }
 

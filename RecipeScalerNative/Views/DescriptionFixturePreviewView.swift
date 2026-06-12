@@ -27,17 +27,15 @@ struct DescriptionFixturePreviewView: View {
                     if timerPopover != nil { timerPopover = nil }
                 }
             )
-            .overlay {
-                if let popover = timerPopover {
-                    DescriptionTimerPopoverOverlay(
-                        state: popover,
-                        accentColor: accent,
-                        onStart: {},
-                        onDismiss: { timerPopover = nil }
-                    )
-                }
-            }
             .navigationTitle("Description fixture")
+            .overlay {
+                DescriptionTimerPopoverOverlay(
+                    state: timerPopover,
+                    accentColor: accent,
+                    onStart: {},
+                    onDismiss: { timerPopover = nil }
+                )
+            }
             .accessibilityIdentifier("description-fixture-preview")
         }
     }

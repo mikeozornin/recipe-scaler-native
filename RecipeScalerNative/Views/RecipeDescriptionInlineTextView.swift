@@ -81,6 +81,26 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
             if let url = attrs[.recipeTimerReference] as? URL,
                let reference = RecipeDescriptionTimerReference.from(link: url),
                let anchor = timerAnchorRect(for: range, in: textView) {
+                // #region agent log
+                #if DEBUG
+                let textViewFrameInWindow = textView.convert(textView.bounds, to: nil)
+                AgentSyncDebugLog.write(
+                    hypothesisId: "TP-A",
+                    location: "RecipeDescriptionInlineTextView.swift:handleTap",
+                    message: "timer_tap_anchor",
+                    data: [
+                        "anchorMinX": String(format: "%.1f", anchor.minX),
+                        "anchorMinY": String(format: "%.1f", anchor.minY),
+                        "anchorWidth": String(format: "%.1f", anchor.width),
+                        "anchorHeight": String(format: "%.1f", anchor.height),
+                        "textViewFrameY": String(format: "%.1f", textViewFrameInWindow.origin.y),
+                        "textViewFrameH": String(format: "%.1f", textViewFrameInWindow.height),
+                        "displayText": reference.displayText,
+                        "durationSec": String(reference.durationSeconds),
+                    ]
+                )
+                #endif
+                // #endregion
                 onTimerTap?(reference, anchor)
                 return
             }
