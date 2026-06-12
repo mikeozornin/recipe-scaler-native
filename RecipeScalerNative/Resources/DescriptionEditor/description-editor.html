@@ -9,86 +9,128 @@
       color-scheme: light dark;
       --bg: #ffffff;
       --fg: #1a1a1a;
-      --muted: #6b7280;
-      --accent: #6366f1;
-      --toolbar-bg: #f3f4f6;
-      --border: #e5e7eb;
+      --recipeColor: #6366f1;
+      --recipeColorBg: rgba(99, 102, 241, 0.15);
+      --linkColor: #0072F5;
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #111111;
         --fg: #f3f4f6;
-        --muted: #9ca3af;
-        --toolbar-bg: #1f2937;
-        --border: #374151;
+        --recipeColorBg: rgba(99, 102, 241, 0.35);
       }
     }
     * { box-sizing: border-box; }
     html, body {
       margin: 0;
       padding: 0;
-      height: 100%;
       background: var(--bg);
       color: var(--fg);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-    #toolbar {
-      display: flex;
-      gap: 8px;
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
-      background: var(--toolbar-bg);
-      position: sticky;
-      top: 0;
-      z-index: 2;
+    html, body, body.inline-embedded {
+      height: auto;
+      min-height: 0;
     }
-    #toolbar button {
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--fg);
-      border-radius: 8px;
-      min-width: 40px;
-      height: 36px;
-      font-size: 15px;
-      font-weight: 600;
-    }
-    #toolbar button.active {
-      border-color: var(--accent);
-      color: var(--accent);
+    body.inline-embedded {
+      background: transparent;
     }
     #editor {
-      min-height: calc(100vh - 58px);
+      min-height: calc(100vh - 16px);
       padding: 16px;
       outline: none;
       line-height: 1.5;
-      font-size: 17px;
+      font-size: 16px;
+      font-family: "Martian Grotesk Nr Lt", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    body.inline-embedded #editor {
+      min-height: 0;
+      padding: 0;
     }
     #editor p { margin: 0 0 0.5em; }
-    #editor ul, #editor ol { margin: 0 0 0.5em; padding-left: 1.2em; }
-    #editor h1 { font-size: 1.1em; margin: 0 0 0.5em; }
-    #editor a { color: var(--accent); }
+    #editor h1 { font-size: 1.1em; margin: 0 0 0.5em; font-weight: 600; }
+    #editor a {
+      color: var(--linkColor);
+      text-decoration: underline;
+      text-decoration-color: color-mix(in srgb, var(--linkColor) 50%, transparent);
+      text-underline-offset: 4px;
+      text-decoration-thickness: 0.5px;
+    }
+    #editor mark,
+    #editor .highlight-mark { background: #fef08a; color: inherit; }
+
+    /* ProseMirror / Tiptap */
+    .ProseMirror {
+      outline: none;
+      min-height: 1.5rem;
+    }
+    .ProseMirror p.is-editor-empty:first-child::before {
+      content: none;
+    }
+
+    /* Ordered list: circle step numbers */
+    #editor ol {
+      list-style: none;
+      margin: 0 0 0.5em;
+      padding-left: 0;
+      counter-reset: tiptap-step;
+    }
+    #editor ol > li {
+      position: relative;
+      margin: 0.75rem 0;
+      padding-left: 1.9375rem;
+      counter-increment: tiptap-step;
+    }
+    #editor ol > li::before {
+      content: counter(tiptap-step);
+      position: absolute;
+      left: 0;
+      top: 0.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.375rem;
+      height: 1.375rem;
+      border-radius: 9999px;
+      border: 0.75px solid color-mix(in srgb, var(--recipeColor) 32%, transparent);
+      background: color-mix(in srgb, var(--recipeColorBg) 85%, white 15%);
+      color: var(--recipeColor);
+      font-family: var(--font-sans-medium, "Martian Grotesk Nr Md", sans-serif);
+      font-size: 0.875rem;
+      line-height: 1;
+    }
+
+    /* Bullet list: dash */
+    #editor ul {
+      list-style: none;
+      margin: 0 0 0.5em;
+      padding-left: 0;
+    }
+    #editor ul > li {
+      position: relative;
+      padding-left: 1rem;
+    }
+    #editor ul > li::before {
+      content: "–";
+      position: absolute;
+      left: 0;
+      color: var(--recipeColor);
+    }
+
+    /* Timer & ingredient references */
     #editor .timer-reference,
     #editor .ingredient-reference {
-      background: rgba(99, 102, 241, 0.12);
+      background: color-mix(in srgb, var(--recipeColor) 12%, transparent);
       border-radius: 4px;
       padding: 0 2px;
-    }
-    #status {
-      font-size: 12px;
-      color: var(--muted);
-      padding: 0 12px 8px;
+      color: var(--recipeColor);
+      -webkit-user-select: none;
+      user-select: none;
+      cursor: pointer;
     }
   </style>
 </head>
-<body>
-  <div id="toolbar">
-    <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
-    <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
-    <button type="button" data-cmd="h1" title="Heading">H1</button>
-    <button type="button" data-cmd="bullet" title="Bullet list">•</button>
-  </div>
-  <div id="status">Loading…</div>
-  <div id="editor" class="tiptap-description" contenteditable="true" spellcheck="true"></div>
+<body class="inline-embedded">
+  <div id="editor" class="tiptap-description"></div>
   <script src="yjs.bundle.js"></script>
   <script src="description-editor-bridge.js"></script>
 </body>

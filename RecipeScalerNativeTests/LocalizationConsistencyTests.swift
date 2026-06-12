@@ -94,7 +94,13 @@ final class LocalizationConsistencyTests: XCTestCase {
             "collections.back",
             "collections.done",
             "recipes.no-title",
-            "search.recipes"
+            "search.recipes",
+            "auth.welcome-title",
+            "auth.welcome-subtitle",
+            "auth.new-user",
+            "auth.used-before",
+            "auth.login",
+            "auth.seed-placeholder"
         ]
 
         for lang in ["en", "ru"] {

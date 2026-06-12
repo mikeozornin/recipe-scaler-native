@@ -8,6 +8,8 @@ import OSLog
 /// Schema: single `ydoc_snapshots` table with WAL mode for concurrent reads.
 final class YrsDatabase {
     let dbQueue: DatabaseQueue
+    /// `true` when on-disk open failed and the app is using an in-memory fallback.
+    static var dbInitFailed = false
     private static let logger = Logger(subsystem: "com.recipescaler.native", category: "YrsDatabase")
 
     init() throws {
@@ -17,7 +19,7 @@ final class YrsDatabase {
         )[0]
 
         let dbURL = appSupport.appendingPathComponent("ydoc_snapshots.sqlite")
-        YrsDatabase.logger.info("Opening database at \(dbURL.path)")
+        Self.logger.info("Opening database at \(dbURL.path)")
 
         var config = Configuration()
         config.prepareDatabase { db in
@@ -25,11 +27,29 @@ final class YrsDatabase {
             try db.execute(sql: "PRAGMA foreign_keys = ON")
         }
 
-        self.dbQueue = try DatabaseQueue(path: dbURL.path, configuration: config)
-        try migrate()
+        let queue = try DatabaseQueue(path: dbURL.path, configuration: config)
+        try Self.migrate(queue)
+        self.dbQueue = queue
     }
 
-    private func migrate() throws {
+    /// In-memory fallback when on-disk DB cannot be opened (corruption, write-protection).
+    /// App will function but snapshots won't persist across launches.
+    static func makeInMemoryFallback() throws -> YrsDatabase {
+        dbInitFailed = true
+        let queue = try DatabaseQueue(configuration: Configuration())
+        try migrate(queue)
+        return YrsDatabase(dbQueue: queue)
+    }
+
+    static func logInitFailure(_ error: Error) {
+        logger.error("Failed to open on-disk database, falling back to in-memory: \(error)")
+    }
+
+    private init(dbQueue: DatabaseQueue) {
+        self.dbQueue = dbQueue
+    }
+
+    private static func migrate(_ dbQueue: DatabaseQueue) throws {
         var migrator = DatabaseMigrator()
 
         migrator.registerMigration("v1_create_ydoc_snapshots") { db in

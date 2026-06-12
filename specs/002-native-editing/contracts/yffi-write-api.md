@@ -27,13 +27,8 @@
 | `ytransaction_commit` | commit после batch insert в одном действии пользователя |
 | `ytransaction_state_diff_v1` | blob апдейта для `sync_request` |
 
-## Опционально (если нужен merge при debounce)
-
-| Функция | Использование |
-|---------|---------------|
-| `ytransaction_merge_updates_v1` | merge pending binary updates перед одним `sync_request` |
-
-Проверить наличие в `libyrs.h` на этапе implement; fallback — один diff за окно debounce.
+## Debounce merge (не в libyrs)
+`ytransaction_merge_updates_v1` / `ymerge_updates` **отсутствуют** в текущем `libyrs.h`. `UpdateDebouncer` не мержит pending updates в один blob: очередь + последовательные `sync_request`. Не использовать `state_diff_v1` на пустом throwaway doc для merge инкрементальных апдейтов — даёт no-op. Паритет с вебом по `Y.mergeUpdates` — отдельная задача (JS bundle или порт алгоритма).
 
 ## Паттерн write-транзакции
 

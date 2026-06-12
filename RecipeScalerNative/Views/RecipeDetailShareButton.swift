@@ -20,7 +20,7 @@ struct RecipeDetailShareButton: View {
             AppToolbarStyle.iconOnly(systemName: "square.and.arrow.up")
         }
         .appToolbarIconButton()
-        .accessibilityLabel(String(localized: "recipe.share"))
+        .accessibilityLabel("recipe.share")
         #if DEBUG
         .onAppear {
             if DebugLaunchOptions.showRecipeShare {
@@ -101,7 +101,7 @@ private struct RecipeShareSheet: View {
                 if !isOnline && showToggle {
                     Section {
                         Text("recipe.share.offline-message")
-                            .font(AppTypography.subheadline)
+                            .appBody()
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -110,6 +110,7 @@ private struct RecipeShareSheet: View {
                     if showToggle {
                         Toggle(isOn: toggleBinding) {
                             Text("recipe.detail.public")
+                                .appBody()
                         }
                         .disabled(!isOnline || isUpdating)
                     } else {
@@ -126,17 +127,17 @@ private struct RecipeShareSheet: View {
                         }
                         .tint(Color.accentColor)
 
-                        Button(String(localized: "shopping.copy-link")) {
+                        Button("shopping.copy-link") {
                             copyLink(url.absoluteString)
                         }
                     }
                 }
             }
-            .navigationTitle(Text("recipe.share"))
+            .localizedNavigationTitle("recipe.share")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "common.done")) { dismiss() }
+                    Button("common.done") { dismiss() }
                 }
             }
         }
@@ -159,8 +160,7 @@ private struct RecipeShareSheet: View {
             "recipe.detail.public"  // fallback; shouldn't happen since showToggle covers .one_by_one
         }
         Text(key)
-            .font(AppTypography.subheadline)
-            .lineSpacing(AppTypography.bodyLineSpacing)
+            .appBody()
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -217,7 +217,7 @@ private struct RecipeShareSheet: View {
         dismiss()
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 350_000_000)
-            ShoppingFeedback.postStatus(String(localized: "shopping.link-copied"))
+            ShoppingFeedback.postStatus(Bundle.currentLocalizedString("shopping.link-copied"))
         }
     }
 }

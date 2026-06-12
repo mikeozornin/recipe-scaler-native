@@ -469,6 +469,7 @@ private struct FolderNavigationTitleModifier: ViewModifier {
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(isEditingName)
             .navigationTitle(Text(verbatim: isEditingName ? "" : displayName))
+            .localizedNavigationBackTitle(verbatim: displayName)
             .toolbar {
                 if isEditingName {
                     ToolbarItem(placement: .principal) {

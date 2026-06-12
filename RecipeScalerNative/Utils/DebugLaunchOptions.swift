@@ -99,6 +99,27 @@ enum DebugLaunchOptions {
         return false
     }
 
+    /// `-DescriptionEditorSimulateText=.` — after editor ready, inserts text (verify scripts only).
+    static var simulateDescriptionEditorText: String? {
+        for arg in ProcessInfo.processInfo.arguments {
+            guard arg.hasPrefix("-DescriptionEditorSimulateText=") else { continue }
+            let value = String(arg.dropFirst("-DescriptionEditorSimulateText=".count))
+            return value.isEmpty ? nil : value
+        }
+        return nil
+    }
+
+    /// `-DescriptionEditorSimulateCommand=bold|bulletList|...` — after editor ready,
+    /// runs a formatting command to exercise the incremental reconcile sync (verify scripts only).
+    static var simulateDescriptionEditorCommand: String? {
+        for arg in ProcessInfo.processInfo.arguments {
+            guard arg.hasPrefix("-DescriptionEditorSimulateCommand=") else { continue }
+            let value = String(arg.dropFirst("-DescriptionEditorSimulateCommand=".count))
+            return value.isEmpty ? nil : value
+        }
+        return nil
+    }
+
     /// `-OpenTab=shopping|discover|recipes|profile|import`
     static var openTab: AppTab? {
         for arg in ProcessInfo.processInfo.arguments {

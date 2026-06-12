@@ -1,0 +1,10 @@
+export { Editor } from '@tiptap/core';
+export { default as StarterKit } from '@tiptap/starter-kit';
+export { default as Highlight } from '@tiptap/extension-highlight';
+export { default as Link } from '@tiptap/extension-link';
+export { default as Collaboration } from '@tiptap/extension-collaboration';
+export * as Y from 'yjs';
+export { TimerNode } from './tiptap-extensions/timer-node.js';
+export { IngredientNode } from './tiptap-extensions/ingredient-node.js';
+export { HeadingWithHash } from './tiptap-extensions/heading-with-hash.js';
+export { ScaleStorageExtension } from './tiptap-extensions/scale-storage.js';

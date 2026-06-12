@@ -38,7 +38,11 @@ final class TimerManager: NSObject, ObservableObject {
             using: nil
         ) { task in
             Task { @MainActor in
-                shared.handleBackgroundTask(task as! BGProcessingTask)
+                guard let processingTask = task as? BGProcessingTask else {
+                    task.setTaskCompleted(success: false)
+                    return
+                }
+                shared.handleBackgroundTask(processingTask)
             }
         }
     }

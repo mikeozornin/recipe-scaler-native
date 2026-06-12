@@ -77,20 +77,25 @@ actor YrsDocument {
         _ = handler
     }
 
+    /// Recipe editing docs: skip GC so yrs does not emit `Skip` structures that y-prosemirror (yjs 13) cannot read.
+    private static func createDocument() throws -> UnsafeMutablePointer<YDoc> {
+        var opts = yoptions()
+        opts.flags |= UInt8(Y_SKIP_GC)
+        guard let d = ydoc_new_with_options(opts) else {
+            throw YrsError.nullPointer(context: "ydoc_new_with_options")
+        }
+        return d
+    }
+
     /// Create a new empty Y.Doc.
     init() throws {
-        guard let d = ydoc_new() else {
-            throw YrsError.nullPointer(context: "ydoc_new")
-        }
-        self.doc = d
+        self.doc = try Self.createDocument()
         installUpdateObserver()
     }
 
     /// Create a Y.Doc and apply an existing binary state.
     init(state: Data) throws {
-        guard let d = ydoc_new() else {
-            throw YrsError.nullPointer(context: "ydoc_new")
-        }
+        let d = try Self.createDocument()
         self.doc = d
         try Self.applyState(state, to: d)
         installUpdateObserver()
@@ -177,6 +182,11 @@ actor YrsDocument {
             _ = updateObserverBoxRef?.consumePending()
             updateObserverBoxRef?.setSuppress(false)
         }
+        try Self.applyState(data, to: doc)
+    }
+
+    /// Apply a local edit and let `ydoc_observe_updates_v1` capture outbound sync bytes (yjs v1).
+    func applyLocalUpdate(_ data: Data) throws {
         try Self.applyState(data, to: doc)
     }
 

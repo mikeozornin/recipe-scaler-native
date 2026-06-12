@@ -17,10 +17,6 @@ struct ScreenAwakeToggle: View {
         }
         .appToolbarIconButton()
         .accessibilityIdentifier(AccessibilityIdentifiers.screenAwakeToggle)
-        .accessibilityLabel(
-            isActive
-                ? String(localized: "common.disable-wake-lock")
-                : String(localized: "common.enable-wake-lock")
-        )
+        .accessibilityLabel(isActive ? "common.disable-wake-lock" : "common.enable-wake-lock")
     }
 }

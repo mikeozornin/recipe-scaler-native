@@ -11,6 +11,7 @@ import UIKit
 struct RecipeDescriptionInlineTextView: UIViewRepresentable {
     let runs: [RecipeDescriptionInlineRun]
     var accentColor: Color
+    var typography: RecipeDescriptionBlockTypography = .body
     var onTimerTap: ((RecipeDescriptionTimerReference, CGRect) -> Void)?
 
     func makeCoordinator() -> Coordinator {
@@ -26,7 +27,7 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
         textView.dataDetectorTypes = []
-        textView.adjustsFontForContentSizeCategory = true
+        textView.adjustsFontForContentSizeCategory = false
         textView.linkTextAttributes = [
             .foregroundColor: RecipeDescriptionStyle.linkUIColor,
             .underlineStyle: NSUnderlineStyle.single.rawValue,
@@ -43,11 +44,10 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
     func updateUIView(_ textView: UITextView, context: Context) {
         context.coordinator.onTimerTap = onTimerTap
         context.coordinator.textView = textView
-        let styled = Self.attributedString(runs: runs, accentColor: accentColor)
+        let styled = Self.attributedString(runs: runs, accentColor: accentColor, typography: typography)
         if let descriptionTextView = textView as? RecipeDescriptionTextView {
             descriptionTextView.timerHighlightColor = UIColor(accentColor)
             descriptionTextView.attributedText = styled
-            descriptionTextView.setNeedsLayout()
         } else {
             textView.attributedText = styled
         }
@@ -81,6 +81,26 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
             if let url = attrs[.recipeTimerReference] as? URL,
                let reference = RecipeDescriptionTimerReference.from(link: url),
                let anchor = timerAnchorRect(for: range, in: textView) {
+                // #region agent log
+                #if DEBUG
+                let textViewFrameInWindow = textView.convert(textView.bounds, to: nil)
+                AgentSyncDebugLog.write(
+                    hypothesisId: "TP-A",
+                    location: "RecipeDescriptionInlineTextView.swift:handleTap",
+                    message: "timer_tap_anchor",
+                    data: [
+                        "anchorMinX": String(format: "%.1f", anchor.minX),
+                        "anchorMinY": String(format: "%.1f", anchor.minY),
+                        "anchorWidth": String(format: "%.1f", anchor.width),
+                        "anchorHeight": String(format: "%.1f", anchor.height),
+                        "textViewFrameY": String(format: "%.1f", textViewFrameInWindow.origin.y),
+                        "textViewFrameH": String(format: "%.1f", textViewFrameInWindow.height),
+                        "displayText": reference.displayText,
+                        "durationSec": String(reference.durationSeconds),
+                    ]
+                )
+                #endif
+                // #endregion
                 onTimerTap?(reference, anchor)
                 return
             }
@@ -130,9 +150,9 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
         }
     }
 
-    static func attributedString(runs: [RecipeDescriptionInlineRun], accentColor: Color) -> NSAttributedString {
+    static func attributedString(runs: [RecipeDescriptionInlineRun], accentColor: Color, typography: RecipeDescriptionBlockTypography = .body) -> NSAttributedString {
         let result = NSMutableAttributedString()
-        let bodyFont = RecipeDescriptionStyle.bodyFont()
+        let bodyFont = typography.baseFont
         let accentUIColor = UIColor(accentColor)
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineSpacing = RecipeDescriptionStyle.bodyLineSpacing
@@ -149,12 +169,11 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
                 result.append(NSAttributedString(string: value, attributes: base))
             case .strong(let value):
                 var attrs = base
-                attrs[.font] = RecipeDescriptionStyle.mediumFont()
+                attrs[.font] = typography.mediumFont
                 result.append(NSAttributedString(string: value, attributes: attrs))
             case .em(let value):
                 var attrs = base
-                if let italic = UIFont(name: AppFonts.sans, size: RecipeDescriptionStyle.bodyFontSize)?
-                    .with(traits: .traitItalic) {
+                if let italic = typography.italicFont {
                     attrs[.font] = italic
                 }
                 result.append(NSAttributedString(string: value, attributes: attrs))

@@ -23,16 +23,14 @@ struct RecipeDetailActionsMenu: View {
                 Button {
                     showingAssignSheet = true
                 } label: {
-                    AppLabel.make(String(localized: "collections.assign-tooltip"), symbol: "folder.badge.plus")
+                    AppLabel.make("collections.assign-tooltip", symbol: "folder.badge.plus")
                 }
 
                 Button {
                     Task { await togglePin() }
                 } label: {
                     AppLabel.make(
-                        isPinned
-                            ? String(localized: "recipe.list.unpin")
-                            : String(localized: "recipe.list.pin"),
+                        isPinned ? "recipe.list.unpin" : "recipe.list.pin",
                         symbol: isPinned ? "pin.slash" : "pin"
                     )
                 }
@@ -40,36 +38,36 @@ struct RecipeDetailActionsMenu: View {
                 Button {
                     Task { await addAllToShopping() }
                 } label: {
-                    AppLabel.make(String(localized: "shopping.detail-add-all"), symbol: "cart.badge.plus")
+                    AppLabel.make("shopping.detail-add-all", symbol: "cart.badge.plus")
                 }
 
                 Button(role: .destructive) {
                     recipePendingDelete = true
                 } label: {
-                    AppLabel.make(String(localized: "recipe.list.delete"), symbol: "trash")
+                    AppLabel.make("recipe.list.delete", symbol: "trash")
                 }
             }
         } label: {
             AppToolbarStyle.iconOnly(systemName: "ellipsis")
         }
         .appToolbarIconButton()
-        .accessibilityLabel(String(localized: "recipe.detail.more-actions"))
+        .accessibilityLabel("recipe.detail.more-actions")
         .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailMenu)
         .sheet(isPresented: $showingAssignSheet) {
             CollectionAssignSheet(recipeId: recipeId, recipeName: recipeName)
         }
         .alert(
-            String(localized: "recipe.list.delete.confirm.title"),
+            Bundle.currentLocalizedString("recipe.list.delete.confirm.title"),
             isPresented: $recipePendingDelete
         ) {
-            Button(String(localized: "recipe.list.delete.confirm.action"), role: .destructive) {
+            Button(Bundle.currentLocalizedString("recipe.list.delete.confirm.action"), role: .destructive) {
                 Task { await deleteRecipe() }
             }
-            Button(String(localized: "recipe.list.delete.confirm.cancel"), role: .cancel) { }
+            Button(Bundle.currentLocalizedString("recipe.list.delete.confirm.cancel"), role: .cancel) { }
         } message: {
             Text(
                 String(
-                    format: String(localized: "recipe.list.delete.confirm.message"),
+                    format: Bundle.currentLocalizedString("recipe.list.delete.confirm.message"),
                     locale: .current,
                     recipeName
                 )
@@ -85,7 +83,7 @@ struct RecipeDetailActionsMenu: View {
             ingredientIds: nil
         )
         guard !items.isEmpty else {
-            postShoppingMessage(String(localized: "shopping.no-items-to-add"))
+            postShoppingMessage(Bundle.currentLocalizedString("shopping.no-items-to-add"))
             return
         }
         do {

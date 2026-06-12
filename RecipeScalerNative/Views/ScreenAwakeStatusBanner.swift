@@ -28,8 +28,8 @@ struct ScreenAwakeStatusBanner: View {
                 .fill(Color.green)
                 .frame(width: 8, height: 8)
                 .opacity(indicatorPulse ? 1 : 0.45)
-            Text(String(localized: "common.screen-always-on"))
-                .font(AppTypography.body)
+            Text("common.screen-always-on")
+                .appBody()
                 .foregroundStyle(bannerText)
             Spacer(minLength: 0)
         }

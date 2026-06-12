@@ -23,9 +23,9 @@ specs/002-native-editing/plan.md
 
 ## Типографика
 
-Полное описание типографики — в [ui.md](ui.md). Кратко: шрифты и размеры определены в `AppTypography.swift` / `AppFonts.swift`, **не хардкодь** их во view-файлах; используй `.appBody()` / `.appFootnote()` и `AppSectionHeader`. Правила и подробности — там же.
+Полное описание типографики — в [UI.md](docs/UI.md). Кратко: шрифты и размеры определены в `AppTypography.swift` / `AppFonts.swift`, **не хардкодь** их во view-файлах; используй `.appBody()` / `.appFootnote()` и `AppSectionHeader`. Правила и подробности — там же.
 
-Прочитай и выполняй @RTK.md. Prefix shell commands with `rtk` when filtering output (see `CLAUDE.md` / `RTK.md`).
+Прочитай и выполняй @docs/RTK.md. Prefix shell commands with `rtk` when filtering output (see `CLAUDE.md` / `docs/RTK.md`).
 
 ## Локализация (i18n)
 
@@ -99,7 +99,11 @@ rtk xcodebuild -scheme RecipeScalerNative \
 - Agent debug ingest to Mac `localhost` does not work on a physical iPhone — use Xcode console, on-device logs, or prod-safe instrumentation.
 - Spec Kit task order is flexible; closing remaining polish tasks in any order is fine.
 - Capture durable UX requirements in `specs/<feature>/` so follow-up work does not lose constraints.
-- Match web behavior for shared UI (e.g. masked `userId`, ingredient rows without unit labels, component-level nutrition editing).
+- Match web behavior for shared UI (e.g. masked `userId`, ingredient rows without unit labels, component-level nutrition editing, recipe ellipsis menu order, ingredient qty column right-aligned to main value with compact drag handle and swipe-from-right delete only).
+- Account and public-profile settings use **iOS Settings patterns** (toggles, `NavigationLink` submenus, label–value rows); no explicit Save button; avatar as centered circle with Set photo below; descriptive copy uses `.appBody()` line-height per `docs/UI.md`.
+- Apple Reminders shopping-list sync: CRDT list stays source of truth; bidirectional completion sync; completed items stay in Reminders (marked, not deleted); Reminders note text must be localized.
+- Shopping list header matches Recipes: large title with sort segment in the collapsible search slot (`UISearchController` / `UISearchBar` pattern — SwiftUI has no separate API for a custom block under large title).
+- Collection folder rename uses inline **Cancel / Done** toolbar, auto-focus with select-all, and hides back button and ellipsis while editing; folder color picker is a preset grid in the rename toolbar (web parity, iOS-adapted).
 
 ## Learned Workspace Facts
 
@@ -108,6 +112,9 @@ rtk xcodebuild -scheme RecipeScalerNative \
 - Offline-first app, app must work in offline except some features like discover section.
 - Recipes **v1/v2** are read-only on iOS with a legacy banner; **v3** editing and v1/v2→v3 migration happen on web app only.
 - Feature verification scripts: `scripts/verify-<feature>.sh` and `scripts/verify-all.sh`.
-- Paid Apple Developer Program ($99/yr): optional for simulator/dev; TestFlight, App Store, App Groups on device, extensions — see `docs/PAID-APPLE-DEVELOPER-REQUIRED.md`.
+- Paid Apple Developer Program ($99/yr): optional for simulator/dev; TestFlight, App Store, App Groups on device, extensions, APNs — see `docs/PAID-APPLE-DEVELOPER-REQUIRED.md`. Timer push toggle hidden until server-synced APNs works; production push planned after Live Activities.
 - Grok Build session transcripts: `~/.grok/sessions/%2FUsers%2F...%2Frecipe-scaler-native/<session-id>/` (`updates.jsonl`, `summary.json`).
+- Native collections parity guide: `../recipe-scaler-web/llm/NATIVE_APP_COLLECTIONS.md` (web-authored reference for iOS implementation).
+- Share Extension + Action Extension targets exist for URL/text import (`specs/025-share-extension`); full on-device Share Sheet testing needs paid program + App Group provisioning.
+- Typography tokens and rules: `docs/UI.md` (not duplicated in AGENTS.md); Russian `Localizable.xcstrings` typograf via `scripts/typograf-xcstrings` — surgical line edits only (preserve Xcode `"key" : "value"` formatting).
 

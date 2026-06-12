@@ -133,6 +133,25 @@ public final class APIClient: ObservableObject, @unchecked Sendable {
         request.httpBody = body
         return request
     }
+
+    // MARK: - Nutrition Recalculation
+
+    public func calculateNutrition(recipeId: String) async throws {
+        let request = try buildRequest(
+            path: "/api/recipes/\(recipeId)/calculate-nutrition",
+            method: "POST"
+        )
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw APIError.httpError(statusCode: httpResponse.statusCode)
+        }
+    }
 }
 
 // MARK: - API Errors

@@ -174,14 +174,6 @@ actor DocumentManager {
             doc = restored
         } else {
             Self.logger.info("Recipe doc \(key) not loaded")
-            // #region agent log
-            AgentSyncDebugLog.write(
-                hypothesisId: "B",
-                location: "DocumentManager.swift:readRecipeData",
-                message: "doc_not_in_memory",
-                data: ["recipeId": recipeId, "key": key]
-            )
-            // #endregion
             return nil
         }
 
@@ -196,53 +188,15 @@ actor DocumentManager {
             let parsed = self.parseRecipeData(from: map, txn: txn, recipeId: recipeId)
             if RecipeData.RecipeVersion.detect(parsed.version) == .v3 {
                 xmlSnapshot = XmlFragmentToHTML.serializedFragment(txn: txn)
-                #if DEBUG
-                if recipeId == RecipeReadDiagnostics.launchRecipeId() {
-                    AgentSyncDebugLog.write(
-                        hypothesisId: "L",
-                        location: "DocumentManager.swift:readRecipeData",
-                        message: "fragment_structure",
-                        data: ["structure": XmlFragmentToHTML.debugFragmentStructure(txn: txn)]
-                    )
-                }
-                #endif
             }
             return parsed
         }
-        // #region agent log
-        AgentSyncDebugLog.write(
-            hypothesisId: "C",
-            location: "DocumentManager.swift:readRecipeData",
-            message: "map_read_done",
-            data: [
-                "recipeId": recipeId,
-                "ms": String(Int((CFAbsoluteTimeGetCurrent() - txnStart) * 1000)),
-                "hasRecipe": String(recipe != nil),
-                "ingredientCount": String(recipe?.ingredients.count ?? 0),
-                "version": recipe?.version ?? "nil",
-                "xmlLen": String(xmlSnapshot?.count ?? 0),
-            ]
-        )
-        // #endregion
 
         guard var recipe else { return nil }
         if let xml = xmlSnapshot,
            let html = XmlFragmentToHTML.html(fromSerializedXML: xml, ingredients: recipe.ingredients),
            !html.isEmpty {
             recipe = recipe.replacing(description: html)
-            // #region agent log
-            AgentSyncDebugLog.write(
-                hypothesisId: "D",
-                location: "DocumentManager.swift:readRecipeData",
-                message: "description_html_ready",
-                data: [
-                    "recipeId": recipeId,
-                    "htmlLen": String(html.count),
-                    "xmlLen": String(xml.count),
-                    "htmlHasHref": String(html.contains("href=\"")),
-                ]
-            )
-            // #endregion
         }
         return recipe
     }
@@ -295,10 +249,10 @@ actor DocumentManager {
     }
 
     func updateRecipeServings(recipeId: String, servings: Int) async throws {
-        guard servings >= 1 else { throw RecipeEditError.invalidServings }
+        let capped = max(1, min(999, servings))
         // Web Yjs stores servings as JS number (float). Yrs `Y_JSON_INT` is not read by `normalizeServingsValue`.
         try await mutateRecipe(recipeId: recipeId) { map, txn in
-            map.insert(key: "servings", value: .double(Double(servings)), txn: txn)
+            map.insert(key: "servings", value: .double(Double(capped)), txn: txn)
         }
     }
 
@@ -341,14 +295,6 @@ actor DocumentManager {
     func updateRecipeColor(recipeId: String, color: String) async throws {
         let normalized = Self.normalizeColor(color)
         let touchedAt = Self.isoTimestamp()
-        // #region agent log
-        AgentSyncDebugLog.write(
-            hypothesisId: "D",
-            location: "DocumentManager.swift:updateRecipeColor:enter",
-            message: "color write started",
-            data: ["recipeId": recipeId, "normalizedColor": normalized, "touchedAt": touchedAt]
-        )
-        // #endregion
         try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { map, txn in
             map.insert(key: "color", value: .string(normalized), txn: txn)
         }
@@ -358,23 +304,6 @@ actor DocumentManager {
                 entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
             }
         }
-        // #region agent log
-        if let userId = currentUserId {
-            let recipe = try? await readRecipeData(recipeId: recipeId, userId: userId)
-            let entry = try? await readCollectionEntries().first { $0.id == recipeId }
-            AgentSyncDebugLog.write(
-                hypothesisId: "E",
-                location: "DocumentManager.swift:updateRecipeColor:afterWrite",
-                message: "in-memory read-back after color write",
-                data: [
-                    "recipeDocColor": recipe?.color ?? "nil",
-                    "recipeDocUpdatedAt": recipe?.updatedAt ?? "nil",
-                    "collectionEntryColor": entry?.color ?? "nil",
-                    "collectionEntryUpdatedAt": entry?.updatedAt ?? "nil",
-                ]
-            )
-        }
-        // #endregion
     }
 
     func addIngredient(recipeId: String, ingredient: IngredientData) async throws {
@@ -383,10 +312,11 @@ actor DocumentManager {
                 try Self.appendIngredient(ingredient, to: array, txn: txn)
                 Self.renumberIngredientOrders(in: array, txn: txn)
             }
+            map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
         }
     }
 
-    func updateIngredient(recipeId: String, ingredient: IngredientData) async throws {
+    func updateIngredient(recipeId: String, ingredient: IngredientData, markNutritionOutdated: Bool = true) async throws {
         try await mutateRecipe(recipeId: recipeId) { map, txn in
             try Self.withIngredientsArray(in: map, txn: txn) { array in
                 let len = array.length(txn: txn)
@@ -397,6 +327,9 @@ actor DocumentManager {
                         }
                     }
                 }
+            }
+            if markNutritionOutdated {
+                map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
             }
         }
     }
@@ -414,6 +347,7 @@ actor DocumentManager {
                     }
                 }
             }
+            map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
         }
     }
 
@@ -480,14 +414,6 @@ actor DocumentManager {
             }
         }
         Self.logger.info("Applied \(sorted.count) offline queue updates to local docs")
-        #if DEBUG
-        AgentSyncDebugLog.write(
-            hypothesisId: "P",
-            location: "DocumentManager.swift:applyOfflineQueueToLocalDocs",
-            message: "offline_queue_applied",
-            data: ["entryCount": String(sorted.count)]
-        )
-        #endif
     }
 
     func persistSnapshot(docKey: String) async {
@@ -497,17 +423,6 @@ actor DocumentManager {
         let lastSyncedAt = try? await store.loadSnapshot(docKey: docKey)?.lastSyncedAt
         do {
             try await store.saveSnapshot(docKey: docKey, state: state, lastSyncedAt: lastSyncedAt)
-            #if DEBUG
-            AgentSyncDebugLog.write(
-                hypothesisId: "P",
-                location: "DocumentManager.swift:persistSnapshot",
-                message: "snapshot_saved",
-                data: [
-                    "docKeySuffix": docKey.split(separator: ":").suffix(2).joined(separator: ":"),
-                    "bytes": String(state.count),
-                ]
-            )
-            #endif
         } catch {
             Self.logger.warning("Failed to persist snapshot for \(docKey): \(error)")
         }
@@ -1001,9 +916,34 @@ actor DocumentManager {
             throw RecipeEditError.legacyFormatReadOnly
         }
 
-        try await applyUpdateToDoc(doc: doc, key: key, data: update, lastSyncedAt: nil)
+        // The WebView now emits incremental, identity-preserving 'reconcile' diffs
+        // (description-editor-bridge.js). No oversized-update backstop needed: the
+        // old >2048 guard existed only to block the full clearFragment()+reinsert
+        // html-push that caused 5× duplication, which no longer happens.
+        do {
+            try await doc.applyLocalUpdate(update)
+        } catch {
+            Self.logger.warning("applyDescriptionEditorUpdate failed for \(key), deleting corrupted snapshot")
+            docs.removeValue(forKey: key)
+            observerTokens.removeValue(forKey: key)
+            try? await store.deleteSnapshot(docKey: key)
+            throw error
+        }
+        if let state = await doc.encodeStateAsUpdate() {
+            try? await store.saveSnapshot(docKey: key, state: state, lastSyncedAt: nil)
+        }
         notifyRecipeChangedIfNeeded(recipeId: recipeId)
-        await onLocalRecipeUpdate?(recipeId, update)
+
+        let yrsUpdate = await doc.consumePendingLocalUpdates()
+        let outbound = yrsUpdate ?? update
+        var descAfter: [String: String] = [:]
+        if let xmlTail = try? await doc.withReadTransaction({ _, txn in
+            XmlFragmentToHTML.serializedFragment(txn: txn)
+        }) {
+            descAfter["xmlLen"] = String(xmlTail.count)
+            descAfter["xmlTail"] = String(xmlTail.suffix(160))
+        }
+        await onLocalRecipeUpdate?(recipeId, outbound)
     }
 
     private func deliverPendingLocalUpdate(recipeId: String) async {
@@ -1016,25 +956,8 @@ actor DocumentManager {
             key = "\(userId):recipe:\(recipeId)"
         }
         guard let doc = docs[key] else { return }
-        // #region agent log
-        let observeBytesBeforeConsume = await doc.pendingLocalUpdateByteCount()
-        // #endregion
-        let observePayload = await doc.consumePendingLocalUpdates()
+        _ = await doc.consumePendingLocalUpdates()
         let encodePayload = await doc.encodeStateAsUpdate()
-        // #region agent log
-        AgentSyncDebugLog.write(
-            hypothesisId: "A",
-            location: "DocumentManager.swift:deliverPendingLocalUpdate",
-            message: "observe vs encode payload sizes",
-            data: [
-                "recipeId": recipeId,
-                "docKey": key,
-                "observePendingBytesBeforeConsume": String(observeBytesBeforeConsume),
-                "observePayloadBytes": String(observePayload?.count ?? 0),
-                "encodePayloadBytes": String(encodePayload?.count ?? 0),
-            ]
-        )
-        // #endregion
         guard let update = encodePayload, !update.isEmpty else {
             Self.logger.warning("No local Yjs update to sync for \(key)")
             return
@@ -1210,16 +1133,21 @@ actor DocumentManager {
         txn: OpaquePointer,
         version: RecipeData.RecipeVersion
     ) -> NutritionData? {
+        // Root-level flag set by server edit API (recipe-edit-service.ts).
+        let rootOutdated = map.bool(key: "nutritionOutdated", txn: txn) ?? false
+
         if let parsed = try? map.withNestedMap(key: "nutrition", txn: txn, { nMap in
             var extra: [String: Double] = [:]
             if let totalWeight = nMap.double(key: "totalWeight", txn: txn) {
                 extra["totalWeight"] = totalWeight
             }
+            let nutritionOutdated = nMap.bool(key: "nutritionOutdated", txn: txn) ?? false
             return NutritionData(
                 calories: nMap.double(key: "calories", txn: txn),
                 protein: nMap.double(key: "protein", txn: txn),
                 fat: nMap.double(key: "fat", txn: txn),
                 carbs: nMap.double(key: "carbs", txn: txn),
+                nutritionOutdated: rootOutdated || nutritionOutdated,
                 extra: extra
             )
         }) {
@@ -1231,7 +1159,18 @@ actor DocumentManager {
               let json = val.stringValue else {
             return nil
         }
-        return parseJSONNutrition(json)
+        var result = parseJSONNutrition(json)
+        if rootOutdated, var modifiable = result {
+            result = NutritionData(
+                calories: modifiable.calories,
+                protein: modifiable.protein,
+                fat: modifiable.fat,
+                carbs: modifiable.carbs,
+                nutritionOutdated: true,
+                extra: modifiable.extra
+            )
+        }
+        return result
     }
 
     // ─── JSON Fallback Parsers (v1) ──────────────────────────────────────
@@ -1410,11 +1349,13 @@ actor DocumentManager {
         guard let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil
         }
+        let nutritionOutdated = dict["nutritionOutdated"] as? Bool ?? false
         return NutritionData(
             calories: dict["calories"] as? Double,
             protein: dict["protein"] as? Double,
             fat: dict["fat"] as? Double,
             carbs: dict["carbs"] as? Double,
+            nutritionOutdated: nutritionOutdated,
             extra: dict.compactMapValues { $0 as? Double }
                 .filter { !["calories", "protein", "fat", "carbs"].contains($0.key) }
         )

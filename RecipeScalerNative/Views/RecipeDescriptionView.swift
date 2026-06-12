@@ -13,7 +13,6 @@ struct RecipeDescriptionView: View {
     var onTimerTap: ((RecipeDescriptionTimerReference, CGRect) -> Void)?
 
     private let bodySize: CGFloat = RecipeDescriptionStyle.bodyFontSize
-    private var lineSpacing: CGFloat { RecipeDescriptionStyle.bodyLineSpacing }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -39,15 +38,14 @@ struct RecipeDescriptionView: View {
         case .bullet(_, let runs):
             HStack(alignment: .top, spacing: 8) {
                 Text("–")
-                    .font(AppTypography.body)
+                    .appBody()
                     .foregroundStyle(accentColor)
                     .frame(width: 12, alignment: .leading)
                 inlineText(runs)
             }
             .padding(.vertical, 2)
         case .heading(_, let level, let runs):
-            inlineText(runs)
-                .font(AppTypography.display(headingSize(level)))
+            inlineText(runs, typography: .heading(level: level))
         }
     }
 
@@ -59,14 +57,6 @@ struct RecipeDescriptionView: View {
             return 6
         case .bullet:
             return 4
-        }
-    }
-
-    private func headingSize(_ level: Int) -> CGFloat {
-        switch level {
-        case 1: return 22
-        case 2: return 20
-        default: return 18
         }
     }
 
@@ -82,10 +72,11 @@ struct RecipeDescriptionView: View {
             )
     }
 
-    private func inlineText(_ runs: [RecipeDescriptionInlineRun]) -> some View {
+    private func inlineText(_ runs: [RecipeDescriptionInlineRun], typography: RecipeDescriptionBlockTypography = .body) -> some View {
         RecipeDescriptionInlineTextView(
             runs: runs,
             accentColor: accentColor,
+            typography: typography,
             onTimerTap: onTimerTap
         )
     }

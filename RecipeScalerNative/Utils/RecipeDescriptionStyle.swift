@@ -8,6 +8,56 @@
 import SwiftUI
 import UIKit
 
+/// Typography context for description blocks — headings use the display font
+/// at 1.1× body size to match the web CSS `[&_h1]:text-[1.1em]`.
+enum RecipeDescriptionBlockTypography {
+    case body
+    case heading(level: Int)
+
+    var baseFont: UIFont {
+        switch self {
+        case .body:
+            return AppTypography.uiFont(AppFonts.sans, size: RecipeDescriptionStyle.bodyFontSize)
+        case .heading:
+            // Web: `[&_h1]:text-[1.1em]` — display font at 1.1× body size.
+            return AppTypography.uiFont(AppFonts.display, size: RecipeDescriptionStyle.bodyFontSize * 1.1)
+        }
+    }
+
+    var mediumFont: UIFont {
+        switch self {
+        case .body:
+            return AppTypography.uiFont(AppFonts.sansMedium, size: RecipeDescriptionStyle.bodyFontSize, fallbackFamily: AppFonts.sansMedium)
+        case .heading:
+            // Headings already use display (extra-bold), keep same family/size for "strong".
+            return AppTypography.uiFont(AppFonts.display, size: RecipeDescriptionStyle.bodyFontSize * 1.1)
+        }
+    }
+
+    var italicFont: UIFont? {
+        let size = fontSize
+        let family: String = {
+            switch self {
+            case .body: return AppFonts.sans
+            case .heading: return AppFonts.display
+            }
+        }()
+        guard let descriptor = UIFont(name: family, size: size)?.fontDescriptor.withSymbolicTraits(.traitItalic) else {
+            return nil
+        }
+        return UIFont(descriptor: descriptor, size: size)
+    }
+
+    var fontSize: CGFloat {
+        switch self {
+        case .body:
+            return RecipeDescriptionStyle.bodyFontSize
+        case .heading:
+            return RecipeDescriptionStyle.bodyFontSize * 1.1
+        }
+    }
+}
+
 enum RecipeDescriptionStyle {
     /// Web `--brand` used by `.text-link` (not recipe accent).
     static let linkColor = Color(red: 0, green: 114 / 255, blue: 245 / 255)

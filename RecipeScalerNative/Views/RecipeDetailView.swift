@@ -415,7 +415,8 @@ struct StepsSection: View {
         }
         .accessibilityIdentifier(AccessibilityIdentifiers.stepsSection)
         .task(id: htmlContent) {
-            document = RecipeDescriptionParser.parse(htmlContent)
+            let parsed = RecipeDescriptionParser.parse(htmlContent)
+            document = parsed
         }
     }
 

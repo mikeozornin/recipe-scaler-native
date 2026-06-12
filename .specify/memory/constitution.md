@@ -78,7 +78,7 @@ full sync parity; skipping phases breaks validation and risk management.
 | Local storage | SQLite (GRDB or SwiftData) for Y snapshots + offline queue |
 | Auth | Seed-based (BIP39) + Keychain — same model as web |
 | UI | SwiftUI; localization via i18n resource files — no hardcoded user-facing strings |
-| Dependencies | SPM where possible; Xcode project maintained manually (see SETUP.md) |
+| Dependencies | SPM where possible; Xcode project maintained manually (see docs/SETUP.md) |
 | Documentation | Architecture/schema changes MUST update `docs/ARCHITECTURE.md`, `docs/YJS-SCHEMA.md`, and related guides |
 
 Export/import features (when implemented) MUST include `metadata.version`, maintain backward
@@ -101,7 +101,7 @@ compatibility, and ship schema + validator artifacts per project export rules.
    relevant, and no unauthorized backend coupling.
 
 Runtime guidance: [AGENTS.md](../../AGENTS.md), [docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md),
-[docs/YJS-SCHEMA.md](../../docs/YJS-SCHEMA.md), [SETUP.md](../../SETUP.md).
+[docs/YJS-SCHEMA.md](../../docs/YJS-SCHEMA.md), [SETUP.md](../../docs/SETUP.md).
 
 ## Governance
 

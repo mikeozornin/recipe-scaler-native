@@ -520,7 +520,7 @@ private struct ShoppingListShareSheet: View {
                     .accessibilityIdentifier(AccessibilityIdentifiers.shoppingCopyAsTextButton)
                 }
             }
-            .navigationTitle(Text("shopping.share-button"))
+            .localizedNavigationTitle("shopping.share-button")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

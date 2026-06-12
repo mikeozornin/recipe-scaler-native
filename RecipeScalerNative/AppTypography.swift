@@ -68,6 +68,12 @@ extension View {
     func appListBodyTypography() -> some View {
         font(AppTypography.body)
     }
+
+    /// Body size + line spacing for `TextField` and other controls that must match `.appBody()` height.
+    func appBodyFieldTypography() -> some View {
+        font(AppTypography.body)
+            .lineSpacing(AppTypography.bodyLineSpacing)
+    }
 }
 
 extension Text {
@@ -81,6 +87,13 @@ extension Text {
         self
             .font(AppTypography.footnote)
             .lineSpacing(AppTypography.footnoteLineSpacing)
+    }
+
+    /// Semibold 16 pt body (headline) with standard body line spacing.
+    func appHeadline() -> some View {
+        self
+            .font(AppTypography.headline)
+            .lineSpacing(AppTypography.bodyLineSpacing)
     }
 }
 
@@ -192,7 +205,9 @@ enum AppChromeAppearance {
 
     private static func configureTextInputs() {
         UITextField.appearance().font = AppTypography.bodyUIFont
-        UITextView.appearance().font = AppTypography.bodyUIFont
+        // Do not set UITextView.appearance().font — it rewrites per-run fonts in read-only
+        // attributed text (recipe description). Editable views set .font explicitly
+        // (e.g. GrowingTitleTextView in RecipeTitleTextField).
     }
 
     private static func configureSegmentedControl() {

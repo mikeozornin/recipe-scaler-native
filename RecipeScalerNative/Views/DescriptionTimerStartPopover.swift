@@ -43,8 +43,8 @@ struct DescriptionTimerStartPopover: View {
                             height: DescriptionTimerStartPopoverMetrics.titleIconSize
                         )
 
-                    Text(String(localized: "Start timer"))
-                        .font(AppTypography.subheadlineSemibold)
+                    Text("timers.start")
+                        .appHeadline()
                         .foregroundStyle(.primary)
                 }
 
@@ -71,7 +71,7 @@ struct DescriptionTimerStartPopover: View {
                 .shadow(color: .black.opacity(0.1), radius: 8, y: 2)
         }
         .accessibilityLabel(
-            "\(String(localized: "Start timer")), \(reference.menuSubtitle)"
+            "\(Bundle.currentLocalizedString("timers.start")), \(reference.menuSubtitle)"
         )
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier(AccessibilityIdentifiers.descriptionTimerStartConfirm)
@@ -79,7 +79,7 @@ struct DescriptionTimerStartPopover: View {
 }
 
 struct DescriptionTimerPopoverOverlay: View {
-    let state: DescriptionTimerPopoverState
+    let state: DescriptionTimerPopoverState?
     let accentColor: Color
     let onStart: () -> Void
     let onDismiss: () -> Void
@@ -91,53 +91,88 @@ struct DescriptionTimerPopoverOverlay: View {
 
     var body: some View {
         GeometryReader { container in
-            let origin = container.frame(in: .global).origin
-            let anchorLeft = state.anchor.minX - origin.x
-            let anchorMinY = state.anchor.minY - origin.y
-            let anchorMaxY = state.anchor.maxY - origin.y
-            let margin: CGFloat = 16
-            let gap: CGFloat = 5
-            let posX = clamped(
-                anchorLeft + popoverSize.width / 2,
-                halfExtent: popoverSize.width / 2,
-                in: container.size.width,
-                margin: margin
-            )
-            let belowCenterY = anchorMaxY + popoverSize.height / 2 + gap
-            let aboveCenterY = anchorMinY - popoverSize.height / 2 - gap
-            let fitsBelow = belowCenterY + popoverSize.height / 2 <= container.size.height - margin
-            let rawY = fitsBelow ? belowCenterY : aboveCenterY
-            let posY = clamped(
-                rawY,
-                halfExtent: popoverSize.height / 2,
-                in: container.size.height,
-                margin: margin
-            )
-
-            ZStack {
-                Color.black.opacity(0.001)
-                    .ignoresSafeArea()
-                    .onTapGesture { onDismiss() }
-
-                DescriptionTimerStartPopover(
-                    reference: state.reference,
-                    accentColor: accentColor,
-                    onStart: {
-                        onStart()
-                        onDismiss()
-                    }
+            if let state {
+                let containerFrame = container.frame(in: .global)
+                let origin = containerFrame.origin
+                let anchorLeft = state.anchor.minX - origin.x
+                let anchorMinY = state.anchor.minY - origin.y
+                let anchorMaxY = state.anchor.maxY - origin.y
+                let margin: CGFloat = 16
+                let gap: CGFloat = 5
+                let posX = clamped(
+                    anchorLeft + popoverSize.width / 2,
+                    halfExtent: popoverSize.width / 2,
+                    in: container.size.width,
+                    margin: margin
                 )
-                .fixedSize(horizontal: true, vertical: true)
-                .background(
-                    GeometryReader { proxy in
-                        Color.clear
-                            .onAppear { popoverSize = proxy.size }
-                            .onChange(of: proxy.size) { _, newSize in
-                                popoverSize = newSize
-                            }
-                    }
+                let belowCenterY = anchorMaxY + popoverSize.height / 2 + gap
+                let aboveCenterY = anchorMinY - popoverSize.height / 2 - gap
+                let fitsBelow = belowCenterY + popoverSize.height / 2 <= container.size.height - margin
+                let rawY = fitsBelow ? belowCenterY : aboveCenterY
+                let posY = clamped(
+                    rawY,
+                    halfExtent: popoverSize.height / 2,
+                    in: container.size.height,
+                    margin: margin
                 )
-                .position(x: posX, y: posY)
+
+                // #region agent log
+                let _ = {
+                    #if DEBUG
+                    AgentSyncDebugLog.write(
+                        hypothesisId: "TP-A",
+                        location: "DescriptionTimerStartPopover.swift:body",
+                        message: "popover_positioning",
+                        data: [
+                            "anchorMinX": String(format: "%.1f", state.anchor.minX),
+                            "anchorMinY": String(format: "%.1f", state.anchor.minY),
+                            "anchorMaxY": String(format: "%.1f", state.anchor.maxY),
+                            "containerOriginX": String(format: "%.1f", origin.x),
+                            "containerOriginY": String(format: "%.1f", origin.y),
+                            "containerSizeW": String(format: "%.1f", container.size.width),
+                            "containerSizeH": String(format: "%.1f", container.size.height),
+                            "anchorLeft": String(format: "%.1f", anchorLeft),
+                            "anchorMinY_adj": String(format: "%.1f", anchorMinY),
+                            "anchorMaxY_adj": String(format: "%.1f", anchorMaxY),
+                            "posX": String(format: "%.1f", posX),
+                            "posY": String(format: "%.1f", posY),
+                            "fitsBelow": String(fitsBelow),
+                            "rawY": String(format: "%.1f", rawY),
+                            "belowCenterY": String(format: "%.1f", belowCenterY),
+                            "aboveCenterY": String(format: "%.1f", aboveCenterY),
+                            "popoverSizeW": String(format: "%.1f", popoverSize.width),
+                            "popoverSizeH": String(format: "%.1f", popoverSize.height),
+                        ]
+                    )
+                    #endif
+                }()
+                // #endregion
+
+                ZStack {
+                    Color.black.opacity(0.001)
+                        .ignoresSafeArea()
+                        .onTapGesture { onDismiss() }
+
+                    DescriptionTimerStartPopover(
+                        reference: state.reference,
+                        accentColor: accentColor,
+                        onStart: {
+                            onStart()
+                            onDismiss()
+                        }
+                    )
+                    .fixedSize(horizontal: true, vertical: true)
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear
+                                .onAppear { popoverSize = proxy.size }
+                                .onChange(of: proxy.size) { _, newSize in
+                                    popoverSize = newSize
+                                }
+                        }
+                    )
+                    .position(x: posX, y: posY)
+                }
             }
         }
         .ignoresSafeArea()

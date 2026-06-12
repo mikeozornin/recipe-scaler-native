@@ -238,7 +238,13 @@ enum XmlFragmentToHTML {
                 if let href, !href.isEmpty {
                     parts.append(#"<a href="\#(escapeAttr(href))" target="_blank" rel="noopener noreferrer">\#(escaped)</a>"#)
                 } else {
-                    parts.append(escaped)
+                    parts.append(
+                        wrapWithInlineMarks(
+                            escaped,
+                            fmt: chunk.fmt,
+                            fmtLen: chunk.fmt_len
+                        )
+                    )
                 }
             }
             let joined = parts.joined()
@@ -285,13 +291,47 @@ enum XmlFragmentToHTML {
         fmt: UnsafePointer<YMapEntry>?,
         count: UInt32
     ) -> Bool {
+        formattingHasMark(fmt: fmt, count: count, mark: "link")
+    }
+
+    private static func formattingHasMark(
+        fmt: UnsafePointer<YMapEntry>?,
+        count: UInt32,
+        mark: String
+    ) -> Bool {
         guard let fmt, count > 0 else { return false }
         for index in 0..<Int(count) {
             guard let namePtr = fmt[index].key else { continue }
             let name = String(cString: namePtr)
-            if name == "link" || name.hasPrefix("link--") { return true }
+            if name == mark || name.hasPrefix("\(mark)--") { return true }
         }
         return false
+    }
+
+    /// ProseMirror/Tiptap inline marks on `Y.XmlText` delta chunks (parity with description-editor-bridge.js).
+    private static func wrapWithInlineMarks(
+        _ escaped: String,
+        fmt: UnsafePointer<YMapEntry>?,
+        fmtLen: UInt32
+    ) -> String {
+        guard !escaped.isEmpty else { return escaped }
+        var out = escaped
+        if formattingHasMark(fmt: fmt, count: fmtLen, mark: "bold") {
+            out = "<strong>\(out)</strong>"
+        }
+        if formattingHasMark(fmt: fmt, count: fmtLen, mark: "italic") {
+            out = "<em>\(out)</em>"
+        }
+        if formattingHasMark(fmt: fmt, count: fmtLen, mark: "strike") {
+            out = "<s>\(out)</s>"
+        }
+        if formattingHasMark(fmt: fmt, count: fmtLen, mark: "code") {
+            out = "<code>\(out)</code>"
+        }
+        if formattingHasMark(fmt: fmt, count: fmtLen, mark: "highlight") {
+            out = "<mark>\(out)</mark>"
+        }
+        return out
     }
 
     private static func linkHref(

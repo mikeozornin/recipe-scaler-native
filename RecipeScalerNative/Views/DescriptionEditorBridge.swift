@@ -2,10 +2,74 @@
 //  DescriptionEditorBridge.swift
 //  RecipeScalerNative
 //
-//  Coordinates WKWebView Yjs editor ↔ yrs Y.Doc (006).
+//  Coordinates WKWebView Yjs editor ↔ yrs Y.Doc (006, 019 v2).
 //
 
 import Foundation
+import SwiftUI
+
+enum DescriptionEditorPresentation {
+    case inline
+    case fullscreen
+}
+
+struct DescriptionEditorSelectionState: Equatable {
+    var bold = false
+    var heading1 = false
+    var highlight = false
+    var bulletList = false
+    var orderedList = false
+    var hasSelection = false
+    var selectedText = ""
+    var canBold = true
+    var canHeading1 = true
+    var canHighlight = true
+    var canBulletList = true
+    var canOrderedList = true
+
+    var canMarkTimer: Bool { hasSelection && !selectedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    var canMarkIngredient: Bool { canMarkTimer }
+}
+
+enum DescriptionEditorHeightMode: Equatable {
+    case embedded
+    case focus
+}
+
+enum DescriptionEditorLayoutMetrics {
+    static let minEmbeddedHeight: CGFloat = 280
+    static let embeddedMaxHeight: CGFloat = 2000
+    static let focusMinHeight: CGFloat = 320
+}
+
+/// Click on a timer or ingredient node in the description editor.
+struct DescriptionNodeClick: Equatable {
+    enum NodeType: String { case timer, ingredient }
+    let nodeType: NodeType
+    let timerId: String
+    let duration: String
+    let timerType: String
+    let value: String
+    let name: String
+    let ingredientId: String
+    let originalAmount: String
+    let ratio: String
+    let text: String
+    let anchorX: CGFloat
+    let anchorY: CGFloat
+    let anchorWidth: CGFloat
+    let anchorHeight: CGFloat
+
+    var anchorRect: CGRect {
+        CGRect(x: anchorX, y: anchorY, width: anchorWidth, height: anchorHeight)
+    }
+
+    /// Stable fallback key when `timerId` is missing from legacy markup.
+    var timerMatchKey: String {
+        if !timerId.isEmpty { return timerId }
+        return "\(duration)-\(timerType)-\(value)-\(text)"
+    }
+}
 
 @MainActor
 final class DescriptionEditorBridge: ObservableObject {
@@ -16,13 +80,30 @@ final class DescriptionEditorBridge: ObservableObject {
     }
 
     @Published private(set) var phase: Phase = .loading
+    @Published private(set) var isFocused = false
+    @Published private(set) var contentHeight: CGFloat = DescriptionEditorLayoutMetrics.minEmbeddedHeight
+    @Published private(set) var selectionState = DescriptionEditorSelectionState()
+    @Published private(set) var lastNodeClick: DescriptionNodeClick?
+    @Published private(set) var nodeClickSequence: UInt = 0
+
+    private var suppressIncomingFocus = false
 
     let recipeId: String
+    let presentation: DescriptionEditorPresentation
     private weak var syncService: YjsSyncService?
-    private var webView: DescriptionEditorWebView.Coordinator?
+    private weak var webView: DescriptionEditorWebView.Coordinator?
 
-    init(recipeId: String, syncService: YjsSyncService) {
+    var heightMode: DescriptionEditorHeightMode {
+        contentHeight > DescriptionEditorLayoutMetrics.embeddedMaxHeight ? .focus : .embedded
+    }
+
+    init(
+        recipeId: String,
+        syncService: YjsSyncService,
+        presentation: DescriptionEditorPresentation = .inline
+    ) {
         self.recipeId = recipeId
+        self.presentation = presentation
         self.syncService = syncService
         syncService.registerDescriptionEditor(self)
     }
@@ -45,18 +126,8 @@ final class DescriptionEditorBridge: ObservableObject {
         }
         do {
             let payload = try await syncService.descriptionEditorBootstrap(recipeId: recipeId)
+            webView?.sendConfigure(presentation: presentation)
             webView?.sendInit(state: payload.state)
-            #if DEBUG
-            AgentSyncDebugLog.write(
-                hypothesisId: "006",
-                location: "DescriptionEditorBridge.swift:beginSession",
-                message: "description_editor_init",
-                data: [
-                    "recipeId": recipeId,
-                    "stateBytes": String(payload.state.count),
-                ]
-            )
-            #endif
         } catch {
             phase = .error(error.localizedDescription)
         }
@@ -72,26 +143,85 @@ final class DescriptionEditorBridge: ObservableObject {
         case "ready":
             phase = .ready
             #if DEBUG
-            AgentSyncDebugLog.write(
-                hypothesisId: "006",
-                location: "DescriptionEditorBridge.swift:ready",
-                message: "description_editor_ready",
-                data: ["recipeId": recipeId]
-            )
+            if let simulateText = DebugLaunchOptions.simulateDescriptionEditorText {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(400))
+                    webView?.sendSimulateText(simulateText)
+                }
+            }
+            if let simulateCommand = DebugLaunchOptions.simulateDescriptionEditorCommand {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(600))
+                    webView?.sendCommand(name: simulateCommand, args: nil)
+                }
+            }
             #endif
         case "update":
             guard let numbers = dict["update"] as? [NSNumber], !numbers.isEmpty else { return }
             let data = Data(numbers.map { UInt8(truncating: $0) })
-            Task {
+            Task { [recipeId] in
                 try? await syncService?.applyDescriptionEditorUpdate(recipeId: recipeId, update: data)
             }
+        case "focus":
+            guard !suppressIncomingFocus else { return }
+            isFocused = true
+        case "blur":
+            suppressIncomingFocus = false
+            isFocused = false
+        case "contentHeight":
+            if let height = dict["height"] as? Double, height > 0 {
+                contentHeight = CGFloat(height)
+            } else if let height = dict["height"] as? NSNumber {
+                contentHeight = CGFloat(truncating: height)
+            }
+        case "selectionState":
+            selectionState = Self.parseSelectionState(dict)
+        case "nodeClick":
+            lastNodeClick = Self.parseNodeClick(dict)
+            nodeClickSequence &+= 1
         default:
             break
         }
     }
 
+    func sendCommand(name: String, args: [String: Any]? = nil) {
+        webView?.sendCommand(name: name, args: args)
+    }
+
+    /// Live ingredient scaling in the editor (Tiptap `scaleStorage` + ingredient NodeView).
+    func updateScale(scaleFactor: Double, ingredients: [IngredientData], locale: String) {
+        let payload: [[String: Any]] = ingredients.compactMap { ing in
+            guard ing.hasQuantity else { return nil }
+            var item: [String: Any] = ["id": ing.id]
+            if let amount = Double(ing.originalAmount.replacingOccurrences(of: ",", with: ".")) {
+                item["originalAmount"] = amount
+            } else if !ing.originalAmount.isEmpty {
+                item["originalAmount"] = ing.originalAmount
+            }
+            return item
+        }
+        webView?.sendSetScale(scaleFactor: scaleFactor, ingredients: payload, locale: locale)
+    }
+
+    /// Dismiss keyboard and clear focus (e.g. keyboard accessory Done).
+    func dismissEditingFocus() {
+        suppressIncomingFocus = true
+        isFocused = false
+        sendCommand(name: "blur")
+        webView?.resignEditingKeyboard()
+    }
+
     func applyRemoteUpdate(_ update: Data) {
         webView?.sendApplyUpdate(update)
+    }
+
+    /// Ask the WebView to flush its debounced reconcile *now* and give the posted
+    /// `update` message a moment to be applied to the doc before the caller drains.
+    /// Without this, the last <DEBOUNCE_MS of typing before Done never reaches Y.
+    func flushEditorEdits() async {
+        guard phase == .ready else { return }
+        sendCommand(name: "flush")
+        try? await Task.sleep(for: .milliseconds(160))
     }
 
     func flushPendingSync() async {
@@ -104,5 +234,58 @@ final class DescriptionEditorBridge: ObservableObject {
 
     func teardown() {
         syncService?.unregisterDescriptionEditor(recipeId: recipeId)
+    }
+
+    private static func parseSelectionState(_ dict: [String: Any]) -> DescriptionEditorSelectionState {
+        func bool(_ key: String) -> Bool {
+            (dict[key] as? Bool) == true || (dict[key] as? NSNumber)?.boolValue == true
+        }
+        func string(_ key: String) -> String {
+            dict[key] as? String ?? ""
+        }
+        return DescriptionEditorSelectionState(
+            bold: bool("bold"),
+            heading1: bool("heading1"),
+            highlight: bool("highlight"),
+            bulletList: bool("bulletList"),
+            orderedList: bool("orderedList"),
+            hasSelection: bool("hasSelection"),
+            selectedText: string("selectedText"),
+            canBold: dict["canBold"] == nil ? true : bool("canBold"),
+            canHeading1: dict["canHeading1"] == nil ? true : bool("canHeading1"),
+            canHighlight: dict["canHighlight"] == nil ? true : bool("canHighlight"),
+            canBulletList: dict["canBulletList"] == nil ? true : bool("canBulletList"),
+            canOrderedList: dict["canOrderedList"] == nil ? true : bool("canOrderedList")
+        )
+    }
+
+    private static func parseNodeClick(_ dict: [String: Any]) -> DescriptionNodeClick {
+        func string(_ key: String) -> String {
+            dict[key] as? String ?? ""
+        }
+        func cgFloat(_ key: String) -> CGFloat {
+            if let value = dict[key] as? Double { return CGFloat(value) }
+            if let value = dict[key] as? NSNumber { return CGFloat(truncating: value) }
+            return 0
+        }
+        let rawType = string("nodeType")
+        let nodeType = DescriptionNodeClick.NodeType(rawValue: rawType) ?? .timer
+        let timerTypeRaw = string("timerType")
+        return DescriptionNodeClick(
+            nodeType: nodeType,
+            timerId: string("timerId"),
+            duration: string("duration"),
+            timerType: timerTypeRaw.isEmpty ? string("type") : timerTypeRaw,
+            value: string("value"),
+            name: string("name"),
+            ingredientId: string("ingredientId"),
+            originalAmount: string("originalAmount"),
+            ratio: string("ratio"),
+            text: string("text"),
+            anchorX: cgFloat("anchorX"),
+            anchorY: cgFloat("anchorY"),
+            anchorWidth: cgFloat("anchorWidth"),
+            anchorHeight: cgFloat("anchorHeight")
+        )
     }
 }

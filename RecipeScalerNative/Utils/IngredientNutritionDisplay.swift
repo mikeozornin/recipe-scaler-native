@@ -52,11 +52,13 @@ enum IngredientNutritionDisplay {
         let fatText = formatMacro(fat)
         let carbsText = formatMacro(carbs)
 
-        let kcal = String(localized: "nutrition.kcal.short")
-        let p = String(localized: "nutrition.protein.short")
-        let f = String(localized: "nutrition.fat.short")
-        let c = String(localized: "nutrition.carbs.short")
-        return "\(calText) \(kcal) · \(proText) \(p) · \(fatText) \(f) · \(carbsText) \(c)"
+        return String(
+            format: Bundle.currentLocalizedString("nutrition.ingredient.summary"),
+            Int(cal.rounded()),
+            proText,
+            fatText,
+            carbsText
+        )
     }
 
     private static func formatMacro(_ value: Double) -> String {

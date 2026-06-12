@@ -22,7 +22,7 @@ enum RecipeRowLayoutMetrics {
     /// Tighter gap between marker and ingredient name (recipe detail, list of ingredients).
     static let ingredientMarkerSpacing: CGFloat = 2
     /// Gap between the ingredients block (marker + name) and qty columns.
-    static let gridIngredientsToQtySpacing: CGFloat = 8
+    static let gridIngredientsToQtySpacing: CGFloat = 4
     /// Gap between base and scaled qty.
     static let gridQtyColumnsSpacing: CGFloat = 4
     /// Name → KBJU line (view and edit).
@@ -51,9 +51,48 @@ enum RecipeRowLayoutMetrics {
     static var scaledQtyColumnWidth: CGFloat { scaledQtyColumnMinWidth }
     static var qtyColumnMinWidth: CGFloat { baseQtyColumnWidth }
 
-    /// Trailing inset for `List` rows — room for ≡ only (not a layout column).
-    static let listReorderTrailingInset: CGFloat = 20
+    /// Trailing inset for view-mode `List` rows.
+    static let listReorderTrailingInset: CGFloat = 4
     static let listReorderColumnWidth: CGFloat = listReorderTrailingInset
+
+    // MARK: - Edit-mode ingredient grid (List + onMove + swipe delete)
+
+    /// Raises edit-list minus + first text line vs standard row chrome.
+    static let editListRowLift: CGFloat = 4
+    /// Gap between custom delete minus and ingredient text in edit `List`.
+    static let editListDeleteToContentSpacing: CGFloat = 6
+    /// Matches system `minus.circle.fill` control in edit lists.
+    static let editListDeleteControlSize: CGFloat = 22
+    /// Minus column + gap before ingredient name (aligns new-row fields with edit rows).
+    static var editListLeadingSlotWidth: CGFloat {
+        editListDeleteControlSize + editListDeleteToContentSpacing
+    }
+    /// «+» row: optical inset so «Name» lines up with edit-row titles (minus.circle is wider).
+    static let editListNewRowNameLeadingInset: CGFloat = 2
+    /// Top offset for reorder control — aligned with custom minus in edit rows.
+    static var editListReorderControlTopOffset: CGFloat {
+        ingredientRowVerticalPadding
+    }
+    /// Vertical center of reorder grip — aligned with minus.circle.fill center.
+    static var editListReorderControlTargetCenterY: CGFloat {
+        editListReorderControlTopOffset + editListDeleteControlSize * 0.5
+    }
+    /// Leading drag handle in edit ingredient rows (left slot, former minus-button area).
+    static let editListLeadingDragHandleWidth: CGFloat = 28
+    /// Approximate UITableView reorder control width in edit mode.
+    static let editListReorderControlWidth: CGFloat = 36
+    /// Gap between amount field and reorder handle inside edit `List`.
+    static let editRowQtyToReorderSpacing: CGFloat = 10
+
+    /// Leading padding for header/servings outside edit `List`.
+    static var editGridLeadingPadding: CGFloat {
+        listHorizontalInset
+    }
+
+    /// Trailing padding for header/servings — compensates reorder handle width so Qty header aligns with row amounts.
+    static var editGridTrailingPadding: CGFloat {
+        editRowQtyToReorderSpacing + editListReorderControlWidth
+    }
 
     private static func monoTextWidth(sample: String, trailingPadding: CGFloat) -> CGFloat {
         let font = AppTypography.uiFont(AppFonts.mono, size: AppTypography.bodySize)
@@ -185,6 +224,17 @@ extension View {
     func ingredientListRowChrome() -> some View {
         padding(.vertical, RecipeRowLayoutMetrics.ingredientRowVerticalPadding)
             .frame(minHeight: RecipeRowLayoutMetrics.rowHeight, alignment: .top)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Edit `List` row chrome — same vertical padding for rows with and without KBJU.
+    func ingredientEditListRowChrome() -> some View {
+        ingredientListRowChromeCompact()
+    }
+
+    /// Row with a KBJU line: symmetric vertical padding, no 44 pt min-height slack.
+    func ingredientListRowChromeCompact() -> some View {
+        padding(.vertical, RecipeRowLayoutMetrics.ingredientRowVerticalPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 

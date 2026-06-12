@@ -7,6 +7,7 @@
 import SwiftUI
 
 struct AuthView: View {
+    @Environment(\.locale) private var locale
     @StateObject private var authService = AuthService.shared
     @State private var isLoading = false
     @State private var showError = false
@@ -25,7 +26,8 @@ struct AuthView: View {
     )
 
     var body: some View {
-        ZStack {
+        let _ = locale
+        return ZStack {
             Color(.systemBackground)
                 .ignoresSafeArea()
 
@@ -56,36 +58,37 @@ struct AuthView: View {
                                 HStack(spacing: 4) {
                                     AppSymbol.image("chevron.left")
                                         .font(AppTypography.iconSize(AppTypography.compactSize))
-                                    Text("Back")
-                                        .font(AppTypography.subheadline)
+                                    Text(verbatim: authString("Back"))
+                                        .appBody()
                                 }
                                 .foregroundColor(.secondary)
                             }
                             .buttonStyle(.plain)
                             .accessibilityIdentifier(AccessibilityIdentifiers.authBackButton)
 
-                            Text("Login")
+                            Text(verbatim: authString("auth.login"))
                                 .font(AppTypography.display(AppTypography.authTitleSize))
                                 .padding(.top, 8)
 
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("1. Open Account page on Recipe Scaler app")
-                                Text("2. Press \"Login on another device\"")
-                                Text("3. Enter your seed phrase to login into your account")
+                                Text(verbatim: authString("auth.step1-open-account"))
+                                    .appBody()
+                                Text(verbatim: authString("auth.step2-press-login"))
+                                    .appBody()
+                                Text(verbatim: authString("auth.step3-enter-seed"))
+                                    .appBody()
                             }
-                            .font(AppTypography.callout)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     } else {
                         VStack(spacing: 8) {
-                            Text("Welcome to\nRecipe Scaler")
+                            Text(verbatim: authString("auth.welcome-title"))
                                 .font(AppTypography.display(AppTypography.authTitleSize))
 
-                            Text("Create a new account\nor restore existing one")
-                                .font(AppTypography.callout)
-                                .foregroundStyle(.secondary)
+                            Text(verbatim: authString("auth.welcome-subtitle"))
+                                .appBody()
                         }
                         .multilineTextAlignment(.center)
                     }
@@ -108,7 +111,7 @@ struct AuthView: View {
                         VStack(spacing: 12) {
                             ZStack(alignment: .topLeading) {
                                 TextEditor(text: $seedPhrase)
-                                    .font(AppTypography.callout)
+                                    .appBodyFieldTypography()
                                     .frame(height: 120)
                                     .autocapitalization(.none)
                                     .autocorrectionDisabled()
@@ -120,8 +123,8 @@ struct AuthView: View {
                                     .accessibilityIdentifier(AccessibilityIdentifiers.authSeedTextEditor)
 
                                 if seedPhrase.isEmpty {
-                                    Text("Seed phrase consists of 12 words")
-                                        .font(AppTypography.callout)
+                                    Text(verbatim: authString("auth.seed-placeholder"))
+                                        .appBody()
                                         .foregroundStyle(.secondary)
                                         .padding(.leading, 17)
                                         .padding(.top, 20)
@@ -140,7 +143,7 @@ struct AuthView: View {
                                         }
                                         .buttonStyle(.plain)
                                         .padding(8)
-                                        .accessibilityLabel("Scan QR code")
+                                        .accessibilityLabel(Bundle.currentLocalizedString("Scan QR code"))
                                         .accessibilityIdentifier(AccessibilityIdentifiers.authQRCodeButton)
                                     }
                                     Spacer()
@@ -155,14 +158,14 @@ struct AuthView: View {
                                     if isLoading {
                                         ProgressView().tint(.white)
                                     } else {
-                                        Text("Login")
+                                        Text(verbatim: authString("auth.login"))
                                             .font(AppTypography.sansMedium(18))
                                             .foregroundColor(.white)
                                     }
                                     Spacer()
                                 }
                             }
-                            .frame(height: 56)
+                            .frame(height: 48)
                             .background(
                                 seedPhrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading
                                     ? Color(.systemGray5)
@@ -177,36 +180,36 @@ struct AuthView: View {
                             Button {
                                 Task { await registerUser() }
                             } label: {
-                                HStack {
-                                    Spacer()
-                                    if isLoading {
-                                        ProgressView().tint(.white)
-                                    } else {
-                                        Text("I'm new user")
-                                            .font(AppTypography.sansMedium(18))
-                                    }
-                                    Spacer()
-                                }
+                                Text(verbatim: authString("auth.new-user"))
+                                    .font(AppTypography.sansMedium(18))
+                                    .multilineTextAlignment(.center)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .padding(.horizontal, 24)
+                                    .padding(.vertical, 15)
+                                    .frame(maxWidth: .infinity)
+                                    .background(gradient)
+                                    .foregroundStyle(.white)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                             }
-                            .frame(height: 56)
-                            .background(gradient)
-                            .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                             .disabled(isLoading)
                             .accessibilityIdentifier(AccessibilityIdentifiers.authNewUserButton)
 
                             Button {
                                 showSeedInput = true
                             } label: {
-                                Text("I used Recipe Scaler before")
+                                Text(verbatim: authString("auth.used-before"))
                                     .font(AppTypography.sansMedium(18))
                                     .foregroundColor(.primary)
+                                    .multilineTextAlignment(.center)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .padding(.horizontal, 24)
+                                    .padding(.vertical, 15)
                                     .frame(maxWidth: .infinity)
-                                .frame(height: 56)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .stroke(Color(.systemGray4), lineWidth: 2)
-                                )
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                            .strokeBorder(Color(.systemGray4), lineWidth: 2)
+                                    )
+                                    .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                             }
                             .buttonStyle(.plain)
                             .disabled(isLoading)
@@ -249,14 +252,17 @@ struct AuthView: View {
         .accessibilityIdentifier(AccessibilityIdentifiers.authRoot)
     }
 
+    private func authString(_ key: String) -> String {
+        Bundle.currentLocalizedString(key)
+    }
+
     private func registerUser() async {
         isLoading = true
         showError = false
         defer { isLoading = false }
 
         do {
-            let result = try await authService.registerAuto()
-            print("Registration successful! Seed phrase: \(result.seedPhrase)")
+            _ = try await authService.registerAuto()
         } catch {
             errorMessage = error.localizedDescription
             showError = true

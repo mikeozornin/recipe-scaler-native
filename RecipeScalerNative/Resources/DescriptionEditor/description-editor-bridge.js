@@ -2,298 +2,596 @@
 (function () {
   'use strict';
 
-  const Y = YjsBundle;
-  const DEBOUNCE_MS = 400;
+  const {
+    Editor,
+    StarterKit,
+    Highlight,
+    Link,
+    Collaboration,
+    Y,
+    TimerNode,
+    IngredientNode,
+    HeadingWithHash,
+    ScaleStorageExtension,
+  } = YjsBundle;
+
   const handlerName = 'descriptionEditor';
+  const MIN_INLINE_HEIGHT = 280;
 
   let ydoc = null;
-  let fragment = null;
+  let editor = null;
   let applyingRemote = false;
-  let pushTimer = null;
   let ready = false;
+  let inlineMode = true;
+  let resizeObserver = null;
+  let savedSelection = null;
+  let holdSelectionForMarkup = false;
+  let pendingScale = null;
 
   const editorEl = document.getElementById('editor');
-  const statusEl = document.getElementById('status');
 
   function post(type, payload) {
-    const msg = Object.assign({ type: type }, payload || {});
+    const msg = Object.assign({}, payload || {}, { type: type });
     if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[handlerName]) {
       window.webkit.messageHandlers[handlerName].postMessage(msg);
     }
   }
 
-  function setStatus(text) {
-    if (statusEl) statusEl.textContent = text;
+  function editorDom() {
+    return editor && editor.view ? editor.view.dom : editorEl;
   }
 
-  function escapeHtml(text) {
-    return String(text)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  function buildExtensions(fragment) {
+    return [
+      StarterKit.configure({ undoRedo: false, heading: false, link: false }),
+      HeadingWithHash.configure({ levels: [1] }),
+      Highlight.configure({
+        HTMLAttributes: { class: 'highlight-mark' },
+      }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        HTMLAttributes: { class: 'text-link' },
+      }),
+      ScaleStorageExtension,
+      TimerNode,
+      IngredientNode,
+      Collaboration.configure({ fragment: fragment }),
+    ];
   }
 
-  function elementTag(node) {
-    if (!node || typeof node.nodeName !== 'string') return '';
-    if (node.nodeName === 'timer') return 'timer';
-    if (node.nodeName === 'ingredient') return 'ingredient';
-    return node.nodeName.toLowerCase();
-  }
-
-  function attrsToString(node) {
-    if (!node || !node.getAttributes) return '';
-    const attrs = node.getAttributes();
-    return Object.keys(attrs)
-      .map((key) => key + '="' + escapeHtml(String(attrs[key])) + '"')
-      .join(' ');
-  }
-
-  function renderXmlText(textNode) {
-    const delta = textNode.toDelta ? textNode.toDelta() : [];
-    if (!delta.length) {
-      const plain = textNode.toString();
-      return plain ? escapeHtml(plain) : '';
+  function destroyEditor() {
+    if (editor) {
+      editor.destroy();
+      editor = null;
     }
-    return delta
-      .map((chunk) => {
-        const content = chunk.insert || '';
-        if (!content) return '';
-        const escaped = escapeHtml(content);
-        const attrs = chunk.attributes || {};
-        if (attrs.link && attrs.link.href) {
-          const href = escapeHtml(attrs.link.href);
-          return '<a href="' + href + '" target="_blank" rel="noopener noreferrer">' + escaped + '</a>';
-        }
-        let out = escaped;
-        if (attrs.bold) out = '<strong>' + out + '</strong>';
-        if (attrs.italic) out = '<em>' + out + '</em>';
-        if (attrs.strike) out = '<s>' + out + '</s>';
-        if (attrs.code) out = '<code>' + out + '</code>';
-        if (attrs.highlight) out = '<mark>' + out + '</mark>';
-        return out;
-      })
-      .join('');
   }
 
-  function renderElement(elem) {
-    const tag = elementTag(elem);
-    const inner = renderChildren(elem);
-    const attrStr = attrsToString(elem);
-    const open = attrStr ? '<' + tag + ' ' + attrStr + '>' : '<' + tag + '>';
+  function applyPendingScale() {
+    if (!editor || !pendingScale) return;
+    const storage = editor.storage.scaleStorage;
+    if (!storage) return;
+    storage.scaleFactor = pendingScale.scaleFactor != null ? pendingScale.scaleFactor : 1;
+    storage.ingredients = pendingScale.ingredients || [];
+    storage.locale = pendingScale.locale || 'en';
+    const tr = editor.state.tr;
+    tr.setMeta('scaleUpdate', storage.scaleFactor);
+    tr.setMeta('addToHistory', false);
+    editor.view.dispatch(tr);
+  }
 
-    switch (tag) {
-      case 'paragraph':
-        return '<p>' + inner + '</p>';
-      case 'heading': {
-        const level = (elem.getAttribute && elem.getAttribute('level')) || '1';
-        const n = Math.min(6, Math.max(1, parseInt(level, 10) || 1));
-        return '<h' + n + '>' + inner + '</h' + n + '>';
+  function createEditor(fragment) {
+    destroyEditor();
+    editor = new Editor({
+      element: editorEl,
+      extensions: buildExtensions(fragment),
+      editable: true,
+      shouldRerenderOnTransaction: true,
+      editorProps: {
+        attributes: {
+          class: 'tiptap-description ProseMirror',
+          spellcheck: 'true',
+        },
+      },
+      onCreate: function () {
+        applyPendingScale();
+      },
+      onUpdate: function () {
+        measureContentHeight();
+        postSelectionState();
+      },
+      onSelectionUpdate: function () {
+        postSelectionState();
+      },
+      onFocus: function () {
+        post('focus');
+      },
+      onBlur: function () {
+        captureSelection();
+        post('blur');
+        if (holdSelectionForMarkup && savedSelection) {
+          requestAnimationFrame(restoreSelection);
+        }
+      },
+    });
+  }
+
+  function captureSelection() {
+    if (!editor) return;
+    const { from, to } = editor.state.selection;
+    savedSelection = { from: from, to: to };
+  }
+
+  function restoreSelection() {
+    if (!editor || !savedSelection) return;
+    editor.commands.setTextSelection(savedSelection);
+  }
+
+  function getSelectedText() {
+    if (!editor) return '';
+    const { from, to, empty } = editor.state.selection;
+    if (empty) return '';
+    return editor.state.doc.textBetween(from, to);
+  }
+
+  function postSelectionState() {
+    if (!editor) return;
+    try {
+      const { empty } = editor.state.selection;
+      const selectedText = getSelectedText();
+      post('selectionState', {
+        bold: editor.isActive('bold'),
+        heading1: editor.isActive('heading', { level: 1 }),
+        highlight: editor.isActive('highlight'),
+        bulletList: editor.isActive('bulletList'),
+        orderedList: editor.isActive('orderedList'),
+        hasSelection: !empty,
+        selectedText: selectedText,
+        canBold: editor.can().toggleBold(),
+        canHeading1: editor.can().toggleHeading({ level: 1 }),
+        canHighlight: editor.can().toggleHighlight(),
+        canBulletList: editor.can().toggleBulletList(),
+        canOrderedList: editor.can().toggleOrderedList(),
+      });
+    } catch (_err) {
+      /* early init */
+    }
+  }
+
+  function measureContentHeight() {
+    const dom = editorDom();
+    if (!dom) return;
+    const height = Math.max(MIN_INLINE_HEIGHT, dom.scrollHeight + 8);
+    post('contentHeight', { height: height });
+  }
+
+  function setupResizeObserver() {
+    const dom = editorDom();
+    if (!dom || typeof ResizeObserver === 'undefined') return;
+    if (resizeObserver) resizeObserver.disconnect();
+    resizeObserver = new ResizeObserver(measureContentHeight);
+    resizeObserver.observe(dom);
+  }
+
+  function injectFonts(config) {
+    const family = config.fontFamily || 'Martian Grotesk Nr Lt';
+    const regularURL = config.fontRegularURL;
+    const mediumURL = config.fontMediumURL;
+    if (!regularURL && !mediumURL) {
+      if (editorEl) editorEl.style.fontFamily = '"' + family + '", -apple-system, BlinkMacSystemFont, sans-serif';
+      return;
+    }
+    const style = document.createElement('style');
+    let css = '';
+    if (regularURL) {
+      css +=
+        '@font-face { font-family: "' +
+        family +
+        '"; src: url("' +
+        regularURL +
+        '") format("opentype"); font-weight: 400; font-style: normal; }';
+    }
+    if (mediumURL) {
+      css +=
+        '@font-face { font-family: "' +
+        family +
+        ' Medium"; src: url("' +
+        mediumURL +
+        '") format("opentype"); font-weight: 500; font-style: normal; }';
+    }
+    style.textContent = css;
+    document.head.appendChild(style);
+    if (editorEl) {
+      editorEl.style.fontFamily = '"' + family + '", -apple-system, BlinkMacSystemFont, sans-serif';
+    }
+  }
+
+  function applyTypography(config) {
+    const fontSize = config.fontSize || 16;
+    if (!editorEl) return;
+    editorEl.style.fontSize = fontSize + 'px';
+    editorEl.style.lineHeight = '1.5';
+    if (config.recipeColor) {
+      document.documentElement.style.setProperty('--recipeColor', config.recipeColor);
+      document.documentElement.style.setProperty('--recipeColorBg', config.recipeColor + '26');
+    }
+    if (config.linkColor) {
+      document.documentElement.style.setProperty('--linkColor', config.linkColor);
+    }
+    injectFonts(config);
+  }
+
+  function applyInlinePresentation(config) {
+    document.body.classList.add('inline-embedded');
+    document.documentElement.style.background = 'transparent';
+    document.body.style.background = 'transparent';
+    applyTypography(config || {});
+    measureContentHeight();
+    setupResizeObserver();
+  }
+
+  function findTimerNodePos(args) {
+    if (!editor) return null;
+    const timerId = args && args.timerId ? String(args.timerId) : '';
+    let found = null;
+    editor.state.doc.descendants(function (node, pos) {
+      if (found || node.type.name !== 'timer') return;
+      const attrs = node.attrs;
+      if (timerId && attrs['data-timer-id'] === timerId) {
+        found = { node: node, pos: pos };
+        return false;
       }
-      case 'bulletlist':
-      case 'bulletList':
-        return '<ul>' + inner + '</ul>';
-      case 'orderedlist':
-      case 'orderedList':
-        return '<ol>' + inner + '</ol>';
-      case 'listitem':
-      case 'listItem':
-        return '<li>' + inner + '</li>';
-      case 'blockquote':
-        return '<blockquote>' + inner + '</blockquote>';
-      case 'codeblock':
-      case 'codeBlock':
-        return '<pre>' + inner + '</pre>';
-      case 'hardbreak':
-      case 'hardBreak':
-        return '<br/>';
-      case 'horizontalrule':
-      case 'horizontalRule':
-        return '<hr/>';
-      case 'timer':
-      case 'ingredient': {
-        const cls = tag === 'timer' ? 'timer-reference' : 'ingredient-reference';
-        return '<span class="' + cls + '" ' + attrsToString(elem) + '>' + inner + '</span>';
+      if (!timerId) {
+        const duration = args.duration != null ? String(args.duration) : '';
+        const type = args.type != null ? String(args.type) : '';
+        const value = args.value != null ? String(args.value) : '';
+        const text = args.text != null ? String(args.text).trim() : '';
+        const spanDuration = attrs['data-duration'] || '';
+        const spanType = attrs['data-type'] || '';
+        const spanValue = attrs['data-value'] || '';
+        const spanText = node.textContent.trim();
+        if (duration && spanDuration === duration && type && spanType === type) {
+          if (text && spanText === text) {
+            found = { node: node, pos: pos };
+            return false;
+          }
+          if (value && spanValue === value) {
+            found = { node: node, pos: pos };
+            return false;
+          }
+          if (!text && !value) {
+            found = { node: node, pos: pos };
+            return false;
+          }
+        }
       }
-      case 'bold':
-        return '<strong>' + inner + '</strong>';
-      case 'italic':
-        return '<em>' + inner + '</em>';
-      case 'strike':
-        return '<s>' + inner + '</s>';
-      case 'highlight':
-        return '<mark>' + inner + '</mark>';
-      case 'code':
-        return '<code>' + inner + '</code>';
-      case 'link':
-      case 'a': {
-        const href = (elem.getAttribute && elem.getAttribute('href')) || '';
-        return '<a href="' + escapeHtml(href) + '" target="_blank" rel="noopener noreferrer">' + inner + '</a>';
+    });
+    return found;
+  }
+
+  function findIngredientNodePos(ingredientId) {
+    if (!editor || !ingredientId) return null;
+    let found = null;
+    editor.state.doc.descendants(function (node, pos) {
+      if (found || node.type.name !== 'ingredient') return;
+      if (node.attrs['data-ingredient-id'] === ingredientId) {
+        found = { node: node, pos: pos };
+        return false;
+      }
+    });
+    return found;
+  }
+
+  function markAsTimer(args) {
+    const a = args || {};
+    const selectedText = getSelectedText();
+    editor
+      .chain()
+      .focus()
+      .deleteSelection()
+      .insertContent({
+        type: 'timer',
+        attrs: {
+          'data-timer-id': a.timerId || 'timer-' + Date.now(),
+          'data-duration': String(a.duration || 0),
+          'data-type': a.type || 'minutes',
+          'data-name': a.name || '',
+          'data-value': String(a.value || 0),
+        },
+        content: selectedText ? [{ type: 'text', text: selectedText }] : undefined,
+      })
+      .run();
+  }
+
+  function markAsIngredient(args) {
+    const a = args || {};
+    const selectedText = getSelectedText();
+    let amountToStore = a.originalAmount;
+    if (amountToStore == null || amountToStore === '') {
+      const parsed = parseFloat(selectedText);
+      if (!isNaN(parsed)) amountToStore = parsed;
+    }
+    editor
+      .chain()
+      .focus()
+      .deleteSelection()
+      .insertContent({
+        type: 'ingredient',
+        attrs: {
+          'data-ingredient-id': a.ingredientId || '',
+          'data-original-amount':
+            amountToStore != null && amountToStore !== ''
+              ? String(amountToStore)
+              : selectedText || null,
+          'data-ratio': a.ratio != null && a.ratio !== '' ? String(a.ratio) : null,
+        },
+      })
+      .run();
+  }
+
+  function removeTimerMarkup(args) {
+    const hit = findTimerNodePos(args || {});
+    if (!hit) return;
+    const text = (args && args.text) || hit.node.textContent || hit.node.attrs['data-value'] || '';
+    editor
+      .chain()
+      .focus()
+      .insertContentAt({ from: hit.pos, to: hit.pos + hit.node.nodeSize }, text)
+      .run();
+  }
+
+  function removeIngredientMarkup(args) {
+    const ingredientId = args && args.ingredientId;
+    const hit = findIngredientNodePos(ingredientId);
+    if (!hit) return;
+    const text =
+      (args && args.displayText) ||
+      hit.node.attrs['data-original-amount'] ||
+      '';
+    editor
+      .chain()
+      .focus()
+      .insertContentAt({ from: hit.pos, to: hit.pos + hit.node.nodeSize }, text)
+      .run();
+  }
+
+  function renameTimer(args) {
+    const hit = findTimerNodePos(args || {});
+    if (!hit || !args || !args.name) return;
+    const attrs = Object.assign({}, hit.node.attrs);
+    if (!attrs['data-timer-id']) {
+      attrs['data-timer-id'] = 'timer-' + Date.now();
+    }
+    attrs['data-name'] = String(args.name);
+    editor.view.dispatch(
+      editor.state.tr.setNodeMarkup(hit.pos, undefined, attrs, hit.node.marks)
+    );
+  }
+
+  function updateIngredientMarkup(args) {
+    const hit = findIngredientNodePos(args && args.ingredientId);
+    if (!hit || !args) return;
+    const attrs = Object.assign({}, hit.node.attrs);
+    if (args.ratio != null && args.ratio !== '') {
+      attrs['data-ratio'] = String(args.ratio);
+    }
+    editor.view.dispatch(
+      editor.state.tr.setNodeMarkup(hit.pos, undefined, attrs, hit.node.marks)
+    );
+    if (args.displayText != null && args.displayText !== '') {
+      /* atom node — display comes from NodeView / attrs */
+    }
+    measureContentHeight();
+  }
+
+  function runCommand(name, args) {
+    if (!editor) return;
+    const a = args || {};
+    switch (name) {
+      case 'toggleBold':
+        restoreSelection();
+        editor.chain().focus().toggleBold().run();
+        break;
+      case 'toggleItalic':
+        restoreSelection();
+        editor.chain().focus().toggleItalic().run();
+        break;
+      case 'toggleHeading1':
+        restoreSelection();
+        editor.chain().focus().toggleHeading({ level: 1 }).run();
+        break;
+      case 'toggleHighlight':
+        restoreSelection();
+        editor.chain().focus().toggleHighlight().run();
+        break;
+      case 'toggleBulletList':
+        restoreSelection();
+        editor.chain().focus().toggleBulletList().run();
+        break;
+      case 'toggleOrderedList':
+        restoreSelection();
+        editor.chain().focus().toggleOrderedList().run();
+        break;
+      case 'markAsTimer':
+        holdSelectionForMarkup = false;
+        restoreSelection();
+        markAsTimer(a);
+        break;
+      case 'markAsIngredient':
+        holdSelectionForMarkup = false;
+        restoreSelection();
+        markAsIngredient(a);
+        break;
+      case 'removeTimerMarkup':
+        removeTimerMarkup(a);
+        postSelectionState();
+        measureContentHeight();
+        return;
+      case 'removeIngredientMarkup':
+        removeIngredientMarkup(a);
+        postSelectionState();
+        measureContentHeight();
+        return;
+      case 'renameTimer':
+        renameTimer(a);
+        break;
+      case 'updateIngredientMarkup':
+        updateIngredientMarkup(a);
+        break;
+      case 'prepareMarkupSelection':
+        captureSelection();
+        holdSelectionForMarkup = true;
+        restoreSelection();
+        return;
+      case 'releaseMarkupSelection':
+        holdSelectionForMarkup = false;
+        return;
+      case 'focus':
+        editor.commands.focus();
+        post('focus');
+        return;
+      case 'flush':
+        /* Collaboration writes to ydoc synchronously — nothing to debounce. */
+        return;
+      case 'blur':
+        holdSelectionForMarkup = false;
+        editor.commands.blur();
+        notifyBlur();
+        return;
+      case 'simulateText': {
+        const text = String(a.text || '');
+        if (text) editor.chain().focus().insertContent(text).run();
+        return;
       }
       default:
-        return inner;
+        break;
     }
+    captureSelection();
+    postSelectionState();
+    measureContentHeight();
   }
 
-  function renderChildren(parent) {
-    let html = '';
-    if (!parent || !parent.length) return html;
-    for (let i = 0; i < parent.length; i++) {
-      const child = parent.get(i);
-      if (!child) continue;
-      if (child.constructor === Y.XmlText) {
-        html += renderXmlText(child);
-      } else if (child.constructor === Y.XmlElement) {
-        html += renderElement(child);
-      }
+  function notifyBlur() {
+    captureSelection();
+    post('blur');
+  }
+
+  function readTimerNodePayload(span) {
+    return {
+      nodeType: 'timer',
+      timerId: span.getAttribute('data-timer-id') || '',
+      duration: span.getAttribute('data-duration') || '',
+      timerType: span.getAttribute('data-type') || '',
+      type: span.getAttribute('data-type') || '',
+      value: span.getAttribute('data-value') || '',
+      name: span.getAttribute('data-name') || '',
+      text: span.textContent || '',
+    };
+  }
+
+  function postNodeClick(span, payload) {
+    notifyBlur();
+    var rect = span.getBoundingClientRect();
+    post(
+      'nodeClick',
+      Object.assign(
+        {
+          anchorX: rect.left,
+          anchorY: rect.top,
+          anchorWidth: rect.width,
+          anchorHeight: rect.height,
+        },
+        payload || {}
+      )
+    );
+  }
+
+  function handleReferenceNodeTap(e, fromClick) {
+    var timerSpan = e.target.closest && e.target.closest('.timer-reference');
+    var ingredientSpan = e.target.closest && e.target.closest('.ingredient-reference');
+    if (!timerSpan && !ingredientSpan) return false;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (timerSpan) {
+      postNodeClick(timerSpan, readTimerNodePayload(timerSpan));
+      return true;
     }
-    return html;
-  }
-
-  function fragmentToHtml() {
-    if (!fragment || !fragment.length) return '<p><br></p>';
-    const html = renderChildren(fragment);
-    return html || '<p><br></p>';
-  }
-
-  function clearFragment() {
-    if (!fragment) return;
-    while (fragment.length > 0) {
-      fragment.delete(0, 1);
-    }
-  }
-
-  function appendParagraphFromElement(el) {
-    const tag = el.tagName.toLowerCase();
-    if (tag === 'ul' || tag === 'ol') {
-      const listTag = tag === 'ul' ? 'bulletList' : 'orderedList';
-      const list = new Y.XmlElement(listTag);
-      Array.from(el.children).forEach((li) => {
-        if (li.tagName.toLowerCase() !== 'li') return;
-        const item = new Y.XmlElement('listItem');
-        const para = new Y.XmlElement('paragraph');
-        para.insert(0, [collectInlineNodes(li)]);
-        item.insert(0, [para]);
-        list.insert(list.length, [item]);
+    if (ingredientSpan) {
+      postNodeClick(ingredientSpan, {
+        nodeType: 'ingredient',
+        ingredientId: ingredientSpan.getAttribute('data-ingredient-id') || '',
+        originalAmount: ingredientSpan.getAttribute('data-original-amount') || '',
+        ratio: ingredientSpan.getAttribute('data-ratio') || '',
+        text: ingredientSpan.textContent || '',
       });
-      fragment.insert(fragment.length, [list]);
-      return;
+      return true;
     }
-
-    const pmTag =
-      tag === 'h1' ? 'heading' :
-      tag === 'blockquote' ? 'blockquote' :
-      tag === 'pre' ? 'codeBlock' :
-      'paragraph';
-
-    const para = new Y.XmlElement(pmTag);
-    if (pmTag === 'heading') {
-      para.setAttribute('level', String(tag.replace('h', '') || '1'));
-    }
-    para.insert(0, [collectInlineNodes(el)]);
-    fragment.insert(fragment.length, [para]);
+    return false;
   }
 
-  function collectInlineNodes(root) {
-    const parts = [];
-    function walk(node) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        const text = node.textContent || '';
-        if (text) parts.push(new Y.XmlText(text));
-        return;
-      }
-      if (node.nodeType !== Node.ELEMENT_NODE) return;
-      const tag = node.tagName.toLowerCase();
-      if (tag === 'br') {
-        const br = new Y.XmlElement('hardBreak');
-        parts.push(br);
-        return;
-      }
-      if (tag === 'span' && (node.classList.contains('timer-reference') || node.classList.contains('ingredient-reference'))) {
-        const pmTag = node.classList.contains('timer-reference') ? 'timer' : 'ingredient';
-        const elem = new Y.XmlElement(pmTag);
-        Array.from(node.attributes).forEach((attr) => {
-          elem.setAttribute(attr.name, attr.value);
-        });
-        const label = node.textContent || '';
-        if (label) elem.insert(0, [new Y.XmlText(label)]);
-        parts.push(elem);
-        return;
-      }
-      if (tag === 'strong' || tag === 'b') {
-        const elem = new Y.XmlElement('bold');
-        elem.insert(0, [new Y.XmlText(node.textContent || '')]);
-        parts.push(elem);
-        return;
-      }
-      if (tag === 'em' || tag === 'i') {
-        const elem = new Y.XmlElement('italic');
-        elem.insert(0, [new Y.XmlText(node.textContent || '')]);
-        parts.push(elem);
-        return;
-      }
-      if (tag === 'a') {
-        const elem = new Y.XmlElement('link');
-        const href = node.getAttribute('href') || '';
-        if (href) elem.setAttribute('href', href);
-        elem.insert(0, [new Y.XmlText(node.textContent || '')]);
-        parts.push(elem);
-        return;
-      }
-      Array.from(node.childNodes).forEach(walk);
-    }
-    Array.from(root.childNodes).forEach(walk);
-    return parts;
-  }
-
-  function htmlToFragment(html) {
-    const template = document.createElement('template');
-    template.innerHTML = html;
-    clearFragment();
-    const blocks = [];
-    template.content.childNodes.forEach((node) => {
-      if (node.nodeType === Node.ELEMENT_NODE) blocks.push(node);
-    });
-    if (!blocks.length) {
-      const para = new Y.XmlElement('paragraph');
-      fragment.insert(0, [para]);
-      return;
-    }
-    blocks.forEach((el) => appendParagraphFromElement(el));
-  }
-
-  function schedulePush() {
-    if (!ready || applyingRemote) return;
-    if (pushTimer) clearTimeout(pushTimer);
-    pushTimer = setTimeout(pushLocalEdit, DEBOUNCE_MS);
-  }
-
-  function pushLocalEdit() {
-    if (!ydoc || !fragment) return;
-    const html = editorEl.innerHTML;
-    ydoc.transact(() => {
-      htmlToFragment(html);
-    });
+  function wireDomHandlers() {
+    const dom = editorDom();
+    if (!dom) return;
+    dom.addEventListener(
+      'pointerup',
+      function (e) {
+        handleReferenceNodeTap(e, false);
+      },
+      true
+    );
+    dom.addEventListener(
+      'click',
+      function (e) {
+        handleReferenceNodeTap(e, true);
+      },
+      true
+    );
   }
 
   function handleNativeMessage(msg) {
     if (!msg || !msg.type) return;
     switch (msg.type) {
+      case 'configure':
+        inlineMode = msg.inline !== false;
+        if (inlineMode) applyInlinePresentation(msg);
+        else applyTypography(msg);
+        break;
       case 'init': {
-        const state = new Uint8Array(msg.state || []);
-        ydoc = new Y.Doc();
-        ydoc.on('update', (update, origin) => {
-          if (!ready || applyingRemote || origin === 'remote') return;
-          post('update', { update: Array.from(update) });
-        });
-        if (state.length) {
-          Y.applyUpdate(ydoc, state, 'remote');
+        try {
+          const state = new Uint8Array(msg.state || []);
+          destroyEditor();
+          ydoc = new Y.Doc();
+          ydoc.on('update', function (update, origin) {
+            if (origin === 'remote') return;
+            if (!ready || applyingRemote) return;
+            post('update', { update: Array.from(update) });
+          });
+          if (state.length) {
+            Y.applyUpdate(ydoc, state, 'remote');
+          }
+          const fragment = ydoc.getXmlFragment('description');
+          createEditor(fragment);
+          ready = true;
+          wireDomHandlers();
+          setupResizeObserver();
+          const plainLen = editor ? editor.state.doc.textContent.length : 0;
+          post('ready', {
+            fragmentLength: fragment.length,
+            editorPlainLen: plainLen,
+          });
+          measureContentHeight();
+          postSelectionState();
+          applyPendingScale();
+        } catch (err) {
+          ready = true;
+          post('ready', {
+            fragmentLength: 0,
+            editorPlainLen: 0,
+            initError: String(err && err.message ? err.message : err),
+          });
         }
-        fragment = ydoc.getXmlFragment('description');
-        editorEl.innerHTML = fragmentToHtml();
-        ready = true;
-        setStatus('Ready');
-        post('ready', { fragmentLength: fragment.length });
         break;
       }
       case 'applyUpdate': {
@@ -301,16 +599,28 @@
         applyingRemote = true;
         try {
           Y.applyUpdate(ydoc, new Uint8Array(msg.update || []), 'remote');
-          if (fragment) editorEl.innerHTML = fragmentToHtml();
+          measureContentHeight();
         } finally {
           applyingRemote = false;
         }
         break;
       }
-      case 'command': {
-        if (!editorEl) return;
-        document.execCommand(msg.name, false, msg.value || null);
-        schedulePush();
+      case 'setScale':
+        pendingScale = {
+          scaleFactor: msg.scaleFactor != null ? Number(msg.scaleFactor) : 1,
+          ingredients: msg.ingredients || [],
+          locale: msg.locale || 'en',
+        };
+        applyPendingScale();
+        break;
+      case 'command':
+        runCommand(msg.name, msg.args);
+        break;
+      case 'simulateText': {
+        if (!ready || !editor) return;
+        const text = String(msg.text || '');
+        if (!text) return;
+        editor.chain().focus().insertContent(text).run();
         break;
       }
       default:
@@ -320,19 +630,33 @@
 
   window.__descriptionEditorReceive = handleNativeMessage;
 
-  editorEl.addEventListener('input', schedulePush);
-
-  document.getElementById('toolbar').addEventListener('click', (event) => {
-    const btn = event.target.closest('button[data-cmd]');
-    if (!btn) return;
-    const cmd = btn.getAttribute('data-cmd');
-    editorEl.focus();
-    if (cmd === 'bold') document.execCommand('bold');
-    else if (cmd === 'italic') document.execCommand('italic');
-    else if (cmd === 'h1') document.execCommand('formatBlock', false, 'h1');
-    else if (cmd === 'bullet') document.execCommand('insertUnorderedList');
-    schedulePush();
-  });
-
   post('loaded');
+
+  if (typeof globalThis !== 'undefined' && globalThis.__DESCRIPTION_EDITOR_TEST__) {
+    globalThis.__descriptionEditorTest = {
+      Y: Y,
+      Editor: Editor,
+      buildExtensions: buildExtensions,
+      initDoc: function (update) {
+        ydoc = new Y.Doc();
+        if (update && update.length) Y.applyUpdate(ydoc, update, 'remote');
+        const fragment = ydoc.getXmlFragment('description');
+        createEditor(fragment);
+        ready = true;
+        return { ydoc: ydoc, fragment: fragment, editor: editor };
+      },
+      getEditor: function () {
+        return editor;
+      },
+      getDoc: function () {
+        return ydoc;
+      },
+      encodeUpdate: function (sv) {
+        return Y.encodeStateAsUpdate(ydoc, sv);
+      },
+      stateVector: function () {
+        return Y.encodeStateVector(ydoc);
+      },
+    };
+  }
 })();

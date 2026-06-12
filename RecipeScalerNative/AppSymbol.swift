@@ -32,19 +32,19 @@ enum AppSymbol {
 }
 
 enum AppLabel {
-    static func make(_ title: String, symbol systemName: String) -> Label<Text, Image> {
+    static func make(_ title: String, symbol systemName: String) -> some View {
         Label {
-            Text(title)
-                .font(AppTypography.body)
+            Text(verbatim: Bundle.currentLocalizedString(title))
+                .appBody()
         } icon: {
             AppSymbol.image(systemName)
         }
     }
 
-    static func make(_ titleKey: LocalizedStringKey, symbol systemName: String) -> Label<Text, Image> {
+    static func make(_ titleKey: LocalizedStringKey, symbol systemName: String) -> some View {
         Label {
             Text(titleKey)
-                .font(AppTypography.body)
+                .appBody()
         } icon: {
             AppSymbol.image(systemName)
         }

@@ -66,7 +66,7 @@ struct RecipeDetailImageSection: View {
                 }
                 .padding(12)
                 .disabled(isDeleting || isUploading)
-                .accessibilityLabel(String(localized: "recipe.image.delete"))
+                .accessibilityLabel("recipe.image.delete")
             }
 
             if isDeleting || isUploading {
@@ -87,12 +87,12 @@ struct RecipeDetailImageSection: View {
                     .font(.system(size: 52))
                     .foregroundStyle(Color(.secondaryLabel))
 
-                Text(String(localized: "recipe.image.upload.title"))
-                    .font(AppTypography.body)
+                Text("recipe.image.upload.title")
+                    .appBody()
                     .foregroundStyle(Color(.secondaryLabel))
 
                 if !allowsNetworkRefresh {
-                    Text(String(localized: "recipe.image.upload.offline"))
+                    Text("recipe.image.upload.offline")
                         .appFootnote()
                         .foregroundStyle(Color(.secondaryLabel))
                         .multilineTextAlignment(.center)
@@ -134,14 +134,14 @@ struct RecipeDetailImageSection: View {
 
         guard let rawData = await loadImageData(from: item) else {
             await MainActor.run {
-                syncService.syncErrorMessage = String(localized: "recipe.image.upload.failed")
+                syncService.syncErrorMessage = Bundle.currentLocalizedString("recipe.image.upload.failed")
             }
             return
         }
 
         guard let payload = RecipeImageUploadPreprocessor.payloadForUpload(from: rawData) else {
             await MainActor.run {
-                syncService.syncErrorMessage = String(localized: "recipe.image.upload.failed")
+                syncService.syncErrorMessage = Bundle.currentLocalizedString("recipe.image.upload.failed")
             }
             return
         }
@@ -158,9 +158,9 @@ struct RecipeDetailImageSection: View {
 
     private static func uploadErrorMessage(for error: Error) -> String {
         if case APIError.httpError(let code) = error, code == 413 {
-            return String(localized: "recipe.image.upload.limit")
+            return Bundle.currentLocalizedString("recipe.image.upload.limit")
         }
-        return String(localized: "recipe.image.upload.failed")
+        return Bundle.currentLocalizedString("recipe.image.upload.failed")
     }
 
     private func deleteImage() async {

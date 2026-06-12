@@ -6,7 +6,11 @@ struct RecipeNutritionBlockView: View {
     let baseServings: Int
     let scaleFactor: Double
     let accentColor: Color
+    let isOnline: Bool
+    let onRecalculate: (() async -> Void)?
     @Binding var viewMode: IngredientNutritionViewMode
+
+    @State private var isCalculating = false
 
     private var totalWeight: Double? {
         RecipeNutritionDisplay.effectiveTotalWeight(from: recipe)
@@ -40,6 +44,9 @@ struct RecipeNutritionBlockView: View {
                 modeHeader
                 macrosRow(macros)
                     .id(viewMode)
+                if recipe.nutrition?.nutritionOutdated == true {
+                    outdatedBanner
+                }
             }
             .padding(.horizontal)
             .padding(.top, 8)
@@ -55,18 +62,18 @@ struct RecipeNutritionBlockView: View {
 
     private var modeSegments: [NutritionModeSegment] {
         var segments: [NutritionModeSegment] = [
-            NutritionModeSegment(mode: .dish, title: String(localized: "nutrition.per-dish"))
+            NutritionModeSegment(mode: .dish, titleKey: "nutrition.per-dish")
         ]
         if (totalWeight ?? 0) > 0 {
-            segments.append(NutritionModeSegment(mode: .per100g, title: String(localized: "nutrition.per-100g")))
+            segments.append(NutritionModeSegment(mode: .per100g, titleKey: "nutrition.per-100g"))
         }
         if recipe.servings > 0 {
-            segments.append(NutritionModeSegment(mode: .perServing, title: String(localized: "nutrition.per-serving")))
+            segments.append(NutritionModeSegment(mode: .perServing, titleKey: "nutrition.per-serving"))
         }
         segments.append(
             NutritionModeSegment(
                 mode: .scaled,
-                title: RecipeNutritionDisplay.formatScaleFactorLabel(scaleFactor),
+                verbatimTitle: RecipeNutritionDisplay.formatScaleFactorLabel(scaleFactor),
                 unselectedTitleColor: accentColor
             )
         )
@@ -76,8 +83,8 @@ struct RecipeNutritionBlockView: View {
     @ViewBuilder
     private var modeHeader: some View {
         HStack(alignment: .center, spacing: 8) {
-            Text(String(localized: "nutrition.label-prefix"))
-                .font(AppTypography.bodySemibold)
+            Text("nutrition.label-prefix")
+                .appHeadline()
 
             if showsModeToggle {
                 NutritionModeSegmentedControl(
@@ -104,37 +111,66 @@ struct RecipeNutritionBlockView: View {
         return HStack(alignment: .bottom, spacing: RecipeNutritionDisplay.Typography.macroColumnSpacing) {
             macroColumn(
                 value: RecipeNutritionDisplay.formatCalories(macros.calories),
-                label: String(localized: "nutrition.kcal"),
+                labelKey: "nutrition.kcal",
                 valueColor: valueColor
             )
             macroColumn(
                 value: RecipeNutritionDisplay.formatMacroValue(macros.protein),
-                label: String(localized: "nutrition.protein"),
+                labelKey: "nutrition.protein",
                 valueColor: valueColor
             )
             macroColumn(
                 value: RecipeNutritionDisplay.formatMacroValue(macros.fat),
-                label: String(localized: "nutrition.fat"),
+                labelKey: "nutrition.fat",
                 valueColor: valueColor
             )
             macroColumn(
                 value: RecipeNutritionDisplay.formatMacroValue(macros.carbs),
-                label: String(localized: "nutrition.carbs"),
+                labelKey: "nutrition.carbs",
                 valueColor: valueColor
             )
             Spacer(minLength: 0)
         }
     }
 
-    private func macroColumn(value: String, label: String, valueColor: Color) -> some View {
+    private var outdatedBanner: some View {
+        HStack(spacing: 8) {
+            Text("nutrition.may-be-outdated")
+                .appFootnote()
+            if isOnline, let onRecalculate {
+                Button {
+                    guard !isCalculating else { return }
+                    Task {
+                        isCalculating = true
+                        await onRecalculate()
+                        isCalculating = false
+                    }
+                } label: {
+                    if isCalculating {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "repeat")
+                            .font(AppTypography.footnote)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("nutrition.recalculate")
+            }
+        }
+        .foregroundStyle(.secondary)
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private func macroColumn(value: String, labelKey: LocalizedStringKey, valueColor: Color) -> some View {
         VStack(alignment: .leading, spacing: RecipeNutritionDisplay.Typography.macroLabelTopSpacing) {
             Text(value)
                 .font(RecipeNutritionDisplay.Typography.macroValueFont)
                 .foregroundStyle(valueColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            Text(label)
-                .font(RecipeNutritionDisplay.Typography.macroLabelFont)
+            Text(labelKey)
+                .appFootnote()
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
@@ -143,10 +179,25 @@ struct RecipeNutritionBlockView: View {
 
 private struct NutritionModeSegment: Identifiable {
     let mode: IngredientNutritionViewMode
-    let title: String
+    let titleKey: String?
+    let verbatimTitle: String?
     var unselectedTitleColor: Color = .primary
 
     var id: IngredientNutritionViewMode { mode }
+
+    init(mode: IngredientNutritionViewMode, titleKey: String, unselectedTitleColor: Color = .primary) {
+        self.mode = mode
+        self.titleKey = titleKey
+        self.verbatimTitle = nil
+        self.unselectedTitleColor = unselectedTitleColor
+    }
+
+    init(mode: IngredientNutritionViewMode, verbatimTitle: String, unselectedTitleColor: Color = .primary) {
+        self.mode = mode
+        self.titleKey = nil
+        self.verbatimTitle = verbatimTitle
+        self.unselectedTitleColor = unselectedTitleColor
+    }
 }
 
 /// Glued segmented control (web `ToggleGroup` with `gap-0` / shared outer border).
@@ -179,22 +230,29 @@ private struct NutritionModeSegmentedControl: View {
         return Button {
             selection = segment.mode
         } label: {
-            Text(segment.title)
-                .font(AppTypography.sansMedium(AppTypography.calloutSize))
-                .foregroundStyle(isSelected ? Color.primary : segment.unselectedTitleColor)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .fixedSize(horizontal: true, vertical: false)
-                .background {
-                    if isSelected {
-                        RoundedRectangle(cornerRadius: segmentCornerRadius, style: .continuous)
-                            .fill(Color(.systemBackground))
-                            .shadow(color: Color.black.opacity(0.06), radius: 1, y: 1)
-                    }
+            Group {
+                if let titleKey = segment.titleKey {
+                    Text(LocalizedStringKey(titleKey))
+                        .appHeadline()
+                } else {
+                    Text(segment.verbatimTitle ?? "")
+                        .appHeadline()
                 }
-                .contentShape(Rectangle())
+            }
+            .foregroundStyle(isSelected ? Color.primary : segment.unselectedTitleColor)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .fixedSize(horizontal: true, vertical: false)
+            .background {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: segmentCornerRadius, style: .continuous)
+                        .fill(Color(.systemBackground))
+                        .shadow(color: Color.black.opacity(0.06), radius: 1, y: 1)
+                }
+            }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .zIndex(isSelected ? 1 : 0)

@@ -48,11 +48,11 @@ struct QRScannerView: View {
                     .ignoresSafeArea()
                 }
             }
-            .navigationTitle(String(localized: "Scan QR code"))
+            .localizedNavigationTitle("qr-scanner.title")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "Cancel")) {
+                    Button("qr-scanner.cancel") {
                         onClose()
                     }
                     .foregroundColor(.white)
@@ -69,22 +69,22 @@ struct QRScannerView: View {
     private func errorView(_ error: QRScannerError) -> some View {
         VStack(spacing: 16) {
             Text(errorTitle(error))
-                .font(AppTypography.sansMedium(18))
+                .appHeadline()
                 .foregroundColor(.red)
                 .multilineTextAlignment(.center)
 
             Text(errorDescription(error))
-                .font(AppTypography.subheadline)
+                .appFootnote()
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
             if error == .permissionDenied || error == .unknown {
-                Button(String(localized: "Try Again")) {
+                Button("qr-scanner.try-again") {
                     setupError = nil
                     retryCount += 1
                 }
-                .font(AppTypography.sansMedium(AppTypography.calloutSize))
+                .appBodyFieldTypography()
                 .padding(.top, 8)
             }
         }
@@ -94,26 +94,26 @@ struct QRScannerView: View {
     private func errorTitle(_ error: QRScannerError) -> String {
         switch error {
         case .permissionDenied:
-            return String(localized: "Camera Access Denied")
+            return Bundle.currentLocalizedString("qr-scanner.error.permission-denied.title")
         case .noCamera:
-            return String(localized: "No Camera Found")
+            return Bundle.currentLocalizedString("qr-scanner.error.no-camera.title")
         case .notReadable:
-            return String(localized: "Camera Not Accessible")
+            return Bundle.currentLocalizedString("qr-scanner.error.not-readable.title")
         case .unknown:
-            return String(localized: "Scanner Error")
+            return Bundle.currentLocalizedString("qr-scanner.error.unknown.title")
         }
     }
 
     private func errorDescription(_ error: QRScannerError) -> String {
         switch error {
         case .permissionDenied:
-            return String(localized: "To scan QR codes, please allow camera access in Settings.")
+            return String(localized: "qr-scanner.error.permission-denied")
         case .noCamera:
-            return String(localized: "We couldn't find a camera on your device.")
+            return String(localized: "qr-scanner.error.no-camera")
         case .notReadable:
-            return String(localized: "The camera couldn't be accessed. It might be in use by another app.")
+            return String(localized: "qr-scanner.error.not-readable")
         case .unknown:
-            return String(localized: "An unexpected error occurred. Please try again.")
+            return String(localized: "qr-scanner.error.unknown")
         }
     }
 }

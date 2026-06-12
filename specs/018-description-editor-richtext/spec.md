@@ -2,8 +2,8 @@
 
 **Ветка**: `018-description-editor-richtext`  
 **Дата**: 2026-06-03  
-**Статус**: Draft (перенос недоделок из 006)  
-**Зависимости**: `006-description-editor` (базовый WKWebView + Yjs-мост), `004` (read-only рендер)  
+**Статус**: Draft (перенос недоделок из 006); UI и inline Tiptap — [019-recipe-description-inline-edit](../019-recipe-description-inline-edit/spec.md)  
+**Зависимости**: `019` (inline + нативная панель), `006` (мост Yjs), `004` (read-only рендер)  
 **Эталон**: Tiptap в `recipe-scaler-web/recipe-scaler` `recipe-detail`, custom-ноды ingredient/timer
 
 ## Контекст

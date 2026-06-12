@@ -1,5 +1,6 @@
 import UIKit
 import XCTest
+import YrsC
 @testable import RecipeScalerNative
 
 final class RecipeScalerNativeTests: XCTestCase {
@@ -13,7 +14,9 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertFalse(RecipeEditPolicy.supportsEditFormat(version: "1"))
         XCTAssertFalse(RecipeEditPolicy.supportsEditFormat(version: "2"))
         XCTAssertFalse(RecipeEditPolicy.supportsEditFormat(version: nil))
-        XCTAssertFalse(RecipeEditPolicy.canEdit(version: "3"))
+        XCTAssertTrue(RecipeEditPolicy.canEdit(version: "3"))
+        XCTAssertFalse(RecipeEditPolicy.canEdit(version: "1"))
+        XCTAssertFalse(RecipeEditPolicy.canEdit(version: "2"))
     }
 
     func testIngredientAmountLikeBasqueCheesecake() {
@@ -48,11 +51,19 @@ final class RecipeScalerNativeTests: XCTestCase {
                 )
             )
         }
-        let height = IngredientEditList.estimatedContentHeight(
+        let editHeight = IngredientEditList.estimatedContentHeight(
             rows: rows,
-            nutritionEnabled: true
+            nutritionEnabled: true,
+            includesNewRow: false
         )
-        XCTAssertGreaterThan(height, RecipeRowLayoutMetrics.rowHeight * 6)
+        XCTAssertGreaterThan(editHeight, RecipeRowLayoutMetrics.rowHeight * 6)
+
+        let viewHeight = IngredientEditList.estimatedContentHeight(
+            rows: rows,
+            nutritionEnabled: true,
+            includesNewRow: false
+        )
+        XCTAssertEqual(editHeight, viewHeight)
     }
 
     func testIngredientEditListMeasuredContentHeightRequiresAllRows() {
@@ -197,6 +208,52 @@ final class RecipeScalerNativeTests: XCTestCase {
         let xml = "<paragraph>Mix flour</paragraph><paragraph>Bake</paragraph>"
         let html = XmlFragmentToHTML.html(fromSerializedXML: xml, ingredients: [])
         XCTAssertEqual(html, "<p>Mix flour</p><p>Bake</p>")
+    }
+
+    /// Tiptap stores bold as Y.XmlText delta marks (`attributes.bold`), not only as <bold> elements.
+    func testXmlFragmentPreservesInlineBoldMarksFromYjsState() throws {
+        let fixtureURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/recipe-adjaruli-yjs.bin")
+        guard FileManager.default.fileExists(atPath: fixtureURL.path) else {
+            throw XCTSkip("Fixture missing at \(fixtureURL.path)")
+        }
+
+        let state = try Data(contentsOf: fixtureURL)
+        let doc = try YrsDocument(state: state)
+        let serialized = try doc.withReadTransaction { _, txn in
+            XmlFragmentToHTML.serializedFragment(txn: txn)
+        }
+        let html = XmlFragmentToHTML.html(fromSerializedXML: serialized ?? "", ingredients: []) ?? ""
+
+        XCTAssertTrue(html.contains("<h1>"), "Expected heading block in \(html)")
+        XCTAssertTrue(html.contains("<strong>ри му</strong>"), "Expected inline bold in heading: \(html)")
+        XCTAssertTrue(html.contains("<strong>Пеки аджарули</strong>"), "Expected bold paragraph: \(html)")
+
+        let document = RecipeDescriptionParser.parse(html)
+        XCTAssertTrue(document.blocks.contains { block in
+            guard case .heading(_, let level, let runs) = block else { return false }
+            return level == 1 && runs.contains { if case .strong("ри му") = $0 { return true }; return false }
+        })
+        XCTAssertTrue(document.blocks.contains { block in
+            guard case .paragraph(_, let runs) = block else { return false }
+            return runs.contains { if case .strong("Пеки аджарули") = $0 { return true }; return false }
+        })
+    }
+
+    /// Pure parser test: `<h1>Бе<strong>ри му</strong>ку</h1>` → `.heading(level:1)` + `.strong("ри му")`.
+    func testDescriptionParserHeadingWithInlineBold() {
+        let html = "<h1>Бе<strong>ри му</strong>ку</h1>"
+        let doc = RecipeDescriptionParser.parse(html)
+        XCTAssertEqual(doc.blocks.count, 1)
+        guard case .heading(_, let level, let runs) = doc.blocks.first else {
+            XCTFail("Expected heading block, got \(doc.blocks)")
+            return
+        }
+        XCTAssertEqual(level, 1)
+        XCTAssertTrue(runs.contains(.plain("Бе")), "Expected plain 'Бе' in \(runs)")
+        XCTAssertTrue(runs.contains(.strong("ри му")), "Expected strong 'ри му' in \(runs)")
+        XCTAssertTrue(runs.contains(.plain("ку")), "Expected plain 'ку' in \(runs)")
     }
 
     func testDescriptionFixtureParsesAllElements() {
@@ -689,7 +746,7 @@ final class RecipeScalerNativeTests: XCTestCase {
                 IngredientData(id: "1", name: "A", calories: 300, protein: 10, fat: 5, carbs: 20),
                 IngredientData(id: "2", name: "B", calories: 150, protein: 5, fat: 2, carbs: 10),
             ],
-            nutrition: NutritionData(calories: 9999, protein: 0, fat: 0, carbs: 0, extra: [:]),
+            nutrition: NutritionData(calories: 9999, protein: 0, fat: 0, carbs: 0, nutritionOutdated: false, extra: [:]),
             isPublic: false,
             hasSteps: false,
             createdAt: "",
