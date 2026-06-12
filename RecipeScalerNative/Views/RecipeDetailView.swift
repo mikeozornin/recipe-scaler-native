@@ -417,26 +417,6 @@ struct StepsSection: View {
         .task(id: htmlContent) {
             let parsed = RecipeDescriptionParser.parse(htmlContent)
             document = parsed
-            // #region agent log
-            #if DEBUG
-            if recipeId == "7daed53b-5e79-42e8-bd9a-bc74deea712d" {
-                var data: [String: String] = [
-                    "recipeId": recipeId ?? "nil",
-                    "htmlLen": String(htmlContent.count),
-                    "blockCount": String(parsed.blocks.count),
-                ]
-                // U2/U3: fingerprint of the HTML the UI actually parsed — compare
-                // against `description_rendered` (read) to localize stale content.
-                data.merge(CursorDebugIngestLog.fingerprint(htmlContent)) { _, new in new }
-                CursorDebugIngestLog.write(
-                    hypothesisId: "U2",
-                    location: "RecipeDetailView.swift:StepsSection.task",
-                    message: "steps_section_parsed",
-                    data: data
-                )
-            }
-            #endif
-            // #endregion
         }
     }
 

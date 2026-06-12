@@ -19,16 +19,6 @@ enum XmlFragmentToHTML {
         guard let fragment = ytype_get(txn, "description") else { return nil }
         let childCount = yxmlelem_child_len(fragment, txn)
         guard childCount > 0 else { return nil }
-        // #region agent log
-        #if DEBUG
-        CursorDebugIngestLog.write(
-            hypothesisId: "D1",
-            location: "XmlFragmentToHTML.swift:serializedFragment",
-            message: "fragment_child_count",
-            data: ["topLevelChildCount": String(childCount)]
-        )
-        #endif
-        // #endregion
 
         var parts: [String] = []
         parts.reserveCapacity(Int(min(childCount, 64)))

@@ -155,6 +155,16 @@ struct DescriptionEditorWebView: UIViewRepresentable {
             sendToJS(payload)
         }
 
+        func sendSetScale(scaleFactor: Double, ingredients: [[String: Any]], locale: String) {
+            let payload: [String: Any] = [
+                "type": "setScale",
+                "scaleFactor": scaleFactor,
+                "ingredients": ingredients,
+                "locale": locale,
+            ]
+            sendToJS(payload)
+        }
+
         #if DEBUG
         func sendSimulateText(_ text: String) {
             sendToJS(["type": "simulateText", "text": text])

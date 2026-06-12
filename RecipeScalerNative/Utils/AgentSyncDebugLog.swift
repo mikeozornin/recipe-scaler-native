@@ -2,6 +2,7 @@ import Foundation
 import OSLog
 
 /// NDJSON debug trace (`/debug` workflow). Filter device logs by `[sync]` or `topic":"sync"`.
+/// Disabled by default — set scheme env `AGENT_DEBUG_LOG_ENABLED=1` to enable.
 enum AgentSyncDebugLog {
     private static let logger = Logger(subsystem: "com.recipescaler.native", category: "AgentSyncDebug")
 
@@ -23,6 +24,7 @@ enum AgentSyncDebugLog {
         data: [String: String]
     ) {
         #if DEBUG
+        guard AgentDebugLogging.isEnabled else { return }
         var payload: [String: Any] = [
             "sessionId": "sync-connection-native",
             "location": location,

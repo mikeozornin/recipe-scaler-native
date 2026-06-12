@@ -13,6 +13,8 @@ enum DebugSessionNDJSONLog {
         data: [String: String] = [:],
         runId: String = "pre-fix"
     ) {
+        #if DEBUG
+        guard AgentDebugLogging.isEnabled else { return }
         var enriched = data
         enriched["topic"] = "gesture"
         if runId != "pre-fix" {
@@ -24,5 +26,6 @@ enum DebugSessionNDJSONLog {
             message: message,
             data: enriched
         )
+        #endif
     }
 }

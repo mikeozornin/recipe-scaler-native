@@ -55,7 +55,17 @@
       text-underline-offset: 4px;
       text-decoration-thickness: 0.5px;
     }
-    #editor mark { background: #fef08a; color: inherit; }
+    #editor mark,
+    #editor .highlight-mark { background: #fef08a; color: inherit; }
+
+    /* ProseMirror / Tiptap */
+    .ProseMirror {
+      outline: none;
+      min-height: 1.5rem;
+    }
+    .ProseMirror p.is-editor-empty:first-child::before {
+      content: none;
+    }
 
     /* Ordered list: circle step numbers */
     #editor ol {
@@ -120,7 +130,7 @@
   </style>
 </head>
 <body class="inline-embedded">
-  <div id="editor" class="tiptap-description" contenteditable="true" spellcheck="true"></div>
+  <div id="editor" class="tiptap-description"></div>
   <script src="yjs.bundle.js"></script>
   <script src="description-editor-bridge.js"></script>
 </body>

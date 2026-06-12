@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Build WKWebView IIFE bundle: global YjsBundle (yjs API for description-editor-bridge.js).
+ * Build WKWebView IIFE bundle: global YjsBundle (Tiptap + yjs 13 for description-editor-bridge.js).
  *
  * Usage (from repo root):
  *   node scripts/build-yjs-bundle.mjs
@@ -24,7 +24,7 @@ function sha256(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
 }
 
-let yjsVersion = '14.0.0-16';
+let yjsVersion = '13.6.30';
 if (existsSync(lockFile)) {
   try {
     const lock = JSON.parse(readFileSync(lockFile, 'utf8'));
@@ -34,15 +34,16 @@ if (existsSync(lockFile)) {
   }
 }
 
-const banner = `/* yjs@${yjsVersion} — rebuild: node scripts/build-yjs-bundle.mjs */\n`;
+const bundleTag = `tiptap+yjs@${yjsVersion}`;
+const banner = `/* ${bundleTag} — rebuild: node scripts/build-yjs-bundle.mjs */\n`;
 
 if (checkOnly && existsSync(outFile)) {
   const current = readFileSync(outFile, 'utf8');
-  if (!current.includes(`yjs@${yjsVersion}`)) {
-    console.error(`yjs.bundle.js is stale (expected yjs@${yjsVersion}). Run: node scripts/build-yjs-bundle.mjs`);
+  if (!current.includes(bundleTag)) {
+    console.error(`yjs.bundle.js is stale (expected ${bundleTag}). Run: node scripts/build-yjs-bundle.mjs`);
     process.exit(1);
   }
-  console.log(`OK yjs.bundle.js matches yjs@${yjsVersion}`);
+  console.log(`OK yjs.bundle.js matches ${bundleTag}`);
   process.exit(0);
 }
 
@@ -63,4 +64,4 @@ const code = banner + result.outputFiles[0].text;
 writeFileSync(outFile, code);
 
 const kb = (Buffer.byteLength(code) / 1024).toFixed(1);
-console.log(`Wrote ${outFile} (${kb} KB, yjs@${yjsVersion})`);
+console.log(`Wrote ${outFile} (${kb} KB, ${bundleTag})`);

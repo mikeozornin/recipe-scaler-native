@@ -14,9 +14,9 @@
 
 ## R2: Debounce и merge (паритет с вебом)
 
-**Решение**: `actor UpdateDebouncer` на ключ документа рецепта — накапливать `Data` в памяти 1 с после последней локальной мутации; по срабатыванию опционально merge pending blob через yrs merge API, иначе один diff за flush. Совпадение с debounce веба ~1 с idle.
+**Решение**: `actor UpdateDebouncer` — накапливать массив `Data` 1 с после последней локальной мутации; по срабатыванию отправлять каждый pending update отдельным `sync_request` (порядок сохраняется). Веб склеивает через `Y.mergeUpdates`; в bundled `libyrs.h` нет `ytransaction_merge_updates_v1` / `ymerge_updates`. Склейка через `state_diff_v1` на пустом doc **ломает** sync (no-op `00 00`).
 
-**Обоснование**: SC-004; веб `yjs-client.ts` debounce и merge pending updates.
+**Обоснование**: SC-004; веб `yjs-client.ts` debounce; паритет по задержке и доставке, не по форме одного бинарника.
 
 **Отвергнутые варианты**:
 - Отправка на каждый keystroke — отклонено (нагрузка на сервер, провал SC-004)

@@ -32,6 +32,16 @@ Chronological log of substantive choices (newest last).
 
 **Rationale:** Deleted recipes from web remained visible on iOS because stale local collection data was merged with fresher server state; server collection is the source of truth after load.
 
+**Update (2026-06-12):** Recipe documents follow **offline-first / web parity** (see decision below). Collection still uses merge-via-`applyUpdate` when local state exists, matching `yjs-client.ts`; full `replaceDocument` only when local snapshot is empty.
+
+---
+
+### 2026-06-12 — Offline-first Yjs writes on iOS (web parity)
+
+**Decision:** Native editing is **offline-first**: every local mutation is applied to the in-memory Y.Doc and persisted to SQLite immediately; Socket.IO `sync_request` and `offline_sync_queue` only **distribute** CRDT updates outward. Incoming `document_loaded` / `recipe_updated` **merge** into local state (`applyUpdate`), never replace a recipe doc that has unsynced local changes. `load_document` is skipped while a recipe has pending offline queue entries or `WriteSyncState` ∈ {`pendingLocal`, `syncing`, `queued`}.
+
+**Rationale:** Matches PWA `yjs-client.ts` (IndexedDB first, then sync). Fixes lost description edits when the socket stayed `connected` during airplane mode or when `load_document` replaced a newer local snapshot with stale server state.
+
 ---
 
 ### 2026-06-01 — Socket.IO websocket-only on iOS

@@ -174,14 +174,6 @@ actor DocumentManager {
             doc = restored
         } else {
             Self.logger.info("Recipe doc \(key) not loaded")
-            // #region agent log
-            AgentSyncDebugLog.write(
-                hypothesisId: "B",
-                location: "DocumentManager.swift:readRecipeData",
-                message: "doc_not_in_memory",
-                data: ["recipeId": recipeId, "key": key]
-            )
-            // #endregion
             return nil
         }
 
@@ -196,34 +188,9 @@ actor DocumentManager {
             let parsed = self.parseRecipeData(from: map, txn: txn, recipeId: recipeId)
             if RecipeData.RecipeVersion.detect(parsed.version) == .v3 {
                 xmlSnapshot = XmlFragmentToHTML.serializedFragment(txn: txn)
-                #if DEBUG
-                if recipeId == RecipeReadDiagnostics.launchRecipeId() {
-                    AgentSyncDebugLog.write(
-                        hypothesisId: "L",
-                        location: "DocumentManager.swift:readRecipeData",
-                        message: "fragment_structure",
-                        data: ["structure": XmlFragmentToHTML.debugFragmentStructure(txn: txn)]
-                    )
-                }
-                #endif
             }
             return parsed
         }
-        // #region agent log
-        AgentSyncDebugLog.write(
-            hypothesisId: "C",
-            location: "DocumentManager.swift:readRecipeData",
-            message: "map_read_done",
-            data: [
-                "recipeId": recipeId,
-                "ms": String(Int((CFAbsoluteTimeGetCurrent() - txnStart) * 1000)),
-                "hasRecipe": String(recipe != nil),
-                "ingredientCount": String(recipe?.ingredients.count ?? 0),
-                "version": recipe?.version ?? "nil",
-                "xmlLen": String(xmlSnapshot?.count ?? 0),
-            ]
-        )
-        // #endregion
 
         guard var recipe else { return nil }
         if let xml = xmlSnapshot,
@@ -231,29 +198,6 @@ actor DocumentManager {
            !html.isEmpty {
             recipe = recipe.replacing(description: html)
         }
-        // #region agent log
-        if recipeId == "7daed53b-5e79-42e8-bd9a-bc74deea712d" {
-            let linkInXml = xmlSnapshot?.contains("link") == true || xmlSnapshot?.contains("href") == true
-            let html = recipe.description ?? ""
-            var rendered: [String: String] = [
-                "recipeId": recipeId,
-                "xmlLen": String(xmlSnapshot?.count ?? 0),
-                "htmlLen": String(html.count),
-                "linkMarkInXml": String(linkInXml),
-                "linkCountInHtml": String(max(0, html.components(separatedBy: "<a ").count - 1)),
-                "hasHref": String(html.contains("href=")),
-            ]
-            // U1: capture the actual rendered text so we can verify the new web
-            // phrase is present in what native reads (length alone is ambiguous).
-            rendered.merge(CursorDebugIngestLog.fingerprint(html)) { _, new in new }
-            CursorDebugIngestLog.write(
-                hypothesisId: "U1",
-                location: "DocumentManager.swift:readRecipeData",
-                message: "description_rendered",
-                data: rendered
-            )
-        }
-        // #endregion
         return recipe
     }
 
@@ -351,14 +295,6 @@ actor DocumentManager {
     func updateRecipeColor(recipeId: String, color: String) async throws {
         let normalized = Self.normalizeColor(color)
         let touchedAt = Self.isoTimestamp()
-        // #region agent log
-        AgentSyncDebugLog.write(
-            hypothesisId: "D",
-            location: "DocumentManager.swift:updateRecipeColor:enter",
-            message: "color write started",
-            data: ["recipeId": recipeId, "normalizedColor": normalized, "touchedAt": touchedAt]
-        )
-        // #endregion
         try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { map, txn in
             map.insert(key: "color", value: .string(normalized), txn: txn)
         }
@@ -368,23 +304,6 @@ actor DocumentManager {
                 entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
             }
         }
-        // #region agent log
-        if let userId = currentUserId {
-            let recipe = try? await readRecipeData(recipeId: recipeId, userId: userId)
-            let entry = try? await readCollectionEntries().first { $0.id == recipeId }
-            AgentSyncDebugLog.write(
-                hypothesisId: "E",
-                location: "DocumentManager.swift:updateRecipeColor:afterWrite",
-                message: "in-memory read-back after color write",
-                data: [
-                    "recipeDocColor": recipe?.color ?? "nil",
-                    "recipeDocUpdatedAt": recipe?.updatedAt ?? "nil",
-                    "collectionEntryColor": entry?.color ?? "nil",
-                    "collectionEntryUpdatedAt": entry?.updatedAt ?? "nil",
-                ]
-            )
-        }
-        // #endregion
     }
 
     func addIngredient(recipeId: String, ingredient: IngredientData) async throws {
@@ -495,14 +414,6 @@ actor DocumentManager {
             }
         }
         Self.logger.info("Applied \(sorted.count) offline queue updates to local docs")
-        #if DEBUG
-        AgentSyncDebugLog.write(
-            hypothesisId: "P",
-            location: "DocumentManager.swift:applyOfflineQueueToLocalDocs",
-            message: "offline_queue_applied",
-            data: ["entryCount": String(sorted.count)]
-        )
-        #endif
     }
 
     func persistSnapshot(docKey: String) async {
@@ -512,17 +423,6 @@ actor DocumentManager {
         let lastSyncedAt = try? await store.loadSnapshot(docKey: docKey)?.lastSyncedAt
         do {
             try await store.saveSnapshot(docKey: docKey, state: state, lastSyncedAt: lastSyncedAt)
-            #if DEBUG
-            AgentSyncDebugLog.write(
-                hypothesisId: "P",
-                location: "DocumentManager.swift:persistSnapshot",
-                message: "snapshot_saved",
-                data: [
-                    "docKeySuffix": docKey.split(separator: ":").suffix(2).joined(separator: ":"),
-                    "bytes": String(state.count),
-                ]
-            )
-            #endif
         } catch {
             Self.logger.warning("Failed to persist snapshot for \(docKey): \(error)")
         }
@@ -1036,20 +936,13 @@ actor DocumentManager {
 
         let yrsUpdate = await doc.consumePendingLocalUpdates()
         let outbound = yrsUpdate ?? update
-        // #region agent log
-        CursorDebugIngestLog.write(
-            hypothesisId: "H4",
-            location: "DocumentManager.swift:applyDescriptionEditorUpdate",
-            message: "editor_sync_payload",
-            data: [
-                "recipeId": recipeId,
-                "rawWebViewBytes": String(update.count),
-                "yrsObserverBytes": String(yrsUpdate?.count ?? 0),
-                "outboundBytes": String(outbound.count),
-                "usedYrsObserver": String(yrsUpdate != nil),
-            ]
-        )
-        // #endregion
+        var descAfter: [String: String] = [:]
+        if let xmlTail = try? await doc.withReadTransaction({ _, txn in
+            XmlFragmentToHTML.serializedFragment(txn: txn)
+        }) {
+            descAfter["xmlLen"] = String(xmlTail.count)
+            descAfter["xmlTail"] = String(xmlTail.suffix(160))
+        }
         await onLocalRecipeUpdate?(recipeId, outbound)
     }
 
@@ -1063,25 +956,8 @@ actor DocumentManager {
             key = "\(userId):recipe:\(recipeId)"
         }
         guard let doc = docs[key] else { return }
-        // #region agent log
-        let observeBytesBeforeConsume = await doc.pendingLocalUpdateByteCount()
-        // #endregion
-        let observePayload = await doc.consumePendingLocalUpdates()
+        _ = await doc.consumePendingLocalUpdates()
         let encodePayload = await doc.encodeStateAsUpdate()
-        // #region agent log
-        AgentSyncDebugLog.write(
-            hypothesisId: "A",
-            location: "DocumentManager.swift:deliverPendingLocalUpdate",
-            message: "observe vs encode payload sizes",
-            data: [
-                "recipeId": recipeId,
-                "docKey": key,
-                "observePendingBytesBeforeConsume": String(observeBytesBeforeConsume),
-                "observePayloadBytes": String(observePayload?.count ?? 0),
-                "encodePayloadBytes": String(encodePayload?.count ?? 0),
-            ]
-        )
-        // #endregion
         guard let update = encodePayload, !update.isEmpty else {
             Self.logger.warning("No local Yjs update to sync for \(key)")
             return

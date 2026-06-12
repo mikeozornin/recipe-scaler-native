@@ -11,21 +11,28 @@ struct RecipeDescriptionEditorBlock: View {
     let recipeId: String
     let accentColor: Color
     let syncService: YjsSyncService
+    let scaleFactor: Double
+    let ingredients: [IngredientData]
     @ObservedObject var chrome: DescriptionEditorChromeState
     var onNodeClick: ((DescriptionNodeClick) -> Void)?
 
+    @Environment(\.locale) private var locale
     @StateObject private var bridge: DescriptionEditorBridge
 
     init(
         recipeId: String,
         accentColor: Color,
         syncService: YjsSyncService,
+        scaleFactor: Double,
+        ingredients: [IngredientData],
         chrome: DescriptionEditorChromeState,
         onNodeClick: ((DescriptionNodeClick) -> Void)? = nil
     ) {
         self.recipeId = recipeId
         self.accentColor = accentColor
         self.syncService = syncService
+        self.scaleFactor = scaleFactor
+        self.ingredients = ingredients
         self.chrome = chrome
         self.onNodeClick = onNodeClick
         _bridge = StateObject(
@@ -77,14 +84,29 @@ struct RecipeDescriptionEditorBlock: View {
         .accessibilityIdentifier("recipe_description_editor_inline")
         .onAppear {
             chrome.bind(bridge: bridge)
+            pushScaleToEditor()
         }
         .onDisappear {
             bridge.teardown()
             chrome.reset()
         }
+        .onChange(of: bridge.phase) { _, phase in
+            if phase == .ready { pushScaleToEditor() }
+        }
+        .onChange(of: scaleFactor) { _, _ in pushScaleToEditor() }
+        .onChange(of: ingredients.count) { _, _ in pushScaleToEditor() }
+        .onChange(of: locale) { _, _ in pushScaleToEditor() }
         .onChange(of: bridge.nodeClickSequence) { _, _ in
             guard let click = bridge.lastNodeClick else { return }
             onNodeClick?(click)
         }
+    }
+
+    private func pushScaleToEditor() {
+        bridge.updateScale(
+            scaleFactor: scaleFactor,
+            ingredients: ingredients,
+            locale: locale.identifier
+        )
     }
 }

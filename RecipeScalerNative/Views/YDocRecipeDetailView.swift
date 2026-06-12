@@ -192,6 +192,8 @@ struct YDocRecipeDetailView: View {
                                 recipeId: recipeId,
                                 accentColor: accentColor,
                                 syncService: syncService,
+                                scaleFactor: scaleFactor,
+                                ingredients: recipe.ingredients,
                                 chrome: descriptionChrome,
                                 onNodeClick: { click in
                                     handleDescriptionNodeClick(click)
@@ -213,7 +215,6 @@ struct YDocRecipeDetailView: View {
                 .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
             }
         }
-        .modifier(RecipeDetailScrollSwipeProbe(isEditing: isEditing))
         .dismissPopoverOnVerticalDrag(isActive: descriptionTimerPopover != nil) {
             descriptionTimerPopover = nil
         }
@@ -429,17 +430,6 @@ struct YDocRecipeDetailView: View {
             syncService.acknowledgeRecipeRemoved()
             await syncService.loadRecipe(recipeId: recipeId)
             #if DEBUG
-            AgentSyncDebugLog.write(
-                hypothesisId: "G",
-                location: "YDocRecipeDetailView.swift:task",
-                message: "after_load_recipe",
-                data: [
-                    "recipeId": recipeId,
-                    "hasRecipe": String(syncService.currentRecipe?.id == recipeId),
-                    "ingredientCount": String(syncService.currentRecipe?.ingredients.count ?? 0),
-                    "hasHeaderImage": String(headerImageUrl != nil),
-                ]
-            )
             #endif
         }
         .task(id: "\(recipeId)-\(headerImageUrl ?? "")-\(allowsImageNetworkRefresh)") {
@@ -458,16 +448,6 @@ struct YDocRecipeDetailView: View {
         }
         .onChange(of: recipe?.id) { _, _ in
             #if DEBUG
-            AgentSyncDebugLog.write(
-                hypothesisId: "H4",
-                location: "YDocRecipeDetailView.swift:onChange(recipe.id)",
-                message: "recipe_id_changed",
-                data: [
-                    "recipeId": recipeId,
-                    "isEditing": String(isEditing),
-                    "isEditingTitle": String(editViewModel?.isEditingTitleField ?? false),
-                ]
-            )
             #endif
             guard editViewModel?.isEditingTitleField != true else { return }
             if let recipe {
@@ -565,12 +545,6 @@ struct YDocRecipeDetailView: View {
             descriptionChrome.bridge?.sendCommand(name: "focus")
         }
         #if DEBUG
-        AgentSyncDebugLog.write(
-            hypothesisId: "019",
-            location: "YDocRecipeDetailView.swift:applyStartDescriptionEdit",
-            message: "description_editor_inline_focus",
-            data: ["recipeId": recipeId]
-        )
         #endif
     }
 
@@ -873,25 +847,10 @@ struct YDocRecipeDetailView: View {
         do {
             try await editViewModel.saveRecipeName(name, against: current)
             #if DEBUG
-            AgentSyncDebugLog.write(
-                hypothesisId: "W",
-                location: "YDocRecipeDetailView.swift:saveRecipeTitle",
-                message: "title_blur_save_done",
-                data: [
-                    "recipeId": recipeId,
-                    "nameLen": String(syncService.currentRecipe?.name.count ?? 0),
-                ]
-            )
             #endif
         } catch {
             editErrorMessage = error.localizedDescription
             #if DEBUG
-            AgentSyncDebugLog.write(
-                hypothesisId: "W",
-                location: "YDocRecipeDetailView.swift:saveRecipeTitle",
-                message: "title_blur_save_error",
-                data: ["recipeId": recipeId, "error": error.localizedDescription]
-            )
             #endif
         }
     }
@@ -922,16 +881,6 @@ struct YDocRecipeDetailView: View {
             await Task.yield()
             await awaitPendingTitleSave()
             #if DEBUG
-            AgentSyncDebugLog.write(
-                hypothesisId: "H",
-                location: "YDocRecipeDetailView.swift:toggleEditMode",
-                message: "commit_begin",
-                data: [
-                    "recipeId": recipeId,
-                    "hasRecipe": String(recipe != nil),
-                    "titleLen": String(syncService.currentRecipe?.name.count ?? 0),
-                ]
-            )
             #endif
             guard let editViewModel else {
                 isEditing = false
@@ -942,18 +891,6 @@ struct YDocRecipeDetailView: View {
                 isEditing = false
                 return
             }
-            // #region agent log
-            DebugSessionNDJSONLog.write(
-                hypothesisId: "H3",
-                location: "YDocRecipeDetailView.swift:toggleEditMode",
-                message: "done_before_finish",
-                data: [
-                    "recipeId": recipeId,
-                    "descLen": String(current.description?.count ?? 0),
-                    "hasDescription": String(current.description != nil && !(current.description?.isEmpty ?? true)),
-                ]
-            )
-            // #endregion
             saveInFlight = true
             defer { saveInFlight = false }
             let servingsChanged = editViewModel.draftServings != current.servings
@@ -970,37 +907,11 @@ struct YDocRecipeDetailView: View {
                     editViewModel.reset(from: updated)
                     pickerColor = RecipeAccentColor.color(from: updated.color)
                 }
-                // #region agent log
-                DebugSessionNDJSONLog.write(
-                    hypothesisId: "H4",
-                    location: "YDocRecipeDetailView.swift:toggleEditMode",
-                    message: "done_after_finish",
-                    data: [
-                        "recipeId": recipeId,
-                        "descLen": String(syncService.currentRecipe?.description?.count ?? 0),
-                    ]
-                )
-                // #endregion
                 #if DEBUG
-                AgentSyncDebugLog.write(
-                    hypothesisId: "H",
-                    location: "YDocRecipeDetailView.swift:toggleEditMode",
-                    message: "commit_done",
-                    data: [
-                        "recipeId": recipeId,
-                        "syncState": String(describing: syncService.writeSyncState(for: recipeId)),
-                    ]
-                )
                 #endif
             } catch {
                 editErrorMessage = error.localizedDescription
                 #if DEBUG
-                AgentSyncDebugLog.write(
-                    hypothesisId: "H",
-                    location: "YDocRecipeDetailView.swift:toggleEditMode",
-                    message: "commit_error",
-                    data: ["recipeId": recipeId, "error": error.localizedDescription]
-                )
                 #endif
             }
         } else {
@@ -1012,15 +923,6 @@ struct YDocRecipeDetailView: View {
             isEditing = true
             editViewModel?.isEditingTitleField = false
             #if DEBUG
-            AgentSyncDebugLog.write(
-                hypothesisId: "H6",
-                location: "YDocRecipeDetailView.swift:toggleEditMode",
-                message: "edit_mode_on",
-                data: [
-                    "recipeId": recipeId,
-                    "titleLen": String(syncService.currentRecipe?.name.count ?? 0),
-                ]
-            )
             #endif
         }
     }
@@ -1168,37 +1070,6 @@ private struct RecipeEditHeaderBindable: View {
     }
 }
 
-// #region agent log
-private struct RecipeDetailScrollSwipeProbe: ViewModifier {
-    let isEditing: Bool
-    @State private var loggedThisGesture = false
-
-    func body(content: Content) -> some View {
-        content.simultaneousGesture(
-            DragGesture(minimumDistance: 10)
-                .onChanged { value in
-                    guard isEditing, !loggedThisGesture else { return }
-                    let horizontal = abs(value.translation.width)
-                    let vertical = abs(value.translation.height)
-                    guard horizontal > vertical, horizontal > 12 else { return }
-                    loggedThisGesture = true
-                    DebugSessionNDJSONLog.write(
-                        hypothesisId: "H3",
-                        location: "YDocRecipeDetailView.swift:RecipeDetailScrollSwipeProbe",
-                        message: "horizontal_drag_on_parent_scroll",
-                        data: [
-                            "width": String(format: "%.1f", value.translation.width),
-                            "height": String(format: "%.1f", value.translation.height),
-                        ]
-                    )
-                }
-                .onEnded { _ in
-                    loggedThisGesture = false
-                }
-        )
-    }
-}
-// #endregion
 
 private extension View {
     /// Dismisses an overlay on vertical scroll without stealing horizontal List row swipes.

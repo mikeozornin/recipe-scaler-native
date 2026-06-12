@@ -128,18 +128,6 @@ final class DescriptionEditorBridge: ObservableObject {
             let payload = try await syncService.descriptionEditorBootstrap(recipeId: recipeId)
             webView?.sendConfigure(presentation: presentation)
             webView?.sendInit(state: payload.state)
-            #if DEBUG
-            AgentSyncDebugLog.write(
-                hypothesisId: "019",
-                location: "DescriptionEditorBridge.swift:beginSession",
-                message: "description_editor_init",
-                data: [
-                    "recipeId": recipeId,
-                    "stateBytes": String(payload.state.count),
-                    "presentation": presentation == .inline ? "inline" : "fullscreen",
-                ]
-            )
-            #endif
         } catch {
             phase = .error(error.localizedDescription)
         }
@@ -152,46 +140,9 @@ final class DescriptionEditorBridge: ObservableObject {
         switch type {
         case "loaded":
             Task { await beginSession() }
-        case "debugLog":
-            #if DEBUG
-            var logData: [String: String] = [:]
-            if let nested = dict["data"] as? [String: Any] {
-                nested.forEach { key, value in
-                    logData[key] = String(describing: value)
-                }
-            }
-            if let hypothesisId = dict["hypothesisId"] as? String,
-               let location = dict["location"] as? String,
-               let message = dict["message"] as? String {
-                let runId = dict["runId"] as? String ?? "pre-fix"
-                CursorDebugIngestLog.write(
-                    hypothesisId: hypothesisId,
-                    location: location,
-                    message: message,
-                    data: logData,
-                    runId: runId
-                )
-            }
-            #endif
         case "ready":
             phase = .ready
             #if DEBUG
-            var readyData: [String: String] = ["recipeId": recipeId]
-            if let fragmentLength = dict["fragmentLength"] {
-                readyData["fragmentLength"] = String(describing: fragmentLength)
-            }
-            if let editorPlainLen = dict["editorPlainLen"] {
-                readyData["editorPlainLen"] = String(describing: editorPlainLen)
-            }
-            if let initError = dict["initError"] as? String, !initError.isEmpty {
-                readyData["initError"] = initError
-            }
-            AgentSyncDebugLog.write(
-                hypothesisId: "019",
-                location: "DescriptionEditorBridge.swift:ready",
-                message: "description_editor_ready",
-                data: readyData
-            )
             if let simulateText = DebugLaunchOptions.simulateDescriptionEditorText {
                 Task {
                     try? await Task.sleep(for: .milliseconds(400))
@@ -208,7 +159,7 @@ final class DescriptionEditorBridge: ObservableObject {
         case "update":
             guard let numbers = dict["update"] as? [NSNumber], !numbers.isEmpty else { return }
             let data = Data(numbers.map { UInt8(truncating: $0) })
-            Task {
+            Task { [recipeId] in
                 try? await syncService?.applyDescriptionEditorUpdate(recipeId: recipeId, update: data)
             }
         case "focus":
@@ -237,6 +188,21 @@ final class DescriptionEditorBridge: ObservableObject {
         webView?.sendCommand(name: name, args: args)
     }
 
+    /// Live ingredient scaling in the editor (Tiptap `scaleStorage` + ingredient NodeView).
+    func updateScale(scaleFactor: Double, ingredients: [IngredientData], locale: String) {
+        let payload: [[String: Any]] = ingredients.compactMap { ing in
+            guard ing.hasQuantity else { return nil }
+            var item: [String: Any] = ["id": ing.id]
+            if let amount = Double(ing.originalAmount.replacingOccurrences(of: ",", with: ".")) {
+                item["originalAmount"] = amount
+            } else if !ing.originalAmount.isEmpty {
+                item["originalAmount"] = ing.originalAmount
+            }
+            return item
+        }
+        webView?.sendSetScale(scaleFactor: scaleFactor, ingredients: payload, locale: locale)
+    }
+
     /// Dismiss keyboard and clear focus (e.g. keyboard accessory Done).
     func dismissEditingFocus() {
         suppressIncomingFocus = true
@@ -247,6 +213,15 @@ final class DescriptionEditorBridge: ObservableObject {
 
     func applyRemoteUpdate(_ update: Data) {
         webView?.sendApplyUpdate(update)
+    }
+
+    /// Ask the WebView to flush its debounced reconcile *now* and give the posted
+    /// `update` message a moment to be applied to the doc before the caller drains.
+    /// Without this, the last <DEBOUNCE_MS of typing before Done never reaches Y.
+    func flushEditorEdits() async {
+        guard phase == .ready else { return }
+        sendCommand(name: "flush")
+        try? await Task.sleep(for: .milliseconds(160))
     }
 
     func flushPendingSync() async {

@@ -34,7 +34,7 @@ enum AppSymbol {
 enum AppLabel {
     static func make(_ title: String, symbol systemName: String) -> some View {
         Label {
-            Text(title)
+            Text(verbatim: Bundle.currentLocalizedString(title))
                 .appBody()
         } icon: {
             AppSymbol.image(systemName)

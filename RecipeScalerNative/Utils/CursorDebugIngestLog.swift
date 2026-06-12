@@ -1,13 +1,11 @@
 //
 //  CursorDebugIngestLog.swift
-//  DEBUG traces via AgentSyncDebugLog (simulator: debug-session.ndjson, pull via sim-verify-lib).
+//  DEBUG traces via AgentSyncDebugLog (+ optional Cursor ingest when enabled).
 //
 
 import Foundation
 
 enum CursorDebugIngestLog {
-    private static let debugSessionId = "d19d57"
-
     static func write(
         hypothesisId: String,
         location: String,
@@ -16,8 +14,9 @@ enum CursorDebugIngestLog {
         runId: String = "pre-fix"
     ) {
         #if DEBUG
+        guard AgentDebugLogging.isEnabled else { return }
         var enriched = data
-        enriched["debugSessionId"] = debugSessionId
+        enriched["debugSessionId"] = AgentDebugLogging.cursorSessionId
         if runId != "pre-fix" {
             enriched["runId"] = runId
         }
@@ -27,11 +26,47 @@ enum CursorDebugIngestLog {
             message: message,
             data: enriched
         )
+        postToCursorIngestIfConfigured(
+            hypothesisId: hypothesisId,
+            location: location,
+            message: message,
+            data: enriched,
+            runId: runId
+        )
         #endif
     }
 
-    /// Plain-text fingerprint of an HTML string so we can eyeball *which* content
-    /// is present (not just its length). Used to tell stale-read from stale-UI.
+    #if DEBUG
+    private static func postToCursorIngestIfConfigured(
+        hypothesisId: String,
+        location: String,
+        message: String,
+        data: [String: String],
+        runId: String
+    ) {
+        guard let url = AgentDebugLogging.cursorIngestURL else { return }
+        var payload: [String: Any] = [
+            "sessionId": AgentDebugLogging.cursorSessionId,
+            "hypothesisId": hypothesisId,
+            "location": location,
+            "message": message,
+            "data": data,
+            "timestamp": Int(Date().timeIntervalSince1970 * 1000),
+        ]
+        if runId != "pre-fix" {
+            payload["runId"] = runId
+        }
+        guard let body = try? JSONSerialization.data(withJSONObject: payload) else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(AgentDebugLogging.cursorSessionId, forHTTPHeaderField: "X-Debug-Session-Id")
+        request.httpBody = body
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    #endif
+
+    /// Plain-text fingerprint of an HTML string (works with logging disabled).
     static func fingerprint(_ html: String, prefix keyPrefix: String = "text") -> [String: String] {
         let plain = html
             .replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
@@ -40,8 +75,6 @@ enum CursorDebugIngestLog {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let head = String(plain.prefix(140))
         let tail = String(plain.suffix(140))
-        // Duplication detector: how many times does the opening anchor recur in
-        // the full text? 1 == normal; N>1 == content multiplied N times on itself.
         let anchor = String(plain.prefix(40))
         var repeatCount = 0
         if anchor.count >= 8 {
