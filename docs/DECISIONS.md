@@ -154,4 +154,22 @@ Chronological log of substantive choices (newest last).
 
 **Rationale:** Proper fix requires rewriting the native bridge to use `Y.XmlText` with formatting marks instead of wrapping elements — a significant refactor of the Yjs sync layer. The web crash is real but the fix scope is too large for the current style-parity batch. A dedicated task should rewrite `collectInlineNodes()` and `renderXmlText()` in the bridge JS to produce Yjs output compatible with ProseMirror's mark system.
 
+**Update (2026-06-12):** Fix path is full Tiptap migration (see decision below), not patching `collectInlineNodes()` in the contentEditable bridge.
+
+---
+
+### 2026-06-12 — Native description editor: migrate to Tiptap on yjs 13
+
+**Decision:** Replace the custom `contentEditable` + reconcile bridge (`description-editor-bridge.js`) with the same Tiptap / y-prosemirror stack as web (yjs **13**, not 14). Abandon maintaining the bespoke native editor. Set `Y_SKIP_GC` on native yrs recipe docs so garbage-collection skip structures are not emitted (y-prosemirror on yjs 13 cannot integrate skips; yjs 14 has skip support but no working ProseMirror binding).
+
+**Rationale:** Custom editor syncs plain text but breaks structural edits (nested lists, mid-document insert, offline duplication). It amplified CRDT history by recreating full HTML on each keystroke, forcing yrs skip GC. Tiptap applies incremental ProseMirror ops like web, sharply reducing that risk. User explicitly chose yjs 13 + Tiptap over continuing to patch contentEditable or waiting for yjs 14.
+
+---
+
+### 2026-06-12 — Agent debug logging: sandbox NDJSON file, not localhost ingest on device
+
+**Decision:** Agent/debug logs write to `Library/Application Support/debug-session.ndjson` on both simulator and physical device. Keep `AgentDebugLogging` / `AgentSyncDebugLog` / `DebugSessionNDJSONLog` classes but leave logging disabled by default (`AGENT_DEBUG_LOG_ENABLED`). Document the workflow in `llm/how-to-debug.md`. Do not rely on `127.0.0.1` HTTP ingest from a physical iPhone.
+
+**Rationale:** On device, localhost is the phone itself — Cursor ingest on the Mac is unreachable, so simulator and phone produced inconsistent debug pictures. Unified file + pull (Xcode console, container download, simulator script) gives parity; user asked to disable noisy logging while keeping the classes for future use.
+
 ---

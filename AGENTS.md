@@ -99,7 +99,7 @@ rtk xcodebuild -scheme RecipeScalerNative \
 - Agent debug ingest to Mac `localhost` does not work on a physical iPhone — use Xcode console, on-device logs, or prod-safe instrumentation.
 - Spec Kit task order is flexible; closing remaining polish tasks in any order is fine.
 - Capture durable UX requirements in `specs/<feature>/` so follow-up work does not lose constraints.
-- Match web behavior for shared UI (e.g. masked `userId`, ingredient rows without unit labels, component-level nutrition editing, recipe ellipsis menu order, ingredient qty column right-aligned to main value with compact drag handle and swipe-from-right delete only).
+- Match web behavior for shared UI (e.g. masked `userId`, ingredient rows without unit labels, component-level nutrition editing, recipe ellipsis menu order, ingredient qty column right-aligned to main value with compact drag handle and swipe-from-right delete only); description formatting toolbar active states must mirror Tiptap `selectionState` (e.g. H1 must not imply bold).
 - Account and public-profile settings use **iOS Settings patterns** (toggles, `NavigationLink` submenus, label–value rows); no explicit Save button; avatar as centered circle with Set photo below; descriptive copy uses `.appBody()` line-height per `docs/UI.md`.
 - Apple Reminders shopping-list sync: CRDT list stays source of truth; bidirectional completion sync; completed items stay in Reminders (marked, not deleted); Reminders note text must be localized.
 - Shopping list header matches Recipes: large title with sort segment in the collapsible search slot (`UISearchController` / `UISearchBar` pattern — SwiftUI has no separate API for a custom block under large title).
@@ -113,8 +113,10 @@ rtk xcodebuild -scheme RecipeScalerNative \
 - Recipes **v1/v2** are read-only on iOS with a legacy banner; **v3** editing and v1/v2→v3 migration happen on web app only.
 - Feature verification scripts: `scripts/verify-<feature>.sh` and `scripts/verify-all.sh`.
 - Paid Apple Developer Program ($99/yr): optional for simulator/dev; TestFlight, App Store, App Groups on device, extensions, APNs — see `docs/PAID-APPLE-DEVELOPER-REQUIRED.md`. Timer push toggle hidden until server-synced APNs works; production push planned after Live Activities.
-- Grok Build session transcripts: `~/.grok/sessions/%2FUsers%2F...%2Frecipe-scaler-native/<session-id>/` (`updates.jsonl`, `summary.json`).
 - Native collections parity guide: `../recipe-scaler-web/llm/NATIVE_APP_COLLECTIONS.md` (web-authored reference for iOS implementation).
 - Share Extension + Action Extension targets exist for URL/text import (`specs/025-share-extension`); full on-device Share Sheet testing needs paid program + App Group provisioning.
 - Typography tokens and rules: `docs/UI.md` (not duplicated in AGENTS.md); Russian `Localizable.xcstrings` typograf via `scripts/typograf-xcstrings` — surgical line edits only (preserve Xcode `"key" : "value"` formatting).
+- Debug logging guide: `llm/how-to-debug.md` — NDJSON to `Library/Application Support/debug-session.ndjson` on simulator and device; enable via `AGENT_DEBUG_LOG_ENABLED`; do not use `127.0.0.1` ingest on a physical iPhone (localhost is the device itself).
+- Architecture/sync markdown (`sync.md`, etc.) may be outdated — verify against live code and web `yjs-client.ts` before treating as source of truth.
+- Native `YrsDocument` sets `Y_SKIP_GC` on recipe docs so yrs does not emit skip structures that y-prosemirror on yjs 13 cannot read; custom `contentEditable` bridge is being replaced by real Tiptap per `specs/019-recipe-description-inline-edit`.
 
