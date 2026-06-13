@@ -754,7 +754,7 @@ actor DocumentManager {
         guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
         let touchedAt = Self.isoTimestamp()
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let displayName = trimmedName.isEmpty ? String(localized: "recipe.create.new") : trimmedName
+        let displayName = trimmedName.isEmpty ? Bundle.currentLocalizedString("recipe.create.new") : trimmedName
         let normalizedColor = Self.normalizeColor(color)
 
         try await appendCollectionEntryIfNotExists(

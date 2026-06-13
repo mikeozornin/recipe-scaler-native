@@ -593,7 +593,7 @@ final class YjsSyncService: ObservableObject {
 
     /// Creates an empty v3 recipe + collection entry; returns new recipe id.
     func createRecipe() async throws -> String {
-        let name = String(localized: "recipe.create.new")
+        let name = Bundle.currentLocalizedString("recipe.create.new")
         let recipeId = try await documentManager.createRecipe(name: name)
         await refreshCollectionEntries()
         return recipeId
