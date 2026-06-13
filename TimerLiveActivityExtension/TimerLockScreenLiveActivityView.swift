@@ -15,6 +15,9 @@ struct TimerLockScreenLiveActivityView: View {
     private static let progressBarHeight: CGFloat = 8
     private static let appGroupIdentifier = "group.ru.recipescaler.RecipeScalerNative"
 
+    private static let timerDigitsFont = Font.custom("Martian Mono Nr Lt", size: 40)
+    private static let timerNameFont = Font.custom("Martian Grotesk Nr Md", size: 16)
+
     private static func loadThumbnail(name: String) -> UIImage? {
         guard let container = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: appGroupIdentifier
@@ -32,87 +35,18 @@ struct TimerLockScreenLiveActivityView: View {
         let fillColor: Color = overdue
             ? TimerLiveActivityPalette.accentColor(for: .exceeded)
             : accent.progressFillColor
+        let primaryTextColor: Color = overdue
+            ? TimerLiveActivityPalette.accentColor(for: .exceeded)
+            : accent.color
 
         VStack(alignment: .leading, spacing: 0) {
             lockScreenProgressBar(fillColor: fillColor, overdue: overdue)
 
-            // Content
             VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top, spacing: 12) {
-                    // Timer digits
-                    if state.phase == .paused {
-                        Text(TimerLiveActivityFormatting.formatTime(seconds: state.pausedRemainingSeconds))
-                            .font(.custom("Martian Mono Nr Lt", size: 40).monospacedDigit())
-                            .foregroundStyle(accent.color)
-                    } else if overdue, let endDate = state.endDate {
-                        HStack(spacing: 0) {
-                            Text("-")
-                            Text(timerInterval: endDate...endDate.addingTimeInterval(Self.overdueHorizon), countsDown: false)
-                        }
-                        .font(.custom("Martian Mono Nr Lt", size: 40).monospacedDigit())
-                        .foregroundStyle(TimerLiveActivityPalette.accentColor(for: .exceeded))
-                    } else if let endDate = state.endDate {
-                        Text(timerInterval: Date()...endDate, countsDown: true)
-                            .font(.custom("Martian Mono Nr Lt", size: 40).monospacedDigit())
-                            .foregroundStyle(accent.color)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                    } else {
-                        Text(TimerLiveActivityFormatting.formatTime(seconds: state.remainingSeconds()))
-                            .font(.custom("Martian Mono Nr Lt", size: 40).monospacedDigit())
-                            .foregroundStyle(accent.color)
-                    }
+                timerNameRow(accent: accent, primaryTextColor: primaryTextColor, overdue: overdue)
 
-                    Text(attributes.timerName)
-                        .font(.custom("Martian Grotesk Nr Md", size: overdue ? 24 : 16))
-                        .foregroundStyle(overdue ? TimerLiveActivityPalette.accentColor(for: .exceeded) : accent.color)
-                        .lineLimit(2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    if !overdue && state.phase == .paused {
-                        Button(intent: ResumeRecipeTimerIntent(timerId: attributes.timerId)) {
-                            Image(systemName: "play.fill")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(accent.color)
-                                .frame(width: 40, height: 40)
-                        }
-                        .buttonStyle(.plain)
-                    } else if !overdue {
-                        Button(intent: PauseRecipeTimerIntent(timerId: attributes.timerId)) {
-                            Image(systemName: "pause.fill")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(accent.color)
-                                .frame(width: 40, height: 40)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
-                // Recipe row
                 if attributes.recipeId != nil || state.recipeName != nil {
-                    HStack(spacing: 10) {
-                        if let thumbName = state.recipeThumbnailName,
-                           let uiImage = Self.loadThumbnail(name: thumbName) {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 24, height: 24)
-                                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-                        } else {
-                            Image("AppLogo")
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 24, height: 24)
-                                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-                        }
-
-                        if let recipeName = state.recipeName, !recipeName.isEmpty {
-                            Text(recipeName)
-                                .font(.system(size: 14))
-                                .foregroundStyle(TimerLiveActivityPalette.secondaryLabel)
-                                .lineLimit(1)
-                        }
-                    }
+                    recipeRow
                 }
             }
             .padding(14)
@@ -121,10 +55,124 @@ struct TimerLockScreenLiveActivityView: View {
         .activitySystemActionForegroundColor(TimerLiveActivityPalette.label)
     }
 
+    // MARK: - Timer row (Figma: timer + control on top, name below)
+
+    @ViewBuilder
+    private func timerNameRow(
+        accent: TimerLiveActivityAccent,
+        primaryTextColor: Color,
+        overdue: Bool
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top, spacing: 0) {
+                lockScreenTimerDigits(color: primaryTextColor, overdue: overdue)
+
+                Spacer(minLength: 0)
+
+                if !overdue {
+                    lockScreenControlButton(accent: accent)
+                }
+            }
+
+            Text(attributes.timerName)
+                .font(Self.timerNameFont)
+                .foregroundStyle(primaryTextColor)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private func lockScreenTimerDigits(color: Color, overdue: Bool) -> some View {
+        if state.phase == .paused {
+            Text(TimerLiveActivityFormatting.formatTime(seconds: state.pausedRemainingSeconds))
+                .font(Self.timerDigitsFont)
+                .monospacedDigit()
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        } else if overdue, let endDate = state.endDate {
+            HStack(spacing: 0) {
+                Text("-")
+                Text(
+                    timerInterval: endDate...endDate.addingTimeInterval(Self.overdueHorizon),
+                    countsDown: false
+                )
+            }
+            .font(Self.timerDigitsFont)
+            .monospacedDigit()
+            .foregroundStyle(color)
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+        } else if let endDate = state.endDate {
+            Text(timerInterval: Date()...endDate, countsDown: true)
+                .font(Self.timerDigitsFont)
+                .monospacedDigit()
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        } else {
+            Text(TimerLiveActivityFormatting.formatTime(seconds: state.remainingSeconds()))
+                .font(Self.timerDigitsFont)
+                .monospacedDigit()
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        }
+    }
+
+    @ViewBuilder
+    private func lockScreenControlButton(accent: TimerLiveActivityAccent) -> some View {
+        if state.phase == .paused {
+            Button(intent: ResumeRecipeTimerIntent(timerId: attributes.timerId)) {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(accent.color)
+                    .frame(width: 40, height: 40)
+            }
+            .buttonStyle(.plain)
+        } else {
+            Button(intent: PauseRecipeTimerIntent(timerId: attributes.timerId)) {
+                Image(systemName: "pause.fill")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(accent.color)
+                    .frame(width: 40, height: 40)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var recipeRow: some View {
+        HStack(spacing: 10) {
+            if let thumbName = state.recipeThumbnailName,
+               let uiImage = Self.loadThumbnail(name: thumbName) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 24, height: 24)
+                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            } else {
+                Image("AppLogo")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 24, height: 24)
+                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            }
+
+            if let recipeName = state.recipeName, !recipeName.isEmpty {
+                Text(recipeName)
+                    .font(.system(size: 14))
+                    .foregroundStyle(TimerLiveActivityPalette.secondaryLabel)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    // MARK: - Progress bar
+
     @ViewBuilder
     private func lockScreenProgressBar(fillColor: Color, overdue: Bool) -> some View {
-        // Same footprint as diagnostic `Rectangle().fill(Color.red).frame(height: 8)`:
-        // full-width 8pt track, leading fill in palette colors.
         Rectangle()
             .fill(TimerLiveActivityPalette.progressTrack)
             .overlay(alignment: .leading) {
