@@ -56,7 +56,7 @@ struct RecipeScalerNativeApp: App {
         #endif
     }
 
-    var sharedModelContainer: ModelContainer = {
+    static let sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Recipe.self,
             Ingredient.self,
@@ -89,7 +89,7 @@ struct RecipeScalerNativeApp: App {
                     handleSpotlightActivity(activity)
                 }
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(Self.sharedModelContainer)
     }
 
     /// Decode Spotlight tap: card itself → `.openRecipe`, action button → `.addToShopping`.

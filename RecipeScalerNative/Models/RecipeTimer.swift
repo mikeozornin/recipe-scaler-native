@@ -19,6 +19,8 @@ final class RecipeTimer {
     var endTime: Date?
     var remainingTime: TimeInterval?
     var recipeId: String?
+    /// Cached recipe title for Live Activity when collection lookup is not ready yet.
+    var recipeDisplayName: String?
     var lastUpdated: Date
     var startedAt: Date?
     var pausedAt: Date?
@@ -41,6 +43,7 @@ final class RecipeTimer {
         endTime: Date? = nil,
         remainingTime: TimeInterval? = nil,
         recipeId: String? = nil,
+        recipeDisplayName: String? = nil,
         lastUpdated: Date = Date(),
         startedAt: Date? = nil,
         pausedAt: Date? = nil,
@@ -56,6 +59,7 @@ final class RecipeTimer {
         self.endTime = endTime
         self.remainingTime = remainingTime
         self.recipeId = recipeId
+        self.recipeDisplayName = recipeDisplayName?.trimmingCharacters(in: .whitespacesAndNewlines)
         self.lastUpdated = lastUpdated
         self.startedAt = startedAt
         self.pausedAt = pausedAt

@@ -102,7 +102,7 @@ struct DescriptionEditorWebView: UIViewRepresentable {
         }
 
         func sendConfigure(presentation: DescriptionEditorPresentation) {
-            let lineHeight = RecipeDescriptionStyle.bodyFontSize + RecipeDescriptionStyle.bodyLineSpacing
+            let lineHeight = RecipeDescriptionStyle.bodyFontSize * RecipeDescriptionStyle.lineHeightMultiple
             var payload: [String: Any] = [
                 "type": "configure",
                 "inline": presentation == .inline,

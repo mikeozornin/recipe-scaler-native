@@ -57,6 +57,15 @@ final class TimerManager: NSObject, ObservableObject {
         self.modelContext = modelContext
         loadTimers()
         TimerSyncService.shared.timerManager = self
+        installLiveActivitySupport()
+    }
+
+    /// Called from App Intent `perform()` when the app process was launched headlessly
+    /// and ContentView hasn't appeared yet. Opens the same on-disk SwiftData store.
+    static func configureForIntentIfNeeded() {
+        guard shared.modelContext == nil else { return }
+        let context = ModelContext(RecipeScalerNativeApp.sharedModelContainer)
+        shared.configure(modelContext: context)
     }
 
     func notificationAuthorizationStatus() async -> UNAuthorizationStatus {
@@ -104,14 +113,16 @@ final class TimerManager: NSObject, ObservableObject {
         name: String,
         duration: TimeInterval,
         type: RecipeTimer.TimerType = .minutes,
-        recipeId: String? = nil
+        recipeId: String? = nil,
+        recipeDisplayName: String? = nil
     ) -> RecipeTimer {
         let timer = RecipeTimer(
             id: Self.makeTimerId(),
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             duration: duration,
             type: type,
-            recipeId: recipeId
+            recipeId: recipeId,
+            recipeDisplayName: recipeDisplayName
         )
         insertTimer(timer)
         syncEnqueue(.timerCreated, timer: timer)
@@ -123,14 +134,16 @@ final class TimerManager: NSObject, ObservableObject {
         name: String,
         duration: TimeInterval,
         type: RecipeTimer.TimerType = .minutes,
-        recipeId: String? = nil
+        recipeId: String? = nil,
+        recipeDisplayName: String? = nil
     ) -> RecipeTimer {
         let timer = RecipeTimer(
             id: Self.makeTimerId(),
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             duration: duration,
             type: type,
-            recipeId: recipeId
+            recipeId: recipeId,
+            recipeDisplayName: recipeDisplayName
         )
         timer.start()
         insertTimer(timer)
@@ -138,6 +151,7 @@ final class TimerManager: NSObject, ObservableObject {
         startUpdateTimer()
         scheduleBackgroundTask()
         pushSchedule(timer)
+        syncLiveActivity(for: timer)
         return timer
     }
 
@@ -152,6 +166,7 @@ final class TimerManager: NSObject, ObservableObject {
         scheduleBackgroundTask()
         syncEnqueue(.timerStarted, timer: timer, extra: ["endTime": millis(timer.endTime)])
         pushSchedule(timer)
+        syncLiveActivity(for: timer)
     }
 
     func pauseTimer(id: String) {
@@ -165,6 +180,7 @@ final class TimerManager: NSObject, ObservableObject {
         stopUpdateLoopIfIdle()
         syncEnqueue(.timerPaused, timer: timer, extra: ["remaining": remaining])
         pushCancel(timer.id)
+        syncLiveActivity(for: timer)
     }
 
     func resumeTimer(id: String) {
@@ -177,6 +193,7 @@ final class TimerManager: NSObject, ObservableObject {
         scheduleBackgroundTask()
         syncEnqueue(.timerResumed, timer: timer, extra: ["endTime": millis(timer.endTime)])
         pushSchedule(timer)
+        syncLiveActivity(for: timer)
     }
 
     func deleteTimer(id: String) {
@@ -189,6 +206,7 @@ final class TimerManager: NSObject, ObservableObject {
         stopUpdateLoopIfIdle()
         syncEnqueue(.timerDeleted, timer: timer)
         pushCancel(timer.id)
+        endLiveActivity(timerId: timer.id)
     }
 
     func resetTimer(id: String) {
@@ -199,6 +217,7 @@ final class TimerManager: NSObject, ObservableObject {
         refreshPanelTimers()
         stopUpdateLoopIfIdle()
         pushCancel(timer.id)
+        endLiveActivity(timerId: timer.id)
     }
 
     // MARK: - Sync (TimerSyncService)
@@ -208,6 +227,7 @@ final class TimerManager: NSObject, ObservableObject {
             timers = serverTimers
             refreshPanelTimers()
             if timers.contains(where: \.isRunning) { startUpdateTimer() }
+            reconcileLiveActivities()
             return
         }
         do {
@@ -227,10 +247,12 @@ final class TimerManager: NSObject, ObservableObject {
             } else {
                 stopUpdateLoopIfIdle()
             }
+            reconcileLiveActivities()
         } catch {
             print("Error replacing timers from server: \(error.localizedDescription)")
             timers = serverTimers
             refreshPanelTimers()
+            reconcileLiveActivities()
         }
     }
 
@@ -242,6 +264,7 @@ final class TimerManager: NSObject, ObservableObject {
             insertTimer(timer, skipSync: true)
         }
         refreshPanelTimers()
+        syncLiveActivity(for: timer)
     }
 
     func removeTimerFromSync(id: String) {
@@ -251,6 +274,7 @@ final class TimerManager: NSObject, ObservableObject {
         deleteFromStore(timer)
         refreshPanelTimers()
         stopUpdateLoopIfIdle()
+        endLiveActivity(timerId: id)
     }
 
     func ensureUpdateLoopRunning() {
@@ -284,6 +308,8 @@ final class TimerManager: NSObject, ObservableObject {
         updateTimer = nil
     }
 
+    private var lastLiveActivityProgressSync: [String: Date] = [:]
+
     private func updateRunningTimers() {
         var didChange = false
         for timer in timers where timer.isRunning {
@@ -292,6 +318,10 @@ final class TimerManager: NSObject, ObservableObject {
             timer.remainingTime = remaining
             if remaining <= 0, !timer.hasCompleted {
                 handleTimerReachedZero(timer)
+            } else if remaining <= 0 {
+                syncLiveActivityIfOverdue(timer)
+            } else {
+                syncLiveActivityProgress(timer)
             }
             didChange = true
         }
@@ -301,11 +331,33 @@ final class TimerManager: NSObject, ObservableObject {
         }
     }
 
+    private func syncLiveActivityProgress(_ timer: RecipeTimer) {
+        let now = Date()
+        if let last = lastLiveActivityProgressSync[timer.id], now.timeIntervalSince(last) < 3 {
+            return
+        }
+        lastLiveActivityProgressSync[timer.id] = now
+        syncLiveActivity(for: timer)
+    }
+
+    private var lastOverdueLiveActivitySync: [String: Date] = [:]
+
+    /// Keeps exceeded Live Activity phase/content fresh while the app stays in memory.
+    private func syncLiveActivityIfOverdue(_ timer: RecipeTimer) {
+        let now = Date()
+        if let last = lastOverdueLiveActivitySync[timer.id], now.timeIntervalSince(last) < 5 {
+            return
+        }
+        lastOverdueLiveActivitySync[timer.id] = now
+        syncLiveActivity(for: timer)
+    }
+
     private func handleTimerReachedZero(_ timer: RecipeTimer) {
         guard !timer.hasCompleted else { return }
         timer.hasCompleted = true
         persist(timer)
         sendCompletionNotification(for: timer)
+        syncLiveActivity(for: timer)
     }
 
     // MARK: - Push schedule helpers
@@ -382,11 +434,39 @@ final class TimerManager: NSObject, ObservableObject {
 
     // MARK: - Background
 
+    private var liveActivityBgTaskID: UIBackgroundTaskIdentifier = .invalid
+    private var liveActivityBgTimer: Timer?
+
     private func scheduleBackgroundTask() {
         let request = BGProcessingTaskRequest(identifier: Self.backgroundTaskIdentifier)
         request.requiresNetworkConnectivity = false
         request.requiresExternalPower = false
         try? BGTaskScheduler.shared.submit(request)
+    }
+
+    func beginLiveActivityBackgroundUpdates() {
+        guard liveActivityBgTaskID == .invalid else { return }
+        guard timers.contains(where: { $0.isRunning }) else { return }
+        liveActivityBgTaskID = UIApplication.shared.beginBackgroundTask { [weak self] in
+            self?.endLiveActivityBackgroundUpdates()
+        }
+        liveActivityBgTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
+            self?.updateLiveActivitiesInBackground()
+        }
+    }
+
+    func endLiveActivityBackgroundUpdates() {
+        liveActivityBgTimer?.invalidate()
+        liveActivityBgTimer = nil
+        guard liveActivityBgTaskID != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(liveActivityBgTaskID)
+        liveActivityBgTaskID = .invalid
+    }
+
+    private func updateLiveActivitiesInBackground() {
+        for timer in timers where timer.isRunning {
+            syncLiveActivity(for: timer)
+        }
     }
 
     private func handleBackgroundTask(_ task: BGProcessingTask) {
@@ -463,6 +543,48 @@ final class TimerManager: NSObject, ObservableObject {
     private func millis(_ date: Date?) -> Int64? {
         guard let date else { return nil }
         return Int64(date.timeIntervalSince1970 * 1000)
+    }
+
+    // MARK: - Live Activity
+
+    private func installLiveActivitySupport() {
+        TimerLiveActivityActionQueue.installHandler { [weak self] action, timerId in
+            Task { @MainActor in
+                guard let self else { return }
+                switch action {
+                case .pause:
+                    self.pauseTimer(id: timerId)
+                case .resume:
+                    self.resumeTimer(id: timerId)
+                }
+            }
+        }
+        TimerLiveActivityActionQueue.drainIfNeeded()
+        TimerLiveActivityCoordinator.shared.restoreFromSystem()
+        reconcileLiveActivities()
+    }
+
+    private func syncLiveActivity(for timer: RecipeTimer) {
+        Task {
+            await TimerLiveActivityCoordinator.shared.sync(timer: timer)
+        }
+    }
+
+    private func endLiveActivity(timerId: String) {
+        Task {
+            await TimerLiveActivityCoordinator.shared.end(timerId: timerId)
+        }
+    }
+
+    /// Refreshes Live Activity content (e.g. recipe name/thumbnail after collection sync).
+    func refreshLiveActivities() {
+        reconcileLiveActivities()
+    }
+
+    private func reconcileLiveActivities() {
+        Task {
+            await TimerLiveActivityCoordinator.shared.reconcile(with: timers)
+        }
     }
 
     nonisolated deinit {

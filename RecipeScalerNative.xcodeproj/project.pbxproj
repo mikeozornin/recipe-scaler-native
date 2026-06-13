@@ -47,6 +47,9 @@
 
 		86953CAE0C5C495CA34B6362 /* RecipeEditPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2C8DC8D63F14DC8A5436B59 /* RecipeEditPolicy.swift */; };
 		91131167C1A00444C453884E /* MartianMono-NrLt.otf in Resources */ = {isa = PBXBuildFile; fileRef = DE1ABB28709A39ED21AF2C28 /* MartianMono-NrLt.otf */; };
+		FA4B1C2D3E4F5A6B7C8D9EF0 /* MartianGrotesk-NrLt.otf in Resources */ = {isa = PBXBuildFile; fileRef = EB452B44E6C61233D3482133 /* MartianGrotesk-NrLt.otf */; };
+		FA4B1C2D3E4F5A6B7C8D9EF1 /* MartianGrotesk-NrMd.otf in Resources */ = {isa = PBXBuildFile; fileRef = FEA658D7E63AC1DAEBDA6361 /* MartianGrotesk-NrMd.otf */; };
+		FA4B1C2D3E4F5A6B7C8D9EF2 /* MartianMono-NrLt.otf in Resources */ = {isa = PBXBuildFile; fileRef = DE1ABB28709A39ED21AF2C28 /* MartianMono-NrLt.otf */; };
 		98FFEFD12926BBB5917A6B53 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C46C342D35721B88D83D58BB /* QRScannerView.swift */; };
 		99B7BAFEF20D4EBBF5CAC721 /* RecipeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2FD0DF0B71C1B50552D1B2F /* RecipeListView.swift */; };
 		9EF93633397A179982515AB9 /* YrsMapEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19D929C2D83E8A45AD648AB3 /* YrsMapEntry.swift */; };
@@ -216,6 +219,35 @@
 		F0D3000000000000000A0006 /* CollectionRecipesIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D3000000000000000A0005 /* CollectionRecipesIndex.swift */; };
 		F0D3000000000000000A0008 /* FolderDisplayName.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D3000000000000000A0007 /* FolderDisplayName.swift */; };
 		F0D3000000000000000A000A /* RecipeFolderRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D3000000000000000A0009 /* RecipeFolderRoutes.swift */; };
+
+		32567600C3994DAC84F2E1FE /* TimerLiveActivityExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = D9E468FAE2F74B2390CE683C /* TimerLiveActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		2104E1D88FB54554B80BD761 /* TimerLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 535668B361594581A4C5E026 /* TimerLiveActivityBundle.swift */; };
+		4AA8B9DAF9AF436590E13E76 /* TimerLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = C62A87AD94EF44749A3FF476 /* TimerLiveActivityWidget.swift */; };
+		0952E30F55AC49E7BCCDEE93 /* TimerLockScreenLiveActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B83AB2645384EAFBD1AD4A3 /* TimerLockScreenLiveActivityView.swift */; };
+		DD3758B6C191489298D8AD6F /* RecipeTimerActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC715E90C3645F99A2965F8 /* RecipeTimerActivityAttributes.swift */; };
+		FE3231F287C04923B25E29E8 /* TimerLiveActivityAccent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56565D99438548F29F16D7DE /* TimerLiveActivityAccent.swift */; };
+		EE235C1AE222411BAF3E3620 /* TimerLiveActivityFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F90F40E8688492B815EB510 /* TimerLiveActivityFormatting.swift */; };
+		D32494D8B32B4083A621A5D5 /* TimerLiveActivityActionQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE9AF6E91804571BD26336B /* TimerLiveActivityActionQueue.swift */; };
+		6BBC390F7AF94B5AA3A27468 /* TimerLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF518ADEDA245B099EC5C7E /* TimerLiveActivityIntents.swift */; };
+		3CC3D76CA52B4B3293D8D000 /* TimerLiveActivityCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816A3426E81C4E58B85FD44B /* TimerLiveActivityCoordinator.swift */; };
+		5EC690AD5A434697B8C0A82C /* TimerLiveActivityMetadataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 057A55B7EC424D69BA4BA244 /* TimerLiveActivityMetadataProvider.swift */; };
+		175A36C0FD9A480E92532607 /* RecipeTimerActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC715E90C3645F99A2965F8 /* RecipeTimerActivityAttributes.swift */; };
+		D9CE2453B71F439583814D83 /* TimerLiveActivityAccent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56565D99438548F29F16D7DE /* TimerLiveActivityAccent.swift */; };
+		0FB07B606EF8451AB560DDC7 /* TimerLiveActivityFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F90F40E8688492B815EB510 /* TimerLiveActivityFormatting.swift */; };
+		4FD4C091C7E848E1B3EC0EAD /* TimerLiveActivityActionQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE9AF6E91804571BD26336B /* TimerLiveActivityActionQueue.swift */; };
+		30F96B8BB19E42E699CD420D /* TimerLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF518ADEDA245B099EC5C7E /* TimerLiveActivityIntents.swift */; };
+		F92785DD8BAC4A8F835483DD /* TimerLiveActivityPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6393C5116C06476E9BBCC288 /* TimerLiveActivityPalette.swift */; };
+		7D40FB29253E4C98AA611CA4 /* TimerLiveActivityPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6393C5116C06476E9BBCC288 /* TimerLiveActivityPalette.swift */; };
+		A1B2C3D4E5F64789AABBCC02 /* TimerLiveActivityLinearProgressStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F64789AABBCC01 /* TimerLiveActivityLinearProgressStyle.swift */; };
+		A1B2C3D4E5F64789AABBCC03 /* TimerLiveActivityLinearProgressStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F64789AABBCC01 /* TimerLiveActivityLinearProgressStyle.swift */; };
+		E50C873F07F34FDDBC2A0C25 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0913FBEDF877DA9B6F52F552 /* Assets.xcassets */; };
+		BB0000000000000000000001 /* RecipeSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000001 /* RecipeSnapshotStore.swift */; };
+		BB0000000000000000000002 /* RecipeEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000002 /* RecipeEntity.swift */; };
+		BB0000000000000000000003 /* StartTimerIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000003 /* StartTimerIntent.swift */; };
+		BB0000000000000000000004 /* ShoppingIntentActionQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000004 /* ShoppingIntentActionQueue.swift */; };
+		BB0000000000000000000005 /* AddToShoppingListIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000005 /* AddToShoppingListIntent.swift */; };
+		BB0000000000000000000006 /* OpenRecipeIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000006 /* OpenRecipeIntent.swift */; };
+		BB0000000000000000000007 /* RecipeScalerShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000007 /* RecipeScalerShortcuts.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -434,9 +466,41 @@
 		F0D3000000000000000A0005 /* CollectionRecipesIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionRecipesIndex.swift; sourceTree = "<group>"; };
 		F0D3000000000000000A0007 /* FolderDisplayName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderDisplayName.swift; sourceTree = "<group>"; };
 		F0D3000000000000000A0009 /* RecipeFolderRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeFolderRoutes.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+
+		D9E468FAE2F74B2390CE683C /* TimerLiveActivityExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TimerLiveActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		450283E26C9249C5858DFCEF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7B391522E0C34F1E8EAF1096 /* TimerLiveActivityExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TimerLiveActivityExtension.entitlements; sourceTree = "<group>"; };
+		535668B361594581A4C5E026 /* TimerLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityBundle.swift; sourceTree = "<group>"; };
+		C62A87AD94EF44749A3FF476 /* TimerLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityWidget.swift; sourceTree = "<group>"; };
+		3B83AB2645384EAFBD1AD4A3 /* TimerLockScreenLiveActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLockScreenLiveActivityView.swift; sourceTree = "<group>"; };
+		EBC715E90C3645F99A2965F8 /* RecipeTimerActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeTimerActivityAttributes.swift; sourceTree = "<group>"; };
+		6393C5116C06476E9BBCC288 /* TimerLiveActivityPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityPalette.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F64789AABBCC01 /* TimerLiveActivityLinearProgressStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityLinearProgressStyle.swift; sourceTree = "<group>"; };
+		56565D99438548F29F16D7DE /* TimerLiveActivityAccent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityAccent.swift; sourceTree = "<group>"; };
+		4F90F40E8688492B815EB510 /* TimerLiveActivityFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityFormatting.swift; sourceTree = "<group>"; };
+		4DE9AF6E91804571BD26336B /* TimerLiveActivityActionQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityActionQueue.swift; sourceTree = "<group>"; };
+		CEF518ADEDA245B099EC5C7E /* TimerLiveActivityIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityIntents.swift; sourceTree = "<group>"; };
+		816A3426E81C4E58B85FD44B /* TimerLiveActivityCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityCoordinator.swift; sourceTree = "<group>"; };
+		057A55B7EC424D69BA4BA244 /* TimerLiveActivityMetadataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityMetadataProvider.swift; sourceTree = "<group>"; };
+		AA0000000000000000000001 /* RecipeSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeSnapshotStore.swift; sourceTree = "<group>"; };
+		AA0000000000000000000002 /* RecipeEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEntity.swift; sourceTree = "<group>"; };
+		AA0000000000000000000003 /* StartTimerIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartTimerIntent.swift; sourceTree = "<group>"; };
+		AA0000000000000000000004 /* ShoppingIntentActionQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingIntentActionQueue.swift; sourceTree = "<group>"; };
+		AA0000000000000000000005 /* AddToShoppingListIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToShoppingListIntent.swift; sourceTree = "<group>"; };
+		AA0000000000000000000006 /* OpenRecipeIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenRecipeIntent.swift; sourceTree = "<group>"; };
+		AA0000000000000000000007 /* RecipeScalerShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeScalerShortcuts.swift; sourceTree = "<group>"; };
+	/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+
+		5AC765CE0AC742CB85DF9927 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+
 		B723C003B318C8956FF9B79E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -491,13 +555,29 @@
 				EA4BEBE2780DE29A70E2D8AC /* ContentView.swift */,
 				296450B0B341AB25920D2100 /* RecipeScalerNativeApp.swift */,
 				CC0005AA0005BB0005CC0005 /* RecipeScalerNative.entitlements */,
+				AA0000000000000000000008 /* AppIntents */,
 				565720722B00D99641496ED4 /* Models */,
 				EDE97F98D203CDB041112403 /* Services */,
+				57A847D3DF2B4596AF643B81 /* LiveActivity */,
 				D60774181BE9BA4A89FEDEAD /* ViewModels */,
 				E5F60718293A4B7000000005 /* Utils */,
 				2C4753BF21C7787912B3866F /* Views */,
 			);
 			path = RecipeScalerNative;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000008 /* AppIntents */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000001 /* RecipeSnapshotStore.swift */,
+				AA0000000000000000000002 /* RecipeEntity.swift */,
+				AA0000000000000000000003 /* StartTimerIntent.swift */,
+				AA0000000000000000000004 /* ShoppingIntentActionQueue.swift */,
+				AA0000000000000000000005 /* AddToShoppingListIntent.swift */,
+				AA0000000000000000000006 /* OpenRecipeIntent.swift */,
+				AA0000000000000000000007 /* RecipeScalerShortcuts.swift */,
+			);
+			path = AppIntents;
 			sourceTree = "<group>";
 		};
 		114066FDB24B148244B3ED3B /* Resources */ = {
@@ -598,6 +678,7 @@
 				874E7D0546814157A05786F4 /* RecipeScalerCore */,
 				6C18841656E84C229972230B /* ShareExtension */,
 				19963B8319AC47C891F0E603 /* ActionExtension */,
+				297DDB7C260341539E77D9EE /* TimerLiveActivityExtension */,
 				02AE57AC5FA5124D4D412BDA /* RecipeScalerNative */,
 				93D42941605BAA5DD8D2035A /* RecipeScalerNativeTests */,
 				EE830B9272D882874906264B /* RecipeScalerNativeUITests */,
@@ -674,7 +755,8 @@
 			
 				E05920822F344D9691E82401 /* RecipeScalerCore.framework */,
 				B8E4D1A7552D487F80885A2F /* ShareExtension.appex */,
-				7E906824536341C2920D9DC5 /* ActionExtension.appex */,);
+				7E906824536341C2920D9DC5 /* ActionExtension.appex */,
+				D9E468FAE2F74B2390CE683C /* TimerLiveActivityExtension.appex */,);
 			name = Products;
 			sourceTree = "<group>";
 		};
@@ -808,6 +890,8 @@
 				E5F60718293A4B7000000026 /* RecipeImageDecoder.swift */,
 				96ECDC1C61704BD8AF111FBD /* SpotlightIndexer.swift */,
 				1D90E06DB664829F1CEFCCD5 /* TimerManager.swift */,
+				816A3426E81C4E58B85FD44B /* TimerLiveActivityCoordinator.swift */,
+				057A55B7EC424D69BA4BA244 /* TimerLiveActivityMetadataProvider.swift */,
 				E5F60718293A4B70A0433F17 /* TimerSyncService.swift */,
 				CC0001AA0001BB0001CC0001 /* PushRegistrationService.swift */,
 				CC0003AA0003BB0003CC0003 /* PushScheduleService.swift */,
@@ -869,6 +953,33 @@
 			path = ActionExtension;
 			sourceTree = "<group>";
 		};
+	
+		57A847D3DF2B4596AF643B81 /* LiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				EBC715E90C3645F99A2965F8 /* RecipeTimerActivityAttributes.swift */,
+				6393C5116C06476E9BBCC288 /* TimerLiveActivityPalette.swift */,
+				A1B2C3D4E5F64789AABBCC01 /* TimerLiveActivityLinearProgressStyle.swift */,
+				56565D99438548F29F16D7DE /* TimerLiveActivityAccent.swift */,
+				4F90F40E8688492B815EB510 /* TimerLiveActivityFormatting.swift */,
+				4DE9AF6E91804571BD26336B /* TimerLiveActivityActionQueue.swift */,
+				CEF518ADEDA245B099EC5C7E /* TimerLiveActivityIntents.swift */,
+			);
+			path = LiveActivity;
+			sourceTree = "<group>";
+		};
+		297DDB7C260341539E77D9EE /* TimerLiveActivityExtension */ = {
+			isa = PBXGroup;
+			children = (
+				535668B361594581A4C5E026 /* TimerLiveActivityBundle.swift */,
+				C62A87AD94EF44749A3FF476 /* TimerLiveActivityWidget.swift */,
+				3B83AB2645384EAFBD1AD4A3 /* TimerLockScreenLiveActivityView.swift */,
+				450283E26C9249C5858DFCEF /* Info.plist */,
+				7B391522E0C34F1E8EAF1096 /* TimerLiveActivityExtension.entitlements */,
+			);
+			path = TimerLiveActivityExtension;
+			sourceTree = "<group>";
+		};
 	/* End PBXGroup section */
 
 
@@ -894,7 +1005,15 @@
 			remoteGlobalIDString = 41393BC76AE246AC9541910F;
 			remoteInfo = ActionExtension;
 		};
-/* End PBXContainerItemProxy section */
+
+		FAD54EF36DEE449ABE1AAABC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5EE18DEE47E00A9648AA02B9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 695F475A36604E0F9469767B;
+			remoteInfo = TimerLiveActivityExtension;
+		};
+	/* End PBXContainerItemProxy section */
 
 /* Begin PBXTargetDependency section */
 		7095869C7124421AB3FB33EF /* PBXTargetDependency */ = {
@@ -912,7 +1031,13 @@
 			target = 41393BC76AE246AC9541910F /* ActionExtension */;
 			targetProxy = 16DB01E08A0445FF9D9EAE66 /* PBXContainerItemProxy */;
 		};
-/* End PBXTargetDependency section */
+
+		AD1A0E2678C64A9EAEE3024F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 695F475A36604E0F9469767B /* TimerLiveActivityExtension */;
+			targetProxy = FAD54EF36DEE449ABE1AAABC /* PBXContainerItemProxy */;
+		};
+	/* End PBXTargetDependency section */
 
 /* Begin PBXNativeTarget section */
 		D48135388848E9FFF6A87142 /* RecipeScalerNative */ = {
@@ -931,6 +1056,7 @@
 				7095869C7124421AB3FB33EF /* PBXTargetDependency */,
 				5F14BB93E9AE46F5BC0EAA5B /* PBXTargetDependency */,
 				AAD7C99B85FB4001BC5CD31C /* PBXTargetDependency */,
+				AD1A0E2678C64A9EAEE3024F /* PBXTargetDependency */,
 			);
 			name = RecipeScalerNative;
 			packageProductDependencies = (
@@ -997,6 +1123,24 @@
 			productReference = 7E906824536341C2920D9DC5 /* ActionExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+
+		695F475A36604E0F9469767B /* TimerLiveActivityExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0C841F05E64741F9B946798A /* Build configuration list for PBXNativeTarget "TimerLiveActivityExtension" */;
+			buildPhases = (
+				7076A461AA75467791622F43 /* Sources */,
+				5AC765CE0AC742CB85DF9927 /* Frameworks */,
+				46AFFA5A78304C2AB275DDA9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TimerLiveActivityExtension;
+			productName = TimerLiveActivityExtension;
+			productReference = D9E468FAE2F74B2390CE683C /* TimerLiveActivityExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 	/* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1031,11 +1175,25 @@
 				C04EC12C7971431D922B6085 /* RecipeScalerCore */,
 				AC42E296039542E287AAF6A6 /* ShareExtension */,
 				41393BC76AE246AC9541910F /* ActionExtension */,
+				695F475A36604E0F9469767B /* TimerLiveActivityExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+
+		46AFFA5A78304C2AB275DDA9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E50C873F07F34FDDBC2A0C25 /* Assets.xcassets in Resources */,
+				FA4B1C2D3E4F5A6B7C8D9EF0 /* MartianGrotesk-NrLt.otf in Resources */,
+				FA4B1C2D3E4F5A6B7C8D9EF1 /* MartianGrotesk-NrMd.otf in Resources */,
+				FA4B1C2D3E4F5A6B7C8D9EF2 /* MartianMono-NrLt.otf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+
 		8BDB73332B8DC3D03047EC69 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1102,6 +1260,7 @@
 			files = (
 				0089FE21D37A4D84BF4355E3 /* ShareExtension.appex in Embed App Extensions */,
 				40FCBD3240184C3DA0D2D673 /* ActionExtension.appex in Embed App Extensions */,
+				32567600C3994DAC84F2E1FE /* TimerLiveActivityExtension.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1109,6 +1268,25 @@
 
 
 /* Begin PBXSourcesBuildPhase section */
+
+		7076A461AA75467791622F43 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2104E1D88FB54554B80BD761 /* TimerLiveActivityBundle.swift in Sources */,
+				4AA8B9DAF9AF436590E13E76 /* TimerLiveActivityWidget.swift in Sources */,
+				0952E30F55AC49E7BCCDEE93 /* TimerLockScreenLiveActivityView.swift in Sources */,
+				175A36C0FD9A480E92532607 /* RecipeTimerActivityAttributes.swift in Sources */,
+				D9CE2453B71F439583814D83 /* TimerLiveActivityAccent.swift in Sources */,
+				F92785DD8BAC4A8F835483DD /* TimerLiveActivityPalette.swift in Sources */,
+				A1B2C3D4E5F64789AABBCC02 /* TimerLiveActivityLinearProgressStyle.swift in Sources */,
+				0FB07B606EF8451AB560DDC7 /* TimerLiveActivityFormatting.swift in Sources */,
+				4FD4C091C7E848E1B3EC0EAD /* TimerLiveActivityActionQueue.swift in Sources */,
+				30F96B8BB19E42E699CD420D /* TimerLiveActivityIntents.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+
 		72A876A1FC6083C3018BF18A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1146,6 +1324,15 @@
 				B73279F40D2B240855EFBF6E /* SplashView.swift in Sources */,
 				3784074202890D721AEDB2D0 /* TimerExampleView.swift in Sources */,
 				FA05529205968797A04D7590 /* TimerManager.swift in Sources */,
+				3CC3D76CA52B4B3293D8D000 /* TimerLiveActivityCoordinator.swift in Sources */,
+				5EC690AD5A434697B8C0A82C /* TimerLiveActivityMetadataProvider.swift in Sources */,
+				DD3758B6C191489298D8AD6F /* RecipeTimerActivityAttributes.swift in Sources */,
+				FE3231F287C04923B25E29E8 /* TimerLiveActivityAccent.swift in Sources */,
+				7D40FB29253E4C98AA611CA4 /* TimerLiveActivityPalette.swift in Sources */,
+				A1B2C3D4E5F64789AABBCC03 /* TimerLiveActivityLinearProgressStyle.swift in Sources */,
+				EE235C1AE222411BAF3E3620 /* TimerLiveActivityFormatting.swift in Sources */,
+				D32494D8B32B4083A621A5D5 /* TimerLiveActivityActionQueue.swift in Sources */,
+				6BBC390F7AF94B5AA3A27468 /* TimerLiveActivityIntents.swift in Sources */,
 				CC0002AA0002BB0002CC0002 /* PushRegistrationService.swift in Sources */,
 				CC0004AA0004BB0004CC0004 /* PushScheduleService.swift in Sources */,
 				DD2201AABB000100000001 /* YrsObserver.swift in Sources */,
@@ -1282,6 +1469,13 @@
 				C011ECA300000003 /* CollectionAssignSheet.swift in Sources */,
 				C011ECA400000004 /* ManageCollectionRecipesSheet.swift in Sources */,
 				C011ECA500000005 /* RecipesRoute.swift in Sources */,
+				BB0000000000000000000001 /* RecipeSnapshotStore.swift in Sources */,
+				BB0000000000000000000002 /* RecipeEntity.swift in Sources */,
+				BB0000000000000000000003 /* StartTimerIntent.swift in Sources */,
+				BB0000000000000000000004 /* ShoppingIntentActionQueue.swift in Sources */,
+				BB0000000000000000000005 /* AddToShoppingListIntent.swift in Sources */,
+				BB0000000000000000000006 /* OpenRecipeIntent.swift in Sources */,
+				BB0000000000000000000007 /* RecipeScalerShortcuts.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1647,6 +1841,58 @@
 
 			name = Release;
 		};
+
+		E15B78C6D76343B49683D8C2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TimerLiveActivityExtension/TimerLiveActivityExtension.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2L5JDYE2L7;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TimerLiveActivityExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScalerNative.TimerLiveActivity;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+
+		97AA9577FAFC4749A970EB8F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TimerLiveActivityExtension/TimerLiveActivityExtension.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2L5JDYE2L7;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TimerLiveActivityExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScalerNative.TimerLiveActivity;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 	/* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1692,6 +1938,16 @@
 			buildConfigurations = (
 				67ACA229B7E34C44A5482B9A /* Debug */,
 				CFAB8851BE8244C3BC8B44E9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+
+		0C841F05E64741F9B946798A /* Build configuration list for PBXNativeTarget "TimerLiveActivityExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E15B78C6D76343B49683D8C2 /* Debug */,
+				97AA9577FAFC4749A970EB8F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

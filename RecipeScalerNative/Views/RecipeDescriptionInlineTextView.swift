@@ -56,7 +56,8 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
         let width = proposal.width ?? UIScreen.main.bounds.width - 32
         let fitting = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
-        return CGSize(width: width, height: fitting.height)
+        let minHeight = typography.fontSize * RecipeDescriptionStyle.lineHeightMultiple
+        return CGSize(width: width, height: max(fitting.height, minHeight))
     }
 
     final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
@@ -81,26 +82,6 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
             if let url = attrs[.recipeTimerReference] as? URL,
                let reference = RecipeDescriptionTimerReference.from(link: url),
                let anchor = timerAnchorRect(for: range, in: textView) {
-                // #region agent log
-                #if DEBUG
-                let textViewFrameInWindow = textView.convert(textView.bounds, to: nil)
-                AgentSyncDebugLog.write(
-                    hypothesisId: "TP-A",
-                    location: "RecipeDescriptionInlineTextView.swift:handleTap",
-                    message: "timer_tap_anchor",
-                    data: [
-                        "anchorMinX": String(format: "%.1f", anchor.minX),
-                        "anchorMinY": String(format: "%.1f", anchor.minY),
-                        "anchorWidth": String(format: "%.1f", anchor.width),
-                        "anchorHeight": String(format: "%.1f", anchor.height),
-                        "textViewFrameY": String(format: "%.1f", textViewFrameInWindow.origin.y),
-                        "textViewFrameH": String(format: "%.1f", textViewFrameInWindow.height),
-                        "displayText": reference.displayText,
-                        "durationSec": String(reference.durationSeconds),
-                    ]
-                )
-                #endif
-                // #endregion
                 onTimerTap?(reference, anchor)
                 return
             }
@@ -155,7 +136,10 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
         let bodyFont = typography.baseFont
         let accentUIColor = UIColor(accentColor)
         let paragraph = NSMutableParagraphStyle()
-        paragraph.lineSpacing = RecipeDescriptionStyle.bodyLineSpacing
+        let targetLineHeight = typography.fontSize * RecipeDescriptionStyle.lineHeightMultiple
+        // Add spacing only between lines (not before the first line) so the
+        // first line's ascender stays at y=0 and the badge aligns correctly.
+        paragraph.lineSpacing = max(0, targetLineHeight - bodyFont.lineHeight)
 
         let base: [NSAttributedString.Key: Any] = [
             .font: bodyFont,
@@ -234,29 +218,55 @@ private final class RecipeDescriptionTextView: UITextView {
         let fill = timerHighlightColor.withAlphaComponent(RecipeDescriptionStyle.TimerHighlight.backgroundAlpha)
         let radius = RecipeDescriptionStyle.TimerHighlight.cornerRadius
         let fullRange = NSRange(location: 0, length: text.length)
+        let host = textLayoutCanvasView
 
         text.enumerateAttribute(.recipeTimerReference, in: fullRange) { value, range, _ in
             guard value != nil else { return }
             let glyphRange = layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
             guard glyphRange.length > 0 else { return }
 
-            var box = RecipeDescriptionStyle.timerHighlightRect(
-                layoutManager: layoutManager,
-                textContainer: container,
-                characterRange: range,
-                attributedText: text,
-                contentOrigin: origin
-            )
-            let host = textLayoutCanvasView
-            if host !== self {
-                box = host.convert(box, from: self)
+            let font = (text.attribute(.font, at: range.location, effectiveRange: nil) as? UIFont)
+                ?? RecipeDescriptionStyle.bodyFont()
+
+            // Collect tight glyph bounding rect per visual line fragment.
+            // enumerateEnclosingRects returns full-width line rects; we need per-glyph bounds.
+            var fragmentRects: [CGRect] = []
+            layoutManager.enumerateLineFragments(forGlyphRange: glyphRange) { _, _, _, lineGlyphRange, _ in
+                let start = max(glyphRange.location, lineGlyphRange.location)
+                let end = min(NSMaxRange(glyphRange), NSMaxRange(lineGlyphRange))
+                guard end > start else { return }
+                fragmentRects.append(
+                    layoutManager.boundingRect(
+                        forGlyphRange: NSRange(location: start, length: end - start),
+                        in: container
+                    )
+                )
             }
 
-            let layer = CAShapeLayer()
-            layer.path = UIBezierPath(roundedRect: box, cornerRadius: radius).cgPath
-            layer.fillColor = fill.cgColor
-            host.layer.insertSublayer(layer, at: 0)
-            self.highlightLayers.append(layer)
+            for (index, glyphRect) in fragmentRects.enumerated() {
+                let isFirst = index == 0
+                let isLast = index == fragmentRects.count - 1
+                // Slice behaviour: round start-of-span (left) and end-of-span (right) corners only.
+                let corners: UIRectCorner = {
+                    if isFirst && isLast { return .allCorners }
+                    if isFirst { return [.topLeft, .bottomLeft] }
+                    if isLast { return [.topRight, .bottomRight] }
+                    return []
+                }()
+
+                var box = RecipeDescriptionStyle.expandTimerRect(glyphRect, font: font, contentOrigin: origin)
+                if host !== self { box = host.convert(box, from: self) }
+
+                let layer = CAShapeLayer()
+                layer.path = UIBezierPath(
+                    roundedRect: box,
+                    byRoundingCorners: corners,
+                    cornerRadii: CGSize(width: radius, height: radius)
+                ).cgPath
+                layer.fillColor = fill.cgColor
+                host.layer.insertSublayer(layer, at: 0)
+                highlightLayers.append(layer)
+            }
         }
     }
 }

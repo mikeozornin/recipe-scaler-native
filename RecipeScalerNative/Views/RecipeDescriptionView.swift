@@ -61,8 +61,9 @@ struct RecipeDescriptionView: View {
     }
 
     private func stepBadge(_ number: Int) -> some View {
-        Text("\(number)")
-            .font(AppTypography.sansMedium(AppTypography.compactSize))
+        let badgeUIFont = AppTypography.uiFont(AppFonts.sansMedium, size: AppTypography.compactSize)
+        return Text("\(number)")
+            .font(Font(badgeUIFont))
             .foregroundStyle(accentColor)
             .frame(width: 22, height: 22)
             .background(

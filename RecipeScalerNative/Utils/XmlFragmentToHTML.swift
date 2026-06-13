@@ -170,7 +170,8 @@ enum XmlFragmentToHTML {
     ) -> String {
         switch tag {
         case "paragraph":
-            return wrap("p", inner)
+            // Always emit <p> even when empty so empty list items render.
+            return "<p>\(inner)</p>"
         case "hardBreak":
             return "<br/>"
         case "horizontalRule":
@@ -180,7 +181,8 @@ enum XmlFragmentToHTML {
         case "orderedList":
             return wrap("ol", inner)
         case "listItem":
-            return wrap("li", inner)
+            // Always emit <li> even when its paragraph is empty.
+            return "<li>\(inner)</li>"
         case "blockquote":
             return wrap("blockquote", inner)
         case "codeBlock":

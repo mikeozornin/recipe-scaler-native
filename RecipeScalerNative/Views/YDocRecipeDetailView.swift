@@ -586,11 +586,14 @@ struct YDocRecipeDetailView: View {
 
     private func startDescriptionTimer(from reference: RecipeDescriptionTimerReference) {
         guard reference.isStartable else { return }
+        let displayName = recipe?.name
+            ?? syncService.collectionEntries.first(where: { $0.id == recipeId })?.name
         _ = TimerManager.shared.createAndStartTimer(
             name: reference.resolvedName,
             duration: TimeInterval(reference.durationSeconds),
             type: reference.type,
-            recipeId: recipeId
+            recipeId: recipeId,
+            recipeDisplayName: displayName
         )
     }
 

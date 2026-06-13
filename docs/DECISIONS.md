@@ -166,6 +166,14 @@ Chronological log of substantive choices (newest last).
 
 ---
 
+### 2026-06-12 — Timer Live Activities (spec 026)
+
+**Decision:** One Live Activity per active timer on Lock Screen; system semantic colors (`primary` / `orange` / `red`); edge-to-edge progress overlay; pause/resume via `LiveActivityIntent` + App Group action queue; deep link tap opens recipe via `recipe-scaler://recipe/{id}`.
+
+**Rationale:** Implements the milestone deferred before production APNs (see 2026-06-08). Per-timer activities chosen for v1 despite HIG preference for a single rotating activity; coordinator allows consolidating later.
+
+---
+
 ### 2026-06-12 — Agent debug logging: sandbox NDJSON file, not localhost ingest on device
 
 **Decision:** Agent/debug logs write to `Library/Application Support/debug-session.ndjson` on both simulator and physical device. Keep `AgentDebugLogging` / `AgentSyncDebugLog` / `DebugSessionNDJSONLog` classes but leave logging disabled by default (`AGENT_DEBUG_LOG_ENABLED`). Document the workflow in `llm/how-to-debug.md`. Do not rely on `127.0.0.1` HTTP ingest from a physical iPhone.

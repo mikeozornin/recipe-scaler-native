@@ -165,6 +165,8 @@ struct ContentView: View {
                 // Transient (app switcher, notification shade) — persist but keep the socket.
                 Task { await syncService.persistAll() }
             case .active:
+                TimerLiveActivityActionQueue.drainIfNeeded()
+                ShoppingIntentDrainer.drainIfNeeded(syncService: syncService)
                 syncService.handleEnteredForeground()
                 Task { await remindersService.reconcileRemindersToUserSnapshot() }
             @unknown default:
@@ -181,6 +183,7 @@ struct ContentView: View {
             .environmentObject(remindersService)
             .environmentObject(spotlightIndexer)
             .onAppear {
+                installTimerLiveActivityRecipeLookup(syncService: syncService)
                 TimerManager.shared.configure(modelContext: modelContext)
             }
             .task(id: effectiveUserId) {
@@ -197,6 +200,7 @@ struct ContentView: View {
                     remindersService.attach(to: syncService)
                     spotlightIndexer.start()
                     ShortcutItemsUpdater.update(from: syncService.collectionEntries)
+                    RecipeSnapshotStore.save(syncService.collectionEntries)
                 } else {
                     syncService.stop()
                     spotlightIndexer.stop()
@@ -205,7 +209,18 @@ struct ContentView: View {
             }
             .onChange(of: syncService.collectionEntries) { _, entries in
                 ShortcutItemsUpdater.update(from: entries)
+                RecipeSnapshotStore.save(entries)
+                installTimerLiveActivityRecipeLookup(syncService: syncService)
+                TimerManager.shared.refreshLiveActivities()
             }
+    }
+
+    private func installTimerLiveActivityRecipeLookup(syncService: YjsSyncService) {
+        TimerLiveActivityMetadataProvider.recipeNameLookup = { recipeId in
+            syncService.collectionEntries
+                .first(where: { $0.id == recipeId && !$0.deleted })?
+                .name
+        }
     }
 }
 

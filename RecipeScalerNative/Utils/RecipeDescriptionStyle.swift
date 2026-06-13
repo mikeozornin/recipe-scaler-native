@@ -65,7 +65,8 @@ enum RecipeDescriptionStyle {
 
     /// iOS Body — same as recipe list title and ingredient rows.
     static let bodyFontSize: CGFloat = AppTypography.bodySize
-    static var bodyLineSpacing: CGFloat { bodyFontSize * 0.4 }
+    /// Matches CSS `line-height: 1.5` in description-editor.html.
+    static let lineHeightMultiple: CGFloat = 1.5
 
     static func bodyFont() -> UIFont {
         AppTypography.uiFont(AppFonts.sans, size: bodyFontSize)
@@ -83,7 +84,20 @@ enum RecipeDescriptionStyle {
         static let backgroundAlpha: CGFloat = 0.15
     }
 
-    /// Inline chip: width from glyph bounds; height from font metrics (trim line-box slack below glyphs).
+    /// Expand a single glyph-space rect into a padded timer chip rect in content coordinates.
+    static func expandTimerRect(_ glyphRect: CGRect, font: UIFont, contentOrigin: CGPoint) -> CGRect {
+        let vertical = TimerHighlight.verticalPadding
+        let horizontal = TimerHighlight.horizontalPadding
+        let inkHeight = font.ascender + abs(font.descender)
+        return CGRect(
+            x: glyphRect.minX - horizontal + contentOrigin.x,
+            y: glyphRect.minY - vertical + contentOrigin.y,
+            width: glyphRect.width + horizontal * 2,
+            height: inkHeight + vertical * 2
+        )
+    }
+
+    /// Union bounding rect for the whole timer run — used for the tap-anchor popover position.
     static func timerHighlightRect(
         layoutManager: NSLayoutManager,
         textContainer: NSTextContainer,
@@ -95,17 +109,7 @@ enum RecipeDescriptionStyle {
         let glyphBounds = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textContainer)
         let font = (attributedText.attribute(.font, at: characterRange.location, effectiveRange: nil) as? UIFont)
             ?? bodyFont()
-
-        let vertical = TimerHighlight.verticalPadding
-        let horizontal = TimerHighlight.horizontalPadding
-        let inkHeight = font.ascender + abs(font.descender)
-
-        return CGRect(
-            x: glyphBounds.minX - horizontal + contentOrigin.x,
-            y: glyphBounds.minY - vertical + contentOrigin.y,
-            width: glyphBounds.width + horizontal * 2,
-            height: inkHeight + vertical * 2
-        )
+        return expandTimerRect(glyphBounds, font: font, contentOrigin: contentOrigin)
     }
 
     /// Opaque fill matching timer chip (`accent` at `backgroundAlpha` over page background).

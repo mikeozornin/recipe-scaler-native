@@ -107,16 +107,16 @@ enum RecipeDescriptionParser {
     }
 
     private static func parseOrderedList(_ html: String, stepOffset: inout Int) -> [RecipeDescriptionBlock] {
-        liContents(html).compactMap { item -> RecipeDescriptionBlock? in
+        liContents(html).map { item -> RecipeDescriptionBlock in
             stepOffset += 1
-            guard let runs = parseInline(unwrapParagraph(item)), !runs.isEmpty else { return nil }
+            let runs = parseInline(unwrapParagraph(item)) ?? []
             return .orderedStep(id: UUID(), number: stepOffset, runs: runs)
         }
     }
 
     private static func parseBulletList(_ html: String) -> [RecipeDescriptionBlock] {
-        liContents(html).compactMap { item -> RecipeDescriptionBlock? in
-            guard let runs = parseInline(unwrapParagraph(item)), !runs.isEmpty else { return nil }
+        liContents(html).map { item -> RecipeDescriptionBlock in
+            let runs = parseInline(unwrapParagraph(item)) ?? []
             return .bullet(id: UUID(), runs: runs)
         }
     }
