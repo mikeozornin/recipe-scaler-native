@@ -1085,7 +1085,14 @@ private struct RecipeEditHeaderBindable: View {
             }
             .padding(.horizontal)
             .onAppear {
-                pickerColor = RecipeAccentColor.color(from: viewModel.draftColor)
+                // Defer to the next runloop tick: writing `pickerColor` (a @State/@Binding
+                // rooted in YDocRecipeDetailView) synchronously from `.onAppear` mutates
+                // observed state during the SwiftUI layout pass, which triggers
+                // "Publishing changes from within view updates is not allowed".
+                let initial = RecipeAccentColor.color(from: viewModel.draftColor)
+                DispatchQueue.main.async {
+                    pickerColor = initial
+                }
             }
             .onChange(of: pickerColor) { _, newColor in
                 viewModel.draftColor = RecipeAccentColor.storedValue(from: newColor)

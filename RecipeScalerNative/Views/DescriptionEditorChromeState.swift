@@ -28,9 +28,16 @@ final class DescriptionEditorChromeState: ObservableObject {
         self.bridge = bridge
         cancellables.removeAll()
 
-        // Snapshot current state
-        isFocused = bridge.isFocused
-        isEditorReady = bridge.phase == .ready
+        // Defer the initial @Published snapshot to the next runloop tick. `bind` is
+        // typically called from `.onAppear`, which runs synchronously during the SwiftUI
+        // body / layout pass; mutating `@Published` here triggers
+        // "Publishing changes from within view updates is not allowed".
+        let initialFocused = bridge.isFocused
+        let initialReady = bridge.phase == .ready
+        DispatchQueue.main.async { [weak self] in
+            self?.isFocused = initialFocused
+            self?.isEditorReady = initialReady
+        }
 
         // Subscribe to future changes — single source of truth
         bridge.$isFocused

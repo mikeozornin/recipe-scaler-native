@@ -181,12 +181,13 @@ struct RecipeTitleTextField: UIViewRepresentable {
         }
 
         private func setEditingActive(_ active: Bool) {
-            if Thread.isMainThread {
-                parent.onEditingActiveChanged(active)
-            } else {
-                DispatchQueue.main.async {
-                    self.parent.onEditingActiveChanged(active)
-                }
+            // Always defer to the next runloop tick, even when already on the main thread.
+            // `updateUIView` / `textViewDidEndEditing` can run synchronously inside a SwiftUI
+            // render pass, and mutating `parent.onEditingActiveChanged` (which writes back
+            // into `@Observable`/`@Published` state) during that pass triggers
+            // "Publishing changes from within view updates is not allowed".
+            DispatchQueue.main.async {
+                self.parent.onEditingActiveChanged(active)
             }
         }
 
@@ -202,7 +203,6 @@ struct RecipeTitleTextField: UIViewRepresentable {
 
         func makeKeyboardToolbar() -> UIToolbar {
             let toolbar = UIToolbar()
-            toolbar.sizeToFit()
             let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
             let done = UIBarButtonItem(
                 title: String(localized: "edit.done"),
@@ -211,7 +211,10 @@ struct RecipeTitleTextField: UIViewRepresentable {
                 action: #selector(keyboardDoneTapped)
             )
             done.accessibilityIdentifier = AccessibilityIdentifiers.recipeTitleKeyboardDone
+            // Assign items BEFORE sizeToFit; otherwise UIToolbar's content view is laid out
+            // with width==0 and UIKit logs "Unable to simultaneously satisfy constraints".
             toolbar.items = [spacer, done]
+            toolbar.sizeToFit()
             return toolbar
         }
 
@@ -315,11 +318,13 @@ struct RecipeTitleTextField: UIViewRepresentable {
                 textView.text = trimmed
             }
             lastSyncedInitialText = trimmed
-            let deliverBlur = { self.parent.onBlur(trimmed) }
-            if Thread.isMainThread {
-                deliverBlur()
-            } else {
-                DispatchQueue.main.async(execute: deliverBlur)
+            // Always hop to the next runloop, even on the main thread: `commitBlur` can be
+            // reached synchronously from `updateUIView` -> `resignFirstResponder` ->
+            // `textViewDidEndEditing`, and writing `parent.onBlur` (which mutates
+            // `@State` / `@Observable` recipe-edit state) during a SwiftUI render pass
+            // triggers "Publishing changes from within view updates is not allowed".
+            DispatchQueue.main.async {
+                self.parent.onBlur(trimmed)
             }
         }
 

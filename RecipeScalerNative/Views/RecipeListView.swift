@@ -558,9 +558,11 @@ private struct SyncStatusIndicator: View {
             AppSymbol.image("doc.fill")
                 .foregroundStyle(.green)
         } else {
-            AppSymbol.image("doc.badge.exclamationmark.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.white, .orange)
+            // `doc.badge.exclamationmark.fill` is not a real SF Symbol name; use `doc.fill`
+            // with orange tint to signal "partial / stale" — mirrors the green `doc.fill`
+            // for the fully-cached branch above.
+            AppSymbol.image("doc.fill")
+                .foregroundStyle(.orange)
         }
     }
 
