@@ -21,6 +21,7 @@ struct YDocRecipeDetailView: View {
     @State private var pickerColor: Color = RecipeAccentColor.color(from: "oklch(0.65 0.25 270)")
     @State private var saveInFlight = false
     @State private var didApplyStartInEditMode = false
+    @State private var shouldAutoFocusRecipeTitle = false
     @StateObject private var descriptionChrome = DescriptionEditorChromeState()
     @State private var didApplyStartDescriptionEdit = false
     @State private var dismissRecipeTitleKeyboard = false
@@ -475,6 +476,11 @@ struct YDocRecipeDetailView: View {
             }
             applyStartDescriptionEditIfNeeded()
         }
+        .onChange(of: syncService.currentRecipe?.id) { _, loadedId in
+            guard loadedId == recipeId else { return }
+            applyStartInEditModeIfNeeded()
+            applyStartDescriptionEditIfNeeded()
+        }
         .onAppear {
             applyStartInEditModeIfNeeded()
             applyStartDescriptionEditIfNeeded()
@@ -534,6 +540,7 @@ struct YDocRecipeDetailView: View {
               canEnterEditMode,
               let recipe else { return }
         didApplyStartInEditMode = true
+        shouldAutoFocusRecipeTitle = startInEditMode
         let vm = RecipeEditViewModel(recipe: recipe, syncService: syncService)
         editViewModel = vm
         pickerColor = RecipeAccentColor.color(from: vm.draftColor)
@@ -839,6 +846,7 @@ struct YDocRecipeDetailView: View {
             pickerColor: $pickerColor,
             dismissTitleKeyboard: $dismissRecipeTitleKeyboard,
             commitTitleNonce: commitTitleNonce,
+            requestInitialFocus: shouldAutoFocusRecipeTitle,
             onTitleBlur: { name in
                 scheduleTitleSave(name, editViewModel: vm)
             },
@@ -1036,11 +1044,12 @@ struct YDocRecipeDetailView: View {
 }
 
 private struct RecipeEditHeaderBindable: View {
-    @ObservedObject var viewModel: RecipeEditViewModel
+    @Bindable var viewModel: RecipeEditViewModel
     let initialTitle: String
     @Binding var pickerColor: Color
     @Binding var dismissTitleKeyboard: Bool
     var commitTitleNonce: Int
+    var requestInitialFocus: Bool = false
     var onTitleBlur: (String) -> Void
     var onEditingActiveChanged: (Bool) -> Void
     @Environment(\.locale) private var locale
@@ -1060,6 +1069,7 @@ private struct RecipeEditHeaderBindable: View {
                 RecipeTitleTextField(
                     initialText: initialTitle,
                     dismissKeyboard: $dismissTitleKeyboard,
+                    requestInitialFocus: requestInitialFocus,
                     commitTitleNonce: commitTitleNonce,
                     placeholder: titlePlaceholder,
                     font: titleUIFont,

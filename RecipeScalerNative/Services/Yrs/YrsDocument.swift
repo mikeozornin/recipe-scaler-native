@@ -156,6 +156,12 @@ actor YrsDocument {
         _ = ymap(doc, name)
     }
 
+    /// Ensures v3 recipe root types exist before the first write transaction on a new doc.
+    func ensureRecipeCreateRoots() {
+        _ = ymap(doc, "recipe")
+        _ = yxmlfragment(doc, "description")
+    }
+
     // ─── Transactions ────────────────────────────────────────────────────
 
     func withReadTransaction<T>(_ block: (UnsafeMutablePointer<YDoc>, OpaquePointer) throws -> T) throws -> T {

@@ -19,12 +19,12 @@ struct CollectionFolderView: View {
     @State private var showingError = false
     @State private var errorMessage = ""
     @State private var recipePendingDelete: RecipeRowData?
-    @State private var recipeIdToOpenInEditMode: String?
+    @State private var isCreatingRecipe = false
     @State private var assignSheetRecipeId: String?
     @State private var assignSheetRecipeName: String?
     @State private var searchText = ""
     /// Lazy recipe loader + highlight cache scoped to this folder.
-    @StateObject private var searchStore = RecipeListSearchStore()
+    @State private var searchStore = RecipeListSearchStore()
     /// Tokens derived from `searchText` once per change.
     @State private var searchTokens: [String] = []
 
@@ -153,26 +153,15 @@ struct CollectionFolderView: View {
         ))
         .appListBodyTypography()
         .toolbar {
-            if !isVirtual && !isEditingName {
+            if !isEditingName {
                 ToolbarItem(placement: .topBarTrailing) {
-                    folderMenu
-                }
-            }
-        }
-        .navigationDestination(for: RecipesRoute.self) { route in
-            switch route {
-            case .recipe(let recipeId, _):
-                YDocRecipeDetailView(
-                    recipeId: recipeId,
-                    startInEditMode: recipeIdToOpenInEditMode == recipeId
-                )
-                .onAppear {
-                    if recipeIdToOpenInEditMode == recipeId {
-                        recipeIdToOpenInEditMode = nil
+                    HStack(spacing: 0) {
+                        if !isVirtual {
+                            folderMenu
+                        }
+                        createRecipeButton
                     }
                 }
-            default:
-                EmptyView()
             }
         }
         .sheet(isPresented: $showingManageRecipes) {
@@ -256,6 +245,21 @@ struct CollectionFolderView: View {
         .appToolbarIconButton()
     }
 
+    @ViewBuilder
+    private var createRecipeButton: some View {
+        Button {
+            Task { @MainActor in
+                await handleCreateRecipe()
+            }
+        } label: {
+            AppToolbarStyle.iconOnly(systemName: "plus")
+        }
+        .appToolbarIconButton()
+        .disabled(isCreatingRecipe)
+        .accessibilityLabel("recipes.add-button")
+        .accessibilityIdentifier(AccessibilityIdentifiers.recipeListAdd)
+    }
+
     // MARK: - Inline rename
 
     private func startRename() {
@@ -317,6 +321,37 @@ struct CollectionFolderView: View {
         do {
             try await syncService.deleteFolder(id: folderId)
             navigationPath.removeLast()
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
+        }
+    }
+
+    private func handleCreateRecipe() async {
+        guard !isCreatingRecipe else { return }
+        isCreatingRecipe = true
+        defer { isCreatingRecipe = false }
+
+        do {
+            let recipeId = try await syncService.createRecipe()
+
+            let shouldAssignFolder = activeFolder != nil && !isVirtual
+            if shouldAssignFolder {
+                do {
+                    try await syncService.setRecipeFolders(recipeId: recipeId, folderIds: [folderId])
+                } catch {
+                    errorMessage = error.localizedDescription
+                    showingError = true
+                }
+            }
+
+            navigationPath.append(
+                RecipesRoute.recipe(
+                    recipeId: recipeId,
+                    folderContext: folderId,
+                    openInEditMode: true
+                )
+            )
         } catch {
             errorMessage = error.localizedDescription
             showingError = true

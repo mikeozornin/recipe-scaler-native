@@ -90,6 +90,8 @@ struct RecipeTitleTextField: UIViewRepresentable {
     /// Shown when the field is created or when the recipe name changes externally (not while typing).
     var initialText: String
     @Binding var dismissKeyboard: Bool
+    /// Focus title once when opening a newly created recipe in edit mode.
+    var requestInitialFocus: Bool = false
     /// Incremented by parent on Done to flush uncommitted title text before `finishEditing`.
     var commitTitleNonce: Int
     var placeholder: String
@@ -122,6 +124,7 @@ struct RecipeTitleTextField: UIViewRepresentable {
         context.coordinator.lastSyncedInitialText = initialText
         context.coordinator.updatePlaceholder(on: view)
         view.inputAccessoryView = context.coordinator.makeKeyboardToolbar()
+        context.coordinator.scheduleInitialFocusIfNeeded(on: view)
         return view
     }
 
@@ -155,6 +158,8 @@ struct RecipeTitleTextField: UIViewRepresentable {
         if uiView.text.isEmpty || !uiView.isFirstResponder {
             context.coordinator.updatePlaceholder(on: uiView)
         }
+
+        context.coordinator.scheduleInitialFocusIfNeeded(on: uiView)
     }
 
     final class Coordinator: NSObject, UITextViewDelegate {
@@ -166,6 +171,7 @@ struct RecipeTitleTextField: UIViewRepresentable {
         var lastSyncedInitialText = ""
         var lastCommittedBlurText: String?
         var appliedCommitNonce = 0
+        private var didApplyInitialFocus = false
         private var lastPlaceholderWidth: CGFloat = -1
 
         private let placeholderTag = 9_901
@@ -181,6 +187,16 @@ struct RecipeTitleTextField: UIViewRepresentable {
                 DispatchQueue.main.async {
                     self.parent.onEditingActiveChanged(active)
                 }
+            }
+        }
+
+        func scheduleInitialFocusIfNeeded(on textView: GrowingTitleTextView) {
+            guard parent.requestInitialFocus, !didApplyInitialFocus else { return }
+            didApplyInitialFocus = true
+            DispatchQueue.main.async { [weak self, weak textView] in
+                guard let self, let textView, !self.parent.dismissKeyboard, !textView.isFirstResponder else { return }
+                _ = textView.becomeFirstResponder()
+                self.setEditingActive(true)
             }
         }
 

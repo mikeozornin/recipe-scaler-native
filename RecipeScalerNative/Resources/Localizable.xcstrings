@@ -4888,6 +4888,23 @@
         }
       }
     },
+    "recipes.add-button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить рецепт"
+          }
+        }
+      }
+    },
     "recipes.ingredient-header" : {
       "extractionState" : "manual",
       "localizations" : {

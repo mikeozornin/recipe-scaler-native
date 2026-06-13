@@ -9,11 +9,11 @@ struct RecipeListView: View {
     @State private var errorMessage = ""
     @State private var showingSyncStatus = false
     @State private var recipePendingDelete: RecipeRowData?
-    @State private var recipeIdToOpenInEditMode: String?
+    @State private var isCreatingRecipe = false
     @State private var assignSheetRecipeId: String?
     @State private var assignSheetRecipeName: String?
     /// Lazy recipe loader + highlight cache for full-text search.
-    @StateObject private var searchStore = RecipeListSearchStore()
+    @State private var searchStore = RecipeListSearchStore()
     /// Tokens derived from `searchText` once per change, not per render.
     @State private var searchTokens: [String] = []
 
@@ -142,16 +142,11 @@ struct RecipeListView: View {
                         folderId: folderId,
                         navigationPath: $navigationPath
                     )
-                case .recipe(let recipeId, _):
+                case .recipe(let recipeId, _, let openInEditMode):
                     YDocRecipeDetailView(
                         recipeId: recipeId,
-                        startInEditMode: recipeIdToOpenInEditMode == recipeId
+                        startInEditMode: openInEditMode
                     )
-                    .onAppear {
-                        if recipeIdToOpenInEditMode == recipeId {
-                            recipeIdToOpenInEditMode = nil
-                        }
-                    }
                 }
             }
             #if DEBUG
@@ -174,6 +169,19 @@ struct RecipeListView: View {
                     ) {
                         showingSyncStatus = true
                     }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { @MainActor in
+                            await handleCreateRecipe(folderId: nil)
+                        }
+                    } label: {
+                        AppToolbarStyle.iconOnly(systemName: "plus")
+                    }
+                    .appToolbarIconButton()
+                    .disabled(isCreatingRecipe)
+                    .accessibilityLabel("recipes.add-button")
+                    .accessibilityIdentifier(AccessibilityIdentifiers.recipeListAdd)
                 }
             }
             .sheet(isPresented: $showingSyncStatus) {
@@ -291,6 +299,39 @@ struct RecipeListView: View {
             if !navigationPath.isEmpty {
                 navigationPath = NavigationPath()
             }
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
+        }
+    }
+
+    private func handleCreateRecipe(folderId: String?) async {
+        guard !isCreatingRecipe else { return }
+        isCreatingRecipe = true
+        defer { isCreatingRecipe = false }
+
+        do {
+            let recipeId = try await syncService.createRecipe()
+
+            let shouldAssignFolder: Bool = folderId.map { id in
+                !CollectionVirtualFolders.isKnownVirtualFolderId(id)
+            } ?? false
+            if shouldAssignFolder, let folderId {
+                do {
+                    try await syncService.setRecipeFolders(recipeId: recipeId, folderIds: [folderId])
+                } catch {
+                    errorMessage = error.localizedDescription
+                    showingError = true
+                }
+            }
+
+            navigationPath.append(
+                RecipesRoute.recipe(
+                    recipeId: recipeId,
+                    folderContext: folderId,
+                    openInEditMode: true
+                )
+            )
         } catch {
             errorMessage = error.localizedDescription
             showingError = true

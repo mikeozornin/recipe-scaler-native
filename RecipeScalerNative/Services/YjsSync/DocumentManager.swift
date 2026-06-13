@@ -766,8 +766,9 @@ actor DocumentManager {
 
         let recipeKey = "\(userId):recipe:\(recipeId)"
         let doc = try await getOrCreateDoc(key: recipeKey)
-        try await doc.withWriteTransaction { rawDoc, txn in
-            guard let mapBranch = ymap(rawDoc, "recipe") else {
+        await doc.ensureRecipeCreateRoots()
+        try await doc.withWriteTransaction { _, txn in
+            guard let mapBranch = ytype_get(txn, "recipe") else {
                 throw RecipeEditError.documentNotLoaded
             }
             let map = YrsMap(branch: mapBranch)
@@ -780,7 +781,6 @@ actor DocumentManager {
             map.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
             map.insert(key: "ingredients", value: .yarray([]), txn: txn)
             map.insert(key: "isPublic", value: .bool(false), txn: txn)
-            _ = yxmlfragment(rawDoc, "description")
         }
         await deliverPendingLocalUpdate(recipeId: recipeId)
         return recipeId
@@ -795,10 +795,14 @@ actor DocumentManager {
         guard !currentCollectionKey.isEmpty else { return }
         let doc = try await getOrCreateDoc(key: currentCollectionKey)
         try await doc.withWriteTransaction { rawDoc, txn in
-            guard let arrayBranch = yarray(rawDoc, "recipes") else {
+            let array: YrsArray
+            if let branch = ytype_get(txn, RecipeFolderConstants.recipesArrayKey) {
+                array = YrsArray(branch: branch)
+            } else if let branch = yarray(rawDoc, RecipeFolderConstants.recipesArrayKey) {
+                array = YrsArray(branch: branch)
+            } else {
                 throw RecipeEditError.documentNotLoaded
             }
-            let array = YrsArray(branch: arrayBranch)
             let len = array.length(txn: txn)
             for index in 0..<len {
                 let matches = array.withMap(at: index, txn: txn) { map in
@@ -807,18 +811,19 @@ actor DocumentManager {
                 if matches { return }
             }
             let index = array.length(txn: txn)
-            array.insert(
-                value: .map([
-                    ("id", .string(recipeId)),
-                    ("name", .string(name)),
-                    ("color", .string(color)),
-                    ("updatedAt", .string(updatedAt)),
-                    ("deleted", .bool(false)),
-                    ("isPinned", .bool(false)),
-                ]),
-                at: index,
-                txn: txn
-            )
+            array.insert(value: .map([]), at: index, txn: txn)
+            let wrote = array.withMap(at: index, txn: txn) { map -> Bool in
+                map.insert(key: "id", value: .string(recipeId), txn: txn)
+                map.insert(key: "name", value: .string(name), txn: txn)
+                map.insert(key: "color", value: .string(color), txn: txn)
+                map.insert(key: "updatedAt", value: .string(updatedAt), txn: txn)
+                map.insert(key: "deleted", value: .bool(false), txn: txn)
+                map.insert(key: "isPinned", value: .bool(false), txn: txn)
+                return true
+            }
+            guard wrote == true else {
+                throw RecipeEditError.documentNotLoaded
+            }
         }
         await deliverPendingLocalUpdate(recipeId: "collection")
     }

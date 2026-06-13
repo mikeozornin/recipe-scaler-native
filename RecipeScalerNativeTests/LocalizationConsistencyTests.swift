@@ -21,6 +21,7 @@ final class LocalizationConsistencyTests: XCTestCase {
             "shopping.empty-to-buy-all-done",
             "shopping.copy-as-text",
             "recipe.list.add",
+            "recipes.add-button",
             "telegram.connect",
             "telegram.disconnect",
             "discover.nav.discover",
