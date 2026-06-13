@@ -2,13 +2,12 @@
 //  DeepLinkRouter.swift
 //  RecipeScalerNative
 //
-//  Central deep-link dispatcher for Spotlight taps, URL scheme links,
-//  and future sources (Universal Links, notifications).
+// Central deep-link dispatcher for Spotlight taps, URL scheme links,
+// and future sources (Universal Links, notifications).
 //
-//  The active `AppShellView` observes `pending` and consumes the link once.
+// The active `AppShellView` observes `pending` and consumes the link once.
 //
 
-import Combine
 import Foundation
 
 // MARK: - DeepLink
@@ -16,22 +15,24 @@ import Foundation
 enum DeepLink: Equatable, Sendable {
     case openRecipe(recipeId: String)
     case addToShopping(recipeId: String)
+    case openShoppingList
 }
 
 // MARK: - DeepLinkRouter
 
 /// Singleton that holds the most recent unprocessed deep link.
-/// Callers write via `handle(_:)`, the scene reads via `$pending`
+/// Callers write via `handle(_:)`, the scene reads via `pending`
 /// and clears via `clear()` after consumption.
 @MainActor
-final class DeepLinkRouter: ObservableObject {
+@Observable
+final class DeepLinkRouter {
     static let shared = DeepLinkRouter()
 
     /// UserDefaults key for `recipe-scaler://recipe/{id}` links persisted
     /// by Share/Action extensions.
     static let pendingRecipeIdKey = "routing.pendingRecipeId"
 
-    @Published var pending: DeepLink?
+    var pending: DeepLink?
 
     private init() {}
 

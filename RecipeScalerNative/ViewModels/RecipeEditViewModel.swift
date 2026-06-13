@@ -2,14 +2,15 @@ import Foundation
 import SwiftUI
 
 @MainActor
-final class RecipeEditViewModel: ObservableObject {
-    @Published var draftServings: Int = 1
-    @Published var draftColor: String = "oklch(0.65 0.25 270)"
+@Observable
+final class RecipeEditViewModel {
+    var draftServings: Int = 1
+    var draftColor: String = "oklch(0.65 0.25 270)"
     private var colorBaseline: String = "oklch(0.65 0.25 270)"
 
     private let syncService: YjsSyncService
     private let recipeId: String
-    /// Web `isEditingTitleRef` — not `@Published` (avoids full detail view re-layout on title focus).
+    /// Web `isEditingTitleRef` — not observed (avoids full detail view re-layout on title focus).
     var isEditingTitleField = false
 
     init(recipe: RecipeData, syncService: YjsSyncService) {

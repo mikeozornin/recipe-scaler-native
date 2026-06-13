@@ -63,7 +63,8 @@ enum ImportPhotoValidator {
     }
 }
 
-struct ImportPhotoItem {
+struct ImportPhotoItem: Identifiable {
+    let id = UUID()
     let data: Data
     let fileName: String
     let utType: UTType?

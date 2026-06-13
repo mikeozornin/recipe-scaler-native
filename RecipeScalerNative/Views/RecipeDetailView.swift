@@ -381,7 +381,7 @@ struct StepsSection: View {
     var recipeId: String?
     @Binding var timerPopover: DescriptionTimerPopoverState?
 
-    @EnvironmentObject private var timerManager: TimerManager
+    @Environment(TimerManager.self) private var timerManager
     @State private var document: RecipeDescriptionDocument?
 
     init(

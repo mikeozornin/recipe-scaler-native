@@ -8,7 +8,7 @@ import SwiftUI
 
 /// Example view demonstrating TimerManager usage
 struct TimerExampleView: View {
-    @EnvironmentObject var timerManager: TimerManager
+    @Environment(TimerManager.self) var timerManager
     @State private var timerName = "Bake Cookies"
     @State private var timerDuration = 12.0
     @State private var selectedType: RecipeTimer.TimerType = .minutes
@@ -70,7 +70,7 @@ struct TimerExampleView: View {
                             VStack(spacing: 10) {
                                 ForEach(timerManager.activeTimers, id: \.id) { timer in
                                     ActiveTimerRow(timer: timer)
-                                        .environmentObject(timerManager)
+                                        .environment(timerManager)
                                 }
                             }
                         }
@@ -95,7 +95,7 @@ struct TimerExampleView: View {
                             VStack(spacing: 10) {
                                 ForEach(timerManager.timers, id: \.id) { timer in
                                     TimerRow(timer: timer)
-                                        .environmentObject(timerManager)
+                                        .environment(timerManager)
                                 }
                             }
                         }
@@ -138,7 +138,7 @@ struct TimerExampleView: View {
 
 // MARK: - Active Timer Row
 struct ActiveTimerRow: View {
-    @EnvironmentObject var timerManager: TimerManager
+    @Environment(TimerManager.self) var timerManager
     let timer: RecipeTimer
     
     var displayTime: String {
@@ -194,7 +194,7 @@ struct ActiveTimerRow: View {
 
 // MARK: - Timer Row
 struct TimerRow: View {
-    @EnvironmentObject var timerManager: TimerManager
+    @Environment(TimerManager.self) var timerManager
     let timer: RecipeTimer
 
     var statusText: String {
@@ -282,5 +282,5 @@ struct TimerRow: View {
 
 #Preview {
     TimerExampleView()
-        .environmentObject(TimerManager())
+        .environment(TimerManager())
 }

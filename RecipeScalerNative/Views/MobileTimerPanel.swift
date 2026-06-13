@@ -7,7 +7,7 @@ import SwiftUI
 
 /// Active timers above tab bar (local + cross-device sync). Compact mobile layout.
 struct MobileTimerPanel: View {
-    @EnvironmentObject private var timerManager: TimerManager
+    @Environment(TimerManager.self) private var timerManager
     @Binding var isCollapsed: Bool
 
     private var expandedListMaxHeight: CGFloat {
@@ -187,7 +187,7 @@ private enum TimerPanelIcon {
 }
 
 private struct MobileTimerRow: View {
-    @EnvironmentObject private var timerManager: TimerManager
+    @Environment(TimerManager.self) private var timerManager
     let timer: RecipeTimer
 
     private var remaining: Int {
@@ -286,7 +286,7 @@ extension EnvironmentValues {
 
 /// Padding for non-list tab roots (empty/loading states).
 struct MobileTimerPanelBottomPaddingModifier: ViewModifier {
-    @EnvironmentObject private var timerManager: TimerManager
+    @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var isCollapsed
 
     private var height: CGFloat {
@@ -309,7 +309,7 @@ extension View {
 
 /// Bottom list row so the last cells stay above the shared timer panel (UITableView-safe).
 struct MobileTimerPanelListSpacerRow: View {
-    @EnvironmentObject private var timerManager: TimerManager
+    @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var isCollapsed
 
     private var height: CGFloat {

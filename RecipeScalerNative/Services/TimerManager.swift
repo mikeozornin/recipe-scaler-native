@@ -11,12 +11,13 @@ import SwiftData
 
 // MARK: - Timer Manager
 @MainActor
-final class TimerManager: NSObject, ObservableObject {
+@Observable
+final class TimerManager: NSObject {
     static let shared = TimerManager()
 
-    @Published private(set) var timers: [RecipeTimer] = []
+    private(set) var timers: [RecipeTimer] = []
     /// All timers for the mobile panel (sorted like web `TimerPanel`).
-    @Published private(set) var activeTimers: [RecipeTimer] = []
+    private(set) var activeTimers: [RecipeTimer] = []
 
     private var modelContext: ModelContext?
     private var updateTimer: Timer?
@@ -327,7 +328,6 @@ final class TimerManager: NSObject, ObservableObject {
         }
         if didChange {
             refreshPanelTimers()
-            objectWillChange.send()
         }
     }
 

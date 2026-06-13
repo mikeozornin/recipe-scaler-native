@@ -21,12 +21,13 @@ struct RecipeRowHighlight {
 ///   of the same name on every re-render
 ///
 /// Each call to `refresh` cancels the previous load, so typing stays responsive.
-/// Snapshot and highlights are republished in a single coalesced
-/// `objectWillChange.send()` to avoid double invalidation of the List body.
+/// Snapshot and highlights are published together via two property writes; SwiftUI
+/// coalesces them within the same render pass.
 @MainActor
-final class RecipeListSearchStore: ObservableObject {
-    @Published private(set) var filteredSnapshot: [CollectionEntry] = []
-    @Published private(set) var highlights: [String: RecipeRowHighlight] = [:]
+@Observable
+final class RecipeListSearchStore {
+    private(set) var filteredSnapshot: [CollectionEntry] = []
+    private(set) var highlights: [String: RecipeRowHighlight] = [:]
 
     /// Cached `normalizeForSearch(name)` per recipe id. Names are immutable for a
     /// given id, so this persists across queries.
@@ -64,8 +65,7 @@ final class RecipeListSearchStore: ObservableObject {
 
         let tokens = RecipeSearchUtils.tokenizeQuery(query)
         guard !tokens.isEmpty else {
-            // Clear search state with a single publish.
-            objectWillChange.send()
+            // Clear search state.
             filteredSnapshot = []
             highlights = [:]
             isActive = false
@@ -160,8 +160,7 @@ final class RecipeListSearchStore: ObservableObject {
             newHighlights[entry.id] = RecipeRowHighlight(title: title, snippet: snippet)
         }
 
-        // Coalesce both assignments into one publish.
-        objectWillChange.send()
+        // Two property writes — SwiftUI coalesces them into one render pass.
         filteredSnapshot = snapshot
         highlights = newHighlights
     }

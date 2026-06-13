@@ -46,8 +46,8 @@ private struct AppTabBarLabel: View {
 
 struct AppShellView: View {
     @EnvironmentObject private var syncService: YjsSyncService
-    @StateObject private var timerManager = TimerManager.shared
-    @StateObject private var deepLinkRouter = DeepLinkRouter.shared
+    @State private var timerManager = TimerManager.shared
+    @State private var deepLinkRouter = DeepLinkRouter.shared
     @State private var selectedTab: AppTab = .recipes
     @State private var previousTab: AppTab = .recipes
     @State private var showImportSheet = false
@@ -145,7 +145,10 @@ struct AppShellView: View {
                 }
             }
         }
-        .onReceive(deepLinkRouter.$pending) { link in
+        .onReceive(NotificationCenter.default.publisher(for: .openRecipeRequested)) { _ in
+            consumePendingDeepLinkIfNeeded()
+        }
+        .onChange(of: deepLinkRouter.pending) { _, link in
             guard let link else { return }
             handleDeepLink(link)
         }
@@ -173,9 +176,6 @@ struct AppShellView: View {
             consumePendingDeepLinkIfNeeded()
         }
         #endif
-        .onReceive(NotificationCenter.default.publisher(for: .openRecipeRequested)) { _ in
-            consumePendingDeepLinkIfNeeded()
-        }
     }
 
     /// Open the recipe requested via `recipe-scaler://recipe/{id}` deep link,
@@ -188,7 +188,7 @@ struct AppShellView: View {
 
     private var mobileTimerPanel: some View {
         MobileTimerPanel(isCollapsed: $mobileTimerPanelCollapsed)
-            .environmentObject(timerManager)
+            .environment(timerManager)
     }
 
     private var tabView: some View {
@@ -296,6 +296,9 @@ struct AppShellView: View {
                     ShoppingFeedback.postStatus(error.localizedDescription)
                 }
             }
+            deepLinkRouter.clear()
+        case .openShoppingList:
+            selectedTab = .shopping
             deepLinkRouter.clear()
         }
     }

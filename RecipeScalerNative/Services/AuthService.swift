@@ -79,12 +79,13 @@ enum AuthError: LocalizedError {
 
 // MARK: - Auth Service
 @MainActor
-class AuthService: ObservableObject {
+@Observable
+class AuthService {
     static let shared = AuthService()
 
-    @Published var isAuthenticated = false
-    @Published var userId: String?
-    @Published var token: String?
+    var isAuthenticated = false
+    var userId: String?
+    var token: String?
 
     private let keychain = Keychain(service: "com.recipescaler.native")
     private let userDefaultsKey = "userId"

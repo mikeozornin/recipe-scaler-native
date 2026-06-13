@@ -8,7 +8,7 @@ import SwiftUI
 
 struct AuthView: View {
     @Environment(\.locale) private var locale
-    @StateObject private var authService = AuthService.shared
+    @State private var authService = AuthService.shared
     @State private var isLoading = false
     @State private var showError = false
     @State private var errorMessage = ""

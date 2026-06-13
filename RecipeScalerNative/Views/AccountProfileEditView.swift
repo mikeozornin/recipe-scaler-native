@@ -7,7 +7,7 @@ import PhotosUI
 import SwiftUI
 
 struct AccountProfileEditView: View {
-    @ObservedObject var viewModel: AccountSettingsViewModel
+    @Bindable var viewModel: AccountSettingsViewModel
     @EnvironmentObject private var syncService: YjsSyncService
 
     @State private var avatarItem: PhotosPickerItem?

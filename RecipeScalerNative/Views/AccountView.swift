@@ -6,21 +6,25 @@
 import LocalAuthentication
 import SwiftUI
 
+private enum AccountSheet: Identifiable {
+    case seed, about, privacy
+
+    var id: Self { self }
+}
+
 struct AccountView: View {
     @EnvironmentObject private var syncService: YjsSyncService
     @EnvironmentObject private var remindersService: RemindersSyncService
     @Environment(\.locale) private var locale
-    @StateObject private var authService = AuthService.shared
-    @StateObject private var viewModel = AccountSettingsViewModel()
+    @State private var authService = AuthService.shared
+    @State private var viewModel = AccountSettingsViewModel()
 
     @State private var showingLogoutConfirmation = false
-    @State private var showLoginOnDevice = false
+    @State private var presentedSheet: AccountSheet?
     @State private var appLanguage: AppLanguagePreference = .current
     @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)
     private var collectionsLayoutRaw: String = RecipeFolderRoutes.CollectionsRootLayout.list.rawValue
     @State private var isTelegramConnected = false
-    @State private var showingAbout = false
-    @State private var showingPrivacy = false
 
     private var collectionsLayout: RecipeFolderRoutes.CollectionsRootLayout {
         RecipeFolderRoutes.CollectionsRootLayout(rawValue: collectionsLayoutRaw) ?? .list
@@ -68,16 +72,17 @@ struct AccountView: View {
             .localizedNavigationTitle("account.title")
             .listSectionSpacing(12)
             .appListBodyTypography()
-            .sheet(isPresented: $showLoginOnDevice) {
-                AccountSeedPhraseSheet()
-            }
-            .sheet(isPresented: $showingAbout) {
-                InAppSafariView(url: PublicURLBuilder.aboutURL)
-                    .ignoresSafeArea()
-            }
-            .sheet(isPresented: $showingPrivacy) {
-                InAppSafariView(url: PublicURLBuilder.privacyURL)
-                    .ignoresSafeArea()
+            .sheet(item: $presentedSheet) { destination in
+                switch destination {
+                case .seed:
+                    AccountSeedPhraseSheet()
+                case .about:
+                    InAppSafariView(url: PublicURLBuilder.aboutURL)
+                        .ignoresSafeArea()
+                case .privacy:
+                    InAppSafariView(url: PublicURLBuilder.privacyURL)
+                        .ignoresSafeArea()
+                }
             }
             .confirmationDialog(
                 Bundle.currentLocalizedString("account.logout.confirm"),
@@ -125,7 +130,7 @@ struct AccountView: View {
             }
 
             Button {
-                showLoginOnDevice = true
+                presentedSheet = .seed
             } label: {
                 Text("auth.login-with-another").appBody()
             }
@@ -413,7 +418,7 @@ struct AccountView: View {
             }
 
             Button {
-                showingAbout = true
+                presentedSheet = .about
             } label: {
                 Text("account.about-link")
                     .appBody()
@@ -422,7 +427,7 @@ struct AccountView: View {
             }
 
             Button {
-                showingPrivacy = true
+                presentedSheet = .privacy
             } label: {
                 Text("privacy.link")
                     .appBody()
@@ -470,7 +475,7 @@ struct AccountView: View {
 // MARK: - Seed phrase (biometrics + QR)
 
 private struct AccountSeedPhraseSheet: View {
-    @StateObject private var authService = AuthService.shared
+    @State private var authService = AuthService.shared
     @Environment(\.dismiss) private var dismiss
     @State private var unlocked = false
     @State private var authError: String?

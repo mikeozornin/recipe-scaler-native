@@ -9,30 +9,31 @@ import EventKit
 import RecipeScalerCore
 
 @MainActor
-final class AccountSettingsViewModel: ObservableObject {
-    @Published var isLoading = false
-    @Published var isOnline = false
-    @Published var statusMessage: String?
+@Observable
+final class AccountSettingsViewModel {
+    var isLoading = false
+    var isOnline = false
+    var statusMessage: String?
 
-    @Published var displayName = ""
-    @Published var avatarURL: URL?
-    @Published var username: String?
-    @Published var canChangeUsername = false
+    var displayName = ""
+    var avatarURL: URL?
+    var username: String?
+    var canChangeUsername = false
 
-    @Published var publicProfileEnabled = false
-    @Published var shareMode: PublicShareMode = .one_by_one
-    @Published var allowRecipeDownloads = true
-    @Published var isUpdatingSharing = false
+    var publicProfileEnabled = false
+    var shareMode: PublicShareMode = .one_by_one
+    var allowRecipeDownloads = true
+    var isUpdatingSharing = false
 
-    @Published var showNutrition = true
-    @Published var appTheme: AppThemePreference = .current
-    @Published var timerNotificationsEnabled = false
-    @Published var timerNotificationsDenied = false
+    var showNutrition = true
+    var appTheme: AppThemePreference = .current
+    var timerNotificationsEnabled = false
+    var timerNotificationsDenied = false
 
-    @Published var remindersSyncEnabled = false
-    @Published var remindersSyncDenied = false
-    @Published var remindersListName: String = ""
-    @Published var availableRemindersLists: [EKCalendar] = []
+    var remindersSyncEnabled = false
+    var remindersSyncDenied = false
+    var remindersListName: String = ""
+    var availableRemindersLists: [EKCalendar] = []
 
     private var nameSaveTask: Task<Void, Never>?
 

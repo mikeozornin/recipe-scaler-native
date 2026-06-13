@@ -4,7 +4,7 @@ import RecipeScalerCore
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @StateObject private var authService = AuthService.shared
+    @State private var authService = AuthService.shared
     @StateObject private var syncService: YjsSyncService
     @StateObject private var remindersService: RemindersSyncService
     @StateObject private var spotlightIndexer: SpotlightIndexer
@@ -179,7 +179,7 @@ struct ContentView: View {
     private func appShell(syncService: YjsSyncService) -> some View {
         AppShellView()
             .environmentObject(syncService)
-            .environmentObject(TimerManager.shared)
+            .environment(TimerManager.shared)
             .environmentObject(remindersService)
             .environmentObject(spotlightIndexer)
             .onAppear {
