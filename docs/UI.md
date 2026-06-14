@@ -1,8 +1,14 @@
-# Типографика
+# UI и UX
+
+Web reference: `../recipe-scaler-web/recipe-scaler`.
+
+---
+
+## Типографика
 
 Все текстовые стили определены в `AppTypography.swift` и `AppFonts.swift`. **Не хардкодь** шрифты и размеры в view-файлах — используй константы и extension-ы.
 
-## Шрифты (AppFonts)
+### Шрифты (AppFonts)
 
 | Роль | Имя | Когда использовать |
 |---|---|---|
@@ -11,7 +17,7 @@
 | `display` | Martian Grotesk Std xBd | Заголовки (title2, large title) |
 | `mono` | Martian Grotesk Nr Lt | Числа, код (`/connect`) |
 
-## Размеры и стили (AppTypography)
+### Размеры и стили (AppTypography)
 
 | Стиль | Размер | Шрифт | lineSpacing | Использование |
 |---|---|---|---|---|
@@ -23,7 +29,7 @@
 | `title2` | 22 pt | display | — | Заголовки экранов |
 | `compact` | 14 pt | sans | — | Секционные заголовки в списке |
 
-## Text extensions (SwiftUI)
+### Text extensions (SwiftUI)
 
 Используй вместо ручного `.font(...)` + `.lineSpacing(...)`:
 
@@ -36,7 +42,7 @@ Text("some key").appFootnote()   // 13 pt + lineSpacing 2
 
 **Ограничение:** `.appBody()` / `.appFootnote()` возвращают `some View`, а не `Text`. После них нельзя вызывать Text-specific модификаторы (`.textCase`, `.tracking`). Для таких случаев используй `.font(AppTypography.footnote)` напрямую (например, `AppSectionHeader`).
 
-## View extension для List/Form
+### View extension для List/Form
 
 ```swift
 .appListBodyTypography()   // font(AppTypography.body) на весь List
@@ -45,22 +51,22 @@ Text("some key").appFootnote()   // 13 pt + lineSpacing 2
 
 Применяй к корневому view списка, чтобы все некастомные Text внутри наследовали body.
 
-## Секционные заголовки
+### Секционные заголовки
 
 ```swift
 AppSectionHeader("key")       // footnote, .secondary, uppercase, tracking 0.8
 AppSectionHeaderSpacer()      // невидимый placeholder для отступа
 ```
 
-## UIKit chrome (AppChromeAppearance)
+### UIKit chrome (AppChromeAppearance)
 
 Глобально настраивает шрифты для NavigationBar, BarButtonItems, TabBar, UITextField, UISegmentedControl через `appearance()`. Вызывается один раз при старте приложения.
 
-## Keyboard toolbar
+### Keyboard toolbar
 
 Кастомная панель над клавиатурой — `ToolbarItemGroup(placement: .keyboard)`. Стили кнопок — `AppToolbarStyle` + `.appToolbarIconButton()` / `.appToolbarTextButton()`.
 
-### Отступы между кнопками
+#### Отступы между кнопками
 
 SwiftUI не добавляет зазор между соседними icon-кнопками в одной группе. Между **соседними кнопками слева** (например, `chevron.up` и `chevron.down`) — **8 pt**:
 
@@ -96,12 +102,50 @@ ToolbarItemGroup(placement: .keyboard) {
 
 Эталон: `YDocIngredientsSection`, `EditIngredientNutritionSheet`.
 
-## Правила
+### Правила типографики
 
 1. **Text view** → используй `.appBody()` / `.appFootnote()` вместо ручного `.font()` + `.lineSpacing()`.
 2. **Не-Text view** (SF Symbols, HStack, ZStack) → используй `.font(AppTypography.xxx)` напрямую.
 3. **TextField** → `.font(AppTypography.body)`; если нужна та же высота строки, что у `.appBody()` (поля названия ингредиента), — `.appBodyFieldTypography()`.
 4. **Toggle label** → передавай `Text(...)` с `.appBody()` вместо строкового ключа.
 5. **Новый стиль с lineSpacing** → добавь константу в `AppTypography` + `Text` extension, обнови `RecipeRowLayoutMetrics` если нужно.
-6. Не создавай fallback вроде `t('key') || 'Default'` — см. правило i18n в `AGENTS.md`.
+6. Не создавай fallback вроде `t('key') || 'Default'` — см. [I18N.md](I18N.md).
 7. **Keyboard toolbar** — см. раздел выше; между соседними icon-кнопками слева всегда 8 pt.
+
+---
+
+## Стандартные компоненты iOS
+
+Если запрос **противоречит поведению или гайдлайнам стандартных компонентов iOS** (Human Interface Guidelines, системным компонентам iOS) — **сначала уточни у пользователя**, что он действительно хочет именно это, а не обходной путь.
+
+Примеры, когда нужно спросить:
+
+- ручное переключение outline / `.fill` в `tabItem` вместо штатного tint активной вкладки;
+- кастомный UIKit поверх SwiftUI там, где системный компонент уже решает задачу;
+- поведение, которое ломает ожидаемые жесты, accessibility или внешний вид платформы.
+
+Предложи **стандартный вариант** (кратко, почему так принято на iOS) и **альтернативу** (кастом / полная переделка), если пользователь настаивает — делай по его выбору.
+
+## Web parity
+
+- UX/UI parity with the **mobile web** layout (same hierarchy and behavior; pixel-perfect match not required).
+- Match web behavior for shared UI: masked `userId`, ingredient rows without unit labels, component-level nutrition editing, recipe ellipsis menu order, ingredient qty column right-aligned to main value with compact drag handle and swipe-from-right delete only; description formatting toolbar active states must mirror Tiptap `selectionState` (e.g. H1 must not imply bold).
+
+## Экраны и паттерны
+
+### Account / public profile
+
+iOS Settings patterns (toggles, `NavigationLink` submenus, label–value rows); no explicit Save button; avatar as centered circle with Set photo below; descriptive copy uses `.appBody()` line-height.
+
+### Shopping list
+
+Header matches Recipes: large title with sort segment in the collapsible search slot (`UISearchController` / `UISearchBar` pattern — SwiftUI has no separate API for a custom block under large title).
+
+### Collections
+
+Folder rename uses inline **Cancel / Done** toolbar, auto-focus with select-all, hides back button and ellipsis while editing; folder color picker is a preset grid in the rename toolbar (web parity, iOS-adapted).
+
+### Discover + assistant
+
+- **Discover** — horizontal cards (photo right, 16:9 previews, count badge, no username, list-level padding only).
+- **Assistant** — no Close on swipe-dismissible sheets, keyboard Done, history left / new chat right, always-visible timestamps/copy, `.appFootnote()` text, attach picker sort matches All Recipes flat list.
