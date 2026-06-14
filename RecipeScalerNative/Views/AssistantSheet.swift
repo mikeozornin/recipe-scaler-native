@@ -14,11 +14,16 @@ struct AssistantSheet: View {
     let contextRecipeId: String?
 
     @State private var threadId: String?
+    @State private var threads: [AssistantThreadDTO] = []
     @State private var messages: [AssistantMessage] = []
     @State private var input = ""
     @State private var attachments: [AssistantRecipeAttachment] = []
     @State private var isSending = false
+    @State private var isBootstrapping = false
+    @State private var isLoadingThreads = false
     @State private var loadError: String?
+    @State private var showHistorySheet = false
+    @State private var deletingThreadId: String?
     @State private var streamTask: Task<Void, Never>?
     @State private var hasTriedSessionRestore = false
     @State private var messageListContentWidth: CGFloat = 0
@@ -46,23 +51,89 @@ struct AssistantSheet: View {
             }
             .localizedNavigationTitle("assistant.title")
             .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        startNewChat()
+                    } label: {
+                        AppToolbarStyle.iconOnly(systemName: "plus")
+                    }
+                    .appToolbarIconButton()
+                    .accessibilityLabel(Text("assistant.new-chat"))
+                    .accessibilityIdentifier(AccessibilityIdentifiers.assistantNewThreadButton)
+
+                    Button {
+                        showHistorySheet = true
+                    } label: {
+                        AppToolbarStyle.iconOnly(systemName: "clock.arrow.circlepath")
+                    }
+                    .appToolbarIconButton()
+                    .accessibilityLabel(Text("assistant.threads-title"))
+                    .accessibilityIdentifier(AccessibilityIdentifiers.assistantHistoryButton)
+                }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("assistant.close") { dismiss() }
-                        .appToolbarTextButton()
+                    Button("assistant.close") {
+                        persistSession()
+                        dismiss()
+                    }
+                    .appToolbarTextButton()
+                }
+            }
+            .overlay {
+                if isBootstrapping {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color(.systemBackground).opacity(0.6))
+                }
+            }
+            .sheet(isPresented: $showHistorySheet) {
+                AssistantThreadListSheet(
+                    threads: threads,
+                    activeThreadId: threadId,
+                    deletingThreadId: deletingThreadId,
+                    isLoading: isLoadingThreads || (isBootstrapping && threads.isEmpty),
+                    onSelect: { selectedId in
+                        showHistorySheet = false
+                        Task { await openThread(selectedId) }
+                    },
+                    onDelete: { deletedId in
+                        Task { await deleteThread(deletedId) }
+                    }
+                )
+                .presentationDetents([.medium, .large])
+            }
+            .alert(
+                "assistant.error-unavailable",
+                isPresented: Binding(
+                    get: { loadError != nil },
+                    set: { if !$0 { loadError = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) { loadError = nil }
+            } message: {
+                if let loadError {
+                    Text(verbatim: loadError)
                 }
             }
             .task { await initialize() }
+            .onChange(of: showHistorySheet) { _, isOpen in
+                if isOpen {
+                    Task { await refreshThreadsList() }
+                }
+            }
             .onAppear {
                 inputPlaceholderVariantIndex = Int.random(in: 0..<AssistantInputPlaceholder.variantCount)
-                // #region agent log
+                #if DEBUG
                 AgentSyncDebugLog.sync(
                     location: "AssistantSheet.onAppear",
                     message: "assistant_sheet_appeared",
                     data: ["has_thread_id": threadId != nil ? "true" : "false"]
                 )
-                // #endregion
+                #endif
             }
-            .onDisappear { streamTask?.cancel() }
+            .onDisappear {
+                persistSession()
+                streamTask?.cancel()
+            }
             .accessibilityIdentifier(AccessibilityIdentifiers.assistantSheet)
         }
     }
@@ -71,7 +142,7 @@ struct AssistantSheet: View {
 
     private var messageList: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 12) {
+            LazyVStack(alignment: .leading, spacing: 8) {
                 ForEach(messages.indices, id: \.self) { index in
                     let message = messages[index]
                     let isLast = index == messages.indices.last
@@ -101,6 +172,11 @@ struct AssistantSheet: View {
     private func messageBubble(for message: AssistantMessage, isLast: Bool) -> some View {
         let isUser = message.role == "user"
         let showMeta = shouldShowMessageMeta(for: message)
+        let followUps = AssistantMessageFollowUps.suggestions(
+            for: message,
+            isLastMessage: isLast,
+            isSending: isSending
+        )
         let bubble = messageBubbleBody(for: message, isLast: isLast, isUser: isUser)
 
         VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
@@ -129,8 +205,19 @@ struct AssistantSheet: View {
             if showMeta {
                 AssistantMessageMetaRow(message: message, isUser: isUser)
             }
+
+            if !followUps.isEmpty {
+                AssistantFollowUpsView(suggestions: followUps) { suggestion in
+                    submitWidgetValue(suggestion.value, displayText: suggestion.label, recipeAttachment: nil)
+                }
+                .frame(
+                    maxWidth: messageListContentWidth > 0
+                        ? messageListContentWidth * Self.messageMaxWidthFraction
+                        : nil,
+                    alignment: .leading
+                )
+            }
         }
-        .padding(.bottom, showMeta ? 8 : 0)
     }
 
     private func shouldShowMessageMeta(for message: AssistantMessage) -> Bool {
@@ -167,9 +254,6 @@ struct AssistantSheet: View {
                 isSending: isSending,
                 onWidgetSubmit: { value, attachment in
                     submitWidgetValue(value, displayText: nil, recipeAttachment: attachment)
-                },
-                onFollowUp: { suggestion in
-                    submitWidgetValue(suggestion.value, displayText: suggestion.label, recipeAttachment: nil)
                 }
             )
         }
@@ -185,22 +269,47 @@ struct AssistantSheet: View {
 
     // MARK: - Lifecycle
 
-    /// On first appearance: try to restore a recent thread (≤60s since last close),
-    /// otherwise create a new one. Mirrors web `ASSISTANT_NEW_CHAT_TIMEOUT_MS`.
+    /// On first appearance: load thread list, then restore recent thread (≤60s) or start empty chat.
+    /// Mirrors web `buildInitialSelection` + `useAssistantChat` bootstrap.
     private func initialize() async {
         guard !hasTriedSessionRestore else { return }
         hasTriedSessionRestore = true
+        isBootstrapping = true
+        defer { isBootstrapping = false }
+
+        do {
+            threads = try await AssistantAPI.listThreads()
+        } catch {
+            loadError = error.localizedDescription
+            threads = []
+        }
 
         let now = Date().timeIntervalSince1970
         let lastOpenedAt = UserDefaults.standard.double(forKey: Self.sessionLastOpenedAtKey)
         if lastOpenedAt > 0,
            now - lastOpenedAt < Self.newChatTimeout,
-           let savedThreadId = UserDefaults.standard.string(forKey: Self.sessionThreadIdKey) {
-            threadId = savedThreadId
-            await loadHistory(for: savedThreadId)
+           let savedThreadId = UserDefaults.standard.string(forKey: Self.sessionThreadIdKey),
+           threads.contains(where: { $0.id == savedThreadId }) {
+            await openThread(savedThreadId)
             return
         }
-        await ensureThread()
+        startNewChat()
+    }
+
+    private func startNewChat() {
+        streamTask?.cancel()
+        threadId = nil
+        messages = []
+        input = ""
+        attachments = []
+        UserDefaults.standard.removeObject(forKey: Self.sessionThreadIdKey)
+    }
+
+    private func openThread(_ id: String) async {
+        streamTask?.cancel()
+        threadId = id
+        persistSession()
+        await loadHistory(for: id)
     }
 
     private func ensureThread() async {
@@ -208,7 +317,38 @@ struct AssistantSheet: View {
         do {
             let thread = try await AssistantAPI.createThread()
             threadId = thread.id
-            UserDefaults.standard.set(thread.id, forKey: Self.sessionThreadIdKey)
+            threads.insert(thread, at: 0)
+            persistSession()
+        } catch {
+            loadError = error.localizedDescription
+        }
+    }
+
+    private func refreshThreadsList() async {
+        if threads.isEmpty {
+            isLoadingThreads = true
+        }
+        defer { isLoadingThreads = false }
+        do {
+            threads = try await AssistantAPI.listThreads()
+        } catch {
+            loadError = error.localizedDescription
+        }
+    }
+
+    private func deleteThread(_ id: String) async {
+        deletingThreadId = id
+        defer { deletingThreadId = nil }
+        do {
+            try await AssistantAPI.deleteThread(threadId: id)
+            threads.removeAll { $0.id == id }
+            if threadId == id {
+                if let nextThread = threads.first {
+                    await openThread(nextThread.id)
+                } else {
+                    startNewChat()
+                }
+            }
         } catch {
             loadError = error.localizedDescription
         }
@@ -228,11 +368,26 @@ struct AssistantSheet: View {
                 )
             }
         } catch {
-            // History load is best-effort; fall through to creating a fresh thread.
             loadError = error.localizedDescription
-            threadId = nil
-            await ensureThread()
+            if threadId == id {
+                threads.removeAll { $0.id == id }
+                startNewChat()
+            }
         }
+    }
+
+    private func promoteActiveThread(updatedTitle: String? = nil) {
+        guard let threadId,
+              let index = threads.firstIndex(where: { $0.id == threadId }) else { return }
+        let existing = threads.remove(at: index)
+        let refreshed = AssistantThreadDTO(
+            id: existing.id,
+            title: updatedTitle ?? existing.title,
+            createdAt: existing.createdAt,
+            updatedAt: existing.updatedAt,
+            lastMessageAt: existing.lastMessageAt
+        )
+        threads.insert(refreshed, at: 0)
     }
 
     // MARK: - Send
@@ -385,9 +540,14 @@ struct AssistantSheet: View {
     }
 
     private func applyFinal(_ data: AssistantStreamFinalData, optimisticAssistantId: String) {
-        if let newThreadId = data.thread?.id, newThreadId != threadId {
-            threadId = newThreadId
-            UserDefaults.standard.set(newThreadId, forKey: Self.sessionThreadIdKey)
+        if let threadData = data.thread {
+            if threadData.id != threadId {
+                threadId = threadData.id
+            }
+            persistSession()
+            promoteActiveThread(updatedTitle: threadData.title)
+        } else {
+            promoteActiveThread()
         }
         if let userMessage = data.userMessage,
            let userIndex = messages.lastIndex(where: { $0.id.hasPrefix("optimistic-user-") }) {
@@ -423,8 +583,17 @@ struct AssistantSheet: View {
 
     // MARK: - Session persistence
 
-    private func stampSession() {
+    private func persistSession() {
         UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Self.sessionLastOpenedAtKey)
+        if let threadId {
+            UserDefaults.standard.set(threadId, forKey: Self.sessionThreadIdKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Self.sessionThreadIdKey)
+        }
+    }
+
+    private func stampSession() {
+        persistSession()
     }
 
     private static let sessionThreadIdKey = "assistant.session.threadId"

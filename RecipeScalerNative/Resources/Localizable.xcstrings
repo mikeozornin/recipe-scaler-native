@@ -22,6 +22,9 @@
     "%@ sec" : {
 
     },
+    "%@." : {
+
+    },
     "%@/%@" : {
       "localizations" : {
         "en" : {
@@ -31,6 +34,9 @@
           }
         }
       }
+    },
+    "•" : {
+
     },
     "• %@" : {
 
@@ -1245,6 +1251,22 @@
         }
       }
     },
+    "assistant.delete-thread" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete chat"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить чат"
+          }
+        }
+      }
+    },
     "assistant.error-unavailable" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1258,6 +1280,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ассистент недоступен"
+          }
+        }
+      }
+    },
+    "assistant.follow-ups-title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick answers"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Быстрые ответы"
           }
         }
       }
@@ -1415,6 +1453,73 @@
         }
       }
     },
+    "assistant.messages.load.failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not load messages"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить сообщения"
+          }
+        }
+      }
+    },
+    "assistant.new-chat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New chat"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новый чат"
+          }
+        }
+      }
+    },
+    "assistant.no-chats-found" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No chats found"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чаты не найдены"
+          }
+        }
+      }
+    },
+    "assistant.no-chats-with-assistant" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No chats with the assistant"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет чатов с ассистентом"
+          }
+        }
+      }
+    },
     "assistant.no-recipes-found" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1481,7 +1586,6 @@
       }
     },
     "assistant.thinking" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1497,7 +1601,92 @@
         }
       }
     },
+    "assistant.thread-search-placeholder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск"
+          }
+        }
+      }
+    },
+    "assistant.threads-title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чаты"
+          }
+        }
+      }
+    },
+    "assistant.threads.create.failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not create chat"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось создать чат"
+          }
+        }
+      }
+    },
+    "assistant.threads.delete.failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not delete chat"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось удалить чат"
+          }
+        }
+      }
+    },
+    "assistant.threads.list.failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not load chats"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить чаты"
+          }
+        }
+      }
+    },
     "assistant.timestamp.yesterday" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

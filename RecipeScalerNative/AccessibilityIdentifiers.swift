@@ -41,7 +41,22 @@ enum AccessibilityIdentifiers {
     static let assistantAttachmentButton = "assistant_attachment_button"
     static let assistantVoiceRecordButton = "assistant_voice_record_button"
     static let assistantSendButton = "assistant_send_button"
+    static let assistantFollowUps = "assistant_follow_ups"
+    static let assistantMarkdownContent = "assistant_markdown_content"
     static let assistantContextRecipeTag = "assistant_context_recipe_tag"
+    static let assistantNewThreadButton = "assistant_new_thread_button"
+    static let assistantHistoryButton = "assistant_history_button"
+    static let assistantThreadPanel = "assistant_thread_panel"
+    static let assistantThreadSearchInput = "assistant_thread_search_input"
+
+    static func assistantThreadItem(threadId: String) -> String {
+        "assistant_thread_item_\(threadId)"
+    }
+
+    static func assistantThreadDeleteButton(threadId: String) -> String {
+        "assistant_thread_delete_button_\(threadId)"
+    }
+
     static let recipeList = "recipe_list"
     static let recipeListAdd = "recipe_list_add"
     static let recipeRowPrefix = "recipe_row_"

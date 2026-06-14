@@ -152,6 +152,11 @@
 		E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70344FA5B3 /* AccountView.swift */; };
 		E5F60718293A4B7061726B18 /* TelegramConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */; };
 		E5F60718293A4B7010A27A52 /* AssistantSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7001851F51 /* AssistantSheet.swift */; };
+		A5MD018293A4B7010000001 /* AssistantMarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5MD028293A4B7010000002 /* AssistantMarkdownRenderer.swift */; };
+		A5TH018293A4B7010000001 /* AssistantThreadListSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5TH028293A4B7010000002 /* AssistantThreadListSheet.swift */; };
+		A5TH038293A4B7010000003 /* AssistantThreadSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5TH048293A4B7010000004 /* AssistantThreadSearch.swift */; };
+		A5TH058293A4B7010000005 /* AssistantThreadSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5TH068293A4B7010000006 /* AssistantThreadSearchTests.swift */; };
+		A5MD038293A4B7010000003 /* AssistantMarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5MD048293A4B7010000004 /* AssistantMarkdownText.swift */; };
 		E5F60718293A4B7018FB5571 /* AssistantMessageFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B706CC8B6CE /* AssistantMessageFooter.swift */; };
 		E5F60718293A4B702B6FFEC2 /* AssistantComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70220BC4FC /* AssistantComposer.swift */; };
 		E5F60718293A4B70E66E63B1 /* MobileTimerPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70E374EEFC /* MobileTimerPanel.swift */; };
@@ -349,6 +354,7 @@
 		E5F60718293A4B7000000091 /* RecipeSearchUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeSearchUtils.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000093 /* RecipeListSearchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeListSearchStore.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000095 /* RecipeSearchUtilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeSearchUtilsTests.swift; sourceTree = "<group>"; };
+		A5MD058293A4B7010000005 /* AssistantMarkdownRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMarkdownRendererTests.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000071 /* DescriptionEditorBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionEditorBridge.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000073 /* DescriptionEditorWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionEditorWebView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000075 /* DescriptionEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionEditorView.swift; sourceTree = "<group>"; };
@@ -400,6 +406,11 @@
 		E5F60718293A4B70344FA5B3 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelegramConnectionView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7001851F51 /* AssistantSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSheet.swift; sourceTree = "<group>"; };
+		A5MD028293A4B7010000002 /* AssistantMarkdownRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMarkdownRenderer.swift; sourceTree = "<group>"; };
+		A5TH028293A4B7010000002 /* AssistantThreadListSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantThreadListSheet.swift; sourceTree = "<group>"; };
+		A5TH048293A4B7010000004 /* AssistantThreadSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantThreadSearch.swift; sourceTree = "<group>"; };
+		A5TH068293A4B7010000006 /* AssistantThreadSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantThreadSearchTests.swift; sourceTree = "<group>"; };
+		A5MD048293A4B7010000004 /* AssistantMarkdownText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMarkdownText.swift; sourceTree = "<group>"; };
 		E5F60718293A4B706CC8B6CE /* AssistantMessageFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMessageFooter.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70220BC4FC /* AssistantComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantComposer.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70E374EEFC /* MobileTimerPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileTimerPanel.swift; sourceTree = "<group>"; };
@@ -662,6 +673,8 @@
 				E5F60718293A4B70ACE01234 /* AccountProfileEditView.swift */,
 				E5F60718293A4B70AAV00001 /* AuthAvatarImage.swift */,
 				E5F60718293A4B7001851F51 /* AssistantSheet.swift */,
+				A5TH028293A4B7010000002 /* AssistantThreadListSheet.swift */,
+				A5MD048293A4B7010000004 /* AssistantMarkdownText.swift */,
 				E5F60718293A4B706CC8B6CE /* AssistantMessageFooter.swift */,
 				E5F60718293A4B70220BC4FC /* AssistantComposer.swift */,
 				E5F60718293A4B70E374EEFC /* MobileTimerPanel.swift */,
@@ -775,6 +788,8 @@
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
 				E5F60718293A4B7000000095 /* RecipeSearchUtilsTests.swift */,
+				A5MD058293A4B7010000005 /* AssistantMarkdownRendererTests.swift */,
+				A5TH068293A4B7010000006 /* AssistantThreadSearchTests.swift */,
 				CDC8307193209458433B2DAF /* SnapshotTests.swift */,
 				1056FC9B5113FFE50B50E8AB /* TestSupport.swift */,
 			);
@@ -851,6 +866,8 @@
 				E5F60718293A4B7000000043 /* RecipeReadDiagnostics.swift */,
 				E5F60718293A4B700000005D /* DebugLaunchOptions.swift */,
 				E5F60718293A4B7000000091 /* RecipeSearchUtils.swift */,
+				A5TH048293A4B7010000004 /* AssistantThreadSearch.swift */,
+				A5MD028293A4B7010000002 /* AssistantMarkdownRenderer.swift */,
 				E5F60718293A4B7000000051 /* RecipeDescriptionFixture.swift */,
 				E5F60718293A4B707F339DC6 /* RecipeDescriptionTimerReference.swift */,
 				E5F60718293A4B70309B38A2 /* DescriptionTimerPopoverState.swift */,
@@ -1437,6 +1454,10 @@
 				E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */,
 				E5F60718293A4B7061726B18 /* TelegramConnectionView.swift in Sources */,
 				E5F60718293A4B7010A27A52 /* AssistantSheet.swift in Sources */,
+				A5TH018293A4B7010000001 /* AssistantThreadListSheet.swift in Sources */,
+				A5TH038293A4B7010000003 /* AssistantThreadSearch.swift in Sources */,
+				A5MD018293A4B7010000001 /* AssistantMarkdownRenderer.swift in Sources */,
+				A5MD038293A4B7010000003 /* AssistantMarkdownText.swift in Sources */,
 				E5F60718293A4B7018FB5571 /* AssistantMessageFooter.swift in Sources */,
 				E5F60718293A4B702B6FFEC2 /* AssistantComposer.swift in Sources */,
 				E5F60718293A4B70E66E63B1 /* MobileTimerPanel.swift in Sources */,

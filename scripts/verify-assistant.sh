@@ -11,6 +11,8 @@ LOG_FILE="$ROOT/.verify-assistant.ndjson"
 # Sanity: the view + accessibility id must exist in source.
 rg -q 'struct AssistantSheet' RecipeScalerNative/Views/AssistantSheet.swift
 rg -q 'AccessibilityIdentifiers.assistantSheet' RecipeScalerNative/Views/AssistantSheet.swift
+rg -q 'AccessibilityIdentifiers.assistantHistoryButton' RecipeScalerNative/Views/AssistantSheet.swift
+rg -q 'struct AssistantThreadListSheet' RecipeScalerNative/Views/AssistantThreadListSheet.swift
 rg -q 'showAssistant' RecipeScalerNative/Views/AppShellView.swift
 
 sim_build >/dev/null

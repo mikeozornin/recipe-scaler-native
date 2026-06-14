@@ -19,11 +19,9 @@ struct AssistantMessageFooter: View {
     let isLastMessage: Bool
     let isSending: Bool
     let onWidgetSubmit: (_ value: String, _ recipeAttachment: AssistantRecipeAttachment?) -> Void
-    let onFollowUp: (AssistantFollowUpSuggestion) -> Void
 
-    /// Single-shot lock: once any widget option / suggestion is tapped, the footer becomes inert.
+    /// Single-shot lock: once any widget option is tapped, the footer becomes inert.
     @State private var widgetSubmitted = false
-    @State private var followUpSubmitted = false
 
     private var widget: AssistantInteractiveWidget? {
         guard message.role == "assistant",
@@ -34,31 +32,30 @@ struct AssistantMessageFooter: View {
         return message.metadata?.interactiveWidget
     }
 
-    private var followUps: [AssistantFollowUpSuggestion] {
+    var body: some View {
+        if let widget {
+            AssistantWidgetView(widget: widget) { value, attachment in
+                widgetSubmitted = true
+                onWidgetSubmit(value, attachment)
+            }
+        }
+    }
+}
+
+enum AssistantMessageFollowUps {
+    static func suggestions(
+        for message: AssistantMessage,
+        isLastMessage: Bool,
+        isSending: Bool
+    ) -> [AssistantFollowUpSuggestion] {
         guard message.role == "assistant",
               !message.isStreaming,
               isLastMessage,
               !isSending,
-              widget == nil,
-              !followUpSubmitted else { return [] }
-        return (message.metadata?.followUpSuggestions ?? []).prefix(3).map { $0 }
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let widget {
-                AssistantWidgetView(widget: widget) { value, attachment in
-                    widgetSubmitted = true
-                    onWidgetSubmit(value, attachment)
-                }
-            }
-            if !followUps.isEmpty {
-                AssistantFollowUpsView(suggestions: followUps) { suggestion in
-                    followUpSubmitted = true
-                    onFollowUp(suggestion)
-                }
-            }
+              message.metadata?.interactiveWidget == nil else {
+            return []
         }
+        return Array((message.metadata?.followUpSuggestions ?? []).prefix(3))
     }
 }
 
@@ -155,18 +152,22 @@ struct AssistantMessageMetaRow: View {
                 if canCopy {
                     copyButton
                 }
-                Text(formattedTimestamp)
+                timestampLabel
             } else {
-                Text(formattedTimestamp)
+                timestampLabel
                 if canCopy {
                     copyButton
                 }
             }
         }
-        .font(.footnote)
-        .foregroundStyle(.secondary)
         .padding(.horizontal, isUser ? 4 : 0)
         .accessibilityElement(children: .combine)
+    }
+
+    private var timestampLabel: some View {
+        Text(formattedTimestamp)
+            .appFootnote()
+            .foregroundStyle(.secondary)
     }
 
     private var copyButton: some View {
@@ -344,24 +345,40 @@ struct AssistantFollowUpsView: View {
     let suggestions: [AssistantFollowUpSuggestion]
     let onTap: (AssistantFollowUpSuggestion) -> Void
 
+    @State private var submitted = false
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ForEach(suggestions) { suggestion in
-                Button {
-                    onTap(suggestion)
-                } label: {
-                    Text(suggestion.value)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .font(.subheadline)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.secondary.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+        VStack(alignment: .leading, spacing: 0) {
+            Text("assistant.follow-ups-title")
+                .font(AppTypography.footnoteSemibold)
+                .foregroundStyle(.primary)
+                .padding(.bottom, 6)
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(suggestions) { suggestion in
+                    Button {
+                        guard !submitted else {
+                            return
+                        }
+                        submitted = true
+                        onTap(suggestion)
+                    } label: {
+                        Text(suggestion.value)
+                            .appFootnote()
+                            .foregroundStyle(.primary)
+                            .underline(true, color: Color.primary.opacity(0.3))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(submitted)
+                    .opacity(submitted ? 0.5 : 1)
+                    .accessibilityIdentifier("assistant_follow_up_\(suggestion.id)")
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("assistant_follow_up_\(suggestion.id)")
             }
         }
+        .padding(.top, 12)
+        .accessibilityIdentifier(AccessibilityIdentifiers.assistantFollowUps)
     }
 }
 
