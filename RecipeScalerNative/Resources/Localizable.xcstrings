@@ -1229,6 +1229,22 @@
         }
       }
     },
+    "assistant.copy-message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy message"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировать сообщение"
+          }
+        }
+      }
+    },
     "assistant.error-unavailable" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1477,6 +1493,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Думаю…"
+          }
+        }
+      }
+    },
+    "assistant.timestamp.yesterday" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yesterday"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вчера"
           }
         }
       }

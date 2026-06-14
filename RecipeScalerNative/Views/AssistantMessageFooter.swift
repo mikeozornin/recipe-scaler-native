@@ -6,9 +6,13 @@
 //  the last assistant message. Mirrors:
 //    - `recipe-scaler-web/recipe-scaler/src/components/assistant/assistant-widget.tsx`
 //    - `recipe-scaler-web/recipe-scaler/src/components/assistant/assistant-follow-ups.tsx`
+//    - `recipe-scaler-web/recipe-scaler/src/components/assistant/assistant-message-list.tsx` (timestamp + copy)
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct AssistantMessageFooter: View {
     let message: AssistantMessage
@@ -55,6 +59,144 @@ struct AssistantMessageFooter: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Timestamp + copy row (mirrors web `assistant-message-list.tsx` footer; always visible on mobile)
+
+enum AssistantMessageTimestampFormatter {
+    static func format(createdAt: Date, locale: Locale) -> String {
+        let calendar = Calendar.current
+        let now = Date()
+
+        let timeFormatter = DateFormatter()
+        timeFormatter.locale = locale
+        timeFormatter.timeStyle = .short
+        timeFormatter.dateStyle = .none
+
+        if calendar.isDate(createdAt, inSameDayAs: now) {
+            return timeFormatter.string(from: createdAt)
+        }
+
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
+           calendar.isDate(createdAt, inSameDayAs: yesterday) {
+            let yesterdayLabel = Bundle.currentLocalizedString("assistant.timestamp.yesterday")
+            return "\(yesterdayLabel), \(timeFormatter.string(from: createdAt))"
+        }
+
+        if calendar.component(.year, from: createdAt) == calendar.component(.year, from: now) {
+            let formatter = DateFormatter()
+            formatter.locale = locale
+            formatter.setLocalizedDateFormatFromTemplate("MMMdHHmm")
+            return formatter.string(from: createdAt)
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.setLocalizedDateFormatFromTemplate("MMMdyyyy")
+        return formatter.string(from: createdAt)
+    }
+}
+
+enum AssistantMessageCopyText {
+    static func text(for message: AssistantMessage) -> String {
+        guard message.role == "user" else {
+            return message.text
+        }
+
+        let attachments = message.metadata?.attachments ?? []
+        guard !attachments.isEmpty else {
+            return message.text
+        }
+
+        let trimmed = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return attachments
+                .map { attachment in
+                    let name = attachment.recipeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    return name.isEmpty ? attachment.recipeId : name
+                }
+                .joined(separator: ", ")
+        }
+
+        if attachments.count == 1,
+           let first = attachments.first,
+           trimmed == first.recipeId {
+            let name = first.recipeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return name.isEmpty ? first.recipeId : name
+        }
+
+        return message.text
+    }
+}
+
+struct AssistantMessageMetaRow: View {
+    let message: AssistantMessage
+    let isUser: Bool
+
+    @Environment(\.locale) private var locale
+    @State private var isCopied = false
+
+    private static let copyButtonSize: CGFloat = 28
+    private static let copyIconFont = Font.system(size: 14)
+
+    private var copyText: String { AssistantMessageCopyText.text(for: message) }
+    private var canCopy: Bool {
+        !copyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var formattedTimestamp: String {
+        AssistantMessageTimestampFormatter.format(createdAt: message.createdAt, locale: locale)
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if isUser {
+                if canCopy {
+                    copyButton
+                }
+                Text(formattedTimestamp)
+            } else {
+                Text(formattedTimestamp)
+                if canCopy {
+                    copyButton
+                }
+            }
+        }
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, isUser ? 4 : 0)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var copyButton: some View {
+        Button {
+            copyToPasteboard(copyText)
+            isCopied = true
+            Task {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                isCopied = false
+            }
+        } label: {
+            ZStack {
+                Image(systemName: "doc.on.doc")
+                    .opacity(isCopied ? 0 : 1)
+                Image(systemName: "checkmark.circle")
+                    .opacity(isCopied ? 1 : 0)
+            }
+            .font(Self.copyIconFont)
+            .frame(width: Self.copyButtonSize, height: Self.copyButtonSize)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("assistant.copy-message"))
+        .accessibilityIdentifier("assistant_message_copy_button")
+    }
+
+    private func copyToPasteboard(_ text: String) {
+        #if canImport(UIKit)
+        UIPasteboard.general.string = text
+        #endif
     }
 }
 

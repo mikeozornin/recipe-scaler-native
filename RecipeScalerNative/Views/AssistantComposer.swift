@@ -94,22 +94,11 @@ struct AssistantComposer: View {
     }
 
     private var messageInput: some View {
-        ZStack(alignment: .topLeading) {
-            TextField("", text: $text, axis: .vertical)
-                .appBodyFieldTypography()
-                .lineLimit(1...6)
-                .frame(maxWidth: .infinity, minHeight: Self.inputMinHeight, alignment: .topLeading)
-                .accessibilityLabel(Text(verbatim: inputPlaceholder))
-
-            if text.isEmpty {
-                Text(verbatim: inputPlaceholder)
-                    .appBodyFieldTypography()
-                    .foregroundStyle(Color(.placeholderText))
-                    .frame(maxWidth: .infinity, minHeight: Self.inputMinHeight, alignment: .topLeading)
-                    .allowsHitTesting(false)
-            }
-        }
-        .accessibilityIdentifier(AccessibilityIdentifiers.assistantMessageInput)
+        TextField(inputPlaceholder, text: $text, axis: .vertical)
+            .appBodyFieldTypography()
+            .lineLimit(1...6)
+            .frame(maxWidth: .infinity, minHeight: Self.inputMinHeight, alignment: .topLeading)
+            .accessibilityIdentifier(AccessibilityIdentifiers.assistantMessageInput)
     }
 
     private var composerToolbar: some View {

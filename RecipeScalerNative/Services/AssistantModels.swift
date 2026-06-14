@@ -113,11 +113,30 @@ struct AssistantFollowUpSuggestion: Decodable, Identifiable, Hashable, Sendable 
 /// `id` is stable within a single sheet session (UUID for optimistic rows, server id
 /// once `final` lands). `text` is mutated in place during streaming.
 struct AssistantMessage: Identifiable {
-    let id: String
+    var id: String
     var role: String
     var text: String
     var isStreaming: Bool
     var metadata: AssistantMessageMetadata?
+    var createdAt: Date
+}
+
+enum AssistantISO8601 {
+    private static let withFractionalSeconds: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    private static let withoutFractionalSeconds: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
+    static func parse(_ string: String) -> Date? {
+        withFractionalSeconds.date(from: string) ?? withoutFractionalSeconds.date(from: string)
+    }
 }
 
 // MARK: - Message metadata (subset of the web `AssistantMessageMetadata` that iOS consumes)
@@ -133,8 +152,10 @@ struct AssistantMessageMetadata: Decodable, Sendable {
 
 /// Minimal shape of `final.data.assistantMessage` used by P1 streaming (content + optional metadata).
 struct AssistantStreamFinalMessage: Decodable, Sendable {
+    let id: String?
     let content: String?
     let metadata: AssistantMessageMetadata?
+    let createdAt: String?
 }
 
 struct AssistantStreamFinalData: Decodable, Sendable {
@@ -146,6 +167,7 @@ struct AssistantStreamFinalData: Decodable, Sendable {
     struct MessageRef: Decodable, Sendable {
         let id: String?
         let content: String?
+        let createdAt: String?
     }
 
     let thread: Thread?

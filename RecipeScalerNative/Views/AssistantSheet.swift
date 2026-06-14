@@ -100,41 +100,66 @@ struct AssistantSheet: View {
     @ViewBuilder
     private func messageBubble(for message: AssistantMessage, isLast: Bool) -> some View {
         let isUser = message.role == "user"
+        let showMeta = shouldShowMessageMeta(for: message)
         let bubble = messageBubbleBody(for: message, isLast: isLast, isUser: isUser)
 
-        Group {
-            if isUser {
-                HStack(alignment: .top, spacing: 0) {
-                    Spacer(minLength: Self.userMessageLeadingInset)
+        VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
+            Group {
+                if isUser {
+                    HStack(alignment: .top, spacing: 0) {
+                        Spacer(minLength: Self.userMessageLeadingInset)
+                        bubble
+                            .frame(
+                                maxWidth: userBubbleMaxWidth(for: messageListContentWidth),
+                                alignment: .trailing
+                            )
+                    }
+                } else {
                     bubble
                         .frame(
-                            maxWidth: userBubbleMaxWidth(for: messageListContentWidth),
-                            alignment: .trailing
+                            maxWidth: messageListContentWidth > 0
+                                ? messageListContentWidth * Self.messageMaxWidthFraction
+                                : nil,
+                            alignment: .leading
                         )
                 }
-            } else {
-                bubble
-                    .frame(
-                        maxWidth: messageListContentWidth > 0
-                            ? messageListContentWidth * Self.messageMaxWidthFraction
-                            : nil,
-                        alignment: .leading
-                    )
+            }
+            .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
+
+            if showMeta {
+                AssistantMessageMetaRow(message: message, isUser: isUser)
             }
         }
-        .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
+        .padding(.bottom, showMeta ? 8 : 0)
+    }
+
+    private func shouldShowMessageMeta(for message: AssistantMessage) -> Bool {
+        if message.role == "assistant",
+           message.isStreaming,
+           message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return false
+        }
+        return true
     }
 
     @ViewBuilder
     private func messageBubbleBody(for message: AssistantMessage, isLast: Bool, isUser: Bool) -> some View {
         VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
-            Text(message.text.isEmpty && message.isStreaming
-                ? Bundle.currentLocalizedString("assistant.thinking")
-                : message.text)
-                .font(.body)
-                .foregroundStyle(.primary)
-                .textSelection(.enabled)
-                .multilineTextAlignment(isUser ? .trailing : .leading)
+            if isUser {
+                Text(message.text)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .textSelection(.enabled)
+                    .multilineTextAlignment(.trailing)
+            } else if message.text.isEmpty && message.isStreaming {
+                Text("assistant.thinking")
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .textSelection(.enabled)
+                    .multilineTextAlignment(.leading)
+            } else {
+                AssistantMarkdownText(content: message.text)
+            }
 
             AssistantMessageFooter(
                 message: message,
@@ -198,7 +223,8 @@ struct AssistantSheet: View {
                     role: $0.role,
                     text: $0.content,
                     isStreaming: false,
-                    metadata: $0.metadata
+                    metadata: $0.metadata,
+                    createdAt: AssistantISO8601.parse($0.createdAt) ?? Date()
                 )
             }
         } catch {
@@ -231,6 +257,7 @@ struct AssistantSheet: View {
         defer { isSending = false }
 
         let userMessageId = "optimistic-user-\(UUID().uuidString)"
+        let now = Date()
         messages.append(
             AssistantMessage(
                 id: userMessageId,
@@ -242,7 +269,8 @@ struct AssistantSheet: View {
                     interactiveWidget: nil,
                     pendingAction: nil,
                     followUpSuggestions: nil
-                )
+                ),
+                createdAt: now
             )
         )
         stampSession()
@@ -265,7 +293,8 @@ struct AssistantSheet: View {
                     role: "assistant",
                     text: error.localizedDescription,
                     isStreaming: false,
-                    metadata: nil
+                    metadata: nil,
+                    createdAt: Date()
                 )
             )
         }
@@ -313,7 +342,8 @@ struct AssistantSheet: View {
                     role: "assistant",
                     text: "",
                     isStreaming: true,
-                    metadata: nil
+                    metadata: nil,
+                    createdAt: Date()
                 )
             )
         }
@@ -359,13 +389,30 @@ struct AssistantSheet: View {
             threadId = newThreadId
             UserDefaults.standard.set(newThreadId, forKey: Self.sessionThreadIdKey)
         }
+        if let userMessage = data.userMessage,
+           let userIndex = messages.lastIndex(where: { $0.id.hasPrefix("optimistic-user-") }) {
+            if let id = userMessage.id {
+                messages[userIndex].id = id
+            }
+            if let createdAt = userMessage.createdAt,
+               let parsed = AssistantISO8601.parse(createdAt) {
+                messages[userIndex].createdAt = parsed
+            }
+        }
         if let assistant = data.assistantMessage {
             updateStreamingMessage(id: optimisticAssistantId) { msg in
+                if let id = assistant.id {
+                    msg.id = id
+                }
                 if let content = assistant.content, !content.isEmpty {
                     msg.text = content
                 }
                 msg.metadata = assistant.metadata
                 msg.isStreaming = false
+                if let createdAt = assistant.createdAt,
+                   let parsed = AssistantISO8601.parse(createdAt) {
+                    msg.createdAt = parsed
+                }
             }
         } else {
             updateStreamingMessage(id: optimisticAssistantId) { msg in
