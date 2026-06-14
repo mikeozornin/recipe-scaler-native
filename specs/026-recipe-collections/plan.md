@@ -7,14 +7,14 @@
 
 | Шаг | Содержание | Статус |
 |-----|------------|--------|
-| 0 | Spec Kit + YJS-SCHEMA + README + verify script (скелет) | ✅ (скрипт — см. quickstart; `scripts/` в agent mode) |
-| 1 | Swift модели и утилиты (порт shared) | ⏳ |
-| 2 | DocumentManager / YjsSyncService folders + folderIds | ⏳ |
-| 3 | ViewModel + UserDefaults view mode | ⏳ |
-| 4 | RecipesRoute, навигация, новые views | ⏳ |
-| 5 | UI parity §8 (toggle, sheets, swipe, detail menu) | ⏳ |
-| 6 | i18n `collections.*` | ⏳ |
-| 7 | Тесты + verify-recipe-collections.sh (полный) | ⏳ |
+| 0 | Spec Kit + YJS-SCHEMA + README + verify script (скелет) | ✅ |
+| 1 | Swift модели и утилиты (порт shared) | ✅ |
+| 2 | DocumentManager / YjsSyncService folders + folderIds | ✅ |
+| 3 | ViewModel + UserDefaults view mode | ✅ |
+| 4 | RecipesRoute, навигация, новые views | ✅ |
+| 5 | UI parity §8 (toggle, sheets, swipe, detail menu) | 🟡 US9 pin side |
+| 6 | i18n `collections.*` | ✅ |
+| 7 | Тесты + verify-recipe-collections.sh (полный) | ✅ |
 
 ## Зависимости между шагами
 

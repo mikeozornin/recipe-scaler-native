@@ -2,29 +2,36 @@
 
 **Ветка**: `011-discover-public`  
 **Дата**: 2026-06-02  
-**Статус**: 🔴 Написано, но недоступно (аудит 2026-06-03). Остаток → [017-discover-enablement](../017-discover-enablement/spec.md)  
+**Статус**: ✅ Реализовано (аудит 2026-06-15). Включение вкладки — [017-discover-enablement](../017-discover-enablement/spec.md) ✅  
 **Зависимости**: `007-app-shell-navigation`, `008-collection-mutations` (clone → create)  
 **Эталон**: `/discover` routes, `PublicProfileHeader`, PRD § Discover / Public Sharing
 
-## Аудит реализации (2026-06-03)
+## Аудит реализации (2026-06-15)
 
-Реализовано в коде, но **вкладка Discover закомментирована в `AppShellView` → экраны недостижимы** для пользователя. Файлы: `DiscoverRootView`, `DiscoverAPI` (collections/collection/recipe/clone).
+Вкладка Discover активна в `AppShellView`. Экраны: `DiscoverRootView`, `DiscoverCollectionView`, `DiscoverRecipeView`, `DiscoverPublicProfileView`, `DiscoverAPI`, превью через `DiscoverRecipePreviewImage` / URLCache.
 
 | Требование | Статус |
 |------------|--------|
-| US1 Discover home | 🟡 код есть, **вкладка отключена** |
-| US2 curated collection/recipe | 🟡 код есть, недостижим |
-| US3 публичный профиль | ❌ заглушка «open on web for full parity» |
+| US1 Discover home | ✅ |
+| US2 curated collection/recipe | ✅ |
+| US3 публичный профиль | ✅ `DiscoverPublicProfileView` (grid, search, share-mode) |
 | US4 copy to my recipes (clone) | ✅ `DiscoverAPI.cloneRecipe` + `loadRecipe` |
-| US5 reset tab | ✅ (в shell), но недостижим пока вкладка off |
+| US5 reset tab | ✅ |
 
-Не сделано → **017-discover-enablement**: включить вкладку, реализовать экран публичного профиля (grid + search + share-mode read-only), загрузку превью-изображений curated.
+**iOS-отступления** (зафиксировано в 017): нет sticky breadcrumb как на вебе; deep links — опционально позже (FR-DISC-004).
+
+## Прошлый аудит (2026-06-03)
+
+| Требование | Статус |
+|------------|--------|
+| US1–US2 | 🟡 код есть, вкладка была отключена |
+| US3 | ❌ заглушка «open on web» |
 
 ## Контекст
 
 Вкладка Discover — curated collections, curated recipes, публичные профили `/#/public/@/{username}/{recipeId}`.
 
-iOS не реализует REST discover и публичные экраны.
+iOS реализует REST discover и публичные экраны (см. аудит 2026-06-15).
 
 ## Цель
 

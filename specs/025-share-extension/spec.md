@@ -2,9 +2,23 @@
 
 **Ветка**: `025-share-extension`
 **Дата**: 2026-06-06
-**Статус**: Draft — scope зафиксирован, реализация не начата
-**Зависимости**: `010-recipe-import` ✅ (RecipeImportAPI, ImportRecipeSheet), `007-app-shell-navigation` ✅ (AppShellView)
+**Статус**: 🟡 В работе (~85% кода, аудит 2026-06-15) — targets + framework + extensions + deep link в репо; pending: device smoke, `DeepLinkRouterTests`, `verify-share-extension.sh`, portal provisioning  
+**Зависимости**: `010-recipe-import` ✅ (RecipeImportAPI, ImportRecipeSheet), `007-app-shell-navigation` ✅ (AppShellView)  
 **Эталон**: PRD § Import; нативный iOS Share Extension API (`NSExtensionContext`, `SLComposeServiceViewController`)
+
+## Аудит реализации (2026-06-15)
+
+| FR / US | Статус |
+|---------|--------|
+| FR-SE-001 RecipeScalerCore | ✅ `RecipeScalerCore/` |
+| FR-SE-002 App Group | ✅ entitlements на main + extensions |
+| FR-SE-003 Share Extension | ✅ `ShareExtension/` + `ShareView` |
+| FR-SE-004–005 content + UI | ✅ `ShareContentLoader`, `ShareView` |
+| FR-SE-006 Action Extension | ✅ `ActionExtension/` + `GetURLFromPage.js` |
+| FR-SE-007–009 URL scheme + DeepLinkRouter | ✅ `recipe-scaler://`, `DeepLinkRouter.swift`, `.onOpenURL` |
+| FR-SE-010–011 i18n | ✅ `Shared.xcstrings` |
+| FR-SE-012 Provisioning | 🟡 paid program / portal — ручная проверка |
+| SC-001…SC-010 | 🟡 build зелёный; полный device smoke не зафиксирован |
 
 ## Контекст
 

@@ -2,7 +2,7 @@
 
 **Ветка**: `026-timer-live-activity`  
 **Дата**: 2026-06-12  
-**Статус**: In progress  
+**Статус**: 🟡 В работе (~90% кода, аудит 2026-06-15) — device QA pause/resume pending  
 **Зависимости**: [014-timers-sync](../014-timers-sync/spec.md) (DONE)
 
 ## Цель

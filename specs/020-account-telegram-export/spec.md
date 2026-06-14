@@ -2,18 +2,18 @@
 
 **Ветка**: `020-account-telegram-export`  
 **Дата**: 2026-06-03  
-**Статус**: Draft (перенос недоделок из 013, связь с 010)  
+**Статус**: 🟡 В работе (аудит 2026-06-15) — Telegram ✅ в [013](../013-account-settings/spec.md); остаток: export/import файлов  
 **Зависимости**: `013-account-settings` (вкладка Profile готова), `010-recipe-import` (import pipeline)  
-**Эталон**: `/account` page (Telegram, export/import), PRD § Telegram / Export
+**Эталон**: `/account` page (export/import), PRD § Export
 
 ## Контекст
 
-В 013 отгружено большинство настроек аккаунта. **Не закрыто**:
+**Telegram (US1–US2) закрыт в 013** — `TelegramConnectionView`, `TelegramAPI` (connect, poll status, disconnect), i18n `telegram.*`.
 
-- US7 Telegram connect/status/disconnect — есть только `telegramUsername` в `UserProfileDTO`, нет UI и API-вызовов;
-- US6 export/import файлов — секция данных = заглушка `account.data.coming-soon`.
+**Не закрыто**:
 
-Импорт файла export (`.json/.zip`) также отмечен как недоделка в 010 — закрываем единым file pipeline здесь.
+- US3 export всех данных (v1.3 zip/json);
+- US4 import файла `.json/.zip` — секция данных = заглушка `account.data.coming-soon`; также отмечено в 010.
 
 ## Цель
 
@@ -23,11 +23,11 @@
 
 ### US1 — Telegram connect (P3)
 
-**Когда** пользователь нажимает «Подключить Telegram», **тогда** показывается код / deep link, `POST connect`, polling статуса; после подключения — `@username` и кнопка disconnect.
+**Закрыто в 013** — см. `TelegramConnectionView`.
 
 ### US2 — Telegram disconnect (P3)
 
-**Когда** disconnect, **тогда** связь снимается, UI обновляется.
+**Закрыто в 013**.
 
 ### US3 — Export всех данных (P2)
 
@@ -45,7 +45,7 @@
 
 ### FR-020-001 — Telegram API
 
-`POST connect` / status poll / disconnect — пути в `contracts/account-api.md` (сверить с `llm/API.md`).
+**Done (013)** — `TelegramAPI`: connect / status poll / disconnect.
 
 ### FR-020-002 — Export
 
@@ -66,7 +66,7 @@
 
 ## Критерии успеха
 
-- **SC-001**: Connect Telegram → статус «подключён» с `@username`.
+- **SC-001**: Connect Telegram → ✅ (013).
 - **SC-002**: Export → валидный v1.3 файл, открываемый вебом.
 - **SC-003**: Import `.zip` v1.3 → рецепты появляются в коллекции на обоих клиентах.
 - **SC-004**: Офлайн — операции недоступны с i18n.

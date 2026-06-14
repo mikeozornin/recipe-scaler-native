@@ -2,9 +2,23 @@
 
 **Ветка**: `023-push-notifications`  
 **Дата**: 2026-06-04  
-**Статус**: Draft — scope зафиксирован, реализация не начата  
+**Статус**: 🟡 В работе (~90% кода, аудит 2026-06-15) — регистрация APNs + schedule/cancel реализованы; QA на устройстве и toggle в Account pending  
 **Зависимости**: `014-timers-sync` ✅ (синк и UI таймеров), Phase 1 `TimerManager` (локальные UN)  
 **Эталон**: PRD § Timers, `recipe-scaler-web/llm/ARCHITECTURE.md` § Timers And Push, `recipe-scaler-web/recipe-scaler/src/services/timer-service.ts`, `server/src/routes/push.ts`
+
+## Аудит реализации (2026-06-15)
+
+| Требование | Статус |
+|------------|--------|
+| US1 APNs registration | ✅ `PushRegistrationService` → `POST /api/push/apns-register`; `RecipeScalerNativeApp` delegate |
+| US2 completion в фоне | 🟡 код есть; device QA pending |
+| US3 reminder >30 мин | 🟡 серверная логика; клиент передаёт `duration_seconds` |
+| US4 pause/delete/resume → cancel/schedule | ✅ `PushScheduleService` + хуки в `TimerManager` |
+| US5 coexistence с локальными UN | ✅ дедуп в `TimerManager` |
+| FR-PUSH-004 deep link | 🟡 через payload (проверить на device) |
+| Toggle push в Account | ❌ вне v1 (см. `docs/DECISIONS.md`) |
+
+Код: `PushRegistrationService.swift`, `PushScheduleService.swift`, контракт `contracts/timer-push-schedule.md`.
 
 ## Контекст
 

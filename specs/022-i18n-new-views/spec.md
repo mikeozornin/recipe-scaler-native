@@ -2,28 +2,33 @@
 
 **Ветка**: `022-i18n-new-views`  
 **Дата**: 2026-06-03  
-**Статус**: Draft (сквозная недоделка качества из 006–016)  
+**Статус**: 🟡 В работе (~75%, аудит 2026-06-15) — Discover/Import/Assistant/Account/Collections на ключах; остаток: edit-секции, `Button("OK")`, a11y, lint  
 **Зависимости**: новые экраны 006/007/024/010/011/012/013/015  
 **Эталон**: принцип паритета #6 в `005-mobile-web-parity-roadmap` («i18n ru/en для всех новых строк»), существующие ключи `discover.*`, `account.*`, `recipe.*`
 
 ## Контекст
 
-Аудит 2026-06-03: новые вьюхи фазы паритета используют **захардкоженные английские строки**, многие из которых **отсутствуют в каталоге** `Resources/Localizable.xcstrings` (нет даже en-записи, не говоря о ru). В русской локали такие элементы отображаются по-английски — нарушение принципа паритета #6 и i18n-FR соответствующих спеков.
+Аудит 2026-06-03 зафиксировал массовые английские литералы. **2026-06-15**: доменные экраны (Discover, Import, Assistant, Account, Collections, Shopping) переведены на ключи. Остаётся debt в edit/detail секциях.
 
-Проверка (примеры с `<KEY MISSING in xcstrings>`): `Public recipe`, `Add to shopping list`, `Assistant`, `Import recipe`, `Copy to my recipes`, `Collections`.
+## Затронутые файлы — остаток (2026-06-15)
 
-## Затронутые файлы (не исчерпывающе)
+| Файл | Проблема |
+|------|----------|
+| `Views/YDocIngredientsSection.swift` | `Text("No ingredients")` |
+| `Views/RecipeDescriptionEditorBlock.swift` | `Text("Instructions")` |
+| `Views/RecipeListView.swift`, `CollectionFolderView.swift`, … | `Button("OK", role: .cancel)` (7 view) |
+| `Views/SplashView.swift` | `Text("Recipe Scaler")` |
+| `Views/MobileTimerPanel.swift` | `.accessibilityLabel("Delete timer")` |
 
-| Файл | Примеры строк |
-|------|---------------|
-| `Views/AssistantSheet.swift` | Assistant, Send, Close, Message |
-| `Views/DiscoverRootView.swift` | Discover, Collections, Public profiles, Copy to my recipes, «open on web…», Error, Recipe |
-| `Views/ImportRecipeSheet.swift` | URL, Text, Photo, Choose photos, Import recipe, Cancel, Import, «Offline — import unavailable» |
-| `Views/RecipeDetailActionsMenu.swift` | Public recipe, Add to shopping list, Added to shopping list |
-| `Views/AccountView.swift` | `account.data.coming-soon` (заглушка, см. 020) |
-| `Views/RecipeDetailView.swift` / `YDocRecipeDetailView.swift` | Ingredients, Instructions, Scale, Original Recipe, No ingredients |
-| `Views/RecipeListView.swift` | Recipes, OK |
-| прочие новые вьюхи | по результату полного прохода |
+## Прошлый перечень (2026-06-03, частично закрыт)
+
+| Файл | Было |
+|------|------|
+| `Views/AssistantSheet.swift` | ✅ на `assistant.*` |
+| `Views/DiscoverRootView.swift` | ✅ на `discover.*` |
+| `Views/ImportRecipeSheet.swift` | ✅ на `import.*` |
+| `Views/RecipeDetailActionsMenu.swift` | ✅ |
+| `Views/AccountView.swift` | ✅ (кроме `account.data.coming-soon`) |
 
 > Примечание: `String(localized: "…")` и `Text("…")` используют строку как ключ и авто-локализуются **только если ключ есть в каталоге с ru-переводом**. `AppLabel.make(_:symbol:)` и `AppSegmentedControl.Segment(title:)` — проверить, что параметр типа `LocalizedStringKey`, а не `String` (иначе локализации не будет вовсе).
 

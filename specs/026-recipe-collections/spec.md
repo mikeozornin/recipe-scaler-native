@@ -2,9 +2,20 @@
 
 **Ветка**: `026-recipe-collections`  
 **Дата**: 2026-06-07  
-**Статус**: В работе  
+**Статус**: 🟢 Реализовано почти полностью (аудит 2026-06-15) — gap: US9 pin на leading вместо trailing; скриншоты spec не зафиксированы  
 **Зависимости**: `008-collection-mutations` (индекс рецептов, pin/delete/create), `007-app-shell-navigation`  
 **Эталон**: [NATIVE_APP_COLLECTIONS.md](../../recipe-scaler-web/llm/NATIVE_APP_COLLECTIONS.md), веб `recipe-list.tsx`, `collections-view.tsx`, `use-yjs-sync` (folder writes)
+
+## Аудит реализации (2026-06-15)
+
+| Область | Статус |
+|---------|--------|
+| Yjs folders + `folderIds` | ✅ `DocumentManager`, `YjsSyncService` |
+| UI: toggle, drill-in, sheets | ✅ `CollectionsRootView`, `CollectionFolderView`, assign/manage sheets |
+| Поиск → flat fallback | ✅ `RecipeListView` |
+| i18n `collections.*` + tests | ✅ |
+| verify script | ✅ `scripts/verify-recipe-collections.sh` |
+| US9 жесты (trailing pin) | 🟡 pin на **leading** вместе с cart/collections |
 
 ## Контекст
 

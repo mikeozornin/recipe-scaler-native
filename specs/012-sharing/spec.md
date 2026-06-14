@@ -2,22 +2,24 @@
 
 **Ветка**: `012-sharing`  
 **Дата**: 2026-06-02  
-**Статус**: 🟡 Частично реализовано (аудит 2026-06-03). Shopping list share/export → ✅ [024-shopping-list-completion](../024-shopping-list-completion/spec.md) (закрыто 2026-06-04)
+**Статус**: ✅ Реализовано (аудит 2026-06-15). Shopping share/export → [024-shopping-list-completion](../024-shopping-list-completion/spec.md) ✅  
 **Зависимости**: `008` (`isPublic` в recipe doc), `024` (shopping share UI), `011` (public URLs)  
 **Эталон**: share popover на recipe + shopping, PRD § Public Sharing
 
-## Аудит реализации (2026-06-03)
-
-Реализовано: `RecipeDetailShareButton` (ShareLink + `PublicURLBuilder`), toggle public в `RecipeDetailActionsMenu` → `updateRecipeIsPublic`. `SharingAPI` для shopping написан, **но не подключён в UI**.
+## Аудит реализации (2026-06-15)
 
 | Требование | Статус |
 |------------|--------|
-| US1 share recipe link | ✅ |
-| US2 toggle public рецепта | ✅ |
-| US3 shopping list share | ✅ `ShoppingListShareSheet` (024) |
+| US1 share recipe link | ✅ `RecipeDetailShareButton` → `RecipeShareSheet` (ShareLink + `PublicURLBuilder`) |
+| US2 toggle public рецепта | ✅ toggle в `RecipeShareSheet` → `updateRecipeIsPublic` |
+| US3 shopping list share | ✅ `ShoppingListShareSheet` + `SharingAPI` (024) |
 | US4 text export shopping | ✅ `ShoppingListPlainText` + copy (024) |
 
-Shopping list share/export закрыты в **024-shopping-list-completion** (2026-06-04).
+> Аудит 2026-06-03 («SharingAPI не в UI») устарел — shopping share закрыт в 024.
+
+## Прошлый аудит (2026-06-03)
+
+Shopping list share/export были в процессе; recipe share ✅.
 
 ## Контекст
 

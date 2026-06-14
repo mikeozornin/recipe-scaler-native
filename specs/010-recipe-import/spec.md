@@ -2,13 +2,13 @@
 
 **Ветка**: `010-recipe-import`  
 **Дата**: 2026-06-02  
-**Статус**: 🟢 Реализовано почти полностью (аудит 2026-06-03)  
+**Статус**: 🟢 Реализовано почти полностью (аудит 2026-06-03, подтверждено 2026-06-15)  
 **Зависимости**: `008-collection-mutations` (новый рецепт в коллекции), `007` (Import tab)  
 **Эталон**: `ImportRecipeSheet`, PRD § Import
 
-## Аудит реализации (2026-06-06)
+## Аудит реализации (2026-06-15)
 
-Вкладка Import и sheet раскомментированы в `AppShellView.swift`; flow импорта доведён до паритета с вебом (текст/URL/фото, multipart multi-image, batch URL, классификация контента, локализованные ошибки, offline «Try later», текстовый fileImporter). i18n ключи `import.*` добавлены в `Localizable.xcstrings`.
+Вкладка Import и sheet в `AppShellView`; flow URL/текст/фото, multipart, batch URL, классификация, локализованные ошибки, offline «Try later», toast через `TransientStatusBanner`. i18n `import.*`.
 
 | Требование | Статус |
 |------------|--------|
@@ -18,10 +18,15 @@
 | US4 навигация после успеха (1 → detail, 2+ → список) | ✅ |
 | US5 локализованные ошибки | ✅ |
 | US6 offline «Попробовать позже» | ✅ |
-| US7 upload текстового файла (.txt / .md / .json / ...) | ✅ |
+| US7 upload текстового файла (.txt / .md / .json / …) | ❌ нет `.fileImporter` — только paste в текстовое поле |
 | Sheet UX: `.presentationDetents([.large])` | ✅ |
 | Toast об успехе через `TransientStatusBanner` | ✅ |
-| Импорт файла export `.json/.zip` | ❌ не реализовано → spec **020** |
+| Share/Action Extension entry point | ✅ → [025-share-extension](../025-share-extension/spec.md) |
+| Импорт файла export `.json/.zip` | ❌ → spec **020** |
+
+## Прошлый аудит (2026-06-06)
+
+US7 ошибочно помечен ✅ — исправлено в аудите 2026-06-15.
 
 ## Прошлый аудит (2026-06-03)
 

@@ -2,28 +2,34 @@
 
 **Ветка**: `007-app-shell-navigation`  
 **Дата**: 2026-06-02  
-**Статус**: 🟡 Частично реализовано (аудит 2026-06-03) — оболочка есть, но вкладок 4 из 5. Остаток → [017-discover-enablement](../017-discover-enablement/spec.md)  
+**Статус**: ✅ Реализовано (аудит 2026-06-15). Discover включён в [017-discover-enablement](../017-discover-enablement/spec.md) ✅  
 **Зависимости**: 001–004 (авторизованный пользователь + sync)  
 **Эталон**: `recipe-scaler-web/recipe-scaler/src/components/bottom-nav.tsx`, `utils/main-nav.ts`
 
-## Аудит реализации (2026-06-03)
+## Аудит реализации (2026-06-15)
 
-Реализовано: `AppShellView` с `TabView`, `MobileTimerPanel` сверху, import-sheet по вкладке Import, assistant FAB, reset вложенной навигации, отдельные `NavigationPath` на вкладку, sync на уровне shell.
+Реализовано: `AppShellView` с `TabView` (**5 вкладок**), `MobileTimerPanel` сверху, import-sheet по вкладке Import, assistant FAB, reset вложенной навигации, отдельные `NavigationPath` на вкладку, sync на уровне shell, `DiscoverRootView` активен.
 
 | Требование | Статус |
 |------------|--------|
-| US1 пять вкладок | ❌ **вкладка Discover закомментирована** (`AppShellView.swift:64`) → реально 4 вкладки |
+| US1 пять вкладок | ✅ Discover, Import, Recipes, Shopping, Profile (`AppShellView.swift`) |
 | US2 reset nested routes | ✅ (recipes/shopping/discover) |
 | US3 import tab → sheet | ✅ |
 | US4 safe area + панель таймеров | ✅ `MobileTimerPanel` |
 | US5 sync lifecycle на shell | ✅ |
 | FR-NAV-004 DEBUG fixture | ✅ |
 
-Не сделано → **017-discover-enablement**: включить вкладку Discover (раскомментировать + проверить reset/VoiceOver для неё).
+> Аудит 2026-06-03 («4 вкладки, Discover закомментирован») устарел — закрыто в 017.
+
+## Прошлый аудит (2026-06-03)
+
+| Требование | Статус |
+|------------|--------|
+| US1 пять вкладок | ❌ вкладка Discover была закомментирована |
 
 ## Контекст
 
-Сейчас `ContentView` показывает только `RecipeListView`. Мобильный веб после логина — **5 равных вкладок**:
+Сейчас `ContentView` → `YjsSyncService` + `AppShellView` с 5 вкладками (аудит 2026-06-15).
 
 1. Discover  
 2. Import (sheet, не route)  
