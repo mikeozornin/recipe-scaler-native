@@ -98,6 +98,34 @@ final class DiscoverSearchStoreTests: XCTestCase {
         XCTAssertEqual(store.filteredSnapshot.first?.name, "Steak")
     }
 
+    func testPublicProfileRecipesSortedByDisplayNameIgnoringLeadingEmoji() async {
+        let store = DiscoverSearchStore<PublicRecipePreviewDTO>()
+        let items = [
+            PublicRecipePreviewDTO(
+                id: "2",
+                name: "🍕 Pizza",
+                description: nil,
+                imageUrl: nil,
+                color: nil,
+                createdAt: nil
+            ),
+            PublicRecipePreviewDTO(
+                id: "1",
+                name: "Apple Pie",
+                description: nil,
+                imageUrl: nil,
+                color: nil,
+                createdAt: nil
+            )
+        ]
+        store.setItems(DiscoverSearch.sortedByRecipeName(items) { $0.name })
+        store.setQuery("")
+
+        try? await Task.sleep(for: .milliseconds(debounceWait))
+
+        XCTAssertEqual(store.filteredSnapshot.map(\.name), ["Apple Pie", "🍕 Pizza"])
+    }
+
     func testNormalizedCachePersistsAcrossQueries() async {
         let store = DiscoverSearchStore<CuratedRecipeMetadataDTO>()
         let items = [

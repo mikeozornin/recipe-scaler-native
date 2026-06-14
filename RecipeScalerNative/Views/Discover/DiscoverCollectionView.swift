@@ -113,7 +113,7 @@ struct DiscoverCollectionView: View {
         do {
             let loaded = try await DiscoverAPI.fetchCollection(slug: slug)
             collection = loaded
-            searchStore.setItems(loaded.recipes)
+            searchStore.setItems(DiscoverSearch.sortedByRecipeName(loaded.recipes) { $0.name })
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
