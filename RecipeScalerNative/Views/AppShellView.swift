@@ -94,24 +94,25 @@ struct AppShellView: View {
                 }
                 .presentationDetents([.large])
             }
-        // TEMPORARY: Assistant button hidden (re-enable when ready).
-        // .sheet(isPresented: $showAssistant) {
-        //     AssistantSheet()
-        // }
-        // .overlay(alignment: .bottomTrailing) {
-        //     Button {
-        //         showAssistant = true
-        //     } label: {
-        //         AppSymbol.image("sparkles")
-        //             .font(AppTypography.iconSize(AppTypography.title2Size))
-        //             .foregroundStyle(.white)
-        //             .padding(14)
-        //             .background(Circle().fill(Color.accentColor))
-        //     }
-        //     .padding(.trailing, 16)
-        //     .padding(.bottom, 72)
-        //     .accessibilityIdentifier(AccessibilityIdentifiers.assistantFab)
-        // }
+        .sheet(isPresented: $showAssistant) {
+            AssistantSheet()
+                .environmentObject(syncService)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Button {
+                showAssistant = true
+            } label: {
+                AppSymbol.image("sparkles")
+                    .font(AppTypography.iconSize(AppTypography.title2Size))
+                    .foregroundStyle(.white)
+                    .padding(14)
+                    .background(Circle().fill(Color.accentColor))
+            }
+            .padding(.trailing, 16)
+            .padding(.bottom, 72)
+            .accessibilityIdentifier(AccessibilityIdentifiers.assistantFab)
+            .accessibilityLabel(Text("assistant.title"))
+        }
         .onChange(of: selectedTab) { old, new in
             if new == .importTab {
                 showImportSheet = true

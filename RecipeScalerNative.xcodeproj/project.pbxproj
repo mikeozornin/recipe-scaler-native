@@ -141,6 +141,7 @@
 		E5F60718293A4B709F00BE94 /* SharingAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7035E279C2 /* SharingAPI.swift */; };
 		E5F60718293A4B70EFFBE68D /* AccountAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70093D4CC7 /* AccountAPI.swift */; };
 		E5F60718293A4B7044C89B39 /* AssistantAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A0E4855E /* AssistantAPI.swift */; };
+		E5F60718293A4B70D7CEFCAD /* AssistantModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70ED0922D8 /* AssistantModels.swift */; };
 		E5F60718293A4B70811A7C4D /* TelegramAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B705F98774E /* TelegramAPI.swift */; };
 		E5F60718293A4B705777B4EE /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A5EF6DCE /* AppShellView.swift */; };
 		E5F60718293A4B7078685F7E /* ShoppingListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700A5738C7 /* ShoppingListView.swift */; };
@@ -151,6 +152,8 @@
 		E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70344FA5B3 /* AccountView.swift */; };
 		E5F60718293A4B7061726B18 /* TelegramConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */; };
 		E5F60718293A4B7010A27A52 /* AssistantSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7001851F51 /* AssistantSheet.swift */; };
+		E5F60718293A4B7018FB5571 /* AssistantMessageFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B706CC8B6CE /* AssistantMessageFooter.swift */; };
+		E5F60718293A4B702B6FFEC2 /* AssistantComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70220BC4FC /* AssistantComposer.swift */; };
 		E5F60718293A4B70E66E63B1 /* MobileTimerPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70E374EEFC /* MobileTimerPanel.swift */; };
 		E5F60718293A4B70B3900847 /* RecipeDetailActionsMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B709EBF9E6E /* RecipeDetailActionsMenu.swift */; };
 		E5F60718293A4B70C1A2B3D4 /* RecipeDetailImageSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70C1A2B3D3 /* RecipeDetailImageSection.swift */; };
@@ -386,6 +389,7 @@
 		E5F60718293A4B7035E279C2 /* SharingAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingAPI.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70093D4CC7 /* AccountAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountAPI.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A0E4855E /* AssistantAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantAPI.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70ED0922D8 /* AssistantModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantModels.swift; sourceTree = "<group>"; };
 		E5F60718293A4B705F98774E /* TelegramAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelegramAPI.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A5EF6DCE /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B700A5738C7 /* ShoppingListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListView.swift; sourceTree = "<group>"; };
@@ -396,6 +400,8 @@
 		E5F60718293A4B70344FA5B3 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelegramConnectionView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7001851F51 /* AssistantSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSheet.swift; sourceTree = "<group>"; };
+		E5F60718293A4B706CC8B6CE /* AssistantMessageFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMessageFooter.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70220BC4FC /* AssistantComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantComposer.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70E374EEFC /* MobileTimerPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileTimerPanel.swift; sourceTree = "<group>"; };
 		E5F60718293A4B709EBF9E6E /* RecipeDetailActionsMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailActionsMenu.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70C1A2B3D3 /* RecipeDetailImageSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailImageSection.swift; sourceTree = "<group>"; };
@@ -656,6 +662,8 @@
 				E5F60718293A4B70ACE01234 /* AccountProfileEditView.swift */,
 				E5F60718293A4B70AAV00001 /* AuthAvatarImage.swift */,
 				E5F60718293A4B7001851F51 /* AssistantSheet.swift */,
+				E5F60718293A4B706CC8B6CE /* AssistantMessageFooter.swift */,
+				E5F60718293A4B70220BC4FC /* AssistantComposer.swift */,
 				E5F60718293A4B70E374EEFC /* MobileTimerPanel.swift */,
 				E5F60718293A4B709EBF9E6E /* RecipeDetailActionsMenu.swift */,
 				E5F60718293A4B70C1A2B3D3 /* RecipeDetailImageSection.swift */,
@@ -880,6 +888,7 @@
 				E5F60718293A4B7035E279C2 /* SharingAPI.swift */,
 				E5F60718293A4B70093D4CC7 /* AccountAPI.swift */,
 				E5F60718293A4B70A0E4855E /* AssistantAPI.swift */,
+				E5F60718293A4B70ED0922D8 /* AssistantModels.swift */,
 				E5F60718293A4B705F98774E /* TelegramAPI.swift */,
 				C45A57EDAC270C757266F8FA /* AuthService.swift */,
 				BDFDC56713A0842CA6B33517 /* ImageCacheService.swift */,
@@ -1417,6 +1426,7 @@
 				E5F60718293A4B709F00BE94 /* SharingAPI.swift in Sources */,
 				E5F60718293A4B70EFFBE68D /* AccountAPI.swift in Sources */,
 				E5F60718293A4B7044C89B39 /* AssistantAPI.swift in Sources */,
+				E5F60718293A4B70D7CEFCAD /* AssistantModels.swift in Sources */,
 				E5F60718293A4B70811A7C4D /* TelegramAPI.swift in Sources */,
 				E5F60718293A4B705777B4EE /* AppShellView.swift in Sources */,
 				E5F60718293A4B7078685F7E /* ShoppingListView.swift in Sources */,
@@ -1427,6 +1437,8 @@
 				E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */,
 				E5F60718293A4B7061726B18 /* TelegramConnectionView.swift in Sources */,
 				E5F60718293A4B7010A27A52 /* AssistantSheet.swift in Sources */,
+				E5F60718293A4B7018FB5571 /* AssistantMessageFooter.swift in Sources */,
+				E5F60718293A4B702B6FFEC2 /* AssistantComposer.swift in Sources */,
 				E5F60718293A4B70E66E63B1 /* MobileTimerPanel.swift in Sources */,
 				E5F60718293A4B70B3900847 /* RecipeDetailActionsMenu.swift in Sources */,
 				E5F60718293A4B70C1A2B3D4 /* RecipeDetailImageSection.swift in Sources */,

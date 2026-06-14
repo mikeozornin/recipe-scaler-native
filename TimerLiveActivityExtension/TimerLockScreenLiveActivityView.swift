@@ -11,6 +11,11 @@ struct TimerLockScreenLiveActivityView: View {
     let attributes: RecipeTimerActivityAttributes
     let state: RecipeTimerActivityAttributes.ContentState
 
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.isLuminanceReduced) private var isLuminanceReduced
+    @Environment(\.widgetRenderingMode) private var widgetRenderingMode
+    @Environment(\.showsWidgetContainerBackground) private var showsWidgetContainerBackground
+
     private static let overdueHorizon: TimeInterval = 24 * 60 * 60
     private static let progressBarHeight: CGFloat = 8
     private static let appGroupIdentifier = "group.ru.recipescaler.RecipeScalerNative"
@@ -32,34 +37,71 @@ struct TimerLockScreenLiveActivityView: View {
             totalDuration: state.totalDuration
         )
         let overdue = state.phase == .exceeded
+        let resolvedAccent = TimerLiveActivityPalette.accentColor(
+            for: accent,
+            colorScheme: colorScheme,
+            isLuminanceReduced: isLuminanceReduced,
+            widgetRenderingMode: widgetRenderingMode,
+            showsWidgetContainerBackground: showsWidgetContainerBackground
+        )
         let fillColor: Color = overdue
-            ? TimerLiveActivityPalette.accentColor(for: .exceeded)
-            : accent.progressFillColor
+            ? TimerLiveActivityPalette.accentColor(
+                for: .exceeded,
+                colorScheme: colorScheme,
+                isLuminanceReduced: isLuminanceReduced,
+                widgetRenderingMode: widgetRenderingMode,
+                showsWidgetContainerBackground: showsWidgetContainerBackground
+            )
+            : resolvedAccent
         let primaryTextColor: Color = overdue
-            ? TimerLiveActivityPalette.accentColor(for: .exceeded)
-            : accent.color
+            ? TimerLiveActivityPalette.accentColor(
+                for: .exceeded,
+                colorScheme: colorScheme,
+                isLuminanceReduced: isLuminanceReduced,
+                widgetRenderingMode: widgetRenderingMode,
+                showsWidgetContainerBackground: showsWidgetContainerBackground
+            )
+            : resolvedAccent
+        let labelColor = TimerLiveActivityPalette.labelColor(
+            colorScheme: colorScheme,
+            isLuminanceReduced: isLuminanceReduced,
+            widgetRenderingMode: widgetRenderingMode,
+            showsWidgetContainerBackground: showsWidgetContainerBackground
+        )
 
         VStack(alignment: .leading, spacing: 0) {
             lockScreenProgressBar(fillColor: fillColor, overdue: overdue)
 
             VStack(alignment: .leading, spacing: 12) {
-                timerNameRow(accent: accent, primaryTextColor: primaryTextColor, overdue: overdue)
+                timerNameRow(
+                    resolvedAccentColor: resolvedAccent,
+                    primaryTextColor: primaryTextColor,
+                    overdue: overdue
+                )
 
                 if attributes.recipeId != nil || state.recipeName != nil {
-                    recipeRow
+                    recipeRow(labelColor: labelColor)
                 }
             }
             .padding(14)
         }
         .widgetURL(attributes.recipeId.flatMap { URL(string: "recipe-scaler://recipe/\($0)") })
-        .activitySystemActionForegroundColor(TimerLiveActivityPalette.label)
+        .activitySystemActionForegroundColor(labelColor)
+        // Fixed dark card chrome + light foreground for every appearance.
+        // See `dim-live-activity.md`: the widget extension process can resolve
+        // `\.colorScheme` as stale `.light` on the Lock Screen (FB15148099), and
+        // DND/Focus-dim does NOT flip `\.isLuminanceReduced` — so the system
+        // would otherwise paint a light card background in Light Mode and a dim
+        // one in Focus. We pin both surfaces explicitly to keep the contrast.
+        .activityBackgroundTint(.black)
+        .containerBackground(Color.black, for: .widget)
     }
 
     // MARK: - Timer row (Figma: timer + control on top, name below)
 
     @ViewBuilder
     private func timerNameRow(
-        accent: TimerLiveActivityAccent,
+        resolvedAccentColor: Color,
         primaryTextColor: Color,
         overdue: Bool
     ) -> some View {
@@ -70,7 +112,7 @@ struct TimerLockScreenLiveActivityView: View {
                 Spacer(minLength: 0)
 
                 if !overdue {
-                    lockScreenControlButton(accent: accent)
+                    lockScreenControlButton(accentColor: resolvedAccentColor)
                 }
             }
 
@@ -123,12 +165,12 @@ struct TimerLockScreenLiveActivityView: View {
     }
 
     @ViewBuilder
-    private func lockScreenControlButton(accent: TimerLiveActivityAccent) -> some View {
+    private func lockScreenControlButton(accentColor: Color) -> some View {
         if state.phase == .paused {
             Button(intent: ResumeRecipeTimerIntent(timerId: attributes.timerId)) {
                 Image(systemName: "play.fill")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(accent.color)
+                    .foregroundStyle(accentColor)
                     .frame(width: 40, height: 40)
             }
             .buttonStyle(.plain)
@@ -136,14 +178,14 @@ struct TimerLockScreenLiveActivityView: View {
             Button(intent: PauseRecipeTimerIntent(timerId: attributes.timerId)) {
                 Image(systemName: "pause.fill")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(accent.color)
+                    .foregroundStyle(accentColor)
                     .frame(width: 40, height: 40)
             }
             .buttonStyle(.plain)
         }
     }
 
-    private var recipeRow: some View {
+    private func recipeRow(labelColor: Color) -> some View {
         HStack(spacing: 10) {
             if let thumbName = state.recipeThumbnailName,
                let uiImage = Self.loadThumbnail(name: thumbName) {
@@ -163,7 +205,13 @@ struct TimerLockScreenLiveActivityView: View {
             if let recipeName = state.recipeName, !recipeName.isEmpty {
                 Text(recipeName)
                     .font(.system(size: 14))
-                    .foregroundStyle(TimerLiveActivityPalette.secondaryLabel)
+                    .foregroundStyle(
+                        TimerLiveActivityPalette.secondaryLabelColor(
+                            colorScheme: colorScheme,
+                            isLuminanceReduced: isLuminanceReduced,
+                            widgetRenderingMode: widgetRenderingMode
+                        )
+                    )
                     .lineLimit(1)
             }
         }
@@ -174,7 +222,13 @@ struct TimerLockScreenLiveActivityView: View {
     @ViewBuilder
     private func lockScreenProgressBar(fillColor: Color, overdue: Bool) -> some View {
         Rectangle()
-            .fill(TimerLiveActivityPalette.progressTrack)
+            .fill(
+                TimerLiveActivityPalette.progressTrackColor(
+                    colorScheme: colorScheme,
+                    isLuminanceReduced: isLuminanceReduced,
+                    widgetRenderingMode: widgetRenderingMode
+                )
+            )
             .overlay(alignment: .leading) {
                 progressFill(fillColor: fillColor, overdue: overdue)
             }
