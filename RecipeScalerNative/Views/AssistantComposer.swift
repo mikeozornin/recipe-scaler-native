@@ -12,16 +12,26 @@ import RecipeScalerCore
 
 struct AssistantComposer: View {
     private static let shellCornerRadius: CGFloat = 16
+    /// Web `min-h-12` — keeps the field height stable when placeholder disappears.
+    private static let inputMinHeight: CGFloat = 48
 
     @Binding var text: String
     @Binding var attachments: [AssistantRecipeAttachment]
     let isSending: Bool
     let inputPlaceholderVariantIndex: Int
+    let contextRecipeId: String?
     let onSend: () -> Void
 
     @Environment(\.locale) private var locale
     @EnvironmentObject private var syncService: YjsSyncService
     @State private var showAttachSheet = false
+    @State private var recipeContext = AssistantRecipeContext.shared
+
+    /// Snapshot from sheet open, with live fallback while the recipe screen stays mounted.
+    private var effectiveContextRecipeId: String? {
+        _ = recipeContext.visibleRecipeId
+        return contextRecipeId ?? recipeContext.visibleRecipeId
+    }
 
     private var inputPlaceholder: String {
         _ = locale
@@ -30,7 +40,6 @@ struct AssistantComposer: View {
 
     var body: some View {
         composerShell
-            .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityIdentifiers.assistantComposerShell)
             .sheet(isPresented: $showAttachSheet) {
                 AssistantRecipePicker(
@@ -52,16 +61,13 @@ struct AssistantComposer: View {
                     .padding(.bottom, 4)
             }
 
-            TextField("", text: $text, prompt: Text(verbatim: inputPlaceholder), axis: .vertical)
-                .appBodyFieldTypography()
-                .lineLimit(1...6)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            messageInput
                 .padding(.horizontal, 16)
                 .padding(.top, attachments.isEmpty ? 12 : 4)
                 .padding(.bottom, 4)
-                .accessibilityIdentifier(AccessibilityIdentifiers.assistantMessageInput)
 
             composerToolbar
+                .zIndex(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.systemBackground))
@@ -69,6 +75,7 @@ struct AssistantComposer: View {
         .overlay {
             RoundedRectangle(cornerRadius: Self.shellCornerRadius, style: .continuous)
                 .stroke(Color(.separator), lineWidth: 1)
+                .allowsHitTesting(false)
         }
     }
 
@@ -86,9 +93,33 @@ struct AssistantComposer: View {
         }
     }
 
+    private var messageInput: some View {
+        ZStack(alignment: .topLeading) {
+            TextField("", text: $text, axis: .vertical)
+                .appBodyFieldTypography()
+                .lineLimit(1...6)
+                .frame(maxWidth: .infinity, minHeight: Self.inputMinHeight, alignment: .topLeading)
+                .accessibilityLabel(Text(verbatim: inputPlaceholder))
+
+            if text.isEmpty {
+                Text(verbatim: inputPlaceholder)
+                    .appBodyFieldTypography()
+                    .foregroundStyle(Color(.placeholderText))
+                    .frame(maxWidth: .infinity, minHeight: Self.inputMinHeight, alignment: .topLeading)
+                    .allowsHitTesting(false)
+            }
+        }
+        .accessibilityIdentifier(AccessibilityIdentifiers.assistantMessageInput)
+    }
+
     private var composerToolbar: some View {
         HStack(spacing: 0) {
-            attachButton
+            HStack(spacing: 4) {
+                attachButton
+                if showContextRecipeTag, let contextAttachment {
+                    contextRecipeTagButton(for: contextAttachment)
+                }
+            }
             Spacer(minLength: 8)
             HStack(spacing: 0) {
                 voiceButton
@@ -98,6 +129,53 @@ struct AssistantComposer: View {
         .padding(.leading, 2)
         .padding(.trailing, 2)
         .padding(.bottom, 2)
+    }
+
+    private var contextRecipeEntry: CollectionEntry? {
+        guard let effectiveContextRecipeId else { return nil }
+        return syncService.collectionEntries.first {
+            !$0.deleted && recipeIdsMatch($0.id, effectiveContextRecipeId)
+        }
+    }
+
+    private var contextAttachment: AssistantRecipeAttachment? {
+        guard let entry = contextRecipeEntry else { return nil }
+        return AssistantRecipeAttachment(
+            recipeId: entry.id,
+            recipeName: entry.name,
+            recipeColor: entry.color
+        )
+    }
+
+    private var isContextRecipeAttached: Bool {
+        guard let effectiveContextRecipeId else { return false }
+        return attachments.contains { recipeIdsMatch($0.recipeId, effectiveContextRecipeId) }
+    }
+
+    private var showContextRecipeTag: Bool {
+        contextAttachment != nil && !isContextRecipeAttached
+    }
+
+    private func contextRecipeTagButton(for attachment: AssistantRecipeAttachment) -> some View {
+        AssistantAttachmentChipLabel(attachment: attachment)
+            .assistantAttachmentChipChrome()
+            .frame(minHeight: AppToolbarStyle.minimumTapSide)
+            .contentShape(Capsule())
+            .onTapGesture {
+                attachContextRecipe(attachment)
+            }
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel(Text("assistant.attach-current-recipe"))
+            .accessibilityIdentifier(AccessibilityIdentifiers.assistantContextRecipeTag)
+    }
+
+    private func attachContextRecipe(_ attachment: AssistantRecipeAttachment) {
+        guard !isContextRecipeAttached, attachments.count < 10 else { return }
+        attachments = attachments + [attachment]
+    }
+
+    private func recipeIdsMatch(_ lhs: String, _ rhs: String) -> Bool {
+        lhs.caseInsensitiveCompare(rhs) == .orderedSame
     }
 
     private var attachButton: some View {
@@ -143,6 +221,7 @@ struct AssistantComposer: View {
         .accessibilityLabel(Text("assistant.send"))
         .accessibilityIdentifier(AccessibilityIdentifiers.assistantSendButton)
         .disabled(!canSend)
+        .opacity(canSend ? 1 : 0.35)
     }
 
     @ViewBuilder
@@ -175,7 +254,7 @@ struct AssistantComposer: View {
     }
 
     private func removeAttachment(_ attachment: AssistantRecipeAttachment) {
-        attachments.removeAll { $0.recipeId == attachment.recipeId }
+        attachments.removeAll { recipeIdsMatch($0.recipeId, attachment.recipeId) }
     }
 }
 
@@ -190,9 +269,8 @@ enum AssistantInputPlaceholder {
 
 // MARK: - Attachment chip
 
-private struct AssistantAttachmentChip: View {
+private struct AssistantAttachmentChipLabel: View {
     let attachment: AssistantRecipeAttachment
-    let onRemove: () -> Void
 
     var body: some View {
         HStack(spacing: 6) {
@@ -202,6 +280,17 @@ private struct AssistantAttachmentChip: View {
             Text(attachment.recipeName ?? attachment.recipeId)
                 .font(.footnote)
                 .lineLimit(1)
+        }
+    }
+}
+
+private struct AssistantAttachmentChip: View {
+    let attachment: AssistantRecipeAttachment
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            AssistantAttachmentChipLabel(attachment: attachment)
             Button(action: onRemove) {
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .semibold))
@@ -210,10 +299,16 @@ private struct AssistantAttachmentChip: View {
             .buttonStyle(.plain)
             .accessibilityLabel(Text("assistant.remove-attached-recipe"))
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(Color.secondary.opacity(0.12))
-        .clipShape(Capsule())
+        .assistantAttachmentChipChrome()
+    }
+}
+
+private extension View {
+    func assistantAttachmentChipChrome() -> some View {
+        padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.secondary.opacity(0.12))
+            .clipShape(Capsule())
     }
 }
 

@@ -11,6 +11,8 @@ import SwiftUI
 struct AssistantSheet: View {
     @Environment(\.dismiss) private var dismiss
 
+    let contextRecipeId: String?
+
     @State private var threadId: String?
     @State private var messages: [AssistantMessage] = []
     @State private var input = ""
@@ -35,6 +37,7 @@ struct AssistantSheet: View {
                     attachments: $attachments,
                     isSending: isSending,
                     inputPlaceholderVariantIndex: inputPlaceholderVariantIndex,
+                    contextRecipeId: contextRecipeId,
                     onSend: { Task { await send() } }
                 )
                 .padding(.horizontal, 12)
@@ -76,16 +79,11 @@ struct AssistantSheet: View {
                 }
             }
             .padding(14)
-            .background {
-                GeometryReader { proxy in
-                    Color.clear.preference(
-                        key: MessageListWidthPreferenceKey.self,
-                        value: proxy.size.width
-                    )
-                }
-            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .onPreferenceChange(MessageListWidthPreferenceKey.self) { width in
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            max(0, proxy.size.width - 28)
+        } action: { width in
             messageListContentWidth = width
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -384,12 +382,4 @@ struct AssistantSheet: View {
 
     private static let sessionThreadIdKey = "assistant.session.threadId"
     private static let sessionLastOpenedAtKey = "assistant.session.lastOpenedAt"
-}
-
-private struct MessageListWidthPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
 }

@@ -152,3 +152,27 @@ struct AssistantStreamFinalData: Decodable, Sendable {
     let userMessage: MessageRef?
     let assistantMessage: AssistantStreamFinalMessage?
 }
+
+// MARK: - Recipe context (assistant quick-attach)
+
+/// Tracks the recipe detail screen currently visible — used for assistant context quick-attach.
+@MainActor
+@Observable
+final class AssistantRecipeContext {
+    static let shared = AssistantRecipeContext()
+
+    private(set) var visibleRecipeId: String?
+    var isAssistantSheetOpen = false
+
+    private init() {}
+
+    func setVisibleRecipeId(_ recipeId: String) {
+        visibleRecipeId = recipeId
+    }
+
+    func clearVisibleRecipeId(_ recipeId: String) {
+        if visibleRecipeId == recipeId {
+            visibleRecipeId = nil
+        }
+    }
+}

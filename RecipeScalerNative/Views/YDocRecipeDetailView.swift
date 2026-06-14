@@ -432,6 +432,8 @@ struct YDocRecipeDetailView: View {
             }
         }
         .onDisappear {
+            guard !AssistantRecipeContext.shared.isAssistantSheetOpen else { return }
+            AssistantRecipeContext.shared.clearVisibleRecipeId(recipeId)
             deactivateScreenAwake()
         }
         .task(id: recipeId) {
@@ -482,6 +484,7 @@ struct YDocRecipeDetailView: View {
             applyStartDescriptionEditIfNeeded()
         }
         .onAppear {
+            AssistantRecipeContext.shared.setVisibleRecipeId(recipeId)
             applyStartInEditModeIfNeeded()
             applyStartDescriptionEditIfNeeded()
             scheduleDebugDescriptionEditorIfNeeded()

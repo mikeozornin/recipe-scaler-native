@@ -41,6 +41,7 @@ enum AccessibilityIdentifiers {
     static let assistantAttachmentButton = "assistant_attachment_button"
     static let assistantVoiceRecordButton = "assistant_voice_record_button"
     static let assistantSendButton = "assistant_send_button"
+    static let assistantContextRecipeTag = "assistant_context_recipe_tag"
     static let recipeList = "recipe_list"
     static let recipeListAdd = "recipe_list_add"
     static let recipeRowPrefix = "recipe_row_"

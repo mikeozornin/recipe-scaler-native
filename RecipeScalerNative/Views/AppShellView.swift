@@ -52,6 +52,7 @@ struct AppShellView: View {
     @State private var previousTab: AppTab = .recipes
     @State private var showImportSheet = false
     @State private var showAssistant = false
+    @State private var assistantContextRecipeId: String?
     @State private var recipesPath = NavigationPath()
     @State private var discoverPath = NavigationPath()
     @State private var shoppingPath = NavigationPath()
@@ -94,27 +95,39 @@ struct AppShellView: View {
                 }
                 .presentationDetents([.large])
             }
-        .sheet(isPresented: $showAssistant) {
-            AssistantSheet()
+        .onChange(of: showAssistant) { _, isOpen in
+            AssistantRecipeContext.shared.isAssistantSheetOpen = isOpen
+        }
+        .sheet(isPresented: $showAssistant, onDismiss: {
+            AssistantRecipeContext.shared.isAssistantSheetOpen = false
+            assistantContextRecipeId = nil
+        }) {
+            AssistantSheet(
+                contextRecipeId: assistantContextRecipeId ?? AssistantRecipeContext.shared.visibleRecipeId
+            )
                 .environmentObject(syncService)
         }
         .overlay(alignment: .bottomTrailing) {
-            Button {
-                showAssistant = true
-            } label: {
-                AppSymbol.image("sparkles")
-                    .font(AppTypography.iconSize(AppTypography.title2Size))
-                    .foregroundStyle(.white)
-                    .padding(14)
-                    .background(Circle().fill(Color.accentColor))
-                    .compositingGroup()
-                    .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: 5)
-                    .shadow(color: .black.opacity(0.24), radius: 24, x: 0, y: 12)
+            if !showAssistant {
+                Button {
+                    assistantContextRecipeId = AssistantRecipeContext.shared.visibleRecipeId
+                    AssistantRecipeContext.shared.isAssistantSheetOpen = true
+                    showAssistant = true
+                } label: {
+                    AppSymbol.image("sparkles")
+                        .font(AppTypography.iconSize(AppTypography.title2Size))
+                        .foregroundStyle(.white)
+                        .padding(14)
+                        .background(Circle().fill(Color.accentColor))
+                        .compositingGroup()
+                        .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: 5)
+                        .shadow(color: .black.opacity(0.24), radius: 24, x: 0, y: 12)
+                }
+                .padding(.trailing, 16)
+                .padding(.bottom, 64)
+                .accessibilityIdentifier(AccessibilityIdentifiers.assistantFab)
+                .accessibilityLabel(Text("assistant.title"))
             }
-            .padding(.trailing, 16)
-            .padding(.bottom, 64)
-            .accessibilityIdentifier(AccessibilityIdentifiers.assistantFab)
-            .accessibilityLabel(Text("assistant.title"))
         }
         .onChange(of: selectedTab) { old, new in
             if new == .importTab {
@@ -171,6 +184,8 @@ struct AppShellView: View {
         .onAppear {
             openDebugTabIfNeeded()
             if DebugLaunchOptions.showAssistant {
+                assistantContextRecipeId = AssistantRecipeContext.shared.visibleRecipeId
+                AssistantRecipeContext.shared.isAssistantSheetOpen = true
                 showAssistant = true
             }
             consumePendingDeepLinkIfNeeded()
