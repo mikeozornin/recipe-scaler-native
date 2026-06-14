@@ -73,31 +73,29 @@ struct AssistantThreadListSheet: View {
 
     @ViewBuilder
     private var threadList: some View {
-        ScrollView {
-            Group {
-                if isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 40)
-                } else if filteredThreads.isEmpty {
-                    Text(emptyStateKey)
-                        .appBody()
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 32)
-                        .padding(.horizontal, 16)
-                } else {
-                    LazyVStack(spacing: 0) {
-                        ForEach(filteredThreads) { thread in
-                            threadRow(thread)
-                        }
-                    }
-                    .padding(.top, 8)
-                }
+        List {
+            ForEach(filteredThreads) { thread in
+                threadRow(thread)
             }
         }
+        .listStyle(.plain)
+        .listSectionSpacing(0)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay {
+            if isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.top, 40)
+            } else if filteredThreads.isEmpty {
+                Text(emptyStateKey)
+                    .appBody()
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.top, 32)
+                    .padding(.horizontal, 16)
+            }
+        }
     }
 
     private func threadRow(_ thread: AssistantThreadDTO) -> some View {
@@ -105,39 +103,31 @@ struct AssistantThreadListSheet: View {
         let isDeleting = deletingThreadId == thread.id
         let displayTitle = AssistantThreadSearch.displayTitle(for: thread)
 
-        return HStack(alignment: .top, spacing: 0) {
-            Button {
-                onSelect(thread.id)
-            } label: {
-                Text(verbatim: displayTitle)
-                    .appBody()
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(threadAccessibilityLabel(title: displayTitle, lastMessageAt: thread.lastMessageAt))
-            .accessibilityIdentifier(AccessibilityIdentifiers.assistantThreadItem(threadId: thread.id))
-
-            Button {
+        return Button {
+            onSelect(thread.id)
+        } label: {
+            Text(verbatim: displayTitle)
+                .appBody()
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+        .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
+        .listRowBackground(isActive ? Color.accentColor.opacity(0.15) : Color.clear)
+        .accessibilityLabel(threadAccessibilityLabel(title: displayTitle, lastMessageAt: thread.lastMessageAt))
+        .accessibilityIdentifier(AccessibilityIdentifiers.assistantThreadItem(threadId: thread.id))
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
                 onDelete(thread.id)
             } label: {
-                AppSymbol.image("trash")
-                    .font(AppTypography.iconSize(AppTypography.bodySize))
-                    .foregroundStyle(.primary)
-                    .frame(width: 44, height: 44)
+                Label("assistant.delete-thread", systemImage: "trash")
             }
-            .buttonStyle(.plain)
             .disabled(isDeleting)
-            .opacity(isActive || isDeleting ? 1 : 0.85)
-            .accessibilityLabel(Text("assistant.delete-thread"))
             .accessibilityIdentifier(AccessibilityIdentifiers.assistantThreadDeleteButton(threadId: thread.id))
         }
-        .background(isActive ? Color.accentColor.opacity(0.15) : Color.clear)
-        .contentShape(Rectangle())
     }
 
     private func threadAccessibilityLabel(title: String, lastMessageAt: String?) -> Text {
