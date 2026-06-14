@@ -76,7 +76,8 @@ struct DiscoverPublicProfileView: View {
                         NavigationLink(
                             value: DiscoverRoute.recipe(
                                 id: recipe.id,
-                                allowDownloads: response.profile.allowRecipeDownloads != false
+                                allowDownloads: response.profile.allowRecipeDownloads != false,
+                                imageSource: .publicRecipe
                             )
                         ) {
                             DiscoverRecipeCard(recipe: recipe, searchTokens: searchTokens)

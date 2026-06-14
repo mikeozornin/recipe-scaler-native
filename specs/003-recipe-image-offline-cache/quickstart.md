@@ -23,7 +23,7 @@
 3. Force-quit приложения, запустить снова.
 4. **Ожидание**: список и превью отображаются без сети; индикатор — disconnected / wifi.slash.
 5. Подождать ~10–30 с онлайн (фоновый prefetch preview + full), затем снова режим полёта.
-6. Открыть рецепт с фото — шапка 250pt с full из `Caches/RecipeImages/{id}_full.webp`, без запросов к API.
+6. Открыть рецепт с фото — шапка 250pt с full из `Application Support/RecipeImages/{id}_full.webp`, без запросов к API.
 
 ## 3. Офлайн без предварительного кэша
 
@@ -47,7 +47,7 @@
 
 ```bash
 # Путь к кэшу на симуляторе (подставить container UUID из ~/Library/Developer/CoreSimulator/Devices/...)
-ls "$(xcrun simctl get_app_container booted com.recipescaler.native data)/Library/Caches/RecipeImages/"
+ls "$(xcrun simctl get_app_container booted ru.recipescaler.RecipeScalerNative data)/Library/Application Support/RecipeImages/"
 ```
 
 Ожидаемые файлы: `{recipeId}_preview.webp`, `{recipeId}_full.webp`.

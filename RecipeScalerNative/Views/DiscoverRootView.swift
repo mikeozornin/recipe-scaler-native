@@ -75,8 +75,12 @@ struct DiscoverRootView: View {
                 switch route {
                 case .collection(let slug):
                     DiscoverCollectionView(slug: slug)
-                case .recipe(let id, let allowDownloads):
-                    DiscoverRecipeView(recipeId: id, allowRecipeDownloads: allowDownloads)
+                case .recipe(let id, let allowDownloads, let imageSource):
+                    DiscoverRecipeView(
+                        recipeId: id,
+                        allowRecipeDownloads: allowDownloads,
+                        imageSource: imageSource
+                    )
                 case .profile(let username):
                     DiscoverPublicProfileView(username: username)
                 }
@@ -118,7 +122,11 @@ struct DiscoverRootView: View {
 
 enum DiscoverRoute: Hashable {
     case collection(String)
-    case recipe(id: String, allowDownloads: Bool = true)
+    case recipe(
+        id: String,
+        allowDownloads: Bool = true,
+        imageSource: DiscoverRecipeImageSource = .curatedDiscover
+    )
     case profile(String)
 }
 
@@ -276,20 +284,15 @@ struct DiscoverAvatar: View {
     var size: CGFloat = 40
 
     var body: some View {
-        Group {
+        ZStack {
+            placeholder
             if let avatarURL {
-                AsyncImage(url: avatarURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    default:
-                        placeholder
-                    }
-                }
-            } else {
-                placeholder
+                PublicCachedImageView(
+                    url: avatarURL,
+                    allowsNetworkRefresh: true,
+                    maxPixelSize: RecipeImageDecoder.previewMaxPixelSize,
+                    contentMode: .fill
+                )
             }
         }
         .frame(width: size, height: size)

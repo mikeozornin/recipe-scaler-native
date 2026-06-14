@@ -6,6 +6,11 @@
 import Foundation
 import RecipeScalerCore
 
+enum DiscoverRecipeImageSource: Hashable, Sendable {
+    case curatedDiscover
+    case publicRecipe
+}
+
 struct DiscoveryCollectionDTO: Decodable, Identifiable, Sendable {
     var id: String { slug }
     let slug: String
@@ -306,6 +311,15 @@ enum DiscoverAPI {
     /// `preview=true` returns a smaller variant; grids use `preview: false` (web parity).
     static func recipeImageURL(recipeId: String, preview: Bool = true) -> URL? {
         URL(string: "\(Config.baseURL)/api/recipes/\(recipeId)/image\(preview ? "?preview=true" : "")")
+    }
+
+    static func detailImageURL(recipeId: String, imageSource: DiscoverRecipeImageSource) -> URL? {
+        switch imageSource {
+        case .curatedDiscover:
+            discoverRecipeImageURL(recipeId: recipeId)
+        case .publicRecipe:
+            recipeImageURL(recipeId: recipeId, preview: false)
+        }
     }
 
     static func collectionRecipeCardImageURL(recipe: CuratedRecipeMetadataDTO) -> URL? {
