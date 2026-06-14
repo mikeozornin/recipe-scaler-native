@@ -50,6 +50,7 @@ final class LocalizationConsistencyTests: XCTestCase {
             "discover.recipe.copying",
             "discover.recipe.copied",
             "discover.recipe.failed",
+            "discover.recipe.loading",
             "discover.recipe.prep-time",
             "discover.recipe.cook-time",
             "discover.recipe.servings",

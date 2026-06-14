@@ -3640,6 +3640,23 @@
         }
       }
     },
+    "discover.recipe.loading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading recipe…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузка рецепта…"
+          }
+        }
+      }
+    },
     "discover.recipe.open-in-my-recipes" : {
       "extractionState" : "manual",
       "localizations" : {

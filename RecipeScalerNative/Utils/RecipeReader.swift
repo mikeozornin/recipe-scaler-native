@@ -28,11 +28,9 @@ enum RecipeReader {
                 let map = YrsMap(branch: mapBranch)
                 recipeFields = readFields(from: map, txn: txn)
 
-                // Capture the v3 description XML inside the txn (FFI walk requires active txn).
-                if let version = recipeFields?.version,
-                   RecipeData.RecipeVersion.detect(version) == .v3 {
-                    xmlSnapshot = XmlFragmentToHTML.serializedFragment(txn: txn)
-                }
+                // v3 description lives in XmlFragment — capture whenever it has content
+                // (public recipes may omit the `version` field).
+                xmlSnapshot = XmlFragmentToHTML.serializedFragment(txn: txn)
             }
         } catch {
             return nil
@@ -59,7 +57,7 @@ enum RecipeReader {
             version: fields.version ?? "v1",
             description: description,
             ingredients: fields.ingredients,
-            nutrition: nil,
+            nutrition: fields.nutrition,
             isPublic: false,
             hasSteps: false,
             createdAt: "",
@@ -78,6 +76,7 @@ enum RecipeReader {
         var version: String?
         var description: String?
         var ingredients: [IngredientData]
+        var nutrition: NutritionData?
         var imageUrl: String?
         var imageAspectRatio: Double?
         var originalRecipeLink: String?
@@ -97,6 +96,7 @@ enum RecipeReader {
             version: versionString,
             description: readDescription(from: map, txn: txn, version: version),
             ingredients: readIngredients(from: map, txn: txn, version: version),
+            nutrition: readNutrition(from: map, txn: txn),
             imageUrl: map.scalarString(key: "imageUrl", txn: txn),
             imageAspectRatio: map.double(key: "imageAspectRatio", txn: txn),
             originalRecipeLink: map.scalarString(key: "originalRecipeLink", txn: txn)
@@ -126,25 +126,70 @@ enum RecipeReader {
         return map.string(key: "description", txn: txn)
     }
 
+    private static func readNutrition(from map: YrsMap, txn: OpaquePointer) -> NutritionData? {
+        let rootOutdated = map.bool(key: "nutritionOutdated", txn: txn) ?? false
+
+        if let parsed = try? map.withNestedMap(key: "nutrition", txn: txn, { nMap in
+            var extra: [String: Double] = [:]
+            if let totalWeight = nMap.double(key: "totalWeight", txn: txn) {
+                extra["totalWeight"] = totalWeight
+            }
+            let nutritionOutdated = nMap.bool(key: "nutritionOutdated", txn: txn) ?? false
+            return NutritionData(
+                calories: nMap.double(key: "calories", txn: txn),
+                protein: nMap.double(key: "protein", txn: txn),
+                fat: nMap.double(key: "fat", txn: txn),
+                carbs: nMap.double(key: "carbs", txn: txn),
+                nutritionOutdated: rootOutdated || nutritionOutdated,
+                extra: extra
+            )
+        }) {
+            return parsed
+        }
+
+        guard let val = map.value(key: "nutrition", txn: txn),
+              val.tag == YrsValue.Y_JSON_STR,
+              let json = val.stringValue,
+              let data = json.data(using: .utf8),
+              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        let nutritionOutdated = dict["nutritionOutdated"] as? Bool ?? false
+        return NutritionData(
+            calories: dict["calories"] as? Double,
+            protein: dict["protein"] as? Double,
+            fat: dict["fat"] as? Double,
+            carbs: dict["carbs"] as? Double,
+            nutritionOutdated: rootOutdated || nutritionOutdated,
+            extra: dict.compactMapValues { $0 as? Double }
+                .filter { !["calories", "protein", "fat", "carbs", "nutritionOutdated"].contains($0.key) }
+        )
+    }
+
     private static func readIngredients(
         from map: YrsMap,
         txn: OpaquePointer,
         version: RecipeData.RecipeVersion
     ) -> [IngredientData] {
+        // Prefer Y.Array (v2/v3) regardless of `version` — public snapshots often omit it.
+        if let fromArray = try? map.withNestedArray(key: "ingredients", txn: txn, { array in
+            var ingredients: [IngredientData] = []
+            var index = 0
+            array.forEachMap(txn: txn) { ingMap in
+                ingredients.append(parseIngredient(ingMap, txn: txn, order: index + 1))
+                index += 1
+            }
+            return ingredients
+        }), !fromArray.isEmpty {
+            return fromArray
+        }
+
         switch version {
         case .v1:
             guard let json = map.string(key: "ingredients", txn: txn) else { return [] }
             return parseJSONIngredients(json)
         case .v2, .v3:
-            return (try? map.withNestedArray(key: "ingredients", txn: txn) { array in
-                var ingredients: [IngredientData] = []
-                var index = 0
-                array.forEachMap(txn: txn) { ingMap in
-                    ingredients.append(parseIngredient(ingMap, txn: txn, order: index + 1))
-                    index += 1
-                }
-                return ingredients
-            }) ?? []
+            return []
         }
     }
 
@@ -155,6 +200,7 @@ enum RecipeReader {
     ) -> IngredientData {
         let isSeparator = map.bool(key: "isSeparator", txn: txn) ?? false
         let amountDouble = map.double(key: "amount", txn: txn)
+        let hasOriginal = !map.isNullOrMissing(key: "originalAmount", txn: txn)
         let originalAmountDouble = map.double(key: "originalAmount", txn: txn)
         let amountString = map.scalarString(key: "amount", txn: txn)
             ?? amountDouble.map(formatAmount)
@@ -162,6 +208,7 @@ enum RecipeReader {
         let originalAmountString = map.scalarString(key: "originalAmount", txn: txn)
             ?? originalAmountDouble.map(formatAmount)
             ?? ""
+        let hasQuantity = hasOriginal && !originalAmountString.isEmpty
         return IngredientData(
             id: map.scalarString(key: "id", txn: txn) ?? UUID().uuidString,
             name: map.scalarString(key: "name", txn: txn) ?? "",
@@ -170,7 +217,7 @@ enum RecipeReader {
             unit: map.scalarString(key: "unit", txn: txn) ?? "",
             order: map.int(key: "order", txn: txn) ?? order,
             isSeparator: isSeparator,
-            hasQuantity: originalAmountDouble != nil,
+            hasQuantity: hasQuantity,
             calories: map.double(key: "calories", txn: txn),
             protein: map.double(key: "protein", txn: txn),
             fat: map.double(key: "fat", txn: txn),

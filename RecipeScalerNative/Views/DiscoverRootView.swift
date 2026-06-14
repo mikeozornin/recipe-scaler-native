@@ -75,8 +75,8 @@ struct DiscoverRootView: View {
                 switch route {
                 case .collection(let slug):
                     DiscoverCollectionView(slug: slug)
-                case .recipe(let id):
-                    DiscoverRecipeView(recipeId: id)
+                case .recipe(let id, let allowDownloads):
+                    DiscoverRecipeView(recipeId: id, allowRecipeDownloads: allowDownloads)
                 case .profile(let username):
                     DiscoverPublicProfileView(username: username)
                 }
@@ -118,7 +118,7 @@ struct DiscoverRootView: View {
 
 enum DiscoverRoute: Hashable {
     case collection(String)
-    case recipe(String)
+    case recipe(id: String, allowDownloads: Bool = true)
     case profile(String)
 }
 

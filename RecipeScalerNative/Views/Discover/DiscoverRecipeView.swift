@@ -6,19 +6,23 @@
 import SwiftUI
 import RecipeScalerCore
 
-/// Read-only view of a public recipe: hero image, prep/cook/servings badges,
-/// read-only ingredients block with servings scaler, HTML description, and
-/// "Copy to my recipes" CTA that clones via the v2 copy endpoint and routes
-/// the user to the cloned recipe in My Recipes.
+/// Read-only public recipe page (web `public-recipe.tsx` mobile layout).
+///
+/// Order: hero image → copy CTA → title → servings → ingredients → nutrition → steps.
+/// Loads Yjs state via `GET /api/v2/recipes/public/{id}/state` and reuses the same
+/// view-mode ingredient / description components as `YDocRecipeDetailView`.
 struct DiscoverRecipeView: View {
     let recipeId: String
+    var allowRecipeDownloads: Bool = true
 
     @EnvironmentObject private var syncService: YjsSyncService
-    @Environment(\.locale) private var locale
+    @AppStorage(NutritionSettings.globalEnabledKey) private var showNutritionGlobal = true
     @State private var recipe: RecipeData?
     @State private var isLoading = true
     @State private var loadError: String?
     @State private var scaleFactor: Double = 1
+    @State private var nutritionViewMode: IngredientNutritionViewMode = NutritionViewModeStorage.load()
+    @State private var descriptionTimerPopover: DescriptionTimerPopoverState?
     @State private var cloneState: CloneState = .idle
 
     @MainActor
@@ -29,20 +33,61 @@ struct DiscoverRecipeView: View {
         case failed(String)
     }
 
+    private var accentColor: Color {
+        RecipeAccentColor.color(from: recipe?.color ?? "")
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 0) {
                 if let recipe {
                     hero(for: recipe)
-                    header(for: recipe)
-                    ingredientsBlock(for: recipe)
-                    if let description = recipe.description, !description.isEmpty {
-                        descriptionBlock(description)
+
+                    VStack(alignment: .leading, spacing: 16) {
+                        if allowRecipeDownloads {
+                            cloneButton
+                                .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
+                        }
+
+                        titleBlock(for: recipe)
+
+                        if recipe.servings > 0 {
+                            ServingsStepperView(
+                                servings: scaledServingsBinding(base: max(1, recipe.servings)),
+                                accentColor: accentColor
+                            )
+                        }
+
+                        YDocIngredientsSection(
+                            ingredients: recipe.ingredients,
+                            baseServings: max(1, recipe.servings),
+                            viewServings: scaledServingsCount(base: max(1, recipe.servings)),
+                            accentColor: accentColor,
+                            onScaledQuantityEdited: { ingredient, text in
+                                applyViewModeScaledQuantityEdit(ingredient: ingredient, text: text)
+                            },
+                            nutritionEnabled: showNutritionGlobal,
+                            nutritionViewMode: nutritionViewMode
+                        )
+
+                        if showNutritionGlobal,
+                           RecipeNutritionDisplay.effectiveMacros(from: recipe) != nil {
+                            nutritionBlock(recipe: recipe)
+                        }
+
+                        if let description = recipe.description, !description.isEmpty {
+                            StepsSection(
+                                htmlContent: description,
+                                accentColor: accentColor,
+                                recipeId: recipeId,
+                                timerPopover: $descriptionTimerPopover
+                            )
+                            .id("discover_recipe_instructions")
+                        }
                     }
-                    cloneButton
-                        .padding(.top, 8)
+                    .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
                 } else if isLoading {
-                    ProgressView(Bundle.currentLocalizedString("discover.loading"))
+                    ProgressView("discover.recipe.loading")
                         .frame(maxWidth: .infinity)
                         .padding(.top, 60)
                 } else if let loadError {
@@ -51,205 +96,167 @@ struct DiscoverRecipeView: View {
                     } description: {
                         Text(loadError).appBody()
                     }
+                    .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
+        }
+        .contentMargins(.horizontal, 0, for: .scrollContent)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(recipe?.name.isEmpty == false ? (recipe?.name ?? "") : "")
+        .overlay {
+            DescriptionTimerPopoverOverlay(
+                state: descriptionTimerPopover,
+                accentColor: accentColor,
+                onStart: {
+                    if let popover = descriptionTimerPopover {
+                        startDescriptionTimer(from: popover.reference)
+                    }
+                },
+                onDismiss: { descriptionTimerPopover = nil }
+            )
         }
         .task { await load() }
     }
 
     @ViewBuilder
     private func hero(for recipe: RecipeData) -> some View {
-        let imageURL = DiscoverAPI.recipeImageURL(recipeId: recipe.id, preview: false)
-        AsyncImage(url: imageURL) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            case .failure, .empty:
-                placeholderHero(color: RecipeAccentColor.color(from: recipe.color))
-            @unknown default:
-                placeholderHero(color: RecipeAccentColor.color(from: recipe.color))
-            }
-        }
-    }
-
-    private func placeholderHero(color: Color) -> some View {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .fill(color.opacity(0.15))
-            .frame(height: 220)
-            .overlay(
-                AppSymbol.image("photo")
-                    .font(.system(size: 36, weight: .regular))
-                    .foregroundStyle(.secondary)
+        if let imageUrlString = recipe.imageUrl, !imageUrlString.isEmpty {
+            RecipeCachedImageView(
+                recipeId: recipe.id,
+                imageUrl: imageUrlString,
+                variant: .full,
+                allowsNetworkRefresh: true,
+                layoutAspectRatio: recipe.imageAspectRatio.map { CGFloat($0) },
+                fullWidthHero: true,
+                maxHeight: 400
             )
+        }
     }
 
     @ViewBuilder
-    private func header(for recipe: RecipeData) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(recipe.name.isEmpty
-                 ? Bundle.currentLocalizedString("recipes.no-title")
-                 : recipe.name)
-                .font(AppTypography.display(24))
-                .foregroundStyle(.primary)
-            HStack(spacing: 8) {
-                if recipe.servings > 0 {
-                    servingsPill(servings: recipe.servings)
-                }
-            }
-        }
+    private func titleBlock(for recipe: RecipeData) -> some View {
+        Text(recipe.name.isEmpty
+             ? Bundle.currentLocalizedString("recipes.no-title")
+             : recipe.name)
+            .font(AppTypography.display(AppTypography.recipeTitleSize))
+            .lineLimit(nil)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
     }
 
-    private func servingsPill(servings: Int) -> some View {
-        VStack(spacing: 2) {
-            Text(Bundle.currentLocalizedString("discover.recipe.servings"))
-                .font(AppTypography.footnote)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-            Text("\(Int((Double(servings) * scaleFactor).rounded()))")
-                .font(AppTypography.subheadlineSemibold)
-                .foregroundStyle(.primary)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+    private func nutritionBlock(recipe: RecipeData) -> some View {
+        RecipeNutritionBlockView(
+            recipe: recipe,
+            baseServings: max(1, recipe.servings),
+            scaleFactor: scaleFactor,
+            accentColor: accentColor,
+            isOnline: syncService.connectionState.isConnected,
+            onRecalculate: nil,
+            viewMode: $nutritionViewMode
         )
     }
 
     @ViewBuilder
-    private func ingredientsBlock(for recipe: RecipeData) -> some View {
-        let displayIngredients = recipe.ingredients.filter { !$0.isSeparator }
-        if !displayIngredients.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("discover.recipe.ingredients")
-                        .appHeadline()
-                    Spacer()
-                    if recipe.servings > 0 {
-                        Stepper(
-                            value: $scaleFactor,
-                            in: 0.25...50,
-                            step: 1
-                        ) {
-                            EmptyView()
-                        }
-                        .labelsHidden()
-                    }
-                }
-                ForEach(displayIngredients) { ingredient in
-                    ingredientRow(ingredient)
-                }
-            }
-            .padding(.vertical, 8)
-        }
-    }
-
-    private func ingredientRow(_ ingredient: IngredientData) -> some View {
-        let scaledAmount = scaledAmountText(ingredient)
-        return HStack(alignment: .firstTextBaseline) {
-            Text(ingredient.name)
-                .appBody()
-                .foregroundStyle(.primary)
-            Spacer()
-            if !scaledAmount.isEmpty {
-                Text(scaledAmount)
-                    .appBody()
-                    .foregroundStyle(.primary)
-                    .monospacedDigit()
-            }
-            if !ingredient.unit.isEmpty {
-                Text(ingredient.unit)
-                    .appFootnote()
-                    .foregroundStyle(.secondary)
-                    .padding(.leading, 4)
-            }
-        }
-        .padding(.vertical, 4)
-    }
-
-    /// Render the scaled amount using the ingredient's numeric `originalAmount`
-    /// (the Yjs map value) times `scaleFactor`. String `amount` is used as a
-    /// fallback when no numeric value is available.
-    private func scaledAmountText(_ ingredient: IngredientData) -> String {
-        if let original = Double(ingredient.originalAmount) {
-            let scaled = original * scaleFactor
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .decimal
-            formatter.minimumFractionDigits = 0
-            formatter.maximumFractionDigits = 2
-            formatter.locale = locale
-            return formatter.string(from: NSNumber(value: scaled)) ?? "\(scaled)"
-        }
-        return ingredient.amount
-    }
-
-    @ViewBuilder
-    private func descriptionBlock(_ html: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("discover.recipe.steps")
-                .appHeadline()
-            Text(attributedDescription(html))
-                .appBody()
-        }
-        .padding(.vertical, 8)
-    }
-
-    private func attributedDescription(_ html: String) -> AttributedString {
-        let cleaned = DiscoverDescriptionText.htmlToPlainText(html)
-        if let attr = try? AttributedString(markdown: cleaned) {
-            return attr
-        }
-        return AttributedString(cleaned)
-    }
-
-    @ViewBuilder
     private var cloneButton: some View {
-        switch cloneState {
-        case .idle:
-            Button {
-                Task { await clone() }
-            } label: {
-                Label("discover.recipe.copy-to-me", systemImage: "arrow.down.to.line")
-            }
-            .buttonStyle(.borderedProminent)
-            .accessibilityIdentifier(AccessibilityIdentifiers.discoverRecipeCloneButton)
-        case .copying:
-            Button {
-                // no-op — in-flight
-            } label: {
-                HStack(spacing: 6) {
-                    ProgressView()
-                    Text("discover.recipe.copying")
-                }
-            }
-            .buttonStyle(.bordered)
-            .disabled(true)
-        case .done(let newRecipeId):
-            Button {
-                DeepLinkRouter.shared.handle(.openRecipe(recipeId: newRecipeId))
-            } label: {
-                Label("discover.recipe.open-in-my-recipes", systemImage: "checkmark")
-            }
-            .buttonStyle(.bordered)
-        case .failed(let message):
+        if case .failed(let message) = cloneState {
             VStack(alignment: .leading, spacing: 4) {
-                Button {
-                    Task { await clone() }
-                } label: {
-                    Label("discover.recipe.copy-to-me", systemImage: "arrow.down.to.line")
-                }
-                .buttonStyle(.borderedProminent)
+                cloneActionButton
                 Text(message)
                     .appFootnote()
                     .foregroundStyle(.red)
             }
+        } else {
+            cloneActionButton
         }
+    }
+
+    private var cloneActionButton: some View {
+        Button {
+            switch cloneState {
+            case .idle, .failed:
+                Task { await clone() }
+            case .done(let newRecipeId):
+                DeepLinkRouter.shared.handle(.openRecipe(recipeId: newRecipeId))
+            case .copying:
+                break
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Group {
+                    if case .copying = cloneState {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: cloneButtonIconName)
+                    }
+                }
+                .frame(width: 20, height: 20)
+
+                Text(cloneButtonTitleKey)
+            }
+            .frame(minHeight: 22)
+        }
+        .buttonStyle(.bordered)
+        .disabled(cloneState == .copying)
+        .accessibilityIdentifier(AccessibilityIdentifiers.discoverRecipeCloneButton)
+    }
+
+    private var cloneButtonIconName: String {
+        switch cloneState {
+        case .done:
+            return "checkmark"
+        case .idle, .copying, .failed:
+            return "arrow.down.to.line"
+        }
+    }
+
+    private var cloneButtonTitleKey: LocalizedStringKey {
+        switch cloneState {
+        case .idle, .failed:
+            return "discover.recipe.copy-to-me"
+        case .copying:
+            return "discover.recipe.copying"
+        case .done:
+            return "discover.recipe.open-in-my-recipes"
+        }
+    }
+
+    private func scaledServingsCount(base: Int) -> Int {
+        let normalizedBase = max(1, base)
+        return max(1, Int((Double(normalizedBase) * scaleFactor).rounded()))
+    }
+
+    private func scaledServingsBinding(base: Int) -> Binding<Int> {
+        Binding(
+            get: { scaledServingsCount(base: base) },
+            set: { newValue in
+                let normalizedBase = max(1, base)
+                scaleFactor = max(
+                    1.0 / Double(normalizedBase),
+                    Double(max(1, newValue)) / Double(normalizedBase)
+                )
+            }
+        )
+    }
+
+    private func applyViewModeScaledQuantityEdit(ingredient: IngredientData, text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let normalized = trimmed.replacingOccurrences(of: ",", with: ".")
+        guard let scaled = Double(normalized), scaled > 0, scaled.isFinite else { return }
+        guard let original = ingredient.numericValue, original > 0 else { return }
+        scaleFactor = scaled / original
+    }
+
+    private func startDescriptionTimer(from reference: RecipeDescriptionTimerReference) {
+        guard reference.isStartable else { return }
+        _ = TimerManager.shared.createAndStartTimer(
+            name: reference.resolvedName,
+            duration: TimeInterval(reference.durationSeconds),
+            type: reference.type,
+            recipeId: recipeId,
+            recipeDisplayName: recipe?.name
+        )
     }
 
     private func load() async {
@@ -257,16 +264,35 @@ struct DiscoverRecipeView: View {
         defer { isLoading = false }
         do {
             let state = try await DiscoverAPI.fetchPublicRecipeState(id: recipeId)
-            // Prefer the Yjs state (canonical source of ingredients + description).
-            // Fall back to top-level metadata if yjsState is missing/empty.
             if let bytes = state.yjsState, !bytes.isEmpty {
-                let data = Data(bytes.map { UInt8(truncatingIfNeeded: $0) })
-                if let parsed = await RecipeReader.parse(state: data, recipeId: recipeId) {
+                let data = YjsPayloadBytes.data(from: bytes) ?? Data(bytes.map { UInt8(truncatingIfNeeded: $0) })
+                if var parsed = await RecipeReader.parse(state: data, recipeId: recipeId) {
+                    if (parsed.imageUrl ?? "").isEmpty,
+                       let imageUrl = state.imageUrl,
+                       !imageUrl.isEmpty {
+                        parsed = RecipeData(
+                            id: parsed.id,
+                            name: parsed.name,
+                            servings: parsed.servings,
+                            color: parsed.color,
+                            version: parsed.version,
+                            description: parsed.description,
+                            ingredients: parsed.ingredients,
+                            nutrition: parsed.nutrition,
+                            isPublic: parsed.isPublic,
+                            hasSteps: parsed.hasSteps,
+                            createdAt: parsed.createdAt,
+                            updatedAt: parsed.updatedAt,
+                            imageUrl: imageUrl,
+                            imageAspectRatio: parsed.imageAspectRatio,
+                            originalRecipeLink: parsed.originalRecipeLink,
+                            originalRecipe: parsed.originalRecipe
+                        )
+                    }
                     recipe = parsed
                     return
                 }
             }
-            // No Yjs state — synthesize a minimal recipe from top-level metadata.
             recipe = RecipeData(
                 id: state.id,
                 name: state.name ?? "",
@@ -295,7 +321,10 @@ struct DiscoverRecipeView: View {
         cloneState = .copying
         do {
             let newId = try await DiscoverAPI.copyRecipe(id: recipeId)
-            await syncService.loadRecipe(recipeId: newId)
+            await syncService.integrateCopiedRecipe(
+                recipeId: newId,
+                fallbackImageUrl: recipe?.imageUrl
+            )
             cloneState = .done(newRecipeId: newId)
             ShoppingFeedback.postStatus(
                 Bundle.currentLocalizedString("discover.recipe.copied")
@@ -303,52 +332,5 @@ struct DiscoverRecipeView: View {
         } catch {
             cloneState = .failed(error.localizedDescription)
         }
-    }
-}
-
-/// Naive HTML → plain text conversion for curated recipe description.
-/// Curated recipes come from the server already sanitized; we only need a
-/// faithful plain rendering, not full styling. Falls back to raw HTML body if
-/// parsing fails.
-private enum DiscoverDescriptionText {
-    static func htmlToPlainText(_ html: String) -> String {
-        var text = html
-        // Convert block-level boundaries to newlines for readability.
-        let blockEndings: [(String, String)] = [
-            ("(?i)</p>", "\n"),
-            ("(?i)</li>", "\n"),
-            ("(?i)</h[1-6]>", "\n"),
-            ("(?i)<br\\s*/?>", "\n"),
-        ]
-        for (pattern, replacement) in blockEndings {
-            text = text.replacingOccurrences(
-                of: pattern,
-                with: replacement,
-                options: .regularExpression
-            )
-        }
-        text = text.replacingOccurrences(
-            of: "<[^>]+>",
-            with: "",
-            options: .regularExpression
-        )
-        text = text
-            .replacingOccurrences(of: "&nbsp;", with: " ")
-            .replacingOccurrences(of: "&amp;", with: "&")
-            .replacingOccurrences(of: "&lt;", with: "<")
-            .replacingOccurrences(of: "&gt;", with: ">")
-            .replacingOccurrences(of: "&quot;", with: "\"")
-            .replacingOccurrences(of: "&#39;", with: "'")
-        // Collapse 3+ newlines into 2 (Markdown paragraph break).
-        repeat {
-            let next = text.replacingOccurrences(
-                of: "\n{3,}",
-                with: "\n\n",
-                options: .regularExpression
-            )
-            if next == text { break }
-            text = next
-        } while true
-        return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

@@ -833,6 +833,70 @@ final class YjsSyncService: ObservableObject {
         logger.info("Emitted load_document for recipe \(recipeId)")
     }
 
+    /// After `POST /api/v2/recipes/:id/copy`: pull server recipe + collection, ensure
+    /// collection metadata has `imageUrl`, and warm on-disk preview cache for the new id.
+    func integrateCopiedRecipe(recipeId: String, fallbackImageUrl: String?) async {
+        guard userId != nil else { return }
+        activeRecipeId = recipeId
+        await installChangeHandlersIfNeeded()
+
+        if canSendLiveSync() {
+            _ = await fetchAndMergeServerDocument(recipeId: recipeId)
+            reloadCollectionFromServer()
+        } else {
+            await loadRecipe(recipeId: recipeId)
+        }
+
+        var resolvedImageUrl: String?
+        for attempt in 0 ..< 25 {
+            await refreshCollectionEntries()
+            if let entry = collectionEntry(for: recipeId),
+               let url = entry.imageUrl,
+               !url.isEmpty {
+                resolvedImageUrl = url
+                break
+            }
+            await refreshCurrentRecipe(recipeId: recipeId)
+            if let url = currentRecipe?.imageUrl, !url.isEmpty {
+                resolvedImageUrl = url
+            }
+            if attempt == 0, canSendLiveSync() {
+                reloadCollectionFromServer()
+            }
+            if resolvedImageUrl != nil, collectionEntry(for: recipeId) != nil {
+                break
+            }
+            try? await Task.sleep(nanoseconds: 200_000_000)
+        }
+
+        await syncCollectionImageUrlFromRecipeIfNeeded(recipeId: recipeId)
+        await refreshCollectionEntries()
+        await refreshCurrentRecipe(recipeId: recipeId)
+
+        let imageUrl = collectionEntry(for: recipeId)?.imageUrl
+            ?? currentRecipe?.imageUrl
+            ?? fallbackImageUrl
+        guard let imageUrl, !imageUrl.isEmpty else { return }
+        guard connectionState == .connected else { return }
+
+        let entry = collectionEntry(for: recipeId)
+            ?? CollectionEntry(
+                id: recipeId,
+                name: currentRecipe?.name ?? "",
+                color: currentRecipe?.color ?? "#3b82f6",
+                imageUrl: imageUrl,
+                updatedAt: ISO8601DateFormatter().string(from: Date()),
+                deleted: false,
+                isPinned: false
+            )
+
+        await RecipeImageService.shared.prefetchPreviews(
+            entries: [entry],
+            allowNetwork: true
+        )
+        await refreshImageCacheStatus()
+    }
+
     /// Full local teardown on logout (web: IndexedDB + realtime destroy).
     func clearSessionForLogout() async {
         if let key = unsyncedRecipeIdsKey() {
@@ -2145,10 +2209,30 @@ final class YjsSyncService: ObservableObject {
     private func requestDocumentReload(recipeId: String) {
         guard socket?.status == .connected, isSocketAuthenticated else { return }
         if recipeId == "collection" {
-            hasRequestedCollectionLoad = false
-            loadCollectionDocument()
+            reloadCollectionFromServer()
         } else {
             socket?.emit("load_document", ["recipeId": recipeId])
+        }
+    }
+
+    private func reloadCollectionFromServer() {
+        guard socket?.status == .connected, isSocketAuthenticated else { return }
+        hasRequestedCollectionLoad = false
+        loadCollectionDocument()
+    }
+
+    private func syncCollectionImageUrlFromRecipeIfNeeded(recipeId: String) async {
+        guard let entry = collectionEntry(for: recipeId),
+              entry.imageUrl?.isEmpty != false else { return }
+        guard let userId else { return }
+        guard let recipe = try? await documentManager.readRecipeData(recipeId: recipeId, userId: userId),
+              let imageUrl = recipe.imageUrl,
+              !imageUrl.isEmpty else { return }
+
+        let touchedAt = ISO8601DateFormatter().string(from: Date())
+        try? await documentManager.updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
+            entryMap.insert(key: "imageUrl", value: .string(imageUrl), txn: txn)
+            entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
         }
     }
 

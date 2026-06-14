@@ -62,7 +62,7 @@ struct DiscoverCollectionView: View {
                             .padding(.top, 40)
                     } else {
                         DiscoverRecipeCardGrid(items: filtered) { recipe in
-                            NavigationLink(value: DiscoverRoute.recipe(recipe.id)) {
+                            NavigationLink(value: DiscoverRoute.recipe(id: recipe.id)) {
                                 DiscoverRecipeCard(recipe: recipe, searchTokens: searchTokens)
                             }
                             .buttonStyle(.plain)
