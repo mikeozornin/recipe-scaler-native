@@ -152,3 +152,11 @@ actor YDocStore {
         }
     }
 }
+
+extension YDocStore {
+    /// In-memory store with migrated schema — for unit tests only.
+    static func inMemory() throws -> YDocStore {
+        let database = try YrsDatabase.makeInMemoryFallback()
+        return YDocStore(dbQueue: database.dbQueue)
+    }
+}

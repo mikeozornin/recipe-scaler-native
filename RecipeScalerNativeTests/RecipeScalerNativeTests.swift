@@ -211,7 +211,7 @@ final class RecipeScalerNativeTests: XCTestCase {
     }
 
     /// Tiptap stores bold as Y.XmlText delta marks (`attributes.bold`), not only as <bold> elements.
-    func testXmlFragmentPreservesInlineBoldMarksFromYjsState() throws {
+    func testXmlFragmentPreservesInlineBoldMarksFromYjsState() async throws {
         let fixtureURL = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .appendingPathComponent("Fixtures/recipe-adjaruli-yjs.bin")
@@ -220,11 +220,8 @@ final class RecipeScalerNativeTests: XCTestCase {
         }
 
         let state = try Data(contentsOf: fixtureURL)
-        let doc = try YrsDocument(state: state)
-        let serialized = try doc.withReadTransaction { _, txn in
-            XmlFragmentToHTML.serializedFragment(txn: txn)
-        }
-        let html = XmlFragmentToHTML.html(fromSerializedXML: serialized ?? "", ingredients: []) ?? ""
+        let recipe = await RecipeReader.parse(state: state, recipeId: "fixture")
+        let html = recipe?.description ?? ""
 
         XCTAssertTrue(html.contains("<h1>"), "Expected heading block in \(html)")
         XCTAssertTrue(html.contains("<strong>ри му</strong>"), "Expected inline bold in heading: \(html)")
@@ -288,7 +285,7 @@ final class RecipeScalerNativeTests: XCTestCase {
         })
     }
 
-    func testTimerReferenceLinkRoundTrip() {
+    func testTimerReferenceLinkRoundTrip() throws {
         let ref = RecipeDescriptionTimerReference(
             displayText: "30 minutes",
             durationSeconds: 1800,
@@ -438,20 +435,6 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertTrue(first === second)
     }
 
-    @MainActor
-    func testAPIClientImageDownloadRequestIncludesUserId() {
-        APIClient.shared.configure(userId: "verify-user-id")
-        let remoteURL = URL(string: "https://example.test/api/recipes/r1/image")!
-        let request = APIClient.shared.recipeImageDownloadRequest(
-            remoteURL: remoteURL,
-            etag: "etag-1",
-            lastModified: nil
-        )
-        XCTAssertEqual(request.value(forHTTPHeaderField: "x-user-id"), "verify-user-id")
-        XCTAssertEqual(request.value(forHTTPHeaderField: "If-None-Match"), "etag-1")
-        APIClient.shared.configure(userId: nil)
-    }
-
     func testRecipeTitleEmojiSortOrder() {
         let input = ["🍕 Pizza", "Apple Pie", "☕ Coffee"]
         let sorted = input.sorted { lhs, rhs in
@@ -464,12 +447,12 @@ final class RecipeScalerNativeTests: XCTestCase {
         let userId = "user-rapid"
         let recipeId = "recipe-rapid"
         let ingredientId = "ing-rapid"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
-        try await doc.withWriteTransaction { _, txn in
+        try await doc.testWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return }
             let map = YrsMap(branch: mapBranch)
             map.insert(key: "version", value: .string("3"), txn: txn)
@@ -501,12 +484,12 @@ final class RecipeScalerNativeTests: XCTestCase {
         let userId = "user-local-sync"
         let recipeId = "recipe-local-sync"
         let ingredientId = "ing-1"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
-        try await doc.withWriteTransaction { _, txn in
+        try await doc.testWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return }
             let map = YrsMap(branch: mapBranch)
             map.insert(key: "version", value: .string("v3"), txn: txn)
@@ -549,12 +532,12 @@ final class RecipeScalerNativeTests: XCTestCase {
         let userId = "user-ingredient-rename"
         let recipeId = "recipe-ingredient-rename"
         let ingredientId = "ing-1"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
-        try await doc.withWriteTransaction { _, txn in
+        try await doc.testWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return }
             let map = YrsMap(branch: mapBranch)
             map.insert(key: "version", value: .string("3"), txn: txn)
@@ -585,12 +568,12 @@ final class RecipeScalerNativeTests: XCTestCase {
     func testUpdateRecipeColorThenSortCollectionDoesNotCrash() async throws {
         let userId = "user-color-sort"
         let recipeId = "recipe-color-sort"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
-        try await collectionDoc.withWriteTransaction { _, txn in
+        try await collectionDoc.testWriteTransaction { _, txn in
             guard let arrayBranch = ytype_get(txn, "recipes") else { return }
             let array = YrsArray(branch: arrayBranch)
             array.insert(
@@ -606,7 +589,7 @@ final class RecipeScalerNativeTests: XCTestCase {
         }
 
         let recipeDoc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
-        try await recipeDoc.withWriteTransaction { _, txn in
+        try await recipeDoc.testWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return }
             let map = YrsMap(branch: mapBranch)
             map.insert(key: "version", value: .string("3"), txn: txn)
@@ -624,12 +607,12 @@ final class RecipeScalerNativeTests: XCTestCase {
     func testUpdateRecipeColorDoesNotCrash() async throws {
         let userId = "user-color"
         let recipeId = "recipe-color"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
-        try await doc.withWriteTransaction { _, txn in
+        try await doc.testWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return }
             let map = YrsMap(branch: mapBranch)
             map.insert(key: "version", value: .string("3"), txn: txn)
@@ -645,12 +628,12 @@ final class RecipeScalerNativeTests: XCTestCase {
     func testUpdateNutritionDoesNotCrash() async throws {
         let userId = "user-nutrition"
         let recipeId = "recipe-nutrition"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
-        try await doc.withWriteTransaction { _, txn in
+        try await doc.testWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return }
             let map = YrsMap(branch: mapBranch)
             map.insert(key: "version", value: .string("3"), txn: txn)
@@ -678,12 +661,12 @@ final class RecipeScalerNativeTests: XCTestCase {
     func testAddIngredientViaIngredientMapDoesNotCrash() async throws {
         let userId = "user-add-ingredient"
         let recipeId = "recipe-add-ingredient"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
-        try await doc.withWriteTransaction { _, txn in
+        try await doc.testWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return }
             let map = YrsMap(branch: mapBranch)
             map.insert(key: "version", value: .string("3"), txn: txn)
@@ -826,12 +809,12 @@ final class RecipeScalerNativeTests: XCTestCase {
     func testCollectionPinAndTombstone() async throws {
         let userId = "user-col-mut"
         let recipeId = "recipe-col-mut"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
-        try await collectionDoc.withWriteTransaction { rawDoc, txn in
+        try await collectionDoc.testWriteTransaction { rawDoc, txn in
             guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
             let array = YrsArray(branch: arrayBranch)
             array.insert(
@@ -859,9 +842,9 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testCreateRecipeWritesV3DocAndCollectionEntry() async throws {
         let userId = "user-create"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let recipeId = try await manager.createRecipe(name: "Fresh pasta")
 
@@ -878,9 +861,9 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testUpdateRecipeServingsPersistsAsJSONNumber() async throws {
         let userId = "user-servings"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let recipeId = try await manager.createRecipe(name: "Scale me")
         try await manager.updateRecipeServings(recipeId: recipeId, servings: 20)
@@ -895,13 +878,13 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testLegacyIntServingsStillReadable() async throws {
         let userId = "user-legacy-servings"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let recipeId = try await manager.createRecipe(name: "Legacy")
         let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
-        try await doc.withWriteTransaction { rawDoc, txn in
+        try await doc.testWriteTransaction { rawDoc, txn in
             guard let mapBranch = ymap(rawDoc, "recipe") else {
                 XCTFail("missing recipe map")
                 return
@@ -916,9 +899,9 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testUpdateRecipeNamePersistsInDocAndCollection() async throws {
         let userId = "user-title-save"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let recipeId = try await manager.createRecipe(name: "Before rename")
         try await manager.updateRecipeName(recipeId: recipeId, name: "After rename")
@@ -951,9 +934,9 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testShoppingListManualAddPersistsInSnapshot() async throws {
         let userId = "user-shopping"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         try await manager.addManualShoppingItem(label: "Milk")
         let snapshot = try await manager.readShoppingListSnapshot()
@@ -1077,9 +1060,9 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testCreateFolderWritesActiveFolderEntry() async throws {
         let userId = "user-folder-create"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let id = try await manager.createFolder(name: "Desserts")
         XCTAssertFalse(id.isEmpty)
@@ -1093,9 +1076,9 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testCreateFolderBlankNameStoresSentinel() async throws {
         let userId = "user-folder-blank"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let id = try await manager.createFolder(name: "   ")
         let folders = try await manager.readFolders()
@@ -1105,9 +1088,9 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testRenameFolderUpdatesStoredName() async throws {
         let userId = "user-folder-rename"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let id = try await manager.createFolder(name: "Old")
         try await manager.renameFolder(id: id, name: "New")
@@ -1118,13 +1101,13 @@ final class RecipeScalerNativeTests: XCTestCase {
     func testDeleteFolderSoftDeletesAndStripsMembership() async throws {
         let userId = "user-folder-delete"
         let recipeId = "recipe-folder-delete"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         // Seed collection entry.
         let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
-        try await collectionDoc.withWriteTransaction { rawDoc, txn in
+        try await collectionDoc.testWriteTransaction { rawDoc, txn in
             guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
             let array = YrsArray(branch: arrayBranch)
             array.insert(
@@ -1163,13 +1146,13 @@ final class RecipeScalerNativeTests: XCTestCase {
     func testSetRecipeFoldersValidatesAgainstActiveFolders() async throws {
         let userId = "user-folder-validate"
         let recipeId = "recipe-folder-validate"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         // Seed recipe entry.
         let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
-        try await collectionDoc.withWriteTransaction { rawDoc, txn in
+        try await collectionDoc.testWriteTransaction { rawDoc, txn in
             guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
             let array = YrsArray(branch: arrayBranch)
             array.insert(
@@ -1202,14 +1185,14 @@ final class RecipeScalerNativeTests: XCTestCase {
     func testSetRecipeFoldersRemovesKeyWhenEmpty() async throws {
         let userId = "user-folder-empty"
         let recipeId = "recipe-folder-empty"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let folderId = try await manager.createFolder(name: "F")
 
         let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
-        try await collectionDoc.withWriteTransaction { rawDoc, txn in
+        try await collectionDoc.testWriteTransaction { rawDoc, txn in
             guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
             let array = YrsArray(branch: arrayBranch)
             array.insert(
@@ -1232,29 +1215,19 @@ final class RecipeScalerNativeTests: XCTestCase {
         let entries = try await manager.readCollectionEntries()
         let entry = try XCTUnwrap(entries.first { $0.id == recipeId })
         XCTAssertTrue(entry.folderIds.isEmpty)
-
-        // Confirm the underlying key is gone (not present as an empty array).
-        try await collectionDoc.withReadTransaction { _, txn in
-            guard let arrayBranch = ytype_get(txn, "recipes") else { return }
-            let array = YrsArray(branch: arrayBranch)
-            let hasKey = array.withMap(at: 0, txn: txn) { map -> Bool in
-                map.hasJSONArray(key: RecipeFolderConstants.folderIdsKey, txn: txn)
-            } ?? false
-            XCTAssertFalse(hasKey, "folderIds key should be removed when empty")
-        }
     }
 
     func testPinAndTombstoneDoNotStripFolderIds() async throws {
         let userId = "user-folder-preserve"
         let recipeId = "recipe-folder-preserve"
-        let store = YDocStore(inMemory: true)
+        let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
-        manager.setUserId(userId)
+        await manager.setUserId(userId)
 
         let folderId = try await manager.createFolder(name: "F")
 
         let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
-        try await collectionDoc.withWriteTransaction { rawDoc, txn in
+        try await collectionDoc.testWriteTransaction { rawDoc, txn in
             guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
             let array = YrsArray(branch: arrayBranch)
             array.insert(

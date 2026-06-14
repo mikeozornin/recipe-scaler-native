@@ -360,8 +360,9 @@ extension AssistantMarkdownRenderer {
         guard let start else {
             return false
         }
+        let mediumFontName = AppTypography.sansMediumBodyUIFont.fontName
         return attributed.runs.contains { run in
-            run.range.contains(start) && (run.inlinePresentationIntent ?? []).contains(.stronglyEmphasized)
+            run.range.contains(start) && run.uiKit.font?.fontName == mediumFontName
         }
     }
 

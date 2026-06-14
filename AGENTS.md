@@ -104,6 +104,7 @@ rtk xcodebuild -scheme RecipeScalerNative \
 - Apple Reminders shopping-list sync: CRDT list stays source of truth; bidirectional completion sync; completed items stay in Reminders (marked, not deleted); Reminders note text must be localized.
 - Shopping list header matches Recipes: large title with sort segment in the collapsible search slot (`UISearchController` / `UISearchBar` pattern — SwiftUI has no separate API for a custom block under large title).
 - Collection folder rename uses inline **Cancel / Done** toolbar, auto-focus with select-all, and hides back button and ellipsis while editing; folder color picker is a preset grid in the rename toolbar (web parity, iOS-adapted).
+- Discover + assistant UX: Discover horizontal cards (photo right, 16:9 previews, count badge, no username, list-level padding only); assistant — no Close on swipe-dismissible sheets, keyboard Done, history left / new chat right, always-visible timestamps/copy, `.appFootnote()` text, attach picker sort matches All Recipes flat list.
 
 ## Learned Workspace Facts
 
@@ -115,7 +116,7 @@ rtk xcodebuild -scheme RecipeScalerNative \
 - Paid Apple Developer Program ($99/yr): optional for simulator/dev; TestFlight, App Store, App Groups on device, extensions, APNs — see `docs/PAID-APPLE-DEVELOPER-REQUIRED.md`. Timer push toggle hidden until server-synced APNs works; production push planned after Live Activities.
 - Native collections parity guide: `../recipe-scaler-web/llm/NATIVE_APP_COLLECTIONS.md` (web-authored reference for iOS implementation).
 - Share Extension + Action Extension targets exist for URL/text import (`specs/025-share-extension`); full on-device Share Sheet testing needs paid program + App Group provisioning.
-- Typography tokens and rules: `docs/UI.md` (not duplicated in AGENTS.md); Russian `Localizable.xcstrings` typograf via `scripts/typograf-xcstrings` — surgical line edits only (preserve Xcode `"key" : "value"` formatting).
+- Typography and i18n tooling: `docs/UI.md` for tokens; Russian typograf via `scripts/typograf-xcstrings` (surgical line edits); count strings use `.one`/`.few`/`.many` xcstrings suffixes via `Bundle.appPluralizedString` (CLDR in `RecipeScalerCore`), grammatical case varies by context.
 - Debug logging guide: `llm/how-to-debug.md` — NDJSON to `Library/Application Support/debug-session.ndjson` on simulator and device; enable via `AGENT_DEBUG_LOG_ENABLED`; do not use `127.0.0.1` ingest on a physical iPhone (localhost is the device itself).
 - Architecture/sync markdown (`sync.md`, etc.) may be outdated — verify against live code and web `yjs-client.ts` before treating as source of truth.
 - Native `YrsDocument` sets `Y_SKIP_GC` on recipe docs so yrs does not emit skip structures that y-prosemirror on yjs 13 cannot read; custom `contentEditable` bridge is being replaced by real Tiptap per `specs/019-recipe-description-inline-edit`.

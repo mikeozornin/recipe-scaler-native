@@ -21,6 +21,8 @@ public struct ImportPhotoItem: Sendable {
 public enum ImportPhotoValidator {
 
     public static let maxImages = 8
+    /// Same as web `MAX_IMPORT_RECIPES`.
+    public static let maxRecipes = 25
     /// 25 MB — same as web `MAX_IMPORT_IMAGE_SIZE_BYTES`.
     public static let maxImageBytes = 25_000_000
 

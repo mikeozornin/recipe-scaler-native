@@ -10,7 +10,6 @@ import RecipeScalerCore
 /// Maps server-side error strings (and our own `import.*` keys) to localized user-facing text.
 enum ImportErrorLocalizer {
 
-    private static let maxRecipes = 25
     private static let sizeMb = Int(ImportPhotoValidator.maxImageBytes / 1_000_000)
 
     private static let failedRecipePattern = #"^Failed to import recipe "([\s\S]+?)": ([\s\S]+)$"#
@@ -31,7 +30,7 @@ enum ImportErrorLocalizer {
     static func localize(_ rawMessage: String) -> String {
         // 1. Already a known `import.*` key (server can echo our keys back).
         if rawMessage.hasPrefix("import.") {
-            return translate(rawMessage)
+            return localizeImportKey(rawMessage)
         }
 
         // 2. Captcha / static / invalid response — exact-match phrases the server emits.
@@ -80,15 +79,45 @@ enum ImportErrorLocalizer {
 
         // 5. URL count limit — server-supplied or echoed.
         if rawMessage.contains("up to") && rawMessage.contains("recipes at a time") {
-            return Bundle.appPluralizedString(key: "import.error-too-many-recipes", count: maxRecipes)
+            let count = parseCount(from: rawMessage) ?? RecipeScalerCore.ImportPhotoValidator.maxRecipes
+            return Bundle.appPluralizedString(key: "import.error-too-many-recipes", count: count)
         }
 
         // 6. Photo count limit.
         if rawMessage.contains("up to") && rawMessage.contains("photos at a time") {
-            return Bundle.appPluralizedString(key: "import.error-too-many-photos", count: ImportPhotoValidator.maxImages)
+            let count = parseCount(from: rawMessage) ?? ImportPhotoValidator.maxImages
+            return Bundle.appPluralizedString(key: "import.error-too-many-photos", count: count)
         }
 
         return rawMessage.isEmpty ? translate("import.error") : rawMessage
+    }
+
+    private static func localizeImportKey(_ key: String) -> String {
+        let baseKey = key.split(separator: ":", maxSplits: 1).first.map(String.init) ?? key
+        switch baseKey {
+        case "import.error-too-many-photos":
+            return Bundle.appPluralizedString(
+                key: baseKey,
+                count: ImportPhotoValidator.maxImages
+            )
+        case "import.error-too-many-recipes":
+            return Bundle.appPluralizedString(
+                key: baseKey,
+                count: RecipeScalerCore.ImportPhotoValidator.maxRecipes
+            )
+        default:
+            return translate(baseKey)
+        }
+    }
+
+    private static func parseCount(from message: String) -> Int? {
+        let pattern = #"\d+"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []),
+              let match = regex.firstMatch(in: message, range: NSRange(message.startIndex..., in: message)),
+              let range = Range(match.range, in: message) else {
+            return nil
+        }
+        return Int(message[range])
     }
 
     private static func translate(_ key: String, substitutions: [String: Int] = [:]) -> String {

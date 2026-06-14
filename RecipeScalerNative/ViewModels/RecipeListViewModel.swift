@@ -86,10 +86,7 @@ class RecipeListViewModel: ObservableObject {
     }
 
     private func normalizeForSearch(_ value: String) -> String {
-        return value
-            .trimmingCharacters(in: .whitespaces)
-            .normalizeNFKD()
-            .lowercased()
+        RecipeSearchUtils.normalizeForSearch(value)
     }
 
     /// Persist documents on background.
@@ -110,12 +107,3 @@ class RecipeListViewModel: ObservableObject {
     }
 }
 
-// MARK: - String Normalization Extension
-
-private extension String {
-    func normalizeNFKD() -> String {
-        return self.decomposedStringWithCanonicalMapping
-            .components(separatedBy: CharacterSet(charactersIn: "\u{0300}"..."\u{036F}"))
-            .joined()
-    }
-}

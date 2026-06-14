@@ -34,7 +34,7 @@ final class AssistantMarkdownRendererTests: XCTestCase {
         }
         XCTAssertEqual(items.count, 3)
         XCTAssertTrue(items[0].hasPrefix("**Кофе:**"))
-        XCTAssertFalse(items[0].hasPrefix("*"))
+        XCTAssertFalse(items[0].hasPrefix("* "))
     }
 
     func testStrongEmphasisUsesBodyMediumAtSameSize() {
@@ -53,10 +53,15 @@ final class AssistantMarkdownRendererTests: XCTestCase {
         guard let strongFont = strongRun?.uiKit.font else {
             return XCTFail("Missing strong font")
         }
+        guard let trailingRange = plain.range(of: " path") else {
+            return XCTFail("Missing regular text")
+        }
+        let regularIndex = AttributedString.Index(trailingRange.lowerBound, within: attributed)
+        guard let regularIndex else {
+            return XCTFail("Missing regular attributed index")
+        }
         let regularRun = attributed.runs.first { run in
-            !(run.inlinePresentationIntent ?? []).contains(.stronglyEmphasized)
-                && !(run.inlinePresentationIntent ?? []).contains(.code)
-                && !String(attributed[run.range].characters).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            run.range.contains(regularIndex)
         }
         guard let regularFont = regularRun?.uiKit.font else {
             return XCTFail("Missing regular font")

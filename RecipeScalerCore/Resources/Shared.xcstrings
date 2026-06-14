@@ -171,6 +171,108 @@
         }
       }
     },
+    "import.error-too-many-photos.one" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can import up to %d photo at a time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не более %d картинки"
+          }
+        }
+      }
+    },
+    "import.error-too-many-photos.few" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can import up to %d photos at a time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не более %d картинок"
+          }
+        }
+      }
+    },
+    "import.error-too-many-photos.many" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can import up to %d photos at a time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не более %d картинок"
+          }
+        }
+      }
+    },
+    "import.error-too-many-recipes.one" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can import up to %d recipe at a time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "За один раз можно импортировать не больше %d рецепта."
+          }
+        }
+      }
+    },
+    "import.error-too-many-recipes.few" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can import up to %d recipes at a time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "За один раз можно импортировать не больше %d рецептов."
+          }
+        }
+      }
+    },
+    "import.error-too-many-recipes.many" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can import up to %d recipes at a time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "За один раз можно импортировать не больше %d рецептов."
+          }
+        }
+      }
+    },
     "share-extension.success.one" : {
       "extractionState" : "manual",
       "localizations" : {

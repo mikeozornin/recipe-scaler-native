@@ -6782,13 +6782,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld items added"
+            "value" : "%d items added"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld покупки добавлено"
+            "value" : "%d покупки добавлено"
           }
         }
       }
@@ -6799,13 +6799,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld items added"
+            "value" : "%d items added"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld покупок добавлено"
+            "value" : "%d покупок добавлено"
           }
         }
       }
@@ -6816,13 +6816,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld item added"
+            "value" : "%d item added"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld покупка добавлена"
+            "value" : "%d покупка добавлена"
           }
         }
       }
@@ -7428,13 +7428,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld recipes are not available offline. Connect to sync them."
+            "value" : "%d recipes are not available offline. Connect to sync them."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld рецепта недоступны офлайн. Подключитесь к сети для загрузки."
+            "value" : "%d рецепта недоступны офлайн. Подключитесь к сети для загрузки."
           }
         }
       }
@@ -7445,13 +7445,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld recipes are not available offline. Connect to sync them."
+            "value" : "%d recipes are not available offline. Connect to sync them."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld рецептов недоступны офлайн. Подключитесь к сети для загрузки."
+            "value" : "%d рецептов недоступны офлайн. Подключитесь к сети для загрузки."
           }
         }
       }
@@ -7462,13 +7462,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld recipe is not available offline. Connect to sync it."
+            "value" : "%d recipe is not available offline. Connect to sync it."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld рецепт недоступен офлайн. Подключитесь к сети для загрузки."
+            "value" : "%d рецепт недоступен офлайн. Подключитесь к сети для загрузки."
           }
         }
       }

@@ -4,6 +4,7 @@ import SwiftUI
 import XCTest
 @testable import RecipeScalerNative
 
+@MainActor
 final class SnapshotTests: XCTestCase {
     override func setUp() {
         super.setUp()
@@ -22,7 +23,7 @@ final class SnapshotTests: XCTestCase {
         let container = try TestSupport.makeInMemoryContainer()
         TestSupport.seedRecipes(into: container.mainContext)
 
-        let view = RecipeListView(autoLoad: false)
+        let view = RecipeListView()
             .modelContainer(container)
 
         assertSnapshot(

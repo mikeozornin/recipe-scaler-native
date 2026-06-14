@@ -23,10 +23,31 @@ enum RecipeSearchUtils {
     static func normalizeForSearch(_ value: String) -> String {
         value
             .trimmingCharacters(in: .whitespaces)
-            .decomposedStringWithCanonicalMapping
-            .components(separatedBy: combiningDiacritics)
+            .map(normalizeSearchCharacter)
             .joined()
-            .lowercased()
+    }
+
+    /// Latin text: NFKD + strip combining marks + lowercase.
+    /// Cyrillic: lowercase only — NFKD decomposes `й` into `и` + breve and breaks search.
+    private static func normalizeSearchCharacter(_ character: Character) -> String {
+        if isCyrillicCharacter(character) {
+            return String(character).lowercased()
+        }
+        return String(character)
+            .decomposedStringWithCanonicalMapping
+            .unicodeScalars
+            .filter { !combiningDiacritics.contains($0) }
+            .map { String($0).lowercased() }
+            .joined()
+    }
+
+    private static func isCyrillicScalar(_ scalar: Unicode.Scalar) -> Bool {
+        let value = scalar.value
+        return (0x0400 ... 0x04FF).contains(value) || (0x0500 ... 0x052F).contains(value)
+    }
+
+    private static func isCyrillicCharacter(_ character: Character) -> Bool {
+        character.unicodeScalars.contains(where: isCyrillicScalar)
     }
 
     /// Trim, split by whitespace into independent AND tokens, honor quoted phrases.
@@ -336,9 +357,12 @@ enum RecipeSearchUtils {
         var utf16Index = 0
         for character in value {
             let segmentStart = utf16Index
-            let decomposed = String(character).decomposedStringWithCanonicalMapping
-            for scalar in decomposed.unicodeScalars {
-                if !combiningDiacritics.contains(scalar) {
+            if isCyrillicCharacter(character) {
+                normalized.append(String(character).lowercased())
+                map.append(segmentStart)
+            } else {
+                let decomposed = String(character).decomposedStringWithCanonicalMapping
+                for scalar in decomposed.unicodeScalars where !combiningDiacritics.contains(scalar) {
                     normalized.append(String(scalar).lowercased())
                     map.append(segmentStart)
                 }

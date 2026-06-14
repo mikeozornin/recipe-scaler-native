@@ -181,3 +181,35 @@ Chronological log of substantive choices (newest last).
 **Rationale:** On device, localhost is the phone itself — Cursor ingest on the Mac is unreachable, so simulator and phone produced inconsistent debug pictures. Unified file + pull (Xcode console, container download, simulator script) gives parity; user asked to disable noisy logging while keeping the classes for future use.
 
 ---
+
+### 2026-06-14 — Discover section enabled (spec 017)
+
+**Decision:** Enable the Discover tab and full Discover flow on iOS (curated collections, public profiles, read-only recipe preview, preview images, tokenized search). Adapt navigation to iOS HIG; keep Import as a 5th tab that opens a sheet (web parity). Deep links deferred.
+
+**Rationale:** Feature was implemented in spec 011 but commented out; user requested full spec 017 enablement with iOS-native navigation rather than a minimal uncomment-only rollout.
+
+---
+
+### 2026-06-14 — Live Activity: always dark card on Lock Screen
+
+**Decision:** Timer Live Activities on the Lock Screen always use an explicit black `containerBackground` and light foreground text, regardless of system color scheme, DND/Focus dimming, or widget rendering mode.
+
+**Rationale:** On device, DND-dim exposes stale `colorScheme == .light` in the widget extension (FB15148099) while the card chrome is dark; semantic/adaptive colors produced black-on-black or white-on-white. User chose a single fixed dark-card appearance for all skins and modes after verifying DND fix.
+
+---
+
+### 2026-06-14 — AI Assistant: iOS-native release scope
+
+**Decision:** Ship assistant release minimum with iOS-native patterns only — voice via `AVAudioRecorder`, offline disabled composer, FAB inset above tab bar/timer panel — without blind web UI copy (no web-style tool-status rows in the message list, no attachment chips in historical user bubbles, no cosmetic-only i18n keys).
+
+**Rationale:** User explicitly scoped follow-up work to release-ready items adapted for iOS HIG, avoiding behaviors that conflict with standard iOS sheet, keyboard, and list patterns.
+
+---
+
+### 2026-06-14 — Russian pluralization via xcstrings categories
+
+**Decision:** All Russian count-dependent strings use String Catalog keys with `.one`/`.few`/`.many` suffixes resolved through `Bundle.appPluralizedString` and CLDR rules in `RecipeScalerCore`; different contexts use appropriate grammatical case (e.g. nominative for Discover counts, genitive after «не больше» in import errors).
+
+**Rationale:** User reported incorrect forms like «3 рецептов» across Discover and other screens; suffix-based pluralization with context-specific copy matches Russian grammar and stays consistent between main app and Share Extension via `Shared.xcstrings`.
+
+---

@@ -67,27 +67,31 @@ struct DiscoverRecipePreviewImage: View {
     }
 
     var body: some View {
-        ZStack {
-            if let displayedImage {
-                Image(uiImage: displayedImage)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                placeholder
+        // Size the box from aspect ratio alone (web `aspect-video`), then object-cover inside.
+        // A ZStack sized by UIImage intrinsic dimensions ignores `.aspectRatio` and renders ~square.
+        Color.clear
+            .aspectRatio(aspectRatio, contentMode: .fit)
+            .frame(maxWidth: .infinity)
+            .background(fallbackColor.opacity(0.15))
+            .overlay {
+                ZStack {
+                    if let displayedImage {
+                        Image(uiImage: displayedImage)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        placeholder
+                    }
+                }
             }
-        }
-        .frame(maxWidth: .infinity)
-        .aspectRatio(aspectRatio, contentMode: .fit)
-        .clipped()
-        .background(fallbackColor.opacity(0.15))
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.05), lineWidth: 0.5)
-        )
-        .task(id: url) {
-            await loadIfNeeded()
-        }
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.05), lineWidth: 0.5)
+            )
+            .task(id: url) {
+                await loadIfNeeded()
+            }
     }
 
     private var placeholder: some View {

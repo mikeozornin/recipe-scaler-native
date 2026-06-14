@@ -180,11 +180,6 @@ struct ManageCollectionRecipesSheet: View {
     }
 
     private func normalizeForSearch(_ value: String) -> String {
-        value
-            .trimmingCharacters(in: .whitespaces)
-            .decomposedStringWithCanonicalMapping
-            .components(separatedBy: CharacterSet(charactersIn: "\u{0300}"..."\u{036F}"))
-            .joined()
-            .lowercased()
+        RecipeSearchUtils.normalizeForSearch(value)
     }
 }

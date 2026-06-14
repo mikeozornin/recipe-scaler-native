@@ -192,12 +192,22 @@ public struct ShareView: View {
 
     // MARK: - Localization
 
-    private static var resourceBundle: Bundle {
+    fileprivate static var resourceBundle: Bundle {
         Bundle(for: APIClient.self)
     }
 
     public static func localized(_ key: String) -> String {
-        resourceBundle.localizedString(forKey: key, value: nil, table: nil)
+        resourceBundle.localizedString(forKey: key, value: nil, table: "Shared")
+    }
+
+    fileprivate static func pluralized(_ key: String, count: Int) -> String {
+        Bundle.pluralizedString(
+            key: key,
+            count: count,
+            table: "Shared",
+            locale: Locale.current,
+            localizedString: { resourceBundle.localizedString(forKey: $0, value: nil, table: $1 ?? "Shared") }
+        )
     }
 }
 
@@ -253,11 +263,7 @@ private struct PreviewPhase: View {
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
         case .images(let items):
-            Text(verbatim: Bundle.pluralizedString(
-                key: "share.photos-count",
-                count: items.count,
-                locale: Locale.current
-            ))
+            Text(verbatim: ShareView.pluralized("share.photos-count", count: items.count))
                 .font(.headline)
             Image(systemName: "photo.on.rectangle.angled")
                 .font(.system(size: 48))
@@ -293,11 +299,7 @@ private struct SuccessPhase: View {
                 .font(.system(size: 64))
                 .foregroundStyle(.green)
             if let result, result.importedCount > 0 {
-                Text(verbatim: Bundle.pluralizedString(
-                    key: "share-extension.success",
-                    count: result.importedCount,
-                    locale: Locale.current
-                ))
+                Text(verbatim: ShareView.pluralized("share-extension.success", count: result.importedCount))
                     .font(.headline)
             } else {
                 Text(verbatim: ShareView.localized("share-extension.success"))
