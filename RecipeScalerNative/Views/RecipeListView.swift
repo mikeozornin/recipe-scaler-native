@@ -81,12 +81,13 @@ struct RecipeListView: View {
                 Group {
                 if showsCollectionsRoot {
                     CollectionsRootView(navigationPath: $navigationPath)
-                } else if syncService.connectionState == .connecting && syncService.collectionEntries.isEmpty {
+                } else if !syncService.isLocalDataLoaded
+                            || (syncService.connectionState == .connecting && syncService.collectionEntries.isEmpty) {
                     ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
                         .mobileTimerPanelBottomPadding()
                 } else if !hasAnyRows {
                     ContentUnavailableView {
-                        AppLabel.make(String(localized: "recipe.list.empty.title"), symbol: "fork.knife")
+                        AppLabel.make("recipe.list.empty.title", symbol: "fork.knife")
                     } description: {
                         Text("recipe.list.empty.description")
                     }
@@ -469,8 +470,8 @@ struct RecipeListSectionHeader: View {
 
             Text(
                 isPinnedSection
-                    ? String(localized: "recipe.list.section.pinned")
-                    : String(localized: "recipe.list.section.unpinned")
+                    ? "recipe.list.section.pinned"
+                    : "recipe.list.section.unpinned"
             )
             .frame(maxWidth: .infinity, alignment: .leading)
         }
