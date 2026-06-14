@@ -153,17 +153,18 @@ struct AssistantComposer: View {
 
     private var composerToolbar: some View {
         HStack(spacing: 0) {
-            HStack(spacing: 4) {
-                attachButton
-                if showContextRecipeTag, let contextAttachment {
-                    contextRecipeTagButton(for: contextAttachment)
-                }
-            }
             if voiceRecorder.state == .recording {
                 AssistantVoiceLevelMeter(samples: voiceRecorder.samples)
-                    .padding(.leading, 8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 16)
+                    .frame(maxWidth: .infinity, minHeight: AppToolbarStyle.minimumTapSide)
+                    .background(Color(.systemBackground))
             } else {
+                HStack(spacing: 4) {
+                    attachButton
+                    if showContextRecipeTag, let contextAttachment {
+                        contextRecipeTagButton(for: contextAttachment)
+                    }
+                }
                 Spacer(minLength: 8)
             }
             voiceButton
