@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 /// Mirrors `recipe-scaler-web/recipe-scaler/src/utils/import-error-message.ts`.
 /// Maps server-side error strings (and our own `import.*` keys) to localized user-facing text.
@@ -20,7 +21,7 @@ enum ImportErrorLocalizer {
 
         // Re-use our own validation keys — they already resolve to localized strings.
         if let validation = error as? ImportPhotoValidator.ValidationError {
-            return translate(validation.localizationKey)
+            return validation.errorDescription ?? validation.localizationKey
         }
 
         return localize(raw)
@@ -79,7 +80,12 @@ enum ImportErrorLocalizer {
 
         // 5. URL count limit — server-supplied or echoed.
         if rawMessage.contains("up to") && rawMessage.contains("recipes at a time") {
-            return translate("import.error-too-many-recipes", substitutions: ["count": maxRecipes])
+            return Bundle.appPluralizedString(key: "import.error-too-many-recipes", count: maxRecipes)
+        }
+
+        // 6. Photo count limit.
+        if rawMessage.contains("up to") && rawMessage.contains("photos at a time") {
+            return Bundle.appPluralizedString(key: "import.error-too-many-photos", count: ImportPhotoValidator.maxImages)
         }
 
         return rawMessage.isEmpty ? translate("import.error") : rawMessage

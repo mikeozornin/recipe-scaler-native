@@ -3,6 +3,7 @@
 //  RecipeScalerNative
 //
 
+import RecipeScalerCore
 import SwiftUI
 
 /// Read-only public profile `@username` (web `/public/@/:username`).
@@ -122,15 +123,7 @@ struct DiscoverPublicProfileView: View {
     }
 
     private func recipeCountText(count: Int) -> String {
-        if count == 1 {
-            return Bundle.currentLocalizedString("discover.profile.recipe-count.one")
-        }
-        let template = Bundle.currentLocalizedString("discover.profile.recipe-count")
-        return String(
-            format: template,
-            locale: AppLanguagePreference.current.locale,
-            count
-        )
+        Bundle.appPluralizedString(key: "discover.profile.recipe-count", count: count)
     }
 
     private func load() async {

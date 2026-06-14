@@ -11,6 +11,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 private var kBundleMainKey: UInt = 0
 
@@ -87,5 +88,25 @@ extension Bundle {
 
         // Fallback: call original implementation.
         return rs_localizedString(forKey: key, value: value, table: tableName)
+    }
+}
+
+// MARK: - Pluralization
+// Merged from RecipeScalerNative/Utils/Pluralization.swift
+
+extension Bundle {
+    /// Format a count-dependent localized string using the in-app language preference.
+    ///
+    /// This is a convenience over `Bundle.pluralizedString(key:count:table:locale:)`
+    /// that passes `AppLanguagePreference.current.locale` so the plural rule matches
+    /// the runtime-selected language even when the system locale differs.
+    static func appPluralizedString(key: String, count: Int, table: String? = nil) -> String {
+        pluralizedString(
+            key: key,
+            count: count,
+            table: table,
+            locale: AppLanguagePreference.current.locale,
+            localizedString: { currentLocalizedString($0, table: $1) }
+        )
     }
 }

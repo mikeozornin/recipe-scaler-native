@@ -3,6 +3,7 @@
 //  RecipeScalerNative
 //
 
+import RecipeScalerCore
 import SwiftUI
 
 /// Reusable sync status content used both as a sheet (from RecipeList toolbar)
@@ -195,7 +196,7 @@ struct SyncStatusContent: View {
         }
         return String(
             format: Bundle.currentLocalizedString("sync.status.images.hint.offline"),
-            locale: .current,
+            locale: AppLanguagePreference.current.locale,
             imageCacheStatus.pendingFullCount
         )
     }
@@ -204,17 +205,16 @@ struct SyncStatusContent: View {
         if connectionState.isConnected {
             return Bundle.currentLocalizedString("sync.status.recipes.hint.online")
         }
-        return String(
-            format: Bundle.currentLocalizedString("sync.status.recipes.hint.offline"),
-            locale: .current,
-            recipeDocumentCacheStatus.pendingCount
+        return Bundle.appPluralizedString(
+            key: "sync.status.recipes.hint.offline",
+            count: recipeDocumentCacheStatus.pendingCount
         )
     }
 
     private var imageDownloadingLabel: String {
         String(
             format: Bundle.currentLocalizedString("sync.status.images.downloading"),
-            locale: .current,
+            locale: AppLanguagePreference.current.locale,
             imageCacheStatus.downloadCompleted,
             imageCacheStatus.downloadTotal
         )
@@ -223,7 +223,7 @@ struct SyncStatusContent: View {
     private var recipeDownloadingLabel: String {
         String(
             format: Bundle.currentLocalizedString("sync.status.recipes.downloading"),
-            locale: .current,
+            locale: AppLanguagePreference.current.locale,
             recipeDocumentCacheStatus.downloadCompleted,
             recipeDocumentCacheStatus.downloadTotal
         )
@@ -232,7 +232,7 @@ struct SyncStatusContent: View {
     private var pendingRecipesMoreLabel: String {
         String(
             format: Bundle.currentLocalizedString("sync.status.pending.more"),
-            locale: .current,
+            locale: AppLanguagePreference.current.locale,
             recipeDocumentCacheStatus.pendingEntries.count - 30
         )
     }
@@ -240,7 +240,7 @@ struct SyncStatusContent: View {
     private var pendingImagesMoreLabel: String {
         String(
             format: Bundle.currentLocalizedString("sync.status.pending.more"),
-            locale: .current,
+            locale: AppLanguagePreference.current.locale,
             imageCacheStatus.pendingEntries.count - 30
         )
     }

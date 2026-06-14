@@ -4,6 +4,7 @@
 //
 //
 
+import RecipeScalerCore
 import SwiftUI
 
 /// Example view demonstrating TimerManager usage
@@ -57,11 +58,14 @@ struct TimerExampleView: View {
 
                 // MARK: - Active Timers Section
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Active Timers (\(timerManager.activeTimers.count))")
+                    Text(verbatim: Bundle.appPluralizedString(
+                        key: "timer.example.active-timers",
+                        count: timerManager.activeTimers.count
+                    ))
                         .font(AppTypography.bodySemibold)
 
                     if timerManager.activeTimers.isEmpty {
-                        Text("No active timers")
+                        Text("timer.example.no-active-timers")
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding()
@@ -82,11 +86,14 @@ struct TimerExampleView: View {
 
                 // MARK: - All Timers Section
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("All Timers (\(timerManager.timers.count))")
+                    Text(verbatim: Bundle.appPluralizedString(
+                        key: "timer.example.all-timers",
+                        count: timerManager.timers.count
+                    ))
                         .font(AppTypography.bodySemibold)
 
                     if timerManager.timers.isEmpty {
-                        Text("No timers created yet")
+                        Text("timer.example.no-timers")
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding()
@@ -108,7 +115,7 @@ struct TimerExampleView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("Timer Manager")
+            .navigationTitle(Text(verbatim: Bundle.currentLocalizedString("timer.example.title")))
         }
     }
 
@@ -234,7 +241,10 @@ struct TimerRow: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text("\(Int(timer.duration)) sec")
+                Text(verbatim: Bundle.appPluralizedString(
+                    key: "timer.example.seconds",
+                    count: Int(timer.duration)
+                ))
                     .appFootnote()
                     .foregroundColor(.secondary)
             }

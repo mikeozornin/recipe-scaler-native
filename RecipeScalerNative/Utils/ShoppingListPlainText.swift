@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 enum ShoppingListPlainText {
     private static let miscKey = "__misc__"
@@ -114,10 +115,7 @@ enum ShoppingFeedback {
 
 enum ShoppingAddFeedback {
     static func message(for count: Int) -> String {
-        if count == 1 {
-            return String(localized: "shopping.items-added.one")
-        }
-        return String(format: String(localized: "shopping.items-added.many"), count)
+        Bundle.appPluralizedString(key: "shopping.items-added", count: count)
     }
 }
 

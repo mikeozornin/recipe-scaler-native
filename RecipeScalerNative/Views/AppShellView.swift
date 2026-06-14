@@ -3,6 +3,7 @@
 //  RecipeScalerNative
 //
 
+import RecipeScalerCore
 import SwiftUI
 import UIKit
 
@@ -104,17 +105,10 @@ struct AppShellView: View {
                         recipesPath.append(RecipesRoute.recipe(recipeId: id, folderContext: nil))
                     }
                     if result.importedCount > 0 {
-                        let message: String
-                        if result.importedCount == 1 {
-                            message = Bundle.currentLocalizedString("import.success")
-                        } else {
-                            let template = Bundle.currentLocalizedString("import.success-multiple")
-                            message = String(
-                                format: template,
-                                locale: AppLanguagePreference.current.locale,
-                                result.importedCount
-                            )
-                        }
+                        let message = Bundle.appPluralizedString(
+                            key: "import.success",
+                            count: result.importedCount
+                        )
                         postTransientStatus(message)
                     }
                 }

@@ -3,6 +3,7 @@
 //  RecipeScalerNative
 //
 
+import RecipeScalerCore
 import SwiftUI
 
 struct DiscoverRootView: View {
@@ -144,15 +145,7 @@ struct DiscoverCollectionCard: View {
     }
 
     private var recipeCountText: String {
-        if collection.recipeCount == 1 {
-            return Bundle.currentLocalizedString("discover.collection.recipe-count.one")
-        }
-        let template = Bundle.currentLocalizedString("discover.collection.recipe-count")
-        return String(
-            format: template,
-            locale: AppLanguagePreference.current.locale,
-            collection.recipeCount
-        )
+        Bundle.appPluralizedString(key: "discover.collection.recipe-count", count: collection.recipeCount)
     }
 }
 
@@ -175,15 +168,7 @@ struct DiscoverProfileCard: View {
     }
 
     private var recipeCountText: String {
-        if profile.recipeCount == 1 {
-            return Bundle.currentLocalizedString("discover.profile.recipe-count.one")
-        }
-        let template = Bundle.currentLocalizedString("discover.profile.recipe-count")
-        return String(
-            format: template,
-            locale: AppLanguagePreference.current.locale,
-            profile.recipeCount
-        )
+        Bundle.appPluralizedString(key: "discover.profile.recipe-count", count: profile.recipeCount)
     }
 }
 

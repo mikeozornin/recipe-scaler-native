@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 import UniformTypeIdentifiers
 
 /// Mirrors `recipe-scaler-web/recipe-scaler/src/utils/import-photo.ts` and shared limits
@@ -32,7 +33,15 @@ enum ImportPhotoValidator {
         }
 
         var errorDescription: String? {
-            Bundle.currentLocalizedString(localizationKey)
+            switch self {
+            case .tooMany:
+                return Bundle.appPluralizedString(
+                    key: "import.error-too-many-photos",
+                    count: ImportPhotoValidator.maxImages
+                )
+            default:
+                return Bundle.currentLocalizedString(localizationKey)
+            }
         }
     }
 

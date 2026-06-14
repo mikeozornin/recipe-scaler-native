@@ -19,9 +19,6 @@
     "%@" : {
 
     },
-    "%@ sec" : {
-
-    },
     "%@." : {
 
     },
@@ -1126,12 +1123,6 @@
           }
         }
       }
-    },
-    "Active Timers (%@)" : {
-
-    },
-    "All Timers (%@)" : {
-
     },
     "An unexpected error occurred. Please try again." : {
       "extractionState" : "manual",
@@ -3105,7 +3096,24 @@
         }
       }
     },
-    "discover.collection.recipe-count" : {
+    "discover.collection.recipe-count.few" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d recipes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d рецепта"
+          }
+        }
+      }
+    },
+    "discover.collection.recipe-count.many" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -3128,13 +3136,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1 recipe"
+            "value" : "%d recipe"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1 рецепт"
+            "value" : "%d рецепт"
           }
         }
       }
@@ -3411,7 +3419,24 @@
         }
       }
     },
-    "discover.profile.recipe-count" : {
+    "discover.profile.recipe-count.few" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d recipes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d рецепта"
+          }
+        }
+      }
+    },
+    "discover.profile.recipe-count.many" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -3434,13 +3459,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1 recipe"
+            "value" : "%d recipe"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1 рецепт"
+            "value" : "%d рецепт"
           }
         }
       }
@@ -4593,7 +4618,7 @@
         }
       }
     },
-    "import.error-too-many-photos" : {
+    "import.error-too-many-photos.few" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
@@ -4610,7 +4635,41 @@
         }
       }
     },
-    "import.error-too-many-recipes" : {
+    "import.error-too-many-photos.many" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can import up to %d photos at a time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не более %d картинок"
+          }
+        }
+      }
+    },
+    "import.error-too-many-photos.one" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can import up to %d photo at a time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не более %d картинки"
+          }
+        }
+      }
+    },
+    "import.error-too-many-recipes.few" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
@@ -4623,6 +4682,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "За один раз можно импортировать не больше %d рецептов."
+          }
+        }
+      }
+    },
+    "import.error-too-many-recipes.many" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can import up to %d recipes at a time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "За один раз можно импортировать не больше %d рецептов."
+          }
+        }
+      }
+    },
+    "import.error-too-many-recipes.one" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can import up to %d recipe at a time."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "За один раз можно импортировать не больше %d рецепта."
           }
         }
       }
@@ -4709,36 +4802,53 @@
         }
       }
     },
-    "import.success" : {
+    "import.success.few" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recipe imported successfully!"
+            "value" : "%d recipes imported"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Рецепт импортирован"
+            "value" : "Импортировано %d рецепта"
           }
         }
       }
     },
-    "import.success-multiple" : {
+    "import.success.many" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Imported recipes: %d"
+            "value" : "%d recipes imported"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Импортировано рецептов: %d"
+            "value" : "Импортировано %d рецептов"
+          }
+        }
+      }
+    },
+    "import.success.one" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d recipe imported"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортирован %d рецепт"
           }
         }
       }
@@ -5099,8 +5209,22 @@
     "Minutes" : {
 
     },
-    "No active timers" : {
-
+    "mobile-timer.panel.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timers"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таймеры"
+          }
+        }
+      }
     },
     "No Camera Found" : {
       "extractionState" : "manual",
@@ -5152,9 +5276,6 @@
           }
         }
       }
-    },
-    "No timers created yet" : {
-
     },
     "nutrition.calories" : {
       "extractionState" : "manual",
@@ -6655,6 +6776,23 @@
         }
       }
     },
+    "shopping.items-added.few" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld items added"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld покупки добавлено"
+          }
+        }
+      }
+    },
     "shopping.items-added.many" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6678,13 +6816,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1 item added"
+            "value" : "%lld item added"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1 покупка добавлена"
+            "value" : "%lld покупка добавлена"
           }
         }
       }
@@ -7103,13 +7241,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Downloading %lld of %lld recipes…"
+            "value" : "Downloading recipes: %lld of %lld…"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Загрузка %lld из %lld рецептов…"
+            "value" : "Загрузка рецептов: %lld из %lld…"
           }
         }
       }
@@ -7284,7 +7422,7 @@
         }
       }
     },
-    "sync.status.recipes.hint.offline" : {
+    "sync.status.recipes.hint.offline.few" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -7296,7 +7434,41 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld рецептов недоступны офлайн. Подключитесь к сети для загрузки."
+            "value" : "%lld рецепта недоступны офлайн. Подключитесь к сети для загрузки."
+          }
+        }
+      }
+    },
+    "sync.status.recipes.hint.offline.many" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld recipes are not available offline. Connect to sync them."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld рецептов недоступны офлайн. Подключитесь к сети для загрузки."
+          }
+        }
+      }
+    },
+    "sync.status.recipes.hint.offline.one" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld recipe is not available offline. Connect to sync it."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld рецепт недоступен офлайн. Подключитесь к сети для загрузки."
           }
         }
       }
@@ -7691,6 +7863,431 @@
         }
       }
     },
+    "timer.example.active-timers" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active Timers (%d)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Активные таймеры (%d)"
+          }
+        }
+      }
+    },
+    "timer.example.all-timers" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Timers (%d)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все таймеры (%d)"
+          }
+        }
+      }
+    },
+    "timer.example.no-active-timers" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No active timers"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет активных таймеров"
+          }
+        }
+      }
+    },
+    "timer.example.no-timers" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No timers created yet"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таймеров ещё нет"
+          }
+        }
+      }
+    },
+    "timer.example.seconds.few" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d seconds"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d секунды"
+          }
+        }
+      }
+    },
+    "timer.example.seconds.many" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d seconds"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d секунд"
+          }
+        }
+      }
+    },
+    "timer.example.seconds.one" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d second"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d секунда"
+          }
+        }
+      }
+    },
+    "timer.example.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer Manager"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Менеджер таймеров"
+          }
+        }
+      }
+    },
+    "timer.siri.default-name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cooking timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кулинарный таймер"
+          }
+        }
+      }
+    },
+    "timer.siri.dialog.hours-and-minutes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer set for %@ and %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таймер установлен на %@ и %@."
+          }
+        }
+      }
+    },
+    "timer.siri.dialog.hours-only" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer set for %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таймер установлен на %@."
+          }
+        }
+      }
+    },
+    "timer.siri.dialog.minutes-only" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer set for %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таймер установлен на %@."
+          }
+        }
+      }
+    },
+    "timer.siri.error.zero-duration" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please specify at least 1 minute or 1 hour."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Укажите хотя бы 1 минуту или 1 час."
+          }
+        }
+      }
+    },
+    "timer.siri.hours.few" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d hours"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d часа"
+          }
+        }
+      }
+    },
+    "timer.siri.hours.many" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d hours"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d часов"
+          }
+        }
+      }
+    },
+    "timer.siri.hours.one" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d hour"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d час"
+          }
+        }
+      }
+    },
+    "timer.siri.intent.description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starts a countdown timer in Recipe Scaler."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запускает таймер обратного отсчёта в Recipe Scaler."
+          }
+        }
+      }
+    },
+    "timer.siri.intent.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start a cooking timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запустить кулинарный таймер"
+          }
+        }
+      }
+    },
+    "timer.siri.minutes.few" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d minutes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d минуты"
+          }
+        }
+      }
+    },
+    "timer.siri.minutes.many" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d minutes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d минут"
+          }
+        }
+      }
+    },
+    "timer.siri.minutes.one" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d minute"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d минуту"
+          }
+        }
+      }
+    },
+    "timer.siri.parameter.hours.description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Number of hours to count down."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Количество часов обратного отсчёта."
+          }
+        }
+      }
+    },
+    "timer.siri.parameter.minutes.description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Number of minutes to count down."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Количество минут обратного отсчёта."
+          }
+        }
+      }
+    },
+    "timer.siri.parameter.name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer name"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Название таймера"
+          }
+        }
+      }
+    },
+    "timer.siri.parameter.name.description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Label for the timer."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Название таймера."
+          }
+        }
+      }
+    },
     "Timers" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7838,7 +8435,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Отлинковать от значения"
+            "value" : "Отлинковать от значения"
           }
         }
       }

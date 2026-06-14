@@ -57,7 +57,7 @@ struct MobileTimerPanel: View {
                     collapsedSummary
                 } else {
                     HStack(spacing: 4) {
-                        Text("Timers", comment: "Mobile timer panel section title")
+                        Text("mobile-timer.panel.title")
                             .font(AppTypography.bodySemibold)
                         Text("·")
                             .font(AppTypography.body)

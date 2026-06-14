@@ -253,7 +253,11 @@ private struct PreviewPhase: View {
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
         case .images(let items):
-            Text("\(items.count) photo(s)")
+            Text(verbatim: Bundle.pluralizedString(
+                key: "share.photos-count",
+                count: items.count,
+                locale: Locale.current
+            ))
                 .font(.headline)
             Image(systemName: "photo.on.rectangle.angled")
                 .font(.system(size: 48))
@@ -288,14 +292,12 @@ private struct SuccessPhase: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(.green)
-            if let result, result.importedCount > 1 {
-                let template = ShareView.localized("share-extension.success-multiple")
-                let message = String(
-                    format: template,
-                    locale: Locale.current,
-                    result.importedCount
-                )
-                Text(verbatim: message)
+            if let result, result.importedCount > 0 {
+                Text(verbatim: Bundle.pluralizedString(
+                    key: "share-extension.success",
+                    count: result.importedCount,
+                    locale: Locale.current
+                ))
                     .font(.headline)
             } else {
                 Text(verbatim: ShareView.localized("share-extension.success"))

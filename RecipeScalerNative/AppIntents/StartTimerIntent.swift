@@ -4,19 +4,32 @@
 //
 
 import AppIntents
+import RecipeScalerCore
 
 struct StartTimerIntent: AppIntent {
-    static var title: LocalizedStringResource = "Start a cooking timer"
-    static var description = IntentDescription("Starts a countdown timer in Recipe Scaler.")
+    static var title: LocalizedStringResource = LocalizedStringResource("timer.siri.intent.title")
+    static var description = IntentDescription(LocalizedStringResource("timer.siri.intent.description"))
     static var openAppWhenRun: Bool = false
 
-    @Parameter(title: "Minutes", description: "Number of minutes to count down.", default: 0)
+    @Parameter(
+        title: LocalizedStringResource("timers.time-types.minutes"),
+        description: LocalizedStringResource("timer.siri.parameter.minutes.description"),
+        default: 0
+    )
     var minutes: Int
 
-    @Parameter(title: "Hours", description: "Number of hours to count down.", default: 0)
+    @Parameter(
+        title: LocalizedStringResource("timers.time-types.hours"),
+        description: LocalizedStringResource("timer.siri.parameter.hours.description"),
+        default: 0
+    )
     var hours: Int
 
-    @Parameter(title: "Timer name", description: "Label for the timer.", default: "Cooking timer")
+    @Parameter(
+        title: LocalizedStringResource("timer.siri.parameter.name"),
+        description: LocalizedStringResource("timer.siri.parameter.name.description"),
+        default: ""
+    )
     var name: String
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
@@ -34,7 +47,9 @@ struct StartTimerIntent: AppIntent {
             timerType = .seconds
         }
 
-        let label = name.trimmingCharacters(in: .whitespaces).isEmpty ? "Cooking timer" : name
+        let label = name.trimmingCharacters(in: .whitespaces).isEmpty
+            ? Bundle.currentLocalizedString("timer.siri.default-name")
+            : name
 
         await TimerManager.configureForIntentIfNeeded()
         await TimerManager.shared.createAndStartTimer(
@@ -50,11 +65,21 @@ struct StartTimerIntent: AppIntent {
     private func buildDialog(hours: Int, minutes: Int) -> String {
         switch (hours, minutes) {
         case (let h, 0) where h > 0:
-            return "Timer set for \(h) hour\(h == 1 ? "" : "s")."
+            return String(
+                format: Bundle.currentLocalizedString("timer.siri.dialog.hours-only"),
+                Bundle.appPluralizedString(key: "timer.siri.hours", count: h)
+            )
         case (0, let m):
-            return "Timer set for \(m) minute\(m == 1 ? "" : "s")."
+            return String(
+                format: Bundle.currentLocalizedString("timer.siri.dialog.minutes-only"),
+                Bundle.appPluralizedString(key: "timer.siri.minutes", count: m)
+            )
         default:
-            return "Timer set for \(hours) hour\(hours == 1 ? "" : "s") and \(minutes) minute\(minutes == 1 ? "" : "s")."
+            return String(
+                format: Bundle.currentLocalizedString("timer.siri.dialog.hours-and-minutes"),
+                Bundle.appPluralizedString(key: "timer.siri.hours", count: hours),
+                Bundle.appPluralizedString(key: "timer.siri.minutes", count: minutes)
+            )
         }
     }
 }
@@ -62,6 +87,6 @@ struct StartTimerIntent: AppIntent {
 private enum TimerIntentError: Error, CustomLocalizedStringResourceConvertible {
     case zeroDuration
     var localizedStringResource: LocalizedStringResource {
-        "Please specify at least 1 minute or 1 hour."
+        LocalizedStringResource("timer.siri.error.zero-duration")
     }
 }
