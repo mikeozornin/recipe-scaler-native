@@ -15,6 +15,7 @@ NEW_FILES = [
     "RecipeScalerNative/Utils/ShoppingListPlainText.swift",
     "RecipeScalerNative/Utils/ShoppingSmokeTest.swift",
     "RecipeScalerNative/Utils/PublicURLBuilder.swift",
+    "RecipeScalerNative/Utils/DiscoverSearch.swift",
     "RecipeScalerNative/Models/YDoc/ShoppingListData.swift",
     "RecipeScalerNative/Services/YjsSync/DocumentManager+ShoppingList.swift",
     "RecipeScalerNative/Services/APIClient+Requests.swift",
@@ -28,6 +29,11 @@ NEW_FILES = [
     "RecipeScalerNative/Views/ShoppingListView.swift",
     "RecipeScalerNative/Views/ImportRecipeSheet.swift",
     "RecipeScalerNative/Views/DiscoverRootView.swift",
+    "RecipeScalerNative/Views/Discover/DiscoverCollectionView.swift",
+    "RecipeScalerNative/Views/Discover/DiscoverPublicProfileView.swift",
+    "RecipeScalerNative/Views/Discover/DiscoverRecipeView.swift",
+    "RecipeScalerNative/Views/Discover/DiscoverRecipePreviewImage.swift",
+    "RecipeScalerNative/Views/Discover/DiscoverRecipeCard.swift",
     "RecipeScalerNative/Views/AccountView.swift",
     "RecipeScalerNative/Views/AssistantSheet.swift",
     "RecipeScalerNative/Views/MobileTimerPanel.swift",
@@ -52,17 +58,25 @@ def main() -> int:
     added = 0
     for rel in NEW_FILES:
         name = Path(rel).name
-        if name in text:
+        if name in text and f"path = \"{rel}\"" not in text and f"path = {rel}" not in text:
+            # Name exists but path doesn't — could be a stale ref. Skip to be safe.
+            pass
+        if f"path = \"{rel}\"" in text or f"path = {rel}" in text:
             continue
         fr = uid(f"fr:{rel}")
         bf = uid(f"bf:{rel}")
-        file_ref = f"\t\t{fr} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = {name}; sourceTree = \"<group>\"; }};\n"
+        # Preserve the relative path so files in subfolders resolve correctly
+        # (PBXFileReference path is relative to the parent group's sourceTree).
+        # The RecipeScalerNative group has sourceTree = "<group>", so we can
+        # use the path relative to the group root.
+        rel_path = rel.split("/", 1)[1] if "/" in rel else name
+        file_ref = f"\t\t{fr} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = \"{rel_path}\"; sourceTree = \"<group>\"; }};\n"
         build_file = f"\t\t{bf} /* {name} in Sources */ = {{isa = PBXBuildFile; fileRef = {fr} /* {name} */; }};\n"
         text = text.replace("/* End PBXBuildFile section */", build_file + "/* End PBXBuildFile section */")
         text = text.replace("/* End PBXFileReference section */", file_ref + "/* End PBXFileReference section */")
         # Sources build phase — append before closing pbx sources list
         text = re.sub(
-            r"(D48135388848E9FFF6A87142 /\* RecipeScalerNative \*/ = \{[^}]*files = \([^)]*)",
+            r"(72A876A1FC6083C3018BF18A /\* Sources \*/ = \{\s*isa = PBXSourcesBuildPhase;\s*buildActionMask = \d+;\s*files = \([^)]*)",
             lambda m: m.group(1) + f"\n\t\t\t\t{bf} /* {name} in Sources */,",
             text,
             count=1,

@@ -241,10 +241,9 @@ struct AppShellView: View {
 
     private var tabView: some View {
         TabView(selection: tabSelection) {
-            // TEMPORARY: Discover tab hidden (re-enable when ready).
-            // tabRoot(DiscoverRootView(path: $discoverPath)) { AppTabBarLabel(tab: .discover) }
-            //     .tag(AppTab.discover)
-            //     .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
+            tabRoot(DiscoverRootView(path: $discoverPath)) { AppTabBarLabel(tab: .discover) }
+                .tag(AppTab.discover)
+                .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
 
             tabRoot(Color.clear) { AppTabBarLabel(tab: .importTab) }
                 .tag(AppTab.importTab)
@@ -357,8 +356,6 @@ struct AppShellView: View {
         if tab == .importTab {
             selectedTab = .recipes
             showImportSheet = true
-        } else if tab == .discover {
-            selectedTab = .recipes
         } else {
             selectedTab = tab
         }

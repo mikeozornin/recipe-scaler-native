@@ -259,6 +259,14 @@
 		BB0000000000000000000005 /* AddToShoppingListIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000005 /* AddToShoppingListIntent.swift */; };
 		BB0000000000000000000006 /* OpenRecipeIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000006 /* OpenRecipeIntent.swift */; };
 		BB0000000000000000000007 /* RecipeScalerShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000007 /* RecipeScalerShortcuts.swift */; };
+		E5F60718293A4B70F9B21071 /* DiscoverSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7019BAC15E /* DiscoverSearch.swift */; };
+		E5F60718293A4B70F9B21199 /* RecipeReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7019BAC1AA /* RecipeReader.swift */; };
+		E5F60718293A4B703E9C5471 /* DiscoverCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70E19AC353 /* DiscoverCollectionView.swift */; };
+		E5F60718293A4B7079EF0178 /* DiscoverPublicProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70322645C2 /* DiscoverPublicProfileView.swift */; };
+		E5F60718293A4B70C2E684EE /* DiscoverRecipeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70D1881049 /* DiscoverRecipeView.swift */; };
+		E5F60718293A4B70FBB75338 /* DiscoverRecipePreviewImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A8935C5F /* DiscoverRecipePreviewImage.swift */; };
+		E5F60718293A4B708BB3E294 /* DiscoverRecipeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700AF73307 /* DiscoverRecipeCard.swift */; };
+		E5F60718293A4B70A1B2C3D /* RecipeReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A1B2C3E /* RecipeReader.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -512,6 +520,14 @@
 		AA0000000000000000000005 /* AddToShoppingListIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToShoppingListIntent.swift; sourceTree = "<group>"; };
 		AA0000000000000000000006 /* OpenRecipeIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenRecipeIntent.swift; sourceTree = "<group>"; };
 		AA0000000000000000000007 /* RecipeScalerShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeScalerShortcuts.swift; sourceTree = "<group>"; };
+		E5F60718293A4B7019BAC15E /* DiscoverSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverSearch.swift; sourceTree = "<group>"; };
+		E5F60718293A4B7019BAC1AA /* RecipeReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeReader.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70E19AC353 /* DiscoverCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverCollectionView.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70322645C2 /* DiscoverPublicProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverPublicProfileView.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70D1881049 /* DiscoverRecipeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverRecipeView.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70A8935C5F /* DiscoverRecipePreviewImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverRecipePreviewImage.swift; sourceTree = "<group>"; };
+		E5F60718293A4B700AF73307 /* DiscoverRecipeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverRecipeCard.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70A1B2C3E /* RecipeReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeReader.swift; sourceTree = "<group>"; };
 	/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -565,6 +581,18 @@
 	/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		E5F60718293A4B701A1B2001 /* Discover */ = {
+			isa = PBXGroup;
+			children = (
+				E5F60718293A4B70E19AC353 /* DiscoverCollectionView.swift */,
+				E5F60718293A4B70322645C2 /* DiscoverPublicProfileView.swift */,
+				E5F60718293A4B70D1881049 /* DiscoverRecipeView.swift */,
+				E5F60718293A4B70A8935C5F /* DiscoverRecipePreviewImage.swift */,
+				E5F60718293A4B700AF73307 /* DiscoverRecipeCard.swift */,
+			);
+			path = Discover;
+			sourceTree = "<group>";
+		};
 		02AE57AC5FA5124D4D412BDA /* RecipeScalerNative */ = {
 			isa = PBXGroup;
 			children = (
@@ -672,6 +700,7 @@
 				E5F60718293A4B70A1SEG002 /* AppSegmentedControl.swift */,
 				E5F60718293A4B70A1TBR002 /* AppToolbarStyle.swift */,
 				E5F60718293A4B7017DF9B12 /* DiscoverRootView.swift */,
+				E5F60718293A4B701A1B2001 /* Discover */,
 				E5F60718293A4B70344FA5B3 /* AccountView.swift */,
 				E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */,
 				E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */,
@@ -873,6 +902,7 @@
 				E5F60718293A4B7000000043 /* RecipeReadDiagnostics.swift */,
 				E5F60718293A4B700000005D /* DebugLaunchOptions.swift */,
 				E5F60718293A4B7000000091 /* RecipeSearchUtils.swift */,
+				E5F60718293A4B70A1B2C3E /* RecipeReader.swift */,
 				A5TH048293A4B7010000004 /* AssistantThreadSearch.swift */,
 				A5TST02293A4B7010000002 /* AssistantToolStatusI18n.swift */,
 				A5MD028293A4B7010000002 /* AssistantMarkdownRenderer.swift */,
@@ -901,6 +931,8 @@
 				F0D3000000000000000A0005 /* CollectionRecipesIndex.swift */,
 				F0D3000000000000000A0007 /* FolderDisplayName.swift */,
 				F0D3000000000000000A0009 /* RecipeFolderRoutes.swift */,
+				E5F60718293A4B7019BAC15E /* DiscoverSearch.swift */,
+				E5F60718293A4B7019BAC1AA /* RecipeReader.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -1462,6 +1494,14 @@
 				E5F60718293A4B70A1SEG001 /* AppSegmentedControl.swift in Sources */,
 				E5F60718293A4B70A1TBR001 /* AppToolbarStyle.swift in Sources */,
 				E5F60718293A4B7076429294 /* DiscoverRootView.swift in Sources */,
+				E5F60718293A4B70F9B21071 /* DiscoverSearch.swift in Sources */,
+				E5F60718293A4B70F9B21199 /* RecipeReader.swift in Sources */,
+				E5F60718293A4B703E9C5471 /* DiscoverCollectionView.swift in Sources */,
+				E5F60718293A4B7079EF0178 /* DiscoverPublicProfileView.swift in Sources */,
+				E5F60718293A4B70C2E684EE /* DiscoverRecipeView.swift in Sources */,
+				E5F60718293A4B70FBB75338 /* DiscoverRecipePreviewImage.swift in Sources */,
+				E5F60718293A4B708BB3E294 /* DiscoverRecipeCard.swift in Sources */,
+				E5F60718293A4B70A1B2C3D /* RecipeReader.swift in Sources */,
 				E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */,
 				E5F60718293A4B7061726B18 /* TelegramConnectionView.swift in Sources */,
 				E5F60718293A4B7010A27A52 /* AssistantSheet.swift in Sources */,

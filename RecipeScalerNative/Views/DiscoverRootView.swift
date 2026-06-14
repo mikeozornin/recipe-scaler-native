@@ -18,60 +18,88 @@ struct DiscoverRootView: View {
                     ProgressView()
                 } else if let errorMessage, data == nil {
                     ContentUnavailableView {
-                        AppLabel.make("Discover", symbol: "wifi.exclamationmark")
+                        AppLabel.make("discover.error", symbol: "wifi.exclamationmark")
                     } description: {
-                        Text(errorMessage)
+                        Text(errorMessage).appBody()
                     }
-                } else if let data {
-                    List {
-                        Section {
-                            ForEach(data.collections) { collection in
-                                NavigationLink(value: DiscoverRoute.collection(collection.slug)) {
-                                    VStack(alignment: .leading) {
-                                        Text(collection.title)
-                                        if let desc = collection.description {
-                                            Text(desc).appFootnote().foregroundStyle(.secondary)
-                                        }
+                } else if let data, !data.collections.isEmpty || !data.profiles.isEmpty {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 24) {
+                            if !data.collections.isEmpty {
+                                section(
+                                    titleKey: "discover.curated-collections",
+                                    items: data.collections
+                                ) { collection in
+                                    NavigationLink(
+                                        value: DiscoverRoute.collection(collection.slug)
+                                    ) {
+                                        DiscoverCollectionCard(collection: collection)
                                     }
+                                    .buttonStyle(.plain)
+                                    .accessibilityIdentifier(
+                                        AccessibilityIdentifiers.discoverCollectionCard
+                                    )
                                 }
                             }
-                        } header: {
-                            AppSectionHeader("Collections")
-                        }
-                        Section {
-                            ForEach(data.profiles) { profile in
-                                NavigationLink(value: DiscoverRoute.profile(profile.username)) {
-                                    HStack {
-                                        Text(profile.name ?? profile.username)
-                                        Spacer()
-                                        Text("\(profile.recipe_count)")
-                                            .appFootnote()
-                                            .foregroundStyle(.secondary)
+                            if !data.profiles.isEmpty {
+                                section(
+                                    titleKey: "discover.featured-chefs",
+                                    items: data.profiles
+                                ) { profile in
+                                    NavigationLink(
+                                        value: DiscoverRoute.profile(profile.username)
+                                    ) {
+                                        DiscoverProfileCard(profile: profile)
                                     }
+                                    .buttonStyle(.plain)
+                                    .accessibilityIdentifier(
+                                        AccessibilityIdentifiers.discoverProfileCard
+                                    )
                                 }
                             }
-                        } header: {
-                            AppSectionHeader("Public profiles")
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 20)
+                    }
+                } else {
+                    ContentUnavailableView {
+                        AppLabel.make("discover.empty", symbol: "sparkles")
+                    } description: {
+                        Text("discover.empty-description").appBody()
                     }
                 }
             }
-            .appListBodyTypography()
-            .localizedNavigationTitle("Discover")
+            .localizedNavigationTitle("discover.title")
             .navigationDestination(for: DiscoverRoute.self) { route in
                 switch route {
                 case .collection(let slug):
                     DiscoverCollectionView(slug: slug)
                 case .recipe(let id):
                     DiscoverRecipeView(recipeId: id)
-                case .profile:
-                    Text("Public profile (read-only) — open on web for full parity")
-                        .padding()
+                case .profile(let username):
+                    DiscoverPublicProfileView(username: username)
                 }
             }
             .task { await load() }
             .refreshable { await load() }
             .accessibilityIdentifier(AccessibilityIdentifiers.discoverRoot)
+        }
+    }
+
+    /// Vertical list of rows, one card per line (web parity on mobile).
+    @ViewBuilder
+    private func section<Item: Identifiable, Content: View>(
+        titleKey: LocalizedStringKey,
+        items: [Item],
+        @ViewBuilder cell: @escaping (Item) -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            AppSectionHeader(titleKey)
+            VStack(spacing: 0) {
+                ForEach(items) { item in
+                    cell(item)
+                }
+            }
         }
     }
 
@@ -93,97 +121,202 @@ enum DiscoverRoute: Hashable {
     case profile(String)
 }
 
-struct DiscoverCollectionView: View {
-    let slug: String
-    @State private var collection: CollectionWithRecipesDTO?
-    @State private var errorMessage: String?
+/// Curated collection preview card (web `CollectionCard` + cover on the right).
+struct DiscoverCollectionCard: View {
+    let collection: DiscoveryCollectionDTO
 
-    var body: some View {
-        Group {
-            if let collection {
-                List(collection.recipes) { recipe in
-                    NavigationLink(value: DiscoverRoute.recipe(recipe.id)) {
-                        Text(recipe.name)
-                    }
-                }
-                .navigationTitle(collection.title)
-            } else if let errorMessage {
-                ContentUnavailableView {
-                    AppLabel.make("Error", symbol: "exclamationmark.triangle")
-                } description: {
-                    Text(errorMessage)
-                }
-            } else {
-                ProgressView()
-            }
-        }
-        .task { await load() }
+    private var coverURL: URL? {
+        DiscoverAPI.collectionCoverURL(from: collection.coverImageURL)
     }
 
-    private func load() async {
-        do {
-            collection = try await DiscoverAPI.fetchCollection(slug: slug)
-        } catch {
-            errorMessage = error.localizedDescription
+    var body: some View {
+        DiscoverRootPreviewCard(
+            title: collection.title,
+            subtitle: collection.description,
+            badgeText: recipeCountText
+        ) {
+            DiscoverPreviewThumbnail(
+                url: coverURL,
+                fallbackColor: .accentColor,
+                placeholderSymbol: "photo"
+            )
+        }
+    }
+
+    private var recipeCountText: String {
+        if collection.recipeCount == 1 {
+            return Bundle.currentLocalizedString("discover.collection.recipe-count.one")
+        }
+        let template = Bundle.currentLocalizedString("discover.collection.recipe-count")
+        return String(
+            format: template,
+            locale: AppLanguagePreference.current.locale,
+            collection.recipeCount
+        )
+    }
+}
+
+/// Featured chef preview card (web `ProfileCard`: name, recipe list, avatar right, badge).
+struct DiscoverProfileCard: View {
+    let profile: PublicProfilePreviewDTO
+
+    var body: some View {
+        DiscoverRootPreviewCard(
+            title: profile.name ?? profile.username,
+            subtitle: profile.description,
+            badgeText: recipeCountText
+        ) {
+            DiscoverPreviewThumbnail(
+                url: DiscoverAPI.avatarURL(username: profile.username),
+                fallbackColor: .accentColor,
+                placeholderSymbol: "person.fill"
+            )
+        }
+    }
+
+    private var recipeCountText: String {
+        if profile.recipeCount == 1 {
+            return Bundle.currentLocalizedString("discover.profile.recipe-count.one")
+        }
+        let template = Bundle.currentLocalizedString("discover.profile.recipe-count")
+        return String(
+            format: template,
+            locale: AppLanguagePreference.current.locale,
+            profile.recipeCount
+        )
+    }
+}
+
+/// Shared discover root card: title + subtitle left, thumbnail right, divider, count badge.
+private struct DiscoverRootPreviewCard<Thumbnail: View>: View {
+    let title: String
+    let subtitle: String?
+    let badgeText: String
+    @ViewBuilder let thumbnail: () -> Thumbnail
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top, spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(title)
+                        .font(AppTypography.title3)
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+
+                    if let subtitle, !subtitle.isEmpty {
+                        Text(subtitle)
+                            .appBody()
+                            .foregroundStyle(.primary.opacity(0.8))
+                            .lineLimit(3)
+                            .multilineTextAlignment(.leading)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                thumbnail()
+            }
+            .padding(.top, 24)
+            .padding(.bottom, 12)
+
+            Divider()
+
+            DiscoverRecipeCountBadge(text: badgeText)
+                .padding(.vertical, 12)
         }
     }
 }
 
-struct DiscoverRecipeView: View {
-    let recipeId: String
-    @EnvironmentObject private var syncService: YjsSyncService
-    @State private var recipe: CuratedRecipeDTO?
-    @State private var isCloning = false
-    @State private var message: String?
+/// 64×64 rounded-square preview image for discover root cards.
+private struct DiscoverPreviewThumbnail: View {
+    let url: URL?
+    let fallbackColor: Color
+    let placeholderSymbol: String
 
     var body: some View {
-        ScrollView {
-            if let recipe {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(recipe.name).font(AppTypography.title2)
-                    if let description = recipe.description {
-                        Text(description)
-                    }
-                    ForEach(recipe.ingredients.indices, id: \.self) { i in
-                        let ing = recipe.ingredients[i]
-                        Text("• \(ing.name)")
-                    }
-                    Button {
-                        Task { await clone() }
-                    } label: {
-                        if isCloning {
-                            ProgressView()
-                        } else {
-                            Text("Copy to my recipes")
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    if let message {
-                        Text(message).appFootnote()
+        Group {
+            if let url {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    default:
+                        placeholder
                     }
                 }
-                .padding()
             } else {
-                ProgressView()
+                placeholder
             }
         }
-        .navigationTitle(recipe?.name ?? "Recipe")
-        .task { await load() }
+        .frame(width: 64, height: 64)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.05), lineWidth: 0.5)
+        )
     }
 
-    private func load() async {
-        recipe = try? await DiscoverAPI.fetchRecipe(id: recipeId)
+    private var placeholder: some View {
+        AppSymbol.image(placeholderSymbol)
+            .font(.system(size: 28, weight: .regular))
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(fallbackColor.opacity(0.12))
+            )
     }
+}
 
-    private func clone() async {
-        isCloning = true
-        defer { isCloning = false }
-        do {
-            let newId = try await DiscoverAPI.cloneRecipe(id: recipeId)
-            message = "Copied — open My Recipes"
-            await syncService.loadRecipe(recipeId: newId)
-        } catch {
-            message = error.localizedDescription
+private struct DiscoverRecipeCountBadge: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .appFootnote()
+            .foregroundStyle(.primary.opacity(0.7))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color(.secondarySystemBackground))
+            )
+    }
+}
+
+/// Circular avatar for a public profile / collection author.
+struct DiscoverAvatar: View {
+    let avatarURL: URL?
+    var size: CGFloat = 40
+
+    var body: some View {
+        Group {
+            if let avatarURL {
+                AsyncImage(url: avatarURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    default:
+                        placeholder
+                    }
+                }
+            } else {
+                placeholder
+            }
         }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().strokeBorder(Color.primary.opacity(0.05), lineWidth: 0.5))
+    }
+
+    private var placeholder: some View {
+        AppSymbol.image("person.fill")
+            .font(.system(size: size * 0.5, weight: .regular))
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Circle().fill(Color(.tertiarySystemFill)))
     }
 }

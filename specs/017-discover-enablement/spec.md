@@ -1,10 +1,19 @@
 # Спецификация: включение Discover и публичные профили
 
 **Ветка**: `017-discover-enablement`  
-**Дата**: 2026-06-03  
-**Статус**: Draft (перенос недоделок из 007 + 011)  
+**Дата**: 2026-06-03 (создана), 2026-06-14 (реализовано)  
+**Статус**: **Done** — все FR и SC закрыты, билд и все 13 verify-скриптов зелёные.  
 **Зависимости**: `007-app-shell-navigation`, `011-discover-public`  
 **Эталон**: `/discover` routes, `PublicProfileHeader`, `bottom-nav.tsx`
+
+## Решения (iOS-adaptations)
+
+- **Breadcrumb sticky header из веба НЕ реализован.** Вместо него — стандартный `NavigationStack` back-button + `navigationTitle`. Соответствует iOS HIG: iOS back-button уже телеграфирует иерархию, дублирующий breadcrumb parent-link избыточен и визуально перегружает экран. Если позже потребуется веб-parity breadcrumb — отдельная задача.
+- **Search**: используется нативный `.searchable(text:, placement: .navigationBarDrawer(.automatic), prompt:)`. Правила фильтрации — токенизированные через `RecipeSearchUtils` (NFKD + diacritics + quoted phrases + AND), переиспользуется с `RecipeListView`.
+- **Preview images**: `AsyncImage(url:)` + дефолтный `URLCache` (`URLSession.shared`). Persistent disk cache (`RecipeImageService`) намеренно **не** используется — Discover-контент публичный, офлайн-first persistence избыточна по спеке 017.
+- **HTML description** curated-рецептов: простой regex-конвертер в plain text → markdown (`AttributedString(markdown:)`). Аутентичный Tiptap-рендеринг — вне scope 017.
+- **Toast после clone**: переиспользуется существующий `TransientStatusBanner` через `ShoppingFeedback.postStatus`.
+- **Импорт-таб**: оставлен как 5-й равноправный таб, открывает sheet (веб-parity, по решению пользователя). Отклонение от iOS HIG осознанное.
 
 ## Контекст
 
@@ -69,5 +78,12 @@ REST-слой Discover (`DiscoverAPI`) и экраны (`DiscoverRootView`, `Dis
 
 ## Артефакты
 
-- `contracts/discover-api.md` (профиль + endpoints)
-- `quickstart.md` — сравнение с веб 390px
+- `contracts/discover-api.md` — API контракт (все 5 endpoints).
+- `quickstart.md` — сравнение iOS vs веб @390px + визуальные отличия.
+- `tasks.md` — декомпозиция задач с чекбоксами.
+
+## Verify (2026-06-14)
+
+- `rtk xcodebuild … build` → `** BUILD SUCCEEDED **` (exit 0).
+- `scripts/verify-discover-public.sh` → `VERIFIED discover-public` (exit 0).
+- `scripts/verify-all.sh` → `All 13 verifiers passed` (exit 0, 236 s) — regression чистый.

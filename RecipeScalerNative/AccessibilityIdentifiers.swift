@@ -23,6 +23,17 @@ enum AccessibilityIdentifiers {
     static let tabShopping = "tab_shopping"
     static let tabProfile = "tab_profile"
     static let discoverRoot = "discover_root"
+
+    // MARK: - Discover (017)
+
+    static let discoverCollectionCard = "discover_collection_card"
+    static let discoverProfileCard = "discover_profile_card"
+    static let discoverProfileHeader = "discover_profile_header"
+    static let discoverRecipeCard = "discover_recipe_card"
+    static let discoverRecipeCloneButton = "discover_recipe_clone_button"
+    static let discoverCollectionSearchField = "discover_collection_search_field"
+    static let discoverProfileSearchField = "discover_profile_search_field"
+    static let discoverServingsStepper = "discover_servings_stepper"
     static let shoppingList = "shopping_list"
     static let shoppingAddField = "shopping_add_field"
     static let shoppingShareButton = "shopping_share_button"

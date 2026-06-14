@@ -21,14 +21,23 @@ enum RecipeImageDecoder {
     }
 
     static func decode(fileURL: URL, maxPixelSize: Int) -> UIImage? {
+        guard let source = CGImageSourceCreateWithURL(fileURL as CFURL, nil) else { return nil }
+        return decode(source: source, maxPixelSize: maxPixelSize)
+    }
+
+    static func decode(data: Data, maxPixelSize: Int) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        return decode(source: source, maxPixelSize: maxPixelSize)
+    }
+
+    private static func decode(source: CGImageSource, maxPixelSize: Int) -> UIImage? {
         let options: [CFString: Any] = [
             kCGImageSourceShouldCache: false,
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
             kCGImageSourceCreateThumbnailWithTransform: true,
         ]
-        guard let source = CGImageSourceCreateWithURL(fileURL as CFURL, nil),
-              let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
             return nil
         }
         return UIImage(cgImage: cgImage)
