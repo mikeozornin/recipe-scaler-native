@@ -328,8 +328,10 @@ struct AssistantComposer: View {
     }
 
     private var availableEntries: [CollectionEntry] {
-        // Exclude soft-deleted entries; keep order stable (collectionEntries is already ordered by the sync layer).
-        syncService.collectionEntries.filter { !$0.deleted }
+        // Pinned-first → alphabetical by display name (emoji ignored) → id, same rule as "All Recipes".
+        RecipeTitleEmoji.sortCollectionEntries(
+            syncService.collectionEntries.filter { !$0.deleted }
+        )
     }
 
     // MARK: - Actions
@@ -525,15 +527,23 @@ struct AssistantRecipePicker: View {
                         Button {
                             select(entry)
                         } label: {
-                            HStack {
+                            HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
                                 Circle()
                                     .fill(Color(hex: entry.color) ?? .accentColor)
                                     .frame(width: 10, height: 10)
+                                    .frame(
+                                        width: RecipeRowLayoutMetrics.markerSlotWidth,
+                                        height: RecipeRowLayoutMetrics.titleLineHeight,
+                                        alignment: .center
+                                    )
                                 Text(entry.name)
                                     .appBody()
                                     .foregroundStyle(.primary)
-                                Spacer()
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .multilineTextAlignment(.leading)
                             }
+                            .ingredientListRowChrome()
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -541,6 +551,7 @@ struct AssistantRecipePicker: View {
                         .accessibilityIdentifier("assistant_recipe_picker_row_\(entry.id)")
                     }
                     .listStyle(.plain)
+                    .environment(\.defaultMinListRowHeight, 1)
                 }
             }
             .searchable(
