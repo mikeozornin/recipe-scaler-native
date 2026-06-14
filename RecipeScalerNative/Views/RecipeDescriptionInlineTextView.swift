@@ -38,6 +38,7 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
         tap.cancelsTouchesInView = true
         textView.addGestureRecognizer(tap)
         textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textView.textContainer.widthTracksTextView = true
         return textView
     }
 
@@ -54,10 +55,26 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
-        let width = proposal.width ?? UIScreen.main.bounds.width - 32
+        let width = Self.resolvedMeasureWidth(proposal: proposal, uiView: uiView)
+        uiView.textContainer.size = CGSize(width: width, height: .greatestFiniteMagnitude)
         let fitting = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
         let minHeight = typography.fontSize * RecipeDescriptionStyle.lineHeightMultiple
-        return CGSize(width: width, height: max(fitting.height, minHeight))
+        let height = max(ceil(fitting.height), minHeight)
+        return CGSize(width: width, height: height)
+    }
+
+    /// SwiftUI may call `sizeThatFits` with width `0` or `inf` before layout; measuring at
+    /// those widths yields a single-line height (~24pt) and clips multi-line steps.
+    private static func resolvedMeasureWidth(proposal: ProposedViewSize, uiView: UITextView) -> CGFloat {
+        if let proposed = proposal.width, proposed.isFinite, proposed > 1 {
+            return proposed
+        }
+        if uiView.bounds.width > 1 {
+            return uiView.bounds.width
+        }
+        // StepsSection horizontal padding + ordered-step badge (22) + spacing (10).
+        let screenWidth = UIScreen.main.bounds.width
+        return max(220, screenWidth - 64 - 32)
     }
 
     final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
