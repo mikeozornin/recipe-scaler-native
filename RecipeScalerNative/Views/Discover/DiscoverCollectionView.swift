@@ -12,6 +12,8 @@ struct DiscoverCollectionView: View {
     @State private var collection: CollectionWithRecipesDTO?
     @State private var errorMessage: String?
     @State private var searchText = ""
+    @State private var searchStore = DiscoverSearchStore<CuratedRecipeMetadataDTO>()
+    @State private var searchTokens: [String] = []
 
     var body: some View {
         Group {
@@ -33,11 +35,15 @@ struct DiscoverCollectionView: View {
             prompt: Text("search.recipes")
         )
         .task { await load() }
+        .onChange(of: searchText) { _, query in
+            searchTokens = DiscoverSearch.tokenize(query)
+            searchStore.setQuery(query)
+        }
     }
 
     @ViewBuilder
     private func content(for collection: CollectionWithRecipesDTO) -> some View {
-        let filtered = collection.recipes.filtered(by: searchText)
+        let filtered = searchStore.filteredSnapshot
         if collection.recipes.isEmpty {
             ContentUnavailableView {
                 AppLabel.make("discover.collection.empty", symbol: "tray")
@@ -57,7 +63,7 @@ struct DiscoverCollectionView: View {
                     } else {
                         DiscoverRecipeCardGrid(items: filtered) { recipe in
                             NavigationLink(value: DiscoverRoute.recipe(recipe.id)) {
-                                DiscoverRecipeCard(recipe: recipe)
+                                DiscoverRecipeCard(recipe: recipe, searchTokens: searchTokens)
                             }
                             .buttonStyle(.plain)
                             .accessibilityIdentifier(AccessibilityIdentifiers.discoverRecipeCard)
@@ -105,7 +111,9 @@ struct DiscoverCollectionView: View {
 
     private func load() async {
         do {
-            collection = try await DiscoverAPI.fetchCollection(slug: slug)
+            let loaded = try await DiscoverAPI.fetchCollection(slug: slug)
+            collection = loaded
+            searchStore.setItems(loaded.recipes)
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription

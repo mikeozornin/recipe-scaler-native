@@ -17,6 +17,8 @@ struct DiscoverPublicProfileView: View {
     @State private var errorMessage: String?
     @State private var isLoading = true
     @State private var searchText = ""
+    @State private var searchStore = DiscoverSearchStore<PublicRecipePreviewDTO>()
+    @State private var searchTokens: [String] = []
 
     var body: some View {
         Group {
@@ -44,11 +46,15 @@ struct DiscoverPublicProfileView: View {
             prompt: Text("search.recipes")
         )
         .task { await load() }
+        .onChange(of: searchText) { _, query in
+            searchTokens = DiscoverSearch.tokenize(query)
+            searchStore.setQuery(query)
+        }
     }
 
     @ViewBuilder
     private func content(for response: PublicProfileResponseDTO) -> some View {
-        let filtered = response.recipes.filtered(by: searchText)
+        let filtered = searchStore.filteredSnapshot
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header(for: response.profile)
@@ -67,7 +73,7 @@ struct DiscoverPublicProfileView: View {
                 } else {
                     DiscoverRecipeCardGrid(items: filtered) { recipe in
                         NavigationLink(value: DiscoverRoute.recipe(recipe.id)) {
-                            DiscoverRecipeCard(recipe: recipe)
+                            DiscoverRecipeCard(recipe: recipe, searchTokens: searchTokens)
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier(AccessibilityIdentifiers.discoverRecipeCard)
@@ -131,7 +137,9 @@ struct DiscoverPublicProfileView: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            response = try await DiscoverAPI.fetchPublicProfile(username: username)
+            let loaded = try await DiscoverAPI.fetchPublicProfile(username: username)
+            response = loaded
+            searchStore.setItems(loaded.recipes)
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription

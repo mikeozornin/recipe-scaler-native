@@ -4,6 +4,24 @@
 //
 
 import Foundation
+import SwiftUI
+
+/// Searchable item exposed to `DiscoverSearchStore`.
+///
+/// Each item provides one or more plain-text fields. The store normalizes them
+/// once and reuses the cache across queries.
+protocol DiscoverSearchable: Identifiable, Sendable {
+    var id: String { get }
+    var searchFields: [String?] { get }
+}
+
+extension CuratedRecipeMetadataDTO: DiscoverSearchable {
+    var searchFields: [String?] { [name] }
+}
+
+extension PublicRecipePreviewDTO: DiscoverSearchable {
+    var searchFields: [String?] { [name, description] }
+}
 
 /// Search helper for Discover entities. Reuses `RecipeSearchUtils` tokenization
 /// (NFKD + diacritics + quoted phrases + AND semantics per `search-behavior.mdc`)
@@ -26,54 +44,91 @@ enum DiscoverSearch {
     }
 }
 
-extension Array where Element == CuratedRecipeMetadataDTO {
-    func filtered(by query: String) -> [CuratedRecipeMetadataDTO] {
-        let tokens = DiscoverSearch.tokenize(query)
-        guard !tokens.isEmpty else { return self }
-        return filter { recipe in
-            DiscoverSearch.matchesAnyField(
-                tokens: tokens,
-                fields: [recipe.name]
-            )
-        }
-    }
-}
+/// Background search store for Discover lists.
+///
+/// - Normalizes searchable fields once when items are set.
+/// - Debounces queries and cancels stale filtering work.
+/// - Runs the actual token matching off the main actor so the search bar stays
+///   responsive while typing.
+/// - Publishes a single `filteredSnapshot` for the view to read.
+@MainActor
+@Observable
+final class DiscoverSearchStore<Item: DiscoverSearchable> {
+    private(set) var filteredSnapshot: [Item] = []
 
-extension Array where Element == PublicRecipePreviewDTO {
-    func filtered(by query: String) -> [PublicRecipePreviewDTO] {
-        let tokens = DiscoverSearch.tokenize(query)
-        guard !tokens.isEmpty else { return self }
-        return filter { recipe in
-            DiscoverSearch.matchesAnyField(
-                tokens: tokens,
-                fields: [recipe.name, recipe.description]
-            )
-        }
-    }
-}
+    private var allItems: [Item] = []
+    private var normalizedFieldsById: [String: [String]] = [:]
+    private var currentQuery: String = ""
+    private var queryGeneration: UInt64 = 0
+    private var debounceTask: Task<Void, Never>?
+    private let debounceMs: UInt64 = 120
 
-extension Array where Element == DiscoveryCollectionDTO {
-    func filtered(by query: String) -> [DiscoveryCollectionDTO] {
-        let tokens = DiscoverSearch.tokenize(query)
-        guard !tokens.isEmpty else { return self }
-        return filter { collection in
-            DiscoverSearch.matchesAnyField(
-                tokens: tokens,
-                fields: [collection.title, collection.description, collection.authorName]
-            )
+    /// Replace the source list and rebuild the normalized-field cache.
+    func setItems(_ items: [Item]) {
+        allItems = items
+        normalizedFieldsById = [:]
+        normalizedFieldsById.reserveCapacity(items.count)
+        for item in items {
+            normalizedFieldsById[item.id] = item.searchFields
+                .compactMap { $0 }
+                .map(RecipeSearchUtils.normalizeForSearch)
         }
+        applyQuery(currentQuery, debounce: false)
     }
-}
 
-extension Array where Element == PublicProfilePreviewDTO {
-    func filtered(by query: String) -> [PublicProfilePreviewDTO] {
-        let tokens = DiscoverSearch.tokenize(query)
-        guard !tokens.isEmpty else { return self }
-        return filter { profile in
-            DiscoverSearch.matchesAnyField(
-                tokens: tokens,
-                fields: [profile.name, profile.username, profile.description]
-            )
+    /// Update the search query. The snapshot is updated after a short debounce.
+    func setQuery(_ query: String) {
+        currentQuery = query
+        queryGeneration += 1
+        applyQuery(query, debounce: true)
+    }
+
+    private func applyQuery(_ query: String, debounce: Bool) {
+        debounceTask?.cancel()
+
+        let tokens = RecipeSearchUtils.tokenizeQuery(query)
+        guard !tokens.isEmpty else {
+            filteredSnapshot = allItems
+            return
+        }
+
+        let generation = queryGeneration
+        let shouldDebounce = debounce
+
+        debounceTask = Task { [weak self] in
+            guard let self else { return }
+            if shouldDebounce {
+                try? await Task.sleep(for: .milliseconds(self.debounceMs))
+            }
+            guard !Task.isCancelled else { return }
+
+            let start = Date()
+            let result = await Task.detached(priority: .userInitiated) { [items = self.allItems, normalized = self.normalizedFieldsById, tokens] in
+                items.filter { item in
+                    guard let fields = normalized[item.id], !fields.isEmpty else { return false }
+                    return tokens.allSatisfy { token in
+                        fields.contains { $0.contains(token) }
+                    }
+                }
+            }.value
+            let ms = Date().timeIntervalSince(start) * 1000
+
+            await MainActor.run {
+                guard generation == self.queryGeneration else { return }
+                self.filteredSnapshot = result
+                #if DEBUG
+                AgentSyncDebugLog.write(
+                    hypothesisId: "discover-search-perf",
+                    location: "DiscoverSearchStore.applyQuery",
+                    message: "discover_search_filter",
+                    data: [
+                        "discover_search_filter_ms": String(format: "%.2f", ms),
+                        "itemCount": "\(self.allItems.count)",
+                        "resultCount": "\(result.count)"
+                    ]
+                )
+                #endif
+            }
         }
     }
 }

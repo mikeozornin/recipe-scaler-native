@@ -12,6 +12,19 @@ struct DiscoverRecipeCard: View {
     let imageURL: URL?
     let name: String
     let accentColor: Color
+    let searchTokens: [String]
+
+    init(
+        imageURL: URL?,
+        name: String,
+        accentColor: Color,
+        searchTokens: [String] = []
+    ) {
+        self.imageURL = imageURL
+        self.name = name
+        self.accentColor = accentColor
+        self.searchTokens = searchTokens
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -22,8 +35,9 @@ struct DiscoverRecipeCard: View {
                 aspectRatio: 16.0 / 9.0
             )
 
-            Text(name)
-                .appHeadline()
+            titleLabel
+                .font(AppTypography.headline)
+                .lineSpacing(AppTypography.bodyLineSpacing)
                 .foregroundStyle(RecipeDescriptionStyle.linkColor)
                 .underline(
                     true,
@@ -34,22 +48,39 @@ struct DiscoverRecipeCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
+
+    @ViewBuilder
+    private var titleLabel: some View {
+        if searchTokens.isEmpty {
+            Text(name)
+        } else {
+            let title = RecipeSearchUtils.highlightedAttributedString(
+                name,
+                tokens: searchTokens,
+                font: AppTypography.sansMediumBodyUIFont,
+                foregroundColor: RecipeDescriptionStyle.linkUIColor
+            )
+            Text(title)
+        }
+    }
 }
 
 extension DiscoverRecipeCard {
-    init(recipe: CuratedRecipeMetadataDTO) {
+    init(recipe: CuratedRecipeMetadataDTO, searchTokens: [String] = []) {
         self.init(
             imageURL: DiscoverAPI.collectionRecipeCardImageURL(recipe: recipe),
             name: recipe.name,
-            accentColor: RecipeAccentColor.color(from: recipe.color)
+            accentColor: RecipeAccentColor.color(from: recipe.color),
+            searchTokens: searchTokens
         )
     }
 
-    init(recipe: PublicRecipePreviewDTO) {
+    init(recipe: PublicRecipePreviewDTO, searchTokens: [String] = []) {
         self.init(
             imageURL: DiscoverAPI.publicRecipeCardImageURL(recipe: recipe),
             name: recipe.name,
-            accentColor: recipe.color.map(RecipeAccentColor.color(from:)) ?? .accentColor
+            accentColor: recipe.color.map(RecipeAccentColor.color(from:)) ?? .accentColor,
+            searchTokens: searchTokens
         )
     }
 }
