@@ -37,6 +37,18 @@
         }
       }
     },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "Privacy - Microphone Usage Description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Recipe Scaler uses the microphone so you can dictate messages to the AI assistant."
+          }
+        }
+      }
+    },
     "NSRemindersFullAccessUsageDescription" : {
       "comment" : "Privacy - Reminders Full Access Usage Description",
       "extractionState" : "extracted_with_value",

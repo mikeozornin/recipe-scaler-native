@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 enum AppTab: String, CaseIterable, Hashable {
     case discover
@@ -60,9 +61,33 @@ struct AppShellView: View {
     @State private var transientStatusDismissTask: Task<Void, Never>?
     @State private var mobileTimerPanelCollapsed = true
     @State private var spotlightOpenRecipeId: String?
+    @State private var tabBarTopOffsetFromLayoutBottom: CGFloat = 0
+
+    private static let assistantFabMargin: CGFloat = 16
+    private static let assistantFabIconPadding: CGFloat = 14
+    private static let assistantFabDiameter: CGFloat = AppTypography.title2Size + assistantFabIconPadding * 2
+
+    private var assistantFabBottomPadding: CGFloat {
+        let timerHeight = MobileTimerPanelLayout.height(
+            timerCount: timerManager.timers.count,
+            isExpanded: !mobileTimerPanelCollapsed
+        )
+        let tabBarOffset = tabBarTopOffsetFromLayoutBottom > 0
+            ? tabBarTopOffsetFromLayoutBottom
+            : Self.fallbackTabBarTopOffsetFromLayoutBottom
+        return tabBarOffset + timerHeight + Self.assistantFabMargin
+    }
+
+    /// Tab bar height fallback until UIKit layout publishes a measured value.
+    private static var fallbackTabBarTopOffsetFromLayoutBottom: CGFloat {
+        49
+    }
 
     var body: some View {
         tabView
+            .background {
+                TabBarTopOffsetReader(offsetFromLayoutBottom: $tabBarTopOffsetFromLayoutBottom)
+            }
             .overlay(alignment: .bottom) {
                 if let transientStatusMessage {
                     TransientStatusBanner(message: transientStatusMessage)
@@ -117,14 +142,18 @@ struct AppShellView: View {
                     AppSymbol.image("sparkles")
                         .font(AppTypography.iconSize(AppTypography.title2Size))
                         .foregroundStyle(.white)
-                        .padding(14)
-                        .background(Circle().fill(Color.accentColor))
-                        .compositingGroup()
-                        .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: 5)
-                        .shadow(color: .black.opacity(0.24), radius: 24, x: 0, y: 12)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background {
+                            Circle()
+                                .fill(Color.accentColor)
+                                .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: 5)
+                                .shadow(color: .black.opacity(0.24), radius: 24, x: 0, y: 12)
+                        }
+                        .frame(width: Self.assistantFabDiameter, height: Self.assistantFabDiameter)
                 }
-                .padding(.trailing, 16)
-                .padding(.bottom, 64)
+                .buttonStyle(.plain)
+                .padding(.trailing, Self.assistantFabMargin)
+                .padding(.bottom, assistantFabBottomPadding)
                 .accessibilityIdentifier(AccessibilityIdentifiers.assistantFab)
                 .accessibilityLabel(Text("assistant.title"))
             }
@@ -336,6 +365,74 @@ struct AppShellView: View {
     }
 
     #endif
+}
+
+private struct TabBarTopOffsetReader: UIViewControllerRepresentable {
+    @Binding var offsetFromLayoutBottom: CGFloat
+
+    func makeUIViewController(context: Context) -> TabBarTopOffsetReaderViewController {
+        let controller = TabBarTopOffsetReaderViewController()
+        controller.onOffsetChange = { newValue in
+            guard offsetFromLayoutBottom != newValue else { return }
+            offsetFromLayoutBottom = newValue
+        }
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: TabBarTopOffsetReaderViewController, context: Context) {
+        uiViewController.onOffsetChange = { newValue in
+            guard offsetFromLayoutBottom != newValue else { return }
+            offsetFromLayoutBottom = newValue
+        }
+        uiViewController.view.setNeedsLayout()
+    }
+}
+
+private final class TabBarTopOffsetReaderViewController: UIViewController {
+    var onOffsetChange: ((CGFloat) -> Void)?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.isUserInteractionEnabled = false
+        view.backgroundColor = .clear
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        publishOffsetIfNeeded()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        publishOffsetIfNeeded()
+    }
+
+    private func publishOffsetIfNeeded() {
+        guard let window = view.window,
+              let tabBar = findTabBarController(in: window.rootViewController)?.tabBar else { return }
+        let tabBarFrame = tabBar.convert(tabBar.bounds, to: window)
+        let offsetFromWindowBottom = window.bounds.height - tabBarFrame.minY
+        let offsetFromLayoutBottom = offsetFromWindowBottom - window.safeAreaInsets.bottom
+        guard offsetFromLayoutBottom > 0 else { return }
+        onOffsetChange?(offsetFromLayoutBottom)
+    }
+
+    private func findTabBarController(in viewController: UIViewController?) -> UITabBarController? {
+        guard let viewController else { return nil }
+        if let tabBarController = viewController as? UITabBarController {
+            return tabBarController
+        }
+        for child in viewController.children {
+            if let tabBarController = findTabBarController(in: child) {
+                return tabBarController
+            }
+        }
+        if let presented = viewController.presentedViewController,
+           let tabBarController = findTabBarController(in: presented) {
+            return tabBarController
+        }
+        return nil
+    }
 }
 
 #if DEBUG

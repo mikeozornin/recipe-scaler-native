@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct AssistantSheet: View {
-    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var syncService: YjsSyncService
 
     let contextRecipeId: String?
 
@@ -28,6 +28,11 @@ struct AssistantSheet: View {
     @State private var hasTriedSessionRestore = false
     @State private var messageListContentWidth: CGFloat = 0
     @State private var inputPlaceholderVariantIndex = Int.random(in: 0..<AssistantInputPlaceholder.variantCount)
+    @State private var streamingToolStatusKey: String?
+
+    private var isOnline: Bool {
+        syncService.connectionState.isConnected
+    }
 
     private static let newChatTimeout: TimeInterval = 60
     private static let userMessageLeadingInset: CGFloat = 48
@@ -37,30 +42,31 @@ struct AssistantSheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 messageList
-                AssistantComposer(
-                    text: $input,
-                    attachments: $attachments,
-                    isSending: isSending,
-                    inputPlaceholderVariantIndex: inputPlaceholderVariantIndex,
-                    contextRecipeId: contextRecipeId,
-                    onSend: { Task { await send() } }
-                )
-                .padding(.horizontal, 12)
-                .padding(.top, 6)
-                .padding(.bottom, 12)
+                if isOnline {
+                    AssistantComposer(
+                        text: $input,
+                        attachments: $attachments,
+                        isSending: isSending,
+                        inputPlaceholderVariantIndex: inputPlaceholderVariantIndex,
+                        contextRecipeId: contextRecipeId,
+                        onSend: { Task { await send() } }
+                    )
+                    .padding(.horizontal, 12)
+                    .padding(.top, 6)
+                    .padding(.bottom, 12)
+                } else {
+                    Text("assistant.offline.description")
+                        .appFootnote()
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 14)
+                        .accessibilityIdentifier(AccessibilityIdentifiers.assistantOfflineFootnote)
+                }
             }
             .localizedNavigationTitle("assistant.title")
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button {
-                        startNewChat()
-                    } label: {
-                        AppToolbarStyle.iconOnly(systemName: "plus")
-                    }
-                    .appToolbarIconButton()
-                    .accessibilityLabel(Text("assistant.new-chat"))
-                    .accessibilityIdentifier(AccessibilityIdentifiers.assistantNewThreadButton)
-
                     Button {
                         showHistorySheet = true
                     } label: {
@@ -69,13 +75,15 @@ struct AssistantSheet: View {
                     .appToolbarIconButton()
                     .accessibilityLabel(Text("assistant.threads-title"))
                     .accessibilityIdentifier(AccessibilityIdentifiers.assistantHistoryButton)
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("assistant.close") {
-                        persistSession()
-                        dismiss()
+
+                    Button {
+                        startNewChat()
+                    } label: {
+                        AppToolbarStyle.iconOnly(systemName: "plus")
                     }
-                    .appToolbarTextButton()
+                    .appToolbarIconButton()
+                    .accessibilityLabel(Text("assistant.new-chat"))
+                    .accessibilityIdentifier(AccessibilityIdentifiers.assistantNewThreadButton)
                 }
             }
             .overlay {
@@ -239,7 +247,7 @@ struct AssistantSheet: View {
                     .textSelection(.enabled)
                     .multilineTextAlignment(.trailing)
             } else if message.text.isEmpty && message.isStreaming {
-                Text("assistant.thinking")
+                Text(verbatim: streamingPlaceholder(for: message, isLast: isLast))
                     .font(.body)
                     .foregroundStyle(.primary)
                     .textSelection(.enabled)
@@ -410,6 +418,7 @@ struct AssistantSheet: View {
         attachments = []
         isSending = true
         defer { isSending = false }
+        streamingToolStatusKey = nil
 
         let userMessageId = "optimistic-user-\(UUID().uuidString)"
         let now = Date()
@@ -518,13 +527,14 @@ struct AssistantSheet: View {
                 updateStreamingMessage(id: assistantMessageId) { msg in
                     msg.text.append(delta)
                 }
-            case .toolStart:
-                // Tool status rendering is optional for P2; keep streaming without a status row.
-                continue
+            case .toolStart(let toolName, _):
+                streamingToolStatusKey = AssistantToolStatusI18n.localizationKey(for: toolName)
             case .final(let data):
+                streamingToolStatusKey = nil
                 applyFinal(data, optimisticAssistantId: assistantMessageId)
                 return
             case .error(let serverMessage):
+                streamingToolStatusKey = nil
                 updateStreamingMessage(id: assistantMessageId) { msg in
                     msg.text = Bundle.currentLocalizedString(serverMessage)
                     msg.isStreaming = false
@@ -540,6 +550,7 @@ struct AssistantSheet: View {
     }
 
     private func applyFinal(_ data: AssistantStreamFinalData, optimisticAssistantId: String) {
+        streamingToolStatusKey = nil
         if let threadData = data.thread {
             if threadData.id != threadId {
                 threadId = threadData.id
@@ -598,4 +609,14 @@ struct AssistantSheet: View {
 
     private static let sessionThreadIdKey = "assistant.session.threadId"
     private static let sessionLastOpenedAtKey = "assistant.session.lastOpenedAt"
+
+    private func streamingPlaceholder(for message: AssistantMessage, isLast: Bool) -> String {
+        if isLast,
+           message.isStreaming,
+           message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+           let streamingToolStatusKey {
+            return Bundle.currentLocalizedString(streamingToolStatusKey)
+        }
+        return Bundle.currentLocalizedString("assistant.thinking")
+    }
 }

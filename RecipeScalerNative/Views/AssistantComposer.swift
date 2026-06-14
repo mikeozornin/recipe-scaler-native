@@ -4,7 +4,7 @@
 //
 //  Bottom composer for AssistantSheet: text input + attach-recipes + send.
 //  Mirrors `recipe-scaler-web/recipe-scaler/src/components/assistant/assistant-composer.tsx`
-//  layout (card shell, field on top, toolbar below). Voice recording comes in P3.
+//  layout (card shell, field on top, toolbar below). Voice via AVFoundation + server transcribe.
 //
 
 import SwiftUI
@@ -26,6 +26,10 @@ struct AssistantComposer: View {
     @EnvironmentObject private var syncService: YjsSyncService
     @State private var showAttachSheet = false
     @State private var recipeContext = AssistantRecipeContext.shared
+    @State private var voiceRecorder = AssistantVoiceRecorder()
+    @State private var voiceLimitAlertVisible = false
+    @State private var voiceErrorMessage: String?
+    @FocusState private var isInputFocused: Bool
 
     /// Snapshot from sheet open, with live fallback while the recipe screen stays mounted.
     private var effectiveContextRecipeId: String? {
@@ -48,12 +52,52 @@ struct AssistantComposer: View {
                 )
                 .presentationDetents([.medium, .large])
             }
+            .onAppear {
+                voiceRecorder.onLimitReached = {
+                    voiceLimitAlertVisible = true
+                }
+                voiceRecorder.onAutoStopCapture = { data in
+                    await transcribeCapturedAudio(data)
+                }
+            }
+            .onDisappear {
+                voiceRecorder.cancel()
+            }
+            .alert(
+                "assistant.error-unavailable",
+                isPresented: Binding(
+                    get: { voiceErrorMessage != nil },
+                    set: { if !$0 { voiceErrorMessage = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) { voiceErrorMessage = nil }
+            } message: {
+                if let voiceErrorMessage {
+                    Text(verbatim: voiceErrorMessage)
+                }
+            }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("edit.done") {
+                        isInputFocused = false
+                    }
+                    .appToolbarTextButton()
+                    .accessibilityIdentifier(AccessibilityIdentifiers.assistantKeyboardDone)
+                }
+            }
     }
 
     // MARK: - Shell
 
     private var composerShell: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if voiceLimitAlertVisible {
+                voiceLimitAlert
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+            }
+
             if !attachments.isEmpty {
                 attachmentsRow
                     .padding(.horizontal, 16)
@@ -98,7 +142,13 @@ struct AssistantComposer: View {
             .appBodyFieldTypography()
             .lineLimit(1...6)
             .frame(maxWidth: .infinity, minHeight: Self.inputMinHeight, alignment: .topLeading)
+            .focused($isInputFocused)
+            .disabled(isComposerInputDisabled)
             .accessibilityIdentifier(AccessibilityIdentifiers.assistantMessageInput)
+    }
+
+    private var isComposerInputDisabled: Bool {
+        isSending || voiceRecorder.state == .transcribing
     }
 
     private var composerToolbar: some View {
@@ -109,11 +159,15 @@ struct AssistantComposer: View {
                     contextRecipeTagButton(for: contextAttachment)
                 }
             }
-            Spacer(minLength: 8)
-            HStack(spacing: 0) {
-                voiceButton
-                sendButton
+            if voiceRecorder.state == .recording {
+                AssistantVoiceLevelMeter(samples: voiceRecorder.samples)
+                    .padding(.leading, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Spacer(minLength: 8)
             }
+            voiceButton
+            sendButton
         }
         .padding(.leading, 2)
         .padding(.trailing, 2)
@@ -180,17 +234,61 @@ struct AssistantComposer: View {
         .opacity(availableEntries.isEmpty ? 0.4 : 1)
     }
 
-    private var voiceButton: some View {
-        Button {
-            // Voice recording — P3
-        } label: {
-            composerIconOnly(systemName: "mic")
+    private var voiceLimitAlert: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("assistant.voice-limit-alert")
+                .appFootnote()
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button {
+                voiceLimitAlertVisible = false
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: AppToolbarStyle.minimumTapSide, height: AppToolbarStyle.minimumTapSide)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("assistant.close"))
         }
-        .appToolbarIconButton()
-        .accessibilityLabel(Text("assistant.voice-record"))
-        .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceRecordButton)
-        .disabled(true)
-        .opacity(0.4)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color.secondary.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceLimitAlert)
+    }
+
+    @ViewBuilder
+    private var voiceButton: some View {
+        switch voiceRecorder.state {
+        case .idle:
+            Button {
+                Task { await startVoiceRecording() }
+            } label: {
+                composerIconOnly(systemName: "mic")
+            }
+            .appToolbarIconButton()
+            .accessibilityLabel(Text("assistant.voice-record"))
+            .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceRecordButton)
+            .disabled(isSending)
+            .opacity(isSending ? 0.4 : 1)
+        case .recording:
+            Button {
+                Task { await stopVoiceRecording() }
+            } label: {
+                composerIconOnly(systemName: "stop.fill", tint: .red)
+            }
+            .appToolbarIconButton()
+            .accessibilityLabel(Text("assistant.voice-stop"))
+            .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceStopButton)
+        case .transcribing:
+            ProgressView()
+                .tint(Color.primary)
+                .frame(width: AppToolbarStyle.iconSide, height: AppToolbarStyle.iconSide)
+                .frame(width: AppToolbarStyle.minimumTapSide, height: AppToolbarStyle.minimumTapSide)
+                .accessibilityLabel(Text("assistant.voice-transcribing"))
+                .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceTranscribingButton)
+        }
     }
 
     private var sendButton: some View {
@@ -209,26 +307,23 @@ struct AssistantComposer: View {
         .appToolbarIconButton()
         .accessibilityLabel(Text("assistant.send"))
         .accessibilityIdentifier(AccessibilityIdentifiers.assistantSendButton)
-        .disabled(!canSend)
-        .opacity(canSend ? 1 : 0.35)
+        .disabled(!canSend || voiceRecorder.state == .recording)
+        .opacity(canSend && voiceRecorder.state != .recording ? 1 : 0.35)
     }
 
     @ViewBuilder
-    private func composerIconOnly(systemName: String) -> some View {
+    private func composerIconOnly(systemName: String, tint: Color = .primary) -> some View {
         AppSymbol.toolbarImage(systemName)
             .resizable()
             .scaledToFit()
             .frame(width: AppToolbarStyle.iconSide, height: AppToolbarStyle.iconSide)
-            .foregroundStyle(Color.primary)
+            .foregroundStyle(tint)
             .frame(width: AppToolbarStyle.minimumTapSide, height: AppToolbarStyle.minimumTapSide)
             .contentShape(Rectangle())
     }
 
     private var canSend: Bool {
-        !isSending && (
-            !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            || !attachments.isEmpty
-        )
+        !isSending && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private var availableEntries: [CollectionEntry] {
@@ -244,6 +339,66 @@ struct AssistantComposer: View {
 
     private func removeAttachment(_ attachment: AssistantRecipeAttachment) {
         attachments.removeAll { recipeIdsMatch($0.recipeId, attachment.recipeId) }
+    }
+
+    private func startVoiceRecording() async {
+        voiceLimitAlertVisible = false
+        do {
+            try await voiceRecorder.start()
+        } catch let error as AssistantVoiceRecorderError {
+            voiceRecorder.markIdle()
+            voiceErrorMessage = error.errorDescription
+        } catch {
+            voiceRecorder.markIdle()
+            voiceErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func stopVoiceRecording() async {
+        do {
+            let audioData = try await voiceRecorder.stopCapture()
+            await transcribeCapturedAudio(audioData)
+        } catch let error as AssistantVoiceRecorderError {
+            voiceRecorder.markIdle()
+            voiceErrorMessage = error.errorDescription
+        } catch {
+            voiceRecorder.markIdle()
+            voiceErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func transcribeCapturedAudio(_ audioData: Data) async {
+        do {
+            let transcribed = try await AssistantAPI.transcribe(audioData: audioData, mimeType: "audio/mp4")
+            voiceRecorder.markIdle()
+            appendTranscription(transcribed)
+        } catch let error as APIError {
+            voiceRecorder.markIdle()
+            voiceErrorMessage = localizedAPIErrorMessage(error)
+        } catch {
+            voiceRecorder.markIdle()
+            voiceErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func appendTranscription(_ transcribed: String) {
+        let trimmed = transcribed.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let existing = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if existing.isEmpty {
+            text = trimmed
+        } else if text.hasSuffix(" ") {
+            text += trimmed
+        } else {
+            text += " \(trimmed)"
+        }
+    }
+
+    private func localizedAPIErrorMessage(_ error: APIError) -> String {
+        if case .serverError(let message) = error, message.hasPrefix("assistant.") {
+            return Bundle.currentLocalizedString(message)
+        }
+        return error.localizedDescription
     }
 }
 
@@ -392,12 +547,6 @@ struct AssistantRecipePicker: View {
                 placement: .navigationBarDrawer(displayMode: .always),
                 prompt: Text("assistant.recipe-search-placeholder")
             )
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("assistant.close") { dismiss() }
-                        .appToolbarTextButton()
-                }
-            }
         }
     }
 

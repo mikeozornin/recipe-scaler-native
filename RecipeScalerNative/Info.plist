@@ -51,6 +51,8 @@
 	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Recipe Scaler uses the microphone so you can dictate messages to the AI assistant.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Recipe Scaler uses the camera to scan QR codes to log in with your seed phrase.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>

@@ -71,10 +71,6 @@ struct ImportRecipeSheet: View {
             .localizedNavigationTitle("import.title")
             .appListBodyTypography()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("common.cancel") { dismiss() }
-                        .appToolbarTextButton()
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     if isOnline {
                         Button {

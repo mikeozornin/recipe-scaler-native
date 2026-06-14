@@ -196,7 +196,16 @@ enum AssistantAPI {
             throw APIError.decodingError(error)
         }
         guard payload.success, let text = payload.data?.text else {
-            throw APIError.serverError(message: payload.error ?? "assistant.voice-error.transcription")
+            let messageKey: String
+            switch payload.error {
+            case "audio_too_long":
+                messageKey = "assistant.voice-error.too-long"
+            case "transcription_not_configured", "transcription_failed":
+                messageKey = "assistant.voice-error.transcription"
+            default:
+                messageKey = payload.error ?? "assistant.voice-error.transcription"
+            }
+            throw APIError.serverError(message: messageKey)
         }
         return text
     }

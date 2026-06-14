@@ -38,6 +38,7 @@ enum AccessibilityIdentifiers {
     static let assistantSheet = "assistant_sheet"
     static let assistantComposerShell = "assistant_composer_shell"
     static let assistantMessageInput = "assistant_message_input"
+    static let assistantKeyboardDone = "assistant_keyboard_done"
     static let assistantAttachmentButton = "assistant_attachment_button"
     static let assistantVoiceRecordButton = "assistant_voice_record_button"
     static let assistantSendButton = "assistant_send_button"
@@ -46,6 +47,10 @@ enum AccessibilityIdentifiers {
     static let assistantContextRecipeTag = "assistant_context_recipe_tag"
     static let assistantNewThreadButton = "assistant_new_thread_button"
     static let assistantHistoryButton = "assistant_history_button"
+    static let assistantOfflineFootnote = "assistant_offline_footnote"
+    static let assistantVoiceStopButton = "assistant_voice_stop_button"
+    static let assistantVoiceTranscribingButton = "assistant_voice_transcribing_button"
+    static let assistantVoiceLimitAlert = "assistant_voice_limit_alert"
     static let assistantThreadPanel = "assistant_thread_panel"
     static let assistantThreadSearchInput = "assistant_thread_search_input"
 
