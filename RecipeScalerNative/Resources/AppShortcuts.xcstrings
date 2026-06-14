@@ -1,0 +1,295 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Add ${recipe} ingredients to ${applicationName} shopping" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add ${recipe} ingredients to ${applicationName} shopping"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавь ингредиенты ${recipe} в покупки ${applicationName}"
+          }
+        }
+      }
+    },
+    "Add ingredients from ${recipe} to my ${applicationName} shopping list" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add ingredients from ${recipe} to my ${applicationName} shopping list"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавь ингредиенты из ${recipe} в список покупок ${applicationName}"
+          }
+        }
+      }
+    },
+    "Add to my ${applicationName} shopping list" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to my ${applicationName} shopping list"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавь в мой список покупок ${applicationName}"
+          }
+        }
+      }
+    },
+    "Check off an item in my ${applicationName} shopping list" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check off an item in my ${applicationName} shopping list"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отметь пункт в списке покупок ${applicationName}"
+          }
+        }
+      }
+    },
+    "Mark an item as purchased in ${applicationName}" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark an item as purchased in ${applicationName}"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отметь пункт купленным в ${applicationName}"
+          }
+        }
+      }
+    },
+    "Open ${recipe} in ${applicationName}" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open ${recipe} in ${applicationName}"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открой ${recipe} в ${applicationName}"
+          }
+        }
+      }
+    },
+    "Open my ${applicationName} shopping list" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open my ${applicationName} shopping list"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открой мой список покупок ${applicationName}"
+          }
+        }
+      }
+    },
+    "Pause my ${applicationName} timer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause my ${applicationName} timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поставь таймер ${applicationName} на паузу"
+          }
+        }
+      }
+    },
+    "Pause the ${applicationName} cooking timer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause the ${applicationName} cooking timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поставь кулинарный таймер ${applicationName} на паузу"
+          }
+        }
+      }
+    },
+    "Resume my ${applicationName} timer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume my ${applicationName} timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продолжи таймер ${applicationName}"
+          }
+        }
+      }
+    },
+    "Resume the ${applicationName} cooking timer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume the ${applicationName} cooking timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продолжи кулинарный таймер ${applicationName}"
+          }
+        }
+      }
+    },
+    "Set a ${applicationName} timer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set a ${applicationName} timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поставь таймер в ${applicationName}"
+          }
+        }
+      }
+    },
+    "Show ${recipe} in ${applicationName}" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show ${recipe} in ${applicationName}"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Покажи ${recipe} в ${applicationName}"
+          }
+        }
+      }
+    },
+    "Show my ${applicationName} shopping list" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show my ${applicationName} shopping list"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Покажи мой список покупок ${applicationName}"
+          }
+        }
+      }
+    },
+    "Start a ${applicationName} cooking timer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start a ${applicationName} cooking timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поставь кулинарный таймер в ${applicationName}"
+          }
+        }
+      }
+    },
+    "Stop my ${applicationName} timer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop my ${applicationName} timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Останови таймер ${applicationName}"
+          }
+        }
+      }
+    },
+    "Stop the ${applicationName} cooking timer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop the ${applicationName} cooking timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Останови кулинарный таймер ${applicationName}"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

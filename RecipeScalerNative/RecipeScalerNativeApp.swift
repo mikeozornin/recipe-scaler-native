@@ -52,6 +52,7 @@ struct RecipeScalerNativeApp: App {
         TimerManager.registerBackgroundTasksIfNeeded()
         AppChromeAppearance.configure()
         #if DEBUG
+        Agentation.shared.toolbarHorizontalAlignment = .leading
         Agentation.shared.install()
         #endif
     }

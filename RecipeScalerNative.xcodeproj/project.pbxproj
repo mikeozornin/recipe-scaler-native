@@ -1175,7 +1175,7 @@
 				BE0DEA2EE33BB2DDADEC826E /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
 				7467910DD391C78018059E70 /* XCRemoteSwiftPackageReference "socket" */,
 				98547C1E1E623FEAE02655FD /* XCRemoteSwiftPackageReference "GRDB" */,
-				A1B2C3D4E5F60718293A4B70 /* XCRemoteSwiftPackageReference "swift-agentation" */,
+				A1B2C3D4E5F60718293A4B70 /* XCLocalSwiftPackageReference "swift-agentation" */,
 			);
 			projectDirPath = "";
 			projectRoot = "";
@@ -1966,6 +1966,13 @@
 		};
 	/* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		A1B2C3D4E5F60718293A4B70 /* XCLocalSwiftPackageReference "swift-agentation" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/swift-agentation;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		406F1D0C74F7E20F797A11E0 /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1991,14 +1998,6 @@
 				minimumVersion = 7.0.0;
 			};
 		};
-		A1B2C3D4E5F60718293A4B70 /* XCRemoteSwiftPackageReference "swift-agentation" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ertembiyik/swift-agentation.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
-			};
-		};
 		BE0DEA2EE33BB2DDADEC826E /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
@@ -2022,7 +2021,7 @@
 		};
 		A1B2C3D4E5F60718293A4B71 /* Agentation */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A1B2C3D4E5F60718293A4B70 /* XCRemoteSwiftPackageReference "swift-agentation" */;
+			package = A1B2C3D4E5F60718293A4B70 /* XCLocalSwiftPackageReference "swift-agentation" */;
 			productName = Agentation;
 		};
 		D5AD4954620B5F09F6E7BD90 /* GRDB */ = {

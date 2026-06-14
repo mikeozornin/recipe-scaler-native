@@ -1147,6 +1147,22 @@
         }
       }
     },
+    "assistant.attach-recipe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attach recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прикрепить рецепт"
+          }
+        }
+      }
+    },
     "assistant.attach-recipes" : {
       "localizations" : {
         "en" : {
@@ -1227,6 +1243,142 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Спросите что-нибудь о рецептах"
+          }
+        }
+      }
+    },
+    "assistant.input-placeholder-variants.0" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find me a strudel recipe…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найди рецепт штруделя…"
+          }
+        }
+      }
+    },
+    "assistant.input-placeholder-variants.1" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explain why it matters to add the yeast right now…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Объясни, почему здесь важно класть дрожжи именно сейчас…"
+          }
+        }
+      }
+    },
+    "assistant.input-placeholder-variants.2" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write out in detail how to make choux pastry…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напиши подробно, как сделать заварное тесто…"
+          }
+        }
+      }
+    },
+    "assistant.input-placeholder-variants.3" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggest what I can use instead of cream in this recipe…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подскажи, чем заменить сливки в этом рецепте…"
+          }
+        }
+      }
+    },
+    "assistant.input-placeholder-variants.4" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Help me adapt this recipe for 6 servings…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Помоги адаптировать рецепт на 6 человек…"
+          }
+        }
+      }
+    },
+    "assistant.input-placeholder-variants.5" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Give me ideas for what I can cook with chicken and mushrooms…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Придумай, что можно приготовить из курицы и грибов…"
+          }
+        }
+      }
+    },
+    "assistant.input-placeholder-variants.6" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Look through my recipes and find something dairy-free…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Посмотри мои рецепты и найди что-нибудь без молока…"
+          }
+        }
+      }
+    },
+    "assistant.input-placeholder-variants.7" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Draft a new recipe and save it as a draft…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Составь новый рецепт и сохрани его как черновик…"
           }
         }
       }
@@ -1325,6 +1477,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ассистент"
+          }
+        }
+      }
+    },
+    "assistant.voice-record" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record voice message"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Записать голосовое сообщение"
           }
         }
       }

@@ -4,40 +4,71 @@
 //
 //  Bottom composer for AssistantSheet: text input + attach-recipes + send.
 //  Mirrors `recipe-scaler-web/recipe-scaler/src/components/assistant/assistant-composer.tsx`
-//  (subset for P2 — voice comes in P3).
+//  layout (card shell, field on top, toolbar below). Voice recording comes in P3.
 //
 
 import SwiftUI
 import RecipeScalerCore
 
 struct AssistantComposer: View {
+    private static let shellCornerRadius: CGFloat = 16
+
     @Binding var text: String
     @Binding var attachments: [AssistantRecipeAttachment]
     let isSending: Bool
+    let inputPlaceholderVariantIndex: Int
     let onSend: () -> Void
 
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var syncService: YjsSyncService
     @State private var showAttachSheet = false
 
+    private var inputPlaceholder: String {
+        _ = locale
+        return AssistantInputPlaceholder.localizedVariant(index: inputPlaceholderVariantIndex)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        composerShell
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(AccessibilityIdentifiers.assistantComposerShell)
+            .sheet(isPresented: $showAttachSheet) {
+                AssistantRecipePicker(
+                    attachments: $attachments,
+                    availableEntries: availableEntries
+                )
+                .presentationDetents([.medium, .large])
+            }
+    }
+
+    // MARK: - Shell
+
+    private var composerShell: some View {
+        VStack(alignment: .leading, spacing: 0) {
             if !attachments.isEmpty {
                 attachmentsRow
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
             }
-            HStack(alignment: .bottom, spacing: 8) {
-                attachButton
-                TextField("assistant.input-placeholder", text: $text, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(1...6)
-                sendButton
-            }
+
+            TextField("", text: $text, prompt: Text(verbatim: inputPlaceholder), axis: .vertical)
+                .appBodyFieldTypography()
+                .lineLimit(1...6)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.top, attachments.isEmpty ? 12 : 4)
+                .padding(.bottom, 4)
+                .accessibilityIdentifier(AccessibilityIdentifiers.assistantMessageInput)
+
+            composerToolbar
         }
-        .sheet(isPresented: $showAttachSheet) {
-            AssistantRecipePicker(
-                attachments: $attachments,
-                availableEntries: availableEntries
-            )
-            .presentationDetents([.medium, .large])
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: Self.shellCornerRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Self.shellCornerRadius, style: .continuous)
+                .stroke(Color(.separator), lineWidth: 1)
         }
     }
 
@@ -52,31 +83,77 @@ struct AssistantComposer: View {
                     }
                 }
             }
-            .padding(.horizontal, 2)
         }
+    }
+
+    private var composerToolbar: some View {
+        HStack(spacing: 0) {
+            attachButton
+            Spacer(minLength: 8)
+            HStack(spacing: 0) {
+                voiceButton
+                sendButton
+            }
+        }
+        .padding(.leading, 2)
+        .padding(.trailing, 2)
+        .padding(.bottom, 2)
     }
 
     private var attachButton: some View {
         Button {
             showAssistantAttachOpen()
         } label: {
-            Image(systemName: "plus.circle")
-                .font(.system(size: 22))
-                .foregroundStyle(.tint)
+            composerIconOnly(systemName: "plus")
         }
+        .appToolbarIconButton()
         .accessibilityLabel(Text("assistant.attach-recipes"))
+        .accessibilityIdentifier(AccessibilityIdentifiers.assistantAttachmentButton)
         .disabled(availableEntries.isEmpty)
         .opacity(availableEntries.isEmpty ? 0.4 : 1)
+    }
+
+    private var voiceButton: some View {
+        Button {
+            // Voice recording — P3
+        } label: {
+            composerIconOnly(systemName: "mic")
+        }
+        .appToolbarIconButton()
+        .accessibilityLabel(Text("assistant.voice-record"))
+        .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceRecordButton)
+        .disabled(true)
+        .opacity(0.4)
     }
 
     private var sendButton: some View {
         Button {
             onSend()
         } label: {
-            Text("assistant.send")
-                .padding(.horizontal, 4)
+            if isSending {
+                ProgressView()
+                    .tint(Color.primary)
+                    .frame(width: AppToolbarStyle.iconSide, height: AppToolbarStyle.iconSide)
+                    .frame(width: AppToolbarStyle.minimumTapSide, height: AppToolbarStyle.minimumTapSide)
+            } else {
+                composerIconOnly(systemName: "paperplane")
+            }
         }
+        .appToolbarIconButton()
+        .accessibilityLabel(Text("assistant.send"))
+        .accessibilityIdentifier(AccessibilityIdentifiers.assistantSendButton)
         .disabled(!canSend)
+    }
+
+    @ViewBuilder
+    private func composerIconOnly(systemName: String) -> some View {
+        AppSymbol.toolbarImage(systemName)
+            .resizable()
+            .scaledToFit()
+            .frame(width: AppToolbarStyle.iconSide, height: AppToolbarStyle.iconSide)
+            .foregroundStyle(Color.primary)
+            .frame(width: AppToolbarStyle.minimumTapSide, height: AppToolbarStyle.minimumTapSide)
+            .contentShape(Rectangle())
     }
 
     private var canSend: Bool {
@@ -102,6 +179,15 @@ struct AssistantComposer: View {
     }
 }
 
+enum AssistantInputPlaceholder {
+    static let variantCount = 8
+
+    static func localizedVariant(index: Int) -> String {
+        let clamped = ((index % variantCount) + variantCount) % variantCount
+        return Bundle.currentLocalizedString("assistant.input-placeholder-variants.\(clamped)")
+    }
+}
+
 // MARK: - Attachment chip
 
 private struct AssistantAttachmentChip: View {
@@ -117,10 +203,11 @@ private struct AssistantAttachmentChip: View {
                 .font(.footnote)
                 .lineLimit(1)
             Button(action: onRemove) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secondary)
-                    .font(.system(size: 14))
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.primary)
             }
+            .buttonStyle(.plain)
             .accessibilityLabel(Text("assistant.remove-attached-recipe"))
         }
         .padding(.horizontal, 10)
@@ -139,64 +226,81 @@ struct AssistantRecipePicker: View {
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
 
+    private var attachableEntries: [CollectionEntry] {
+        availableEntries.filter { entry in
+            !attachments.contains { $0.recipeId == entry.id }
+        }
+    }
+
     private var filtered: [CollectionEntry] {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return Array(availableEntries.prefix(50)) }
+        guard !trimmed.isEmpty else { return Array(attachableEntries.prefix(50)) }
         let tokens = RecipeSearchUtils.tokenizeQuery(trimmed)
         guard !tokens.isEmpty else { return [] }
-        return availableEntries
+        return attachableEntries
             .filter { RecipeSearchUtils.matchesName($0.name, tokens: tokens) }
             .prefix(50)
             .map { $0 }
     }
 
-    private func isSelected(_ entry: CollectionEntry) -> Bool {
-        attachments.contains { $0.recipeId == entry.id }
-    }
-
-    private func toggle(_ entry: CollectionEntry) {
-        if let idx = attachments.firstIndex(where: { $0.recipeId == entry.id }) {
-            attachments.remove(at: idx)
-        } else if attachments.count < 10 {
-            attachments.append(
-                AssistantRecipeAttachment(
-                    recipeId: entry.id,
-                    recipeName: entry.name,
-                    recipeColor: entry.color
-                )
-            )
+    private func select(_ entry: CollectionEntry) {
+        guard attachments.count < 10 else {
+            dismiss()
+            return
         }
+        attachments.append(
+            AssistantRecipeAttachment(
+                recipeId: entry.id,
+                recipeName: entry.name,
+                recipeColor: entry.color
+            )
+        )
+        dismiss()
     }
 
     var body: some View {
         NavigationStack {
-            VStack {
+            VStack(alignment: .leading, spacing: 0) {
+                if !availableEntries.isEmpty {
+                    attachRecipesIntro
+                }
+
                 if availableEntries.isEmpty {
                     ContentUnavailableView(
                         Bundle.currentLocalizedString("assistant.no-recipes-found"),
                         systemImage: "book"
                     )
+                } else if attachableEntries.isEmpty {
+                    ContentUnavailableView(
+                        Bundle.currentLocalizedString("assistant.no-recipes-found"),
+                        systemImage: "book"
+                    )
+                } else if filtered.isEmpty {
+                    ContentUnavailableView(
+                        Bundle.currentLocalizedString("assistant.no-recipes-found"),
+                        systemImage: "magnifyingglass"
+                    )
                 } else {
                     List(filtered) { entry in
                         Button {
-                            toggle(entry)
+                            select(entry)
                         } label: {
                             HStack {
                                 Circle()
                                     .fill(Color(hex: entry.color) ?? .accentColor)
                                     .frame(width: 10, height: 10)
                                 Text(entry.name)
+                                    .appBody()
                                     .foregroundStyle(.primary)
                                 Spacer()
-                                if isSelected(entry) {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.tint)
-                                        .accessibilityHidden(true)
-                                }
                             }
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
+                        .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
                         .accessibilityIdentifier("assistant_recipe_picker_row_\(entry.id)")
                     }
+                    .listStyle(.plain)
                 }
             }
             .searchable(
@@ -204,7 +308,6 @@ struct AssistantRecipePicker: View {
                 placement: .navigationBarDrawer(displayMode: .always),
                 prompt: Text("assistant.recipe-search-placeholder")
             )
-            .localizedNavigationTitle("assistant.attach-recipes.menu-title")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("assistant.close") { dismiss() }
@@ -212,5 +315,15 @@ struct AssistantRecipePicker: View {
                 }
             }
         }
+    }
+
+    private var attachRecipesIntro: some View {
+        Text("assistant.attach-recipe")
+            .font(AppTypography.headline)
+            .foregroundStyle(.primary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
+            .padding(.top, RecipeRowLayoutMetrics.listHorizontalInset)
+            .padding(.bottom, 8)
     }
 }

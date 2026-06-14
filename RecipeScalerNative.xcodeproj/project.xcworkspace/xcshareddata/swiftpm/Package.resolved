@@ -1,5 +1,5 @@
 {
-  "originHash" : "3de18fe45cdb408e31be6e4a4b146ba1521f1fe69d6e97e937fcea56ab9f0170",
+  "originHash" : "1672f579beae788e09fe8c1b24a3fbf280c5e39d52aea5c6270d2969c482752e",
   "pins" : [
     {
       "identity" : "grdb.swift",
@@ -35,15 +35,6 @@
       "state" : {
         "revision" : "c6bfd1af48efcc9a9ad203665db12375ba6b145a",
         "version" : "4.0.8"
-      }
-    },
-    {
-      "identity" : "swift-agentation",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ertembiyik/swift-agentation.git",
-      "state" : {
-        "revision" : "401adcb94d9e58a7de7e79cbc00586c4c741897d",
-        "version" : "1.0.0"
       }
     },
     {

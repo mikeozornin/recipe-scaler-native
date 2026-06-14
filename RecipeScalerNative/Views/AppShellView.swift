@@ -107,9 +107,12 @@ struct AppShellView: View {
                     .foregroundStyle(.white)
                     .padding(14)
                     .background(Circle().fill(Color.accentColor))
+                    .compositingGroup()
+                    .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: 5)
+                    .shadow(color: .black.opacity(0.24), radius: 24, x: 0, y: 12)
             }
             .padding(.trailing, 16)
-            .padding(.bottom, 72)
+            .padding(.bottom, 64)
             .accessibilityIdentifier(AccessibilityIdentifiers.assistantFab)
             .accessibilityLabel(Text("assistant.title"))
         }

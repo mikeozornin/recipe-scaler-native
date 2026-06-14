@@ -19,8 +19,12 @@ struct AssistantSheet: View {
     @State private var loadError: String?
     @State private var streamTask: Task<Void, Never>?
     @State private var hasTriedSessionRestore = false
+    @State private var messageListContentWidth: CGFloat = 0
+    @State private var inputPlaceholderVariantIndex = Int.random(in: 0..<AssistantInputPlaceholder.variantCount)
 
     private static let newChatTimeout: TimeInterval = 60
+    private static let userMessageLeadingInset: CGFloat = 48
+    private static let messageMaxWidthFraction: CGFloat = 0.9
 
     var body: some View {
         NavigationStack {
@@ -30,6 +34,7 @@ struct AssistantSheet: View {
                     text: $input,
                     attachments: $attachments,
                     isSending: isSending,
+                    inputPlaceholderVariantIndex: inputPlaceholderVariantIndex,
                     onSend: { Task { await send() } }
                 )
                 .padding(.horizontal, 12)
@@ -38,13 +43,14 @@ struct AssistantSheet: View {
             }
             .localizedNavigationTitle("assistant.title")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("assistant.close") { dismiss() }
                         .appToolbarTextButton()
                 }
             }
             .task { await initialize() }
             .onAppear {
+                inputPlaceholderVariantIndex = Int.random(in: 0..<AssistantInputPlaceholder.variantCount)
                 // #region agent log
                 AgentSyncDebugLog.sync(
                     location: "AssistantSheet.onAppear",
@@ -70,20 +76,67 @@ struct AssistantSheet: View {
                 }
             }
             .padding(14)
+            .background {
+                GeometryReader { proxy in
+                    Color.clear.preference(
+                        key: MessageListWidthPreferenceKey.self,
+                        value: proxy.size.width
+                    )
+                }
+            }
+        }
+        .onPreferenceChange(MessageListWidthPreferenceKey.self) { width in
+            messageListContentWidth = width
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    private func userBubbleMaxWidth(for contentWidth: CGFloat) -> CGFloat {
+        guard contentWidth > 0 else { return 280 }
+        return min(
+            contentWidth * Self.messageMaxWidthFraction,
+            contentWidth - Self.userMessageLeadingInset
+        )
+    }
+
     @ViewBuilder
     private func messageBubble(for message: AssistantMessage, isLast: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let isUser = message.role == "user"
+        let bubble = messageBubbleBody(for: message, isLast: isLast, isUser: isUser)
+
+        Group {
+            if isUser {
+                HStack(alignment: .top, spacing: 0) {
+                    Spacer(minLength: Self.userMessageLeadingInset)
+                    bubble
+                        .frame(
+                            maxWidth: userBubbleMaxWidth(for: messageListContentWidth),
+                            alignment: .trailing
+                        )
+                }
+            } else {
+                bubble
+                    .frame(
+                        maxWidth: messageListContentWidth > 0
+                            ? messageListContentWidth * Self.messageMaxWidthFraction
+                            : nil,
+                        alignment: .leading
+                    )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
+    }
+
+    @ViewBuilder
+    private func messageBubbleBody(for message: AssistantMessage, isLast: Bool, isUser: Bool) -> some View {
+        VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
             Text(message.text.isEmpty && message.isStreaming
                 ? Bundle.currentLocalizedString("assistant.thinking")
                 : message.text)
                 .font(.body)
                 .foregroundStyle(.primary)
                 .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(isUser ? .trailing : .leading)
 
             AssistantMessageFooter(
                 message: message,
@@ -99,7 +152,7 @@ struct AssistantSheet: View {
         }
         .padding(10)
         .background(
-            message.role == "user"
+            isUser
                 ? Color.accentColor.opacity(0.15)
                 : Color.secondary.opacity(0.12)
         )
@@ -331,4 +384,12 @@ struct AssistantSheet: View {
 
     private static let sessionThreadIdKey = "assistant.session.threadId"
     private static let sessionLastOpenedAtKey = "assistant.session.lastOpenedAt"
+}
+
+private struct MessageListWidthPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
 }

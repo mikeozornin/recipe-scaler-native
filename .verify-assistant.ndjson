@@ -1,0 +1,3 @@
+{"message":"contentview_init","location":"ContentView.init","timestamp":1781435455550,"data":{"topic":"sync"},"sessionId":"sync-connection-native","hypothesisId":"sync"}
+{"sessionId":"sync-connection-native","location":"AssistantSheet.onAppear","hypothesisId":"sync","timestamp":1781435456307,"data":{"topic":"sync","has_thread_id":"false"},"message":"assistant_sheet_appeared"}
+{"message":"app_shell_start","location":"ContentView.swift:appShell","timestamp":1781435456384,"data":{"userId":"cfcd839f-56f2-4411-9632-7795b75f96d1","topic":"sync"},"sessionId":"sync-connection-native","hypothesisId":"sync"}

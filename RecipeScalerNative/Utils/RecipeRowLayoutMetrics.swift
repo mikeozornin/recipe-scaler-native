@@ -150,6 +150,16 @@ enum RecipeRowLayoutMetrics {
             trailing: listHorizontalInset
         )
     }
+
+    /// "New collection" row: top inset matches horizontal inset (web parity).
+    static var newCollectionRowInsets: EdgeInsets {
+        EdgeInsets(
+            top: listHorizontalInset,
+            leading: listHorizontalInset,
+            bottom: 0,
+            trailing: listHorizontalInset
+        )
+    }
 }
 
 import SwiftUI

@@ -148,7 +148,7 @@ struct CollectionAssignSheet: View {
             }
             .buttonStyle(.plain)
             .tint(.primary)
-            .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
+            .listRowInsets(RecipeRowLayoutMetrics.newCollectionRowInsets)
         }
     }
 

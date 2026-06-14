@@ -380,7 +380,7 @@ struct CollectionsRootView: View {
             }
             .buttonStyle(.plain)
             .tint(.primary)
-            .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
+            .listRowInsets(RecipeRowLayoutMetrics.newCollectionRowInsets)
             .accessibilityIdentifier(AccessibilityIdentifiers.collectionsNewRow)
         }
     }
