@@ -101,7 +101,7 @@
 - [x] T025 Создать `RecipeScalerNative/Routing/DeepLinkRouter.swift` (см. plan Фаза 5)
 - [x] T026 Расширить `RecipeScalerNative/RecipeScalerNativeApp.swift` — добавить `.onOpenURL` в `WindowGroup`
 - [x] T027 Расширить `RecipeScalerNative/Views/AppShellView.swift` — `.onAppear` + `.onReceive(.openRecipeRequested)` для потребления pending id
-- [ ] T028 [US6] Создать `RecipeScalerNativeTests/DeepLinkRouterTests.swift` — 5 кейсов (см. plan Фаза 7)
+- [x] T028 [US6] Создать `RecipeScalerNativeTests/DeepLinkRouterTests.swift` — 8 кейсов: valid URL, uppercase UUID → lowercase, wrong scheme, wrong host, non-UUID path, clear, consumePendingRecipeId legacy path (×2)
 
 **Контрольная точка**: `xcrun simctl openurl booted recipe-scaler://recipe/test-id` открывает main app и пытается показать рецепт (fallback на missing в `YDocRecipeDetailView`)
 

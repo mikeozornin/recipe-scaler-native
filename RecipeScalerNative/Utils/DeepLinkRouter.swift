@@ -53,7 +53,7 @@ final class DeepLinkRouter {
               url.host == "recipe",
               let id = url.pathComponents.dropFirst().first,
               !id.isEmpty,
-              let recipeId = UUID(uuidString: id)?.uuidString else { return }
+              let recipeId = UUID(uuidString: id)?.uuidString.lowercased() else { return }
         shared.handle(.openRecipe(recipeId: recipeId))
     }
 

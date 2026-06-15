@@ -933,6 +933,7 @@ final class RecipeScalerNativeTests: XCTestCase {
         await manager.setUserId(userId)
 
         let recipeId = try await manager.createRecipe(name: "Fresh pasta")
+        XCTAssertEqual(recipeId, recipeId.lowercased(), "recipe ids must be lowercase (web parity)")
 
         let entries = try await manager.readCollectionEntries()
         let entry = try XCTUnwrap(entries.first { $0.id == recipeId })

@@ -17,7 +17,7 @@
 
 - `docKey`: `{userId}:collection`
 - `recipeId` (queue row): `"collection"`
-- On create recipe: also enqueue `{userId}:recipe:{id}` with `recipeId` = UUID
+- On create recipe: also enqueue `{userId}:recipe:{id}` with `recipeId` = UUID (lowercase)
 
 ## Local write → sync
 

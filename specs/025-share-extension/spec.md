@@ -159,13 +159,13 @@ Localization через `Bundle.module` (framework resources).
 </array>
 ```
 
-Формат: `recipe-scaler://recipe/{recipeId}`.
+Формат: `recipe-scaler://recipe/{recipeId}`. `{recipeId}` — UUID в нижнем регистре (как в URL веб-клиента).
 
 ### FR-SE-008 — DeepLinkRouter
 
 В main app создать `Routing/DeepLinkRouter.swift`:
 
-- `handle(_ url: URL)`: парсит `recipe-scaler://recipe/{id}`, пишет pending id в `UserDefaults.standard` + post уведомление.
+- `handle(_ url: URL)`: парсит `recipe-scaler://recipe/{id}`, валидирует UUID и **нормализует id в нижний регистр**, пишет pending id в `UserDefaults.standard` + post уведомление.
 - Поддержка холодного старта: `AppShellView.onAppear` читает pending id и пушит в `recipesPath`.
 - Поддержка тёплого старта: `AppShellView.onReceive(.openRecipeRequested)` обрабатывает уведомление.
 

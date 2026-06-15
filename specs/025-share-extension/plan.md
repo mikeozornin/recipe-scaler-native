@@ -429,7 +429,8 @@ enum DeepLinkRouter {
         guard url.scheme == "recipe-scaler" else { return }
         guard url.host == "recipe" else { return }
         guard let id = url.pathComponents.dropFirst().first, !id.isEmpty else { return }
-        UserDefaults.standard.set(id, forKey: pendingRecipeIdKey)
+        guard let recipeId = UUID(uuidString: id)?.uuidString.lowercased() else { return }
+        UserDefaults.standard.set(recipeId, forKey: pendingRecipeIdKey)
         NotificationCenter.default.post(name: .openRecipeRequested, object: nil)
     }
 
@@ -545,6 +546,7 @@ UDID — из `xcrun simctl list devices available | rg 'iPhone 17'`.
 `RecipeScalerNativeTests/DeepLinkRouterTests.swift`:
 
 - `test_handleValidRecipeURL_storesPendingId` — `recipe-scaler://recipe/abc-123` пишет pending id.
+- `test_uppercaseUUID_isAcceptedAndNormalized` — uppercase UUID в URL нормализуется в lowercase.
 - `test_handleWrongScheme_ignored` — `https://recipe/abc` игнорируется.
 - `test_handleWrongHost_ignored` — `recipe-scaler://other/abc` игнорируется.
 - `test_handleEmptyId_ignored` — `recipe-scaler://recipe/` игнорируется.

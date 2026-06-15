@@ -747,10 +747,11 @@ actor DocumentManager {
 
     /// Creates a v3 recipe document and collection entry (web `createRecipe` parity).
     func createRecipe(
-        recipeId: String = UUID().uuidString,
+        recipeId rawRecipeId: String = UUID().uuidString.lowercased(),
         name: String,
         color: String = defaultNewRecipeColor
     ) async throws -> String {
+        let recipeId = rawRecipeId.lowercased()
         guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
         let touchedAt = Self.isoTimestamp()
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
