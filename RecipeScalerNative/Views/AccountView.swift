@@ -51,7 +51,7 @@ struct AccountView: View {
                 publicRecipesSection
                 telegramSection
                 preferencesSection
-                // dataSection
+                dataSection
 
                 if let statusMessage = viewModel.statusMessage {
                     Section {
@@ -364,7 +364,7 @@ struct AccountView: View {
     private var dataSection: some View {
         Section {
             Text("account.data.coming-soon")
-                .font(AppTypography.subheadline)
+                .appBody()
                 .foregroundStyle(.secondary)
         } header: {
             AppSectionHeader("account.section.data")
@@ -381,13 +381,15 @@ struct AccountView: View {
                     Text(verbatim: "Export sync debug log")
                         .appBody()
                 }
-                Text(url.lastPathComponent)
-                    .appFootnote()
-                    .foregroundStyle(.secondary)
             }
         } header: {
             Text(verbatim: "Developer")
+                .font(AppTypography.footnote)
+                .foregroundStyle(Color(.secondaryLabel))
+                .tracking(AppSectionHeader.letterSpacing)
+                .textCase(.uppercase)
         }
+        .appListSectionHeaderStyle()
     }
     #endif
 
