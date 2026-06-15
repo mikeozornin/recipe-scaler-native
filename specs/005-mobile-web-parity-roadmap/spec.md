@@ -28,7 +28,7 @@
 | 013 | Account settings | 🟢 (export → 020) |
 | 014 | Синк таймеров + mobile panel | ✅ |
 | 015/021 | Assistant | 🟢 (actions → 021) |
-| 016 | Image upload | 🟢 (URL upload UI ❌) |
+| 016 | Image upload | 🟢 |
 | 023 | Push APNs | 🟡 in progress |
 | 024 | Список покупок + share/export + вкладка Shopping | ✅ (2026-06-04) |
 | 025 | Share/Action Extension | 🟡 ~85% |
