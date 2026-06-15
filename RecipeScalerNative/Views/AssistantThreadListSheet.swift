@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct AssistantThreadListSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
     let threads: [AssistantThreadDTO]
     let activeThreadId: String?
     let deletingThreadId: String?
@@ -18,7 +16,6 @@ struct AssistantThreadListSheet: View {
     let onDelete: (String) -> Void
 
     @State private var searchQuery = ""
-    @FocusState private var isSearchFocused: Bool
 
     private var filteredThreads: [AssistantThreadDTO] {
         AssistantThreadSearch.filteredThreads(threads, query: searchQuery)
@@ -30,45 +27,14 @@ struct AssistantThreadListSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                searchField
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-
-                Divider()
-
-                threadList
-            }
-            .localizedNavigationTitle("assistant.threads-title")
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("assistant.close") { dismiss() }
-                        .appToolbarTextButton()
-                }
-            }
-            .onAppear {
-                isSearchFocused = true
-            }
-            .accessibilityIdentifier(AccessibilityIdentifiers.assistantThreadPanel)
+            threadList
+                .searchable(
+                    text: $searchQuery,
+                    placement: .navigationBarDrawer(displayMode: .always),
+                    prompt: Text("assistant.thread-search-placeholder")
+                )
+                .accessibilityIdentifier(AccessibilityIdentifiers.assistantThreadPanel)
         }
-    }
-
-    private var searchField: some View {
-        HStack(spacing: 8) {
-            AppSymbol.image("magnifyingglass")
-                .foregroundStyle(.secondary)
-                .frame(width: 20, height: 20)
-            TextField("", text: $searchQuery, prompt: Text("assistant.thread-search-placeholder"))
-                .font(AppTypography.body)
-                .textFieldStyle(.plain)
-                .focused($isSearchFocused)
-                .accessibilityIdentifier(AccessibilityIdentifiers.assistantThreadSearchInput)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .frame(minHeight: 44, alignment: .leading)
-        .background(Color.secondary.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     @ViewBuilder
