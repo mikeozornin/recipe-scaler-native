@@ -88,7 +88,7 @@ struct DiscoverRecipeView: View {
                     }
                     .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
                 } else if isLoading {
-                    ProgressView("discover.recipe.loading")
+                    ProgressView(Bundle.currentLocalizedString("discover.recipe.loading"))
                         .frame(maxWidth: .infinity)
                         .padding(.top, 60)
                 } else if let loadError {
