@@ -328,13 +328,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recipe Scaler JSON or ZIP"
+            "value" : "Recipe Scaler JSON/ZIP, Paprika (.paprikarecipes), or Crouton (.crumb)"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "JSON или ZIP Recipe Scaler"
+            "value" : "JSON/ZIP Recipe Scaler, Paprika (.paprikarecipes) или Crouton (.crumb)"
           }
         }
       }
@@ -424,6 +424,22 @@
         }
       }
     },
+    "account.data.import.preparing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подготовка…"
+          }
+        }
+      }
+    },
     "account.data.import.progress %d %d" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -454,23 +470,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Не удалось импортировать «%1$@»: %2$@"
-          }
-        }
-      }
-    },
-    "account.data.import.section" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Import"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Импорт"
           }
         }
       }

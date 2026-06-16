@@ -6,6 +6,11 @@ struct DataManagementView: View {
     @EnvironmentObject private var syncService: YjsSyncService
     @Environment(\.dismiss) private var dismiss
 
+    enum ImportOutcome {
+        case native(NativeImportResult)
+        case thirdParty(ThirdPartyImportResult)
+    }
+
     @State private var isExporting = false
     @State private var exportProgress: (completed: Int, total: Int)?
     @State private var exportedFileURL: URL?
@@ -13,7 +18,7 @@ struct DataManagementView: View {
 
     @State private var isImporting = false
     @State private var importProgress: (completed: Int, total: Int)?
-    @State private var importResult: NativeImportResult?
+    @State private var importOutcome: ImportOutcome?
     @State private var importError: String?
     @State private var importTask: Task<Void, Never>?
     @State private var importStopRequested = false
@@ -25,7 +30,7 @@ struct DataManagementView: View {
     }
 
     private var showsImportStatus: Bool {
-        isImporting || importResult != nil
+        isImporting || importOutcome != nil
     }
 
     var body: some View {
@@ -40,10 +45,6 @@ struct DataManagementView: View {
                 if showsImportStatus {
                     importStatusContent
                 }
-            } header: {
-                if showsImportStatus {
-                    AppSectionHeader("account.data.import.section")
-                }
             }
             .appListSectionHeaderStyle()
         }
@@ -53,9 +54,7 @@ struct DataManagementView: View {
         .navigationBarTitleDisplayMode(.inline)
         .fileImporter(
             isPresented: $isShowingFileImporter,
-            allowedContentTypes: [
-                .json, .zip, .data
-            ],
+            allowedContentTypes: RecipeImportContentTypes.supported,
             allowsMultipleSelection: false
         ) { result in
             handleFileImportResult(result)
@@ -141,7 +140,23 @@ struct DataManagementView: View {
 
     @ViewBuilder
     private var importStatusContent: some View {
-        if let (completed, total) = importProgress, isImporting {
+        if isImporting && importProgress == nil {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("account.data.import.preparing")
+                        .appBody()
+                }
+
+                Button(role: .destructive) {
+                    stopImport()
+                } label: {
+                    Text("account.data.import.stop")
+                        .appBody()
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else if let (completed, total) = importProgress, isImporting {
             VStack(alignment: .leading, spacing: 12) {
                 FractionProgressView(
                     completed: completed,
@@ -157,44 +172,72 @@ struct DataManagementView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-        } else if let result = importResult {
+        } else if let outcome = importOutcome {
             VStack(alignment: .leading, spacing: 8) {
-                if result.wasStopped {
-                    Text("account.data.import.stopped")
-                        .appBody()
-                        .foregroundStyle(.secondary)
-                }
-                if result.importedCount > 0 {
-                    Text(verbatim: formattedMessage(key: "account.data.import.success %d", count: result.importedCount))
-                        .appBody()
-                }
-                if result.foldersImported > 0 {
-                    Text(verbatim: formattedMessage(key: "account.data.import.folders %d", count: result.foldersImported))
-                        .appFootnote()
-                        .foregroundStyle(.secondary)
-                }
-                if !result.warnings.isEmpty {
-                    ForEach(result.warnings, id: \.self) { warning in
-                        Text(warning)
-                            .appFootnote()
-                            .foregroundStyle(.orange)
-                    }
-                }
-                if !result.errors.isEmpty {
-                    ForEach(result.errors, id: \.self) { error in
-                        Text(error)
-                            .appFootnote()
-                            .foregroundStyle(.red)
-                    }
+                switch outcome {
+                case let .native(result):
+                    nativeResultRows(result)
+                case let .thirdParty(result):
+                    thirdPartyResultRows(result)
                 }
                 Button {
-                    importResult = nil
+                    importOutcome = nil
                 } label: {
                     Text("common.close")
                         .appBody()
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private func nativeResultRows(_ result: NativeImportResult) -> some View {
+        if result.wasStopped {
+            Text("account.data.import.stopped")
+                .appBody()
+                .foregroundStyle(.secondary)
+        }
+        if result.importedCount > 0 {
+            Text(verbatim: formattedMessage(key: "account.data.import.success %d", count: result.importedCount))
+                .appBody()
+        }
+        if result.foldersImported > 0 {
+            Text(verbatim: formattedMessage(key: "account.data.import.folders %d", count: result.foldersImported))
+                .appFootnote()
+                .foregroundStyle(.secondary)
+        }
+        ForEach(result.warnings, id: \.self) { warning in
+            Text(warning)
+                .appFootnote()
+                .foregroundStyle(.orange)
+        }
+        ForEach(result.errors, id: \.self) { error in
+            Text(error)
+                .appFootnote()
+                .foregroundStyle(.red)
+        }
+    }
+
+    @ViewBuilder
+    private func thirdPartyResultRows(_ result: ThirdPartyImportResult) -> some View {
+        let imported = result.importedRecipeIds.count
+        if imported > 0 {
+            Text(verbatim: formattedMessage(key: "account.data.import.success %d", count: imported))
+                .appBody()
+        }
+        if let photoWarning = ThirdPartyImportErrorLocalizer.photoWarningMessage(for: result) {
+            Text(photoWarning)
+                .appFootnote()
+                .foregroundStyle(.orange)
+        }
+        ForEach(Array(result.failed.enumerated()), id: \.offset) { _, failure in
+            Text(verbatim: ThirdPartyImportErrorLocalizer.localizedFailure(
+                fileName: failure.fileName,
+                error: failure.error
+            ))
+            .appFootnote()
+            .foregroundStyle(.red)
         }
     }
 
@@ -239,12 +282,11 @@ struct DataManagementView: View {
         importStopRequested = false
 
         isImporting = true
-        importResult = nil
+        importOutcome = nil
         importError = nil
         importProgress = nil
 
         let accessed = url.startAccessingSecurityScopedResource()
-        let service = NativeExportImportService(syncService: syncService)
 
         importTask = Task { @MainActor in
             defer {
@@ -255,16 +297,30 @@ struct DataManagementView: View {
             }
 
             do {
-                let result = try await service.importFile(
-                    url: url,
-                    isOnline: isOnline,
-                    shouldStop: { importStopRequested }
-                ) { completed, total in
-                    importProgress = (completed, total)
+                if NativeExportImportService.isNativeFormat(url: url) {
+                    let nativeService = NativeExportImportService(syncService: syncService)
+                    let result = try await nativeService.importFile(
+                        url: url,
+                        isOnline: isOnline,
+                        shouldStop: { importStopRequested }
+                    ) { completed, total in
+                        importProgress = (completed, total)
+                    }
+                    importOutcome = .native(result)
+                } else {
+                    let service = ThirdPartyRecipeImportService(syncService: syncService)
+                    let result = try await service.importFile(
+                        url: url,
+                        isOnline: isOnline
+                    ) { completed, total in
+                        importProgress = (completed, total)
+                    }
+                    importOutcome = .thirdParty(result)
                 }
-                importResult = result
             } catch let error as NativeImportError {
                 importError = error.localizedDescription
+            } catch let error as ThirdPartyImportError {
+                importError = ThirdPartyImportErrorLocalizer.localize(error)
             } catch {
                 if !importStopRequested {
                     importError = error.localizedDescription

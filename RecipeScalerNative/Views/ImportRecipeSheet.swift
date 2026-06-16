@@ -300,21 +300,13 @@ struct ImportRecipeSheet: View {
     }
 
     private static var importFileTypes: [UTType] {
-        var types: [UTType] = [.zip, .data, .plainText, .json]
-        // Markdown: `.md` — falls under public.text but `.plainText` already
-        // covers it; we register the explicit extension as a fallback in case
-        // the system does not have a `net.daringfireball.markdown` UTType.
+        var types = RecipeImportContentTypes.supported
+        // Plain text and markdown drive the server-side text-import pipeline
+        // (Spec 010 US7) and are intentionally absent from the shared helper
+        // because Profile import does not support text mode.
+        types.append(.plainText)
         if let markdown = UTType(filenameExtension: "md") {
             types.append(markdown)
-        }
-        if let paprikaArchive = UTType(filenameExtension: "paprikarecipes") {
-            types.append(paprikaArchive)
-        }
-        if let paprikaSingle = UTType(filenameExtension: "paprikarecipe") {
-            types.append(paprikaSingle)
-        }
-        if let crumb = UTType(filenameExtension: "crumb") {
-            types.append(crumb)
         }
         return types
     }

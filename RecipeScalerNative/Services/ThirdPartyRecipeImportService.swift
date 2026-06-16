@@ -167,4 +167,15 @@ enum ThirdPartyImportErrorLocalizer {
         let template = Bundle.currentLocalizedString("import.third-party-progress")
         return String(format: template, locale: AppLanguagePreference.current.locale, completed, total)
     }
+
+    static func localizedFailure(fileName: String, error: ThirdPartyImportError) -> String {
+        let template = Bundle.currentLocalizedString("account.data.import.recipe-failed %@ %@")
+        let reason = localize(error)
+        return String(
+            format: template,
+            locale: AppLanguagePreference.current.locale,
+            fileName,
+            reason
+        )
+    }
 }

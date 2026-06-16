@@ -267,6 +267,7 @@
 		A027027000006 /* ThirdPartyFormatDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000106 /* ThirdPartyFormatDetector.swift */; };
 		A027027000007 /* ShareContentClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000107 /* ShareContentClassifier.swift */; };
 		A027027000008 /* ThirdPartyRecipeImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000108 /* ThirdPartyRecipeImportService.swift */; };
+		A027028000001 /* RecipeImportContentTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027028000101 /* RecipeImportContentTypes.swift */; };
 		A027027000009 /* DescriptionXmlFragmentWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000109 /* DescriptionXmlFragmentWriter.swift */; };
 		A029031000090 /* RecipeDescriptionXmlFragmentWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000190 /* RecipeDescriptionXmlFragmentWriter.swift */; };
 		A027027000010 /* CroutonRecipeParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000110 /* CroutonRecipeParserTests.swift */; };
@@ -644,6 +645,7 @@
 		A027027000106 /* ThirdPartyFormatDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Import/ThirdParty/ThirdPartyFormatDetector.swift; sourceTree = "<group>"; };
 		A027027000107 /* ShareContentClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/ShareContentClassifier.swift; sourceTree = "<group>"; };
 		A027027000108 /* ThirdPartyRecipeImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThirdPartyRecipeImportService.swift; sourceTree = "<group>"; };
+		A027028000101 /* RecipeImportContentTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Import/ThirdParty/RecipeImportContentTypes.swift; sourceTree = "<group>"; };
 		A027027000109 /* DescriptionXmlFragmentWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionXmlFragmentWriter.swift; sourceTree = "<group>"; };
 		A029031000190 /* RecipeDescriptionXmlFragmentWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDescriptionXmlFragmentWriter.swift; sourceTree = "<group>"; };
 		A027027000110 /* CroutonRecipeParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CroutonRecipeParserTests.swift; sourceTree = "<group>"; };
@@ -1021,6 +1023,7 @@
 				A027027000104 /* PaprikaRecipeParser.swift */,
 				A027027000105 /* CroutonRecipeParser.swift */,
 				A027027000106 /* ThirdPartyFormatDetector.swift */,
+				A027028000101 /* RecipeImportContentTypes.swift */,
 				A027027000107 /* ShareContentClassifier.swift */,
 				A029031000107 /* Export */,
 				6A46C39B025B41C69FD12A6A /* ImportErrorLocalizer.swift */,
@@ -1569,6 +1572,7 @@
 				A027027000005 /* CroutonRecipeParser.swift in Sources */,
 				A027027000006 /* ThirdPartyFormatDetector.swift in Sources */,
 				A027027000007 /* ShareContentClassifier.swift in Sources */,
+				A027028000001 /* RecipeImportContentTypes.swift in Sources */,
 				A029031000001 /* NativeFormatVersion.swift in Sources */,
 				A029031000002 /* NativeFormatTypes.swift in Sources */,
 				A029031000003 /* NativeFormatDetector.swift in Sources */,
