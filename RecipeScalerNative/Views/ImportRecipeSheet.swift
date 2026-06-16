@@ -433,9 +433,15 @@ struct ImportRecipeSheet: View {
                     return
                 }
 
+                if let photoWarning = ThirdPartyImportErrorLocalizer.photoWarningMessage(for: importResult) {
+                    errorMessage = photoWarning
+                }
+
                 let result = ImportRecipesResult(recipeIds: importResult.importedRecipeIds)
                 onImport(result)
-                dismiss()
+                if errorMessage == nil {
+                    dismiss()
+                }
             }
         } catch let error as ThirdPartyImportError {
             errorMessage = ThirdPartyImportErrorLocalizer.localize(error)

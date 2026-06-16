@@ -52,7 +52,7 @@
    - Regex prefix: `^([\d.,/\s]+(?:g|kg|ml|l|oz|lb|cup|cups|tbsp|tsp|шт\.?)?)\s+(.+)$` (case-insensitive) → `amount`, `name`.
    - Иначе: `name = line`, `amount = ""`.
 3. Для строки с количеством: `ThirdPartyIngredientAmountSplitter` разделяет combined amount (`"200 g"`) → `amount` = `"200"`, `unit` = `"g"`.
-4. Y.Map: `id` (UUID, lowercase), `name`, `amount` (число), `originalAmount` = `amount`, `unit`, `order` = 1-based index.
+4. Y.Map: `id` (UUID, lowercase), `name` (если `unit` непустой — `"{name}, {unit}"`, как server import), `amount` (число), `originalAmount` = `amount`, `unit`, `order` = 1-based index.
 
 ### 1.5 Directions → description
 
@@ -104,7 +104,7 @@
 
 | Crouton | RS ingredient map |
 |---------|-------------------|
-| `ingredient.name` | `name` |
+| `ingredient.name` | `name` (если `unit` непустой — `"{name}, {unit}"`) |
 | `quantity.amount` | `amount` (numeric string) |
 | `quantity.quantityType` | `unit` (suffix, см. таблицу ниже) |
 | `order` | `order` (1-based) |

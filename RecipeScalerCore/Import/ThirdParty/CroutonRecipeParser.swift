@@ -100,8 +100,11 @@ public enum CroutonRecipeParser {
         case "OUNCES": unit = "oz"
         case "POUNDS": unit = "lb"
         case "CUPS": unit = "cup"
+        case "CUP": unit = "cup"
         case "TABLESPOONS": unit = "tbsp"
+        case "TABLESPOON": unit = "tbsp"
         case "TEASPOONS": unit = "tsp"
+        case "TEASPOON": unit = "tsp"
         case "PIECES": unit = ""
         case "ITEM": unit = ""
         default: unit = type.isEmpty ? "" : type.lowercased()

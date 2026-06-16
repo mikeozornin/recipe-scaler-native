@@ -152,6 +152,34 @@ final class CroutonRecipeParserTests: XCTestCase {
         XCTAssertTrue(draft.imageData?.count ?? 0 <= ThirdPartyImportLimits.maxImageBytes)
     }
 
+    /// Debug session 6eea62: Crouton uses singular quantityType values (CUP, TEASPOON).
+    func testRealExportParsesIngredientUnits() throws {
+        let url = try fixtureURL(named: "crouton-real-export", ext: "zip")
+        let entries = try ThirdPartyFormatDetector.enumerateRecipeEntries(
+            url: url,
+            format: .croutonArchive
+        )
+        guard let cookieEntry = entries.first(where: { $0.fileName.lowercased().contains("chocolate chip") }) else {
+            throw NSError(domain: "CroutonRecipeParserTests", code: 99)
+        }
+        let draft = try CroutonRecipeParser.parse(
+            jsonData: cookieEntry.data,
+            fileName: cookieEntry.fileName,
+            sourceFormat: .croutonArchive
+        )
+        let butter = draft.ingredients.first { $0.name.contains("butter") }
+        let flour = draft.ingredients.first { $0.name.contains("flour") }
+        let eggs = draft.ingredients.first { $0.name.contains("eggs") }
+        XCTAssertEqual(butter?.amount, "1")
+        XCTAssertEqual(butter?.unit, "cup")
+        XCTAssertEqual(flour?.amount, "3")
+        XCTAssertEqual(flour?.unit, "cup")
+        XCTAssertEqual(eggs?.amount, "2")
+        XCTAssertEqual(eggs?.unit, "")
+        let vanilla = draft.ingredients.first { $0.name.contains("vanilla") }
+        XCTAssertEqual(vanilla?.unit, "tsp")
+    }
+
     func testRealExportHandlesNonASCIIRecipe() throws {
         let url = try fixtureURL(named: "crouton-real-export", ext: "zip")
         let entries = try ThirdPartyFormatDetector.enumerateRecipeEntries(

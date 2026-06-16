@@ -143,6 +143,26 @@ enum ThirdPartyImportErrorLocalizer {
         return String(format: template, locale: AppLanguagePreference.current.locale, imported, failedCount)
     }
 
+    static func photoWarningMessage(for result: ThirdPartyImportResult) -> String? {
+        if result.photosSkippedOffline > 0 {
+            let template = Bundle.currentLocalizedString("import.third-party-photo-skipped-offline")
+            return String(
+                format: template,
+                locale: AppLanguagePreference.current.locale,
+                result.photosSkippedOffline
+            )
+        }
+        if result.photosFailed > 0 {
+            let template = Bundle.currentLocalizedString("import.third-party-photo-failed")
+            return String(
+                format: template,
+                locale: AppLanguagePreference.current.locale,
+                result.photosFailed
+            )
+        }
+        return nil
+    }
+
     static func progressMessage(completed: Int, total: Int) -> String {
         let template = Bundle.currentLocalizedString("import.third-party-progress")
         return String(format: template, locale: AppLanguagePreference.current.locale, completed, total)

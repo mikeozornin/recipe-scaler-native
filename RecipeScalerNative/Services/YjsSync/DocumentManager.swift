@@ -842,9 +842,11 @@ actor DocumentManager {
                 unit = split.unit
             }
             let hasQuantity = !amount.isEmpty
+            let trimmedName = ingredient.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let storedName = unit.isEmpty ? trimmedName : "\(trimmedName), \(unit)"
             let row = IngredientData(
                 id: UUID().uuidString,
-                name: ingredient.name,
+                name: storedName,
                 amount: amount,
                 originalAmount: amount,
                 unit: unit,

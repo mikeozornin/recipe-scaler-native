@@ -5118,6 +5118,23 @@
         }
       }
     },
+    "import.third-party-photo-failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d photo(s) could not be uploaded"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d фото не удалось загрузить"
+          }
+        }
+      }
+    },
     "import.third-party-progress" : {
       "extractionState" : "stale",
       "localizations" : {
