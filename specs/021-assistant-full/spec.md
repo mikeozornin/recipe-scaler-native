@@ -2,7 +2,7 @@
 
 **Ветка**: `021-assistant-full`  
 **Дата**: 2026-06-03  
-**Статус**: 🟡 Почти готово (аудит 2026-06-15) — 6/7 US в коде; остаток: подтверждаемые actions + sanitization audit  
+**Статус**: 🟢 Готово (аудит 2026-06-15, US5 закрыт 2026-06-15) — 7/7 US в коде. Подтверждаемые actions: UI только через `interactiveWidget` (quick replies), как на web; `pendingAction` в metadata — серверный gate + подписи user bubble. Sanitization — архитектурно (клиент шлёт только `recipeId`, сервер очищает контент)  
 **Зависимости**: `015-assistant` (основной scope в production), `013` (account), recipe context 001/002  
 **Эталон**: `assistant-sheet.tsx`, PRD § Assistant
 
@@ -16,7 +16,7 @@
 | US2 recipe attachment | ✅ IDs на сервер; client HTML sanitization — не найдена |
 | US3 widgets | ✅ |
 | US4 voice | ✅ |
-| US5 actions | ❌ `AssistantPendingAction` в моделях, UI подтверждения нет |
+| US5 actions | ✅ quick replies из `interactiveWidget` (web parity); submit как user message с `confirmValue`/`cancelValue`; `pendingAction` — metadata для gate и подписи bubble |
 | US6 follow-up | ✅ |
 | US7 threads | ✅ |
 
@@ -60,13 +60,13 @@
 
 **Done (015)** — инкрементальное обновление в `AssistantSheet`.
 
-### FR-021-002 — Sanitization контекста
+### FR-021-002 — Sanitization контекста ✅
 
-Attachment-контент — не в system prompt; очистка HTML/URL до отправки.
+Архитектурно: клиент (`AssistantAPI.stream`) шлёт только `recipeId` (`attachedRecipeIds`) — никогда не встраивает ingredients/instructions в system prompt. Серверная сторона (`recipe-scaler-web` orchestrator) вытягивает recipe plain-text и фильтрует HTML/URL. На iOS доп. очистка не нужна.
 
-### FR-021-003 — Widgets / actions
+### FR-021-003 — Widgets / actions ✅
 
-Widgets **done (015)**. Actions — маппинг на `YjsSyncService` / shopping **todo**.
+Widgets — done (015). Actions — `pendingAction` в metadata (серверный gate); UI подтверждения только `interactiveWidget` (quick replies), как `assistant-message-list.tsx`. Сабмит — как user message с `confirmValue`/`cancelValue`.
 
 ### FR-021-004 — i18n
 
@@ -82,7 +82,7 @@ Widgets **done (015)**. Actions — маппинг на `YjsSyncService` / shopp
 - **SC-001**: ✅ (attachment по recipeId).
 - **SC-002**: ✅ инкрементальный стрим.
 - **SC-003**: ✅ widgets.
-- **SC-004**: ❌ actions — todo.
+- **SC-004**: ✅ actions — `interactiveWidget` + `submitWidgetValue` (US5, web parity 2026-06-16).
 
 ## Артефакты
 

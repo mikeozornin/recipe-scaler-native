@@ -28,15 +28,58 @@ struct AssistantMessageFooter: View {
               !message.isStreaming,
               isLastMessage,
               !isSending,
-              !widgetSubmitted else { return nil }
+              !widgetSubmitted else {
+            // #region agent log
+            AssistantPendingActionDebugTrace.write(
+                hypothesisId: "H1A",
+                location: "AssistantMessageFooter.widget:gateRejected",
+                message: "widget gate rejected",
+                data: [
+                    "msg_id": message.id,
+                    "role": message.role,
+                    "isStreaming": message.isStreaming.description,
+                    "isLastMessage": isLastMessage.description,
+                    "isSending": isSending.description,
+                    "widgetSubmitted": widgetSubmitted.description,
+                    "metadata_hasInteractiveWidget": (message.metadata?.interactiveWidget != nil).description
+                ]
+            )
+            // #endregion
+            return nil
+        }
+        // #region agent log
+        AssistantPendingActionDebugTrace.write(
+            hypothesisId: "H1A",
+            location: "AssistantMessageFooter.widget:gatePassed",
+            message: "widget gate passed",
+            data: [
+                "msg_id": message.id,
+                "hasWidget": (message.metadata?.interactiveWidget != nil).description
+            ]
+        )
+        // #endregion
         return message.metadata?.interactiveWidget
     }
 
     var body: some View {
-        if let widget {
-            AssistantWidgetView(widget: widget) { value, attachment in
-                widgetSubmitted = true
-                onWidgetSubmit(value, attachment)
+        VStack(alignment: .leading, spacing: 8) {
+            if let widget {
+                // #region agent log
+                let _ = AssistantPendingActionDebugTrace.write(
+                    hypothesisId: "H1A",
+                    location: "AssistantMessageFooter.body:renderedWidget",
+                    message: "footer rendered widget branch (web parity: pendingAction is server-only)",
+                    data: [
+                        "msg_id": message.id,
+                        "widgetId": widget.id,
+                        "pendingActionAlsoPresent": (message.metadata?.pendingAction != nil).description
+                    ]
+                )
+                // #endregion
+                AssistantWidgetView(widget: widget) { value, attachment in
+                    widgetSubmitted = true
+                    onWidgetSubmit(value, attachment)
+                }
             }
         }
     }
@@ -56,6 +99,30 @@ enum AssistantMessageFollowUps {
             return []
         }
         return Array((message.metadata?.followUpSuggestions ?? []).prefix(3))
+    }
+}
+
+// MARK: - Presentation gates (testable; mirrors `AssistantMessageFooter.widget`)
+
+enum AssistantMessageFooterPresentation {
+    /// Web parity: only `interactiveWidget` is rendered; `pendingAction` is a server gate only.
+    static func shouldRenderWidget(
+        role: String,
+        isStreaming: Bool,
+        isLastMessage: Bool,
+        isSending: Bool,
+        widgetSubmitted: Bool,
+        metadata: AssistantMessageMetadata?
+    ) -> Bool {
+        guard role == "assistant",
+              !isStreaming,
+              isLastMessage,
+              !isSending,
+              !widgetSubmitted,
+              metadata?.interactiveWidget != nil else {
+            return false
+        }
+        return true
     }
 }
 
@@ -101,6 +168,13 @@ enum AssistantMessageCopyText {
             return message.text
         }
 
+        // Web parity (`assistant-message-list.tsx:getResolvedUserMessageText`): if this user message
+        // resolved a pending action via the widget, show the friendlier confirmLabel/cancelLabel
+        // (e.g. "Удалить") instead of the raw value (e.g. "confirm_delete").
+        if let resolved = Self.resolvedWidgetActionText(for: message) {
+            return resolved
+        }
+
         let attachments = message.metadata?.attachments ?? []
         guard !attachments.isEmpty else {
             return message.text
@@ -124,6 +198,99 @@ enum AssistantMessageCopyText {
         }
 
         return message.text
+    }
+
+    /// Mirrors web `getResolvedUserMessageText` — returns a non-nil label when the user message
+    /// was produced by tapping a confirmation widget (server marks it with `actionResolution.source == "widget"`).
+    private static func resolvedWidgetActionText(for message: AssistantMessage) -> String? {
+        let metadata = message.metadata
+        let pendingAction = metadata?.pendingAction
+        let resolution = metadata?.actionResolution
+        // #region agent log
+        AssistantPendingActionDebugTrace.write(
+            hypothesisId: "H2A",
+            location: "AssistantMessageCopyText.resolvedWidgetActionText:entry",
+            message: "checking user bubble resolution",
+            data: [
+                "msg_id": message.id,
+                "msg_text": message.text,
+                "hasMetadata": (metadata != nil).description,
+                "hasPendingAction": (pendingAction != nil).description,
+                "hasActionResolution": (resolution != nil).description,
+                "actionResolutionSource": resolution?.source ?? "nil",
+                "confirmValue": pendingAction?.confirmValue ?? "nil",
+                "cancelValue": pendingAction?.cancelValue ?? "nil",
+                "confirmLabel": pendingAction?.confirmLabel ?? "nil",
+                "cancelLabel": pendingAction?.cancelLabel ?? "nil"
+            ]
+        )
+        // #endregion
+        guard let metadata,
+              let pendingAction = metadata.pendingAction,
+              let resolution = metadata.actionResolution,
+              resolution.source == "widget",
+              resolution.pendingActionId == pendingAction.id else {
+            // #region agent log
+            AssistantPendingActionDebugTrace.write(
+                hypothesisId: "H2A",
+                location: "AssistantMessageCopyText.resolvedWidgetActionText:returnNil",
+                message: "returning nil — guard failed (no metadata / pendingAction / resolution / source != widget)",
+                data: [
+                    "msg_id": message.id,
+                    "reason_noMetadata": (metadata == nil).description,
+                    "reason_noPendingAction": (pendingAction == nil).description,
+                    "reason_noResolution": (resolution == nil).description,
+                    "reason_sourceNotWidget": (resolution?.source != nil && resolution?.source != "widget").description
+                ]
+            )
+            // #endregion
+            return nil
+        }
+        let normalizedContent = AssistantMessageValueNormalizer.normalize(message.text)
+        if normalizedContent == AssistantMessageValueNormalizer.normalize(pendingAction.confirmValue) {
+            // #region agent log
+            AssistantPendingActionDebugTrace.write(
+                hypothesisId: "H2A",
+                location: "AssistantMessageCopyText.resolvedWidgetActionText:confirmMatch",
+                message: "returning confirmLabel",
+                data: ["msg_id": message.id, "confirmLabel": pendingAction.confirmLabel ?? "nil"]
+            )
+            // #endregion
+            return pendingAction.confirmLabel ?? message.text
+        }
+        if normalizedContent == AssistantMessageValueNormalizer.normalize(pendingAction.cancelValue) {
+            // #region agent log
+            AssistantPendingActionDebugTrace.write(
+                hypothesisId: "H2A",
+                location: "AssistantMessageCopyText.resolvedWidgetActionText:cancelMatch",
+                message: "returning cancelLabel",
+                data: ["msg_id": message.id, "cancelLabel": pendingAction.cancelLabel ?? "nil"]
+            )
+            // #endregion
+            return pendingAction.cancelLabel ?? message.text
+        }
+        // #region agent log
+        AssistantPendingActionDebugTrace.write(
+            hypothesisId: "H2A",
+            location: "AssistantMessageCopyText.resolvedWidgetActionText:noMatch",
+            message: "source=widget but content matches neither confirm nor cancel value",
+            data: [
+                "msg_id": message.id,
+                "normalizedContent": normalizedContent,
+                "normalizedConfirm": AssistantMessageValueNormalizer.normalize(pendingAction.confirmValue),
+                "normalizedCancel": AssistantMessageValueNormalizer.normalize(pendingAction.cancelValue)
+            ]
+        )
+        // #endregion
+        return nil
+    }
+}
+
+/// Mirror of web `normalizeUserMessageValue` (`assistant-message-list.tsx:33-35`):
+/// trim + lowercase for case-insensitive comparison of widget values.
+enum AssistantMessageValueNormalizer {
+    static func normalize(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 }
 
