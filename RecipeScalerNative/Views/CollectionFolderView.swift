@@ -130,7 +130,7 @@ struct CollectionFolderView: View {
                 .environment(\.defaultMinListRowHeight, 1)
             }
         }
-        .searchable(text: $searchText, prompt: String(localized: "search.recipes"))
+        .searchable(text: $searchText, prompt: Text("search.recipes"))
         .onAppear {
             searchStore.bind(syncService: syncService)
         }

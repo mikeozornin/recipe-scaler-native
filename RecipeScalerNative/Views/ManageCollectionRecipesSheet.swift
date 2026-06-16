@@ -97,7 +97,7 @@ struct ManageCollectionRecipesSheet: View {
             }
             .listStyle(.plain)
             .environment(\.defaultMinListRowHeight, 1)
-            .searchable(text: $searchText, prompt: String(localized: "search.recipes"))
+            .searchable(text: $searchText, prompt: Text("search.recipes"))
             .navigationTitle(Text(verbatim: folderDisplayName))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

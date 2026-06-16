@@ -119,7 +119,7 @@ struct RecipeListView: View {
                 }
                 }
             }
-            .searchable(text: $searchText, prompt: String(localized: "search.recipes"))
+            .searchable(text: $searchText, prompt: Text("search.recipes"))
             .onAppear {
                 searchStore.bind(syncService: syncService)
             }
