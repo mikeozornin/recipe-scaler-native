@@ -10,7 +10,7 @@
 2. **Цикл** (до 5 итераций): правка → проверка агентом → при провале снова правка. **Не** писать «готово», пока claim не подтверждён локально.
 3. **Проверки** (по возрастанию, что реально доступно в сессии):
    - обязательно: `rtk xcodebuild … build` (см. ниже);
-   - если есть тест под область: `rtk xcodebuild … test` с нужным `-only-testing:…`;
+   - если есть тест под область: **`xcodebuild … test`** (без `rtk`) или `rtk proxy xcodebuild …` — см. [RTK.md § Xcode](RTK.md#xcode-build-vs-test);
    - если уже есть `scripts/verify-<feature>.sh` под эту фичу — запустить (готовый shortcut, **новый скрипт не обязателен**);
    - баг без автотеста: `/debug` + логи симулятора (`bash scripts/pull-app-logs.sh` → `.debug-session.ndjson`) или XCTest, не «проверь на телефоне».
 4. **Вердикт** в конце: `VERIFIED` / `NOT VERIFIED` / `INCONCLUSIVE` + одна строка evidence (команда, exit code, метрика).
@@ -30,9 +30,24 @@ rtk xcodebuild -scheme RecipeScalerNative \
 
 `<UDID>` — из `xcrun simctl list devices available` (например iPhone 16, OS 18.6). Имя без OS часто не резолвится — предпочитай `id=`. При ошибках — исправить и пересобрать. После build — проверки из раздела «Agent loop» (тесты / существующий `scripts/verify-*.sh`, если есть).
 
+## XCTest
+
+**Не** используй `rtk xcodebuild … test` — фильтр RTK для test-таргета работает ненадёжно. Сборка остаётся на `rtk xcodebuild … build-for-testing`; прогон — сырой `xcodebuild` или `rtk proxy xcodebuild` (паттерн в `scripts/verify-third-party-import.sh`).
+
+```bash
+xcodebuild build-for-testing -scheme RecipeScalerNative \
+  -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6'
+
+xcodebuild test-without-building -scheme RecipeScalerNative \
+  -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6' \
+  -only-testing:RecipeScalerNativeTests/MyTests
+```
+
+Подробности и escape hatches: [RTK.md](RTK.md#xcode-build-vs-test).
+
 ## Shell и RTK
 
-Прочитай и выполняй [RTK.md](RTK.md). Prefix shell commands with `rtk` when filtering output (see `CLAUDE.md` / `RTK.md`).
+Прочитай и выполняй [RTK.md](RTK.md). Prefix shell commands with `rtk` when filtering output (see `CLAUDE.md` / `RTK.md`). **Исключение:** XCTest — см. раздел выше.
 
 ## Проверка фич
 

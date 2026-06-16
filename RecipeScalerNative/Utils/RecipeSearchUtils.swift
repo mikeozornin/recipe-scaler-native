@@ -401,16 +401,9 @@ enum RecipeSearchUtils {
             }
             var segment = ""
             for run in runs {
-                switch run {
-                case .plain(let text), .strong(let text), .em(let text):
+                if let text = run.flattenedText {
                     segment += text
-                case .link(_, let text):
-                    segment += text
-                case .timer(let reference):
-                    segment += reference.displayText
-                case .ingredient(let name):
-                    segment += name
-                case .lineBreak:
+                } else if case .lineBreak = run {
                     segment += " "
                 }
             }

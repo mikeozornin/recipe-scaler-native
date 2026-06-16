@@ -808,6 +808,117 @@ actor DocumentManager {
         return recipeId
     }
 
+    /// Native format import (029): create v3 recipe from a full-featured draft.
+    /// Handles color, servings, nutrition, description (as HTML → XmlFragment), dates,
+    /// originalRecipe/Link, and ingredients with preserved amounts/units.
+    func applyNativeRecipe(_ draft: NativeRecipe) async throws -> String {
+        let trimmedName = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayName = trimmedName.isEmpty
+            ? Bundle.currentLocalizedString("recipe.create.new")
+            : trimmedName
+        let color = draft.color ?? Self.defaultNewRecipeColor
+
+        let recipeId = try await createRecipe(name: displayName, color: color)
+
+        // Write rich fields
+        try await mutateRecipe(recipeId: recipeId) { map, txn in
+            if let servings = draft.servings, servings > 0 {
+                map.insert(key: "servings", value: .double(servings), txn: txn)
+            }
+            if let desc = draft.description, !desc.isEmpty {
+                map.insert(key: "description", value: .string(desc), txn: txn)
+                map.insert(key: "hasSteps", value: .bool(true), txn: txn)
+            }
+            if let link = draft.originalRecipeLink?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !link.isEmpty {
+                map.insert(key: "originalRecipeLink", value: .string(link), txn: txn)
+            }
+            if let source = draft.originalRecipe?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !source.isEmpty {
+                map.insert(key: "originalRecipe", value: .string(source), txn: txn)
+            }
+            if let createdAt = draft.createdAt, !createdAt.isEmpty {
+                map.insert(key: "createdAt", value: .string(createdAt), txn: txn)
+            }
+            if let updatedAt = draft.updatedAt, !updatedAt.isEmpty {
+                map.insert(key: "updatedAt", value: .string(updatedAt), txn: txn)
+            }
+
+            // Nutrition
+            if let nutrition = draft.nutrition {
+                if let cal = nutrition.calories {
+                    map.insert(key: "nutritionCalories", value: .double(cal), txn: txn)
+                }
+                if let p = nutrition.protein {
+                    map.insert(key: "nutritionProtein", value: .double(p), txn: txn)
+                }
+                if let f = nutrition.fat {
+                    map.insert(key: "nutritionFat", value: .double(f), txn: txn)
+                }
+                if let c = nutrition.carbs {
+                    map.insert(key: "nutritionCarbs", value: .double(c), txn: txn)
+                }
+                let outdated = nutrition.nutritionOutdated ?? true
+                map.insert(key: "nutritionOutdated", value: .bool(outdated), txn: txn)
+            }
+        }
+
+        // Write description as XmlFragment (v3 format) — parse the HTML into structured blocks
+        // (paragraph / orderedList / listItem / heading / inline timer/ingredient/link runs) so
+        // readers (XmlFragmentToHTML + RecipeDescriptionView) render interactive chips, not raw HTML.
+        if let desc = draft.description, !desc.isEmpty {
+            guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
+            let key = "\(userId):recipe:\(recipeId)"
+            let doc = try await getOrCreateDoc(key: key)
+            let document = RecipeDescriptionParser.parse(desc)
+            try await doc.withWriteTransaction { rawDoc, txn in
+                RecipeDescriptionXmlFragmentWriter.apply(
+                    document: document,
+                    rawDoc: rawDoc,
+                    txn: txn
+                )
+            }
+            await persistSnapshot(docKey: key)
+            await deliverPendingLocalUpdate(recipeId: recipeId)
+        }
+
+        // Add ingredients
+        for (index, ingredient) in draft.ingredients.enumerated() {
+            let trimmedName = ingredient.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedName.isEmpty else { continue }
+
+            let isSep = ingredient.isSeparator ?? false
+            let order = ingredient.order ?? (index + 1)
+            let originalAmount: Double? = ingredient.originalAmount
+            let unit = ingredient.unit?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+            let hasQuantity: Bool
+            let amountString: String
+            if let oa = originalAmount {
+                hasQuantity = true
+                amountString = String(oa)
+            } else {
+                hasQuantity = false
+                amountString = ""
+            }
+
+            let storedName = unit.isEmpty ? trimmedName : "\(trimmedName), \(unit)"
+            let row = IngredientData(
+                id: ingredient.id ?? UUID().uuidString,
+                name: storedName,
+                amount: amountString,
+                originalAmount: amountString,
+                unit: unit,
+                order: order,
+                isSeparator: isSep,
+                hasQuantity: hasQuantity
+            )
+            try await addIngredient(recipeId: recipeId, ingredient: row)
+        }
+
+        return recipeId
+    }
+
     /// Deterministic third-party import (027): create v3 recipe from parsed draft.
     func applyImportedRecipe(_ draft: ThirdPartyRecipeDraft) async throws -> String {
         let trimmedName = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)

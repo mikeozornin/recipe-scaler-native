@@ -1982,6 +1982,23 @@ final class YjsSyncService: ObservableObject {
         }
     }
 
+    // MARK: - Native Export/Import (029)
+
+    /// Public read for export: reads a single recipe's full data from Y.Doc.
+    func readRecipeData(recipeId: String) async throws -> RecipeData? {
+        guard let userId else { return nil }
+        return try await documentManager.readRecipeData(recipeId: recipeId, userId: userId)
+    }
+
+    /// Apply a native-format recipe draft to Y.Doc (029).
+    /// Full-field write: preserves color, servings, nutrition, dates, originalRecipe/Link.
+    func applyNativeRecipe(_ draft: NativeRecipe) async throws -> String {
+        let recipeId = try await documentManager.applyNativeRecipe(draft)
+        await refreshCollectionEntries()
+        await flushImportSyncBeforeImageUpload(recipeId: recipeId)
+        return recipeId
+    }
+
     #if DEBUG
     /// Smoke test helper (same snapshot read as UI).
     func refreshShoppingSnapshotForSmokeTest() async {

@@ -173,6 +173,7 @@
       }
     },
     "account.data.coming-soon" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -184,6 +185,373 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Экспорт и импорт появятся в следующем обновлении."
+          }
+        }
+      }
+    },
+    "account.data.export.hint" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export all recipes with images as a ZIP or JSON file."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспорт всех рецептов с изображениями в ZIP или JSON."
+          }
+        }
+      }
+    },
+    "account.data.export.nothing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No recipes to export"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет рецептов для экспорта"
+          }
+        }
+      }
+    },
+    "account.data.export.progress %d %d" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d of %2$d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d из %2$d"
+          }
+        }
+      }
+    },
+    "account.data.export.section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспорт"
+          }
+        }
+      }
+    },
+    "account.data.export.share" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share export file"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поделиться файлом"
+          }
+        }
+      }
+    },
+    "account.data.export.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export all recipes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспортировать все рецепты"
+          }
+        }
+      }
+    },
+    "account.data.import.error.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import failed"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка импорта"
+          }
+        }
+      }
+    },
+    "account.data.import.folders %d" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folders imported: %d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Папок импортировано: %d"
+          }
+        }
+      }
+    },
+    "account.data.import.formats" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe Scaler JSON or ZIP"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JSON или ZIP Recipe Scaler"
+          }
+        }
+      }
+    },
+    "account.data.import.hint" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import recipes from a Recipe Scaler JSON or ZIP file."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт рецептов из файла JSON или ZIP Recipe Scaler."
+          }
+        }
+      }
+    },
+    "account.data.import.image-failed %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not upload photo: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить фото: %@"
+          }
+        }
+      }
+    },
+    "account.data.import.image-too-large %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo too large, skipped: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото слишком большое, пропущено: %@"
+          }
+        }
+      }
+    },
+    "account.data.import.images %d" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Images uploaded: %d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изображений загружено: %d"
+          }
+        }
+      }
+    },
+    "account.data.import.images-offline %d" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d photo(s) skipped (offline)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d фото пропущено (нет сети)"
+          }
+        }
+      }
+    },
+    "account.data.import.progress %d %d" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d of %2$d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d из %2$d"
+          }
+        }
+      }
+    },
+    "account.data.import.recipe-failed %@ %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to import \"%1$@\": %2$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось импортировать «%1$@»: %2$@"
+          }
+        }
+      }
+    },
+    "account.data.import.section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт"
+          }
+        }
+      }
+    },
+    "account.data.import.stop" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop import"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Остановить импорт"
+          }
+        }
+      }
+    },
+    "account.data.import.stopped" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import stopped"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт остановлен"
+          }
+        }
+      }
+    },
+    "account.data.import.success %d" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d recipes imported"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировано рецептов: %d"
+          }
+        }
+      }
+    },
+    "account.data.import.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import from file"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировать из файла"
+          }
+        }
+      }
+    },
+    "account.data.management" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export and import"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспорт и импорт"
           }
         }
       }
@@ -218,6 +586,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Не удалось связаться с сервером. Проверьте подключение и попробуйте снова."
+          }
+        }
+      }
+    },
+    "account.export.logs.missing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No log file available"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл журнала недоступен"
+          }
+        }
+      }
+    },
+    "account.export.logs.missing.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The diagnostic log is only created in debug builds while the app is running."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Журнал создаётся только в отладочной сборке во время работы приложения."
+          }
+        }
+      }
+    },
+    "account.export.logs.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export app log"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспорт журнала"
           }
         }
       }
@@ -623,18 +1039,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Data management"
+            "value" : "Data"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Управление данными"
+            "value" : "Данные"
           }
         }
       }
     },
     "account.section.logs" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -646,54 +1063,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Диагностика"
-          }
-        }
-      }
-    },
-    "account.export.logs.title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export app log"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Экспорт журнала"
-          }
-        }
-      }
-    },
-    "account.export.logs.missing" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No log file available"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Файл журнала недоступен"
-          }
-        }
-      }
-    },
-    "account.export.logs.missing.hint" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The diagnostic log is only created in debug builds while the app is running."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Журнал создаётся только в отладочной сборке во время работы приложения."
           }
         }
       }
@@ -2750,6 +3119,23 @@
         }
       }
     },
+    "common.close" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть"
+          }
+        }
+      }
+    },
     "common.delete-image" : {
       "localizations" : {
         "en" : {
@@ -3944,23 +4330,6 @@
         }
       }
     },
-    "edit.error.invalidServings" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servings must be at least 1."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Порций должно быть не меньше 1."
-          }
-        }
-      }
-    },
     "edit.error.invalidInput" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3974,6 +4343,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Некорректный ввод."
+          }
+        }
+      }
+    },
+    "edit.error.invalidServings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servings must be at least 1."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Порций должно быть не меньше 1."
           }
         }
       }
@@ -4873,13 +5259,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Import recipes exported from Paprika or Crouton"
+            "value" : "Recipe Scaler (JSON/ZIP), Paprika, or Crouton export files"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Импорт рецептов из экспорта Paprika или Crouton"
+            "value" : "Файлы экспорта Recipe Scaler (JSON/ZIP), Paprika или Crouton"
           }
         }
       }
@@ -5165,23 +5551,6 @@
         }
       }
     },
-    "import.third-party-photo-skipped-offline" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$d photo(s) skipped (offline)"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$d фото пропущено (нет сети)"
-          }
-        }
-      }
-    },
     "import.third-party-photo-failed" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5195,6 +5564,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d фото не удалось загрузить"
+          }
+        }
+      }
+    },
+    "import.third-party-photo-skipped-offline" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d photo(s) skipped (offline)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d фото пропущено (нет сети)"
           }
         }
       }
@@ -6641,6 +7027,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрепить"
+          }
+        }
+      }
+    },
+    "recipe.list.search-empty.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No such recipes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет таких рецептов"
           }
         }
       }

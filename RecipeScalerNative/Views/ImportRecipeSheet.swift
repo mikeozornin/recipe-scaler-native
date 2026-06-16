@@ -36,7 +36,7 @@ struct ImportRecipeSheet: View {
     @State private var selectedFileURL: URL?
     @State private var selectedFileName = ""
     @State private var showFileImporter = false
-    @State private var progressMessage: String?
+    @State private var fileImportProgress: (completed: Int, total: Int, messageKey: String)?
     @State private var importTask: Task<Void, Never>?
 
     enum ImportMode: String, CaseIterable {
@@ -67,11 +67,13 @@ struct ImportRecipeSheet: View {
                     fileSection
                 }
 
-                if let progressMessage {
+                if let fileImportProgress, isProcessing, mode == .file {
                     Section {
-                        Text(progressMessage)
-                            .appFootnote()
-                            .foregroundStyle(.secondary)
+                        FractionProgressView(
+                            completed: fileImportProgress.completed,
+                            total: fileImportProgress.total,
+                            messageKey: fileImportProgress.messageKey
+                        )
                     }
                 }
 
@@ -125,7 +127,7 @@ struct ImportRecipeSheet: View {
             .onAppear { resetState() }
             .onChange(of: mode) { _, _ in
                 errorMessage = nil
-                progressMessage = nil
+                fileImportProgress = nil
             }
             .onDisappear {
                 importTask?.cancel()
@@ -366,10 +368,10 @@ struct ImportRecipeSheet: View {
 
         isProcessing = true
         errorMessage = nil
-        progressMessage = nil
+        fileImportProgress = nil
         defer {
             isProcessing = false
-            progressMessage = nil
+            fileImportProgress = nil
         }
 
         do {
@@ -411,15 +413,50 @@ struct ImportRecipeSheet: View {
                     return
                 }
 
+                // Check for native Recipe Scaler format (v1.0–v1.4)
+                if NativeExportImportService.isNativeFormat(url: fileURL) {
+                    let nativeService = NativeExportImportService(syncService: syncService)
+                    let nativeResult = try await nativeService.importFile(
+                        url: fileURL,
+                        isOnline: isOnline
+                    ) { completed, total in
+                        Task { @MainActor in
+                            fileImportProgress = (
+                                completed,
+                                total,
+                                "account.data.import.progress %d %d"
+                            )
+                        }
+                    }
+
+                    let result = ImportRecipesResult(
+                        recipeIds: nativeResult.importedRecipeIds,
+                        importedCount: nativeResult.importedCount
+                    )
+                    onImport(result)
+
+                    if !nativeResult.errors.isEmpty {
+                        errorMessage = nativeResult.errors.joined(separator: "\n")
+                    } else if !nativeResult.warnings.isEmpty {
+                        errorMessage = nativeResult.warnings.joined(separator: "\n")
+                    } else if nativeResult.importedCount > 0 {
+                        dismiss()
+                    } else {
+                        errorMessage = Bundle.currentLocalizedString("import.third-party-empty")
+                    }
+                    return
+                }
+
                 let service = ThirdPartyRecipeImportService(syncService: syncService)
                 let importResult = try await service.importFile(
                     url: fileURL,
                     isOnline: isOnline
                 ) { completed, total in
                     Task { @MainActor in
-                        progressMessage = ThirdPartyImportErrorLocalizer.progressMessage(
-                            completed: completed,
-                            total: total
+                        fileImportProgress = (
+                            completed,
+                            total,
+                            "import.third-party-progress"
                         )
                     }
                 }
@@ -491,7 +528,7 @@ struct ImportRecipeSheet: View {
         selectedFileURL = nil
         selectedFileName = ""
         errorMessage = nil
-        progressMessage = nil
+        fileImportProgress = nil
     }
 
     // MARK: - Plain-text file detection (US7)

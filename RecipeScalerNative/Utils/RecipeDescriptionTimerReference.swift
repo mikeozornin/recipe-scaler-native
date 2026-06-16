@@ -23,6 +23,28 @@ struct RecipeDescriptionTimerReference: Equatable, Identifiable {
 
     var isStartable: Bool { durationSeconds > 0 }
 
+    /// Numeric value in the timer's own unit (hours/minutes/seconds), derived from `durationSeconds`.
+    /// Matches the web contract in `description-markup-parity.md`:
+    ///   hours → durationSeconds / 3600, minutes → /60, seconds → /1.
+    var valueAttribute: String {
+        let divisor: Int
+        switch type {
+        case .hours: divisor = 3600
+        case .minutes: divisor = 60
+        case .seconds: divisor = 1
+        }
+        let whole = durationSeconds / divisor
+        let remainder = durationSeconds % divisor
+        if remainder == 0 {
+            return String(whole)
+        }
+        let fractional = Double(remainder) / Double(divisor)
+        var text = String(format: "%.4f", Double(whole) + fractional)
+        while text.hasSuffix("0") { text.removeLast() }
+        if text.hasSuffix(".") { text.removeLast() }
+        return text
+    }
+
     var resolvedName: String {
         let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !trimmed.isEmpty { return trimmed }

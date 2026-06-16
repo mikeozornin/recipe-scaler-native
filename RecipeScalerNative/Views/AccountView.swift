@@ -360,11 +360,12 @@ struct AccountView: View {
     @ViewBuilder
     private var dataSection: some View {
         Section {
-            Text("account.data.coming-soon")
-                .appBody()
-                .foregroundStyle(.secondary)
-        } header: {
-            AppSectionHeader("account.section.data")
+            NavigationLink {
+                DataManagementView()
+            } label: {
+                Text("account.data.management")
+                    .appBody()
+            }
         }
         .appListSectionHeaderStyle()
     }
@@ -519,7 +520,7 @@ private struct AccountSeedPhraseSheet: View {
                     }
                 } else {
                     ContentUnavailableView {
-                        Label("account.seed.locked", systemImage: "lock.fill")
+                        AppEmptyState.label("account.seed.locked", symbol: "lock.fill")
                     } description: {
                         if let authError {
                             Text(authError)
@@ -533,6 +534,7 @@ private struct AccountSeedPhraseSheet: View {
                             Task { @MainActor in await authenticate() }
                         }
                     }
+                    .font(AppTypography.body)
                 }
             }
             .localizedNavigationTitle("account.secret-phrase")

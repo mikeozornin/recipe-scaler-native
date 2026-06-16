@@ -5,7 +5,7 @@
 ## Обязательно при старте
 
 - **Сборка** — после Swift/Xcode правок агент сам прогоняет build (не проси пользователя). Команда и цикл проверок — [docs/AGENT-WORKFLOW.md](docs/AGENT-WORKFLOW.md).
-- **Shell** — prefix с `rtk` ([docs/RTK.md](docs/RTK.md)).
+- **Shell** — prefix с `rtk` ([docs/RTK.md](docs/RTK.md)); **XCTest** — `xcodebuild test` без `rtk` (или `rtk proxy xcodebuild`), см. [docs/AGENT-WORKFLOW.md](docs/AGENT-WORKFLOW.md#xctest).
 - **i18n** — строки только в `RecipeScalerNative/Resources/Localizable.xcstrings`; не хардкодь текст в view; без fallback на дефолтные строки. Подробности — [docs/I18N.md](docs/I18N.md).
 - **UI / UX** — `.appBody()` / `.appFootnote()`, web parity, паттерны экранов. Подробности — [docs/UI.md](docs/UI.md).
 - **Spec Kit** — артефакты в `specs/<feature>/` на **русском** (`spec.md`, `plan.md`, …).

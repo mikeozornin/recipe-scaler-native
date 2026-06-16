@@ -32,3 +32,13 @@
 
 - Paid Apple Developer Program ($99/yr): optional for simulator/dev; TestFlight, App Store, App Groups on device, extensions, APNs — см. [PAID-APPLE-DEVELOPER-REQUIRED.md](PAID-APPLE-DEVELOPER-REQUIRED.md). Timer push toggle hidden until server-synced APNs works; production push planned after Live Activities.
 - Share Extension + Action Extension targets exist for URL/text import (`specs/025-share-extension`); full on-device Share Sheet testing needs paid program + App Group provisioning.
+
+## Экспорт и импорт данных (native)
+
+Локальный офлайн-first экспорт/импорт рецептов в формате Recipe Scaler JSON/ZIP **v1.0–v1.4** (parity с вебом). Спека: `specs/029-account-data-export-import`.
+
+- **Экспорт**: Профиль → Управление данными → «Экспортировать все рецепты». Сбор из Y.Doc через `YjsSyncService.readRecipeData`, сериализация `NativeRecipeExporter` (всегда v1.4), ShareLink на временный файл.
+- **Импорт**: тот же экран или `ImportRecipeSheet` (file mode). Detect → validate → `NativeRecipeImporter` → `DocumentManager.applyNativeRecipe`. Папки — batch после рецептов; **изображения** загружаются сразу после каждого рецепта (как Paprika/Crouton), не отдельной фазой; офлайн — skip с i18n warning.
+- **Описание рецепта** при импорте парсится из HTML в `RecipeDescriptionDocument` (`RecipeDescriptionParser`) и пишется в Y.XmlFragment как дерево v3-узлов (`paragraph` / `heading` / `orderedList` / `bulletList` + inline `timer` / `ingredient` / `link` / `bold` / `italic`) через `RecipeDescriptionXmlFragmentWriter` (parity с Tiptap/y-prosemirror). round-trip тесты: `RecipeScalerNativeTests/NativeFormatHtmlImportRoundtripTests.swift`.
+- **Core**: `RecipeScalerCore/Export/Native/` — типы, detector, validator, exporter/importer, JSON Schema reference в `schemas/`.
+- **Лимиты**: `ThirdPartyImportLimits` (500 рецептов, 25 MB/image).

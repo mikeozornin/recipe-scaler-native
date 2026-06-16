@@ -27,6 +27,12 @@ extension YrsDocument {
         }
     }
 
+    func testApplyDescriptionDocument(_ document: RecipeDescriptionDocument) async throws {
+        try await withWriteTransaction { rawDoc, txn in
+            RecipeDescriptionXmlFragmentWriter.apply(document: document, rawDoc: rawDoc, txn: txn)
+        }
+    }
+
     func testSerializedDescriptionHTML() async throws -> String? {
         try await withReadTransaction { _, txn in
             XmlFragmentToHTML.serializedFragment(txn: txn)

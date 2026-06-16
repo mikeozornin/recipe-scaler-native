@@ -100,6 +100,7 @@ final class LocalizationConsistencyTests: XCTestCase {
             "import.validation.invalid-servings",
             "import.validation.recipe-import-failed",
             "common.cancel",
+            "common.close",
             "common.delete-image",
             "account.sync.title",
             "account.sync.never",

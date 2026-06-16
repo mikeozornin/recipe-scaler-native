@@ -193,7 +193,7 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
                     attrs[.recipeTimerReference] = payload
                 }
                 result.append(NSAttributedString(string: reference.displayText, attributes: attrs))
-            case .ingredient(let value):
+            case .ingredient(_, _, _, let value):
                 var attrs = base
                 attrs[.foregroundColor] = accentUIColor
                 result.append(NSAttributedString(string: value, attributes: attrs))

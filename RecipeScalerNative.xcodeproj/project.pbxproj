@@ -268,6 +268,7 @@
 		A027027000007 /* ShareContentClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000107 /* ShareContentClassifier.swift */; };
 		A027027000008 /* ThirdPartyRecipeImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000108 /* ThirdPartyRecipeImportService.swift */; };
 		A027027000009 /* DescriptionXmlFragmentWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000109 /* DescriptionXmlFragmentWriter.swift */; };
+		A029031000090 /* RecipeDescriptionXmlFragmentWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000190 /* RecipeDescriptionXmlFragmentWriter.swift */; };
 		A027027000010 /* CroutonRecipeParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000110 /* CroutonRecipeParserTests.swift */; };
 		A027027000011 /* PaprikaRecipeParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000111 /* PaprikaRecipeParserTests.swift */; };
 		A027027000019 /* ThirdPartyIngredientAmountSplitterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000119 /* ThirdPartyIngredientAmountSplitterTests.swift */; };
@@ -277,6 +278,23 @@
 		A027027000015 /* ShareContentClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000115 /* ShareContentClassifierTests.swift */; };
 		A027027000016 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = A027027000302 /* ZIPFoundation */; };
 		A027027000017 /* ThirdPartyImport in Resources */ = {isa = PBXBuildFile; fileRef = A027027000116 /* ThirdPartyImport */; };
+		A029031000001 /* NativeFormatVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000101 /* NativeFormatVersion.swift */; };
+		A029031000002 /* NativeFormatTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000102 /* NativeFormatTypes.swift */; };
+		A029031000003 /* NativeFormatDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000103 /* NativeFormatDetector.swift */; };
+		A029031000004 /* NativeFormatValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000104 /* NativeFormatValidator.swift */; };
+		A029031000005 /* NativeRecipeExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000105 /* NativeRecipeExporter.swift */; };
+		A029031000006 /* NativeRecipeImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000106 /* NativeRecipeImporter.swift */; };
+		A029031000007 /* NativeImportImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000109 /* NativeImportImagePicker.swift */; };
+		A029031000211 /* NativeExportImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000201 /* NativeExportImportService.swift */; };
+		A029031000213 /* NativeImportMessageLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000110 /* NativeImportMessageLocalizer.swift */; };
+		A029031000212 /* DataManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000202 /* DataManagementView.swift */; };
+		A029031000214 /* FractionProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000203 /* FractionProgressView.swift */; };
+		A029031000311 /* NativeFormatVersionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000301 /* NativeFormatVersionTests.swift */; };
+		A029031000312 /* NativeFormatValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000302 /* NativeFormatValidatorTests.swift */; };
+		A029031000313 /* NativeRecipeExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000303 /* NativeRecipeExporterTests.swift */; };
+		A029031000314 /* NativeRecipeImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000304 /* NativeRecipeImporterTests.swift */; };
+		A029031000315 /* NativeFormatHtmlImportRoundtripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000305 /* NativeFormatHtmlImportRoundtripTests.swift */; };
+		A029031000316 /* NativeImportImageSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000306 /* NativeImportImageSelectionTests.swift */; };
 		EB4EDF7C30F646A99BDD3767 /* Shared.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B723ECE01A3D4E2F85D856AC /* Shared.xcstrings */; };
 		ED63F0C4CB8144D1A7CDD374 /* WriteSyncState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 082DDFB9F64449A7BCF4D3FA /* WriteSyncState.swift */; };
 		EE235C1AE222411BAF3E3620 /* TimerLiveActivityFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F90F40E8688492B815EB510 /* TimerLiveActivityFormatting.swift */; };
@@ -627,6 +645,7 @@
 		A027027000107 /* ShareContentClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/ShareContentClassifier.swift; sourceTree = "<group>"; };
 		A027027000108 /* ThirdPartyRecipeImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThirdPartyRecipeImportService.swift; sourceTree = "<group>"; };
 		A027027000109 /* DescriptionXmlFragmentWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionXmlFragmentWriter.swift; sourceTree = "<group>"; };
+		A029031000190 /* RecipeDescriptionXmlFragmentWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDescriptionXmlFragmentWriter.swift; sourceTree = "<group>"; };
 		A027027000110 /* CroutonRecipeParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CroutonRecipeParserTests.swift; sourceTree = "<group>"; };
 		A027027000111 /* PaprikaRecipeParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaprikaRecipeParserTests.swift; sourceTree = "<group>"; };
 		A027027000119 /* ThirdPartyIngredientAmountSplitterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThirdPartyIngredientAmountSplitterTests.swift; sourceTree = "<group>"; };
@@ -635,6 +654,23 @@
 		A027027000114 /* DescriptionXmlFragmentWriterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionXmlFragmentWriterTests.swift; sourceTree = "<group>"; };
 		A027027000115 /* ShareContentClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareContentClassifierTests.swift; sourceTree = "<group>"; };
 		A027027000116 /* ThirdPartyImport */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ThirdPartyImport; sourceTree = "<group>"; };
+		A029031000101 /* NativeFormatVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatVersion.swift; sourceTree = "<group>"; };
+		A029031000102 /* NativeFormatTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatTypes.swift; sourceTree = "<group>"; };
+		A029031000103 /* NativeFormatDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatDetector.swift; sourceTree = "<group>"; };
+		A029031000104 /* NativeFormatValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatValidator.swift; sourceTree = "<group>"; };
+		A029031000105 /* NativeRecipeExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRecipeExporter.swift; sourceTree = "<group>"; };
+		A029031000106 /* NativeRecipeImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRecipeImporter.swift; sourceTree = "<group>"; };
+		A029031000109 /* NativeImportImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeImportImagePicker.swift; sourceTree = "<group>"; };
+		A029031000201 /* NativeExportImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeExportImportService.swift; sourceTree = "<group>"; };
+		A029031000110 /* NativeImportMessageLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeImportMessageLocalizer.swift; sourceTree = "<group>"; };
+		A029031000202 /* DataManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManagementView.swift; sourceTree = "<group>"; };
+		A029031000203 /* FractionProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FractionProgressView.swift; sourceTree = "<group>"; };
+		A029031000301 /* NativeFormatVersionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatVersionTests.swift; sourceTree = "<group>"; };
+		A029031000302 /* NativeFormatValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatValidatorTests.swift; sourceTree = "<group>"; };
+		A029031000303 /* NativeRecipeExporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRecipeExporterTests.swift; sourceTree = "<group>"; };
+		A029031000304 /* NativeRecipeImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRecipeImporterTests.swift; sourceTree = "<group>"; };
+		A029031000305 /* NativeFormatHtmlImportRoundtripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatHtmlImportRoundtripTests.swift; sourceTree = "<group>"; };
+		A029031000306 /* NativeImportImageSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeImportImageSelectionTests.swift; sourceTree = "<group>"; };
 		EB452B44E6C61233D3482133 /* MartianGrotesk-NrLt.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MartianGrotesk-NrLt.otf"; sourceTree = "<group>"; };
 		EBC715E90C3645F99A2965F8 /* RecipeTimerActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeTimerActivityAttributes.swift; sourceTree = "<group>"; };
 		EK00010001BB000100EK0001 /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
@@ -832,6 +868,8 @@
 				E5F60718293A4B7017DF9B12 /* DiscoverRootView.swift */,
 				E5F60718293A4B701A1B2001 /* Discover */,
 				E5F60718293A4B70344FA5B3 /* AccountView.swift */,
+				A029031000202 /* DataManagementView.swift */,
+				A029031000203 /* FractionProgressView.swift */,
 				E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */,
 				E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */,
 				E5F60718293A4B70E32FCAE0 /* AccountOptionLabels.swift */,
@@ -984,12 +1022,35 @@
 				A027027000105 /* CroutonRecipeParser.swift */,
 				A027027000106 /* ThirdPartyFormatDetector.swift */,
 				A027027000107 /* ShareContentClassifier.swift */,
+				A029031000107 /* Export */,
 				6A46C39B025B41C69FD12A6A /* ImportErrorLocalizer.swift */,
 				743247074D2B4CAFACB39F46 /* ShareContentLoader.swift */,
 				5DE6F63FC7E14C8C979AACCE /* ShareView.swift */,
 				B723ECE01A3D4E2F85D856AC /* Shared.xcstrings */,
 			);
 			path = RecipeScalerCore;
+			sourceTree = "<group>";
+		};
+		A029031000107 /* Export */ = {
+			isa = PBXGroup;
+			children = (
+				A029031000108 /* Native */,
+			);
+			path = Export;
+			sourceTree = "<group>";
+		};
+		A029031000108 /* Native */ = {
+			isa = PBXGroup;
+			children = (
+				A029031000101 /* NativeFormatVersion.swift */,
+				A029031000102 /* NativeFormatTypes.swift */,
+				A029031000103 /* NativeFormatDetector.swift */,
+				A029031000104 /* NativeFormatValidator.swift */,
+				A029031000105 /* NativeRecipeExporter.swift */,
+				A029031000106 /* NativeRecipeImporter.swift */,
+				A029031000109 /* NativeImportImagePicker.swift */,
+			);
+			path = Native;
 			sourceTree = "<group>";
 		};
 		93D42941605BAA5DD8D2035A /* RecipeScalerNativeTests */ = {
@@ -1015,6 +1076,12 @@
 				A027027000113 /* ThirdPartyImportIntegrationTests.swift */,
 				A027027000114 /* DescriptionXmlFragmentWriterTests.swift */,
 				A027027000115 /* ShareContentClassifierTests.swift */,
+				A029031000301 /* NativeFormatVersionTests.swift */,
+				A029031000302 /* NativeFormatValidatorTests.swift */,
+				A029031000303 /* NativeRecipeExporterTests.swift */,
+				A029031000304 /* NativeRecipeImporterTests.swift */,
+				A029031000305 /* NativeFormatHtmlImportRoundtripTests.swift */,
+				A029031000306 /* NativeImportImageSelectionTests.swift */,
 				YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */,
 				A027027000117 /* Fixtures */,
 			);
@@ -1137,6 +1204,7 @@
 				F0D3000000000000000A0009 /* RecipeFolderRoutes.swift */,
 				E5F60718293A4B7019BAC15E /* DiscoverSearch.swift */,
 				A027027000109 /* DescriptionXmlFragmentWriter.swift */,
+				A029031000190 /* RecipeDescriptionXmlFragmentWriter.swift */,
 				E5F60718293A4B7019BAC1AA /* RecipeReader.swift */,
 			);
 			path = Utils;
@@ -1203,6 +1271,8 @@
 				CC0003AA0003BB0003CC0003 /* PushScheduleService.swift */,
 				D0574E4BB4D0DE3B5AE7CFAB /* Yrs */,
 				A027027000108 /* ThirdPartyRecipeImportService.swift */,
+				A029031000201 /* NativeExportImportService.swift */,
+				A029031000110 /* NativeImportMessageLocalizer.swift */,
 				E49E6DAE77BDA02267796630 /* YjsSync */,
 				6C814AF9AA15A89BCAC1A9E4 /* Storage */,
 				REMINDERS00A0AA00A0BB0A /* Reminders */,
@@ -1499,6 +1569,13 @@
 				A027027000005 /* CroutonRecipeParser.swift in Sources */,
 				A027027000006 /* ThirdPartyFormatDetector.swift in Sources */,
 				A027027000007 /* ShareContentClassifier.swift in Sources */,
+				A029031000001 /* NativeFormatVersion.swift in Sources */,
+				A029031000002 /* NativeFormatTypes.swift in Sources */,
+				A029031000003 /* NativeFormatDetector.swift in Sources */,
+				A029031000004 /* NativeFormatValidator.swift in Sources */,
+				A029031000005 /* NativeRecipeExporter.swift in Sources */,
+				A029031000006 /* NativeRecipeImporter.swift in Sources */,
+				A029031000007 /* NativeImportImagePicker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1705,7 +1782,12 @@
 				E5F60718293A4B70374F8F19 /* SeedQRCodeView.swift in Sources */,
 				E5F60718293A4B70A1B2C3E5 /* RecipeImageUploadPreprocessor.swift in Sources */,
 				A027027000008 /* ThirdPartyRecipeImportService.swift in Sources */,
+				A029031000211 /* NativeExportImportService.swift in Sources */,
+				A029031000213 /* NativeImportMessageLocalizer.swift in Sources */,
+				A029031000212 /* DataManagementView.swift in Sources */,
+				A029031000214 /* FractionProgressView.swift in Sources */,
 				A027027000009 /* DescriptionXmlFragmentWriter.swift in Sources */,
+				A029031000090 /* RecipeDescriptionXmlFragmentWriter.swift in Sources */,
 				E5F60718293A4B7069A26F71 /* AccountCheckmarkSelectionView.swift in Sources */,
 				E5F60718293A4B7058D1A50A /* AccountOptionLabels.swift in Sources */,
 				E5F60718293A4B70ACE05678 /* AccountProfileEditView.swift in Sources */,
@@ -1766,6 +1848,12 @@
 				A027027000013 /* ThirdPartyImportIntegrationTests.swift in Sources */,
 				A027027000014 /* DescriptionXmlFragmentWriterTests.swift in Sources */,
 				A027027000015 /* ShareContentClassifierTests.swift in Sources */,
+				A029031000311 /* NativeFormatVersionTests.swift in Sources */,
+				A029031000312 /* NativeFormatValidatorTests.swift in Sources */,
+				A029031000313 /* NativeRecipeExporterTests.swift in Sources */,
+				A029031000314 /* NativeRecipeImporterTests.swift in Sources */,
+				A029031000315 /* NativeFormatHtmlImportRoundtripTests.swift in Sources */,
+				A029031000316 /* NativeImportImageSelectionTests.swift in Sources */,
 				YRSDOC01A293A4B701000001 /* YrsDocument+TestSupport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

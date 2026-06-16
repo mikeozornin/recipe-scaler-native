@@ -1,0 +1,226 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Recipe Scaler Export Format v1.3",
+  "description": "Schema for Recipe Scaler export format version 1.3 (with servings and optional images in ZIP)",
+  "type": "object",
+  "required": [
+    "metadata",
+    "recipes"
+  ],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": [
+        "version",
+        "exportDate",
+        "type",
+        "count"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "enum": [
+            "1.3"
+          ],
+          "description": "Format version must be 1.3"
+        },
+        "exportDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 date-time when export was created"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "recipes-v1.3"
+          ],
+          "description": "Export type"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of recipes in export"
+        }
+      },
+      "additionalProperties": false
+    },
+    "recipes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique recipe identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Recipe name"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Recipe description/steps"
+          },
+          "ingredients": {
+            "type": "array",
+            "description": "Array of ingredients",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "originalAmount": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "order": {
+                  "type": "number"
+                },
+                "isSeparator": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "color": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Recipe color"
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "ISO 8601 date-time when recipe was created"
+          },
+          "updatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "ISO 8601 date-time when recipe was last updated"
+          },
+          "originalRecipeLink": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Link to original recipe"
+          },
+          "originalRecipe": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Original recipe text"
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "description": "Canonical base servings for the recipe"
+          },
+          "nutrition": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Optional nutrition payload",
+            "required": [
+              "calories",
+              "protein",
+              "fat",
+              "carbs",
+              "calculatedAt",
+              "nutritionOutdated"
+            ],
+            "properties": {
+              "calories": {
+                "type": "number",
+                "minimum": 0
+              },
+              "protein": {
+                "type": "number",
+                "minimum": 0
+              },
+              "fat": {
+                "type": "number",
+                "minimum": 0
+              },
+              "carbs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "calculatedAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "ISO 8601 date-time when nutrition was calculated"
+              },
+              "nutritionOutdated": {
+                "type": "boolean",
+                "description": "Whether nutrition needs recalculation"
+              },
+              "totalWeight": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Optional total recipe weight in grams"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "imageFiles": {
+      "type": "object",
+      "description": "Mapping of recipe IDs to image file paths in ZIP",
+      "patternProperties": {
+        "^[a-zA-Z0-9_-]+$": {
+          "type": "object",
+          "required": [
+            "full",
+            "preview"
+          ],
+          "properties": {
+            "full": {
+              "type": "string",
+              "pattern": "^images/[^/]+/full\\.webp$",
+              "description": "Path to full image in ZIP (format: images/{recipeId}/full.webp)"
+            },
+            "preview": {
+              "type": "string",
+              "pattern": "^images/[^/]+/preview\\.webp$",
+              "description": "Path to preview image in ZIP (format: images/{recipeId}/preview.webp)"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

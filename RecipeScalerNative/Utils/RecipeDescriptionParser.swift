@@ -31,8 +31,24 @@ enum RecipeDescriptionInlineRun: Equatable {
     case em(String)
     case link(url: String, text: String)
     case timer(RecipeDescriptionTimerReference)
-    case ingredient(String)
+    case ingredient(id: String?, ratio: Double?, originalAmount: String?, text: String)
     case lineBreak
+
+    /// Plain-text flattening (search indexing, fallback rendering).
+    var flattenedText: String? {
+        switch self {
+        case .plain(let text), .strong(let text), .em(let text):
+            return text
+        case .link(_, let text):
+            return text
+        case .timer(let reference):
+            return reference.displayText
+        case .ingredient(_, _, _, let text):
+            return text
+        case .lineBreak:
+            return nil
+        }
+    }
 }
 
 enum RecipeDescriptionParser {
@@ -234,7 +250,12 @@ enum RecipeDescriptionParser {
                     }
                 } else if tagSource.contains("ingredient-reference") {
                     let text = stripTags(inner)
-                    if !text.isEmpty { runs.append(.ingredient(text)) }
+                    if !text.isEmpty {
+                        let id = attribute(named: "data-ingredient-id", in: tagSource)
+                        let ratio = attribute(named: "data-ratio", in: tagSource).flatMap(Double.init)
+                        let originalAmount = attribute(named: "data-original-amount", in: tagSource)
+                        runs.append(.ingredient(id: id, ratio: ratio, originalAmount: originalAmount, text: text))
+                    }
                 } else {
                     parseInlineNodes(inner, into: &runs)
                 }

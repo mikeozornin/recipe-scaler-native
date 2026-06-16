@@ -2,7 +2,7 @@
 
 **Ветка**: `020-account-telegram-export`  
 **Дата**: 2026-06-03  
-**Статус**: 🟡 В работе (аудит 2026-06-15; фикс placeholder 2026-06-15) — Telegram ✅ в [013](../013-account-settings/spec.md); placeholder `account.data.coming-soon` показывается в `AccountView.dataSection`; export/import — deferred (ждёт backend endpoint)
+**Статус**: 🟢 Частично закрыт — Telegram ✅ в [013](../013-account-settings/spec.md); US3/US4 export/import перенесены в [029-account-data-export-import](../029-account-data-export-import/spec.md) (локально, без бекенда)
 **Зависимости**: `013-account-settings` (вкладка Profile готова), `010-recipe-import` (import pipeline)  
 **Эталон**: `/account` page (export/import), PRD § Export
 
@@ -10,10 +10,10 @@
 
 **Telegram (US1–US2) закрыт в 013** — `TelegramConnectionView`, `TelegramAPI` (connect, poll status, disconnect), i18n `telegram.*`.
 
-**Не закрыто**:
+**Не закрыто** (перенесено в [029](../029-account-data-export-import/spec.md)):
 
-- US3 export всех данных (v1.3 zip/json);
-- US4 import файла `.json/.zip` — секция данных = заглушка `account.data.coming-soon`; также отмечено в 010.
+- ~~US3 export всех данных (v1.3 zip/json)~~ → 029 US1
+- ~~US4 import файла `.json/.zip`~~ → 029 US2
 
 ## Цель
 
@@ -31,11 +31,11 @@
 
 ### US3 — Export всех данных (P2)
 
-**Когда** «Экспортировать всё», **тогда** v1.3 zip/json (через API или сбор из Y.Doc — сверить с вебом), сохранение через share sheet / Files.
+**Перенесено в [029-account-data-export-import](../029-account-data-export-import/spec.md) US1** — реализуется локально из Y.Doc, без бекенда, формат v1.4.
 
 ### US4 — Import файла (P2)
 
-**Когда** пользователь выбирает `.json/.zip` (v1.0–v1.3), **тогда** тот же серверный pipeline, что 010; результат — рецепты в коллекции через sync. Точка входа — Import sheet (010) и/или раздел данных аккаунта.
+**Перенесено в [029-account-data-export-import](../029-account-data-export-import/spec.md) US2** — локальный импорт v1.0–v1.4 через Y.Doc, без серверного pipeline.
 
 ### US5 — Офлайн / безопасность (P2)
 
@@ -49,15 +49,15 @@
 
 ### FR-020-002 — Export
 
-Формат v1.3; сверить, отдаёт ли сервер готовый файл или собирается клиентом из Y.Doc.
+**Перенесено в 029** — локальный экспорт из Y.Doc (v1.4 JSON/ZIP), без бекенд-эндпоинта.
 
 ### FR-020-003 — Import file
 
-Расширить `RecipeImportAPI` / `ImportRecipeSheet` режимом «файл»; `fileImporter` SwiftUI.
+**Перенесено в 029** — локальный импорт v1.0–v1.4 через Y.Doc, без серверного pipeline.
 
 ### FR-020-004 — i18n
 
-Заменить `account.data.coming-soon` и все новые строки на локализованные ключи ru/en (см. 022).
+**Перенесено в 029** — ключи `account.data.*`.
 
 ## Вне scope
 
@@ -67,9 +67,9 @@
 ## Критерии успеха
 
 - **SC-001**: Connect Telegram → ✅ (013).
-- **SC-002**: Export → валидный v1.3 файл, открываемый вебом.
-- **SC-003**: Import `.zip` v1.3 → рецепты появляются в коллекции на обоих клиентах.
-- **SC-004**: Офлайн — операции недоступны с i18n.
+- **SC-002**: Export → перенесено в 029 SC-001.
+- **SC-003**: Import → перенесено в 029 SC-002.
+- **SC-004**: Офлайн — операции недоступны с i18n → перенесено в 029 SC-003.
 
 ## Артефакты
 
