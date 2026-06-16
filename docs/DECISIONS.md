@@ -225,3 +225,59 @@ Chronological log of substantive choices (newest last).
 **Rationale:** User reported incorrect forms like «3 рецептов» across Discover and other screens; suffix-based pluralization with context-specific copy matches Russian grammar and stays consistent between main app and Share Extension via `Shared.xcstrings`.
 
 ---
+
+### 2026-06-15 — Collection pin grouped with leading swipe actions
+
+**Decision:** In collection list rows, the **pin** action is part of the leading swipe / context group (alongside trash and folders), not the trailing group.
+
+**Rationale:** Pin is conceptually organizational/destructive; grouping it with trash + folders matched the user's mental model of the leading action cluster (spec 026-collections US9).
+
+---
+
+### 2026-06-15 — Drop setLink UI and upload-from-URL from native scope
+
+**Decision:** Remove the **setLink UI** from the native description editor (spec 018) and **upload-from-URL** (spec 016) — both cut from their specs entirely, not deferred.
+
+**Rationale:** Link insertion was deemed unnecessary for native v1; upload-from-URL has a backend API but no UX need on iOS. Both removed from the corresponding `spec.md` files.
+
+---
+
+### 2026-06-15 — Search bar in the header for chats and recipe attachment picker
+
+**Decision:** The assistant's chat-list search and the recipe-attachment picker search both live in the **header** with consistent placement; drop the «Чаты» title if needed to make room. Search is **not** auto-closed after use.
+
+**Rationale:** Inconsistent placement (header in the picker, in-list in chats) felt wrong; user wanted header parity across both entry points and Telegram-style persistence.
+
+---
+
+### 2026-06-16 — Native export/import via NativeRecipeDraft, not ThirdPartyRecipeDraft
+
+**Decision:** Build a separate Recipe Scaler v1.0–v1.4 export/import pipeline (spec 029) with a new `NativeRecipeDraft` type mirroring `RecipeData + CollectionEntry + RecipeFolder` 1:1, instead of reusing `ThirdPartyRecipeDraft`.
+
+**Rationale:** `ThirdPartyRecipeDraft` is lossy — no `id`, `color`, `nutrition`, exact timestamps, or `folderIds` — so it cannot support lossless round-trip. Web parity with `v1.4-exporter.ts` / `v1.4-importer.ts` requires a richer draft; pipeline is fully offline-first through Y.Doc.
+
+---
+
+### 2026-06-16 — Recipe GUIDs are lowercase
+
+**Decision:** Recipes created from the native app use **lowercase** UUIDs (matching web convention); uppercase GUIDs break deep-link parity.
+
+**Rationale:** Web URLs and GUID storage assume lowercase; an uppercase native-generated GUID produced a non-matching deep link (`recipe-scaler://recipe/{id}`). Same rule was propagated into the spec.
+
+---
+
+### 2026-06-16 — Third-party import normalizes ingredients to typed fields (even at data loss)
+
+**Decision:** Third-party imports (e.g. Crouton) normalize ingredients into the standard typed structure (name + typed unit + quantity), even if this loses the source's freeform unit text — never dumping "25 г" into a single untyped field.
+
+**Rationale:** Crouton imports pushed the unit into the quantity field, producing un-editable ingredients that behaved differently from other recipes. User explicitly preferred uniformity over fidelity.
+
+---
+
+### 2026-06-16 — Single inline delete confirmation, web-style
+
+**Decision:** Recipe / assistant delete uses **one** inline confirmation styled like the web app. The second, differently-styled confirmation component that was rendering alongside the inline one is fully removed (not just un-called); the guard against double-trigger stays.
+
+**Rationale:** Two confirmation blocks rendered simultaneously, causing a flicker of a "second confirmation". Single inline component matches web parity.
+
+---

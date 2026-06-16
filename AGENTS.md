@@ -42,3 +42,12 @@ For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
 at specs/027-paprika-crouton-import/plan.md
 <!-- SPECKIT END -->
+
+## Learned User Preferences
+
+- All app text must use the project typeface (Martian), not the default SF — if a text block renders in the system font, it's a bug.
+- Verify UI changes via the simulator accessibility server, not screenshot reads — `read`-tool image rendering is unreliable for visual verification.
+
+## Learned Workspace Facts
+
+_(none yet)_
