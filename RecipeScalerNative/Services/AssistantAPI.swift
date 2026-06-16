@@ -223,17 +223,6 @@ enum AssistantAPI {
               let data = trimmed.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let type = json["type"] as? String else {
-            // #region agent log
-            AssistantPendingActionDebugTrace.write(
-                hypothesisId: "H4",
-                location: "AssistantAPI.parseLine:malformedOrNoType",
-                message: "NDJSON line could not be parsed as {type: ...}",
-                data: [
-                    "raw_head": String(trimmed.prefix(300)),
-                    "raw_len": String(trimmed.count)
-                ]
-            )
-            // #endregion
             return nil
         }
         switch type {
@@ -248,30 +237,6 @@ enum AssistantAPI {
             }
             return nil
         case "final":
-            // #region agent log
-            // Capture the raw shape BEFORE attempting typed decoding so we can see exactly what
-            // the server sent (vs what AssistantStreamFinalData kept after decoding).
-            let dataField = json["data"]
-            let dataDict = dataField as? [String: Any]
-            let am = dataDict?["assistantMessage"] as? [String: Any]
-            let amMeta = am?["metadata"] as? [String: Any]
-            AssistantPendingActionDebugTrace.write(
-                hypothesisId: "H4",
-                location: "AssistantAPI.parseLine:final",
-                message: "received 'final' line — raw shape inspection",
-                data: [
-                    "raw_head": String(trimmed.prefix(500)),
-                    "raw_len": String(trimmed.count),
-                    "has_data_key": (dataField != nil).description,
-                    "data_keys": dataDict?.keys.sorted().joined(separator: ",") ?? "not_a_dict",
-                    "data_has_thread": (dataDict?["thread"] != nil).description,
-                    "data_has_userMessage": (dataDict?["userMessage"] != nil).description,
-                    "data_has_assistantMessage": (dataDict?["assistantMessage"] != nil).description,
-                    "data_assistantMessage_keys": am?.keys.sorted().joined(separator: ",") ?? "nil_or_not_dict",
-                    "data_assistantMessage_metadata_keys": amMeta?.keys.sorted().joined(separator: ",") ?? "nil_or_not_dict"
-                ]
-            )
-            // #endregion
             // The server emits `{"type":"final","data":{...}}`. We must decode the *inner* `data`
             // object as AssistantStreamFinalData — NOT the whole envelope (which would decode to
             // all-nil optionals silently).
@@ -285,54 +250,13 @@ enum AssistantAPI {
                 final = try? JSONDecoder().decode(AssistantStreamFinalData.self, from: data)
             }
             guard let final else {
-                // #region agent log
-                AssistantPendingActionDebugTrace.write(
-                    hypothesisId: "H4",
-                    location: "AssistantAPI.parseLine:final:decodeFailed",
-                    message: "AssistantStreamFinalData decode failed — returning nil event (ignored)",
-                    data: ["raw_head": String(trimmed.prefix(500))]
-                )
-                // #endregion
                 return nil
             }
-            // #region agent log
-            AssistantPendingActionDebugTrace.write(
-                hypothesisId: "H4",
-                location: "AssistantAPI.parseLine:final:decodeOk",
-                message: "AssistantStreamFinalData decoded",
-                data: [
-                    "has_thread": (final.thread != nil).description,
-                    "has_userMessage": (final.userMessage != nil).description,
-                    "userMessage_has_metadata": (final.userMessage?.metadata != nil).description,
-                    "userMessage_has_actionResolution": (final.userMessage?.metadata?.actionResolution != nil).description,
-                    "has_assistantMessage": (final.assistantMessage != nil).description,
-                    "assistantMessage_id": final.assistantMessage?.id ?? "nil",
-                    "assistantMessage_content_len": String(final.assistantMessage?.content?.count ?? -1),
-                    "assistantMessage_has_metadata": (final.assistantMessage?.metadata != nil).description
-                ]
-            )
-            // #endregion
             return .final(final)
         case "error":
             let message = (json["message"] as? String) ?? "assistant.error-unavailable"
-            // #region agent log
-            AssistantPendingActionDebugTrace.write(
-                hypothesisId: "H4",
-                location: "AssistantAPI.parseLine:error",
-                message: "received 'error' line from server",
-                data: ["server_message": message]
-            )
-            // #endregion
             return .error(message)
         default:
-            // #region agent log
-            AssistantPendingActionDebugTrace.write(
-                hypothesisId: "H4",
-                location: "AssistantAPI.parseLine:unknownType",
-                message: "unknown event type",
-                data: ["type": type, "raw_head": String(trimmed.prefix(200))]
-            )
-            // #endregion
             return nil
         }
     }

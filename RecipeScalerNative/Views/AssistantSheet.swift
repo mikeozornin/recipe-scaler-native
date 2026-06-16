@@ -262,8 +262,8 @@ struct AssistantSheet: View {
                 message: message,
                 isLastMessage: isLast,
                 isSending: isSending,
-                onWidgetSubmit: { value, attachment in
-                    submitWidgetValue(value, displayText: nil, recipeAttachment: attachment)
+                onWidgetSubmit: { value, displayText, attachment in
+                    submitWidgetValue(value, displayText: displayText, recipeAttachment: attachment)
                 }
             )
         }
@@ -367,27 +367,6 @@ struct AssistantSheet: View {
     private func loadHistory(for id: String) async {
         do {
             let history = try await AssistantAPI.getMessages(threadId: id)
-            // #region agent log
-            for msg in history.prefix(10) {
-                AssistantPendingActionDebugTrace.write(
-                    hypothesisId: "H1A-H2A-H3A",
-                    location: "AssistantSheet.loadHistory:message",
-                    message: "server message loaded from history",
-                    data: [
-                        "msg_id": msg.id,
-                        "role": msg.role,
-                        "content_head": String(msg.content.prefix(80)),
-                        "content_len": String(msg.content.count),
-                        "hasMetadata": (msg.metadata != nil).description,
-                        "hasPendingAction": (msg.metadata?.pendingAction != nil).description,
-                        "pendingActionStatus": msg.metadata?.pendingAction?.status.rawValue ?? "nil",
-                        "hasInteractiveWidget": (msg.metadata?.interactiveWidget != nil).description,
-                        "hasActionResolution": (msg.metadata?.actionResolution != nil).description,
-                        "actionResolutionSource": msg.metadata?.actionResolution?.source ?? "nil"
-                    ]
-                )
-            }
-            // #endregion
             messages = history.map {
                 AssistantMessage(
                     id: $0.id,
@@ -425,7 +404,7 @@ struct AssistantSheet: View {
 
     /// Web `handleSend` (assistant-sheet.tsx:464-511): trim text, snapshot attachments,
     /// optimistic user bubble, then stream.
-    private func send() async {
+    private func send(displayText: String? = nil) async {
         await ensureThread()
         guard let threadId else { return }
 
@@ -435,7 +414,7 @@ struct AssistantSheet: View {
 
         let attachedIds = attachments.compactMap { UUID(uuidString: $0.recipeId)?.uuidString.lowercased() }
         let snapshotAttachments = attachments
-        let displayText = trimmedText
+        let bubbleText = displayText ?? trimmedText
 
         input = ""
         attachments = []
@@ -449,7 +428,7 @@ struct AssistantSheet: View {
             AssistantMessage(
                 id: userMessageId,
                 role: "user",
-                text: displayText,
+                text: bubbleText,
                 isStreaming: false,
                 metadata: AssistantMessageMetadata(
                     attachments: snapshotAttachments.isEmpty ? nil : snapshotAttachments,
@@ -468,12 +447,12 @@ struct AssistantSheet: View {
                 threadId: threadId,
                 message: trimmedText,
                 attachedRecipeIds: attachedIds,
-                displayText: displayText
+                displayText: bubbleText
             )
         } catch {
             // Drop optimistic user bubble on failure so the user can retry.
             messages.removeAll { $0.id == userMessageId }
-            input = displayText
+            input = bubbleText
             attachments = snapshotAttachments
             messages.append(
                 AssistantMessage(
@@ -496,17 +475,6 @@ struct AssistantSheet: View {
         displayText: String?,
         recipeAttachment: AssistantRecipeAttachment?
     ) {
-        // #region agent log
-        AssistantPendingActionDebugTrace.write(
-            hypothesisId: "H2A",
-            location: "AssistantSheet.submitWidgetValue",
-            message: "widget value submitted",
-            data: [
-                "value": value,
-                "displayText": displayText ?? "nil"
-            ]
-        )
-        // #endregion
         let attachments: [AssistantRecipeAttachment]
         if let recipeAttachment {
             attachments = [recipeAttachment]
@@ -516,12 +484,7 @@ struct AssistantSheet: View {
         input = value
         self.attachments = attachments
         Task {
-            await send()
-            // After widget submit, restore the visible text to the friendlier displayText
-            // (the server still received `value`).
-            if let displayText, let lastUserIndex = messages.lastIndex(where: { $0.role == "user" }) {
-                messages[lastUserIndex].text = displayText
-            }
+            await send(displayText: displayText)
         }
     }
 
@@ -586,25 +549,6 @@ struct AssistantSheet: View {
 
     private func applyFinal(_ data: AssistantStreamFinalData, optimisticAssistantId: String) {
         streamingToolStatusKey = nil
-        // #region agent log
-        AssistantPendingActionDebugTrace.write(
-            hypothesisId: "H2A-H3A-H3B",
-            location: "AssistantSheet.applyFinal:entry",
-            message: "final event received",
-            data: [
-                "userMessage.id": data.userMessage?.id ?? "nil",
-                "userMessage.content": data.userMessage?.content ?? "nil",
-                "assistantMessage.id": data.assistantMessage?.id ?? "nil",
-                "assistantMessage.content": data.assistantMessage?.content ?? "nil",
-                "assistantMessage.content.isEmpty": (data.assistantMessage?.content?.isEmpty ?? true).description,
-                "assistantMessage.metadata.hasPendingAction": (data.assistantMessage?.metadata?.pendingAction != nil).description,
-                "assistantMessage.metadata.pendingActionStatus": data.assistantMessage?.metadata?.pendingAction?.status.rawValue ?? "nil",
-                "assistantMessage.metadata.hasInteractiveWidget": (data.assistantMessage?.metadata?.interactiveWidget != nil).description,
-                "assistantMessage.metadata.hasActionResolution": (data.assistantMessage?.metadata?.actionResolution != nil).description,
-                "userMessage.metadata.hasActionResolution": (data.userMessage?.metadata?.actionResolution != nil).description
-            ]
-        )
-        // #endregion
         if let threadData = data.thread {
             if threadData.id != threadId {
                 threadId = threadData.id
@@ -616,23 +560,6 @@ struct AssistantSheet: View {
         }
         if let userMessage = data.userMessage,
            let userIndex = messages.lastIndex(where: { $0.id.hasPrefix("optimistic-user-") }) {
-            // #region agent log
-            AssistantPendingActionDebugTrace.write(
-                hypothesisId: "H2A",
-                location: "AssistantSheet.applyFinal:userMessage",
-                message: "patching optimistic user message",
-                data: [
-                    "optimisticIndex": String(userIndex),
-                    "before_text": messages[userIndex].text,
-                    "before_hasMetadata": (messages[userIndex].metadata != nil).description,
-                    "before_hasActionResolution": (messages[userIndex].metadata?.actionResolution != nil).description,
-                    "server_id": userMessage.id ?? "nil",
-                    "server_content": userMessage.content ?? "nil",
-                    "server_hasMetadata": (userMessage.metadata != nil).description,
-                    "server_hasActionResolution": (userMessage.metadata?.actionResolution != nil).description
-                ]
-            )
-            // #endregion
             if let id = userMessage.id {
                 messages[userIndex].id = id
             }
@@ -659,33 +586,8 @@ struct AssistantSheet: View {
                    let parsed = AssistantISO8601.parse(createdAt) {
                     msg.createdAt = parsed
                 }
-                // #region agent log
-                AssistantPendingActionDebugTrace.write(
-                    hypothesisId: "H1A-H3A",
-                    location: "AssistantSheet.applyFinal:assistantMessage:postUpdate",
-                    message: "assistant streaming message finalized",
-                    data: [
-                        "final_id": msg.id,
-                        "final_text_len": String(msg.text.count),
-                        "final_text_head": String(msg.text.prefix(80)),
-                        "final_isStreaming": msg.isStreaming.description,
-                        "final_hasMetadata": (msg.metadata != nil).description,
-                        "final_hasInteractiveWidget": (msg.metadata?.interactiveWidget != nil).description,
-                        "final_hasPendingAction": (msg.metadata?.pendingAction != nil).description,
-                        "final_pendingActionStatus": msg.metadata?.pendingAction?.status.rawValue ?? "nil"
-                    ]
-                )
-                // #endregion
             }
         } else {
-            // #region agent log
-            AssistantPendingActionDebugTrace.write(
-                hypothesisId: "H3A",
-                location: "AssistantSheet.applyFinal:noAssistantMessage",
-                message: "final event has no assistantMessage — keeping optimistic bubble",
-                data: ["optimisticId": optimisticAssistantId]
-            )
-            // #endregion
             updateStreamingMessage(id: optimisticAssistantId) { msg in
                 msg.isStreaming = false
             }

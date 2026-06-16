@@ -171,6 +171,28 @@ final class AssistantPendingActionTests: XCTestCase {
         XCTAssertEqual(AssistantMessageCopyText.text(for: message), "Удали плиз рецепт")
     }
 
+    func testOptimisticUserBubbleKeepsFriendlyDisplayText() {
+        // When the user taps a quick-reply widget, the optimistic bubble is created with the
+        // widget label (e.g. "Удалить") rather than the raw value ("confirm_delete"). Until the
+        // server responds with actionResolution metadata, the bubble should simply show that text.
+        let message = AssistantMessage(
+            id: "user-optimistic",
+            role: "user",
+            text: "Удалить",
+            isStreaming: false,
+            metadata: AssistantMessageMetadata(
+                attachments: nil,
+                interactiveWidget: nil,
+                pendingAction: nil,
+                actionResolution: nil,
+                followUpSuggestions: nil
+            ),
+            createdAt: Date()
+        )
+
+        XCTAssertEqual(AssistantMessageCopyText.text(for: message), "Удалить")
+    }
+
     func testValueNormalizerIsCaseInsensitiveAndTrims() {
         XCTAssertEqual(AssistantMessageValueNormalizer.normalize("  Confirm_Delete  "), "confirm_delete")
         XCTAssertEqual(AssistantMessageValueNormalizer.normalize("CANCEL_DELETE"), "cancel_delete")

@@ -253,7 +253,6 @@
 		E5F60719293A4B7000000089 /* DebugSessionNDJSONLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000088 /* DebugSessionNDJSONLog.swift */; };
 		E5F60719293A4B7000000091 /* CursorDebugIngestLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000090 /* CursorDebugIngestLog.swift */; };
 		E5F60719293A4B7000000093 /* AgentDebugLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000092 /* AgentDebugLogging.swift */; };
-		E5F6071F46CEF90000000002 /* AssistantPendingActionDebugTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6071F46CEF90000000001 /* AssistantPendingActionDebugTrace.swift */; };
 		E5F6071A293A4B7000000090 /* DescriptionWireExportHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6071A293A4B7000000091 /* DescriptionWireExportHost.swift */; };
 		E9DD0B9B76F2486E815F1778 /* GetURLFromPage.js in Resources */ = {isa = PBXBuildFile; fileRef = 7547A99BB7A0476BB6F43525 /* GetURLFromPage.js */; };
 		EB4EDF7C30F646A99BDD3767 /* Shared.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B723ECE01A3D4E2F85D856AC /* Shared.xcstrings */; };
@@ -591,7 +590,6 @@
 		E5F60719293A4B7000000088 /* DebugSessionNDJSONLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSessionNDJSONLog.swift; sourceTree = "<group>"; };
 		E5F60719293A4B7000000090 /* CursorDebugIngestLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorDebugIngestLog.swift; sourceTree = "<group>"; };
 		E5F60719293A4B7000000092 /* AgentDebugLogging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentDebugLogging.swift; sourceTree = "<group>"; };
-		E5F6071F46CEF90000000001 /* AssistantPendingActionDebugTrace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantPendingActionDebugTrace.swift; sourceTree = "<group>"; };
 		E5F6071A293A4B7000000091 /* DescriptionWireExportHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionWireExportHost.swift; sourceTree = "<group>"; };
 		EA4BEBE2780DE29A70E2D8AC /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		EB452B44E6C61233D3482133 /* MartianGrotesk-NrLt.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MartianGrotesk-NrLt.otf"; sourceTree = "<group>"; };
@@ -1057,7 +1055,6 @@
 				E5F60718293A4B7000000059 /* RecipeDescriptionStyle.swift */,
 				E5F60718293A4B700000000D /* AgentSyncDebugLog.swift */,
 				E5F60719293A4B7000000092 /* AgentDebugLogging.swift */,
-				E5F6071F46CEF90000000001 /* AssistantPendingActionDebugTrace.swift */,
 				E5F60719293A4B7000000088 /* DebugSessionNDJSONLog.swift */,
 				E5F60719293A4B7000000090 /* CursorDebugIngestLog.swift */,
 				E5F60718293A4B7000000009 /* RecipeRowLayoutMetrics.swift */,
@@ -1544,7 +1541,6 @@
 				E5F60718293A4B700000005A /* RecipeDescriptionInlineTextView.swift in Sources */,
 				E5F60718293A4B700000000C /* AgentSyncDebugLog.swift in Sources */,
 				E5F60719293A4B7000000093 /* AgentDebugLogging.swift in Sources */,
-				E5F6071F46CEF90000000002 /* AssistantPendingActionDebugTrace.swift in Sources */,
 				E5F60719293A4B7000000089 /* DebugSessionNDJSONLog.swift in Sources */,
 				E5F60719293A4B7000000091 /* CursorDebugIngestLog.swift in Sources */,
 				E5F60718293A4B7000000003 /* EditIngredientNutritionSheet.swift in Sources */,

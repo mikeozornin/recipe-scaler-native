@@ -18,7 +18,7 @@ struct AssistantMessageFooter: View {
     let message: AssistantMessage
     let isLastMessage: Bool
     let isSending: Bool
-    let onWidgetSubmit: (_ value: String, _ recipeAttachment: AssistantRecipeAttachment?) -> Void
+    let onWidgetSubmit: (_ value: String, _ displayText: String?, _ recipeAttachment: AssistantRecipeAttachment?) -> Void
 
     /// Single-shot lock: once any widget option is tapped, the footer becomes inert.
     @State private var widgetSubmitted = false
@@ -29,56 +29,17 @@ struct AssistantMessageFooter: View {
               isLastMessage,
               !isSending,
               !widgetSubmitted else {
-            // #region agent log
-            AssistantPendingActionDebugTrace.write(
-                hypothesisId: "H1A",
-                location: "AssistantMessageFooter.widget:gateRejected",
-                message: "widget gate rejected",
-                data: [
-                    "msg_id": message.id,
-                    "role": message.role,
-                    "isStreaming": message.isStreaming.description,
-                    "isLastMessage": isLastMessage.description,
-                    "isSending": isSending.description,
-                    "widgetSubmitted": widgetSubmitted.description,
-                    "metadata_hasInteractiveWidget": (message.metadata?.interactiveWidget != nil).description
-                ]
-            )
-            // #endregion
             return nil
         }
-        // #region agent log
-        AssistantPendingActionDebugTrace.write(
-            hypothesisId: "H1A",
-            location: "AssistantMessageFooter.widget:gatePassed",
-            message: "widget gate passed",
-            data: [
-                "msg_id": message.id,
-                "hasWidget": (message.metadata?.interactiveWidget != nil).description
-            ]
-        )
-        // #endregion
         return message.metadata?.interactiveWidget
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let widget {
-                // #region agent log
-                let _ = AssistantPendingActionDebugTrace.write(
-                    hypothesisId: "H1A",
-                    location: "AssistantMessageFooter.body:renderedWidget",
-                    message: "footer rendered widget branch (web parity: pendingAction is server-only)",
-                    data: [
-                        "msg_id": message.id,
-                        "widgetId": widget.id,
-                        "pendingActionAlsoPresent": (message.metadata?.pendingAction != nil).description
-                    ]
-                )
-                // #endregion
-                AssistantWidgetView(widget: widget) { value, attachment in
+                AssistantWidgetView(widget: widget) { value, displayText, attachment in
                     widgetSubmitted = true
-                    onWidgetSubmit(value, attachment)
+                    onWidgetSubmit(value, displayText, attachment)
                 }
             }
         }
@@ -206,82 +167,20 @@ enum AssistantMessageCopyText {
         let metadata = message.metadata
         let pendingAction = metadata?.pendingAction
         let resolution = metadata?.actionResolution
-        // #region agent log
-        AssistantPendingActionDebugTrace.write(
-            hypothesisId: "H2A",
-            location: "AssistantMessageCopyText.resolvedWidgetActionText:entry",
-            message: "checking user bubble resolution",
-            data: [
-                "msg_id": message.id,
-                "msg_text": message.text,
-                "hasMetadata": (metadata != nil).description,
-                "hasPendingAction": (pendingAction != nil).description,
-                "hasActionResolution": (resolution != nil).description,
-                "actionResolutionSource": resolution?.source ?? "nil",
-                "confirmValue": pendingAction?.confirmValue ?? "nil",
-                "cancelValue": pendingAction?.cancelValue ?? "nil",
-                "confirmLabel": pendingAction?.confirmLabel ?? "nil",
-                "cancelLabel": pendingAction?.cancelLabel ?? "nil"
-            ]
-        )
-        // #endregion
         guard let metadata,
               let pendingAction = metadata.pendingAction,
               let resolution = metadata.actionResolution,
               resolution.source == "widget",
               resolution.pendingActionId == pendingAction.id else {
-            // #region agent log
-            AssistantPendingActionDebugTrace.write(
-                hypothesisId: "H2A",
-                location: "AssistantMessageCopyText.resolvedWidgetActionText:returnNil",
-                message: "returning nil — guard failed (no metadata / pendingAction / resolution / source != widget)",
-                data: [
-                    "msg_id": message.id,
-                    "reason_noMetadata": (metadata == nil).description,
-                    "reason_noPendingAction": (pendingAction == nil).description,
-                    "reason_noResolution": (resolution == nil).description,
-                    "reason_sourceNotWidget": (resolution?.source != nil && resolution?.source != "widget").description
-                ]
-            )
-            // #endregion
             return nil
         }
         let normalizedContent = AssistantMessageValueNormalizer.normalize(message.text)
         if normalizedContent == AssistantMessageValueNormalizer.normalize(pendingAction.confirmValue) {
-            // #region agent log
-            AssistantPendingActionDebugTrace.write(
-                hypothesisId: "H2A",
-                location: "AssistantMessageCopyText.resolvedWidgetActionText:confirmMatch",
-                message: "returning confirmLabel",
-                data: ["msg_id": message.id, "confirmLabel": pendingAction.confirmLabel ?? "nil"]
-            )
-            // #endregion
             return pendingAction.confirmLabel ?? message.text
         }
         if normalizedContent == AssistantMessageValueNormalizer.normalize(pendingAction.cancelValue) {
-            // #region agent log
-            AssistantPendingActionDebugTrace.write(
-                hypothesisId: "H2A",
-                location: "AssistantMessageCopyText.resolvedWidgetActionText:cancelMatch",
-                message: "returning cancelLabel",
-                data: ["msg_id": message.id, "cancelLabel": pendingAction.cancelLabel ?? "nil"]
-            )
-            // #endregion
             return pendingAction.cancelLabel ?? message.text
         }
-        // #region agent log
-        AssistantPendingActionDebugTrace.write(
-            hypothesisId: "H2A",
-            location: "AssistantMessageCopyText.resolvedWidgetActionText:noMatch",
-            message: "source=widget but content matches neither confirm nor cancel value",
-            data: [
-                "msg_id": message.id,
-                "normalizedContent": normalizedContent,
-                "normalizedConfirm": AssistantMessageValueNormalizer.normalize(pendingAction.confirmValue),
-                "normalizedCancel": AssistantMessageValueNormalizer.normalize(pendingAction.cancelValue)
-            ]
-        )
-        // #endregion
         return nil
     }
 }
@@ -372,7 +271,7 @@ struct AssistantMessageMetaRow: View {
 
 struct AssistantWidgetView: View {
     let widget: AssistantInteractiveWidget
-    let onSubmit: (_ value: String, _ recipeAttachment: AssistantRecipeAttachment?) -> Void
+    let onSubmit: (_ value: String, _ displayText: String?, _ recipeAttachment: AssistantRecipeAttachment?) -> Void
 
     var body: some View {
         switch widget {
@@ -399,16 +298,18 @@ private func looksLikeUUID(_ value: String) -> Bool {
 
 private struct AssistantQuickRepliesWidget: View {
     let options: [AssistantWidgetOption]
-    let onSubmit: (String, AssistantRecipeAttachment?) -> Void
+    let onSubmit: (String, String?, AssistantRecipeAttachment?) -> Void
 
     var body: some View {
         FlowLayout(spacing: 8) {
             ForEach(options) { option in
                 Button {
-                    let attachment: AssistantRecipeAttachment? = looksLikeUUID(option.value)
+                    let isRecipeId = looksLikeUUID(option.value)
+                    let attachment: AssistantRecipeAttachment? = isRecipeId
                         ? AssistantRecipeAttachment(recipeId: option.value, recipeName: option.label, recipeColor: nil)
                         : nil
-                    onSubmit(option.value, attachment)
+                    let displayText: String? = isRecipeId ? nil : option.label
+                    onSubmit(option.value, displayText, attachment)
                 } label: {
                     Text(option.label)
                         .font(.subheadline)
@@ -426,7 +327,7 @@ private struct AssistantQuickRepliesWidget: View {
 
 private struct AssistantSelectWidget: View {
     let options: [AssistantWidgetOption]
-    let onSubmit: (String, AssistantRecipeAttachment?) -> Void
+    let onSubmit: (String, String?, AssistantRecipeAttachment?) -> Void
 
     @State private var selection: AssistantWidgetOption?
 
@@ -449,7 +350,7 @@ private struct AssistantSelectWidget: View {
                     recipeName: selected.label,
                     recipeColor: nil
                 )
-                onSubmit(selected.value, attachment)
+                onSubmit(selected.value, nil, attachment)
             }
             .buttonStyle(.borderedProminent)
             .disabled(selection == nil)
@@ -463,7 +364,7 @@ private struct AssistantSelectWidget: View {
 
 private struct AssistantNumberInputWidget: View {
     let config: AssistantInteractiveWidget.NumberInput
-    let onSubmit: (String, AssistantRecipeAttachment?) -> Void
+    let onSubmit: (String, String?, AssistantRecipeAttachment?) -> Void
 
     @State private var value: Double = 1
 
@@ -482,7 +383,7 @@ private struct AssistantNumberInputWidget: View {
                 }
             }
             Button("assistant.send") {
-                onSubmit(formattedValue, nil)
+                onSubmit(formattedValue, nil, nil)
             }
             .buttonStyle(.borderedProminent)
             .accessibilityIdentifier("assistant_widget_number_input_submit")
