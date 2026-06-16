@@ -406,11 +406,12 @@ struct RecipeListView: View {
                 .tint(.blue)
             }
             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                Button(role: .destructive) {
+                Button {
                     recipePendingDelete = item
                 } label: {
                     AppLabel.make(String(localized: "recipe.list.delete"), symbol: "trash")
                 }
+                .tint(.red)
             }
             .task(id: item.id) {
                 guard item.hasThumbnail,
