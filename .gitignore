@@ -64,3 +64,4 @@ scripts/node_modules/
 .debug-session.ndjson
 .playwright-mcp
 tmp
+.verify-screenshots
