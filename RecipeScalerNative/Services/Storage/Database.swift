@@ -1,6 +1,6 @@
 import Foundation
 import GRDB
-import OSLog
+
 
 /// GRDB database setup and migration for Y.Doc snapshot storage.
 ///
@@ -10,7 +10,6 @@ final class YrsDatabase {
     let dbQueue: DatabaseQueue
     /// `true` when on-disk open failed and the app is using an in-memory fallback.
     static var dbInitFailed = false
-    private static let logger = Logger(subsystem: "com.recipescaler.native", category: "YrsDatabase")
 
     init() throws {
         let appSupport = FileManager.default.urls(
@@ -19,7 +18,7 @@ final class YrsDatabase {
         )[0]
 
         let dbURL = appSupport.appendingPathComponent("ydoc_snapshots.sqlite")
-        Self.logger.info("Opening database at \(dbURL.path)")
+        AppLog.info(.database, "Opening database at \(dbURL.path)")
 
         var config = Configuration()
         config.prepareDatabase { db in
@@ -42,7 +41,7 @@ final class YrsDatabase {
     }
 
     static func logInitFailure(_ error: Error) {
-        logger.error("Failed to open on-disk database, falling back to in-memory: \(error)")
+        AppLog.error(.database, "Failed to open on-disk database, falling back to in-memory: \(error)")
     }
 
     private init(dbQueue: DatabaseQueue) {

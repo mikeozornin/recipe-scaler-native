@@ -11,7 +11,6 @@ import os
 final class TimerLiveActivityCoordinator {
     static let shared = TimerLiveActivityCoordinator()
 
-    private let logger = Logger(subsystem: "ru.recipescaler.RecipeScalerNative", category: "TimerLiveActivity")
 
     private var activityByTimerId: [String: Activity<RecipeTimerActivityAttributes>] = [:]
     private var exceededDismissTasks: [String: Task<Void, Never>] = [:]
@@ -50,7 +49,7 @@ final class TimerLiveActivityCoordinator {
             return
         }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
-            logger.warning("Live Activities disabled (system or per-app Settings)")
+            AppLog.notice(.timer, "Live Activities disabled (system or per-app Settings)")
             return
         }
 
@@ -94,12 +93,11 @@ final class TimerLiveActivityCoordinator {
                 pushType: nil
             )
             activityByTimerId[timer.id] = activity
-            logger.info("Started Live Activity for timer \(timer.id, privacy: .public)")
+            AppLog.info(.timer, "Started Live Activity for timer \(timer.id)")
             handleExceededDismissSchedule(timerId: timer.id, state: contentState)
         } catch {
             let message = "Activity.request failed for \(timer.id): \(error.localizedDescription)"
-            logger.error("\(message, privacy: .public)")
-            print("[TimerLiveActivity] \(message)")
+            AppLog.error(.timer, message)
         }
     }
 

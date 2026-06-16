@@ -41,9 +41,9 @@ final class PushRegistrationService {
                 method: "POST",
                 body: body
             )
-            print("[APNs] Device token registered")
+            AppLog.info(.push, "Device token registered")
         } catch {
-            print("[APNs] Token registration failed: \(error.localizedDescription)")
+            AppLog.error(.push, "Token registration failed: \(error.localizedDescription)")
         }
     }
 }

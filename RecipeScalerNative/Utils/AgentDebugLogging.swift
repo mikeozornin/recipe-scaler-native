@@ -2,13 +2,12 @@ import Foundation
 
 /// Master switch for agent NDJSON debug traces (`AgentSyncDebugLog`, `CursorDebugIngestLog`, …).
 ///
-/// Off by default. Enable in the Xcode scheme:
-/// `AGENT_DEBUG_LOG_ENABLED` = `1`
+/// On by default in DEBUG builds. Opt out via scheme env `AGENT_DEBUG_LOG_DISABLED=1`.
 /// Optional Cursor ingest: `CURSOR_DEBUG_INGEST_URL`, `CURSOR_DEBUG_SESSION_ID`.
 enum AgentDebugLogging {
     #if DEBUG
     static var isEnabled: Bool {
-        ProcessInfo.processInfo.environment["AGENT_DEBUG_LOG_ENABLED"] == "1"
+        AppLog.isFileLoggingEnabled
     }
 
     static var cursorIngestURL: URL? {

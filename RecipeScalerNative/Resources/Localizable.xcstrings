@@ -634,6 +634,70 @@
         }
       }
     },
+    "account.section.logs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnostics"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Диагностика"
+          }
+        }
+      }
+    },
+    "account.export.logs.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export app log"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспорт журнала"
+          }
+        }
+      }
+    },
+    "account.export.logs.missing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No log file available"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл журнала недоступен"
+          }
+        }
+      }
+    },
+    "account.export.logs.missing.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The diagnostic log is only created in debug builds while the app is running."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Журнал создаётся только в отладочной сборке во время работы приложения."
+          }
+        }
+      }
+    },
     "account.section.preferences" : {
       "extractionState" : "stale",
       "localizations" : {

@@ -79,7 +79,7 @@ enum RecipeImageDiskCache {
 
         if movedCount > 0 {
             #if DEBUG
-            print("RecipeImageDiskCache: migrated \(movedCount) file(s) from Caches to Application Support")
+            AppLog.info(.app, "RecipeImageDiskCache: migrated \(movedCount) file(s) from Caches to Application Support")
             #endif
         }
 

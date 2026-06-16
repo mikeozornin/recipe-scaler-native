@@ -63,6 +63,8 @@
 		86953CAE0C5C495CA34B6362 /* RecipeEditPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2C8DC8D63F14DC8A5436B59 /* RecipeEditPolicy.swift */; };
 		8E988A9C80C04F009435D353 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EF2B3F0EB5A4599AE467921 /* DeepLinkRouter.swift */; };
 		8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */; };
+		B3APPLOG01B293A4B70100002 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPLOG01A293A4B70100001 /* AppLog.swift */; };
+		B3APPLOG02B293A4B70100002 /* AppLogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPLOG02A293A4B70100001 /* AppLogTests.swift */; };
 		B3PLUR01B293A4B701000002 /* PluralizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3PLUR01A293A4B701000001 /* PluralizationTests.swift */; };
 		B3SNAP01B293A4B701000004 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = B3SNAP01A293A4B701000003 /* SnapshotTesting */; };
 		B3APIC01B293A4B701000006 /* APIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APIC01B293A4B701000005 /* APIClientTests.swift */; };
@@ -200,6 +202,7 @@
 		E5F60718293A4B703C4C8B66 /* TimerUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7066BF06C8 /* TimerUtils.swift */; };
 		E5F60718293A4B703E9C5471 /* DiscoverCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70E19AC353 /* DiscoverCollectionView.swift */; };
 		E5F60718293A4B7044C89B39 /* AssistantAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A0E4855E /* AssistantAPI.swift */; };
+		E5LLMPARSE293A4B70100002 /* RecipeLLMParseAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5LLMPARSE293A4B70100001 /* RecipeLLMParseAPI.swift */; };
 		E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70344FA5B3 /* AccountView.swift */; };
 		E5F60718293A4B704B61748D /* DiscoverAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7011DA2DE4 /* DiscoverAPI.swift */; };
 		E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */; };
@@ -382,6 +385,8 @@
 		1D90E06DB664829F1CEFCCD5 /* TimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerManager.swift; sourceTree = "<group>"; };
 		2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeScalerNativeTests.swift; sourceTree = "<group>"; };
 		2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationConsistencyTests.swift; sourceTree = "<group>"; };
+		B3APPLOG01A293A4B70100001 /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
+		B3APPLOG02A293A4B70100001 /* AppLogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogTests.swift; sourceTree = "<group>"; };
 		B3PLUR01A293A4B701000001 /* PluralizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluralizationTests.swift; sourceTree = "<group>"; };
 		B3APIC01B293A4B701000005 /* APIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientTests.swift; sourceTree = "<group>"; };
 		24D8ACC6DE6F3FE3D4AE9C40 /* IngredientData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientData.swift; sourceTree = "<group>"; };
@@ -578,6 +583,7 @@
 		E5F60718293A4B709EBF9E6E /* RecipeDetailActionsMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailActionsMenu.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A0433F17 /* TimerSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSyncService.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A0E4855E /* AssistantAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantAPI.swift; sourceTree = "<group>"; };
+		E5LLMPARSE293A4B70100001 /* RecipeLLMParseAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeLLMParseAPI.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A1B2C3E /* RecipeReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeReader.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeImageUploadPreprocessor.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A1SEG002 /* AppSegmentedControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSegmentedControl.swift; sourceTree = "<group>"; };
@@ -992,6 +998,7 @@
 				94F6EEB0522CF5E6241A73B1 /* Info.plist */,
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
+				B3APPLOG02A293A4B70100001 /* AppLogTests.swift */,
 				B3PLUR01A293A4B701000001 /* PluralizationTests.swift */,
 				B3APIC01B293A4B701000005 /* APIClientTests.swift */,
 				E5F60718293A4B7000000095 /* RecipeSearchUtilsTests.swift */,
@@ -1107,6 +1114,7 @@
 				E5F60718293A4B70309B38A2 /* DescriptionTimerPopoverState.swift */,
 				E5F60718293A4B7000000053 /* RecipeDescriptionParser.swift */,
 				E5F60718293A4B7000000059 /* RecipeDescriptionStyle.swift */,
+				B3APPLOG01A293A4B70100001 /* AppLog.swift */,
 				E5F60718293A4B700000000D /* AgentSyncDebugLog.swift */,
 				E5F60719293A4B7000000092 /* AgentDebugLogging.swift */,
 				E5F60719293A4B7000000088 /* DebugSessionNDJSONLog.swift */,
@@ -1173,6 +1181,7 @@
 				E5F60718293A4B7035E279C2 /* SharingAPI.swift */,
 				E5F60718293A4B70093D4CC7 /* AccountAPI.swift */,
 				E5F60718293A4B70A0E4855E /* AssistantAPI.swift */,
+				E5LLMPARSE293A4B70100001 /* RecipeLLMParseAPI.swift */,
 				A5VOC02293A4B7010000002 /* AssistantVoiceRecorder.swift */,
 				E5F60718293A4B70ED0922D8 /* AssistantModels.swift */,
 				E5F60718293A4B705F98774E /* TelegramAPI.swift */,
@@ -1615,6 +1624,7 @@
 				E5F60719293A4B7000000087 /* DescriptionMarkupFlow.swift in Sources */,
 				E5F60718293A4B7000000058 /* RecipeDescriptionStyle.swift in Sources */,
 				E5F60718293A4B700000005A /* RecipeDescriptionInlineTextView.swift in Sources */,
+				B3APPLOG01B293A4B70100002 /* AppLog.swift in Sources */,
 				E5F60718293A4B700000000C /* AgentSyncDebugLog.swift in Sources */,
 				E5F60719293A4B7000000093 /* AgentDebugLogging.swift in Sources */,
 				E5F60719293A4B7000000089 /* DebugSessionNDJSONLog.swift in Sources */,
@@ -1642,6 +1652,7 @@
 				E5F60718293A4B709F00BE94 /* SharingAPI.swift in Sources */,
 				E5F60718293A4B70EFFBE68D /* AccountAPI.swift in Sources */,
 				E5F60718293A4B7044C89B39 /* AssistantAPI.swift in Sources */,
+				E5LLMPARSE293A4B70100002 /* RecipeLLMParseAPI.swift in Sources */,
 				A5VOC01293A4B7010000001 /* AssistantVoiceRecorder.swift in Sources */,
 				A5VLM01293A4B7010000001 /* AssistantVoiceLevelMeter.swift in Sources */,
 				E5F60718293A4B70D7CEFCAD /* AssistantModels.swift in Sources */,
@@ -1738,6 +1749,7 @@
 			files = (
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
+				B3APPLOG02B293A4B70100002 /* AppLogTests.swift in Sources */,
 				B3PLUR01B293A4B701000002 /* PluralizationTests.swift in Sources */,
 				B3APIC01B293A4B701000006 /* APIClientTests.swift in Sources */,
 				7F2675404F75AD0EC794F971 /* RecipeSearchUtilsTests.swift in Sources */,

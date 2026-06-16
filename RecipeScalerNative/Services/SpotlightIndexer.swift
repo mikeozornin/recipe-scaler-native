@@ -1,7 +1,7 @@
 import Combine
 import CoreSpotlight
 import Foundation
-import OSLog
+
 import UniformTypeIdentifiers
 #if canImport(UIKit)
 import UIKit
@@ -26,7 +26,6 @@ final class SpotlightIndexer: ObservableObject {
     private static let previewFormatVersion = "2"
 
     private let syncService: YjsSyncService
-    private let logger = Logger(subsystem: "com.recipescaler.native", category: "SpotlightIndexer")
     private var cancellables = Set<AnyCancellable>()
     /// recipeId → updatedAt. Used to skip reindex when content unchanged.
     private var indexedFingerprints: [String: String] = [:]
@@ -62,7 +61,7 @@ final class SpotlightIndexer: ObservableObject {
             try await CSSearchableIndex.default()
                 .deleteSearchableItems(withDomainIdentifiers: [domainId])
         } catch {
-            logger.warning("clearAll failed: \(error.localizedDescription)")
+            AppLog.notice(.spotlight, "clearAll failed: \(error.localizedDescription)")
         }
         indexedFingerprints.removeAll()
     }
@@ -84,7 +83,7 @@ final class SpotlightIndexer: ObservableObject {
                 try await CSSearchableIndex.default()
                     .deleteSearchableItems(withIdentifiers: Array(stale))
             } catch {
-                logger.warning("delete stale failed: \(error.localizedDescription)")
+                AppLog.notice(.spotlight, "delete stale failed: \(error.localizedDescription)")
             }
             for id in stale {
                 indexedFingerprints.removeValue(forKey: id)
@@ -94,7 +93,7 @@ final class SpotlightIndexer: ObservableObject {
         let dirty = live.filter { indexedFingerprints[$0.id] != indexFingerprint(for: $0) }
         guard !dirty.isEmpty else { return }
 
-        logger.info("Reindexing \(dirty.count) recipe(s); stale removed: \(stale.count)")
+        AppLog.info(.spotlight, "Reindexing \(dirty.count) recipe(s); stale removed: \(stale.count)")
 
         for entry in dirty {
             await indexOne(entry: entry)
@@ -152,7 +151,7 @@ final class SpotlightIndexer: ObservableObject {
             try await CSSearchableIndex.default().indexSearchableItems([item])
             indexedFingerprints[entry.id] = indexFingerprint(for: entry)
         } catch {
-            logger.warning("Index failed for \(entry.id): \(error.localizedDescription)")
+            AppLog.notice(.spotlight, "Index failed for \(entry.id): \(error.localizedDescription)")
         }
     }
 

@@ -39,7 +39,7 @@ final class PushScheduleService {
             )
             return true
         } catch {
-            print("[Push] Schedule failed: \(error.localizedDescription)")
+            AppLog.error(.push, "Schedule failed: \(error.localizedDescription)")
             return false
         }
     }
@@ -57,7 +57,7 @@ final class PushScheduleService {
                 body: body
             )
         } catch {
-            print("[Push] Cancel failed: \(error.localizedDescription)")
+            AppLog.error(.push, "Cancel failed: \(error.localizedDescription)")
         }
     }
 }

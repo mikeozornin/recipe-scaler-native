@@ -19,9 +19,8 @@ sim_build >/dev/null
 sim_prepare
 sim_install
 
-# `sim_launch` unsets SIMCTL_CHILD_AGENT_DEBUG_LOG, but we need both env vars to be
-# present in the launched process so AgentSyncDebugLog writes the NDJSON trace.
-# Mirror the pattern from scripts/debug-recipe-detail.sh.
+# Optional: write NDJSON directly to host path (see llm/how-to-debug.md).
+# AppLog is on by default in DEBUG — no AGENT_DEBUG_LOG_ENABLED needed.
 rm -f "$LOG_FILE"
 xcrun simctl terminate "$SIM_ID" "$BUNDLE_ID" 2>/dev/null || true
 container="$(xcrun simctl get_app_container "$SIM_ID" "$BUNDLE_ID" data 2>/dev/null || true)"
@@ -32,7 +31,6 @@ if [[ -n "$container" ]]; then
     "$container/Library/Caches/$BUNDLE_ID/debug-session.ndjson" 2>/dev/null || true
 fi
 export SIMCTL_CHILD_AGENT_DEBUG_LOG="$LOG_FILE"
-export SIMCTL_CHILD_AGENT_DEBUG_LOG_ENABLED="1"
 xcrun simctl launch "$SIM_ID" "$BUNDLE_ID" -SkipSplash=1 -ShowAssistant=1 >/dev/null
 
 sleep 10
@@ -56,7 +54,7 @@ fi
 
 if [[ ! -s "$LOG_FILE" ]]; then
   echo "FAIL: debug-session.ndjson missing or empty at $LOG_FILE"
-  echo "  (check that AGENT_DEBUG_LOG_ENABLED was propagated and AssistantSheet.onAppear ran)"
+  echo "  (check that app ran in DEBUG and AssistantSheet.onAppear fired)"
   exit 1
 fi
 

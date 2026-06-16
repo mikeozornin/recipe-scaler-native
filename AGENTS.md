@@ -16,6 +16,15 @@
 - Offline-first; debug builds auto-login prod debug user.
 - Recipes v1/v2 — read-only на iOS; v3 editing и миграция — только web.
 
+## Журналирование (агент)
+
+- **Фасад:** `AppLog` (`RecipeScalerNative/Utils/AppLog.swift`) — единая точка для Services и agent-trace.
+- **Файл (DEBUG):** `Library/Application Support/debug-session.ndjson` в sandbox; включён по умолчанию, opt-out: `AGENT_DEBUG_LOG_DISABLED=1`.
+- **Забрать логи из симулятора:** `bash scripts/pull-app-logs.sh` → `.debug-session.ndjson` в корне репо.
+- **Телефон:** Профиль → Диагностика → Экспорт журнала (DEBUG); в Release файла нет — в UI понятное сообщение.
+- **Добавить лог:** `AppLog.info(.sync, "event_name", data: ["key": "value"])`; для `/debug`-trace — `AgentSyncDebugLog.sync(...)` или `AppLog.agent(...)`.
+- **Полный гайд:** [llm/how-to-debug.md](llm/how-to-debug.md). Не использовать HTTP ingest на `127.0.0.1` с физического iPhone.
+
 ## Документация по задаче
 
 | Документ | Когда читать |
@@ -24,6 +33,7 @@
 | [docs/I18N.md](docs/I18N.md) | runtime locale, свизл, navigationTitle, pluralization |
 | [docs/UI.md](docs/UI.md) | типографика, HIG, web parity, паттерны экранов |
 | [docs/AGENT-WORKFLOW.md](docs/AGENT-WORKFLOW.md) | fix-until-green, verify-скрипты, отладка |
+| [llm/how-to-debug.md](llm/how-to-debug.md) | **журналирование**: `AppLog`, NDJSON, `pull-app-logs.sh`, экспорт с телефона |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | CRDT, yrs, sync layers |
 | [docs/PAID-APPLE-DEVELOPER-REQUIRED.md](docs/PAID-APPLE-DEVELOPER-REQUIRED.md) | TestFlight, extensions, App Groups |
 
