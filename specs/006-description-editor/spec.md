@@ -2,7 +2,7 @@
 
 **Ветка**: `006-description-editor`  
 **Дата**: 2026-06-02  
-**Статус**: ✅ **Superseded by 019** (2026-06-15) — inline Tiptap + sticky bar в production. Функциональный остаток → [018](../018-description-editor-richtext/spec.md) (🟢 почти done). Legacy sheet `DescriptionEditorView` — dead code, удаление T021 в 019.  
+**Статус**: ✅ **Superseded by 019** (2026-06-15) — inline Tiptap + sticky bar в production. Функциональный остаток → [018](../018-description-editor-richtext/spec.md) (🟢 почти done). Legacy sheet `DescriptionEditorView` — dead code, удалён из target (019 T021 закрыт 2026-06-15).  
 **Зависимости**: `004-description-read-only` (чтение v3), `002-native-editing` (sync write)  
 **Эталон веба**: `recipe-scaler-web/recipe-scaler` — Tiptap в `recipe-detail`, `Y.XmlFragment('description')`
 

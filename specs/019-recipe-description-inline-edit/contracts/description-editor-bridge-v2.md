@@ -33,7 +33,6 @@
 | `toggleBulletList` | — | `toggleBulletList()` |
 | `toggleOrderedList` | — | `toggleOrderedList()` |
 | `toggleItalic` | — | `toggleItalic()` (если extension включён) |
-| `setLink` | `href: String` | `setLink({ href })` / `unsetLink()` если `href` пустой |
 | `focus` | — | `editor.commands.focus()` |
 | `blur` | — | `editor.commands.blur()` |
 | `markAsIngredient` | `ingredientId`, `originalAmount?`, `ratio?` | как `TiptapRecipeEditorRef.markAsIngredient` |

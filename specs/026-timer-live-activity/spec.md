@@ -2,7 +2,7 @@
 
 **Ветка**: `026-timer-live-activity`  
 **Дата**: 2026-06-12  
-**Статус**: 🟡 В работе (~90% кода, аудит 2026-06-15) — device QA pause/resume pending  
+**Статус**: 🟡 В работе (~90% кода, аудит 2026-06-15) — device QA pause/resume pending. **Блокер**: device QA требует платный Apple Developer Account (см. [PAID-APPLE-DEVELOPER-REQUIRED.md](../../docs/PAID-APPLE-DEVELOPER-REQUIRED.md)); кодовая часть (ActivityKit + App Group queue + LiveActivityIntent) полностью готова.
 **Зависимости**: [014-timers-sync](../014-timers-sync/spec.md) (DONE)
 
 ## Цель

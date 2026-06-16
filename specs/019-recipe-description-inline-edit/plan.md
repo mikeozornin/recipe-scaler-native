@@ -35,13 +35,13 @@ Inline **Tiptap** в `YDocRecipeDetailView`, **нативная sticky-пане�
 - [x] `DescriptionFormattingBar` + `safeAreaInset(edge: .bottom)`
 - [x] `focus` / `blur` / `selectionState`
 - [x] H1, bold, highlight, ordered/bullet lists
-- [ ] SC-003 quickstart formal
+- [x] SC-003 quickstart formal (подтверждено 2026-06-15)
 
 ### Phase 3 — Tiptap parity core (018 P1) 🟡
 
 - [x] Tiptap extensions: Link (autolink), Highlight, TimerNode, IngredientNode
 - [x] Web toolbar не показывается (inline-embedded HTML)
-- [ ] Manual setLink UI (optional)
+- [x] Manual setLink UI — вне scope (убрано 2026-06-15; на веб mobile menu bar отдельной кнопки тоже нет)
 - [ ] Round-trip quickstart SC-006
 
 ### Phase 4 — Nodes + LLM (018 P2, US7) 🟡

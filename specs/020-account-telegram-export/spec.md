@@ -2,7 +2,7 @@
 
 **Ветка**: `020-account-telegram-export`  
 **Дата**: 2026-06-03  
-**Статус**: 🟡 В работе (аудит 2026-06-15) — Telegram ✅ в [013](../013-account-settings/spec.md); остаток: export/import файлов  
+**Статус**: 🟡 В работе (аудит 2026-06-15; фикс placeholder 2026-06-15) — Telegram ✅ в [013](../013-account-settings/spec.md); placeholder `account.data.coming-soon` показывается в `AccountView.dataSection`; export/import — deferred (ждёт backend endpoint)
 **Зависимости**: `013-account-settings` (вкладка Profile готова), `010-recipe-import` (import pipeline)  
 **Эталон**: `/account` page (export/import), PRD § Export
 

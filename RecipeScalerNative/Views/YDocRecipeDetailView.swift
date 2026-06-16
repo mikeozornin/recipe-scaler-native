@@ -37,6 +37,8 @@ struct YDocRecipeDetailView: View {
     @State private var descriptionIngredientNodeMenu: DescriptionIngredientNodeMenuState?
     @State private var ingredientFieldsFocused = false
     @State private var clearIngredientFocusToken = 0
+    @State private var isParsingDescription = false
+    @State private var descriptionParseError: String?
 
 
     private var recipe: RecipeData? {
@@ -259,7 +261,10 @@ struct YDocRecipeDetailView: View {
                     bridge: bridge,
                     accentColor: accentColor,
                     onMarkTimer: beginDescriptionTimerMarkup,
-                    onMarkIngredient: beginDescriptionIngredientMarkup
+                    onMarkIngredient: beginDescriptionIngredientMarkup,
+                    onParseRecipe: {
+                        Task { await runDescriptionLLMParse(bridge: bridge) }
+                    }
                 )
             }
         }
@@ -392,6 +397,17 @@ struct YDocRecipeDetailView: View {
             Button(Bundle.currentLocalizedString("edit.error.ok"), role: .cancel) {}
         } message: {
             Text(editErrorMessage ?? "")
+        }
+        .alert(
+            Bundle.currentLocalizedString("llm.parse-recipe"),
+            isPresented: Binding(
+                get: { descriptionParseError != nil },
+                set: { if !$0 { descriptionParseError = nil } }
+            )
+        ) {
+            Button("common.ok", role: .cancel) {}
+        } message: {
+            Text(descriptionParseError ?? "")
         }
 
         .onChange(of: syncService.syncErrorMessage) { _, message in
@@ -659,6 +675,28 @@ struct YDocRecipeDetailView: View {
     private func finishDescriptionMarkupSheet() {
         descriptionChrome.bridge?.sendCommand(name: "releaseMarkupSelection")
         syncDescriptionChromeSuppression()
+    }
+
+    /// Sparkles button: call LLM `/parse` with current editor HTML; server applies result and
+    /// emits recipe_updated + collection_updated + document_loaded over sync (019 US7).
+    @MainActor
+    private func runDescriptionLLMParse(bridge: DescriptionEditorBridge) async {
+        guard !isParsingDescription else { return }
+        guard let recipeId = recipe?.id, !recipeId.isEmpty else { return }
+        isParsingDescription = true
+        descriptionParseError = nil
+        defer { isParsingDescription = false }
+
+        // Flush any pending local edits so the server parses the freshest content.
+        await bridge.flushEditorEdits()
+
+        let html = await bridge.requestHTML()
+        do {
+            try await RecipeLLMParseAPI.parseAndApply(recipeId: recipeId, stepsHtml: html)
+            // Sync delivers recipe_updated / collection_updated / document_loaded.
+        } catch {
+            descriptionParseError = error.localizedDescription
+        }
     }
 
     private func syncDescriptionChromeSuppression() {

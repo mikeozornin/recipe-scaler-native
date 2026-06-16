@@ -1,3 +1,4 @@
+import RecipeScalerCore
 import SwiftUI
 import UIKit
 
@@ -69,7 +70,7 @@ struct YDocIngredientsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if numberedRows.isEmpty {
-                Text("No ingredients")
+                Text("recipes.no-ingredients")
                     .appBody()
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)

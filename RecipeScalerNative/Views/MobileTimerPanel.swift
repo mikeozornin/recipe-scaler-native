@@ -240,17 +240,17 @@ private struct MobileTimerRow: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerDelete(timerId: timer.id))
-            .accessibilityLabel("Delete timer")
+            .accessibilityLabel("timer.delete")
         }
         .frame(height: MobileTimerPanelLayout.barHeight)
         .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerChip(timerId: timer.id))
     }
 
     private var toggleAccessibilityLabel: String {
-        if remaining < 0 { return "Overdue" }
-        if timer.isRunning, !timer.isPaused { return "Pause" }
-        if timer.isPaused { return "Resume" }
-        return "Start"
+        if remaining < 0 { return Bundle.currentLocalizedString("timer.toggle.overdue") }
+        if timer.isRunning, !timer.isPaused { return Bundle.currentLocalizedString("timer.toggle.pause") }
+        if timer.isPaused { return Bundle.currentLocalizedString("timer.toggle.resume") }
+        return Bundle.currentLocalizedString("timer.toggle.start")
     }
 
     private var progressTint: Color {

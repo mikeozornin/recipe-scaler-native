@@ -26,7 +26,7 @@ struct SplashView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                 }
 
-                Text("Recipe Scaler")
+                Text("splash.app-name")
                     .font(AppTypography.display(AppTypography.splashTitleSize))
             }
         }

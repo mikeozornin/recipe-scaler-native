@@ -241,7 +241,7 @@ enum AssistantAPI {
             // object as AssistantStreamFinalData — NOT the whole envelope (which would decode to
             // all-nil optionals silently).
             let final: AssistantStreamFinalData?
-            if let dataDict,
+            if let dataDict = json["data"] as? [String: Any],
                let innerData = try? JSONSerialization.data(withJSONObject: dataDict) {
                 final = try? JSONDecoder().decode(AssistantStreamFinalData.self, from: innerData)
             } else {

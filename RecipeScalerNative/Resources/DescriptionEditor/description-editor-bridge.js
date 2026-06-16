@@ -511,6 +511,13 @@
         editor.commands.blur();
         notifyBlur();
         return;
+      case 'getHTML':
+        try {
+          post('html', { html: editor.getHTML() });
+        } catch (htmlErr) {
+          post('html', { html: '' });
+        }
+        return;
       case 'simulateText': {
         const text = String(a.text || '');
         if (text) editor.chain().focus().insertContent(text).run();

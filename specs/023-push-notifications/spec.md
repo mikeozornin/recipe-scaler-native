@@ -2,7 +2,7 @@
 
 **Ветка**: `023-push-notifications`  
 **Дата**: 2026-06-04  
-**Статус**: 🟡 В работе (~90% кода, аудит 2026-06-15) — регистрация APNs + schedule/cancel реализованы; QA на устройстве и toggle в Account pending  
+**Статус**: 🟡 В работе (~90% кода, аудит 2026-06-15) — регистрация APNs + schedule/cancel реализованы; QA на устройстве и toggle в Account pending. **Блокер**: device QA требует платный Apple Developer Account (см. [PAID-APPLE-DEVELOPER-REQUIRED.md](../../docs/PAID-APPLE-DEVELOPER-REQUIRED.md)); кодовая часть полностью готова.  
 **Зависимости**: `014-timers-sync` ✅ (синк и UI таймеров), Phase 1 `TimerManager` (локальные UN)  
 **Эталон**: PRD § Timers, `recipe-scaler-web/llm/ARCHITECTURE.md` § Timers And Push, `recipe-scaler-web/recipe-scaler/src/services/timer-service.ts`, `server/src/routes/push.ts`
 

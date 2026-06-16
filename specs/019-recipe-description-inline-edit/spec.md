@@ -2,7 +2,7 @@
 
 **Ветка**: `019-recipe-description-inline-edit`  
 **Дата**: 2026-06-10 (создана), 2026-06-15 (аудит кода)  
-**Статус**: 🟢 **Реализовано почти полностью** — inline Tiptap, sticky-панель, sync, timer/ingredient markup (018). Остаток: LLM Sparkles, удаление legacy `DescriptionEditorView`, polish/quickstart.  
+**Статус**: 🟢 **Готово** (закрыто 2026-06-15) — inline Tiptap, sticky-панель (SC-003 подтверждён), sync, timer/ingredient markup (018), LLM Sparkles, legacy `DescriptionEditorView` удалён.  
 **Зависимости**: `002` ✅, `004` ✅, `006` ✅ (superseded), `018` 🟢  
 **Эталон UX**: mobile stacked `recipe-detail.tsx`  
 **Эталон движка**: `tiptap-recipe-editor.tsx` + `tiptap-menu-bar.tsx`
@@ -17,11 +17,11 @@
 | US4 sync / offline / remote | ✅ | `DescriptionEditorBridge` + `applyDescriptionEditorUpdate`; `suspendRecipeRefresh` на edit |
 | US5 rich-text 018 (nodes) | ✅ | Native sheets + bridge commands — см. [018](../018-description-editor-richtext/spec.md) |
 | US6 timer из просмотра | ✅ | `StepsSection` + `DescriptionTimerPopoverOverlay` |
-| US7 LLM Sparkles | ❌ | Кнопка в `DescriptionFormattingBar` (`onParseRecipe`); **не проведена** в `YDocRecipeDetailView` |
+| US7 LLM Sparkles | ✅ | `RecipeLLMParseAPI.parseAndApply(recipeId:stepsHtml:)` + кнопка Sparkles в `DescriptionFormattingBar` wired через `YDocRecipeDetailView.runDescriptionLLMParse`. Сервер `apply: true` → `recipe_updated` через sync. (Закрыто 2026-06-15.) |
 | US8 v1/v2 gate | ✅ | `canEnterEditMode` / legacy banner без изменений |
 | FR-019-ENG-001 Tiptap bundle | ✅ | `Resources/DescriptionEditor/yjs.bundle.js` + `description-editor-bridge.js` (Tiptap Editor API) |
 | FR-019-ENG-002 мост v2 | ✅ | `DescriptionEditorBridge` — `command`, `selectionState`, `contentHeight`, `focus`, `nodeClick` |
-| FR-019-UI-001 без sheet | 🟡 | UX без sheet ✅; файл `DescriptionEditorView.swift` **ещё в target** (dead code) |
+| FR-019-UI-001 без sheet | ✅ | UX без sheet; `DescriptionEditorView.swift` **удалён из target и репозитория** (2026-06-15, T021 закрыт) |
 | FR-019-UI-003 focus mode | 🟡 | `heightMode` в bridge есть; `RecipeDescriptionEditorBlock` всегда `allowsScrolling: false` + полная высота — длинный текст скроллит **родитель**, не inner WebView |
 
 **Решение по высоте (2026-06-15):** вместо переключения embedded/focus с inner scroll — один режим: WebView растёт по `contentHeight`, скролл у `ScrollView` деталки. Порог 2000 pt в bridge остаётся для метрик, UI-переключения focus нет.

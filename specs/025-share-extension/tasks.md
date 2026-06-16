@@ -4,7 +4,7 @@
 
 **Предусловия**: spec.md, plan.md
 
-**Аудит 2026-06-15**: фазы 1–6 в основном реализованы в коде; открыты T001 (portal), T028 (тесты), T044–T046 (verify/smoke/docs).
+**Аудит 2026-06-15 (обновлено 2026-06-15)**: фазы 1–6 в основном реализованы в коде; открыты T001 (portal — требует платный аккаунт разработчика), T038 (стриминг фото — оптимизация памяти), T046 (ручной smoke — требует device с extensions). Скрипты `scripts/verify-share-extension.sh` и `DeepLinkRouterTests` существуют и проходят на симуляторе.
 
 **Тесты**: минимум — `DeepLinkRouterTests`, `LocalizationConsistencyTests` (расширение).
 
@@ -24,7 +24,7 @@
 
 **⚠️ КРИТИЧНО**: эти задачи выполняются вручную в Xcode по чеклисту из `quickstart.md`. Агент может только писать код и обновлять существующие файлы; создание target'ов в pbxproj без UI рискованно.
 
-- [ ] T001 Создать App Group `group.ru.recipescaler.RecipeScalerNative` на Apple Developer Portal (team `2L5JDYE2L7`)
+- [ ] T001 Создать App Group `group.ru.recipescaler.RecipeScalerNative` на Apple Developer Portal (team `2L5JDYE2L7`) — **блокер**: требует платный Apple Developer Program; код использует этот group id во всех entitlements (проверено verify-share-extension.sh)
 - [x] T002 Создать target `RecipeScalerCore` (Cocoa Touch Framework, Swift, iOS 17). Bundle ID `ru.recipescaler.RecipeScalerNative.Core`
 - [x] T003 Создать target `ShareExtension` (Share Extension template). Bundle ID `ru.recipescaler.RecipeScalerNative.Share`
 - [x] T004 Создать target `ActionExtension` (Action Extension template, "Presents user interface"). Bundle ID `ru.recipescaler.RecipeScalerNative.Action`
@@ -88,7 +88,7 @@
 ### i18n
 
 - [x] T023 Создать `RecipeScalerCore/Resources/Shared.xcstrings` с ключами (см. spec FR-SE-010): `share-extension.*` (11 шт) + дублирование `import.*` ключей из main xcstrings
-- [ ] T024 [P] Расширить `RecipeScalerNativeTests/LocalizationConsistencyTests.swift` — проверить, что все ключи `share-extension.*` и `import.*` (из Shared.xcstrings) присутствуют в en + ru
+- [x] T024 [P] Расширить `RecipeScalerNativeTests/LocalizationConsistencyTests.swift` — добавлен `testShareExtensionKeysResolveInBothLanguages` (парсит `Shared.xcstrings` JSON напрямую; 10 `share-extension.*` ключей в en+ru, 2026-06-15)
 
 **Контрольная точка**: `SharedAuthStore.userId` возвращает валидный id из main app и из extension; тесты локализации зелёные
 
@@ -120,7 +120,7 @@
 ### Content extraction
 
 - [x] T032 Создать `ShareExtension/ShareContentLoader.swift` — async/await обёртки вокруг `NSItemProvider.loadItem(forTypeIdentifier:)` для `public.url`, `public.text`, `public.image`. Возвращает `ContentKind`
-- [ ] T033 [US2, US3] Создать `ShareExtension/ShareContentClassifier.swift` — логика приоритета URL > Images > Text, использует `ImportContentClassifier.classify(_:)` из framework
+- [x] T033 [US2, US3] Создать `RecipeScalerCore/UI/ShareContentClassifier.swift` — чистая логика приоритета URL > Images > Text, делегирует `ImportContentClassifier` для single-URL текста; `ShareContentLoader.classify` теперь вызывает его. `RecipeScalerNativeTests/ShareContentClassifierTests.swift` (9 кейсов, 2026-06-15).
 
 ### UI
 
@@ -163,8 +163,8 @@
 
 **Цель**: документация, ручной smoke, обновление spec 010
 
-- [ ] T044 [P] Обновить `specs/010-recipe-import/spec.md` — новая строка в таблице аудита: «Share/Action Extension импорт → spec 025»
-- [ ] T045 [P] Создать `scripts/verify-share-extension.sh` — `rtk xcodebuild build` + `rtk xcodebuild test -only-testing:RecipeScalerNativeTests/DeepLinkRouterTests` + grep по pbxproj на присутствие 3 target'ов
+- [x] T044 [P] Обновить `specs/010-recipe-import/spec.md` — строка аудита Share/Action Extension расширена (добавлено указание на spec 025 + артефакты 2026-06-15)
+- [x] T045 [P] Создан `scripts/verify-share-extension.sh` — проверки pbxproj target'ов (3), entitlements (App Group), Info.plist URL scheme, DeepLinkRouter wiring, SharedAuthStore, Shared.xcstrings ключи, ShareContentClassifier; затем `xcodebuild build` + 3 test suites (DeepLink, Classifier, Localization)
 - [ ] T046 Полный ручной smoke по `quickstart.md` (Safari/Messages/Telegram/Photos/long-press)
 
 **Контрольная точка**: SC-001..SC-010 зелёные

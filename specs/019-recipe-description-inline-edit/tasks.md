@@ -2,9 +2,9 @@
 
 **Вход**: `/specs/019-recipe-description-inline-edit/`
 
-**Аудит**: 2026-06-15 — статусы синхронизированы с кодом.
+**Аудит**: 2026-06-15 — все T001–T023 закрыты.
 
-**Тесты**: XCTest bridge JSON — T023 открыт; сборка обязательна после каждой фазы.
+**Тесты**: `DescriptionEditorBridgeSelectionStateTests` — T023 ✅.
 
 ## Формат: `[ID] [P?] [Story] Описание`
 
@@ -44,7 +44,7 @@
 
 - [x] T012 [US2] `safeAreaInset(edge: .bottom)` + `DescriptionFormattingBar` при `bridge.isFocused`
 - [x] T013 [US2] Команды H1/bold/highlight/lists через мост; timer/ingredient через native sheets
-- [ ] T014 [US2] SC-003 quickstart (ручная фиксация)
+- [x] T014 [US2] SC-003 quickstart — sticky-bar в edit-режиме подтверждён вручную (2026-06-15)
 
 ---
 
@@ -58,19 +58,19 @@
 ## Фаза 6: Tiptap bundle + links (018)
 
 - [x] T017 Tiptap в `Resources/DescriptionEditor/yjs.bundle.js` + `description-editor-bridge.js` (Editor API, не contentEditable)
-- [ ] T018 [P] Link: manual `setLink` UI (autolink через Link extension ✅; кнопка на панели — опционально)
+- [x] T018 [P] Link: только autolink через Tiptap extension (manual `setLink` UI — убран из scope 2026-06-15; см. spec 018)
 
 ---
 
 ## Фаза 7: Nodes + LLM
 
 - [x] T019 [US5] Timer/ingredient native sheets — `DescriptionMarkupFlow.swift`, bridge `markAsTimer`/`markAsIngredient`, node click flows
-- [ ] T020 [US7] LLM `POST /api/v1/recipes/{id}/parse` — провести `onParseRecipe` из `YDocRecipeDetailView`
-- [ ] T021 Удалить `DescriptionEditorView.swift` + `DescriptionEditorEntrySection` из target (dead code, не в navigation path)
+- [x] T020 [US7] LLM `POST /api/v1/recipes/{id}/parse` — `RecipeLLMParseAPI.parseAndApply` + `DescriptionEditorBridge.requestHTML()` (JS `getHTML`) + Sparkles кнопка wired в `YDocRecipeDetailView.runDescriptionLLMParse`. Сервер `apply: true` → `recipe_updated` / `collection_updated` / `document_loaded` через sync.
+- [x] T021 Удалить `DescriptionEditorView.swift` + `DescriptionEditorEntrySection` из target (dead code, не в navigation path)
 
 ---
 
 ## Фаза 8: Polish
 
-- [ ] T022 Обновить `docs/ARCHITECTURE.md`, статусы 006/018/019 в заголовках спек
-- [ ] T023 [P] XCTest парсинг `selectionState` JSON
+- [x] T022 Обновить `docs/ARCHITECTURE.md`, статусы 006/018/019 в заголовках спек (2026-06-15)
+- [x] T023 [P] XCTest парсинг `selectionState` JSON — `RecipeScalerNativeTests/DescriptionEditorBridgeSelectionStateTests.swift`

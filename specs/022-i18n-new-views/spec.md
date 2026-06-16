@@ -2,15 +2,30 @@
 
 **Ветка**: `022-i18n-new-views`  
 **Дата**: 2026-06-03  
-**Статус**: 🟡 В работе (~75%, аудит 2026-06-15) — Discover/Import/Assistant/Account/Collections на ключах; остаток: edit-секции, `Button("OK")`, a11y, lint  
+**Статус**: 🟢 Готово (аудит 2026-06-15, закрыто 2026-06-15) — edit-секции, `Button("OK")`, a11y таймера внешние; каталог ru+en полный; `xcodebuild` зелёный
 **Зависимости**: новые экраны 006/007/024/010/011/012/013/015  
 **Эталон**: принцип паритета #6 в `005-mobile-web-parity-roadmap` («i18n ru/en для всех новых строк»), существующие ключи `discover.*`, `account.*`, `recipe.*`
 
 ## Контекст
 
-Аудит 2026-06-03 зафиксировал массовые английские литералы. **2026-06-15**: доменные экраны (Discover, Import, Assistant, Account, Collections, Shopping) переведены на ключи. Остаётся debt в edit/detail секциях.
+Аудит 2026-06-03 зафиксировал массовые английские литералы. **2026-06-15**: доменные экраны (Discover, Import, Assistant, Account, Collections, Shopping) переведены на ключи; edit/detail секции, `Button("OK")` (7 view), splash, a11y MobileTimerPanel внешние; каталог ru+en полный.
 
-## Затронутые файлы — остаток (2026-06-15)
+## Аудит (2026-06-15, закрыто)
+
+| Было | Стало |
+|------|-------|
+| `Text("No ingredients")` в `YDocIngredientsSection.swift` | `Text("recipes.no-ingredients")` |
+| `Text("Instructions")` в `RecipeDescriptionEditorBlock.swift` | `Text("description.instructions")` (повторное использование существующего ключа) |
+| `Button("OK", role: .cancel)` ×7 (`RecipeListView`, `CollectionAssignSheet`, `CollectionFolderView`, `ShoppingListView`, `AssistantSheet`, `ManageCollectionRecipesSheet`, `AssistantComposer`) | `Button("common.ok", role: .cancel)` |
+| `Text("Recipe Scaler")` в `SplashView.swift` | `Text("splash.app-name")` (brand name) |
+| `accessibilityLabel("Delete timer")` в `MobileTimerPanel.swift` | `.accessibilityLabel("timer.delete")` |
+| `toggleAccessibilityLabel` literals (`"Overdue"/"Pause"/"Resume"/"Start"`) в `MobileTimerPanel.swift` | `Bundle.currentLocalizedString("timer.toggle.*")` |
+
+Добавлено ключей в `Localizable.xcstrings` (ru + en): `common.ok`, `recipes.no-ingredients`, `splash.app-name`, `timer.delete`, `timer.toggle.overdue`, `timer.toggle.pause`, `timer.toggle.resume`, `timer.toggle.start`.
+
+Проверка: `rtk xcodebuild … build` → **BUILD SUCCEEDED**.
+
+## Затронутые файлы — остаток (историческое)
 
 | Файл | Проблема |
 |------|----------|
