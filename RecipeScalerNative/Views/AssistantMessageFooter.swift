@@ -312,7 +312,7 @@ private struct AssistantQuickRepliesWidget: View {
                     onSubmit(option.value, displayText, attachment)
                 } label: {
                     Text(option.label)
-                        .font(.subheadline)
+                        .font(AppTypography.footnote)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(Color.accentColor.opacity(0.1))
@@ -335,13 +335,16 @@ private struct AssistantSelectWidget: View {
         VStack(alignment: .leading, spacing: 8) {
             Picker(selection: $selection) {
                 ForEach(options) { option in
-                    Text(option.label).tag(option as AssistantWidgetOption?)
+                    Text(option.label)
+                        .font(AppTypography.body)
+                        .tag(option as AssistantWidgetOption?)
                 }
             } label: {
                 EmptyView()
             }
             .pickerStyle(.menu)
             .labelsHidden()
+            .font(AppTypography.body)
 
             Button("assistant.send") {
                 guard let selected = selection else { return }
@@ -377,8 +380,11 @@ private struct AssistantNumberInputWidget: View {
             Stepper(value: $value, in: stepperRange, step: config.step ?? 1) {
                 HStack(spacing: 4) {
                     Text(formattedValue)
+                        .appBody()
                     if let unit = config.unit, !unit.isEmpty {
-                        Text(unit).foregroundStyle(.secondary)
+                        Text(unit)
+                            .appBody()
+                            .foregroundStyle(.secondary)
                     }
                 }
             }

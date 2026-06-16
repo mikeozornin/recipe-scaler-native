@@ -70,7 +70,7 @@ struct AssistantComposer: View {
                     set: { if !$0 { voiceErrorMessage = nil } }
                 )
             ) {
-                Button("OK", role: .cancel) { voiceErrorMessage = nil }
+                Button("common.ok", role: .cancel) { voiceErrorMessage = nil }
             } message: {
                 if let voiceErrorMessage {
                     Text(verbatim: voiceErrorMessage)
@@ -425,7 +425,6 @@ private struct AssistantAttachmentChipLabel: View {
                 .fill(Color(hex: attachment.recipeColor ?? "") ?? .accentColor)
                 .frame(width: 8, height: 8)
             Text(attachment.recipeName ?? attachment.recipeId)
-                .font(.footnote)
                 .lineLimit(1)
         }
     }
@@ -452,7 +451,8 @@ private struct AssistantAttachmentChip: View {
 
 private extension View {
     func assistantAttachmentChipChrome() -> some View {
-        padding(.horizontal, 10)
+        font(Font(AppTypography.footnoteUIFont))
+            .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(Color.secondary.opacity(0.12))
             .clipShape(Capsule())

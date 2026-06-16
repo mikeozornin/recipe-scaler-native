@@ -244,16 +244,10 @@ struct AssistantSheet: View {
                 // Web parity: user-bubble shows the friendlier resolved text (e.g. "Удалить"
                 // instead of "confirm_delete") for messages that resolved a pending action.
                 Text(AssistantMessageCopyText.text(for: message))
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .textSelection(.enabled)
-                    .multilineTextAlignment(.trailing)
+                    .appBodySelectable(multilineTextAlignment: .trailing)
             } else if message.text.isEmpty && message.isStreaming {
                 Text(verbatim: streamingPlaceholder(for: message, isLast: isLast))
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .textSelection(.enabled)
-                    .multilineTextAlignment(.leading)
+                    .appBodySelectable(multilineTextAlignment: .leading)
             } else {
                 AssistantMarkdownText(content: message.text)
             }

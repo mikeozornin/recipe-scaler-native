@@ -44,10 +44,14 @@ enum AppTypography {
     static var tabBarUIFont: UIFont { uiFont(AppFonts.sans, size: tabBarSize) }
     static var footnoteUIFont: UIFont { uiFont(AppFonts.sans, size: footnoteSize) }
 
-    static func sans(_ size: CGFloat) -> Font { .custom(AppFonts.sans, size: size) }
-    static func sansMedium(_ size: CGFloat) -> Font { .custom(AppFonts.sansMedium, size: size) }
-    static func display(_ size: CGFloat) -> Font { .custom(AppFonts.display, size: size) }
-    static func mono(_ size: CGFloat) -> Font { .custom(AppFonts.mono, size: size) }
+    static func sans(_ size: CGFloat) -> Font { Font(uiFont(AppFonts.sans, size: size)) }
+    static func sansMedium(_ size: CGFloat) -> Font {
+        Font(uiFont(AppFonts.sansMedium, size: size, fallbackFamily: AppFonts.sansMedium))
+    }
+    static func display(_ size: CGFloat) -> Font {
+        Font(uiFont(AppFonts.display, size: size, fallbackFamily: AppFonts.display))
+    }
+    static func mono(_ size: CGFloat) -> Font { Font(uiFont(AppFonts.mono, size: size, fallbackFamily: AppFonts.mono)) }
 
     /// SF Symbol point size only — not for text labels.
     static func iconSize(_ points: CGFloat) -> Font { .system(size: points) }
@@ -93,6 +97,16 @@ extension Text {
     func appHeadline() -> some View {
         self
             .font(AppTypography.headline)
+            .lineSpacing(AppTypography.bodyLineSpacing)
+    }
+
+    /// Body typography that survives `.textSelection(.enabled)` (selection resets `.custom` fonts).
+    func appBodySelectable(multilineTextAlignment: TextAlignment = .leading) -> some View {
+        self
+            .foregroundStyle(.primary)
+            .multilineTextAlignment(multilineTextAlignment)
+            .textSelection(.enabled)
+            .font(Font(AppTypography.bodyUIFont))
             .lineSpacing(AppTypography.bodyLineSpacing)
     }
 }
@@ -144,6 +158,7 @@ enum AppChromeAppearance {
         configureListSectionHeaders()
         configureTextInputs()
         configureSegmentedControl()
+        configureAlerts()
     }
 
     private static func configureNavigationBar() {
@@ -214,5 +229,10 @@ enum AppChromeAppearance {
         let attributes: [NSAttributedString.Key: Any] = [.font: AppTypography.bodyUIFont]
         UISegmentedControl.appearance().setTitleTextAttributes(attributes, for: .normal)
         UISegmentedControl.appearance().setTitleTextAttributes(attributes, for: .selected)
+    }
+
+    private static func configureAlerts() {
+        UILabel.appearance(whenContainedInInstancesOf: [UIAlertController.self]).font =
+            AppTypography.bodyUIFont
     }
 }
