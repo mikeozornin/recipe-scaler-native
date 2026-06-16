@@ -78,41 +78,44 @@ struct RecipeDetailImageSection: View {
     }
 
     private var uploadDropzone: some View {
-        Button {
-            guard !isUploading, allowsNetworkRefresh else { return }
-            isPhotoPickerPresented = true
-        } label: {
-            VStack(spacing: 12) {
-                Image(systemName: "photo.on.rectangle.angled")
-                    .font(.system(size: 52))
-                    .foregroundStyle(Color(.secondaryLabel))
-
-                Text("recipe.image.upload.title")
-                    .appBody()
-                    .foregroundStyle(Color(.secondaryLabel))
-
-                if !allowsNetworkRefresh {
-                    Text("recipe.image.upload.offline")
-                        .appFootnote()
+        VStack(spacing: 8) {
+            Button {
+                guard !isUploading, allowsNetworkRefresh else { return }
+                isPhotoPickerPresented = true
+            } label: {
+                VStack(spacing: 12) {
+                    Image(systemName: "photo.on.rectangle.angled")
+                        .font(.system(size: 52))
                         .foregroundStyle(Color(.secondaryLabel))
-                        .multilineTextAlignment(.center)
+
+                    Text("recipe.image.upload.title")
+                        .appBody()
+                        .foregroundStyle(Color(.secondaryLabel))
+
+                    if !allowsNetworkRefresh {
+                        Text("recipe.image.upload.offline")
+                            .appFootnote()
+                            .foregroundStyle(Color(.secondaryLabel))
+                            .multilineTextAlignment(.center)
+                    }
                 }
+                .frame(maxWidth: .infinity, minHeight: 160, alignment: .center)
+                .padding(.horizontal, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color(.systemGray6))
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
-            .frame(maxWidth: .infinity, minHeight: 160, alignment: .center)
-            .padding(.horizontal, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(.systemGray6))
+            .buttonStyle(.plain)
+            .photosPicker(
+                isPresented: $isPhotoPickerPresented,
+                selection: $photoItem,
+                matching: .images
             )
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .disabled(isUploading || !allowsNetworkRefresh)
+            .accessibilityIdentifier(AccessibilityIdentifiers.recipeImageUpload)
         }
-        .buttonStyle(.plain)
-        .photosPicker(
-            isPresented: $isPhotoPickerPresented,
-            selection: $photoItem,
-            matching: .images
-        )
-        .disabled(isUploading)
         .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
         .padding(.top, RecipeRowLayoutMetrics.listHorizontalInset)
         .overlay {
@@ -120,7 +123,6 @@ struct RecipeDetailImageSection: View {
                 ProgressView()
             }
         }
-        .accessibilityIdentifier(AccessibilityIdentifiers.recipeImageUpload)
     }
 
     private func uploadPhoto(_ item: PhotosPickerItem?) async {

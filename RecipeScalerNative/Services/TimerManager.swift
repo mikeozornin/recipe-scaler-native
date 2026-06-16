@@ -82,7 +82,7 @@ final class TimerManager: NSObject {
             }
             return granted
         } catch {
-            print("Notification authorization error: \(error.localizedDescription)")
+            AppLog.error(.timer, "Notification authorization error: \(error.localizedDescription)")
             return false
         }
     }
@@ -99,7 +99,7 @@ final class TimerManager: NSObject {
                 startUpdateTimer()
             }
         } catch {
-            print("Error loading timers: \(error.localizedDescription)")
+            AppLog.error(.timer, "Error loading timers: \(error.localizedDescription)")
         }
     }
 
@@ -250,7 +250,7 @@ final class TimerManager: NSObject {
             }
             reconcileLiveActivities()
         } catch {
-            print("Error replacing timers from server: \(error.localizedDescription)")
+            AppLog.error(.timer, "Error replacing timers from server: \(error.localizedDescription)")
             timers = serverTimers
             refreshPanelTimers()
             reconcileLiveActivities()
@@ -502,7 +502,7 @@ final class TimerManager: NSObject {
         do {
             try modelContext.save()
         } catch {
-            print("Error saving timer: \(error.localizedDescription)")
+            AppLog.error(.timer, "Error saving timer: \(error.localizedDescription)")
         }
     }
 
@@ -512,7 +512,7 @@ final class TimerManager: NSObject {
             modelContext.delete(timer)
             try modelContext.save()
         } catch {
-            print("Error deleting timer: \(error.localizedDescription)")
+            AppLog.error(.timer, "Error deleting timer: \(error.localizedDescription)")
         }
     }
 

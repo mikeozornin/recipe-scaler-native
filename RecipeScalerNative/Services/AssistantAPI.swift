@@ -237,7 +237,19 @@ enum AssistantAPI {
             }
             return nil
         case "final":
-            guard let final = try? JSONDecoder().decode(AssistantStreamFinalData.self, from: data) else {
+            // The server emits `{"type":"final","data":{...}}`. We must decode the *inner* `data`
+            // object as AssistantStreamFinalData — NOT the whole envelope (which would decode to
+            // all-nil optionals silently).
+            let final: AssistantStreamFinalData?
+            if let dataDict = json["data"] as? [String: Any],
+               let innerData = try? JSONSerialization.data(withJSONObject: dataDict) {
+                final = try? JSONDecoder().decode(AssistantStreamFinalData.self, from: innerData)
+            } else {
+                // Fallback: try decoding the whole line as-is (legacy behaviour, will yield nil
+                // fields if server ever wraps the data again).
+                final = try? JSONDecoder().decode(AssistantStreamFinalData.self, from: data)
+            }
+            guard let final else {
                 return nil
             }
             return .final(final)

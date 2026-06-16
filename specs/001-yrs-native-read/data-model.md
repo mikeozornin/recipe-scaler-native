@@ -105,7 +105,7 @@ persisted → [corruption detected] → deleted → [re-fetch from server]
 | `isPinned` | `Bool` | `map["isPinned"]` | Закреплён вверху списка |
 
 **Validation**:
-- `id` — непустой UUID
+- `id` — непустой UUID в нижнем регистре (канонический формат веб-клиента)
 - `deleted == true` → не отображать в списке
 
 **Сортировка для отображения** (паритет с веб `sortCollectionsByDisplayName`):

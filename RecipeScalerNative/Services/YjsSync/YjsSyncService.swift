@@ -217,9 +217,18 @@ final class YjsSyncService: ObservableObject {
         await refreshCollectionEntries()
         await RecipeImageService.shared.removeCache(recipeId: recipeId)
         if connectionState == .connected {
-            await RecipeImageService.shared.prefetchFull(
-                recipeId: recipeId,
-                imageUrl: result.imageUrl,
+            let entry = collectionEntry(for: recipeId)
+                ?? CollectionEntry(
+                    id: recipeId,
+                    name: currentRecipe?.name ?? "",
+                    color: currentRecipe?.color ?? "#3b82f6",
+                    imageUrl: result.imageUrl,
+                    updatedAt: ISO8601DateFormatter().string(from: Date()),
+                    deleted: false,
+                    isPinned: false
+                )
+            await RecipeImageService.shared.prefetchPreviews(
+                entries: [entry],
                 allowNetwork: true
             )
         }
@@ -597,6 +606,100 @@ final class YjsSyncService: ObservableObject {
         let recipeId = try await documentManager.createRecipe(name: name)
         await refreshCollectionEntries()
         return recipeId
+    }
+
+    /// Import a parsed third-party recipe draft into Y.Doc (027).
+    func applyImportedRecipe(_ draft: ThirdPartyRecipeDraft) async throws -> String {
+        let recipeId = try await documentManager.applyImportedRecipe(draft)
+        await refreshCollectionEntries()
+        await flushImportSyncBeforeImageUpload(recipeId: recipeId)
+        return recipeId
+    }
+
+    /// Upload image bytes for a recipe created via third-party import.
+    func uploadImportedRecipeImage(recipeId: String, imageData: Data) async throws {
+        guard let payload = RecipeImageUploadPreprocessor.payloadForUpload(from: imageData) else {
+            throw ImportedRecipeImageUploadError.preprocessingFailed
+        }
+        await flushImportSyncBeforeImageUpload(recipeId: recipeId)
+
+        var lastError: Error = ImportedRecipeImageUploadError.preprocessingFailed
+        let maxAttempts = 8
+        for attempt in 0..<maxAttempts {
+            if attempt > 0 {
+                let delayNs = UInt64(min(attempt, 5)) * 500_000_000
+                try await Task.sleep(nanoseconds: delayNs)
+                await flushImportSyncBeforeImageUpload(recipeId: recipeId)
+            }
+            do {
+                let result = try await RecipeImageUploadAPI.upload(recipeId: recipeId, payload: payload)
+                try await applyRecipeImageUpload(recipeId: recipeId, result: result)
+                return
+            } catch let error as APIError {
+                if case .httpError(let code) = error {
+                    if code == 404, attempt < maxAttempts - 1 {
+                        lastError = error
+                        continue
+                    }
+                }
+                throw error
+            }
+        }
+        throw lastError
+    }
+
+    /// Push pending Yjs updates and wait for server ack before `POST /api/recipes/:id/image`
+    /// (that endpoint returns 404 until the recipe row exists in Supabase).
+    private func flushImportSyncBeforeImageUpload(recipeId: String) async {
+        let recipeIds = [recipeId, "collection"]
+        for _ in 0..<24 {
+            await Task.yield()
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            await flushPendingUpdates(for: recipeIds)
+            let recipePending = await updateDebouncer.hasPending(recipeId: recipeId)
+            let collectionPending = await updateDebouncer.hasPending(recipeId: "collection")
+            if !recipePending, !collectionPending {
+                break
+            }
+        }
+        await waitForRecipeServerAck(recipeId: recipeId, timeoutSeconds: 12)
+    }
+
+    private func waitForRecipeServerAck(recipeId: String, timeoutSeconds: Double) async {
+        guard canSendLiveSync() else { return }
+        let deadline = Date().addingTimeInterval(timeoutSeconds)
+        while Date() < deadline {
+            let state = writeSyncStates[recipeId] ?? .idle
+            if state == .synced {
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                return
+            }
+            if case .error = state {
+                return
+            }
+            if state == .idle, !unsyncedRecipeIds.contains(recipeId) {
+                return
+            }
+            try? await Task.sleep(nanoseconds: 200_000_000)
+        }
+    }
+
+    /// US8: assign recipe to folders resolved from Paprika `categories` /
+    /// Crouton `tags` labels. Reuses existing folders by case-insensitive
+    /// label or creates new ones. Idempotent per (recipeId, label) pair.
+    func applyCategoryLabelsToRecipe(recipeId: String, labels: [String]) async throws {
+        var folderIds: [String] = []
+        for label in labels {
+            let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let folderId = try await documentManager.resolveOrCreateFolderId(label: trimmed)
+            if !folderIds.contains(folderId) {
+                folderIds.append(folderId)
+            }
+        }
+        guard !folderIds.isEmpty else { return }
+        try await documentManager.setRecipeFolders(recipeId: recipeId, folderIds: folderIds)
+        await refreshCollectionEntries()
     }
 
     // MARK: - Collection folders (026)

@@ -111,7 +111,7 @@ flowchart TB
 ### 8. Оставшееся / polish
 
 - [ ] Стабильная работа pause/resume на устройстве (App Group + paid program)
-- [ ] Анимированный progress bar на running (сейчас статический `state.progress`; countdown цифр — системный)
+- [x] Анимированный progress bar на running (`ProgressView(timerInterval:)` / `TimerLiveActivityLinearProgressStyle`)
 - [ ] Регистрация App Intent metadata в extension (лог `Failed to fetch metadata for PauseRecipeTimerIntent` на симуляторе)
 - [ ] Toggle Live Activities в Account (вне scope v1)
 - [ ] Push-обновления activity (spec 023, вне scope v1)

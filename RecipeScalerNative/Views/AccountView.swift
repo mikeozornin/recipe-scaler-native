@@ -51,7 +51,8 @@ struct AccountView: View {
                 publicRecipesSection
                 telegramSection
                 preferencesSection
-                // dataSection
+                dataSection
+                logExportSection
 
                 if let statusMessage = viewModel.statusMessage {
                     Section {
@@ -60,10 +61,6 @@ struct AccountView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-
-                #if DEBUG
-                developerDebugSection
-                #endif
 
                 footerSection
 
@@ -364,7 +361,7 @@ struct AccountView: View {
     private var dataSection: some View {
         Section {
             Text("account.data.coming-soon")
-                .font(AppTypography.subheadline)
+                .appBody()
                 .foregroundStyle(.secondary)
         } header: {
             AppSectionHeader("account.section.data")
@@ -372,24 +369,39 @@ struct AccountView: View {
         .appListSectionHeaderStyle()
     }
 
-    #if DEBUG
     @ViewBuilder
-    private var developerDebugSection: some View {
+    private var logExportSection: some View {
         Section {
-            if let url = AgentSyncDebugLog.sessionLogFileURL() {
+            if let url = AppLog.currentLogFileURL() {
                 ShareLink(item: url) {
-                    Text(verbatim: "Export sync debug log")
-                        .appBody()
+                    Label {
+                        Text("account.export.logs.title")
+                            .appBody()
+                    } icon: {
+                        AppSymbol.image("square.and.arrow.up")
+                    }
                 }
-                Text(url.lastPathComponent)
-                    .appFootnote()
-                    .foregroundStyle(.secondary)
+            } else {
+                Label {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("account.export.logs.missing")
+                            .appBody()
+                        Text("account.export.logs.missing.hint")
+                            .appFootnote()
+                            .foregroundStyle(.secondary)
+                    }
+                } icon: {
+                    AppSymbol.image("info.circle")
+                        .foregroundStyle(.secondary)
+                }
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier(AccessibilityIdentifiers.accountExportLogsMissing)
             }
         } header: {
-            Text(verbatim: "Developer")
+            AppSectionHeader("account.section.logs")
         }
+        .appListSectionHeaderStyle()
     }
-    #endif
 
     @ViewBuilder
     private var footerSection: some View {

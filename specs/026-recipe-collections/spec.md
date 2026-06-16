@@ -2,9 +2,20 @@
 
 **Ветка**: `026-recipe-collections`  
 **Дата**: 2026-06-07  
-**Статус**: В работе  
+**Статус**: 🟢 Реализовано (аудит 2026-06-15 — US9 закрыт: pin перенесён с leading на trailing)  
 **Зависимости**: `008-collection-mutations` (индекс рецептов, pin/delete/create), `007-app-shell-navigation`  
 **Эталон**: [NATIVE_APP_COLLECTIONS.md](../../recipe-scaler-web/llm/NATIVE_APP_COLLECTIONS.md), веб `recipe-list.tsx`, `collections-view.tsx`, `use-yjs-sync` (folder writes)
+
+## Аудит реализации (2026-06-15)
+
+| Область | Статус |
+|---------|--------|
+| Yjs folders + `folderIds` | ✅ `DocumentManager`, `YjsSyncService` |
+| UI: toggle, drill-in, sheets | ✅ `CollectionsRootView`, `CollectionFolderView`, assign/manage sheets |
+| Поиск → flat fallback | ✅ `RecipeListView` |
+| i18n `collections.*` + tests | ✅ |
+| verify script | ✅ `scripts/verify-recipe-collections.sh` |
+| US9 жесты (leading pin) | ✅ pin в **leading** группе рядом с cart + collections (фикс 2026-06-15 — `RecipeListView.swift` и `CollectionFolderView.swift`); trailing содержит только delete |
 
 ## Контекст
 
@@ -55,7 +66,7 @@ Full parity мобильного веба: режимы «По коллекци�
 
 ### US9 — Жесты строки (P2)
 
-**Паритет веба §8.8**: leading — корзина (зелёный), коллекции (янтарный); trailing — pin/unpin, удаление.
+**Паритет нативного UX**: leading swipe — cart (зелёный), collections (оранжевый), pin/unpin (синий); trailing swipe — удаление (красный).
 
 ### US10 — Офлайн (P1)
 

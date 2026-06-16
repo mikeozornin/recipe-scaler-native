@@ -6,7 +6,7 @@
 import Foundation
 import UniformTypeIdentifiers
 
-public struct ImportPhotoItem: Sendable {
+public struct ImportPhotoItem: Sendable, Equatable {
     public let data: Data
     public let fileName: String
     public let utType: UTType?
@@ -15,6 +15,11 @@ public struct ImportPhotoItem: Sendable {
         self.data = data
         self.fileName = fileName
         self.utType = utType
+    }
+
+    // Equatable — compare by data + fileName only; UTType is not Equatable.
+    public static func == (lhs: ImportPhotoItem, rhs: ImportPhotoItem) -> Bool {
+        lhs.data == rhs.data && lhs.fileName == rhs.fileName
     }
 }
 

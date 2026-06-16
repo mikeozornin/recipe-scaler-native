@@ -241,17 +241,13 @@ struct AssistantSheet: View {
     private func messageBubbleBody(for message: AssistantMessage, isLast: Bool, isUser: Bool) -> some View {
         VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
             if isUser {
-                Text(message.text)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .textSelection(.enabled)
-                    .multilineTextAlignment(.trailing)
+                // Web parity: user-bubble shows the friendlier resolved text (e.g. "Удалить"
+                // instead of "confirm_delete") for messages that resolved a pending action.
+                Text(AssistantMessageCopyText.text(for: message))
+                    .appBodySelectable(multilineTextAlignment: .trailing)
             } else if message.text.isEmpty && message.isStreaming {
                 Text(verbatim: streamingPlaceholder(for: message, isLast: isLast))
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .textSelection(.enabled)
-                    .multilineTextAlignment(.leading)
+                    .appBodySelectable(multilineTextAlignment: .leading)
             } else {
                 AssistantMarkdownText(content: message.text)
             }
@@ -260,8 +256,8 @@ struct AssistantSheet: View {
                 message: message,
                 isLastMessage: isLast,
                 isSending: isSending,
-                onWidgetSubmit: { value, attachment in
-                    submitWidgetValue(value, displayText: nil, recipeAttachment: attachment)
+                onWidgetSubmit: { value, displayText, attachment in
+                    submitWidgetValue(value, displayText: displayText, recipeAttachment: attachment)
                 }
             )
         }
@@ -402,7 +398,7 @@ struct AssistantSheet: View {
 
     /// Web `handleSend` (assistant-sheet.tsx:464-511): trim text, snapshot attachments,
     /// optimistic user bubble, then stream.
-    private func send() async {
+    private func send(displayText: String? = nil) async {
         await ensureThread()
         guard let threadId else { return }
 
@@ -412,7 +408,7 @@ struct AssistantSheet: View {
 
         let attachedIds = attachments.compactMap { UUID(uuidString: $0.recipeId)?.uuidString.lowercased() }
         let snapshotAttachments = attachments
-        let displayText = trimmedText
+        let bubbleText = displayText ?? trimmedText
 
         input = ""
         attachments = []
@@ -426,12 +422,13 @@ struct AssistantSheet: View {
             AssistantMessage(
                 id: userMessageId,
                 role: "user",
-                text: displayText,
+                text: bubbleText,
                 isStreaming: false,
                 metadata: AssistantMessageMetadata(
                     attachments: snapshotAttachments.isEmpty ? nil : snapshotAttachments,
                     interactiveWidget: nil,
                     pendingAction: nil,
+                    actionResolution: nil,
                     followUpSuggestions: nil
                 ),
                 createdAt: now
@@ -444,12 +441,12 @@ struct AssistantSheet: View {
                 threadId: threadId,
                 message: trimmedText,
                 attachedRecipeIds: attachedIds,
-                displayText: displayText
+                displayText: bubbleText
             )
         } catch {
             // Drop optimistic user bubble on failure so the user can retry.
             messages.removeAll { $0.id == userMessageId }
-            input = displayText
+            input = bubbleText
             attachments = snapshotAttachments
             messages.append(
                 AssistantMessage(
@@ -481,12 +478,7 @@ struct AssistantSheet: View {
         input = value
         self.attachments = attachments
         Task {
-            await send()
-            // After widget submit, restore the visible text to the friendlier displayText
-            // (the server still received `value`).
-            if let displayText, let lastUserIndex = messages.lastIndex(where: { $0.role == "user" }) {
-                messages[lastUserIndex].text = displayText
-            }
+            await send(displayText: displayText)
         }
     }
 
@@ -569,6 +561,10 @@ struct AssistantSheet: View {
                let parsed = AssistantISO8601.parse(createdAt) {
                 messages[userIndex].createdAt = parsed
             }
+            // Web parity: the server returns the persisted user message with full metadata
+            // (including actionResolution) in the final event. Copy it so the bubble can render
+            // friendly confirm/cancel labels (e.g. "Удалить") instead of raw values.
+            messages[userIndex].metadata = userMessage.metadata
         }
         if let assistant = data.assistantMessage {
             updateStreamingMessage(id: optimisticAssistantId) { msg in

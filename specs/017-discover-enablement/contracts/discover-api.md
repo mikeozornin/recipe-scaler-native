@@ -32,9 +32,10 @@
 
 ## Кэширование
 
-- HTTP-кэш: `URLSession.shared.urlCache` (default: RAM 4 MB + disk 20 MB). Сервер может слать `Cache-Control` / `ETag`.
-- Offline: `URLSession.shared` автоматически возвращает последний закэшированный response, если политика позволяет. Иначе — выбрасывает ошибку, UI показывает `discover.error` / `discover.profile.not-found`.
-- Persistent disk cache (как в `RecipeImageService`) — **намеренно не используется** для Discover. Спека 017: «офлайн — последний кэш + сообщение», а не offline-first persistence.
+- **Disk cache (public)**: `PublicImageCacheService` → `{Caches}/PublicImages/{sha256(url)}.webp`. ETag / `If-None-Match`, лимит ~150 MB. Spec 021.
+- **Memory cache**: `DiscoverImageMemoryCache` (NSCache) для мгновенного restore при scroll.
+- **Offline**: последний disk cache + placeholder; не offline-first persistence.
+- **Личные рецепты**: `RecipeImageService` → `Application Support/RecipeImages/` (spec 003, 021). Для Discover **не** используется.
 
 ---
 

@@ -46,6 +46,11 @@ actor UpdateDebouncer {
         await flush(recipeId: recipeId)
     }
 
+    func hasPending(recipeId: String) -> Bool {
+        guard let batch = pendingByRecipeId[recipeId] else { return false }
+        return !batch.isEmpty
+    }
+
     private func flush(recipeId: String) async {
         guard let batch = drainPendingBatch(recipeId: recipeId) else { return }
         let payloads = batch.filter { $0.count > 2 }

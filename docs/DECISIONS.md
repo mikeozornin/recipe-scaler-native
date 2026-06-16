@@ -176,9 +176,21 @@ Chronological log of substantive choices (newest last).
 
 ### 2026-06-12 — Agent debug logging: sandbox NDJSON file, not localhost ingest on device
 
-**Decision:** Agent/debug logs write to `Library/Application Support/debug-session.ndjson` on both simulator and physical device. Keep `AgentDebugLogging` / `AgentSyncDebugLog` / `DebugSessionNDJSONLog` classes but leave logging disabled by default (`AGENT_DEBUG_LOG_ENABLED`). Document the workflow in `llm/how-to-debug.md`. Do not rely on `127.0.0.1` HTTP ingest from a physical iPhone.
+**Decision:** Agent/debug logs write to `Library/Application Support/debug-session.ndjson` on both simulator and physical device. Do not rely on `127.0.0.1` HTTP ingest from a physical iPhone.
 
-**Rationale:** On device, localhost is the phone itself — Cursor ingest on the Mac is unreachable, so simulator and phone produced inconsistent debug pictures. Unified file + pull (Xcode console, container download, simulator script) gives parity; user asked to disable noisy logging while keeping the classes for future use.
+**Rationale:** On device, localhost is the phone itself — Cursor ingest on the Mac is unreachable. Unified file + pull gives parity.
+
+**Superseded (2026-06-16):** logging disabled-by-default and `AGENT_DEBUG_LOG_ENABLED` — см. решение ниже про `AppLog`.
+
+---
+
+### 2026-06-16 — Unified AppLog facade (spec 028)
+
+**Decision:** Single `AppLog` facade for all app logging. DEBUG builds write NDJSON to `Library/Application Support/debug-session.ndjson` **by default** (no scheme env required). Opt-out: `AGENT_DEBUG_LOG_DISABLED=1`. All builds mirror to `os.Logger`. `AgentSyncDebugLog` / `DebugSessionNDJSONLog` / `CursorDebugIngestLog` remain as thin compatibility wrappers. Agent pulls logs via `scripts/pull-app-logs.sh`; user exports from Profile → Diagnostics on device. Release: no file; profile shows a clear «no log» message.
+
+**Rationale:** Fragmented logging (`AgentSyncDebugLog` only in Views, `print`/`Logger` in Services) made agent reproduction unreliable. Default-on DEBUG logging works on simulator and phone without env injection; rotation caps disk use (5 MB × 3 archives).
+
+**Docs:** `llm/how-to-debug.md`, `docs/AGENT-WORKFLOW.md` §Отладка, `AGENTS.md` §Журналирование.
 
 ---
 

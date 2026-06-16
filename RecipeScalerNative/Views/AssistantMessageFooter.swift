@@ -18,7 +18,7 @@ struct AssistantMessageFooter: View {
     let message: AssistantMessage
     let isLastMessage: Bool
     let isSending: Bool
-    let onWidgetSubmit: (_ value: String, _ recipeAttachment: AssistantRecipeAttachment?) -> Void
+    let onWidgetSubmit: (_ value: String, _ displayText: String?, _ recipeAttachment: AssistantRecipeAttachment?) -> Void
 
     /// Single-shot lock: once any widget option is tapped, the footer becomes inert.
     @State private var widgetSubmitted = false
@@ -28,15 +28,19 @@ struct AssistantMessageFooter: View {
               !message.isStreaming,
               isLastMessage,
               !isSending,
-              !widgetSubmitted else { return nil }
+              !widgetSubmitted else {
+            return nil
+        }
         return message.metadata?.interactiveWidget
     }
 
     var body: some View {
-        if let widget {
-            AssistantWidgetView(widget: widget) { value, attachment in
-                widgetSubmitted = true
-                onWidgetSubmit(value, attachment)
+        VStack(alignment: .leading, spacing: 8) {
+            if let widget {
+                AssistantWidgetView(widget: widget) { value, displayText, attachment in
+                    widgetSubmitted = true
+                    onWidgetSubmit(value, displayText, attachment)
+                }
             }
         }
     }
@@ -56,6 +60,30 @@ enum AssistantMessageFollowUps {
             return []
         }
         return Array((message.metadata?.followUpSuggestions ?? []).prefix(3))
+    }
+}
+
+// MARK: - Presentation gates (testable; mirrors `AssistantMessageFooter.widget`)
+
+enum AssistantMessageFooterPresentation {
+    /// Web parity: only `interactiveWidget` is rendered; `pendingAction` is a server gate only.
+    static func shouldRenderWidget(
+        role: String,
+        isStreaming: Bool,
+        isLastMessage: Bool,
+        isSending: Bool,
+        widgetSubmitted: Bool,
+        metadata: AssistantMessageMetadata?
+    ) -> Bool {
+        guard role == "assistant",
+              !isStreaming,
+              isLastMessage,
+              !isSending,
+              !widgetSubmitted,
+              metadata?.interactiveWidget != nil else {
+            return false
+        }
+        return true
     }
 }
 
@@ -101,6 +129,13 @@ enum AssistantMessageCopyText {
             return message.text
         }
 
+        // Web parity (`assistant-message-list.tsx:getResolvedUserMessageText`): if this user message
+        // resolved a pending action via the widget, show the friendlier confirmLabel/cancelLabel
+        // (e.g. "Удалить") instead of the raw value (e.g. "confirm_delete").
+        if let resolved = Self.resolvedWidgetActionText(for: message) {
+            return resolved
+        }
+
         let attachments = message.metadata?.attachments ?? []
         guard !attachments.isEmpty else {
             return message.text
@@ -124,6 +159,37 @@ enum AssistantMessageCopyText {
         }
 
         return message.text
+    }
+
+    /// Mirrors web `getResolvedUserMessageText` — returns a non-nil label when the user message
+    /// was produced by tapping a confirmation widget (server marks it with `actionResolution.source == "widget"`).
+    private static func resolvedWidgetActionText(for message: AssistantMessage) -> String? {
+        let metadata = message.metadata
+        let pendingAction = metadata?.pendingAction
+        let resolution = metadata?.actionResolution
+        guard let metadata,
+              let pendingAction = metadata.pendingAction,
+              let resolution = metadata.actionResolution,
+              resolution.source == "widget",
+              resolution.pendingActionId == pendingAction.id else {
+            return nil
+        }
+        let normalizedContent = AssistantMessageValueNormalizer.normalize(message.text)
+        if normalizedContent == AssistantMessageValueNormalizer.normalize(pendingAction.confirmValue) {
+            return pendingAction.confirmLabel ?? message.text
+        }
+        if normalizedContent == AssistantMessageValueNormalizer.normalize(pendingAction.cancelValue) {
+            return pendingAction.cancelLabel ?? message.text
+        }
+        return nil
+    }
+}
+
+/// Mirror of web `normalizeUserMessageValue` (`assistant-message-list.tsx:33-35`):
+/// trim + lowercase for case-insensitive comparison of widget values.
+enum AssistantMessageValueNormalizer {
+    static func normalize(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 }
 
@@ -205,7 +271,7 @@ struct AssistantMessageMetaRow: View {
 
 struct AssistantWidgetView: View {
     let widget: AssistantInteractiveWidget
-    let onSubmit: (_ value: String, _ recipeAttachment: AssistantRecipeAttachment?) -> Void
+    let onSubmit: (_ value: String, _ displayText: String?, _ recipeAttachment: AssistantRecipeAttachment?) -> Void
 
     var body: some View {
         switch widget {
@@ -232,19 +298,21 @@ private func looksLikeUUID(_ value: String) -> Bool {
 
 private struct AssistantQuickRepliesWidget: View {
     let options: [AssistantWidgetOption]
-    let onSubmit: (String, AssistantRecipeAttachment?) -> Void
+    let onSubmit: (String, String?, AssistantRecipeAttachment?) -> Void
 
     var body: some View {
         FlowLayout(spacing: 8) {
             ForEach(options) { option in
                 Button {
-                    let attachment: AssistantRecipeAttachment? = looksLikeUUID(option.value)
+                    let isRecipeId = looksLikeUUID(option.value)
+                    let attachment: AssistantRecipeAttachment? = isRecipeId
                         ? AssistantRecipeAttachment(recipeId: option.value, recipeName: option.label, recipeColor: nil)
                         : nil
-                    onSubmit(option.value, attachment)
+                    let displayText: String? = isRecipeId ? nil : option.label
+                    onSubmit(option.value, displayText, attachment)
                 } label: {
                     Text(option.label)
-                        .font(.subheadline)
+                        .font(AppTypography.footnote)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(Color.accentColor.opacity(0.1))
@@ -259,7 +327,7 @@ private struct AssistantQuickRepliesWidget: View {
 
 private struct AssistantSelectWidget: View {
     let options: [AssistantWidgetOption]
-    let onSubmit: (String, AssistantRecipeAttachment?) -> Void
+    let onSubmit: (String, String?, AssistantRecipeAttachment?) -> Void
 
     @State private var selection: AssistantWidgetOption?
 
@@ -267,13 +335,16 @@ private struct AssistantSelectWidget: View {
         VStack(alignment: .leading, spacing: 8) {
             Picker(selection: $selection) {
                 ForEach(options) { option in
-                    Text(option.label).tag(option as AssistantWidgetOption?)
+                    Text(option.label)
+                        .font(AppTypography.body)
+                        .tag(option as AssistantWidgetOption?)
                 }
             } label: {
                 EmptyView()
             }
             .pickerStyle(.menu)
             .labelsHidden()
+            .font(AppTypography.body)
 
             Button("assistant.send") {
                 guard let selected = selection else { return }
@@ -282,7 +353,7 @@ private struct AssistantSelectWidget: View {
                     recipeName: selected.label,
                     recipeColor: nil
                 )
-                onSubmit(selected.value, attachment)
+                onSubmit(selected.value, nil, attachment)
             }
             .buttonStyle(.borderedProminent)
             .disabled(selection == nil)
@@ -296,7 +367,7 @@ private struct AssistantSelectWidget: View {
 
 private struct AssistantNumberInputWidget: View {
     let config: AssistantInteractiveWidget.NumberInput
-    let onSubmit: (String, AssistantRecipeAttachment?) -> Void
+    let onSubmit: (String, String?, AssistantRecipeAttachment?) -> Void
 
     @State private var value: Double = 1
 
@@ -309,13 +380,16 @@ private struct AssistantNumberInputWidget: View {
             Stepper(value: $value, in: stepperRange, step: config.step ?? 1) {
                 HStack(spacing: 4) {
                     Text(formattedValue)
+                        .appBody()
                     if let unit = config.unit, !unit.isEmpty {
-                        Text(unit).foregroundStyle(.secondary)
+                        Text(unit)
+                            .appBody()
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
             Button("assistant.send") {
-                onSubmit(formattedValue, nil)
+                onSubmit(formattedValue, nil, nil)
             }
             .buttonStyle(.borderedProminent)
             .accessibilityIdentifier("assistant_widget_number_input_submit")

@@ -1,10 +1,10 @@
 # План реализации: 019 inline description editor
 
-**Ветка**: `019-recipe-description-inline-edit` | **Дата**: 2026-06-10 | **Спека**: [spec.md](./spec.md)
+**Ветка**: `019-recipe-description-inline-edit` | **Дата**: 2026-06-10 | **Аудит**: 2026-06-15 | **Спека**: [spec.md](./spec.md)
 
 ## Кратко
 
-Заменить sheet + contentEditable на **inline Tiptap** в `YDocRecipeDetailView`, **нативную sticky-панель** и режимы высоты embedded/focus. Мост Yjs из 006 сохранить, расширить [contracts/description-editor-bridge-v2.md](./contracts/description-editor-bridge-v2.md).
+Inline **Tiptap** в `YDocRecipeDetailView`, **нативная sticky-панель**, parent-scroll по `contentHeight`. Sheet + contentEditable **сняты с production path**; файл sheet — dead code до T021.
 
 ## Проверка конституции
 
@@ -13,79 +13,73 @@
 | Native UI | ✅ SwiftUI shell; WKWebView только canvas описания |
 | CRDT / sync | ✅ XmlFragment через applyUpdate |
 | Паритет веб stacked | ✅ Один Edit, порядок блоков |
-| i18n | ✅ Ключи панели в `Localizable.xcstrings` |
+| i18n | ✅ Ключи `editor.*`, `llm.parse-recipe` |
 
 ## Фазы
 
-### Phase 0 — Подготовка
+### Phase 0 — Подготовка ✅
 
-- [ ] Tiptap esbuild target `Resources/TiptapEditor/` (или рефактор `DescriptionEditor/`)
-- [ ] JS: экспорт `window.__descriptionEditor` с `editor`, обработка `command`
-- [ ] Обновить `DescriptionEditorBridge` + координатор под v2 сообщения
-- [ ] Feature flag `inlineDescriptionEditor` (опционально) для отката sheet
+- [x] Tiptap bundle `Resources/DescriptionEditor/` (`yjs.bundle.js`, `description-editor-bridge.js`)
+- [x] JS: `Editor` + `runCommand` / `selectionState` / `nodeClick`
+- [x] `DescriptionEditorBridge` v2
 
-### Phase 1 — Inline MVP (US1, US3, US4)
+### Phase 1 — Inline MVP (US1, US3, US4) ✅
 
-- [ ] `RecipeDescriptionEditorBlock` в `YDocRecipeDetailView` вместо `DescriptionEditorEntrySection`
-- [ ] Убрать основной путь `showsDescriptionEditor` sheet (оставить dead code за flag до Phase 4)
-- [ ] `contentHeight` + embedded mode (`embeddedMaxHeight` = 2000)
-- [ ] Focus mode при превышении порога
-- [ ] Remote `applyUpdate` пока edit открыт
-- [ ] Build + quickstart SC-001, SC-002, SC-005
+- [x] `RecipeDescriptionEditorBlock` в `YDocRecipeDetailView`
+- [x] Sheet path не используется в production
+- [x] `contentHeight` + parent scroll
+- [x] Remote `applyUpdate` при edit
 
-### Phase 2 — Нативная sticky-панель (US2)
+### Phase 2 — Нативная sticky-панель (US2) ✅
 
-- [ ] `DescriptionFormattingBar` + `safeAreaInset(edge: .bottom)`
-- [ ] `focus` / `blur` / `selectionState` из WebView
-- [ ] Команды: H1, bold, highlight, ordered/bullet lists
-- [ ] SC-003
+- [x] `DescriptionFormattingBar` + `safeAreaInset(edge: .bottom)`
+- [x] `focus` / `blur` / `selectionState`
+- [x] H1, bold, highlight, ordered/bullet lists
+- [x] SC-003 quickstart formal (подтверждено 2026-06-15)
 
-### Phase 3 — Tiptap parity core (018 P1)
+### Phase 3 — Tiptap parity core (018 P1) 🟡
 
-- [ ] Link: нативный alert/sheet URL → `setLink`
-- [ ] Скрыть/не собирать web `TiptapMenuBar` в iOS bundle
-- [ ] Round-trip простой разметки (quickstart)
+- [x] Tiptap extensions: Link (autolink), Highlight, TimerNode, IngredientNode
+- [x] Web toolbar не показывается (inline-embedded HTML)
+- [x] Manual setLink UI — вне scope (убрано 2026-06-15; на веб mobile menu bar отдельной кнопки тоже нет)
+- [ ] Round-trip quickstart SC-006
 
-### Phase 4 — Nodes + LLM (018 P2, US7)
+### Phase 4 — Nodes + LLM (018 P2, US7) 🟡
 
-- [ ] Реализовать [contracts/description-markup-parity.md](./contracts/description-markup-parity.md) (timer + ingredient sheets + LLM API)
-- [ ] Timer tap в `StepsSection` → `TimerManager`
-- [ ] LLM Sparkles: Swift + API parity `runParseWithLLM`, только v3 editable
-- [ ] Удалить sheet `DescriptionEditorView` и HTML toolbar
-- [ ] SC-006 выборочно
+- [x] [description-markup-parity.md](./contracts/description-markup-parity.md) — timer + ingredient sheets + edit/read node menus
+- [x] Timer tap в `StepsSection` → `TimerManager`
+- [ ] LLM Sparkles: Swift + API `runParseWithLLM`
+- [ ] Удалить `DescriptionEditorView.swift`
 
-### Phase 5 — Полировка
+### Phase 5 — Полировка ⏳
 
 - [ ] `caretRect` + scroll к каретке (если нужно после QA)
-- [ ] Instruments: память WebView на длинном рецепте
-- [ ] Обновить `docs/ARCHITECTURE.md`, `006`/`018` статусы, `docs/DECISIONS.md` по запросу
+- [ ] XCTest `selectionState` JSON
+- [ ] Обновить `docs/ARCHITECTURE.md`, статусы 006/018
 
-## Компоненты (целевые пути)
+## Компоненты (фактические пути)
 
 ```text
 RecipeScalerNative/Views/
-├── YDocRecipeDetailView.swift          # inline block, safeAreaInset bar
-├── RecipeDescriptionEditorBlock.swift    # NEW — WebView + height mode
-├── DescriptionFormattingBar.swift      # NEW — sticky toolbar
-├── DescriptionEditorWebView.swift      # extend: height, no full-screen only
-├── DescriptionEditorView.swift         # DEPRECATE → remove Phase 4
+├── YDocRecipeDetailView.swift          # inline block, safeAreaInset bar, markup sheets
+├── RecipeDescriptionEditorBlock.swift  # WebView + height
+├── DescriptionFormattingBar.swift      # sticky toolbar
+├── DescriptionMarkupFlow.swift         # timer/ingredient sheets + node menus
+├── DescriptionEditorWebView.swift
+├── DescriptionEditorBridge.swift       # v2
+├── DescriptionEditorView.swift         # DEAD CODE → remove T021
 
-RecipeScalerNative/Services/
-├── DescriptionEditorBridge.swift       # v2 commands + selectionState
-
-RecipeScalerNative/Resources/TiptapEditor/  # NEW or rename
-├── tiptap-recipe-ios.html
-└── tiptap-recipe-ios.bundle.js
+RecipeScalerNative/Resources/DescriptionEditor/
+├── description-editor.html
+├── description-editor-bridge.js        # Tiptap Editor
+└── yjs.bundle.js
 ```
 
-## Тестирование
+## Оставшийся объём (оценка)
 
-- XCTest: bridge command whitelist (unit на парсинг `selectionState` JSON)
-- Ручное: [quickstart.md](./quickstart.md)
-- `rtk xcodebuild -scheme RecipeScalerNative build` после каждой фазы
-
-## Зависимости от веба
-
-- `tiptap-recipe-editor.tsx`, `tiptap-menu-bar.tsx` — эталон команд
-- `recipe-detail.tsx` stacked порядок секций
-- LLM: повторить контракт `runParseWithLLM` (прочитать endpoint при Phase 4)
+| Задача | Effort |
+|--------|--------|
+| T020 LLM parse API | M |
+| T021 удалить legacy sheet view | S |
+| T018 manual link UI | S (optional) |
+| T014/T022/T023 polish | S |

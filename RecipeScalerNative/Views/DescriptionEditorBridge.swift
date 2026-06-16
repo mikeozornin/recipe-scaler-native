@@ -87,6 +87,7 @@ final class DescriptionEditorBridge: ObservableObject {
     @Published private(set) var nodeClickSequence: UInt = 0
 
     private var suppressIncomingFocus = false
+    private var htmlContinuations: [CheckedContinuation<String, Never>] = []
 
     let recipeId: String
     let presentation: DescriptionEditorPresentation
@@ -183,6 +184,9 @@ final class DescriptionEditorBridge: ObservableObject {
             }
         case "selectionState":
             selectionState = Self.parseSelectionState(dict)
+        case "html":
+            let html = (dict["html"] as? String) ?? ""
+            resumeHtmlWaiters(with: html)
         case "nodeClick":
             lastNodeClick = Self.parseNodeClick(dict)
             nodeClickSequence &+= 1
@@ -282,8 +286,38 @@ final class DescriptionEditorBridge: ObservableObject {
         phase = .error(message)
     }
 
+    /// Request current editor HTML (resolves after JS posts `html`).
+    func requestHTML() async -> String {
+        guard phase == .ready else { return "" }
+        return await withTaskGroup(of: String.self) { group in
+            group.addTask { @MainActor in
+                await withCheckedContinuation { (continuation: CheckedContinuation<String, Never>) in
+                    self.htmlContinuations.append(continuation)
+                    self.sendCommand(name: "getHTML")
+                }
+            }
+            group.addTask {
+                try? await Task.sleep(for: .seconds(2))
+                return ""
+            }
+            let result = await group.next() ?? ""
+            group.cancelAll()
+            self.resumeHtmlWaiters(with: result)
+            return result
+        }
+    }
+
+    private func resumeHtmlWaiters(with html: String) {
+        let waiters = htmlContinuations
+        htmlContinuations.removeAll()
+        for waiter in waiters {
+            waiter.resume(returning: html)
+        }
+    }
+
     func teardown() {
         syncService?.unregisterDescriptionEditor(recipeId: recipeId)
+        resumeHtmlWaiters(with: "")
     }
 
     private static func parseSelectionState(_ dict: [String: Any]) -> DescriptionEditorSelectionState {

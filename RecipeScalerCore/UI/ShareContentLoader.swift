@@ -11,7 +11,7 @@ import UIKit
 import UniformTypeIdentifiers
 
 /// Classified payload that an extension can import.
-public enum ShareContent {
+public enum ShareContent: Equatable {
     /// One or more URLs only.
     case urls([URL])
     /// Free-form text — may still contain URLs that the classifier will route to URL import.
@@ -137,28 +137,13 @@ public enum ShareContentLoader {
     // MARK: - Classification
 
     /// Apply priority: URL → Images → Text. URLs+text become `.mixed`.
+    /// Delegates to `ShareContentClassifier` (spec 025 T033) so the priority
+    /// logic is unit-testable without `NSItemProvider`.
     private static func classify(
         urls: [URL],
         texts: [String],
         images: [ImportPhotoItem]
     ) -> ShareContent {
-        if !urls.isEmpty {
-            let combined = texts.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
-            if combined.isEmpty {
-                return .urls(urls)
-            }
-            return .mixed(urls: urls, text: combined)
-        }
-        if !images.isEmpty {
-            return .images(images)
-        }
-        let combined = texts.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !combined.isEmpty else { return .empty }
-
-        let cls = ImportContentClassifier.classify(combined)
-        if cls.isUrlOnly, let first = cls.urls.first, let url = URL(string: first) {
-            return .urls([url])
-        }
-        return .text(combined)
+        ShareContentClassifier.classify(urls: urls, texts: texts, images: images)
     }
 }

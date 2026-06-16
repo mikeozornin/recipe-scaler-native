@@ -634,6 +634,70 @@
         }
       }
     },
+    "account.section.logs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnostics"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Диагностика"
+          }
+        }
+      }
+    },
+    "account.export.logs.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export app log"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспорт журнала"
+          }
+        }
+      }
+    },
+    "account.export.logs.missing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No log file available"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл журнала недоступен"
+          }
+        }
+      }
+    },
+    "account.export.logs.missing.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The diagnostic log is only created in debug builds while the app is running."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Журнал создаётся только в отладочной сборке во время работы приложения."
+          }
+        }
+      }
+    },
     "account.section.preferences" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1537,6 +1601,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ассистент доступен только при подключении к интернету."
+          }
+        }
+      }
+    },
+    "assistant.pending-action.cancel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отмена"
+          }
+        }
+      }
+    },
+    "assistant.pending-action.confirm" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подтвердить"
           }
         }
       }
@@ -2719,6 +2817,23 @@
         }
       }
     },
+    "common.ok" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ОК"
+          }
+        }
+      }
+    },
     "common.screen-always-on" : {
       "localizations" : {
         "en" : {
@@ -2995,7 +3110,6 @@
       }
     },
     "description.instructions" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3843,6 +3957,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Порций должно быть не меньше 1."
+          }
+        }
+      }
+    },
+    "edit.error.invalidInput" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid input."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некорректный ввод."
           }
         }
       }
@@ -4737,6 +4868,39 @@
         }
       }
     },
+    "import.file-hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import recipes exported from Paprika or Crouton"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт рецептов из экспорта Paprika или Crouton"
+          }
+        }
+      }
+    },
+    "import.file-pick" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose file"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать файл"
+          }
+        }
+      }
+    },
     "import.lets-go" : {
       "localizations" : {
         "en" : {
@@ -4870,6 +5034,22 @@
         }
       }
     },
+    "import.tab-file" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл"
+          }
+        }
+      }
+    },
     "import.tab-photo" : {
       "localizations" : {
         "en" : {
@@ -4930,6 +5110,142 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Борщ с говядиной, 4 порции\n\nГовядина — 500 г\nСвёкла — 2 шт.\nКапуста — 300 г"
+          }
+        }
+      }
+    },
+    "import.third-party-cancel" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel import"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отменить импорт"
+          }
+        }
+      }
+    },
+    "import.third-party-empty" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive contains no recipes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Архив не содержит рецептов"
+          }
+        }
+      }
+    },
+    "import.third-party-limit" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many recipes (maximum %1$d)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слишком много рецептов (максимум %1$d)"
+          }
+        }
+      }
+    },
+    "import.third-party-photo-skipped-offline" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d photo(s) skipped (offline)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d фото пропущено (нет сети)"
+          }
+        }
+      }
+    },
+    "import.third-party-photo-failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d photo(s) could not be uploaded"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d фото не удалось загрузить"
+          }
+        }
+      }
+    },
+    "import.third-party-progress" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d / %2$d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d / %2$d"
+          }
+        }
+      }
+    },
+    "import.third-party-summary" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imported %1$d, failed %2$d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировано %1$d, ошибок %2$d"
+          }
+        }
+      }
+    },
+    "import.third-party-unsupported" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsupported file format"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неподдерживаемый формат файла"
           }
         }
       }
@@ -5172,6 +5488,40 @@
         }
       }
     },
+    "llm.parse-empty" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing to parse yet — type the recipe steps first."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сначала введите шаги рецепта."
+          }
+        }
+      }
+    },
+    "llm.parse-error" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not auto-detect the recipe. Try again later."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось распознать рецепт. Попробуйте позже."
+          }
+        }
+      }
+    },
     "llm.parse-recipe" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5185,6 +5535,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Автораспознавание"
+          }
+        }
+      }
+    },
+    "llm.parse-recipe-offline" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto-detect (offline)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автораспознавание (офлайн)"
+          }
+        }
+      }
+    },
+    "llm.processing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detecting recipe…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Распознаём рецепт…"
           }
         }
       }
@@ -5905,9 +6289,6 @@
         }
       }
     },
-    "Recipe Scaler" : {
-
-    },
     "recipe.create.new" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6463,6 +6844,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ингредиент"
+          }
+        }
+      }
+    },
+    "recipes.no-ingredients" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No ingredients"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет ингредиентов"
           }
         }
       }
@@ -7078,6 +7475,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Список покупок"
+          }
+        }
+      }
+    },
+    "splash.app-name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe Scaler"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe Scaler"
           }
         }
       }
@@ -7880,6 +8293,23 @@
         }
       }
     },
+    "timer.delete" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить таймер"
+          }
+        }
+      }
+    },
     "timer.example.active-timers" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8301,6 +8731,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Название таймера."
+          }
+        }
+      }
+    },
+    "timer.toggle.overdue" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overdue"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просрочен"
+          }
+        }
+      }
+    },
+    "timer.toggle.pause" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пауза"
+          }
+        }
+      }
+    },
+    "timer.toggle.resume" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продолжить"
+          }
+        }
+      }
+    },
+    "timer.toggle.start" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запустить"
           }
         }
       }

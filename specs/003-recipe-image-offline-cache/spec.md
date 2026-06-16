@@ -33,8 +33,8 @@
 
 Загруженные байты ДОЛЖНЫ сохраняться в `ImageCacheService`:
 
-- `{Caches}/RecipeImages/{recipeId}_preview.webp`
-- `{Caches}/RecipeImages/{recipeId}_full.webp`
+- `{Application Support}/RecipeImages/{recipeId}_preview.webp`
+- `{Application Support}/RecipeImages/{recipeId}_full.webp`
 
 Условные запросы (`If-None-Match` / `If-Modified-Since`) и ответ `304` — как в существующем `ImageCacheService`.
 

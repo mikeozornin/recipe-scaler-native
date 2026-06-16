@@ -14,6 +14,7 @@ import RecipeScalerCore
 struct DiscoverRecipeView: View {
     let recipeId: String
     var allowRecipeDownloads: Bool = true
+    var imageSource: DiscoverRecipeImageSource = .curatedDiscover
 
     @EnvironmentObject private var syncService: YjsSyncService
     @AppStorage(NutritionSettings.globalEnabledKey) private var showNutritionGlobal = true
@@ -87,7 +88,7 @@ struct DiscoverRecipeView: View {
                     }
                     .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
                 } else if isLoading {
-                    ProgressView("discover.recipe.loading")
+                    ProgressView(Bundle.currentLocalizedString("discover.recipe.loading"))
                         .frame(maxWidth: .infinity)
                         .padding(.top, 60)
                 } else if let loadError {
@@ -120,11 +121,10 @@ struct DiscoverRecipeView: View {
 
     @ViewBuilder
     private func hero(for recipe: RecipeData) -> some View {
-        if let imageUrlString = recipe.imageUrl, !imageUrlString.isEmpty {
-            RecipeCachedImageView(
-                recipeId: recipe.id,
-                imageUrl: imageUrlString,
-                variant: .full,
+        if recipe.imageUrl?.isEmpty == false,
+           let imageURL = DiscoverAPI.detailImageURL(recipeId: recipe.id, imageSource: imageSource) {
+            PublicCachedImageView(
+                url: imageURL,
                 allowsNetworkRefresh: true,
                 layoutAspectRatio: recipe.imageAspectRatio.map { CGFloat($0) },
                 fullWidthHero: true,

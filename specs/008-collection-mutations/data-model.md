@@ -21,7 +21,7 @@ recipes: Y.Array
 | Pin | `setCollectionEntryPinned` | `isPinned`, `updatedAt` |
 | Unpin | same | `isPinned: false` |
 | Delete | `tombstoneCollectionEntry` | `deleted: true`, `updatedAt` |
-| Create | `createRecipe` | new array entry + new `{userId}:recipe:{id}` v3 map |
+| Create | `createRecipe` | new array entry + new `{userId}:recipe:{id}` v3 map (`id` — lowercase UUID) |
 
 ## Recipe doc on create (v3)
 

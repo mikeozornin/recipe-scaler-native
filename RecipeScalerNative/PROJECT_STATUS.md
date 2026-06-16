@@ -102,9 +102,13 @@ Cross-device timer state + mobile panel parity.
 - [x] Start from description — timer node tap → popover → `createAndStartTimer`
 - [x] `scripts/verify-timers-sync.sh`; panel screenshots 2026-06-04
 
-## Spec 023: Push notifications — PLANNED
+## Spec 023: Push notifications — IN PROGRESS (~90% code, 2026-06-15)
 
-APNs registration + server schedule/cancel for timers (moved from 014). See `specs/023-push-notifications/spec.md`.
+APNs registration + server schedule/cancel for timers. See `specs/023-push-notifications/spec.md`.
+
+- [x] `PushRegistrationService` → `POST /api/push/apns-register`
+- [x] `PushScheduleService` + hooks in `TimerManager`
+- [ ] Device QA (paid program); Account toggle (deferred)
 
 ## UX polish (no separate spec)
 

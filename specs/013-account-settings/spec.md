@@ -2,13 +2,11 @@
 
 **Ветка**: `013-account-settings`  
 **Дата**: 2026-06-02  
-**Статус**: 🟡 Реализовано большинство (аудит 2026-06-03). Остаток → [020-account-telegram-export](../020-account-telegram-export/spec.md)  
+**Статус**: 🟢 Реализовано почти полностью (аудит 2026-06-15). Остаток export/import → [020-account-telegram-export](../020-account-telegram-export/spec.md)  
 **Зависимости**: `007-app-shell-navigation`, auth Phase 1  
 **Эталон**: `/account` page, PRD § Assistant (settings subset), Telegram, export
 
-## Аудит реализации (2026-06-03)
-
-Реализовано: `AccountView` + `AccountSettingsViewModel` + `AccountAPI`, `SeedQRCodeView`, `AppLanguagePreference`, `AppThemePreference`.
+## Аудит реализации (2026-06-15)
 
 | Требование | Статус |
 |------------|--------|
@@ -17,17 +15,20 @@
 | US3 seed phrase + биометрия + QR | ✅ |
 | US4 язык + тема | ✅ |
 | US5 nutrition toggle | ✅ |
-| US6 export / import файлов | ❌ заглушка `account.data.coming-soon` |
-| US7 Telegram connect/disconnect | ❌ (есть только `telegramUsername` в DTO) |
+| US6 export / import файлов | ❌ заглушка `account.data.coming-soon` → **020** |
+| US7 Telegram connect/disconnect | ✅ `TelegramConnectionView` + `TelegramAPI` |
 | US8 logout (Keychain/SQLite/queue) | ✅ |
+| Reminders sync | ✅ (сверх исходного scope) |
 
-Не сделано → **020-account-telegram-export**: Telegram connect/status/disconnect и export/import файлов (v1.3 zip/json, общий pipeline с импортом 010).
+## Прошлый аудит (2026-06-03)
+
+US7 Telegram был ❌ — реализован после аудита.
 
 ## Контекст
 
 Вкладка Profile на вебе: display name, avatar, language, theme, nutrition toggle, seed/QR, public profile settings, Telegram, export/import файлов, logout.
 
-iOS: `AuthView` + Keychain; полноценного Account screen нет.
+iOS: `AuthView` + Keychain; `AccountView` с профилем и настройками реализован (013). Export/import — **020**.
 
 ## Цель
 

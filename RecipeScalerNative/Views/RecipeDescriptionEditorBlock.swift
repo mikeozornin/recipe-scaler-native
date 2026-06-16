@@ -51,7 +51,7 @@ struct RecipeDescriptionEditorBlock: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Instructions")
+            Text("description.instructions")
                 .font(AppTypography.title2)
                 .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
 

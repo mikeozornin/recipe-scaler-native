@@ -54,6 +54,9 @@ struct ContentView: View {
 
     private var effectiveUserId: String? {
         #if targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("-DisableDebugAutoLogin=1") {
+            return authService.userId
+        }
         return debugUserId
         #else
         return authService.userId
@@ -62,6 +65,9 @@ struct ContentView: View {
 
     private var isAuthenticated: Bool {
         #if targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("-DisableDebugAutoLogin=1") {
+            return authService.isAuthenticated
+        }
         return true
         #else
         return authService.isAuthenticated

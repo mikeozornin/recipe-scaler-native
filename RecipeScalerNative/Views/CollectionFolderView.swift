@@ -177,7 +177,7 @@ struct CollectionFolderView: View {
             CollectionAssignSheet(recipeId: item.recipeId, recipeName: item.recipeName)
         }
         .alert("Error", isPresented: $showingError) {
-            Button("OK", role: .cancel) { }
+            Button("common.ok", role: .cancel) { }
         } message: {
             Text(errorMessage)
         }
@@ -468,11 +468,12 @@ struct CollectionFolderView: View {
                 .tint(.blue)
             }
             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                Button(role: .destructive) {
+                Button {
                     recipePendingDelete = item
                 } label: {
                     AppLabel.make(String(localized: "recipe.list.delete"), symbol: "trash")
                 }
+                .tint(.red)
             }
             .task(id: item.id) {
                 guard item.hasThumbnail,

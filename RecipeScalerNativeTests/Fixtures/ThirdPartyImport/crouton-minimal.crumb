@@ -1,0 +1,46 @@
+{
+  "uuid": "uuid-test-crouton-salad",
+  "name": "Test Crouton Salad",
+  "serves": 2,
+  "ingredients": [
+    {
+      "quantity": {
+        "amount": 225,
+        "quantityType": "GRAMS"
+      },
+      "ingredient": {
+        "name": "Cucumber",
+        "uuid": "ing-1"
+      },
+      "order": 0
+    },
+    {
+      "quantity": {
+        "amount": 2,
+        "quantityType": "TABLESPOONS"
+      },
+      "ingredient": {
+        "name": "Olive oil",
+        "uuid": "ing-2"
+      },
+      "order": 1
+    }
+  ],
+  "steps": [
+    {
+      "step": "Chop cucumber",
+      "order": 0,
+      "isSection": false
+    },
+    {
+      "step": "Dressing",
+      "order": 1,
+      "isSection": true
+    },
+    {
+      "step": "Mix oil and vinegar",
+      "order": 2,
+      "isSection": false
+    }
+  ]
+}

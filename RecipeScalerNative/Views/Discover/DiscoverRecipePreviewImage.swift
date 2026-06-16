@@ -7,7 +7,6 @@ import SwiftUI
 import RecipeScalerCore
 
 /// In-memory cache so eager grid cells restore instantly on re-scroll.
-/// `URLSession` disk cache still backs network loads (spec 017).
 enum DiscoverImageMemoryCache {
     private static let cache: NSCache<NSURL, UIImage> = {
         let cache = NSCache<NSURL, UIImage>()
@@ -34,13 +33,22 @@ enum DiscoverImageLoader {
         if let cached = DiscoverImageMemoryCache.image(for: url) {
             return cached
         }
-        var request = URLRequest(url: url)
-        request.cachePolicy = .returnCacheDataElseLoad
-        guard let (data, response) = try? await URLSession.shared.data(for: request),
-              let http = response as? HTTPURLResponse,
-              (200 ... 299).contains(http.statusCode),
-              !data.isEmpty,
-              let image = RecipeImageDecoder.decode(data: data, maxPixelSize: gridMaxPixelSize) else {
+        if let fileURL = PublicImageDiskCache.existingFileURL(for: url),
+           let image = RecipeImageDecoder.decode(
+               fileURL: fileURL,
+               maxPixelSize: gridMaxPixelSize
+           ) {
+            DiscoverImageMemoryCache.store(image, for: url)
+            return image
+        }
+        guard let fileURL = await PublicImageCacheService.shared.ensureCached(
+            url: url,
+            allowNetwork: true
+        ),
+              let image = RecipeImageDecoder.decode(
+                  fileURL: fileURL,
+                  maxPixelSize: gridMaxPixelSize
+              ) else {
             return nil
         }
         DiscoverImageMemoryCache.store(image, for: url)
@@ -48,10 +56,10 @@ enum DiscoverImageLoader {
     }
 }
 
-/// `AsyncImage`-based preview for Discover / Public Profile recipe grids.
+/// Preview for Discover / Public Profile recipe grids.
 ///
-/// Uses full-size discover/public URLs (web parity), 16:9 `object-cover`, and an
-/// in-memory cache so scrolled-off cells restore instantly without re-fetch flicker.
+/// Uses full-size discover/public URLs (web parity), 16:9 `object-cover`, memory +
+/// disk cache (`Caches/PublicImages/`) with ETag revalidation.
 struct DiscoverRecipePreviewImage: View {
     let url: URL?
     let fallbackColor: Color
@@ -67,8 +75,6 @@ struct DiscoverRecipePreviewImage: View {
     }
 
     var body: some View {
-        // Size the box from aspect ratio alone (web `aspect-video`), then object-cover inside.
-        // A ZStack sized by UIImage intrinsic dimensions ignores `.aspectRatio` and renders ~square.
         Color.clear
             .aspectRatio(aspectRatio, contentMode: .fit)
             .frame(maxWidth: .infinity)

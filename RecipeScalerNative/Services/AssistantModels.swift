@@ -99,6 +99,16 @@ struct AssistantPendingAction: Decodable, Sendable {
     let expiresAt: String
 }
 
+/// Mirrors web `AssistantActionResolution` (`recipe-scaler/src/services/assistant-api.ts`).
+/// Server attaches it to the user message that resolves a pending action so the client can
+/// render a friendly label (e.g. "Удалить") instead of the raw `confirmValue`/`cancelValue`.
+struct AssistantActionResolution: Decodable, Sendable {
+    let pendingActionId: String
+    let disposition: String
+    let source: String
+    let createdAt: String
+}
+
 // MARK: - Follow-up suggestions
 
 struct AssistantFollowUpSuggestion: Decodable, Identifiable, Hashable, Sendable {
@@ -145,6 +155,7 @@ struct AssistantMessageMetadata: Decodable, Sendable {
     let attachments: [AssistantRecipeAttachment]?
     let interactiveWidget: AssistantInteractiveWidget?
     let pendingAction: AssistantPendingAction?
+    let actionResolution: AssistantActionResolution?
     let followUpSuggestions: [AssistantFollowUpSuggestion]?
 }
 
@@ -167,6 +178,7 @@ struct AssistantStreamFinalData: Decodable, Sendable {
     struct MessageRef: Decodable, Sendable {
         let id: String?
         let content: String?
+        let metadata: AssistantMessageMetadata?
         let createdAt: String?
     }
 

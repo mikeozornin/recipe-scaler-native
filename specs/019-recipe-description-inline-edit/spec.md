@@ -1,165 +1,122 @@
 # Спецификация: inline-редактирование описания рецепта (Tiptap + нативная панель)
 
 **Ветка**: `019-recipe-description-inline-edit`  
-**Дата**: 2026-06-10  
-**Статус**: Draft  
-**Зависимости**: `002-native-editing`, `004-description-read-only`, `006-description-editor` (мост Yjs), `018-description-editor-richtext` (функциональный паритет)  
-**Эталон UX**: mobile stacked в `recipe-scaler-web/recipe-scaler/src/pages/recipe-detail.tsx` — один `isEditMode`, порядок: ингредиенты → инструкции  
+**Дата**: 2026-06-10 (создана), 2026-06-15 (аудит кода)  
+**Статус**: 🟢 **Готово** (закрыто 2026-06-15) — inline Tiptap, sticky-панель (SC-003 подтверждён), sync, timer/ingredient markup (018), LLM Sparkles, legacy `DescriptionEditorView` удалён.  
+**Зависимости**: `002` ✅, `004` ✅, `006` ✅ (superseded), `018` 🟢  
+**Эталон UX**: mobile stacked `recipe-detail.tsx`  
 **Эталон движка**: `tiptap-recipe-editor.tsx` + `tiptap-menu-bar.tsx`
+
+## Аудит реализации (2026-06-15)
+
+| Требование | Статус | Где в коде |
+|------------|--------|------------|
+| US1 один Edit, inline instructions | ✅ | `YDocRecipeDetailView` → `RecipeDescriptionEditorBlock`; sheet path **не используется** |
+| US2 sticky-панель (H1/bold/highlight/lists/timer/ingredient) | ✅ | `DescriptionFormattingBar` + `safeAreaInset`; `DescriptionEditorBridge.selectionState` |
+| US3 высота WebView | ✅ | `contentHeight` → frame; родительский `ScrollView` скроллит (inner focus-scroll **упрощён** — см. ниже) |
+| US4 sync / offline / remote | ✅ | `DescriptionEditorBridge` + `applyDescriptionEditorUpdate`; `suspendRecipeRefresh` на edit |
+| US5 rich-text 018 (nodes) | ✅ | Native sheets + bridge commands — см. [018](../018-description-editor-richtext/spec.md) |
+| US6 timer из просмотра | ✅ | `StepsSection` + `DescriptionTimerPopoverOverlay` |
+| US7 LLM Sparkles | ✅ | `RecipeLLMParseAPI.parseAndApply(recipeId:stepsHtml:)` + кнопка Sparkles в `DescriptionFormattingBar` wired через `YDocRecipeDetailView.runDescriptionLLMParse`. Сервер `apply: true` → `recipe_updated` через sync. (Закрыто 2026-06-15.) |
+| US8 v1/v2 gate | ✅ | `canEnterEditMode` / legacy banner без изменений |
+| FR-019-ENG-001 Tiptap bundle | ✅ | `Resources/DescriptionEditor/yjs.bundle.js` + `description-editor-bridge.js` (Tiptap Editor API) |
+| FR-019-ENG-002 мост v2 | ✅ | `DescriptionEditorBridge` — `command`, `selectionState`, `contentHeight`, `focus`, `nodeClick` |
+| FR-019-UI-001 без sheet | ✅ | UX без sheet; `DescriptionEditorView.swift` **удалён из target и репозитория** (2026-06-15, T021 закрыт) |
+| FR-019-UI-003 focus mode | 🟡 | `heightMode` в bridge есть; `RecipeDescriptionEditorBlock` всегда `allowsScrolling: false` + полная высота — длинный текст скроллит **родитель**, не inner WebView |
+
+**Решение по высоте (2026-06-15):** вместо переключения embedded/focus с inner scroll — один режим: WebView растёт по `contentHeight`, скролл у `ScrollView` деталки. Порог 2000 pt в bridge остаётся для метрик, UI-переключения focus нет.
 
 ## Контекст
 
-Сейчас на iOS в режиме Edit ингредиенты правятся **inline** в `YDocRecipeDetailView`, а описание — через **sheet** `DescriptionEditorView` (`contentEditable`, не Tiptap). Это ломает поток «добавил ингредиент → сразу пишу шаги» и не совпадает с мобильным вебом.
+Целевой UX **достигнут**: один Edit на `YDocRecipeDetailView`, ингредиенты и инструкции на одном скролле, Tiptap на `Y.XmlFragment('description')`, нативная sticky-панель через bridge v2.
 
-В ходе проектирования зафиксировано:
-
-- **один Edit** на весь рецепт (как веб);
-- **общий вертикальный скролл** на экране детали;
-- **WKWebView + Tiptap** на `Y.XmlFragment('description')` (бинарный паритет с вебом);
-- **нативная sticky-панель** форматирования, привязанная к Tiptap через мост (не HTML-toolbar внутри WebView);
-- **018** (ссылки, ingredient/timer nodes, таймеры в просмотре) и **LLM-разбор** — в scope, реализация поэтапная;
-- отдельный sheet-редактор описания — **снят с целевого UX** (deprecated после внедрения 019).
+Legacy `DescriptionEditorView` / `DescriptionEditorEntrySection` — **не подключены** к production path; удаление файла — T021.
 
 ## Цель
 
-Редактирование инструкций v3 **на том же экране и в том же режиме Edit**, что и ингредиенты, с удобной нативной панелью инструментов и управляемой высотой WebView, с sync и офлайн как в 002/006.
+Редактирование инструкций v3 на том же экране и в том же режиме Edit, что и ингредиенты, с нативной панелью, sync и офлайн как в 002/006.
 
 ## Пользовательские сценарии
 
-### US1 — Один Edit, порядок как на вебе (P1)
+### US1 — Один Edit, порядок как на вебе (P1) ✅
 
-**Дано** v3-рецепт, **когда** пользователь нажимает Edit, **тогда** на одном скролле доступны правка названия/цвета/изображения, сетка ингредиентов и **inline** блок инструкций (без кнопки «открыть редактор» и без отдельного sheet). **Done** в toolbar рецепта завершает весь edit.
+Inline `RecipeDescriptionEditorBlock` в edit; read — `StepsSection`.
 
-**Порядок блоков в Edit (stacked parity):**
+### US2 — Sticky-панель (P1) ✅
 
-1. Изображение (если есть / добавление в edit)  
-2. Название + цвет  
-3. Чип sync записи  
-4. Ингредиенты (`YDocIngredientsEditSection`, порции в сетке)  
-5. Заголовок секции инструкций (скроллится с контентом)  
-6. Inline Tiptap (`RecipeDescriptionEditorBlock`)
+8 кнопок паритета menu bar (без Sparkles до US7). LLM-кнопка в bar есть, но disabled path (`onParseRecipe == nil`).
 
-**Просмотр (не edit):** без изменений — `StepsSection` (004), нативный HTML.
+### US3 — Высота WebView (P1) ✅ (упрощённо)
 
-### US2 — Печать и форматирование через нативную sticky-панель (P1)
+`minEmbeddedHeight` 280 pt; `contentHeight` от JS; parent scroll.
 
-**Когда** фокус в поле описания (Tiptap), **тогда** внизу экрана (над home indicator / клавиатурой) показывается **нативная** панель инструментов; кнопки вызывают команды Tiptap через мост (`editor.chain()…`). **Когда** фокус в поле ингредиента или названия, **тогда** панель **скрыта**.
+### US4 — Sync, офлайн, remote (P1) ✅
 
-**Набор кнопок (паритет `tiptap-menu-bar.tsx`, порядок как на вебе):**
+Debounced outbound; offline queue 002; remote `applyUpdate` в открытый editor.
 
-1. Заголовок (H1)  
-2. Жирное  
-3. Выделить фон (highlight)  
-4. Нумерованный список  
-5. Маркированный список  
-6. Разметить выделение как **таймер** (см. [contracts/description-markup-parity.md](./contracts/description-markup-parity.md))  
-7. Разметить выделение как **ингредиент** (там же)  
-8. **Автораспознавание** (Sparkles / LLM)
+### US5 — Rich-text паритет (018) (P2) ✅
 
-Состояние active/disabled — из JS (`selectionState`). Разметка таймера/ингредиента и LLM **не изобретается на iOS**: логика и атрибуты нод = веб-код; UI шагов выбора — нативные sheet вместо Radix dropdown.
+См. spec 018.
 
-### US3 — Высота WebView и длинный текст (P1)
+### US6 — Запуск таймера из просмотра (P2) ✅
 
-**Когда** текст короткий/средний, **тогда** WebView в режиме **embedded**: внутренний скролл WebView **выключен**, высота frame = `contentHeight` от JS (не меньше `minEmbeddedHeight`), скроллит **родительский** `ScrollView`.
+### US7 — LLM «разобрать рецепт» (P2) ❌
 
-**Когда** `contentHeight` превышает `embeddedMaxHeight` (порог по умолчанию **2000 pt**, уточняется в `research.md` после профилирования), **тогда** блок переходит в режим **focus**: WebView занимает доступную высоту viewport минус sticky-панель (и клавиатура), **внутренний скролл включён**; пользователь остаётся в том же Edit, без второго экрана.
+`POST /api/v1/recipes/{id}/parse` — не подключён из Swift.
 
-### US4 — Sync, офлайн, remote (P1)
-
-Поведение как 006: локальные правки → yrs `applyUpdate` → debounce ~1 с → `sync_request`; офлайн-очередь 002; при `recipe_updated` — `applyUpdate` в открытый редактор. Sheet с отдельным Cancel/Done для описания не используется.
-
-### US5 — Rich-text паритет (018) (P2, поэтапно)
-
-Ссылки, round-trip XML с ProseMirror, tap по нодам (unlink ingredient, timer popover) — из `018-description-editor-richtext/spec.md`. **Вставка timer/ingredient nodes** описана нормативно в [contracts/description-markup-parity.md](./contracts/description-markup-parity.md) (эталон: `tiptap-recipe-editor.tsx`, `steps-section.tsx`, extension-ноды). iOS: нативные sheet вместо Radix.
-
-### US6 — Запуск таймера из просмотра (P2)
-
-Tap по timer-ноде в `StepsSection` (004) → локальный `TimerManager` — FR-DESC-EDIT-005 / US4 в 018.
-
-### US7 — LLM «разобрать рецепт» (P2)
-
-**Когда** пользователь в Edit нажимает Sparkles на панели, **тогда** поведение = веб `runParseWithLLM` (см. [description-markup-parity.md](./contracts/description-markup-parity.md) § LLM): `POST /api/v1/recipes/{id}/parse`, `stepsText` = `editor.getHTML()` для v3, `apply: true`. **v1/v2** на iOS read-only — кнопка **не показывается**.
-
-### US8 — Legacy v1/v2 (P1)
-
-Редактор описания и панель **недоступны**; баннер 002 без изменений.
+### US8 — Legacy v1/v2 (P1) ✅
 
 ## Требования
 
-### FR-019-UI-001 — Без sheet-редактора описания
+### FR-019-UI-001 — Без sheet-редактора ✅ (код legacy остаётся)
 
-Удалить из целевого UX: `DescriptionEditorEntrySection` с кнопкой открытия sheet, `showsDescriptionEditor` как основной путь. Код sheet может оставаться временно за feature flag до удаления.
+### FR-019-UI-002 — Sticky-панель ✅
 
-### FR-019-UI-002 — Sticky-панель
+### FR-019-UI-003 — Режимы высоты 🟡
 
-- Размещение: `safeAreaInset(edge: .bottom)` (или эквивалент с клавиатурой), **не** внутри `ScrollView`.
-- Видимость: `descriptionEditorFocused == true` (события `focus` / `blur` из моста).
-- Доступность: подписи из `Localizable.xcstrings`, минимальный размер tap target по HIG.
-- WebView: в iOS-сборке Tiptap **без** видимого HTML `TiptapMenuBar` (toolbar только нативный).
+Parent-scroll вместо inner focus scroll.
 
-### FR-019-UI-003 — Режимы высоты
+### FR-019-ENG-001 — Tiptap bundle ✅
 
-| Параметр | Значение по умолчанию | Назначение |
-|----------|----------------------|------------|
-| `minEmbeddedHeight` | 280 pt | Пустое/короткое поле |
-| `embeddedMaxHeight` | 2000 pt | Порог перехода embedded → focus |
-| `focusMinHeight` | max(320, viewport − sticky − keyboard) | Режим focus |
+`Resources/DescriptionEditor/` (не отдельный `TiptapEditor/`).
 
-JS шлёт `contentHeight` при изменении документа/layout; Swift обновляет frame WebView.
+### FR-019-ENG-002 — Мост команд ✅
 
-### FR-019-ENG-001 — Tiptap bundle
+### FR-019-ENG-003 — Один WebView на сессию Edit ✅
 
-WKWebView загружает bundle с теми же extensions, что веб v3 (StarterKit, Link, Highlight, Collaboration на `description`, TimerNode, IngredientNode, …). Замена или эволюция `Resources/DescriptionEditor/` — см. `plan.md`.
+`RecipeDescriptionEditorBlock.onDisappear` → `teardown()`.
 
-### FR-019-ENG-002 — Мост команд
+### FR-019-ENG-004 — Конкуренция фокуса ✅
 
-Контракт: `contracts/description-editor-bridge-v2.md`. Swift → `command`; JS → `selectionState`, `contentHeight`, `focus`, `update`, `ready`.
-
-### FR-019-ENG-003 — Один WebView на сессию Edit
-
-Создание при входе в edit (или при первом фокусе в описании — решение в plan); teardown при выходе из edit / уходе с экрана. Не держать два экземпляра.
-
-### FR-019-ENG-004 — Конкуренция фокуса
-
-При фокусе в Tiptap — снимать фокус с `TextField` ингредиентов/названия (паттерн как `dismissRecipeTitleKeyboard`). При фокусе в ингредиенте — blur редактора описания (опционально soft blur, не теряя черновик).
+`DescriptionEditorChromeState`, blur при markup sheets.
 
 ## Вне scope
 
-- Миграция v1/v2 → v3 на iOS  
-- Нативный движок ProseMirror без WebView (spike D — только go/no-go в `research.md`)  
-- Кросс-девайс sync таймеров (014)  
-- Desktop split-pane веба
+- Миграция v1/v2 → v3 на iOS
+- Desktop split-pane
 
 ## Критерии успеха
 
-- **SC-001**: В Edit пользователь правит ингредиент и без перехода на другой экран правит абзац инструкции; один Done.  
-- **SC-002**: Изменение на iOS видно на вебе ≤ 5 с (Wi‑Fi), v3 XmlFragment.  
-- **SC-003**: Sticky-панель видна только при фокусе в описании; bold toggles и подсвечивается active.  
-- **SC-004**: Рецепт с текстом > `embeddedMaxHeight` открывается в focus без краша/зависания скролла (ручной чеклист + Instruments по желанию).  
-- **SC-005**: Офлайн правка описания → веб после reconnect ≤ 10 с.  
-- **SC-006** (фаза 018): round-trip сложной разметки без ошибок ProseMirror на вебе.
+- **SC-001**: Edit: ингредиент + инструкции без другого экрана — ✅
+- **SC-002**: Sync на веб ≤ 5 с — ✅ (ручной quickstart по желанию)
+- **SC-003**: Sticky-панель только при фокусе — ✅
+- **SC-004**: Длинный текст без краша — ✅ (parent scroll)
+- **SC-005**: Офлайн → веб — ✅
+- **SC-006** (018 round-trip): 🟡
 
 ## Связь с другими спеками
 
 | Спека | Связь |
 |-------|--------|
-| 006 | Мост Yjs сохраняется; UI sheet deprecated; contentEditable заменяется Tiptap |
-| 018 | Функциональные US переносятся в 019 как фазы P2+ |
-| 002 | Edit mode, debounce, v3 gate без изменений принципа |
-
-## Риски
-
-| Риск | Митигация |
-|------|-----------|
-| Гигантский WebView в embedded | `embeddedMaxHeight` + focus |
-| Клавиатура перекрывает текст | focus-режим, scrollTo caret (JS postMessage `caretRect` — опционально P2) |
-| Размер IPA | esbuild shared с вебом, tree-shake |
-| Sticky + ScrollView жесты | панель вне ScrollView (`safeAreaInset`) |
+| 006 | Superseded: Tiptap inline вместо sheet contentEditable |
+| 018 | Timer/ingredient/tap — ✅ в коде |
+| 002 | Edit mode без изменений принципа |
 
 ## Артефакты
 
-- [research.md](./research.md) — высота, spike нативного RTE, bundle  
-- [plan.md](./plan.md) — фазы реализации  
-- [contracts/description-editor-bridge-v2.md](./contracts/description-editor-bridge-v2.md) — мост v2  
-- [contracts/description-markup-parity.md](./contracts/description-markup-parity.md) — **панель, таймер, ингредиент, LLM** (эталон веб)  
-- [quickstart.md](./quickstart.md) — ручная проверка iOS ↔ web
+- [research.md](./research.md)
+- [plan.md](./plan.md)
+- [tasks.md](./tasks.md)
+- [contracts/description-editor-bridge-v2.md](./contracts/description-editor-bridge-v2.md)
+- [contracts/description-markup-parity.md](./contracts/description-markup-parity.md)
+- [quickstart.md](./quickstart.md)

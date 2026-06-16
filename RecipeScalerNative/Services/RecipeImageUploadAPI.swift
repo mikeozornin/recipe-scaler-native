@@ -11,6 +11,10 @@ struct RecipeImageUploadResult: Decodable, Sendable {
     let aspectRatio: Double?
 }
 
+enum ImportedRecipeImageUploadError: Error {
+    case preprocessingFailed
+}
+
 @MainActor
 enum RecipeImageUploadAPI {
     static func upload(recipeId: String, payload: RecipeImageUploadPayload) async throws -> RecipeImageUploadResult {
@@ -26,19 +30,6 @@ enum RecipeImageUploadAPI {
             throw APIError.serverError(message: response.error ?? "Upload failed")
         }
         return payload
-    }
-
-    static func uploadFromURL(recipeId: String, imageURL: String) async throws -> RecipeImageUploadResult {
-        struct Body: Encodable { let imageUrl: String }
-        let response: APIResponse<RecipeImageUploadResult> = try await APIClient.shared.requestJSON(
-            path: "/api/recipes/\(recipeId)/image-from-url",
-            method: "POST",
-            body: Body(imageUrl: imageURL)
-        )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "Upload failed")
-        }
-        return data
     }
 
     static func delete(recipeId: String) async throws {

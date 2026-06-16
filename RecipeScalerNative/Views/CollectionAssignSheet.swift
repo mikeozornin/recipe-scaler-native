@@ -84,7 +84,7 @@ struct CollectionAssignSheet: View {
                 }
             }
             .alert("Error", isPresented: $showingError) {
-                Button("OK", role: .cancel) { }
+                Button("common.ok", role: .cancel) { }
             } message: {
                 Text(errorMessage)
             }

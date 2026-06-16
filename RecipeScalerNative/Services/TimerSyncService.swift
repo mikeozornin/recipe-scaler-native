@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import OSLog
+
 import RecipeScalerCore
 
 // MARK: - Sync event types
@@ -71,7 +71,6 @@ struct TimerSyncHTTPResponse: Decodable {
 final class TimerSyncService {
     static let shared = TimerSyncService()
 
-    private let logger = Logger(subsystem: "com.recipescaler.native", category: "TimerSync")
     private let storageKey = "timer_sync_state"
     private let minSyncInterval: TimeInterval = 2
     private let minLoadInterval: TimeInterval = 2
@@ -215,9 +214,9 @@ final class TimerSyncService {
                 .map { Self.recipeTimer(from: $0) }
 
             timerManager?.replaceTimersFromServer(mapped)
-            logger.info("Loaded \(mapped.count) active timer(s) from server")
+            AppLog.info(.timer, "Loaded \(mapped.count) active timer(s) from server")
         } catch {
-            logger.warning("Failed to load active timers: \(error.localizedDescription, privacy: .public)")
+            AppLog.notice(.timer, "Failed to load active timers: \(error.localizedDescription)")
         }
     }
 
@@ -279,7 +278,7 @@ final class TimerSyncService {
                 saveState()
             }
         } catch {
-            logger.warning("Timer sync HTTP failed: \(error.localizedDescription, privacy: .public)")
+            AppLog.notice(.timer, "Timer sync HTTP failed: \(error.localizedDescription)")
         }
     }
 

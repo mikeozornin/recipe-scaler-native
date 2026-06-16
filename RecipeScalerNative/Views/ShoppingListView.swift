@@ -96,7 +96,7 @@ struct ShoppingListView: View {
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
-            Button("OK", role: .cancel) { errorMessage = nil }
+            Button("common.ok", role: .cancel) { errorMessage = nil }
         } message: {
             Text(errorMessage ?? "")
         }

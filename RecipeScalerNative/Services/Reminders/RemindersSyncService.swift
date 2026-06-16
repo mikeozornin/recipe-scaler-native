@@ -25,7 +25,7 @@
 import Foundation
 import Combine
 import EventKit
-import OSLog
+
 import UIKit
 
 @MainActor
@@ -44,10 +44,6 @@ final class RemindersSyncService: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var isRunningSync = false
 
-    private static let logger = Logger(
-        subsystem: "com.recipescaler.native",
-        category: "RemindersSyncService"
-    )
     static let dedicatedListName = "Recipe Scaler"
 
     // MARK: - Init
@@ -79,7 +75,7 @@ final class RemindersSyncService: ObservableObject {
             refreshAuthorizationStatus()
             return granted
         } catch {
-            Self.logger.error("Reminders access request failed: \(error)")
+            AppLog.error(.reminders, "Reminders access request failed: \(error)")
             return false
         }
     }
@@ -236,7 +232,7 @@ final class RemindersSyncService: ObservableObject {
                     lastCompleted: item.purchased
                 )
             } catch {
-                Self.logger.error("Failed to save reminder for item \(item.id): \(error)")
+                AppLog.error(.reminders, "Failed to save reminder for item \(item.id): \(error)")
             }
         }
     }
@@ -277,7 +273,7 @@ final class RemindersSyncService: ObservableObject {
 
             if reminderWins {
                 try? await syncService.setShoppingItemPurchased(id: itemId, purchased: reminderCompleted)
-                Self.logger.info("Reminders→CRDT: item \(itemId) purchased=\(reminderCompleted)")
+                AppLog.info(.reminders, "Reminders→CRDT: item \(itemId) purchased=\(reminderCompleted)")
             }
         }
 
@@ -321,11 +317,11 @@ final class RemindersSyncService: ObservableObject {
                     ? "\(Self.tokenPrefix)\(itemId)\(Self.tokenSuffix)"
                     : "\(base)\n\(Self.tokenPrefix)\(itemId)\(Self.tokenSuffix)"
                 try? store.save(reminder, commit: true)
-                Self.logger.info("Reminders→CRDT: imported '\(label)' as item \(itemId)")
+                AppLog.info(.reminders, "Reminders→CRDT: imported '\(label)' as item \(itemId)")
             } catch {
                 // Roll back the pre-cached entry so the next pass retries cleanly.
                 try? await mapStore.delete(itemId: itemId)
-                Self.logger.error("Reminders→CRDT: import failed for '\(label)': \(error)")
+                AppLog.error(.reminders, "Reminders→CRDT: import failed for '\(label)': \(error)")
             }
         }
     }
@@ -357,9 +353,9 @@ final class RemindersSyncService: ObservableObject {
             ?? store.sources.first
         do {
             try store.saveCalendar(newCal, commit: true)
-            Self.logger.info("Created dedicated Reminders list '\(Self.dedicatedListName)'")
+            AppLog.info(.reminders, "Created dedicated Reminders list '\(Self.dedicatedListName)'")
         } catch {
-            Self.logger.error("Failed to create Reminders list: \(error)")
+            AppLog.error(.reminders, "Failed to create Reminders list: \(error)")
         }
         return newCal
     }

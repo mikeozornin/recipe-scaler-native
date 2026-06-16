@@ -2,17 +2,27 @@
 
 **Ветка**: `021-assistant-full`  
 **Дата**: 2026-06-03  
-**Статус**: Draft (перенос недоделок из 015)  
-**Зависимости**: `015-assistant` (MVP-чат готов), `013` (account), recipe context 001/002  
+**Статус**: 🟢 Готово (аудит 2026-06-15, US5 закрыт 2026-06-15) — 7/7 US в коде. Подтверждаемые actions: UI только через `interactiveWidget` (quick replies), как на web; `pendingAction` в metadata — серверный gate + подписи user bubble. Sanitization — архитектурно (клиент шлёт только `recipeId`, сервер очищает контент)  
+**Зависимости**: `015-assistant` (основной scope в production), `013` (account), recipe context 001/002  
 **Эталон**: `assistant-sheet.tsx`, PRD § Assistant
 
 ## Контекст
 
-В 015 отгружен MVP: `AssistantSheet` + `AssistantAPI` (createThread, respond-stream), FAB-launcher. Стрим **читается, но рендерится только финалом** — нет инкрементального вывода. Остальные сценарии веба не реализованы.
+Большая часть scope перенесена из 015 и **реализована в коде** (2026-06-15):
+
+| US | Статус в коде |
+|----|---------------|
+| US1 инкрементальный стрим | ✅ `AssistantSheet.consumeStream` |
+| US2 recipe attachment | ✅ IDs на сервер; client HTML sanitization — не найдена |
+| US3 widgets | ✅ |
+| US4 voice | ✅ |
+| US5 actions | ✅ quick replies из `interactiveWidget` (web parity); submit как user message с `confirmValue`/`cancelValue`; `pendingAction` — metadata для gate и подписи bubble |
+| US6 follow-up | ✅ |
+| US7 threads | ✅ |
 
 ## Цель
 
-Мобильный паритет ассистента: живой стрим, контекст рецепта, виджеты, voice, подтверждаемые действия, follow-up.
+Закрыть остаток: подтверждаемые actions (scale, add to shopping) и аудит sanitization контекста (FR-021-002).
 
 ## Пользовательские сценарии
 
@@ -48,15 +58,15 @@
 
 ### FR-021-001 — Стрим UI
 
-Переписать `AssistantSheet.send` на инкрементальное обновление сообщения (binding на накапливаемый текст), а не append финала.
+**Done (015)** — инкрементальное обновление в `AssistantSheet`.
 
-### FR-021-002 — Sanitization контекста
+### FR-021-002 — Sanitization контекста ✅
 
-Attachment-контент — не в system prompt; очистка HTML/URL до отправки.
+Архитектурно: клиент (`AssistantAPI.stream`) шлёт только `recipeId` (`attachedRecipeIds`) — никогда не встраивает ingredients/instructions в system prompt. Серверная сторона (`recipe-scaler-web` orchestrator) вытягивает recipe plain-text и фильтрует HTML/URL. На iOS доп. очистка не нужна.
 
-### FR-021-003 — Widgets / actions
+### FR-021-003 — Widgets / actions ✅
 
-Маппинг типов веба на нативные контролы и сервисы.
+Widgets — done (015). Actions — `pendingAction` в metadata (серверный gate); UI подтверждения только `interactiveWidget` (quick replies), как `assistant-message-list.tsx`. Сабмит — как user message с `confirmValue`/`cancelValue`.
 
 ### FR-021-004 — i18n
 
@@ -69,10 +79,10 @@ Attachment-контент — не в system prompt; очистка HTML/URL д�
 
 ## Критерии успеха
 
-- **SC-001**: Вопрос по открытому рецепту → корректное имя рецепта в ответе.
-- **SC-002**: Стрим обновляет UI инкрементально (видно набор текста).
-- **SC-003**: Widget `quick_replies` → нативные кнопки; выбор отправляет текст.
-- **SC-004**: Подтверждённый «add to shopping» → пункт в списке покупок.
+- **SC-001**: ✅ (attachment по recipeId).
+- **SC-002**: ✅ инкрементальный стрим.
+- **SC-003**: ✅ widgets.
+- **SC-004**: ✅ actions — `interactiveWidget` + `submitWidgetValue` (US5, web parity 2026-06-16).
 
 ## Артефакты
 

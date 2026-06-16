@@ -3,6 +3,8 @@
 Exact structure of Y.Doc documents as used by the web client and server.
 iOS implementation must replicate this schema exactly for binary compatibility.
 
+**UUID ids** (recipe, ingredient, folder, collection entry): canonical form is **lowercase** (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`), matching web `crypto.randomUUID()`. Native clients MUST generate and persist ids in lowercase; uppercase ids in incoming deep links SHOULD be normalized to lowercase before lookup.
+
 Source files:
 - `recipe-scaler-web/recipe-scaler/src/hooks/use-yjs-sync.ts` — recipe schema, mutations
 - `recipe-scaler-web/recipe-scaler/src/utils/collection-v2.ts` — collection schema

@@ -1,7 +1,7 @@
 # Дорожная карта: паритет iOS с мобильным вебом
 
-**Дата**: 2026-06-02  
-**Статус**: Draft (только спеки, без реализации)  
+**Дата**: 2026-06-02 (обновлено 2026-06-15)  
+**Статус**: Living roadmap — большинство этапов A–D реализованы; см. статусы отдельных спек  
 **Источники**:
 - Продукт: [`recipe-scaler-web/llm/PRD.md`](../../../recipe-scaler-web/llm/PRD.md)
 - Нативный PRD: [`docs/PRD.md`](../../docs/PRD.md)
@@ -16,11 +16,23 @@
 | ID | Фича | Статус |
 |----|------|--------|
 | 001 | yrs + чтение коллекции/рецепта, офлайн-снимки | ✅ |
-| 002 | Редактирование v3 (поля, ингредиенты, nutrition), офлайн-очередь | ✅ |
+| 002 | Редактирование v3 (поля, ингредиенты, nutrition), офлайн-очередь | ✅ (QA matrix open) |
 | 003 | Офлайн-кэш изображений (REST → диск) | ✅ |
 | 004 | Просмотр описания v3 (XmlFragment → HTML, без WKWebView) | ✅ |
+| 006/019 | Inline редактор описания (Tiptap) | 🟢 почти done → 019 |
+| 007 | Оболочка 5 вкладок | ✅ |
+| 008 | Pin/delete/create в коллекции | ✅ |
+| 010 | Import URL/текст/фото | 🟢 (fileImporter ❌) |
+| 011/017 | Discover + enablement | ✅ |
+| 012 | Sharing recipe + shopping | ✅ |
+| 013 | Account settings | 🟢 (export → 020) |
 | 014 | Синк таймеров + mobile panel | ✅ |
+| 015/021 | Assistant | 🟢 (actions → 021) |
+| 016 | Image upload | 🟢 |
+| 023 | Push APNs | 🟡 in progress |
 | 024 | Список покупок + share/export + вкладка Shopping | ✅ (2026-06-04) |
+| 025 | Share/Action Extension | 🟡 ~85% |
+| 026 | Collections / Live Activity | 🟡 ~90% |
 | — | Auth BIP39, таймеры локальные, i18n ru/en, масштаб порций UI-local | ✅ Phase 1 |
 
 ## Этапы (после 004)
