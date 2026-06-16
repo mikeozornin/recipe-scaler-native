@@ -21,6 +21,11 @@ enum AppSymbol {
         symbolImage(systemName, configuration: compactControlConfiguration)
     }
 
+    /// Large decorative symbol for empty states (`AppTypography.emptyStateIconSize`, 48 pt).
+    static func emptyStateImage(_ systemName: String) -> Image {
+        Image(systemName: systemName)
+    }
+
     private static func symbolImage(_ systemName: String, configuration: UIImage.SymbolConfiguration) -> Image {
         guard let uiImage = UIImage(systemName: systemName, withConfiguration: configuration)?
             .withRenderingMode(.alwaysTemplate) else {
@@ -47,6 +52,33 @@ enum AppLabel {
                 .appBody()
         } icon: {
             AppSymbol.image(systemName)
+        }
+    }
+}
+
+/// Label + 48 pt icon for `ContentUnavailableView` title slots.
+enum AppEmptyState {
+    @ViewBuilder
+    static func icon(_ systemName: String, weight: Font.Weight = .light) -> some View {
+        AppSymbol.emptyStateImage(systemName)
+            .font(.system(size: AppTypography.emptyStateIconSize, weight: weight))
+    }
+
+    static func label(_ title: String, symbol systemName: String) -> some View {
+        Label {
+            Text(verbatim: Bundle.currentLocalizedString(title))
+                .appBody()
+        } icon: {
+            icon(systemName)
+        }
+    }
+
+    static func label(_ titleKey: LocalizedStringKey, symbol systemName: String) -> some View {
+        Label {
+            Text(titleKey)
+                .appBody()
+        } icon: {
+            icon(systemName)
         }
     }
 }

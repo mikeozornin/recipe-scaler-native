@@ -96,15 +96,17 @@ struct CollectionFolderView: View {
                         Text(String(localized: "collections.empty-folder"))
                             .font(AppTypography.body)
                     } icon: {
-                        Image(systemName: "folder")
-                            .font(.system(size: 40, weight: .light))
+                        AppEmptyState.icon("folder")
                             .foregroundStyle(emptyStateFolderIconColor)
                     }
                 }
                 .mobileTimerPanelBottomPadding()
             } else if filteredEntries.isEmpty && isSearching {
-                ContentUnavailableView.search(text: searchText)
-                    .mobileTimerPanelBottomPadding()
+                ContentUnavailableView {
+                    AppEmptyState.label("recipe.list.search-empty.title", symbol: "magnifyingglass")
+                }
+                .font(AppTypography.body)
+                .mobileTimerPanelBottomPadding()
             } else {
                 List {
                     if !pinnedRowItems.isEmpty {

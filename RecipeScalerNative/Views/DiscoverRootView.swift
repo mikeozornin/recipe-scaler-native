@@ -19,7 +19,7 @@ struct DiscoverRootView: View {
                     ProgressView()
                 } else if let errorMessage, data == nil {
                     ContentUnavailableView {
-                        AppLabel.make("discover.error", symbol: "wifi.exclamationmark")
+                        AppEmptyState.label("discover.error", symbol: "wifi.exclamationmark")
                     } description: {
                         Text(errorMessage).appBody()
                     }
@@ -64,7 +64,7 @@ struct DiscoverRootView: View {
                     }
                 } else {
                     ContentUnavailableView {
-                        AppLabel.make("discover.empty", symbol: "sparkles")
+                        AppEmptyState.label("discover.empty", symbol: "sparkles")
                     } description: {
                         Text("discover.empty-description").appBody()
                     }

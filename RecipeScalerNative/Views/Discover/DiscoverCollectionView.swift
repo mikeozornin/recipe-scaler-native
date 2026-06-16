@@ -21,7 +21,7 @@ struct DiscoverCollectionView: View {
                 content(for: collection)
             } else if let errorMessage {
                 ContentUnavailableView {
-                    AppLabel.make("discover.collection.not-found", symbol: "exclamationmark.triangle")
+                    AppEmptyState.label("discover.collection.not-found", symbol: "exclamationmark.triangle")
                 } description: {
                     Text(errorMessage).appBody()
                 }
@@ -46,7 +46,7 @@ struct DiscoverCollectionView: View {
         let filtered = searchStore.filteredSnapshot
         if collection.recipes.isEmpty {
             ContentUnavailableView {
-                AppLabel.make("discover.collection.empty", symbol: "tray")
+                AppEmptyState.label("discover.collection.empty", symbol: "tray")
             } description: {
                 Text("discover.collection.empty").appBody()
             }

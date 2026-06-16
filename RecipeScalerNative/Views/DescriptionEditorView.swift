@@ -45,7 +45,7 @@ struct DescriptionEditorView: View {
 
                 if case .error(let message) = bridge.phase {
                     ContentUnavailableView {
-                        AppLabel.make("description.editor.error.title", symbol: "exclamationmark.triangle")
+                        AppEmptyState.label("description.editor.error.title", symbol: "exclamationmark.triangle")
                     } description: {
                         Text(message)
                             .appBody()

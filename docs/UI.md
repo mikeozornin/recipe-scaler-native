@@ -28,6 +28,7 @@ Web reference: `../recipe-scaler-web/recipe-scaler`.
 | `title3` | 20 pt | sansMedium | — | Подзаголовки |
 | `title2` | 22 pt | display | — | Заголовки экранов |
 | `compact` | 14 pt | sans | — | Секционные заголовки в списке |
+| empty state icon | 48 pt | SF Symbol | — | `AppEmptyState.icon` / `ContentUnavailableView` |
 
 ### Text extensions (SwiftUI)
 
@@ -111,6 +112,30 @@ ToolbarItemGroup(placement: .keyboard) {
 5. **Новый стиль с lineSpacing** → добавь константу в `AppTypography` + `Text` extension, обнови `RecipeRowLayoutMetrics` если нужно.
 6. Не создавай fallback вроде `t('key') || 'Default'` — см. [I18N.md](I18N.md).
 7. **Keyboard toolbar** — см. раздел выше; между соседними icon-кнопками слева всегда 8 pt.
+8. **ContentUnavailableView** — см. подраздел ниже; не полагайся на наследование от `.appListBodyTypography()`.
+
+### ContentUnavailableView
+
+`ContentUnavailableView` **не наследует** Martian от `.appListBodyTypography()` на родителе — рисует системный SF Pro. Явно задавай типографику в каждом слоте:
+
+- **Title:** `AppEmptyState.label(key, symbol:)` — Martian title + **48 pt** icon (`AppTypography.emptyStateIconSize`, weight `.light` по умолчанию).
+- **Description:** всегда `Text(...).appBody()` (или `.font(AppTypography.body)`).
+- **Кастомная иконка** (цвет папки и т.п.): `AppEmptyState.icon("folder").foregroundStyle(color)` в `Label { … } icon: { … }`.
+- **Не использовать** convenience-инициализатор `ContentUnavailableView("title", systemImage:)` — SF-текст и нет единого размера иконки.
+- **`ContentUnavailableView.search`** — не использовать; для поиска без результатов — `AppEmptyState.label("recipe.list.search-empty.title", symbol: "magnifyingglass")` (без description).
+- При необходимости перебить системный стиль label-слота — `.font(AppTypography.body)` на весь `ContentUnavailableView`.
+
+Эталоны: `RecipeListView`, `CollectionFolderView`, `DiscoverRootView`.
+
+```swift
+ContentUnavailableView {
+    AppEmptyState.label("recipe.list.empty.title", symbol: "fork.knife")
+} description: {
+    Text("recipe.list.empty.description")
+        .appBody()
+}
+.font(AppTypography.body)
+```
 
 ---
 

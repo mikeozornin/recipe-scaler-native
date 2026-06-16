@@ -29,7 +29,7 @@ struct CollectionAssignSheet: View {
                 let sortedFolders = RecipeFolder.sortedActive(syncService.folders)
                 if sortedFolders.isEmpty && !isCreatingNew {
                     ContentUnavailableView {
-                        AppLabel.make(String(localized: "collections.assign-empty"), symbol: "folder.badge.plus")
+                        AppEmptyState.label("collections.assign-empty", symbol: "folder.badge.plus")
                     }
                 } else {
                     List {

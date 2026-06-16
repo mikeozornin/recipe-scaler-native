@@ -86,12 +86,22 @@ struct RecipeListView: View {
                     ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
                         .mobileTimerPanelBottomPadding()
                 } else if !hasAnyRows {
-                    ContentUnavailableView {
-                        AppLabel.make("recipe.list.empty.title", symbol: "fork.knife")
-                    } description: {
-                        Text("recipe.list.empty.description")
+                    if isSearching {
+                        ContentUnavailableView {
+                            AppEmptyState.label("recipe.list.search-empty.title", symbol: "magnifyingglass")
+                        }
+                        .font(AppTypography.body)
+                        .mobileTimerPanelBottomPadding()
+                    } else {
+                        ContentUnavailableView {
+                            AppEmptyState.label("recipe.list.empty.title", symbol: "fork.knife")
+                        } description: {
+                            Text("recipe.list.empty.description")
+                                .appBody()
+                        }
+                        .font(AppTypography.body)
+                        .mobileTimerPanelBottomPadding()
                     }
-                    .mobileTimerPanelBottomPadding()
                 } else {
                     List {
                         if !pinnedRowItems.isEmpty {

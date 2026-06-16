@@ -19,6 +19,8 @@ enum AppTypography {
     static let authTitleSize: CGFloat = 30
     static let splashTitleSize: CGFloat = 24
     static let tabBarSize: CGFloat = 10
+    /// Decorative SF Symbol in `ContentUnavailableView` and other empty states.
+    static let emptyStateIconSize: CGFloat = 48
 
     static let bodyLineSpacing: CGFloat = 4
     static let footnoteLineSpacing: CGFloat = 2

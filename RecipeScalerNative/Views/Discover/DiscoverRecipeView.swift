@@ -93,7 +93,7 @@ struct DiscoverRecipeView: View {
                         .padding(.top, 60)
                 } else if let loadError {
                     ContentUnavailableView {
-                        AppLabel.make("discover.recipe.failed", symbol: "exclamationmark.triangle")
+                        AppEmptyState.label("discover.recipe.failed", symbol: "exclamationmark.triangle")
                     } description: {
                         Text(loadError).appBody()
                     }

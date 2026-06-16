@@ -508,20 +508,20 @@ struct AssistantRecipePicker: View {
                 }
 
                 if availableEntries.isEmpty {
-                    ContentUnavailableView(
-                        Bundle.currentLocalizedString("assistant.no-recipes-found"),
-                        systemImage: "book"
-                    )
+                    ContentUnavailableView {
+                        AppEmptyState.label("assistant.no-recipes-found", symbol: "book")
+                    }
+                    .font(AppTypography.body)
                 } else if attachableEntries.isEmpty {
-                    ContentUnavailableView(
-                        Bundle.currentLocalizedString("assistant.no-recipes-found"),
-                        systemImage: "book"
-                    )
+                    ContentUnavailableView {
+                        AppEmptyState.label("assistant.no-recipes-found", symbol: "book")
+                    }
+                    .font(AppTypography.body)
                 } else if filtered.isEmpty {
-                    ContentUnavailableView(
-                        Bundle.currentLocalizedString("assistant.no-recipes-found"),
-                        systemImage: "magnifyingglass"
-                    )
+                    ContentUnavailableView {
+                        AppEmptyState.label("assistant.no-recipes-found", symbol: "magnifyingglass")
+                    }
+                    .font(AppTypography.body)
                 } else {
                     List(filtered) { entry in
                         Button {

@@ -29,13 +29,13 @@ struct DiscoverPublicProfileView: View {
                 ProgressView(Bundle.currentLocalizedString("discover.loading"))
             } else if let errorMessage {
                 ContentUnavailableView {
-                    AppLabel.make("discover.profile.not-found", symbol: "person.crop.circle.badge.exclamationmark")
+                    AppEmptyState.label("discover.profile.not-found", symbol: "person.crop.circle.badge.exclamationmark")
                 } description: {
                     Text(errorMessage).appBody()
                 }
             } else {
                 ContentUnavailableView {
-                    AppLabel.make("discover.profile.not-found", symbol: "person.crop.circle.badge.exclamationmark")
+                    AppEmptyState.label("discover.profile.not-found", symbol: "person.crop.circle.badge.exclamationmark")
                 } description: {
                     Text("discover.profile.not-found-description").appBody()
                 }
