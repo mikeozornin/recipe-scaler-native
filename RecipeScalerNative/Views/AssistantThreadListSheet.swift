@@ -81,6 +81,7 @@ struct AssistantThreadListSheet: View {
                 .padding(.vertical, 10)
         }
         .buttonStyle(.plain)
+        .opacity(isDeleting ? 0.5 : 1)
         .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
         .listRowBackground(isActive ? Color.accentColor.opacity(0.15) : Color.clear)
         .accessibilityLabel(threadAccessibilityLabel(title: displayTitle, lastMessageAt: thread.lastMessageAt))

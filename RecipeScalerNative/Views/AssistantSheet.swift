@@ -342,18 +342,21 @@ struct AssistantSheet: View {
 
     private func deleteThread(_ id: String) async {
         deletingThreadId = id
-        defer { deletingThreadId = nil }
         do {
             try await AssistantAPI.deleteThread(threadId: id)
-            threads.removeAll { $0.id == id }
-            if threadId == id {
-                if let nextThread = threads.first {
-                    await openThread(nextThread.id)
-                } else {
-                    startNewChat()
-                }
+            let needsNewActive = threadId == id
+            withAnimation(.easeInOut(duration: 0.25)) {
+                threads.removeAll { $0.id == id }
+            }
+            deletingThreadId = nil
+            guard needsNewActive else { return }
+            if let nextThread = threads.first {
+                await openThread(nextThread.id)
+            } else {
+                startNewChat()
             }
         } catch {
+            deletingThreadId = nil
             loadError = error.localizedDescription
         }
     }
