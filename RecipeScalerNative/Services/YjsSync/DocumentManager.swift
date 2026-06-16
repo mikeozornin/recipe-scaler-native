@@ -1,5 +1,6 @@
 import Foundation
 import OSLog
+import RecipeScalerCore
 import YrsC
 
 /// Manages Y.Doc instances and provides parsed domain models from CRDT data.
@@ -545,6 +546,26 @@ actor DocumentManager {
         return id
     }
 
+    /// Resolve-or-create a folder by case-insensitive label.
+    ///
+    /// Used by spec 027 third-party import (US8): Paprika `categories` /
+    /// Crouton `tags` map to folder labels. We reuse an existing non-deleted
+    /// folder with the same label (case-insensitive, trimmed) when available,
+    /// otherwise create a new one. Returns the folder id.
+    @discardableResult
+    func resolveOrCreateFolderId(label: String) async throws -> String {
+        let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw RecipeEditError.invalidInput
+        }
+        let existing = try await readFolders()
+        let needle = trimmed.lowercased()
+        if let match = existing.first(where: { !$0.deleted && $0.name.lowercased() == needle }) {
+            return match.id
+        }
+        return try await createFolder(name: trimmed)
+    }
+
     /// Rename a folder (and bump `updatedAt`).
     func renameFolder(id: String, name: String) async throws {
         try await mutateFolderEntry(id: id) { map, txn in
@@ -784,6 +805,70 @@ actor DocumentManager {
             map.insert(key: "isPublic", value: .bool(false), txn: txn)
         }
         await deliverPendingLocalUpdate(recipeId: recipeId)
+        return recipeId
+    }
+
+    /// Deterministic third-party import (027): create v3 recipe from parsed draft.
+    func applyImportedRecipe(_ draft: ThirdPartyRecipeDraft) async throws -> String {
+        let trimmedName = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayName = trimmedName.isEmpty
+            ? Bundle.currentLocalizedString("recipe.create.new")
+            : trimmedName
+
+        let recipeId = try await createRecipe(name: displayName)
+
+        try await mutateRecipe(recipeId: recipeId) { map, txn in
+            map.insert(key: "servings", value: .double(Double(draft.servings)), txn: txn)
+            if let source = draft.originalRecipe?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !source.isEmpty {
+                map.insert(key: "originalRecipe", value: .string(source), txn: txn)
+            }
+            if let link = draft.originalRecipeLink?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !link.isEmpty {
+                map.insert(key: "originalRecipeLink", value: .string(link), txn: txn)
+            }
+            if !draft.descriptionBlocks.isEmpty {
+                map.insert(key: "hasSteps", value: .bool(true), txn: txn)
+            }
+        }
+
+        for ingredient in draft.ingredients {
+            let trimmedAmount = ingredient.amount.trimmingCharacters(in: .whitespacesAndNewlines)
+            var unit = ingredient.unit.trimmingCharacters(in: .whitespacesAndNewlines)
+            var amount = trimmedAmount
+            if unit.isEmpty, !amount.isEmpty {
+                let split = ThirdPartyIngredientAmountSplitter.split(amount)
+                amount = split.amount
+                unit = split.unit
+            }
+            let hasQuantity = !amount.isEmpty
+            let row = IngredientData(
+                id: UUID().uuidString,
+                name: ingredient.name,
+                amount: amount,
+                originalAmount: amount,
+                unit: unit,
+                order: ingredient.order,
+                hasQuantity: hasQuantity
+            )
+            try await addIngredient(recipeId: recipeId, ingredient: row)
+        }
+
+        if !draft.descriptionBlocks.isEmpty {
+            guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
+            let key = "\(userId):recipe:\(recipeId)"
+            let doc = try await getOrCreateDoc(key: key)
+            try await doc.withWriteTransaction { rawDoc, txn in
+                DescriptionXmlFragmentWriter.apply(
+                    blocks: draft.descriptionBlocks,
+                    rawDoc: rawDoc,
+                    txn: txn
+                )
+            }
+            await persistSnapshot(docKey: key)
+            await deliverPendingLocalUpdate(recipeId: recipeId)
+        }
+
         return recipeId
     }
 

@@ -284,6 +284,31 @@ Native **write path** for v3 recipes only (`RecipeEditPolicy`). v1/v2 remain rea
 
 Spec: [`specs/002-native-editing/`](../specs/002-native-editing/).
 
+## Phase 4 — Inline description editor (006 / 018 / 019)
+
+Phase 4 closed: native **inline** description editor via WKWebView + real
+**Tiptap** ProseMirror instance bound to `Y.XmlFragment('description')`.
+
+| Module | Role |
+|--------|------|
+| `Resources/DescriptionEditor/yjs.bundle.js` | Tiptap bundle: `StarterKit`, `Link`, `Highlight`, `TimerNode`, `IngredientNode`, `Collaboration` |
+| `Resources/DescriptionEditor/description-editor-bridge.js` | Swift ↔ JS bridge v2: `init`, `applyUpdate`, `update`, `command`, `contentHeight`, `selectionState`, `nodeClick`, `loaded`, `ready` |
+| `Views/DescriptionEditorBridge.swift` | WKWebView controller, Swift-side `command(name:args:)`, `requestHTML`, `selectionState` parsing |
+| `Views/DescriptionEditorWebView.swift` | WKWebView wrapper (App Group / Yjs share) |
+| `Views/DescriptionFormattingBar.swift` | Native sticky bar: H1 / bold / highlight / lists / timer / ingredient / **LLM Sparkles** |
+| `Views/RecipeDescriptionEditorBlock.swift` | Embedded block in `YDocRecipeDetailView` (no sheet); parent scroll handles overflow |
+| `Services/RecipeLLMParseAPI.swift` | `POST /api/v1/recipes/{id}/parse` with `apply: true`; server side patch via `recipe_updated` |
+| `Views/DescriptionMarkupFlow.swift` | Timer / ingredient picker sheets; calls `markAsTimer` / `markAsIngredient` |
+
+**Specs:** [`006`](../specs/006-description-editor/spec.md) ✅ Superseded by 019;
+[`018`](../specs/018-description-editor-richtext/spec.md) 🟢 nodes + autolink
+(ручной UI setLink убран из scope 2026-06-15);
+[`019`](../specs/019-recipe-description-inline-edit/spec.md)
+🟢 fully implemented.
+
+**Legacy:** `DescriptionEditorView.swift` (sheet path) — **deleted from target
+and repository** (019 T021, 2026-06-15).
+
 ## Comparison with Web Client
 
 | Aspect | Web (yjs-client.ts) | iOS (YjsSyncService) |

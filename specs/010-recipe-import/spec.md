@@ -18,10 +18,10 @@
 | US4 навигация после успеха (1 → detail, 2+ → список) | ✅ |
 | US5 локализованные ошибки | ✅ |
 | US6 offline «Попробовать позже» | ✅ |
-| US7 upload текстового файла (.txt / .md / .json / …) | ❌ нет `.fileImporter` — только paste в текстовое поле |
+| US7 upload текстового файла (.txt / .md / .json / …) | ✅ `.fileImporter` в `ImportRecipeSheet.mode == .file`; поддерживает `.txt / .md / .markdown / .json` и любые UTType, conforme `public.plain-text`; содержимое отправляется через `RecipeImportAPI.importText`. Архивы `.zip / .paprikarecipes / .paprikarecipe / .crumb` идут через `ThirdPartyRecipeImportService` (2026-06-15) |
 | Sheet UX: `.presentationDetents([.large])` | ✅ |
 | Toast об успехе через `TransientStatusBanner` | ✅ |
-| Share/Action Extension entry point | ✅ → [025-share-extension](../025-share-extension/spec.md) |
+| Share/Action Extension entry point | ✅ → [025-share-extension](../025-share-extension/spec.md) — реализовано (URL/text/photo, App Group auth, deep link в main app, 2026-06-15 — `ShareContentClassifier`, `DeepLinkRouterTests`, `ShareContentClassifierTests`, `scripts/verify-share-extension.sh`) |
 | Импорт файла export `.json/.zip` | ❌ → spec **020** |
 
 ## Прошлый аудит (2026-06-06)

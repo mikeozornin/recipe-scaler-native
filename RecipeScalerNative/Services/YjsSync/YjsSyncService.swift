@@ -217,9 +217,18 @@ final class YjsSyncService: ObservableObject {
         await refreshCollectionEntries()
         await RecipeImageService.shared.removeCache(recipeId: recipeId)
         if connectionState == .connected {
-            await RecipeImageService.shared.prefetchFull(
-                recipeId: recipeId,
-                imageUrl: result.imageUrl,
+            let entry = collectionEntry(for: recipeId)
+                ?? CollectionEntry(
+                    id: recipeId,
+                    name: currentRecipe?.name ?? "",
+                    color: currentRecipe?.color ?? "#3b82f6",
+                    imageUrl: result.imageUrl,
+                    updatedAt: ISO8601DateFormatter().string(from: Date()),
+                    deleted: false,
+                    isPinned: false
+                )
+            await RecipeImageService.shared.prefetchPreviews(
+                entries: [entry],
                 allowNetwork: true
             )
         }
@@ -597,6 +606,40 @@ final class YjsSyncService: ObservableObject {
         let recipeId = try await documentManager.createRecipe(name: name)
         await refreshCollectionEntries()
         return recipeId
+    }
+
+    /// Import a parsed third-party recipe draft into Y.Doc (027).
+    func applyImportedRecipe(_ draft: ThirdPartyRecipeDraft) async throws -> String {
+        let recipeId = try await documentManager.applyImportedRecipe(draft)
+        await refreshCollectionEntries()
+        return recipeId
+    }
+
+    /// Upload image bytes for a recipe created via third-party import.
+    func uploadImportedRecipeImage(recipeId: String, imageData: Data) async throws {
+        guard let payload = RecipeImageUploadPreprocessor.payloadForUpload(from: imageData) else {
+            throw ImportedRecipeImageUploadError.preprocessingFailed
+        }
+        let result = try await RecipeImageUploadAPI.upload(recipeId: recipeId, payload: payload)
+        try await applyRecipeImageUpload(recipeId: recipeId, result: result)
+    }
+
+    /// US8: assign recipe to folders resolved from Paprika `categories` /
+    /// Crouton `tags` labels. Reuses existing folders by case-insensitive
+    /// label or creates new ones. Idempotent per (recipeId, label) pair.
+    func applyCategoryLabelsToRecipe(recipeId: String, labels: [String]) async throws {
+        var folderIds: [String] = []
+        for label in labels {
+            let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let folderId = try await documentManager.resolveOrCreateFolderId(label: trimmed)
+            if !folderIds.contains(folderId) {
+                folderIds.append(folderId)
+            }
+        }
+        guard !folderIds.isEmpty else { return }
+        try await documentManager.setRecipeFolders(recipeId: recipeId, folderIds: folderIds)
+        await refreshCollectionEntries()
     }
 
     // MARK: - Collection folders (026)

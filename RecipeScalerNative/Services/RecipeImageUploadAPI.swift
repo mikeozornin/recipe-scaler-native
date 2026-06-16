@@ -11,6 +11,10 @@ struct RecipeImageUploadResult: Decodable, Sendable {
     let aspectRatio: Double?
 }
 
+enum ImportedRecipeImageUploadError: Error {
+    case preprocessingFailed
+}
+
 @MainActor
 enum RecipeImageUploadAPI {
     static func upload(recipeId: String, payload: RecipeImageUploadPayload) async throws -> RecipeImageUploadResult {

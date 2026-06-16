@@ -4,6 +4,7 @@ enum RecipeEditError: Error, LocalizedError {
     case legacyFormatReadOnly
     case documentNotLoaded
     case invalidServings
+    case invalidInput
 
     var errorDescription: String? {
         switch self {
@@ -13,6 +14,8 @@ enum RecipeEditError: Error, LocalizedError {
             return String(localized: "edit.error.documentNotLoaded")
         case .invalidServings:
             return String(localized: "edit.error.invalidServings")
+        case .invalidInput:
+            return String(localized: "edit.error.invalidInput")
         }
     }
 }

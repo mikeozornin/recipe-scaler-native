@@ -1,6 +1,6 @@
 # AGENTS.md — контекст для coding agents
 
-План и технологии: [specs/002-native-editing/plan.md](specs/002-native-editing/plan.md).
+План и технологии: [specs/027-paprika-crouton-import/plan.md](specs/027-paprika-crouton-import/plan.md).
 
 ## Обязательно при старте
 
@@ -26,3 +26,9 @@
 | [docs/AGENT-WORKFLOW.md](docs/AGENT-WORKFLOW.md) | fix-until-green, verify-скрипты, отладка |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | CRDT, yrs, sync layers |
 | [docs/PAID-APPLE-DEVELOPER-REQUIRED.md](docs/PAID-APPLE-DEVELOPER-REQUIRED.md) | TestFlight, extensions, App Groups |
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+at specs/027-paprika-crouton-import/plan.md
+<!-- SPECKIT END -->

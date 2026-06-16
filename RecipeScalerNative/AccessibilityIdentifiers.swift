@@ -38,6 +38,7 @@ enum AccessibilityIdentifiers {
     static let shoppingAddField = "shopping_add_field"
     static let shoppingShareButton = "shopping_share_button"
     static let importSheet = "import_sheet"
+    static let importFilePickButton = "import_file_pick_button"
     static let accountRoot = "account_root"
     static let accountTelegramConnect = "account_telegram_connect"
     static let accountTelegramDisconnect = "account_telegram_disconnect"

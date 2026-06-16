@@ -196,4 +196,61 @@ final class LocalizationConsistencyTests: XCTestCase {
             }
         }
     }
+
+    /// Spec 025 T024 — verify `share-extension.*` keys from `Shared.xcstrings`
+    /// (RecipeScalerCore) have entries for both en and ru. We parse the source
+    /// `.xcstrings` JSON directly because RecipeScalerCore is statically linked
+    /// into the test host, so `Bundle(for:).url(forResource:"RecipeScalerCore",
+    /// withExtension:"bundle")` returns nil and `Bundle.main` does not contain
+    /// the merged Shared.xcstrings in the test runtime.
+    func testShareExtensionKeysResolveInBothLanguages() throws {
+        let keys = Set([
+            "share-extension.title",
+            "share-extension.button-import",
+            "share-extension.button-open",
+            "share-extension.button-retry",
+            "share-extension.button-cancel",
+            "share-extension.importing",
+            "share-extension.success",
+            "share-extension.error-no-content",
+            "share-extension.error-not-signed-in",
+            "share-extension.error-network"
+        ])
+
+        // Locate Shared.xcstrings relative to the test file's repository root.
+        let sourceRoot = URL(fileURLWithPath: #file)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let sharedXcstrings = sourceRoot
+            .appendingPathComponent("RecipeScalerCore/Resources/Shared.xcstrings")
+
+        guard FileManager.default.fileExists(atPath: sharedXcstrings.path) else {
+            XCTFail("Shared.xcstrings not found at \(sharedXcstrings.path)")
+            return
+        }
+
+        let data = try Data(contentsOf: sharedXcstrings)
+        let object = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+        guard let strings = object?["strings"] as? [String: Any] else {
+            XCTFail("Shared.xcstrings: missing top-level 'strings' object")
+            return
+        }
+
+        for key in keys {
+            guard let entry = strings[key] as? [String: Any],
+                  let localizations = entry["localizations"] as? [String: Any] else {
+                XCTFail("Key '\(key)' missing from Shared.xcstrings")
+                continue
+            }
+            for lang in ["en", "ru"] {
+                guard let langEntry = localizations[lang] as? [String: Any],
+                      let stringUnit = langEntry["stringUnit"] as? [String: Any],
+                      let value = stringUnit["value"] as? String,
+                      !value.isEmpty else {
+                    XCTFail("Key '\(key)' has no non-empty \(lang) value in Shared.xcstrings")
+                    continue
+                }
+            }
+        }
+    }
 }

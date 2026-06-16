@@ -42,7 +42,8 @@ enum RecipeImageUploadPreprocessor {
             )
         }
 
-        if sourceType == UTType.webP.identifier, data.count <= maxUploadBytes {
+        if sourceType == UTType.webP.identifier, data.count <= maxUploadBytes,
+           CGImageSourceCreateWithData(data as CFData, nil) != nil {
             return RecipeImageUploadPayload(data: data, fileName: "photo.webp", mimeType: "image/webp")
         }
 
