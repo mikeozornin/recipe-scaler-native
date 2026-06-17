@@ -4,6 +4,9 @@
     "–" : {
 
     },
+    "—" : {
+
+    },
     "·" : {
 
     },
@@ -18,6 +21,16 @@
     },
     "%@" : {
 
+    },
+    "%@ — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ — %2$@"
+          }
+        }
+      }
     },
     "%@." : {
 
@@ -4930,6 +4943,28 @@
     "Hours" : {
 
     },
+    "II" : {
+
+    },
+    "II --:--" : {
+
+    },
+    "II --:-- — %@" : {
+
+    },
+    "II %@" : {
+
+    },
+    "II %@ — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "II %1$@ — %2$@"
+          }
+        }
+      }
+    },
     "import.choose-photos" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9404,6 +9439,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "На устройстве не найдена камера."
+          }
+        }
+      }
+    },
+    "widgets.timer.description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active cooking timers"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Активные таймеры"
+          }
+        }
+      }
+    },
+    "widgets.timer.empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No active timers"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таймеров нет"
+          }
+        }
+      }
+    },
+    "widgets.timer.name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe Scaler"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe Scaler"
           }
         }
       }

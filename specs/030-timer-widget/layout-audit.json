@@ -1,0 +1,166 @@
+{
+  "feature": "030-timer-widget",
+  "layout_doc": "layout.md",
+  "figma": {
+    "file_key": "rVzFwMDS5SECfIq4HRLHya",
+    "frames": [
+      { "id": "107:207", "name": "Timer light", "role": "systemSmall light" },
+      { "id": "107:266", "name": "Timer dark", "role": "systemSmall dark" },
+      { "id": "107:332", "name": "Timer monochrome", "role": "accessory mono" },
+      { "id": "107:318", "name": "2 timers linear", "role": "systemSmall two rows" },
+      { "id": "107:238", "name": "1 timer ring", "role": "systemSmall single" }
+    ]
+  },
+  "required_files": [
+    "HomeWidgetExtension/Views/WidgetTimerLayout.swift",
+    "HomeWidgetExtension/Views/WidgetTimerPalette.swift",
+    "HomeWidgetExtension/Views/WidgetTimerRing.swift",
+    "HomeWidgetExtension/Views/WidgetTimerLinearRow.swift",
+    "HomeWidgetExtension/Views/WidgetTimerFormatting.swift",
+    "HomeWidgetExtension/Views/WidgetFonts.swift",
+    "HomeWidgetExtension/Views/TimerHomeSmallView.swift"
+  ],
+  "must_contain": [
+    {
+      "id": "ring-stroke-6",
+      "description": "Ring stroke 6pt on 56pt path",
+      "pattern": "ringStrokeWidth: CGFloat = 6",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerLayout.swift"]
+    },
+    {
+      "id": "ring-path-56",
+      "description": "Ring path 56pt",
+      "pattern": "ringTrackSize: CGFloat = 56",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerLayout.swift"]
+    },
+    {
+      "id": "linear-bar-gap-8",
+      "description": "Gap between bar and time column 8pt",
+      "pattern": "linearBarToTimeGap: CGFloat = 8",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerLayout.swift"]
+    },
+    {
+      "id": "linear-time-width-40",
+      "description": "Time column 40pt",
+      "pattern": "linearTimeWidth: CGFloat = 40",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerLayout.swift"]
+    },
+    {
+      "id": "two-timer-label-54",
+      "description": "Two-timer label block 3×18pt",
+      "pattern": "twoTimerLabelHeight",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerLayout.swift"]
+    },
+    {
+      "id": "tracking-minus-0-1",
+      "description": "Timer digit tracking -0.1",
+      "pattern": "timerTracking: CGFloat = -0.1",
+      "paths": ["HomeWidgetExtension/Views/WidgetFonts.swift"]
+    },
+    {
+      "id": "compact-remaining-ring",
+      "description": "Compact time format in ring",
+      "pattern": "compactRemaining\\(seconds:",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerRing.swift"]
+    },
+    {
+      "id": "compact-remaining-linear",
+      "description": "Compact time format in linear row",
+      "pattern": "compactRemaining\\(seconds:",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerLinearRow.swift"]
+    },
+    {
+      "id": "mono-hides-ring-track",
+      "description": "Monochrome palette hides ring track",
+      "pattern": "showsRingTrack",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerPalette.swift"]
+    },
+    {
+      "id": "vibrant-clear-bg",
+      "description": "Non-fullColor widget uses clear background",
+      "pattern": "renderingMode == \\.fullColor",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerBackground.swift"]
+    },
+    {
+      "id": "widget-accentable",
+      "description": "Accessory mono uses widgetAccentable helper",
+      "pattern": "widgetTimerAccentable",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerPalette.swift"]
+    },
+    {
+      "id": "two-timers-vstack",
+      "description": "Two timers stacked with grid gap",
+      "pattern": "VStack\\(alignment: \\.leading, spacing: WidgetTimerLayout.gridGap\\)",
+      "paths": ["HomeWidgetExtension/Views/TimerHomeSmallView.swift"]
+    },
+    {
+      "id": "minute-boundary-reload",
+      "description": "Timeline reload at minute boundary",
+      "pattern": "nextMinuteBoundary",
+      "paths": ["HomeWidgetExtension/TimerWidgetProvider.swift"]
+    },
+    {
+      "id": "linear-row-fixed-size-wrap",
+      "description": "Label uses fixedSize before frame for multiline wrap (layout.md)",
+      "pattern": "fixedSize\\(horizontal: false, vertical: true\\)",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerLinearRow.swift"]
+    },
+    {
+      "id": "linear-row-recipe-name-text",
+      "description": "Attributed recipe label helper",
+      "pattern": "WidgetFonts\\.recipeNameText",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerLinearRow.swift"]
+    },
+    {
+      "id": "linear-row-overlay-anchor",
+      "description": "Row uses clear anchor + overlays (not ZStack bar+label)",
+      "pattern": "Color\\.clear",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerLinearRow.swift"]
+    },
+    {
+      "id": "preview-2-light",
+      "description": "Canvas preview 2 timers light",
+      "pattern": "#Preview\\(\"2 timers — light\"\\)",
+      "paths": ["HomeWidgetExtension/Views/TimerHomeSmallView.swift"]
+    },
+    {
+      "id": "preview-2-mono",
+      "description": "Canvas preview 2 timers mono",
+      "pattern": "#Preview\\(\"2 timers — mono vibrant\"\\)",
+      "paths": ["HomeWidgetExtension/Views/TimerHomeSmallView.swift"]
+    },
+    {
+      "id": "ring-digit-line-height",
+      "description": "Ring digit line height 18pt",
+      "pattern": "ringDigitLineHeight: CGFloat = 18",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerLayout.swift"]
+    }
+  ],
+  "must_not_contain": [
+    {
+      "id": "no-max-height-infinity-linear-row",
+      "description": "Linear row must not expand infinitely (overlap bug)",
+      "pattern": "maxHeight: \\.infinity",
+      "paths": ["HomeWidgetExtension/Views/WidgetTimerLinearRow.swift"]
+    },
+    {
+      "id": "no-uikit-representable-widget",
+      "description": "WidgetKit does not render UIViewRepresentable",
+      "pattern": "UIViewRepresentable",
+      "paths": ["HomeWidgetExtension"]
+    }
+  ],
+  "previews": [],
+  "acceptance_claims": [
+    {
+      "id": "two-timer-equal-wrap-137",
+      "description": "2 timers: both labels wrap equally on 137pt, no ellipsis — manual / accessibility",
+      "manual": true
+    },
+    {
+      "id": "ring-same-diameter",
+      "description": "Ring track and arc share 56pt path — manual / preview",
+      "manual": true
+    }
+  ]
+}

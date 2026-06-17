@@ -8,6 +8,8 @@ import UIKit
 import UserNotifications
 import BackgroundTasks
 import SwiftData
+import WidgetKit
+import RecipeScalerCore
 
 // MARK: - Timer Manager
 @MainActor
@@ -293,6 +295,24 @@ final class TimerManager: NSObject {
 
     private func refreshPanelTimers() {
         activeTimers = TimerUtils.sortTimers(timers)
+        persistTimerSnapshot()
+    }
+
+    // MARK: - Widget snapshot
+
+    /// Debounced write of the active timers into the App Group so that
+    /// `HomeWidgetExtension` can render `TimerWidget` without touching SwiftData.
+    private var snapshotWriteWorkItem: DispatchWorkItem?
+
+    private func persistTimerSnapshot() {
+        snapshotWriteWorkItem?.cancel()
+        let work = DispatchWorkItem {
+            let document = self.timers.timerSnapshotDocument()
+            TimerSnapshotStore.save(document)
+            WidgetCenter.shared.reloadTimelines(ofKind: TimerWidgetKind.id)
+        }
+        snapshotWriteWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: work)
     }
 
     // MARK: - Update loop

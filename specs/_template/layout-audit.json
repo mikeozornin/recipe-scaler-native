@@ -1,0 +1,48 @@
+{
+  "feature": "NNN-feature-name",
+  "layout_doc": "layout.md",
+  "figma": {
+    "file_key": "FIGMA_FILE_KEY",
+    "frames": [
+      {
+        "id": "000:000",
+        "name": "Frame name",
+        "role": "primary light"
+      }
+    ]
+  },
+  "required_files": [
+    "Path/To/FeatureLayout.swift"
+  ],
+  "must_contain": [
+    {
+      "id": "example-token",
+      "description": "Human-readable check for code review",
+      "pattern": "exampleToken: CGFloat = 16",
+      "paths": ["Path/To/FeatureLayout.swift"]
+    }
+  ],
+  "must_not_contain": [
+    {
+      "id": "no-magic-font-in-view",
+      "description": "Font sizes only via layout tokens / typography helpers",
+      "pattern": "\\.font\\(\\.system\\(",
+      "paths": ["Path/To/FeatureView.swift"]
+    }
+  ],
+  "previews": [
+    {
+      "id": "primary-light-preview",
+      "description": "Canvas preview for primary state light",
+      "pattern": "#Preview\\(\".*light\"\\)",
+      "paths": ["Path/To/FeatureView.swift"]
+    }
+  ],
+  "acceptance_claims": [
+    {
+      "id": "claim-1",
+      "description": "Falsifiable claim from layout.md — verified manually or via simulator accessibility",
+      "manual": true
+    }
+  ]
+}

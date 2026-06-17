@@ -1,5 +1,6 @@
 import Combine
 import SwiftUI
+import WidgetKit
 import RecipeScalerCore
 
 struct ContentView: View {
@@ -167,6 +168,9 @@ struct ContentView: View {
                 // Persist, then drop the socket so suspended requests don't time out on resume.
                 Task { await syncService.persistAll() }
                 syncService.handleEnteredBackground()
+                // Refresh Home/Lock Screen widgets with the latest timer snapshot
+                // so the countdown stays correct while the app isn't foreground.
+                WidgetCenter.shared.reloadAllTimelines()
             case .inactive:
                 // Transient (app switcher, notification shade) — persist but keep the socket.
                 Task { await syncService.persistAll() }

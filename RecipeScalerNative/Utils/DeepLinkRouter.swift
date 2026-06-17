@@ -16,6 +16,9 @@ enum DeepLink: Equatable, Sendable {
     case openRecipe(recipeId: String)
     case addToShopping(recipeId: String)
     case openShoppingList
+    /// Opens the app on the default tab (`.recipes`). Used by `TimerWidget`
+    /// taps on the Home Screen — there is no dedicated timers tab in the app.
+    case openHome
 }
 
 // MARK: - DeepLinkRouter
@@ -46,15 +49,28 @@ final class DeepLinkRouter {
 
     // MARK: - URL scheme
 
-    /// Parse an inbound `recipe-scaler://recipe/{recipeId}` URL and queue
-    /// it as `.openRecipe` deep link. Called from `.onOpenURL`.
+    /// Parse an inbound `recipe-scaler://` URL and queue it as a deep link.
+    /// Called from `.onOpenURL`.
+    ///
+    /// Supported routes:
+    /// - `recipe-scaler://recipe/{recipeId}` → `.openRecipe`
+    /// - `recipe-scaler://home` → `.openHome`
+    /// - `recipe-scaler://shopping` → `.openShoppingList`
     static func handle(_ url: URL) {
-        guard url.scheme == "recipe-scaler",
-              url.host == "recipe",
-              let id = url.pathComponents.dropFirst().first,
-              !id.isEmpty,
-              let recipeId = UUID(uuidString: id)?.uuidString.lowercased() else { return }
-        shared.handle(.openRecipe(recipeId: recipeId))
+        guard url.scheme == "recipe-scaler" else { return }
+        switch url.host {
+        case "recipe":
+            guard let id = url.pathComponents.dropFirst().first,
+                  !id.isEmpty,
+                  let recipeId = UUID(uuidString: id)?.uuidString.lowercased() else { return }
+            shared.handle(.openRecipe(recipeId: recipeId))
+        case "home":
+            shared.handle(.openHome)
+        case "shopping":
+            shared.handle(.openShoppingList)
+        default:
+            return
+        }
     }
 
     /// Legacy: consume recipe id written by extensions into UserDefaults.

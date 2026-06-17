@@ -49,6 +49,10 @@ struct RecipeScalerNativeApp: App {
         // Install bundle swizzle + apply stored language preference before any
         // SwiftUI view body evaluates `String(localized:)` / `LocalizedStringKey`.
         AppLanguagePreference.bootstrap()
+        // Force CoreText registration of bundled Martian OTF faces now, so the
+        // first .environment(\.font, AppTypography.body) lookup can't race the
+        // lazy UIAppFonts registration from Info.plist.
+        AppFonts.registerBundledFontsIfNeeded()
         TimerManager.registerBackgroundTasksIfNeeded()
         AppChromeAppearance.configure()
         #if DEBUG

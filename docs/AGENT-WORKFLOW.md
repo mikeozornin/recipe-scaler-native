@@ -47,6 +47,28 @@ xcodebuild test-without-building -scheme RecipeScalerNative \
 
 - Feature verification scripts: `scripts/verify-<feature>.sh` и `scripts/verify-all.sh`.
 
+## UI по макетам (Figma)
+
+Если в spec есть Figma frames / pixel-perfect UI — см. [UI-LAYOUT-FROM-FIGMA.md](./UI-LAYOUT-FROM-FIGMA.md).
+
+**До tasks на view:**
+
+1. `specs/<feature>/layout.md` — дерево вёрстки, токены, матрица состояний, falsifiable claims (**ревью человеком**).
+2. `specs/<feature>/layout-audit.json` — проверки для скрипта.
+
+**В agent loop (после layout-правок):**
+
+```bash
+bash scripts/audit-ui-layout.sh specs/<feature>
+```
+
+**Порядок субагентов для UI-фич** (после зелёного build + audit):
+
+1. **layout-reviewer** — код ↔ `layout.md` (дерево, размеры, platform constraints).
+2. **fix-until-green** — claim из `layout.md`, не «выглядит ок».
+
+Шаблоны: `specs/_template/layout.md`, `specs/_template/layout-audit.json`. Эталон: `specs/030-timer-widget/`.
+
 ## Отладка
 
 - Run builds, simulator checks, and reproduction steps yourself when possible — do not ask the user to verify what the agent can run locally.

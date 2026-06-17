@@ -2,6 +2,8 @@
 
 Web reference: `../recipe-scaler-web/recipe-scaler`.
 
+**Макеты (Figma):** перед версткой — [UI-LAYOUT-FROM-FIGMA.md](./UI-LAYOUT-FROM-FIGMA.md) (`layout.md`, `layout-audit.json`, `scripts/audit-ui-layout.sh`).
+
 ---
 
 ## Типографика

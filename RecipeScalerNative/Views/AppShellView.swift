@@ -341,6 +341,10 @@ struct AppShellView: View {
         case .openShoppingList:
             selectedTab = .shopping
             deepLinkRouter.clear()
+        case .openHome:
+            // No dedicated timers tab in the app — open the default tab.
+            selectedTab = .recipes
+            deepLinkRouter.clear()
         }
     }
 

@@ -63,9 +63,20 @@ enum AppTypography {
         size: CGFloat,
         fallbackFamily: String = AppFonts.sans
     ) -> UIFont {
-        UIFont(name: name, size: size)
-            ?? UIFont(name: fallbackFamily, size: size)
-            ?? UIFont(name: AppFonts.sans, size: size)!
+        // Ensure bundled Martian faces are registered with CoreText before any lookup.
+        // UIAppFonts registration from Info.plist is lazy and can race with the first
+        // ContentView.body evaluation (.environment(\.font, AppTypography.body)).
+        AppFonts.registerBundledFontsIfNeeded()
+
+        func resolve(_ face: String) -> UIFont? {
+            UIFont(name: face, size: size)
+                ?? AppFonts.postScriptName(for: face).flatMap { UIFont(name: $0, size: size) }
+        }
+
+        return resolve(name)
+            ?? resolve(fallbackFamily)
+            ?? resolve(AppFonts.sans)
+            ?? .systemFont(ofSize: size)
     }
 }
 

@@ -8,6 +8,7 @@
 - **Shell / XCTest** — `xcodebuild build` и `xcodebuild test`, см. [docs/AGENT-WORKFLOW.md](docs/AGENT-WORKFLOW.md).
 - **i18n** — строки только в `RecipeScalerNative/Resources/Localizable.xcstrings`; не хардкодь текст в view; без fallback на дефолтные строки. Подробности — [docs/I18N.md](docs/I18N.md).
 - **UI / UX** — `.appBody()` / `.appFootnote()`, web parity, паттерны экранов. Подробности — [docs/UI.md](docs/UI.md).
+- **UI по Figma / макетам** — до реализации view обязательны `specs/<feature>/layout.md` (ревью человеком) и `layout-audit.json`; прогон `bash scripts/audit-ui-layout.sh specs/<feature>`. Подробности — [docs/UI-LAYOUT-FROM-FIGMA.md](docs/UI-LAYOUT-FROM-FIGMA.md).
 - **Spec Kit** — артефакты в `specs/<feature>/` на **русском** (`spec.md`, `plan.md`, …).
 
 ## Контекст проекта (кратко)
@@ -32,6 +33,7 @@
 | [docs/PROJECT.md](docs/PROJECT.md) | рецепты, sync, Reminders, collections, Spec Kit, платформа |
 | [docs/I18N.md](docs/I18N.md) | runtime locale, свизл, navigationTitle, pluralization |
 | [docs/UI.md](docs/UI.md) | типографика, HIG, web parity, паттерны экранов |
+| [docs/UI-LAYOUT-FROM-FIGMA.md](docs/UI-LAYOUT-FROM-FIGMA.md) | **макеты**: layout.md, layout-audit.json, audit-ui-layout, agent loop |
 | [docs/AGENT-WORKFLOW.md](docs/AGENT-WORKFLOW.md) | fix-until-green, verify-скрипты, отладка |
 | [llm/how-to-debug.md](llm/how-to-debug.md) | **журналирование**: `AppLog`, NDJSON, `pull-app-logs.sh`, экспорт с телефона |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | CRDT, yrs, sync layers |
@@ -47,6 +49,7 @@ at specs/027-paprika-crouton-import/plan.md
 
 - All app text must use the project typeface (Martian), not the default SF — if a text block renders in the system font, it's a bug.
 - Verify UI changes via the simulator accessibility server, not screenshot reads — `read`-tool image rendering is unreliable for visual verification.
+- For Figma-driven UI: write `layout.md` + `layout-audit.json` before SwiftUI views; human reviews `layout.md`; run `audit-ui-layout.sh` in the agent loop.
 
 ## Learned Workspace Facts
 
