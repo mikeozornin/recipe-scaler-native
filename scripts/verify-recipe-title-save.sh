@@ -12,7 +12,7 @@ xcodebuild test \
   -scheme RecipeScalerNative \
   -destination "platform=iOS Simulator,id=$SIM_ID" \
   -only-testing "RecipeScalerNativeTests/RecipeScalerNativeTests/testUpdateRecipeNamePersistsInDocAndCollection" \
-  2>&1 | rtk grep -E 'Test Case|passed|failed|error:' || true
+  2>&1 | grep -E 'Test Case|passed|failed|error:' || true
 
 echo "== Build + launch recipe in edit mode (manual: rename title, Done, relaunch) =="
 sim_build >/dev/null
@@ -24,7 +24,7 @@ sim_wait_ready 8
 LOG="${LOG_FILE:-$ROOT/.debug-session.ndjson}"
 if sim_pull_debug_log; then
   echo "Debug log: $LOG"
-  if rtk grep -q 'title_blur_save_done' "$LOG" 2>/dev/null; then
+  if grep -q 'title_blur_save_done' "$LOG" 2>/dev/null; then
     echo "OK: saw title_blur_save_done in log"
   else
     echo "NOTE: title_blur_save_done not in log yet (edit title + tap Done to verify)"

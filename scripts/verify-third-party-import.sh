@@ -8,13 +8,13 @@ cd "$(dirname "$0")/.."
 DEST_ID="${XCODE_DEST_ID:-C3ED7448-2C55-4F02-B5DA-721E2853FD0B}"
 
 echo "==> Building RecipeScalerNative (Debug)"
-rtk xcodebuild \
+xcodebuild \
   -scheme RecipeScalerNative \
   -destination "platform=iOS Simulator,id=${DEST_ID}" \
   build-for-testing
 
 echo "==> Running ThirdParty* test suites"
-rtk proxy xcodebuild \
+xcodebuild \
   -scheme RecipeScalerNative \
   -destination "platform=iOS Simulator,id=${DEST_ID}" \
   test-without-building \
