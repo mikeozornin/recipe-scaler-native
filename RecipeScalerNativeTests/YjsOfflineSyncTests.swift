@@ -13,7 +13,52 @@ final class YjsWireSnapshotStoreTests: XCTestCase {
         let loaded = try await store.loadYjsWireSnapshot(docKey: docKey)
         XCTAssertEqual(loaded?.state, payload)
         try await store.deleteYjsWireSnapshot(docKey: docKey)
-        XCTAssertNil(try await store.loadYjsWireSnapshot(docKey: docKey))
+        let afterDelete = try await store.loadYjsWireSnapshot(docKey: docKey)
+        XCTAssertNil(afterDelete)
+    }
+
+    func testLoadSnapshotsBatch() async throws {
+        let queue = try DatabaseQueue()
+        try YrsDatabase.migrateForTests(queue)
+        let store = YDocStore(dbQueue: queue)
+        let keyA = "user:recipe:a"
+        let keyB = "user:recipe:b"
+        let stateA = Data([1, 2])
+        let stateB = Data([3, 4])
+        try await store.saveSnapshot(docKey: keyA, state: stateA, lastSyncedAt: nil)
+        try await store.saveSnapshot(docKey: keyB, state: stateB, lastSyncedAt: nil)
+
+        let loaded = try await store.loadSnapshots(docKeys: [keyA, keyB, "user:recipe:missing"])
+        XCTAssertEqual(loaded[keyA]?.state, stateA)
+        XCTAssertEqual(loaded[keyB]?.state, stateB)
+        XCTAssertNil(loaded["user:recipe:missing"])
+    }
+
+    func testExistingSnapshotKeys() async throws {
+        let queue = try DatabaseQueue()
+        try YrsDatabase.migrateForTests(queue)
+        let store = YDocStore(dbQueue: queue)
+        let keyA = "user:recipe:a"
+        try await store.saveSnapshot(docKey: keyA, state: Data([1]), lastSyncedAt: nil)
+
+        let existing = try await store.existingSnapshotKeys(docKeys: [keyA, "user:recipe:b"])
+        XCTAssertEqual(existing, Set([keyA]))
+    }
+
+    func testLoadYjsWireSnapshotsBatch() async throws {
+        let queue = try DatabaseQueue()
+        try YrsDatabase.migrateForTests(queue)
+        let store = YDocStore(dbQueue: queue)
+        let keyA = "user:recipe:a"
+        let keyB = "user:recipe:b"
+        let stateA = Data([5, 6])
+        let stateB = Data([7, 8])
+        try await store.saveYjsWireSnapshot(docKey: keyA, state: stateA)
+        try await store.saveYjsWireSnapshot(docKey: keyB, state: stateB)
+
+        let loaded = try await store.loadYjsWireSnapshots(docKeys: [keyA, keyB])
+        XCTAssertEqual(loaded[keyA]?.state, stateA)
+        XCTAssertEqual(loaded[keyB]?.state, stateB)
     }
 }
 

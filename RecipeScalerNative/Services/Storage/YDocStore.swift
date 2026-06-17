@@ -51,6 +51,31 @@ actor YDocStore {
         }
     }
 
+    /// Load snapshots for multiple doc keys in a single database read.
+    func loadSnapshots(docKeys: [String]) throws -> [String: YDocSnapshot] {
+        guard !docKeys.isEmpty else { return [:] }
+        return try dbQueue.read { db in
+            let rows = try YDocSnapshot.fetchAll(db, keys: docKeys)
+            return Dictionary(uniqueKeysWithValues: rows.map { ($0.docKey, $0) })
+        }
+    }
+
+    /// Return only the doc keys that have a snapshot row.
+    func existingSnapshotKeys(docKeys: [String]) throws -> Set<String> {
+        guard !docKeys.isEmpty else { return [] }
+        return try dbQueue.read { db in
+            let keys = try String.fetchAll(
+                db,
+                sql: """
+                SELECT docKey FROM ydoc_snapshots
+                WHERE docKey IN (\(docKeys.map { _ in "?" }.joined(separator: ",")))
+                """,
+                arguments: StatementArguments(docKeys)
+            )
+            return Set(keys)
+        }
+    }
+
     /// Get all stored document keys. Useful for identifying what's cached locally.
     func allSnapshotKeys() throws -> [String] {
         try dbQueue.read { db in
@@ -118,6 +143,27 @@ actor YDocStore {
         }
     }
 
+    /// Distinct recipe ids present in the offline queue (single read).
+    func fetchOfflineQueueRecipeIds() throws -> Set<String> {
+        try dbQueue.read { db in
+            let ids = try String.fetchAll(
+                db,
+                sql: "SELECT DISTINCT recipeId FROM offline_sync_queue"
+            )
+            return Set(ids)
+        }
+    }
+
+    /// Delete multiple queue rows in one write transaction.
+    func deleteOfflineEntries(ids: [Int64]) throws {
+        guard !ids.isEmpty else { return }
+        try dbQueue.write { db in
+            for id in ids {
+                _ = try OfflineSyncEntry.deleteOne(db, key: id)
+            }
+        }
+    }
+
     // MARK: - Yjs wire snapshots (description offline sync)
 
     func saveYjsWireSnapshot(docKey: String, state: Data) throws {
@@ -131,6 +177,14 @@ actor YDocStore {
     func loadYjsWireSnapshot(docKey: String) throws -> YjsWireSnapshot? {
         try dbQueue.read { db in
             try YjsWireSnapshot.fetchOne(db, key: docKey)
+        }
+    }
+
+    func loadYjsWireSnapshots(docKeys: [String]) throws -> [String: YjsWireSnapshot] {
+        guard !docKeys.isEmpty else { return [:] }
+        return try dbQueue.read { db in
+            let rows = try YjsWireSnapshot.fetchAll(db, keys: docKeys)
+            return Dictionary(uniqueKeysWithValues: rows.map { ($0.docKey, $0) })
         }
     }
 

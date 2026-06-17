@@ -23,9 +23,9 @@ final class ThirdPartyFormatDetectorTests: XCTestCase {
         XCTAssertEqual(try ThirdPartyFormatDetector.detect(url: url), .croutonArchive)
     }
 
-    func testEnumeratePaprikaArchive() throws {
+    func testEnumeratePaprikaArchive() async throws {
         let url = try fixtureURL(named: "paprika-three", ext: "paprikarecipes")
-        let entries = try ThirdPartyFormatDetector.enumerateRecipeEntries(
+        let entries = try await ThirdPartyFormatDetector.enumerateRecipeEntries(
             url: url,
             format: .paprikaArchive
         )
@@ -33,9 +33,9 @@ final class ThirdPartyFormatDetectorTests: XCTestCase {
         XCTAssertEqual(entries.count, expected["recipeCount"] as? Int)
     }
 
-    func testEnumerateCroutonArchive() throws {
+    func testEnumerateCroutonArchive() async throws {
         let url = try fixtureURL(named: "crouton-batch", ext: "zip")
-        let entries = try ThirdPartyFormatDetector.enumerateRecipeEntries(
+        let entries = try await ThirdPartyFormatDetector.enumerateRecipeEntries(
             url: url,
             format: .croutonArchive
         )

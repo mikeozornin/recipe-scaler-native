@@ -108,12 +108,12 @@ final class CroutonRecipeParserTests: XCTestCase {
 
     /// Real Crouton export (2 recipes, one with non-ASCII filename).
     /// Verifies detection, enumeration and parser tolerance to mixed schemas.
-    func testRealExportDetectAndEnumerate() throws {
+    func testRealExportDetectAndEnumerate() async throws {
         let url = try fixtureURL(named: "crouton-real-export", ext: "zip")
         let format = try ThirdPartyFormatDetector.detect(url: url)
         XCTAssertEqual(format, .croutonArchive)
 
-        let entries = try ThirdPartyFormatDetector.enumerateRecipeEntries(
+        let entries = try await ThirdPartyFormatDetector.enumerateRecipeEntries(
             url: url,
             format: .croutonArchive
         )
@@ -125,9 +125,9 @@ final class CroutonRecipeParserTests: XCTestCase {
         XCTAssertTrue(names.contains(where: { $0.lowercased().hasSuffix("chocolate chip cookies.crumb") }))
     }
 
-    func testRealExportParsesFirstRecipe() throws {
+    func testRealExportParsesFirstRecipe() async throws {
         let url = try fixtureURL(named: "crouton-real-export", ext: "zip")
-        let entries = try ThirdPartyFormatDetector.enumerateRecipeEntries(
+        let entries = try await ThirdPartyFormatDetector.enumerateRecipeEntries(
             url: url,
             format: .croutonArchive
         )
@@ -153,9 +153,9 @@ final class CroutonRecipeParserTests: XCTestCase {
     }
 
     /// Debug session 6eea62: Crouton uses singular quantityType values (CUP, TEASPOON).
-    func testRealExportParsesIngredientUnits() throws {
+    func testRealExportParsesIngredientUnits() async throws {
         let url = try fixtureURL(named: "crouton-real-export", ext: "zip")
-        let entries = try ThirdPartyFormatDetector.enumerateRecipeEntries(
+        let entries = try await ThirdPartyFormatDetector.enumerateRecipeEntries(
             url: url,
             format: .croutonArchive
         )
@@ -180,9 +180,9 @@ final class CroutonRecipeParserTests: XCTestCase {
         XCTAssertEqual(vanilla?.unit, "tsp")
     }
 
-    func testRealExportHandlesNonASCIIRecipe() throws {
+    func testRealExportHandlesNonASCIIRecipe() async throws {
         let url = try fixtureURL(named: "crouton-real-export", ext: "zip")
-        let entries = try ThirdPartyFormatDetector.enumerateRecipeEntries(
+        let entries = try await ThirdPartyFormatDetector.enumerateRecipeEntries(
             url: url,
             format: .croutonArchive
         )

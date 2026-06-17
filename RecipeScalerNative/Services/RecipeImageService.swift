@@ -33,6 +33,7 @@ actor RecipeImageService {
     private var prefetchCompleted = 0
     private var prefetchTotal = 0
     private var cacheStatusNotifyTask: Task<Void, Never>?
+    private var cacheStatusMemo: (fingerprint: Set<String>, status: RecipeImageCacheStatus)?
 
     private init() {}
 
@@ -42,6 +43,15 @@ actor RecipeImageService {
 
     /// Snapshot of disk cache vs collection entries (no network).
     func cacheStatus(for entries: [CollectionEntry]) async -> RecipeImageCacheStatus {
+        let fingerprint = cacheFingerprint(for: entries)
+        if let memo = cacheStatusMemo, memo.fingerprint == fingerprint {
+            var status = memo.status
+            status.isDownloading = isPrefetching
+            status.downloadCompleted = prefetchCompleted
+            status.downloadTotal = prefetchTotal
+            return status
+        }
+
         var withImage = 0
         var previewCached = 0
         var fullCached = 0
@@ -77,7 +87,7 @@ actor RecipeImageService {
             }
         }
 
-        return RecipeImageCacheStatus(
+        let status = RecipeImageCacheStatus(
             recipesWithImage: withImage,
             previewCached: previewCached,
             fullCached: fullCached,
@@ -86,6 +96,8 @@ actor RecipeImageService {
             downloadTotal: prefetchTotal,
             pendingEntries: pending
         )
+        cacheStatusMemo = (fingerprint, status)
+        return status
     }
 
     /// Returns a cached file URL, optionally refreshing from the API when allowed.
@@ -181,9 +193,21 @@ actor RecipeImageService {
             defaults.removeObject(forKey: lastModifiedKey(recipeId: recipeId, variant: variant))
             defaults.removeObject(forKey: versionKey(recipeId: recipeId, variant: variant))
         }
+        invalidateCacheStatusMemo()
     }
 
     // MARK: - Private
+
+    private func cacheFingerprint(for entries: [CollectionEntry]) -> Set<String> {
+        Set(entries.map { entry in
+            let url = entry.imageUrl ?? ""
+            return "\(entry.id)|\(url)"
+        })
+    }
+
+    private func invalidateCacheStatusMemo() {
+        cacheStatusMemo = nil
+    }
 
     private func isVariantCached(
         recipeId: String,
@@ -315,6 +339,7 @@ actor RecipeImageService {
     }
 
     private func postCacheStatusChanged(immediate: Bool = false) async {
+        invalidateCacheStatusMemo()
         cacheStatusNotifyTask?.cancel()
         if immediate {
             await MainActor.run {

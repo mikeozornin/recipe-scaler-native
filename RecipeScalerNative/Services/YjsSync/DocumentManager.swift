@@ -23,6 +23,13 @@ actor DocumentManager {
     private var suppressRecipeObserverDepth = 0
     /// Debounced SQLite persist for hot description-editor paths (avoid per-keystroke full encode).
     private var snapshotPersistTasks: [String: Task<Void, Never>] = [:]
+    /// Per-doc HTML serialization cache keyed by state vector. Invalidation
+    /// happens implicitly via state-vector mismatch — if the doc was mutated
+    /// (locally or via `applyUpdate`), the next read will see a fresh vector
+    /// and recompute. Bounds memory by evicting entries past `maxHtmlCacheEntries`.
+    private var htmlCache: [String: (stateVector: Data, html: String?)] = [:]
+    private var plainTextCache: [String: (stateVector: Data, plainText: String)] = [:]
+    private let maxHtmlCacheEntries = 64
     private static let snapshotPersistDebounceNs: UInt64 = 500_000_000
 
     init(store: YDocStore) {
@@ -116,9 +123,16 @@ actor DocumentManager {
             Self.logger.warning("applyUpdate failed for \(key), deleting corrupted snapshot")
             docs.removeValue(forKey: key)
             observerTokens.removeValue(forKey: key)
+            htmlCache.removeValue(forKey: key)
+            plainTextCache.removeValue(forKey: key)
             try? await store.deleteSnapshot(docKey: key)
             throw error
         }
+
+        // State vector changed: any cached HTML is now stale. Drop it so the
+        // next read recomputes (and re-caches with the new vector).
+        htmlCache.removeValue(forKey: key)
+        plainTextCache.removeValue(forKey: key)
 
         if let state = await doc.encodeStateAsUpdate() {
             try? await store.saveSnapshot(docKey: key, state: state, lastSyncedAt: lastSyncedAt)
@@ -129,6 +143,8 @@ actor DocumentManager {
     func replaceDocument(key: String, state: Data, lastSyncedAt: String? = nil) async throws {
         docs.removeValue(forKey: key)
         observerTokens.removeValue(forKey: key)
+        htmlCache.removeValue(forKey: key)
+        plainTextCache.removeValue(forKey: key)
         let doc = try YrsDocument(state: state)
         docs[key] = doc
         try? await store.saveSnapshot(docKey: key, state: state, lastSyncedAt: lastSyncedAt)
@@ -186,6 +202,18 @@ actor DocumentManager {
             return nil
         }
 
+        // Snapshot the state vector cheaply to look up the HTML cache before
+        // paying for the XmlFragment tree walk.
+        let cachedHTML: String?
+        let currentSV: Data? = await doc.stateVector()
+        if let currentSV,
+           let cached = htmlCache[key],
+           cached.stateVector == currentSV {
+            cachedHTML = cached.html
+        } else {
+            cachedHTML = nil
+        }
+
         let txnStart = CFAbsoluteTimeGetCurrent()
         var xmlSnapshot: String?
         let recipe: RecipeData? = try await doc.withReadTransaction { rawDoc, txn in
@@ -195,19 +223,119 @@ actor DocumentManager {
             }
             let map = YrsMap(branch: mapBranch)
             let parsed = self.parseRecipeData(from: map, txn: txn, recipeId: recipeId)
-            if RecipeData.RecipeVersion.detect(parsed.version) == .v3 {
+            // Skip the expensive FFI tree walk when the cache is already valid
+            // for this state vector.
+            if cachedHTML == nil,
+               RecipeData.RecipeVersion.detect(parsed.version) == .v3 {
                 xmlSnapshot = XmlFragmentToHTML.serializedFragment(txn: txn)
             }
             return parsed
         }
 
         guard var recipe else { return nil }
-        if let xml = xmlSnapshot,
-           let html = XmlFragmentToHTML.html(fromSerializedXML: xml, ingredients: recipe.ingredients),
-           !html.isEmpty {
+
+        let computedHTML: String?
+        if let cached = cachedHTML {
+            computedHTML = cached
+        } else if let xml = xmlSnapshot {
+            computedHTML = XmlFragmentToHTML.html(fromSerializedXML: xml, ingredients: recipe.ingredients)
+        } else {
+            computedHTML = nil
+        }
+
+        // Update cache entry if state vector is known and we recomputed.
+        if let currentSV, cachedHTML == nil {
+            htmlCache[key] = (stateVector: currentSV, html: computedHTML)
+            if htmlCache.count > maxHtmlCacheEntries {
+                evictOldestHTMLCacheEntries()
+            }
+        }
+
+        if let html = computedHTML, !html.isEmpty {
             recipe = recipe.replacing(description: html)
         }
         return recipe
+    }
+
+    /// Lightweight projection for recipe-list search: ingredients + description
+    /// plain text only — no full `RecipeData`, no XmlFragment→HTML.
+    func readSearchIndex(recipeId: String, userId: String) async throws -> RecipeSearchIndex? {
+        let key = "\(userId):recipe:\(recipeId)"
+        let doc: YrsDocument
+        if let existing = docs[key] {
+            doc = existing
+        } else if let restored = try? await getOrCreateDoc(key: key) {
+            doc = restored
+        } else {
+            return nil
+        }
+
+        let cachedPlainText: String?
+        let currentSV: Data? = await doc.stateVector()
+        if let currentSV,
+           let cached = plainTextCache[key],
+           cached.stateVector == currentSV {
+            cachedPlainText = cached.plainText
+        } else {
+            cachedPlainText = nil
+        }
+
+        let index: RecipeSearchIndex? = try await doc.withReadTransaction { _, txn in
+            guard let mapBranch = ytype_get(txn, "recipe") else { return nil }
+            let map = YrsMap(branch: mapBranch)
+            let versionString = map.scalarString(key: "version", txn: txn)
+            let version = RecipeData.RecipeVersion.detect(versionString)
+            let ingredients = self.readSearchIngredients(from: map, txn: txn, version: version)
+
+            let descriptionPlain: String
+            if let cached = cachedPlainText {
+                descriptionPlain = cached
+            } else if version == .v3 {
+                descriptionPlain = XmlFragmentToPlainText.plainText(txn: txn)
+            } else if let raw = self.readDescription(from: map, txn: txn, version: version) {
+                descriptionPlain = RecipeSearchUtils.plainText(fromDescriptionHTML: raw)
+            } else {
+                descriptionPlain = ""
+            }
+
+            return RecipeSearchIndex(
+                id: recipeId,
+                ingredientNames: ingredients.names,
+                ingredientAmounts: ingredients.amounts,
+                descriptionPlainText: descriptionPlain
+            )
+        }
+
+        if let currentSV, cachedPlainText == nil, let index {
+            plainTextCache[key] = (stateVector: currentSV, plainText: index.descriptionPlainText)
+            if plainTextCache.count > maxHtmlCacheEntries {
+                evictOldestPlainTextCacheEntries()
+            }
+        }
+
+        return index
+    }
+
+    /// Cheap LRU-ish eviction: drop the first `n` over-capacity entries.
+    /// `Dictionary` does not preserve insertion order, so this is effectively
+    /// random eviction — acceptable for a best-effort cache where correctness
+    /// is enforced by state-vector comparison, not by recency.
+    private func evictOldestHTMLCacheEntries() {
+        let drop = htmlCache.count - maxHtmlCacheEntries
+        guard drop > 0 else { return }
+        let keys = Array(htmlCache.keys.prefix(drop))
+        for key in keys {
+            htmlCache.removeValue(forKey: key)
+        }
+    }
+
+    private func evictOldestPlainTextCacheEntries() {
+        let drop = plainTextCache.count - maxHtmlCacheEntries
+        guard drop > 0 else { return }
+        let keys = Array(plainTextCache.keys.prefix(drop))
+        for key in keys {
+            plainTextCache.removeValue(forKey: key)
+        }
     }
 
     // ─── State Persistence ───────────────────────────────────────────────
@@ -325,6 +453,23 @@ actor DocumentManager {
         }
     }
 
+    /// Batched variant of `addIngredient` for import paths that insert many
+    /// ingredients at once. Performs a single write transaction, a single
+    /// `renumberIngredientOrders` pass, and a single snapshot persist + deliver.
+    /// Final merged Y.Doc state is identical to calling `addIngredient` per item.
+    func addIngredients(recipeId: String, ingredients: [IngredientData]) async throws {
+        guard !ingredients.isEmpty else { return }
+        try await mutateRecipe(recipeId: recipeId) { map, txn in
+            try Self.withIngredientsArray(in: map, txn: txn) { array in
+                for ingredient in ingredients {
+                    try Self.appendIngredient(ingredient, to: array, txn: txn)
+                }
+                Self.renumberIngredientOrders(in: array, txn: txn)
+            }
+            map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
+        }
+    }
+
     func updateIngredient(recipeId: String, ingredient: IngredientData, markNutritionOutdated: Bool = true) async throws {
         try await mutateRecipe(recipeId: recipeId) { map, txn in
             try Self.withIngredientsArray(in: map, txn: txn) { array in
@@ -403,8 +548,7 @@ actor DocumentManager {
                 }
             }
         }
-        await persistSnapshot(docKey: currentCollectionKey)
-        await deliverPendingLocalUpdate(recipeId: "collection")
+        await persistAndDeliver(recipeId: "collection", docKey: currentCollectionKey)
     }
 
     /// Merge queued offline Yjs updates into loaded docs and persist (restart before reconnect).
@@ -435,6 +579,34 @@ actor DocumentManager {
         } catch {
             Self.logger.warning("Failed to persist snapshot for \(docKey): \(error)")
         }
+    }
+
+    /// Encode the document state ONCE, persist to SQLite, and forward the same
+    /// bytes to the local-update handler. Avoids the double `encodeStateAsUpdate`
+    /// that happens when calling `persistSnapshot` + `deliverPendingLocalUpdate`
+    /// separately on every mutation.
+    ///
+    /// Also invalidates the HTML serialization cache for this docKey — after a
+    /// mutation the state vector changes and any cached HTML is stale.
+    private func persistAndDeliver(recipeId: String, docKey: String) async {
+        guard let doc = docs[docKey] else { return }
+        _ = await doc.consumePendingLocalUpdates()
+        guard let state = await doc.encodeStateAsUpdate(), !state.isEmpty else {
+            Self.logger.warning("No local Yjs update to sync for \(docKey)")
+            return
+        }
+        // Drop any cached HTML/plain text so the next read sees the new state.
+        htmlCache.removeValue(forKey: docKey)
+        plainTextCache.removeValue(forKey: docKey)
+        let lastSyncedAt = try? await store.loadSnapshot(docKey: docKey)?.lastSyncedAt
+        do {
+            try await store.saveSnapshot(docKey: docKey, state: state, lastSyncedAt: lastSyncedAt)
+        } catch {
+            Self.logger.warning("Failed to persist snapshot for \(docKey): \(error)")
+        }
+        guard let handler = onLocalRecipeUpdate else { return }
+        // Do not await: handler hops to @MainActor YjsSyncService while caller may be blocked on this actor.
+        Task { await handler(recipeId, state) }
     }
 
     /// Schedule a debounced snapshot write (coalesces rapid description-editor keystrokes).
@@ -541,8 +713,7 @@ actor DocumentManager {
                 throw RecipeEditError.documentNotLoaded
             }
         }
-        await persistSnapshot(docKey: currentCollectionKey)
-        await deliverPendingLocalUpdate(recipeId: "collection")
+        await persistAndDeliver(recipeId: "collection", docKey: currentCollectionKey)
         return id
     }
 
@@ -629,8 +800,7 @@ actor DocumentManager {
                 }
             }
         }
-        await persistSnapshot(docKey: currentCollectionKey)
-        await deliverPendingLocalUpdate(recipeId: "collection")
+        await persistAndDeliver(recipeId: "collection", docKey: currentCollectionKey)
     }
 
     /// Replace the set of folders a recipe belongs to.
@@ -659,8 +829,7 @@ actor DocumentManager {
                 break
             }
         }
-        await persistSnapshot(docKey: currentCollectionKey)
-        await deliverPendingLocalUpdate(recipeId: "collection")
+        await persistAndDeliver(recipeId: "collection", docKey: currentCollectionKey)
     }
 
     /// Set of active (non-deleted) folder ids — used to validate `folderIds` writes.
@@ -705,8 +874,7 @@ actor DocumentManager {
                 break
             }
         }
-        await persistSnapshot(docKey: currentCollectionKey)
-        await deliverPendingLocalUpdate(recipeId: "collection")
+        await persistAndDeliver(recipeId: "collection", docKey: currentCollectionKey)
     }
 
     /// Parse a folder Y.Map into `RecipeFolder`. Returns nil when the entry
@@ -878,11 +1046,12 @@ actor DocumentManager {
                     txn: txn
                 )
             }
-            await persistSnapshot(docKey: key)
-            await deliverPendingLocalUpdate(recipeId: recipeId)
+            await persistAndDeliver(recipeId: recipeId, docKey: key)
         }
 
-        // Add ingredients
+        // Add ingredients (batched: single write-txn + single renumber pass + single persist/deliver)
+        var collectedIngredients: [IngredientData] = []
+        collectedIngredients.reserveCapacity(draft.ingredients.count)
         for (index, ingredient) in draft.ingredients.enumerated() {
             let trimmedName = ingredient.name.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedName.isEmpty else { continue }
@@ -903,18 +1072,20 @@ actor DocumentManager {
             }
 
             let storedName = unit.isEmpty ? trimmedName : "\(trimmedName), \(unit)"
-            let row = IngredientData(
-                id: ingredient.id ?? UUID().uuidString,
-                name: storedName,
-                amount: amountString,
-                originalAmount: amountString,
-                unit: unit,
-                order: order,
-                isSeparator: isSep,
-                hasQuantity: hasQuantity
+            collectedIngredients.append(
+                IngredientData(
+                    id: ingredient.id ?? UUID().uuidString,
+                    name: storedName,
+                    amount: amountString,
+                    originalAmount: amountString,
+                    unit: unit,
+                    order: order,
+                    isSeparator: isSep,
+                    hasQuantity: hasQuantity
+                )
             )
-            try await addIngredient(recipeId: recipeId, ingredient: row)
         }
+        try await addIngredients(recipeId: recipeId, ingredients: collectedIngredients)
 
         return recipeId
     }
@@ -943,6 +1114,8 @@ actor DocumentManager {
             }
         }
 
+        var collectedIngredients: [IngredientData] = []
+        collectedIngredients.reserveCapacity(draft.ingredients.count)
         for ingredient in draft.ingredients {
             let trimmedAmount = ingredient.amount.trimmingCharacters(in: .whitespacesAndNewlines)
             var unit = ingredient.unit.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -955,17 +1128,19 @@ actor DocumentManager {
             let hasQuantity = !amount.isEmpty
             let trimmedName = ingredient.name.trimmingCharacters(in: .whitespacesAndNewlines)
             let storedName = unit.isEmpty ? trimmedName : "\(trimmedName), \(unit)"
-            let row = IngredientData(
-                id: UUID().uuidString,
-                name: storedName,
-                amount: amount,
-                originalAmount: amount,
-                unit: unit,
-                order: ingredient.order,
-                hasQuantity: hasQuantity
+            collectedIngredients.append(
+                IngredientData(
+                    id: UUID().uuidString,
+                    name: storedName,
+                    amount: amount,
+                    originalAmount: amount,
+                    unit: unit,
+                    order: ingredient.order,
+                    hasQuantity: hasQuantity
+                )
             )
-            try await addIngredient(recipeId: recipeId, ingredient: row)
         }
+        try await addIngredients(recipeId: recipeId, ingredients: collectedIngredients)
 
         if !draft.descriptionBlocks.isEmpty {
             guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
@@ -978,8 +1153,7 @@ actor DocumentManager {
                     txn: txn
                 )
             }
-            await persistSnapshot(docKey: key)
-            await deliverPendingLocalUpdate(recipeId: recipeId)
+            await persistAndDeliver(recipeId: recipeId, docKey: key)
         }
 
         return recipeId
@@ -1085,8 +1259,7 @@ actor DocumentManager {
             map.insert(key: "updatedAt", value: .string(now), txn: txn)
         }
 
-        await persistSnapshot(docKey: key)
-        await deliverPendingLocalUpdate(recipeId: recipeId)
+        await persistAndDeliver(recipeId: recipeId, docKey: key)
     }
 
     /// Writes a recipe metadata field (e.g. `isPublic`) without the v3-only edit gate.
@@ -1113,8 +1286,7 @@ actor DocumentManager {
             map.insert(key: "updatedAt", value: .string(now), txn: txn)
         }
 
-        await persistSnapshot(docKey: key)
-        await deliverPendingLocalUpdate(recipeId: recipeId)
+        await persistAndDeliver(recipeId: recipeId, docKey: key)
     }
 
     // MARK: - Description editor (006)
@@ -1159,9 +1331,14 @@ actor DocumentManager {
             Self.logger.warning("applyDescriptionEditorUpdate failed for \(key), deleting corrupted snapshot")
             docs.removeValue(forKey: key)
             observerTokens.removeValue(forKey: key)
+            htmlCache.removeValue(forKey: key)
+            plainTextCache.removeValue(forKey: key)
             try? await store.deleteSnapshot(docKey: key)
             throw error
         }
+        // Description was just mutated; cached HTML/plain text for this recipe is stale.
+        htmlCache.removeValue(forKey: key)
+        plainTextCache.removeValue(forKey: key)
         // Hot path: debounce SQLite encode; network debouncer + flushPendingEdits persist on Done.
         scheduleSnapshotPersist(docKey: key)
         // Description renders in WebView during edit — skip recipe observer refresh per keystroke.
@@ -1344,6 +1521,77 @@ actor DocumentManager {
             }
             return map.string(key: "description", txn: txn)
         }
+    }
+
+    private struct SearchIngredientProjection {
+        let names: [String]
+        let amounts: [String]
+    }
+
+    private func readSearchIngredients(
+        from map: YrsMap,
+        txn: OpaquePointer,
+        version: RecipeData.RecipeVersion
+    ) -> SearchIngredientProjection {
+        switch version {
+        case .v1:
+            guard let json = map.string(key: "ingredients", txn: txn) else {
+                return SearchIngredientProjection(names: [], amounts: [])
+            }
+            return searchIngredientsFromJSON(json)
+        case .v2, .v3:
+            let projection = (try? map.withNestedArray(key: "ingredients", txn: txn) { array in
+                var names: [String] = []
+                var amounts: [String] = []
+                array.forEachMap(txn: txn) { ingMap in
+                    let isSeparator = ingMap.bool(key: "isSeparator", txn: txn) ?? false
+                    guard !isSeparator else { return }
+                    let name = ingMap.scalarString(key: "name", txn: txn) ?? ""
+                    guard !name.isEmpty else { return }
+                    names.append(name)
+                    let hasOriginal = !ingMap.isNullOrMissing(key: "originalAmount", txn: txn)
+                    let originalAmount = ingMap.scalarString(key: "originalAmount", txn: txn) ?? ""
+                    let amount = ingMap.scalarString(key: "amount", txn: txn) ?? ""
+                    let hasQuantity = hasOriginal && !originalAmount.isEmpty
+                    amounts.append(hasQuantity ? originalAmount : amount)
+                }
+                return SearchIngredientProjection(names: names, amounts: amounts)
+            })
+            return projection ?? SearchIngredientProjection(names: [], amounts: [])
+        }
+    }
+
+    private func searchIngredientsFromJSON(_ json: String) -> SearchIngredientProjection {
+        guard let data = json.data(using: .utf8),
+              let raw = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+            return SearchIngredientProjection(names: [], amounts: [])
+        }
+        var names: [String] = []
+        var amounts: [String] = []
+        for dict in raw {
+            let isSeparator = dict["isSeparator"] as? Bool ?? false
+            guard !isSeparator else { continue }
+            let name = dict["name"] as? String ?? ""
+            guard !name.isEmpty else { continue }
+            names.append(name)
+            let originalAmount: String = {
+                if dict["originalAmount"] is NSNull { return "" }
+                if let number = dict["originalAmount"] as? NSNumber {
+                    return IngredientData.formatScalarNumber(number.doubleValue)
+                }
+                if let string = dict["originalAmount"] as? String { return string }
+                return ""
+            }()
+            let amount: String = {
+                if let number = dict["amount"] as? NSNumber {
+                    return IngredientData.formatScalarNumber(number.doubleValue)
+                }
+                if let string = dict["amount"] as? String { return string }
+                return ""
+            }()
+            amounts.append(!originalAmount.isEmpty ? originalAmount : amount)
+        }
+        return SearchIngredientProjection(names: names, amounts: amounts)
     }
 
     private func readIngredients(

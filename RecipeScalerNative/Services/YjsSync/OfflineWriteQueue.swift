@@ -27,4 +27,12 @@ actor OfflineWriteQueue {
     func clear(forRecipeId recipeId: String) async throws {
         try await store.deleteOfflineQueue(forRecipeId: recipeId)
     }
+
+    func recipeIdsInQueue() async throws -> Set<String> {
+        try await store.fetchOfflineQueueRecipeIds()
+    }
+
+    func deleteEntries(ids: [Int64]) async throws {
+        try await store.deleteOfflineEntries(ids: ids)
+    }
 }

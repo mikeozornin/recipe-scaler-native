@@ -16,6 +16,8 @@ struct RecipeListView: View {
     @State private var searchStore = RecipeListSearchStore()
     /// Tokens derived from `searchText` once per change, not per render.
     @State private var searchTokens: [String] = []
+    @State private var cachedPinnedRows: [RecipeRowData] = []
+    @State private var cachedUnpinnedRows: [RecipeRowData] = []
 
     /// Persisted view mode: `nil` = default (collections).
     @AppStorage(RecipeFolderRoutes.viewModeStorageKey)
@@ -46,16 +48,18 @@ struct RecipeListView: View {
         return RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
     }
 
-    private var pinnedRowItems: [RecipeRowData] {
-        filteredEntries
-            .filter(\.isPinned)
-            .map(RecipeRowData.init(entry:))
+    private var pinnedRowItems: [RecipeRowData] { cachedPinnedRows }
+    private var unpinnedRowItems: [RecipeRowData] { cachedUnpinnedRows }
+
+    private var rowItemsCacheKey: [String] {
+        filteredEntries.map {
+            "\($0.id)|\($0.isPinned)|\($0.name)|\($0.imageUrl ?? "")|\($0.color ?? "")"
+        }
     }
 
-    private var unpinnedRowItems: [RecipeRowData] {
-        filteredEntries
-            .filter { !$0.isPinned }
-            .map(RecipeRowData.init(entry:))
+    private func rebuildRowItemsCache() {
+        cachedPinnedRows = filteredEntries.filter(\.isPinned).map(RecipeRowData.init(entry:))
+        cachedUnpinnedRows = filteredEntries.filter { !$0.isPinned }.map(RecipeRowData.init(entry:))
     }
 
     private var hasAnyRows: Bool {
@@ -132,6 +136,9 @@ struct RecipeListView: View {
             .searchable(text: $searchText, prompt: Text("search.recipes"))
             .onAppear {
                 searchStore.bind(syncService: syncService)
+            }
+            .onChange(of: rowItemsCacheKey, initial: true) { _, _ in
+                rebuildRowItemsCache()
             }
             .onChange(of: searchText) { _, query in
                 // Tokens computed once per change (was: 16–26× per render).
@@ -362,10 +369,12 @@ struct RecipeListView: View {
     private func recipeRows(_ items: [RecipeRowData]) -> some View {
         ForEach(items) { item in
             ZStack(alignment: .leading) {
-                RecipeRow(
-                    data: item,
-                    highlight: isSearching ? searchStore.highlights[item.id] : nil,
-                    allowsNetworkRefresh: allowsImageNetworkRefresh
+                EquatableView(
+                    content: RecipeRowEquatable(
+                        data: item,
+                        highlight: isSearching ? searchStore.highlights[item.id] : nil,
+                        allowsNetworkRefresh: allowsImageNetworkRefresh
+                    )
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -687,6 +696,20 @@ private struct DatabaseInitFailedBanner: View {
 
 // MARK: - Recipe Row
 
+private struct RecipeRowEquatable: View, Equatable {
+    let data: RecipeRowData
+    let highlight: RecipeRowHighlight?
+    let allowsNetworkRefresh: Bool
+
+    var body: some View {
+        RecipeRow(
+            data: data,
+            highlight: highlight,
+            allowsNetworkRefresh: allowsNetworkRefresh
+        )
+    }
+}
+
 struct RecipeRow: View {
     let data: RecipeRowData
     /// Pre-built highlighted title + snippet. Built once by
@@ -774,7 +797,7 @@ struct RecipeRow: View {
 
 // MARK: - Value Type
 
-struct RecipeRowData: Identifiable {
+struct RecipeRowData: Identifiable, Equatable {
     let id: String
     let name: String
     let displayName: String

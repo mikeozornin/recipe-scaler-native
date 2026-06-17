@@ -20,6 +20,7 @@ enum RecipeImageUploadPreprocessor {
 
     private static let maxLongEdgePixels = 2560
     private static let targetMaxBytes = 9_500_000
+    private static let encodeQualities: [Float] = [0.85, 0.58, 0.32]
 
     private static let webpEncodingAvailable: Bool = {
         let probe = NSMutableData()
@@ -31,7 +32,14 @@ enum RecipeImageUploadPreprocessor {
         ) != nil
     }()
 
-    static func payloadForUpload(from data: Data) -> RecipeImageUploadPayload? {
+    /// Runs encoding off the caller's actor (typically main) to avoid UI stalls.
+    static func payloadForUpload(from data: Data) async -> RecipeImageUploadPayload? {
+        await Task.detached(priority: .userInitiated) {
+            encodePayload(from: data)
+        }.value
+    }
+
+    private static func encodePayload(from data: Data) -> RecipeImageUploadPayload? {
         let sourceType = imageSourceTypeIdentifier(data) ?? "unknown"
 
         if isHeicType(sourceType), data.count <= maxUploadBytes {
@@ -132,24 +140,16 @@ enum RecipeImageUploadPreprocessor {
     }
 
     private static func imageDataUnderLimit(_ image: UIImage, format: OutputFormat) -> Data? {
-        var maxEdge = CGFloat(maxLongEdgePixels)
-        var working = image
-
-        for _ in 0..<14 {
-            if let data = bestEncodedData(for: working, format: format, maxBytes: targetMaxBytes) {
-                return data
-            }
-            maxEdge = max(480, maxEdge * 0.75)
-            working = resizeToMaxLongEdge(working, maxEdge)
+        if let data = bestEncodedData(for: image, format: format, maxBytes: targetMaxBytes) {
+            return data
         }
-
-        return bestEncodedData(for: working, format: format, maxBytes: targetMaxBytes)
+        let resized = resizeToMaxLongEdge(image, max(480, CGFloat(maxLongEdgePixels) * 0.75))
+        return bestEncodedData(for: resized, format: format, maxBytes: targetMaxBytes)
     }
 
     private static func bestEncodedData(for image: UIImage, format: OutputFormat, maxBytes: Int) -> Data? {
         guard let cgImage = cgImage(from: image) else { return nil }
-        let qualities: [Float] = [0.85, 0.72, 0.58, 0.45, 0.32, 0.2, 0.12, 0.08]
-        for quality in qualities {
+        for quality in encodeQualities {
             let data: Data?
             switch format {
             case .webp:

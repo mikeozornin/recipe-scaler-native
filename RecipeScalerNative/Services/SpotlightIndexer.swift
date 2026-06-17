@@ -30,6 +30,7 @@ final class SpotlightIndexer: ObservableObject {
     /// recipeId → updatedAt. Used to skip reindex when content unchanged.
     private var indexedFingerprints: [String: String] = [:]
     private var isStarted = false
+    private var reindexTask: Task<Void, Never>?
 
     init(syncService: YjsSyncService) {
         self.syncService = syncService
@@ -50,12 +51,16 @@ final class SpotlightIndexer: ObservableObject {
     }
 
     func stop() {
+        reindexTask?.cancel()
+        reindexTask = nil
         cancellables.removeAll()
         isStarted = false
     }
 
     /// Wipe everything this app indexed. Called on logout / user switch.
     func clearAll() async {
+        reindexTask?.cancel()
+        reindexTask = nil
         let domainId = Self.domainIdentifier
         do {
             try await CSSearchableIndex.default()
@@ -69,6 +74,16 @@ final class SpotlightIndexer: ObservableObject {
     // MARK: - Internal
 
     private func reindex(entries: [CollectionEntry]) async {
+        reindexTask?.cancel()
+        reindexTask = Task { [weak self] in
+            await self?.performReindex(entries: entries)
+        }
+        await reindexTask?.value
+    }
+
+    private func performReindex(entries: [CollectionEntry]) async {
+        guard !Task.isCancelled else { return }
+
         guard !entries.isEmpty else {
             await clearAll()
             return
@@ -95,26 +110,60 @@ final class SpotlightIndexer: ObservableObject {
 
         AppLog.info(.spotlight, "Reindexing \(dirty.count) recipe(s); stale removed: \(stale.count)")
 
+        var recipeData: [String: RecipeData] = [:]
+        recipeData.reserveCapacity(dirty.count)
         for entry in dirty {
-            await indexOne(entry: entry)
+            if Task.isCancelled { return }
+            guard var recipe = await syncService.peekRecipeData(recipeId: entry.id) else {
+                continue
+            }
+            recipe = RecipeCollectionMerge.merged(recipe, with: entry)
+            recipeData[entry.id] = recipe
+        }
+
+        guard !Task.isCancelled, !recipeData.isEmpty else { return }
+
+        let entriesById = Dictionary(uniqueKeysWithValues: dirty.map { ($0.id, $0) })
+        let indexedIds = Set(recipeData.keys)
+
+        let items: [CSSearchableItem] = await Task.detached(priority: .utility) { () -> [CSSearchableItem] in
+            var result: [CSSearchableItem] = []
+            result.reserveCapacity(recipeData.count)
+            for (recipeId, recipe) in recipeData {
+                if Task.isCancelled { return [] }
+                guard let entry = entriesById[recipeId] else { continue }
+                if let item = SpotlightIndexer.buildItem(entry: entry, recipe: recipe) {
+                    result.append(item)
+                }
+            }
+            return result
+        }.value
+
+        guard !Task.isCancelled else { return }
+
+        do {
+            try await CSSearchableIndex.default().indexSearchableItems(items)
+            for entry in dirty where indexedIds.contains(entry.id) {
+                indexedFingerprints[entry.id] = indexFingerprint(for: entry)
+            }
+        } catch {
+            AppLog.notice(.spotlight, "Index batch failed: \(error.localizedDescription)")
         }
     }
 
-    private func indexOne(entry: CollectionEntry) async {
-        guard var recipe = await syncService.peekRecipeData(recipeId: entry.id) else {
-            return
-        }
+    // MARK: - Item building (off main actor)
 
-        recipe = RecipeCollectionMerge.merged(recipe, with: entry)
+    private nonisolated static let plainTextCache = NSCache<NSString, NSString>()
 
+    nonisolated private static func buildItem(entry: CollectionEntry, recipe: RecipeData) -> CSSearchableItem? {
         let attrs = CSSearchableItemAttributeSet(itemContentType: UTType.text.identifier)
         attrs.title = recipe.name
         let displayTitle = RecipeTitleEmoji.displayName(for: recipe.name)
         if !displayTitle.isEmpty {
             attrs.displayName = displayTitle
         }
-        attrs.contentDescription = Self.buildPreview(recipe: recipe)
-        if let fullText = Self.plainText(fromHTML: recipe.description), !fullText.isEmpty {
+        attrs.contentDescription = buildPreview(recipe: recipe)
+        if let fullText = plainText(fromHTML: recipe.description), !fullText.isEmpty {
             attrs.textContent = fullText
         }
         attrs.identifier = recipe.id
@@ -124,7 +173,7 @@ final class SpotlightIndexer: ObservableObject {
             .map { $0.name }
         attrs.keywords = ingredientKeywords.isEmpty ? nil : ingredientKeywords
 
-        if let updated = Self.dateParser.date(from: entry.updatedAt) {
+        if let updated = dateParser.date(from: entry.updatedAt) {
             attrs.lastUsedDate = updated
             attrs.contentCreationDate = updated
             attrs.contentModificationDate = updated
@@ -146,13 +195,7 @@ final class SpotlightIndexer: ObservableObject {
             attributeSet: attrs
         )
         item.expirationDate = .distantFuture
-
-        do {
-            try await CSSearchableIndex.default().indexSearchableItems([item])
-            indexedFingerprints[entry.id] = indexFingerprint(for: entry)
-        } catch {
-            AppLog.notice(.spotlight, "Index failed for \(entry.id): \(error.localizedDescription)")
-        }
+        return item
     }
 
     // MARK: - Helpers
@@ -161,14 +204,14 @@ final class SpotlightIndexer: ObservableObject {
         "\(entry.updatedAt)|\(Self.previewFormatVersion)"
     }
 
-    private static let dateParser: ISO8601DateFormatter = {
+    nonisolated private static let dateParser: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return f
     }()
 
     /// Spotlight snippet: ingredients on line 1, description on lines 2+.
-    private static func buildPreview(recipe: RecipeData) -> String? {
+    nonisolated private static func buildPreview(recipe: RecipeData) -> String? {
         let ingredientSnippet = buildIngredientSnippet(recipe: recipe)
         let descriptionText = plainText(fromHTML: recipe.description)
             .flatMap { $0.isEmpty ? nil : $0 }
@@ -190,7 +233,7 @@ final class SpotlightIndexer: ObservableObject {
         }
     }
 
-    private static func buildIngredientSnippet(recipe: RecipeData) -> String? {
+    nonisolated private static func buildIngredientSnippet(recipe: RecipeData) -> String? {
         let ingredientLines = recipe.ingredients
             .filter { !$0.isHeaderRow }
             .compactMap { spotlightIngredientLine($0) }
@@ -206,7 +249,7 @@ final class SpotlightIndexer: ObservableObject {
         return truncateToLength(snippet, maxLength: spotlightSnippetMaxLength)
     }
 
-    private static func spotlightIngredientLine(_ ingredient: IngredientData) -> String? {
+    nonisolated private static func spotlightIngredientLine(_ ingredient: IngredientData) -> String? {
         let name = ingredient.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return nil }
 
@@ -220,18 +263,22 @@ final class SpotlightIndexer: ObservableObject {
         return parts.joined(separator: " ")
     }
 
-    private static let spotlightSnippetMaxLength = 220
-    private static let spotlightTotalMaxLength = 300
+    nonisolated private static let spotlightSnippetMaxLength = 220
+    nonisolated private static let spotlightTotalMaxLength = 300
 
-    private static func truncateToLength(_ text: String, maxLength: Int) -> String {
+    nonisolated private static func truncateToLength(_ text: String, maxLength: Int) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count > maxLength else { return trimmed }
         let end = trimmed.index(trimmed.startIndex, offsetBy: maxLength)
         return String(trimmed[..<end]).trimmingCharacters(in: .whitespacesAndNewlines) + "…"
     }
 
-    private static func plainText(fromHTML html: String?) -> String? {
+    nonisolated static func plainText(fromHTML html: String?) -> String? {
         guard let html, !html.isEmpty else { return nil }
+        let key = html as NSString
+        if let cached = plainTextCache.object(forKey: key) {
+            return cached as String
+        }
 
         #if canImport(UIKit)
         if let data = html.data(using: .utf8),
@@ -251,7 +298,10 @@ final class SpotlightIndexer: ObservableObject {
                 options: .regularExpression
             )
             .trimmingCharacters(in: .whitespacesAndNewlines)
-            if !collapsed.isEmpty { return collapsed }
+            if !collapsed.isEmpty {
+                plainTextCache.setObject(collapsed as NSString, forKey: key)
+                return collapsed
+            }
         }
         #endif
 
@@ -261,6 +311,20 @@ final class SpotlightIndexer: ObservableObject {
         text = text.replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
         let collapsed = text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        return collapsed.isEmpty ? nil : collapsed
+        guard !collapsed.isEmpty else { return nil }
+        plainTextCache.setObject(collapsed as NSString, forKey: key)
+        return collapsed
     }
 }
+
+#if DEBUG
+extension SpotlightIndexer {
+    nonisolated static func _testPlainText(fromHTML html: String?) -> String? {
+        plainText(fromHTML: html)
+    }
+
+    nonisolated static func _testBuildItem(entry: CollectionEntry, recipe: RecipeData) -> CSSearchableItem? {
+        buildItem(entry: entry, recipe: recipe)
+    }
+}
+#endif

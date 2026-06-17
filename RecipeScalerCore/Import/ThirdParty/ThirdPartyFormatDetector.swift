@@ -37,22 +37,148 @@ public enum ThirdPartyFormatDetector {
         return .unsupported
     }
 
+    /// Cheap central-directory count of recipe entries in a ZIP-backed format.
+    /// Reads only the ZIP central directory (no decompression). Returns `nil` for
+    /// single-file formats or if the archive cannot be opened.
+    public static func estimatedRecipeCount(
+        url: URL,
+        format: ThirdPartyFormat
+    ) -> Int? {
+        guard format == .paprikaArchive || format == .croutonArchive else { return nil }
+        guard let archive = try? Archive(url: url, accessMode: .read) else { return nil }
+        let suffix: String
+        switch format {
+        case .paprikaArchive: suffix = ".paprikarecipe"
+        case .croutonArchive: suffix = ".crumb"
+        default: return nil
+        }
+        return archive.reduce(into: 0) { acc, entry in
+            if entry.path.lowercased().hasSuffix(suffix) { acc += 1 }
+        }
+    }
+
     public static func enumerateRecipeEntries(
         url: URL,
         format: ThirdPartyFormat
-    ) throws -> [ThirdPartyArchiveEntry] {
-        switch format {
-        case .paprikaArchive, .croutonArchive:
-            return try enumerateZipEntries(url: url, format: format)
-        case .paprikaSingle:
-            let data = try Data(contentsOf: url)
-            return [ThirdPartyArchiveEntry(fileName: url.lastPathComponent, data: data)]
-        case .croutonSingle:
-            let data = try Data(contentsOf: url)
-            return [ThirdPartyArchiveEntry(fileName: url.lastPathComponent, data: data)]
-        case .unsupported:
-            throw ThirdPartyImportError.unsupportedFormat
+    ) async throws -> [ThirdPartyArchiveEntry] {
+        // Thin wrapper around the streaming variant for callers that still want the full
+        // array in memory (existing tests, `validateEntryCount` on count, etc.). Iteration
+        // semantics (including the `recipeLimitExceeded` guard) are identical.
+        var collected: [ThirdPartyArchiveEntry] = []
+        let stream = enumerateRecipeEntriesStream(url: url, format: format)
+        for try await entry in stream {
+            collected.append(entry)
         }
+        collected.sort { $0.fileName.localizedStandardCompare($1.fileName) == .orderedAscending }
+        return collected
+    }
+
+    /// Streaming variant of `enumerateRecipeEntries`. Yields one decoded entry at a time
+    /// so per-entry `Data` is released before the next iteration, keeping peak memory
+    /// bounded regardless of archive size. Enforces `maxRecipesPerImport` mid-stream
+    /// (throws as soon as the count would exceed the limit) — callers do NOT need to call
+    /// `validateEntryCount` after iterating.
+    ///
+    /// Single-file formats (`.paprikaSingle`, `.croutonSingle`) yield exactly one entry.
+    public static func enumerateRecipeEntriesStream(
+        url: URL,
+        format: ThirdPartyFormat
+    ) -> AsyncThrowingStream<ThirdPartyArchiveEntry, Error> {
+        AsyncThrowingStream { continuation in
+            // Pre-decide single-file paths synchronously to keep Archive lifecycle inside the task.
+            if format == .paprikaSingle || format == .croutonSingle {
+                do {
+                    let data = try Data(contentsOf: url)
+                    continuation.yield(ThirdPartyArchiveEntry(fileName: url.lastPathComponent, data: data))
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+                return
+            }
+
+            guard format == .paprikaArchive || format == .croutonArchive else {
+                continuation.finish(throwing: ThirdPartyImportError.unsupportedFormat)
+                return
+            }
+
+            Task.detached(priority: .userInitiated) {
+                let result: Result<Void, Error> = await Self.yieldZipEntries(
+                    url: url,
+                    format: format,
+                    continuation: continuation
+                )
+                switch result {
+                case .success:
+                    continuation.finish()
+                case .failure(let error):
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
+
+    /// Drives the ZIP-extraction loop on a background executor. Each yielded
+    /// `ThirdPartyArchiveEntry.data` is freed by ARC after the consumer is done with it.
+    private static func yieldZipEntries(
+        url: URL,
+        format: ThirdPartyFormat,
+        continuation: AsyncThrowingStream<ThirdPartyArchiveEntry, Error>.Continuation
+    ) async -> Result<Void, Error> {
+        let archive: Archive
+        do {
+            guard let opened = try? Archive(url: url, accessMode: .read) else {
+                return .failure(ThirdPartyImportError.unsupportedFormat)
+            }
+            archive = opened
+        }
+
+        let suffix: String
+        switch format {
+        case .paprikaArchive: suffix = ".paprikarecipe"
+        case .croutonArchive: suffix = ".crumb"
+        default: return .failure(ThirdPartyImportError.unsupportedFormat)
+        }
+
+        var count = 0
+        var seenAny = false
+
+        // Stable iteration: ZIPFoundation `Archive` conforms to `Sequence`. We iterate in
+        // natural central-directory order and let callers sort when they need determinism.
+        for entry in archive {
+            // Soft cancellation: if downstream breaks out, stop extracting.
+            if Task.isCancelled { return .success(()) }
+
+            let path = decodeEntryPath(entry)
+            guard path.lowercased().hasSuffix(suffix) else { continue }
+
+            count += 1
+            if count > ThirdPartyImportLimits.maxRecipesPerImport {
+                return .failure(ThirdPartyImportError.recipeLimitExceeded(
+                    limit: ThirdPartyImportLimits.maxRecipesPerImport
+                ))
+            }
+
+            var data = Data()
+            do {
+                _ = try archive.extract(entry) { chunk in
+                    data.append(chunk)
+                }
+            } catch {
+                return .failure(ThirdPartyImportError.corruptEntry(fileName: path))
+            }
+            guard !data.isEmpty else {
+                return .failure(ThirdPartyImportError.corruptEntry(fileName: path))
+            }
+
+            seenAny = true
+            continuation.yield(ThirdPartyArchiveEntry(fileName: path, data: data))
+        }
+
+        guard seenAny else {
+            return .failure(ThirdPartyImportError.emptyArchive)
+        }
+        return .success(())
     }
 
     public static func validateEntryCount(_ entries: [ThirdPartyArchiveEntry]) throws {

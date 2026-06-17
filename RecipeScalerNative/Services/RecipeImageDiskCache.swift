@@ -12,7 +12,6 @@ enum RecipeImageDiskCache {
     private static let migrationKey = "recipeImage.diskCache.migratedToApplicationSupport"
 
     static func fileURL(recipeId: String, variant: CachedImageVariant) -> URL {
-        migrateFromCachesIfNeeded()
         let folderURL = baseDirectoryURL
         return folderURL.appendingPathComponent("\(recipeId)_\(variant.rawValue).webp")
     }

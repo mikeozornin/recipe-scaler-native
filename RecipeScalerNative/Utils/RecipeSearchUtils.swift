@@ -105,10 +105,32 @@ enum RecipeSearchUtils {
     }
 
     /// Full-text fallback: ingredients or description plain text.
+    static func matchesRecipeContent(_ index: RecipeSearchIndex, tokens: [String]) -> Bool {
+        guard !tokens.isEmpty else { return false }
+        if findIngredientMatch(in: index, tokens: tokens) != nil { return true }
+        return findDescriptionMatch(in: index, tokens: tokens) != nil
+    }
+
+    /// Full-text fallback: ingredients or description plain text (full recipe).
     static func matchesRecipeContent(_ recipe: RecipeData, tokens: [String]) -> Bool {
         guard !tokens.isEmpty else { return false }
         if findIngredientMatch(in: recipe, tokens: tokens) != nil { return true }
         return findDescriptionMatch(in: recipe, tokens: tokens) != nil
+    }
+
+    /// First ingredient whose normalized name contains every token.
+    static func findIngredientMatch(in index: RecipeSearchIndex, tokens: [String]) -> (name: String, amount: String)? {
+        for (offset, name) in index.ingredientNames.enumerated() {
+            let normalized = normalizeForSearch(name)
+            guard !normalized.isEmpty else { continue }
+            if tokens.allSatisfy({ normalized.contains($0) }) {
+                let amount = offset < index.ingredientAmounts.count
+                    ? index.ingredientAmounts[offset]
+                    : ""
+                return (name, amount)
+            }
+        }
+        return nil
     }
 
     /// First ingredient whose normalized name contains every token.
@@ -125,8 +147,18 @@ enum RecipeSearchUtils {
 
     /// Description plain text where every token occurs (AND), with the earliest
     /// match index used to anchor the snippet window.
+    static func findDescriptionMatch(in index: RecipeSearchIndex, tokens: [String]) -> (text: String, matchIndex: Int)? {
+        findDescriptionMatch(inPlainText: index.descriptionPlainText, tokens: tokens)
+    }
+
+    /// Description plain text where every token occurs (AND), with the earliest
+    /// match index used to anchor the snippet window.
     static func findDescriptionMatch(in recipe: RecipeData, tokens: [String]) -> (text: String, matchIndex: Int)? {
         let plain = plainText(fromDescriptionHTML: recipe.description)
+        return findDescriptionMatch(inPlainText: plain, tokens: tokens)
+    }
+
+    private static func findDescriptionMatch(inPlainText plain: String, tokens: [String]) -> (text: String, matchIndex: Int)? {
         guard !plain.isEmpty else { return nil }
 
         let normalized = normalizeForSearch(plain)
@@ -144,6 +176,33 @@ enum RecipeSearchUtils {
     }
 
     // MARK: - Snippets (ingredient name or description window)
+
+    /// Returns the snippet shown under the title when search hit content (not name).
+    /// - Ingredients: `"<name>, <original amount>"` when amount is present.
+    /// - Description: ~250-char window anchored at the first match, with `…` ellipses.
+    static func snippet(for index: RecipeSearchIndex, tokens: [String], matchesNameOnly: Bool) -> String? {
+        guard !matchesNameOnly, !tokens.isEmpty else { return nil }
+
+        if let ingredient = findIngredientMatch(in: index, tokens: tokens) {
+            var parts: [String] = []
+            if !ingredient.name.isEmpty { parts.append(ingredient.name) }
+            let trimmedAmount = ingredient.amount.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedAmount.isEmpty {
+                parts.append(trimmedAmount)
+            }
+            return parts.joined(separator: ", ")
+        }
+
+        if let descriptionMatch = findDescriptionMatch(in: index, tokens: tokens) {
+            let originalIndex = originalCharacterIndex(
+                in: descriptionMatch.text,
+                normalizedIndex: descriptionMatch.matchIndex
+            )
+            return snippetWindow(in: descriptionMatch.text, matchIndex: originalIndex)
+        }
+
+        return nil
+    }
 
     /// Returns the snippet shown under the title when search hit content (not name).
     /// - Ingredients: `"<name>, <original amount>"` when amount is present.

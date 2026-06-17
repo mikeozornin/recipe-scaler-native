@@ -12,9 +12,15 @@ final class NativeExportImportService {
     // MARK: - Export
 
     /// Export all recipes to a temp file and return the URL.
+    ///
+    /// Heavy work (recipe reads, JSON encoding, ZIP packing) is performed off
+    /// the MainActor via `Task.detached(priority: .userInitiated)`. Only the
+    /// initial snapshot of `collectionEntries` / `folders` is read on the
+    /// MainActor, and progress callbacks are routed back to the MainActor.
     func exportAll(
-        progress: @escaping (_ completed: Int, _ total: Int) -> Void
+        progress: @escaping @MainActor (_ completed: Int, _ total: Int) -> Void
     ) async throws -> URL {
+        // MainActor snapshot — cheap, sync reads of @Published arrays.
         let entries = syncService.collectionEntries.filter { !$0.deleted }
         let folders = syncService.folders
 
@@ -22,7 +28,7 @@ final class NativeExportImportService {
             throw NativeImportError.emptyArchive
         }
 
-        // Build recipeFolderIds mapping
+        // Build recipeFolderIds mapping (cheap, no I/O).
         var recipeFolderIds: [String: [String]] = [:]
         for entry in entries {
             if !entry.folderIds.isEmpty {
@@ -30,14 +36,41 @@ final class NativeExportImportService {
             }
         }
 
-        // Collect recipes with their data
-        var exportRecipes: [ExportRecipe] = []
+        let exportFolders = folders.map { folder in
+            ExportFolder(
+                id: folder.id,
+                name: folder.name,
+                color: folder.color,
+                createdAt: folder.createdAt,
+                updatedAt: folder.updatedAt
+            )
+        }
+
         let total = entries.count
+        // Capture the sync service reference so the detached task can hop to
+        // the MainActor for each `readRecipeData` call without re-entering
+        // this class's actor isolation.
+        let syncService = self.syncService
 
-        for (index, entry) in entries.enumerated() {
-            if Task.isCancelled { break }
+        // Detach heavy work — recipe reads + ZIP packing — to a background executor.
+        let fileURL: URL = try await Task.detached(priority: .userInitiated) {
+            // Per-recipe: read recipe data + image file URLs (single pass,
+            // each recipe released before the next is read).
+            var exportRecipes: [ExportRecipe] = []
+            exportRecipes.reserveCapacity(total)
+            var imageFiles: [NativeRecipeExporter.ImageFile] = []
 
-            if let recipeData = try? await syncService.readRecipeData(recipeId: entry.id) {
+            for (index, entry) in entries.enumerated() {
+                if Task.isCancelled { break }
+
+                let recipeData = try? await syncService.readRecipeData(recipeId: entry.id)
+
+                await MainActor.run {
+                    progress(index + 1, total)
+                }
+
+                guard let recipeData = recipeData else { continue }
+
                 exportRecipes.append(
                     ExportRecipe(
                         id: recipeData.id,
@@ -72,54 +105,43 @@ final class NativeExportImportService {
                         imageUrl: recipeData.imageUrl
                     )
                 )
+
+                if recipeData.imageUrl != nil {
+                    if let fullURL = RecipeImageDiskCache.existingFileURL(
+                        recipeId: recipeData.id, variant: .full
+                    ),
+                       let previewURL = RecipeImageDiskCache.existingFileURL(
+                        recipeId: recipeData.id, variant: .preview
+                       ) {
+                        imageFiles.append(
+                            NativeRecipeExporter.ImageFile(
+                                recipeId: recipeData.id,
+                                fullURL: fullURL,
+                                previewURL: previewURL
+                            )
+                        )
+                    }
+                }
             }
 
-            progress(index + 1, total)
-        }
-
-        // Load cached images
-        var imageData: [String: (full: Data, preview: Data)] = [:]
-        for recipe in exportRecipes {
-            guard recipe.imageUrl != nil else { continue }
-            if let fullURL = RecipeImageDiskCache.existingFileURL(
-                recipeId: recipe.id, variant: .full
-            ),
-               let previewURL = RecipeImageDiskCache.existingFileURL(
-                   recipeId: recipe.id, variant: .preview
-               ),
-               let fullData = try? Data(contentsOf: fullURL),
-               let previewData = try? Data(contentsOf: previewURL) {
-                imageData[recipe.id] = (full: fullData, preview: previewData)
-            }
-        }
-
-        // Export
-        let exportFolders = folders.map { folder in
-            ExportFolder(
-                id: folder.id,
-                name: folder.name,
-                color: folder.color,
-                createdAt: folder.createdAt,
-                updatedAt: folder.updatedAt
+            // Stream JSON + images into a single ZIP off the MainActor.
+            let result = try NativeRecipeExporter.exportStreaming(
+                recipes: exportRecipes,
+                recipeFolderIds: recipeFolderIds,
+                folders: exportFolders,
+                imageFiles: imageFiles
             )
-        }
 
-        let result = try NativeRecipeExporter.export(
-            recipes: exportRecipes,
-            recipeFolderIds: recipeFolderIds,
-            folders: exportFolders,
-            imageData: imageData
-        )
-
-        // Write to temp file
-        let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("RecipeScalerExport")
-        try FileManager.default.createDirectory(
-            at: tempDir,
-            withIntermediateDirectories: true
-        )
-        let fileURL = tempDir.appendingPathComponent(result.filename)
-        try result.data.write(to: fileURL)
+            let tempDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("RecipeScalerExport")
+            try FileManager.default.createDirectory(
+                at: tempDir,
+                withIntermediateDirectories: true
+            )
+            let fileURL = tempDir.appendingPathComponent(result.filename)
+            try result.data.write(to: fileURL)
+            return fileURL
+        }.value
 
         return fileURL
     }
@@ -263,7 +285,7 @@ final class NativeExportImportService {
             if Task.isCancelled { break }
             let trimmed = folder.name.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else {
-                errors.append("Folder with empty name skipped.")
+                errors.append(String(localized: "recipe.import.folder-empty-skipped"))
                 continue
             }
 
@@ -278,7 +300,9 @@ final class NativeExportImportService {
                 )
                 mapping[folder.id] = newId
             } catch {
-                errors.append("Failed to import folder \"\(trimmed)\": \(error.localizedDescription)")
+                let localized = UserFacingAPIError.message(for: error)
+                let prefix = String(localized: "recipe.import.folder-failed-prefix")
+                errors.append("\(prefix) \"\(trimmed)\": \(localized)")
             }
         }
 

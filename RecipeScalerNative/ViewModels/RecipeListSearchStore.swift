@@ -7,7 +7,7 @@ import SwiftUI
 /// search). `snippet` is non-nil only for content matches (ingredient or
 /// description), carrying the highlighted snippet string. Both are pre-built
 /// `AttributedString`s so `RecipeRow.body` never rebuilds them on re-render.
-struct RecipeRowHighlight {
+struct RecipeRowHighlight: Equatable {
     let title: AttributedString
     let snippet: AttributedString?
 }
@@ -32,8 +32,8 @@ final class RecipeListSearchStore {
     /// Cached `normalizeForSearch(name)` per recipe id. Names are immutable for a
     /// given id, so this persists across queries.
     private var normalizedNames: [String: String] = [:]
-    /// Loaded full-recipe snapshots, keyed by id. Persists across queries.
-    private(set) var loadedRecipes: [String: RecipeData] = [:]
+    /// Loaded lightweight search projections, keyed by id. Persists across queries.
+    private(set) var loadedSearchIndexes: [String: RecipeSearchIndex] = [:]
     /// Whether search is currently active (non-empty token list).
     private(set) var isActive: Bool = false
 
@@ -50,7 +50,7 @@ final class RecipeListSearchStore {
         filteredSnapshot = []
         highlights = [:]
         normalizedNames = [:]
-        loadedRecipes = [:]
+        loadedSearchIndexes = [:]
         isActive = false
     }
 
@@ -58,7 +58,7 @@ final class RecipeListSearchStore {
     ///
     /// Synchronously publishes the name-match subset of the snapshot (so the UI
     /// updates instantly on every keystroke), then kicks off a cancellable
-    /// background load of up to 100 name-miss recipes via `peekRecipeData`,
+    /// background load of up to 100 name-miss recipes via `peekSearchIndex`,
     /// merging content matches into the snapshot as they resolve.
     func refresh(entries: [CollectionEntry], query: String) {
         loadTask?.cancel()
@@ -89,7 +89,7 @@ final class RecipeListSearchStore {
             if RecipeSearchUtils.matchesName(normalized: normalized, tokens: tokens) {
                 return false
             }
-            return loadedRecipes[entry.id] == nil
+            return loadedSearchIndexes[entry.id] == nil
         }.prefix(100)
 
         guard !candidatesToLoad.isEmpty else { return }
@@ -97,19 +97,19 @@ final class RecipeListSearchStore {
         loadTask = Task { [weak self] in
             guard let self else { return }
 
-            var newlyLoaded: [String: RecipeData] = [:]
+            var newlyLoaded: [String: RecipeSearchIndex] = [:]
             for entry in candidatesToLoad {
                 if Task.isCancelled { return }
-                guard let recipe = await syncService.peekRecipeData(recipeId: entry.id) else {
+                guard let index = await syncService.peekSearchIndex(recipeId: entry.id) else {
                     continue
                 }
-                newlyLoaded[entry.id] = recipe
+                newlyLoaded[entry.id] = index
             }
 
             guard !Task.isCancelled, !newlyLoaded.isEmpty else { return }
 
             await MainActor.run {
-                self.loadedRecipes.merge(newlyLoaded) { _, new in new }
+                self.loadedSearchIndexes.merge(newlyLoaded) { _, new in new }
                 self.publishSnapshot(entries: entries, tokens: tokens)
             }
         }
@@ -131,11 +131,11 @@ final class RecipeListSearchStore {
             var snippetString: String? = nil
             if nameMatches {
                 snapshot.append(entry)
-            } else if let recipe = loadedRecipes[entry.id],
-                      RecipeSearchUtils.matchesRecipeContent(recipe, tokens: tokens) {
+            } else if let index = loadedSearchIndexes[entry.id],
+                      RecipeSearchUtils.matchesRecipeContent(index, tokens: tokens) {
                 snapshot.append(entry)
                 snippetString = RecipeSearchUtils.snippet(
-                    for: recipe,
+                    for: index,
                     tokens: tokens,
                     matchesNameOnly: false
                 )

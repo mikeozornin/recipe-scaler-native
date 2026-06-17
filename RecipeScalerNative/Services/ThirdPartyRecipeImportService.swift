@@ -35,19 +35,29 @@ final class ThirdPartyRecipeImportService {
             throw ThirdPartyImportError.unsupportedFormat
         }
 
-        let entries = try ThirdPartyFormatDetector.enumerateRecipeEntries(url: url, format: format)
-        guard !entries.isEmpty else {
+        // Cheap central-directory read: archive entry count (no decompression).
+        // Used for progress denominator only — actual extraction limit is enforced
+        // inside the stream (recipeLimitExceeded as soon as count > max).
+        let total: Int
+        if format == .paprikaArchive || format == .croutonArchive {
+            total = ThirdPartyFormatDetector.estimatedRecipeCount(url: url, format: format) ?? 0
+        } else {
+            // Single-file import: exactly one recipe.
+            total = 1
+        }
+
+        guard total > 0 else {
             throw ThirdPartyImportError.emptyArchive
         }
-        try ThirdPartyFormatDetector.validateEntryCount(entries)
 
         var importedRecipeIds: [String] = []
         var failed: [(fileName: String, error: ThirdPartyImportError)] = []
         var photosSkippedOffline = 0
         var photosFailed = 0
-        let total = entries.count
 
-        for (index, entry) in entries.enumerated() {
+        let stream = ThirdPartyFormatDetector.enumerateRecipeEntriesStream(url: url, format: format)
+        var index = 0
+        for try await entry in stream {
             if Task.isCancelled {
                 break
             }
@@ -87,7 +97,8 @@ final class ThirdPartyRecipeImportService {
                 failed.append((entry.fileName, .corruptEntry(fileName: entry.fileName)))
             }
 
-            progress(index + 1, total)
+            index += 1
+            progress(index, total)
         }
 
         return ThirdPartyImportResult(

@@ -73,6 +73,7 @@ final class YjsSyncService: ObservableObject {
         await self?.sendDebouncedUpdate(recipeId: recipeId, update: update)
     }
     private var imageCacheStatusRefreshTask: Task<Void, Never>?
+    private var collectionEntriesRefreshTask: Task<Void, Never>?
     private var imageCacheObserversInstalled = false
     private var descriptionEditorSessions: [String: DescriptionEditorSession] = [:]
     private var networkPathMonitor: NWPathMonitor?
@@ -310,7 +311,10 @@ final class YjsSyncService: ObservableObject {
     /// byte-size guess was removed — CRDT byte sizes do not reflect "who is ahead" (a delete can
     /// grow the doc via tombstones), and after a server merge it produced a permanent false
     /// positive that wedged the recipe into skip-pull.
-    private func hasUnsyncedLocalChanges(recipeId: String) async -> Bool {
+    private func hasUnsyncedLocalChanges(
+        recipeId: String,
+        queuedRecipeIds: Set<String>? = nil
+    ) async -> Bool {
         if unsyncedRecipeIds.contains(recipeId) { return true }
         switch writeSyncStates[recipeId] ?? .idle {
         case .queued, .syncing, .pendingLocal:
@@ -318,8 +322,10 @@ final class YjsSyncService: ObservableObject {
         case .idle, .synced, .error:
             break
         }
-        if let entries = try? await offlineQueue.fetchAll(),
-           entries.contains(where: { $0.recipeId == recipeId }) {
+        if let queuedRecipeIds {
+            if queuedRecipeIds.contains(recipeId) { return true }
+        } else if let entries = try? await offlineQueue.fetchAll(),
+                  entries.contains(where: { $0.recipeId == recipeId }) {
             return true
         }
         let pendingObserver = await documentManager.pendingSyncByteCount(recipeId: recipeId)
@@ -372,8 +378,12 @@ final class YjsSyncService: ObservableObject {
     /// Web parity: pull server snapshot and CRDT-merge into local before pushing offline edits.
     private func fetchAndMergeServerDocuments(recipeIds: [String]) async {
         guard canSendLiveSync() else { return }
+        let queuedRecipeIds = (try? await offlineQueue.recipeIdsInQueue()) ?? []
         for recipeId in recipeIds where isRecipeDocument(recipeId: recipeId) {
-            guard await hasUnsyncedLocalChanges(recipeId: recipeId) else { continue }
+            guard await hasUnsyncedLocalChanges(
+                recipeId: recipeId,
+                queuedRecipeIds: queuedRecipeIds
+            ) else { continue }
             _ = await fetchAndMergeServerDocument(recipeId: recipeId)
         }
     }
@@ -618,7 +628,7 @@ final class YjsSyncService: ObservableObject {
 
     /// Upload image bytes for a recipe created via third-party import.
     func uploadImportedRecipeImage(recipeId: String, imageData: Data) async throws {
-        guard let payload = RecipeImageUploadPreprocessor.payloadForUpload(from: imageData) else {
+        guard let payload = await RecipeImageUploadPreprocessor.payloadForUpload(from: imageData) else {
             throw ImportedRecipeImageUploadError.preprocessingFailed
         }
         await flushImportSyncBeforeImageUpload(recipeId: recipeId)
@@ -1028,6 +1038,13 @@ final class YjsSyncService: ObservableObject {
         guard let userId else { return nil }
         _ = try? await documentManager.getOrCreateDoc(key: docKeyFor(recipeId: recipeId))
         return try? await documentManager.readRecipeData(recipeId: recipeId, userId: userId)
+    }
+
+    /// Lightweight search projection without XmlFragment→HTML conversion.
+    func peekSearchIndex(recipeId: String) async -> RecipeSearchIndex? {
+        guard let userId else { return nil }
+        _ = try? await documentManager.getOrCreateDoc(key: docKeyFor(recipeId: recipeId))
+        return try? await documentManager.readSearchIndex(recipeId: recipeId, userId: userId)
     }
 
     /// The current user id, exposed read-only for indexing layers (Spotlight, etc.).
@@ -1515,19 +1532,59 @@ final class YjsSyncService: ObservableObject {
     }
 
     private func refreshWireSnapshotsForRecipes(recipeIds: [String]) async {
-        for recipeId in recipeIds where isRecipeDocument(recipeId: recipeId) {
-            guard await hasUnsyncedLocalChanges(recipeId: recipeId) else { continue }
-            await refreshWireSnapshotForRecipe(recipeId: recipeId)
+        let candidates = recipeIds.filter { isRecipeDocument(recipeId: $0) }
+        guard !candidates.isEmpty else { return }
+        let queuedRecipeIds = (try? await offlineQueue.recipeIdsInQueue()) ?? []
+        let docKeys = candidates.map { docKeyFor(recipeId: $0) }
+        let wireSnapshots = (try? await store.loadYjsWireSnapshots(docKeys: docKeys)) ?? [:]
+        let snapshots = (try? await store.loadSnapshots(docKeys: docKeys)) ?? [:]
+        let allQueue = (try? await offlineQueue.fetchAll()) ?? []
+        var queueByRecipeId: [String: [OfflineSyncEntry]] = [:]
+        for entry in allQueue {
+            queueByRecipeId[entry.recipeId, default: []].append(entry)
+        }
+        for recipeId in candidates {
+            guard await hasUnsyncedLocalChanges(
+                recipeId: recipeId,
+                queuedRecipeIds: queuedRecipeIds
+            ) else { continue }
+            let docKey = docKeyFor(recipeId: recipeId)
+            await refreshWireSnapshotForRecipe(
+                recipeId: recipeId,
+                wireSnapshot: wireSnapshots[docKey],
+                snapshot: snapshots[docKey],
+                queueEntries: queueByRecipeId[recipeId] ?? []
+            )
         }
     }
 
     /// Rebuild durable yjs wire bytes from wire/yrs bootstrap + queued incrementals (never stale wire alone).
-    private func refreshWireSnapshotForRecipe(recipeId: String) async {
+    private func refreshWireSnapshotForRecipe(
+        recipeId: String,
+        wireSnapshot: YjsWireSnapshot? = nil,
+        snapshot: YDocSnapshot? = nil,
+        queueEntries: [OfflineSyncEntry]? = nil
+    ) async {
         let docKey = docKeyFor(recipeId: recipeId)
-        let queueEntries = (try? await offlineQueue.fetchAll())?.filter { $0.recipeId == recipeId } ?? []
-        let parts = queueEntries.map(\.yjsUpdate).filter { $0.count > 2 }
-        let wireBootstrap = try? await store.loadYjsWireSnapshot(docKey: docKey)?.state
-        let yrsBootstrap = try? await store.loadSnapshot(docKey: docKey)?.state
+        let resolvedQueueEntries: [OfflineSyncEntry]
+        if let queueEntries {
+            resolvedQueueEntries = queueEntries
+        } else {
+            resolvedQueueEntries = (try? await offlineQueue.fetchAll())?.filter { $0.recipeId == recipeId } ?? []
+        }
+        let parts = resolvedQueueEntries.map(\.yjsUpdate).filter { $0.count > 2 }
+        let wireBootstrap: Data?
+        if let state = wireSnapshot?.state {
+            wireBootstrap = state
+        } else {
+            wireBootstrap = try? await store.loadYjsWireSnapshot(docKey: docKey)?.state
+        }
+        let yrsBootstrap: Data?
+        if let state = snapshot?.state {
+            yrsBootstrap = state
+        } else {
+            yrsBootstrap = try? await store.loadSnapshot(docKey: docKey)?.state
+        }
         guard let bootstrap = wireBootstrap ?? yrsBootstrap, bootstrap.count > 2 else {
             return
         }
@@ -1637,11 +1694,8 @@ final class YjsSyncService: ObservableObject {
 
         guard recipeId != "collection", recipeId != ShoppingListConstants.offlineRecipeId else { return }
         if let queue = try? await offlineQueue.fetchAll() {
-            for entry in queue where entry.recipeId == recipeId {
-                if let id = entry.id {
-                    try? await offlineQueue.deleteEntry(id: id)
-                }
-            }
+            let ids = queue.filter { $0.recipeId == recipeId }.compactMap(\.id)
+            try? await offlineQueue.deleteEntries(ids: ids)
         }
     }
 
@@ -1679,11 +1733,8 @@ final class YjsSyncService: ObservableObject {
                 docKey: docKey,
                 documentKind: documentKind
             )
-            for entry in docEntries {
-                if let id = entry.id {
-                    try? await offlineQueue.deleteEntry(id: id)
-                }
-            }
+            let ids = docEntries.compactMap(\.id)
+            try? await offlineQueue.deleteEntries(ids: ids)
         }
         logger.info("Drained offline sync queue (\(entries.count) entries)")
     }
@@ -1691,9 +1742,13 @@ final class YjsSyncService: ObservableObject {
     private func pushUnsyncedWireSnapshots(recipeIds: [String]) async {
         guard canSendLiveSync() else { return }
         let queued = (try? await offlineQueue.fetchAll()) ?? []
+        let queuedRecipeIds = Set(queued.map(\.recipeId))
         for recipeId in recipeIds {
             guard isRecipeDocument(recipeId: recipeId) else { continue }
-            guard await hasUnsyncedLocalChanges(recipeId: recipeId) else { continue }
+            guard await hasUnsyncedLocalChanges(
+                recipeId: recipeId,
+                queuedRecipeIds: queuedRecipeIds
+            ) else { continue }
             let docKey = docKeyFor(recipeId: recipeId)
             let queueEntries = queued.filter { $0.recipeId == recipeId }
             if !queueEntries.isEmpty { continue }
@@ -1914,15 +1969,13 @@ final class YjsSyncService: ObservableObject {
     }
 
     private func recipeIdsMissingLocalSnapshots(_ recipeIds: [String]) async -> [String] {
-        guard let userId else { return [] }
-        var missing: [String] = []
-        for recipeId in recipeIds {
-            let key = "\(userId):recipe:\(recipeId)"
-            if (try? await store.loadSnapshot(docKey: key)) == nil {
-                missing.append(recipeId)
-            }
-        }
-        return missing
+        guard userId != nil else { return [] }
+        let candidates = recipeIds.filter { isRecipeDocument(recipeId: $0) }
+        let docKeys = candidates.map { docKeyFor(recipeId: $0) }
+        guard !docKeys.isEmpty else { return [] }
+        let existing = (try? await store.existingSnapshotKeys(docKeys: docKeys)) ?? []
+        return zip(candidates, docKeys)
+            .compactMap { recipeId, docKey in existing.contains(docKey) ? nil : recipeId }
     }
 
     private func handleRecipeUpdated(recipeId: String, updateData: Data) async {
@@ -2044,16 +2097,18 @@ final class YjsSyncService: ObservableObject {
     }
 
     func refreshRecipeDocumentCacheStatus() async {
-        guard let userId else {
+        guard userId != nil else {
             recipeDocumentCacheStatus = RecipeDocumentCacheStatus()
             return
         }
         let entries = collectionEntries
+        let docKeys = entries.map { docKeyFor(recipeId: $0.id) }
+        let existingKeys = (try? await store.existingSnapshotKeys(docKeys: docKeys)) ?? []
         var cached = 0
         var pending: [RecipeDocumentCachePendingEntry] = []
         for entry in entries {
-            let key = "\(userId):recipe:\(entry.id)"
-            if (try? await store.loadSnapshot(docKey: key)) != nil {
+            let key = docKeyFor(recipeId: entry.id)
+            if existingKeys.contains(key) {
                 cached += 1
             } else {
                 pending.append(RecipeDocumentCachePendingEntry(id: entry.id, name: entry.name))
@@ -2125,6 +2180,15 @@ final class YjsSyncService: ObservableObject {
     }
 
     // MARK: - Collection Reading
+
+    private func scheduleCollectionEntriesRefresh() {
+        collectionEntriesRefreshTask?.cancel()
+        collectionEntriesRefreshTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            guard !Task.isCancelled else { return }
+            await self?.refreshCollectionEntries()
+        }
+    }
 
     private func refreshCollectionEntries() async {
         do {
@@ -2213,7 +2277,7 @@ final class YjsSyncService: ObservableObject {
         await documentManager.setChangeHandlers(
             onCollectionChanged: { [weak self] in
                 Task { @MainActor in
-                    await self?.refreshCollectionEntries()
+                    self?.scheduleCollectionEntriesRefresh()
                 }
             },
             onRecipeChanged: { [weak self] recipeId in

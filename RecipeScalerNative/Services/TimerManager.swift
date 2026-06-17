@@ -330,13 +330,20 @@ final class TimerManager: NSObject {
     }
 
     private var lastLiveActivityProgressSync: [String: Date] = [:]
+    /// Last displayed whole-second per timer; panel/widget refresh only when this changes.
+    private var lastDisplayedSeconds: [String: Int] = [:]
 
     private func updateRunningTimers() {
-        var didChange = false
+        var panelNeedsRefresh = false
         for timer in timers where timer.isRunning {
             guard let endTime = timer.endTime else { continue }
             let remaining = endTime.timeIntervalSinceNow
             timer.remainingTime = remaining
+            let displayedSecond = max(0, Int(ceil(remaining)))
+            if lastDisplayedSeconds[timer.id] != displayedSecond {
+                lastDisplayedSeconds[timer.id] = displayedSecond
+                panelNeedsRefresh = true
+            }
             if remaining <= 0, !timer.hasCompleted {
                 handleTimerReachedZero(timer)
             } else if remaining <= 0 {
@@ -344,9 +351,8 @@ final class TimerManager: NSObject {
             } else {
                 syncLiveActivityProgress(timer)
             }
-            didChange = true
         }
-        if didChange {
+        if panelNeedsRefresh {
             refreshPanelTimers()
         }
     }
