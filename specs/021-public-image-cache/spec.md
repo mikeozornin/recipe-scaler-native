@@ -100,7 +100,7 @@ Grid, hero, аватары — через public cache stack. `RecipeImageServic
 ## Verify
 
 ```bash
-rtk xcodebuild -scheme RecipeScalerNative \
+xcodebuild -scheme RecipeScalerNative \
   -destination 'platform=iOS Simulator,name=iPhone 16e,OS=18.6' build
 scripts/verify-discover-public.sh
 ```

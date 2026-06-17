@@ -87,7 +87,7 @@ entry (`Домашнее мороженое.crumb`) проверяет это п
 
 ```bash
 # Быстрый прогон (parser + detector + XmlFragment, без test host stall):
-rtk proxy xcodebuild test-without-building \
+xcodebuild test-without-building \
   -scheme RecipeScalerNative \
   -destination 'platform=iOS Simulator,name=iPhone 16' \
   -only-testing:RecipeScalerNativeTests/PaprikaRecipeParserTests \

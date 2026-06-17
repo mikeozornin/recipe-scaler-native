@@ -534,7 +534,7 @@ var ExtensionPreprocessingJS = new GetURLFromPage;
 ### Сборка
 
 ```bash
-rtk xcodebuild -scheme RecipeScalerNative \
+xcodebuild -scheme RecipeScalerNative \
     -destination 'platform=iOS Simulator,id=<UDID>' \
     build
 ```

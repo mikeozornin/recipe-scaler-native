@@ -23,7 +23,7 @@
 
 Добавлено ключей в `Localizable.xcstrings` (ru + en): `common.ok`, `recipes.no-ingredients`, `splash.app-name`, `timer.delete`, `timer.toggle.overdue`, `timer.toggle.pause`, `timer.toggle.resume`, `timer.toggle.start`.
 
-Проверка: `rtk xcodebuild … build` → **BUILD SUCCEEDED**.
+Проверка: `xcodebuild … build` → **BUILD SUCCEEDED**.
 
 ## Затронутые файлы — остаток (историческое)
 

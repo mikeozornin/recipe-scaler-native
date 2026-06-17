@@ -206,7 +206,7 @@ sequenceDiagram
 ## Сборка и проверка
 
 ```bash
-rtk xcodebuild -scheme RecipeScalerNative \
+xcodebuild -scheme RecipeScalerNative \
   -destination 'platform=iOS Simulator,id=<UDID>' \
   build
 ```

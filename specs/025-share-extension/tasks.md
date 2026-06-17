@@ -71,7 +71,7 @@
 - [x] T018 В main app там, где нужны `APIClient` / `RecipeImportAPI` / `Config` / `APIResponse` / `AnyEncodable` — добавить `import RecipeScalerCore`
 - [x] T019 Убрать перенесённые файлы из Compile Sources главного target'а (target membership: только `RecipeScalerCore`)
 
-**Контрольная точка**: `rtk xcodebuild build` зелёный; main app работает идентично до рефакторинга
+**Контрольная точка**: `xcodebuild build` зелёный; main app работает идентично до рефакторинга
 
 ---
 

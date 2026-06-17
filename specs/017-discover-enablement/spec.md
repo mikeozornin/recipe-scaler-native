@@ -84,6 +84,6 @@ REST-слой Discover (`DiscoverAPI`) и экраны (`DiscoverRootView`, `Dis
 
 ## Verify (2026-06-14)
 
-- `rtk xcodebuild … build` → `** BUILD SUCCEEDED **` (exit 0).
+- `xcodebuild … build` → `** BUILD SUCCEEDED **` (exit 0).
 - `scripts/verify-discover-public.sh` → `VERIFIED discover-public` (exit 0).
 - `scripts/verify-all.sh` → `All 13 verifiers passed` (exit 0, 236 s) — regression чистый.

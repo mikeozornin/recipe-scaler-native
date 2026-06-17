@@ -23,7 +23,7 @@ Settings → Appearance → Light / Dark; повторить шаги 2–4. Т�
 ## Сборка
 
 ```bash
-rtk xcodebuild -scheme RecipeScalerNative \
+xcodebuild -scheme RecipeScalerNative \
   -destination 'platform=iOS Simulator,id=<UDID>' \
   build
 ```

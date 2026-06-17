@@ -39,7 +39,7 @@
 
 ## Фаза 6: Проверка
 
-- [x] T015 `rtk xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=7CC5ABD7-A34F-4B94-B8CE-A0B396467214' build` → **BUILD SUCCEEDED**
+- [x] T015 `xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=7CC5ABD7-A34F-4B94-B8CE-A0B396467214' build` → **BUILD SUCCEEDED**
 
 ---
 

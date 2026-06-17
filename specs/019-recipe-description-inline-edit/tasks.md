@@ -34,7 +34,7 @@
 
 - [x] T009 [US1] `YDocRecipeDetailView.swift` — `RecipeDescriptionEditorBlock` вместо `DescriptionEditorEntrySection` + sheet
 - [x] T010 [US1] Debug `-StartDescriptionEdit` — фокус inline, не sheet
-- [x] T011 [US1] `rtk xcodebuild` build PASS
+- [x] T011 [US1] `xcodebuild` build PASS
 
 **Контрольная точка**: SC-001 quickstart
 

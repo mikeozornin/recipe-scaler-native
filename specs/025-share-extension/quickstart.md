@@ -107,7 +107,7 @@
 ### 1.9. Контрольная точка
 
 ```bash
-rtk xcodebuild -scheme RecipeScalerNative \
+xcodebuild -scheme RecipeScalerNative \
     -destination 'platform=iOS Simulator,name=iPhone 16' \
     build
 ```
@@ -208,7 +208,7 @@ xcrun simctl openurl booted recipe-scaler://recipe/test-recipe-id
 ### 3.1. DeepLinkRouterTests
 
 ```bash
-rtk xcodebuild test \
+xcodebuild test \
     -scheme RecipeScalerNative \
     -destination 'platform=iOS Simulator,name=iPhone 16' \
     -only-testing:RecipeScalerNativeTests/DeepLinkRouterTests
@@ -225,7 +225,7 @@ rtk xcodebuild test \
 ### 3.2. LocalizationConsistencyTests
 
 ```bash
-rtk xcodebuild test \
+xcodebuild test \
     -scheme RecipeScalerNative \
     -destination 'platform=iOS Simulator,name=iPhone 16' \
     -only-testing:RecipeScalerNativeTests/LocalizationConsistencyTests
@@ -243,7 +243,7 @@ rtk xcodebuild test \
 
 Делает:
 
-1. `rtk xcodebuild build` всех 4 target'ов.
+1. `xcodebuild build` всех 4 target'ов.
 2. Запускает `DeepLinkRouterTests` + `LocalizationConsistencyTests`.
 3. Проверяет через `rg`, что в `project.pbxproj` есть 3 новых product type:
    - `com.apple.product-type.framework` (RecipeScalerCore)

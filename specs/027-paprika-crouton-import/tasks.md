@@ -48,7 +48,7 @@
 - [X] T019 [P] `RecipeScalerNativeTests/DescriptionXmlFragmentWriterTests.swift` — write → `XmlFragmentToHTML` contains step text
 - [X] T020 Реализовать `DocumentManager.applyImportedRecipe(_:)` в `RecipeScalerNative/Services/YjsSync/DocumentManager.swift` (create + ingredients + description + metadata)
 - [X] T021 `RecipeScalerNativeTests/ThirdPartyImportIntegrationTests.swift` — applyImportedRecipe → `RecipeReader` name + ingredient count (XCTSkip: test host auto-login stalls)
-- [X] T022 `rtk xcodebuild` build + `-only-testing:RecipeScalerNativeTests/PaprikaRecipeParserTests` … XmlFragment tests PASS
+- [X] T022 `xcodebuild` build + `-only-testing:RecipeScalerNativeTests/PaprikaRecipeParserTests` … XmlFragment tests PASS
 
 **Контрольная точка**: парсеры и applyImportedRecipe работают без UI
 
@@ -69,7 +69,7 @@
 - [X] T027 [US1] Partial failure: продолжать batch, накапливать `failed[]` в `ThirdPartyRecipeImportService.swift`
 - [X] T028 [US1] Summary alert/toast «import.third-party-summary» после batch в `ImportRecipeSheet.swift`
 - [X] T029 [US1] Navigation: 1 recipeId → dismiss + `onImport` detail; 2+ → list (parity 010) в `ImportRecipeSheet.swift`
-- [X] T030 [US1] `rtk xcodebuild` build PASS после US1 wiring
+- [X] T030 [US1] `xcodebuild` build PASS после US1 wiring
 
 **Контрольная точка**: US1 acceptance scenarios 1–3 из spec.md
 
@@ -223,7 +223,7 @@
 - [X] T071 [P] `AccessibilityIdentifiers` для file import mode в `RecipeScalerNative/Utils/AccessibilityIdentifiers.swift` + `ImportRecipeSheet.swift`
 - [X] T072 Обновить [quickstart.md](./quickstart.md) с verify script и fixture instructions
 - [X] T073 [P] Export `ThirdPartyRecipeImportService` entry for future Share Extension (025) — public facade in `RecipeScalerCore` if needed (parsers/types already public, no new facade needed for 027 scope)
-- [X] T074 `rtk xcodebuild` full build + ThirdParty test suite green
+- [X] T074 `xcodebuild` full build + ThirdParty test suite green
 - [X] T075 Отметить статус spec/plan «В работе» / audit table в `specs/027-paprika-crouton-import/spec.md` после merge
 
 ---

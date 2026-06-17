@@ -55,7 +55,7 @@
 
 ## Verify (fix-until-green)
 
-- [x] `rtk xcodebuild … build` → `** BUILD SUCCEEDED **` (exit 0).
+- [x] `xcodebuild … build` → `** BUILD SUCCEEDED **` (exit 0).
 - [x] `scripts/verify-discover-public.sh` → `VERIFIED discover-public` (exit 0).
 - [x] `scripts/verify-all.sh` → `All 13 verifiers passed` (exit 0).
 
