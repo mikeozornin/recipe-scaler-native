@@ -164,20 +164,24 @@ public enum APIError: LocalizedError {
     case decodingError(Error)
     case unauthorized
 
+    /// Returns a dot-key identifier for each fixed case. The Native target resolves
+    /// these via `Bundle.currentLocalizedString` (see `APIError+Localization.swift`).
+    /// `serverError(message:)` returns the message as-is — the contract is that the
+    /// server supplies a dot-key (see `specs/031-error-i18n/server-error-keys.md`).
     public var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return "Invalid URL"
+            return "api.error.invalid-url"
         case .invalidResponse:
-            return "Invalid response from server"
+            return "api.error.invalid-response"
         case .httpError(let code):
-            return "HTTP error: \(code)"
+            return "api.error.http:\(code)"
         case .serverError(let message):
-            return "Server error: \(message)"
-        case .decodingError(let error):
-            return "Decoding error: \(error.localizedDescription)"
+            return message
+        case .decodingError:
+            return "api.error.decoding"
         case .unauthorized:
-            return "Unauthorized access"
+            return "api.error.unauthorized"
         }
     }
 }

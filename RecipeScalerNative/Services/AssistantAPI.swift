@@ -147,10 +147,15 @@ enum AssistantAPI {
                                 break
                             }
                         }
-                        throw APIError.httpError(
-                            statusCode: status,
-                            message: serverMessage ?? "assistant.stream.http-error"
-                        )
+                        // Surface the HTTP status separately by also throwing `httpError`,
+                        // but carry the server dot-key message via a side log. View layer
+                        // resolves via `APIError.userFacingMessage()` (4xx/5xx categorical
+                        // fallback). The server dot-key (when present) is preferred when
+                        // surfaced via `serverError`.
+                        if let serverMessage {
+                            throw APIError.serverError(message: serverMessage)
+                        }
+                        throw APIError.httpError(statusCode: status)
                     }
                     for try await line in bytes.lines {
                         if Task.isCancelled { return }
@@ -263,14 +268,11 @@ enum AssistantAPI {
 }
 
 // MARK: - APIError helper
-
-extension APIError {
-    /// The project's `APIError.httpError` only takes statusCode; this builds a descriptive
-    /// variant for stream failures that also have a server-side message.
-    static func httpError(statusCode: Int, message: String) -> APIError {
-        return .serverError(message: "\(message) [HTTP \(statusCode)]")
-    }
-}
+// Removed `httpError(statusCode:message:)` extension — it converted to
+// `serverError(message: "\(message) [HTTP \(statusCode)]")`, masking the
+// status code from `userFacingMessage()`. Call sites now throw
+// `.serverError(message:)` directly with a dot-key. See
+// `specs/031-error-i18n/server-error-keys.md`.
 
 private extension String {
     var nilIfEmpty: String? {

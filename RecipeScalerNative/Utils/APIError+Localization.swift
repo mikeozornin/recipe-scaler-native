@@ -1,0 +1,46 @@
+//
+//  APIError+Localization.swift
+//  RecipeScalerNative
+//
+//  Resolves `APIError` (defined in RecipeScalerCore) into user-facing localized
+//  strings via `Bundle.currentLocalizedString`. The Core enum only emits dot-key
+//  identifiers from `errorDescription` — this extension performs the final
+//  resolution for the Native target and view layer.
+//
+//  Contract: specs/031-error-i18n/server-error-keys.md
+//
+
+import Foundation
+import RecipeScalerCore
+
+extension APIError {
+    /// User-facing localized message for view-layer consumption.
+    ///
+    /// - `invalidURL` / `invalidResponse` / `decodingError` / `unauthorized`: fixed localized keys.
+    /// - `httpError(code)`: categorical fallback (4xx vs 5xx) — never leaks the raw status code.
+    /// - `serverError(message)`: dot-key detection via `DotKeyLocalizer`. Legacy English
+    ///   server messages fall back to a generic localized message.
+    func userFacingMessage() -> String {
+        switch self {
+        case .invalidURL:
+            return Bundle.currentLocalizedString("api.error.invalid-url")
+        case .invalidResponse:
+            return Bundle.currentLocalizedString("api.error.invalid-response")
+        case .decodingError:
+            return Bundle.currentLocalizedString("api.error.decoding")
+        case .unauthorized:
+            return Bundle.currentLocalizedString("api.error.unauthorized")
+        case .httpError(let code) where (400...499).contains(code):
+            return Bundle.currentLocalizedString("api.error.http-4xx")
+        case .httpError(let code) where (500...599).contains(code):
+            return Bundle.currentLocalizedString("api.error.http-5xx")
+        case .httpError:
+            return Bundle.currentLocalizedString("api.error.server-generic")
+        case .serverError(let message):
+            return DotKeyLocalizer.localize(
+                message: message,
+                fallbackKey: "api.error.server-generic"
+            )
+        }
+    }
+}

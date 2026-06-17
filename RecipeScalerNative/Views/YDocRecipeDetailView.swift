@@ -695,7 +695,7 @@ struct YDocRecipeDetailView: View {
             try await RecipeLLMParseAPI.parseAndApply(recipeId: recipeId, stepsHtml: html)
             // Sync delivers recipe_updated / collection_updated / document_loaded.
         } catch {
-            descriptionParseError = error.localizedDescription
+            descriptionParseError = UserFacingAPIError.message(for: error)
         }
     }
 
@@ -912,7 +912,7 @@ struct YDocRecipeDetailView: View {
             #if DEBUG
             #endif
         } catch {
-            editErrorMessage = error.localizedDescription
+            editErrorMessage = UserFacingAPIError.message(for: error)
             #if DEBUG
             #endif
         }
@@ -973,7 +973,7 @@ struct YDocRecipeDetailView: View {
                 #if DEBUG
                 #endif
             } catch {
-                editErrorMessage = error.localizedDescription
+                editErrorMessage = UserFacingAPIError.message(for: error)
                 #if DEBUG
                 #endif
             }
@@ -1006,7 +1006,7 @@ struct YDocRecipeDetailView: View {
         do {
             try await editViewModel.saveIngredientNutrition(updated)
         } catch {
-            editErrorMessage = error.localizedDescription
+            editErrorMessage = UserFacingAPIError.message(for: error)
         }
     }
 
@@ -1017,7 +1017,7 @@ struct YDocRecipeDetailView: View {
         do {
             try await editViewModel.saveIngredient(ingredient, existing: existing)
         } catch {
-            editErrorMessage = error.localizedDescription
+            editErrorMessage = UserFacingAPIError.message(for: error)
         }
     }
 
@@ -1028,7 +1028,7 @@ struct YDocRecipeDetailView: View {
         do {
             try await editViewModel.deleteIngredient(id: id)
         } catch {
-            editErrorMessage = error.localizedDescription
+            editErrorMessage = UserFacingAPIError.message(for: error)
         }
     }
 
@@ -1053,7 +1053,7 @@ struct YDocRecipeDetailView: View {
             )
             ShoppingFeedback.postStatus(ShoppingAddFeedback.message(for: items.count))
         } catch {
-            ShoppingFeedback.postStatus(error.localizedDescription)
+            ShoppingFeedback.postStatus(UserFacingAPIError.message(for: error))
         }
     }
 
@@ -1079,7 +1079,7 @@ struct YDocRecipeDetailView: View {
         do {
             try await syncService.moveIngredient(fromIndex: from, toIndex: to)
         } catch {
-            editErrorMessage = error.localizedDescription
+            editErrorMessage = UserFacingAPIError.message(for: error)
         }
     }
 }

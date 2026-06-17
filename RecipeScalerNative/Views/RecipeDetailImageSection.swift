@@ -141,7 +141,7 @@ struct RecipeDetailImageSection: View {
             return
         }
 
-        guard let payload = RecipeImageUploadPreprocessor.payloadForUpload(from: rawData) else {
+        guard let payload = await RecipeImageUploadPreprocessor.payloadForUpload(from: rawData) else {
             await MainActor.run {
                 syncService.syncErrorMessage = Bundle.currentLocalizedString("recipe.image.upload.failed")
             }
@@ -174,7 +174,7 @@ struct RecipeDetailImageSection: View {
             try await syncService.applyRecipeImageDeletion(recipeId: recipeId)
         } catch {
             await MainActor.run {
-                syncService.syncErrorMessage = error.localizedDescription
+                syncService.syncErrorMessage = UserFacingAPIError.message(for: error)
             }
         }
     }

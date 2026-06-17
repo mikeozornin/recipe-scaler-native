@@ -47,33 +47,39 @@ enum AuthError: LocalizedError {
     case decodingError(Error)
     case networkError(String)
     case invalidSeedPhrase
-    case userNotFound
     case seedPhraseNotFound
-    case seedPhraseGenerationFailed
     case apiError(statusCode: Int, message: String)
     case invalidResponse
 
     var errorDescription: String? {
         switch self {
-        case .keychainError(let message):
-            return "Keychain error: \(message)"
-        case .decodingError(let error):
-            return "Decoding error: \(error.localizedDescription)"
-        case .networkError(let message):
-            return "Network error: \(message)"
+        case .keychainError:
+            return Bundle.currentLocalizedString("auth.error.keychain")
+        case .decodingError:
+            return Bundle.currentLocalizedString("auth.error.decoding")
+        case .networkError:
+            return Bundle.currentLocalizedString("auth.error.network")
         case .invalidSeedPhrase:
-            return "Invalid seed phrase"
-        case .userNotFound:
-            return "User not found"
+            return Bundle.currentLocalizedString("auth.error.invalid-seed")
         case .seedPhraseNotFound:
-            return "Seed phrase not found in Keychain"
-        case .seedPhraseGenerationFailed:
-            return "Failed to generate seed phrase"
-        case .apiError(let code, let message):
-            return "API error (\(code)): \(message)"
+            return Bundle.currentLocalizedString("auth.error.seed-not-found")
+        case .apiError(_, let message):
+            return AuthError.localizeServerMessage(message)
         case .invalidResponse:
-            return "Invalid response from server"
+            return Bundle.currentLocalizedString("auth.error.invalid-response")
         }
+    }
+
+    /// Resolve a server-supplied message into a user-facing localized string.
+    /// Server contract: `response.error` should be a dot-key (e.g. `auth.register.failed`);
+    /// legacy English strings fall back to a generic localized message.
+    static func localizeServerMessage(_ message: String) -> String {
+        DotKeyLocalizer.localize(message: message, fallbackKey: "auth.error.api-generic")
+    }
+
+    /// User-facing message for view-layer consumption (idiomatic alongside `APIError.userFacingMessage()`).
+    func userFacingMessage() -> String {
+        errorDescription ?? Bundle.currentLocalizedString("auth.error.api-generic")
     }
 }
 
@@ -133,7 +139,7 @@ class AuthService {
         do {
             try keychain.set(seedPhrase, key: seedPhraseKey)
         } catch {
-            throw AuthError.keychainError("Failed to save seed phrase: \(error.localizedDescription)")
+            throw AuthError.keychainError("save_seed_phrase")
         }
     }
 
@@ -147,7 +153,7 @@ class AuthService {
             if error is AuthError {
                 throw error
             }
-            throw AuthError.keychainError("Failed to retrieve seed phrase: \(error.localizedDescription)")
+            throw AuthError.keychainError("retrieve_seed_phrase")
         }
     }
 
@@ -163,7 +169,7 @@ class AuthService {
         do {
             try keychain.remove(seedPhraseKey)
         } catch {
-            throw AuthError.keychainError("Failed to delete seed phrase: \(error.localizedDescription)")
+            throw AuthError.keychainError("delete_seed_phrase")
         }
     }
 
@@ -181,7 +187,7 @@ class AuthService {
         body: Data? = nil
     ) throws -> URLRequest {
         guard let url = URL(string: "\(Config.baseURL)\(path)") else {
-            throw AuthError.networkError("Invalid URL")
+            throw AuthError.networkError("invalid_url")
         }
 
         var request = URLRequest(url: url)
@@ -214,7 +220,7 @@ class AuthService {
                let errorMessage = errorResponse["error"] ?? errorResponse["message"] {
                 throw AuthError.apiError(statusCode: httpResponse.statusCode, message: errorMessage)
             }
-            throw AuthError.apiError(statusCode: httpResponse.statusCode, message: "Request failed")
+            throw AuthError.apiError(statusCode: httpResponse.statusCode, message: "auth.error.api-generic")
         }
 
         let decoder = JSONDecoder()
@@ -240,7 +246,7 @@ class AuthService {
         guard response.success, let data = response.data else {
             throw AuthError.apiError(
                 statusCode: 400,
-                message: response.error ?? "Registration failed"
+                message: response.error ?? "auth.register.failed"
             )
         }
 
@@ -289,7 +295,7 @@ class AuthService {
         guard response.success, let data = response.data else {
             throw AuthError.apiError(
                 statusCode: 400,
-                message: response.error ?? "Login failed"
+                message: response.error ?? "auth.login.failed"
             )
         }
 

@@ -816,6 +816,23 @@
         }
       }
     },
+    "account.profile.load-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load profile"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить профиль"
+          }
+        }
+      }
+    },
     "account.profile.name" : {
       "localizations" : {
         "en" : {
@@ -1214,6 +1231,23 @@
         }
       }
     },
+    "account.settings.load-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load settings"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить настройки"
+          }
+        }
+      }
+    },
     "account.share-mode.all" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1278,6 +1312,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "С рецептом и фото"
+          }
+        }
+      }
+    },
+    "account.sharing.load-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load sharing settings"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить настройки шаринга"
+          }
+        }
+      }
+    },
+    "account.sharing.update-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to update sharing settings"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось обновить настройки шаринга"
           }
         }
       }
@@ -1586,6 +1654,125 @@
         }
       }
     },
+    "api.error.decoding" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to read server response"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось разобрать ответ сервера"
+          }
+        }
+      }
+    },
+    "api.error.http-4xx" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request failed"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка запроса"
+          }
+        }
+      }
+    },
+    "api.error.http-5xx" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server error. Please try again later."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка сервера. Попробуйте позже."
+          }
+        }
+      }
+    },
+    "api.error.invalid-response" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid response from server"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некорректный ответ сервера"
+          }
+        }
+      }
+    },
+    "api.error.invalid-url" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid URL"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некорректный адрес"
+          }
+        }
+      }
+    },
+    "api.error.server-generic" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что-то пошло не так"
+          }
+        }
+      }
+    },
+    "api.error.unauthorized" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authorization required"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Требуется авторизация"
+          }
+        }
+      }
+    },
     "assistant.attach-current-recipe" : {
       "localizations" : {
         "en" : {
@@ -1882,6 +2069,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Составь новый рецепт и сохрани его как черновик…"
+          }
+        }
+      }
+    },
+    "assistant.message.empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message cannot be empty"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сообщение не может быть пустым"
+          }
+        }
+      }
+    },
+    "assistant.message.too-long" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message is too long"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слишком длинное сообщение"
           }
         }
       }
@@ -2435,6 +2656,125 @@
         }
       }
     },
+    "auth.error.api-generic" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authentication error"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка аутентификации"
+          }
+        }
+      }
+    },
+    "auth.error.decoding" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to parse authentication data"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось разобрать данные аутентификации"
+          }
+        }
+      }
+    },
+    "auth.error.invalid-response" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid response from server"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некорректный ответ сервера"
+          }
+        }
+      }
+    },
+    "auth.error.invalid-seed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid seed phrase"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некорректная seed-фраза"
+          }
+        }
+      }
+    },
+    "auth.error.keychain" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to access secure storage"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось получить доступ к хранилищу"
+          }
+        }
+      }
+    },
+    "auth.error.network" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network error"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка сети"
+          }
+        }
+      }
+    },
+    "auth.error.seed-not-found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seed phrase not found"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seed-фраза не найдена"
+          }
+        }
+      }
+    },
     "auth.login" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2468,6 +2808,23 @@
         }
       }
     },
+    "auth.login.failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Login failed"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось войти"
+          }
+        }
+      }
+    },
     "auth.new-user" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2481,6 +2838,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Я — новый пользователь"
+          }
+        }
+      }
+    },
+    "auth.register.failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registration failed"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось зарегистрироваться"
           }
         }
       }
@@ -3523,6 +3897,40 @@
         }
       }
     },
+    "discover.clone-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to clone recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось клонировать рецепт"
+          }
+        }
+      }
+    },
+    "discover.collection-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load collection"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить подборку"
+          }
+        }
+      }
+    },
     "discover.collection.by-author" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3676,6 +4084,23 @@
         }
       }
     },
+    "discover.copy-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to copy recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось скопировать рецепт"
+          }
+        }
+      }
+    },
     "discover.curated-collections" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3774,6 +4199,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Авторы"
+          }
+        }
+      }
+    },
+    "discover.fetch-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load discover feed"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить ленту"
           }
         }
       }
@@ -4046,6 +4488,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Публичный профиль"
+          }
+        }
+      }
+    },
+    "discover.public-profile-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load public profile"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить публичный профиль"
+          }
+        }
+      }
+    },
+    "discover.public-recipe-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load public recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить рецепт"
+          }
+        }
+      }
+    },
+    "discover.recipe-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить рецепт"
           }
         }
       }
@@ -6793,6 +7286,40 @@
         }
       }
     },
+    "recipe.image.delete-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to delete the image"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось удалить изображение"
+          }
+        }
+      }
+    },
+    "recipe.image.upload-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to upload image"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось загрузить изображение"
+          }
+        }
+      }
+    },
     "recipe.image.upload.failed" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6874,6 +7401,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выбрать изображение"
+          }
+        }
+      }
+    },
+    "recipe.import.failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to import recipes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось импортировать рецепты"
+          }
+        }
+      }
+    },
+    "recipe.import.folder-empty-skipped" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder with empty name skipped."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пропущена папка с пустым именем."
+          }
+        }
+      }
+    },
+    "recipe.import.folder-failed-prefix" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to import folder"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось импортировать папку"
+          }
+        }
+      }
+    },
+    "recipe.import.no-images" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No images selected"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изображения не выбраны"
           }
         }
       }
@@ -7439,6 +8034,23 @@
     },
     "Seconds" : {
 
+    },
+    "sharing.update-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to update sharing settings"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось обновить настройки доступа"
+          }
+        }
+      }
     },
     "shopping.add" : {
       "extractionState" : "stale",
@@ -8713,6 +9325,23 @@
         }
       }
     },
+    "telegram.status-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load Telegram status"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось получить статус Telegram"
+          }
+        }
+      }
+    },
     "The camera couldn't be accessed. It might be in use by another app." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9490,6 +10119,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recipe Scaler"
+          }
+        }
+      }
+    },
+    "yrs.error.apply-failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to apply the update"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось применить обновление"
+          }
+        }
+      }
+    },
+    "yrs.error.technical" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A technical error occurred. Please try again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Произошла техническая ошибка. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "yrs.error.transaction" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to open a document transaction"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось открыть транзакцию документа"
           }
         }
       }

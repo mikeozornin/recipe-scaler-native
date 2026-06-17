@@ -27,7 +27,7 @@ enum TelegramAPI {
             body: EmptyBody()
         )
         guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? String(localized: "telegram.failed-to-get-code"))
+            throw APIError.serverError(message: response.error ?? "telegram.failed-to-get-code")
         }
         return data
     }
@@ -37,7 +37,7 @@ enum TelegramAPI {
             path: "/api/telegram/status"
         )
         guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "Telegram status failed")
+            throw APIError.serverError(message: response.error ?? "telegram.status-failed")
         }
         return data
     }
@@ -50,7 +50,7 @@ enum TelegramAPI {
             body: EmptyBody()
         )
         guard response.success else {
-            throw APIError.serverError(message: response.error ?? String(localized: "telegram.failed-to-disconnect"))
+            throw APIError.serverError(message: response.error ?? "telegram.failed-to-disconnect")
         }
     }
 }

@@ -312,7 +312,7 @@ struct DiscoverRecipeView: View {
                 originalRecipe: nil
             )
         } catch {
-            loadError = error.localizedDescription
+            loadError = UserFacingAPIError.message(for: error)
         }
     }
 
@@ -330,7 +330,7 @@ struct DiscoverRecipeView: View {
                 Bundle.currentLocalizedString("discover.recipe.copied")
             )
         } catch {
-            cloneState = .failed(error.localizedDescription)
+            cloneState = .failed(UserFacingAPIError.message(for: error))
         }
     }
 }

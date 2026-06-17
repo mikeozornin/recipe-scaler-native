@@ -298,6 +298,9 @@
 		E5F60718293A4B70CD074276 /* ImportRecipeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7060097EA7 /* ImportRecipeSheet.swift */; };
 		E5F60718293A4B70CD094881 /* LocalizedNavigationTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */; };
 		E5F60718293A4B70CD094891 /* UserFacingAPIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */; };
+		B3DOTKEYLOC001 /* DotKeyLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DOTKEYLOC002 /* DotKeyLocalizer.swift */; };
+		B3APIERRLOC001 /* APIError+Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APIELOC002 /* APIError+Localization.swift */; };
+		B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TESTERR0020 /* ErrorLocalizationTests.swift */; };
 		E5F60718293A4B70D78B092E /* ShoppingListFromRecipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7040751435 /* ShoppingListFromRecipe.swift */; };
 		E5F60718293A4B70D7CEFCAD /* AssistantModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70ED0922D8 /* AssistantModels.swift */; };
 		E5F60718293A4B70D9D24CAE /* RecipeImageUploadAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7097235780 /* RecipeImageUploadAPI.swift */; };
@@ -719,6 +722,9 @@
 		E5F60718293A4B70CD094871 /* Bundle+Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Language.swift"; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedNavigationTitle.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserFacingAPIError.swift; sourceTree = "<group>"; };
+		B3DOTKEYLOC002 /* DotKeyLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DotKeyLocalizer.swift; sourceTree = "<group>"; };
+		B3APIELOC002 /* APIError+Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIError+Localization.swift"; sourceTree = "<group>"; };
+		B3TESTERR0020 /* ErrorLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorLocalizationTests.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelegramConnectionView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70D1881049 /* DiscoverRecipeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverRecipeView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70DEADB001 /* SharingSettingsCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingSettingsCache.swift; sourceTree = "<group>"; };
@@ -1147,6 +1153,7 @@
 				94F6EEB0522CF5E6241A73B1 /* Info.plist */,
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
+				B3TESTERR0020 /* ErrorLocalizationTests.swift */,
 				B3APPLOG02A293A4B70100001 /* AppLogTests.swift */,
 				B3PLUR01A293A4B701000001 /* PluralizationTests.swift */,
 				B3APIC01B293A4B701000005 /* APIClientTests.swift */,
@@ -1279,6 +1286,8 @@
 				E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */,
 				AB1234567890ABCDEF123450 /* InAppSafariView.swift */,
 				E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */,
+				B3DOTKEYLOC002 /* DotKeyLocalizer.swift */,
+				B3APIELOC002 /* APIError+Localization.swift */,
 				E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */,
 				E5F60718293A4B7000000002 /* IngredientNutritionDisplay.swift */,
 				E5F60718293A4B700000000F /* RecipeNutritionDisplay.swift */,
@@ -1945,6 +1954,8 @@
 				E5F60718293A4B70CD094881 /* LocalizedNavigationTitle.swift in Sources */,
 				AB1234567890ABCDEF123451 /* InAppSafariView.swift in Sources */,
 				E5F60718293A4B70CD094891 /* UserFacingAPIError.swift in Sources */,
+				B3DOTKEYLOC001 /* DotKeyLocalizer.swift in Sources */,
+				B3APIERRLOC001 /* APIError+Localization.swift in Sources */,
 				E5F60718293A4B70374F8F19 /* SeedQRCodeView.swift in Sources */,
 				E5F60718293A4B70A1B2C3E5 /* RecipeImageUploadPreprocessor.swift in Sources */,
 				A027027000008 /* ThirdPartyRecipeImportService.swift in Sources */,
@@ -2021,6 +2032,7 @@
 			files = (
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
+				B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */,
 				B3APPLOG02B293A4B70100002 /* AppLogTests.swift in Sources */,
 				B3PLUR01B293A4B701000002 /* PluralizationTests.swift in Sources */,
 				B3APIC01B293A4B701000006 /* APIClientTests.swift in Sources */,

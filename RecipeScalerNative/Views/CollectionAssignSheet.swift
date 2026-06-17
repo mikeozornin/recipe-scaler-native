@@ -182,7 +182,7 @@ struct CollectionAssignSheet: View {
             )
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingAPIError.message(for: error)
             showingError = true
             isSaving = false
         }
@@ -211,7 +211,7 @@ struct CollectionAssignSheet: View {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 #endif
             } catch {
-                errorMessage = error.localizedDescription
+                errorMessage = UserFacingAPIError.message(for: error)
                 showingError = true
             }
             isSavingFolder = false

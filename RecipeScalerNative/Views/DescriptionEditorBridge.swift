@@ -133,7 +133,7 @@ final class DescriptionEditorBridge: ObservableObject {
             webView?.sendConfigure(presentation: presentation)
             webView?.sendInit(state: payload.state)
         } catch {
-            phase = .error(error.localizedDescription)
+            phase = .error(UserFacingAPIError.message(for: error))
         }
     }
 

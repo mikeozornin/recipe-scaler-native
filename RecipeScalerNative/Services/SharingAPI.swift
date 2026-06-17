@@ -28,7 +28,7 @@ enum SharingAPI {
             body: Body(share_enabled: enabled)
         )
         guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "Share update failed")
+            throw APIError.serverError(message: response.error ?? "sharing.update-failed")
         }
         return data
     }

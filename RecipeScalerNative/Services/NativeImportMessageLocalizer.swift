@@ -11,7 +11,7 @@ enum NativeImportMessageLocalizer {
             format: Bundle.currentLocalizedString("account.data.import.recipe-failed %@ %@"),
             locale: AppLanguagePreference.current.locale,
             name,
-            error.localizedDescription
+            UserFacingAPIError.message(for: error)
         )
     }
 

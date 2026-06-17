@@ -115,7 +115,7 @@ struct DiscoverRootView: View {
             data = try await DiscoverAPI.fetchDiscovery()
             errorMessage = nil
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingAPIError.message(for: error)
         }
     }
 }

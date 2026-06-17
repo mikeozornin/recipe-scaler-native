@@ -58,7 +58,7 @@ enum AccountAPI {
             path: "/api/users/profile"
         )
         guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "Profile load failed")
+            throw APIError.serverError(message: response.error ?? "account.profile.load-failed")
         }
         return data
     }
@@ -68,7 +68,7 @@ enum AccountAPI {
             path: "/api/users/sharing-settings"
         )
         guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "Sharing settings load failed")
+            throw APIError.serverError(message: response.error ?? "account.sharing.load-failed")
         }
         return data
     }
@@ -106,7 +106,7 @@ enum AccountAPI {
             )
         )
         guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "Sharing settings update failed")
+            throw APIError.serverError(message: response.error ?? "account.sharing.update-failed")
         }
         return data
     }
@@ -151,7 +151,7 @@ enum AccountAPI {
             path: "/api/settings"
         )
         guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "Settings load failed")
+            throw APIError.serverError(message: response.error ?? "account.settings.load-failed")
         }
         return data
     }

@@ -568,7 +568,7 @@ private struct AccountSeedPhraseSheet: View {
             unlocked = ok
             authError = ok ? nil : String(localized: "account.seed.auth-failed")
         } catch {
-            authError = error.localizedDescription
+            authError = UserFacingAPIError.message(for: error)
         }
     }
 }

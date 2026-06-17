@@ -203,6 +203,9 @@ struct AppShellView: View {
                 recipesPath.append(RecipesRoute.recipe(recipeId: pendingId, folderContext: nil))
             }
         }
+        .onAppear {
+            RecipeImageDiskCache.migrateFromCachesIfNeeded()
+        }
         #if DEBUG
         .onAppear {
             openDebugTabIfNeeded()
@@ -334,7 +337,7 @@ struct AppShellView: View {
                         ShoppingFeedback.postStatus(String(localized: "shopping.no-items-to-add"))
                     }
                 } catch {
-                    ShoppingFeedback.postStatus(error.localizedDescription)
+                    ShoppingFeedback.postStatus(UserFacingAPIError.message(for: error))
                 }
             }
             deepLinkRouter.clear()

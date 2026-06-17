@@ -217,7 +217,7 @@ struct TelegramConnectionView: View {
             instructions = result.instructions
             restartPolling(if: true)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingAPIError.message(for: error)
         }
     }
 
@@ -233,7 +233,7 @@ struct TelegramConnectionView: View {
             connectionCode = nil
             instructions = nil
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingAPIError.message(for: error)
         }
     }
 

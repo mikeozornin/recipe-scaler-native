@@ -1,26 +1,40 @@
 import Foundation
 import YrsC
 
-/// Custom errors for yrs operations.
+/// Errors for yrs (CRDT) operations.
+///
+/// The associated `context` value is preserved for diagnostic logging only —
+/// it is never interpolated into `errorDescription`, which always returns a
+/// localized user-facing message via `Bundle.currentLocalizedString`.
 enum YrsError: Error, LocalizedError {
     case nullPointer(context: String)
     case applyFailed(context: String)
     case transactionError(context: String)
-    case invalidState(context: String)
-    case corruptedState(docKey: String)
 
     var errorDescription: String? {
         switch self {
-        case .nullPointer(let ctx):
-            return "Yrs null pointer: \(ctx)"
-        case .applyFailed(let ctx):
-            return "Yrs apply failed: \(ctx)"
-        case .transactionError(let ctx):
-            return "Yrs transaction error: \(ctx)"
-        case .invalidState(let ctx):
-            return "Yrs invalid state: \(ctx)"
-        case .corruptedState(let key):
-            return "Yrs corrupted state for doc: \(key)"
+        case .nullPointer:
+            return Bundle.currentLocalizedString("yrs.error.technical")
+        case .applyFailed:
+            return Bundle.currentLocalizedString("yrs.error.apply-failed")
+        case .transactionError:
+            return Bundle.currentLocalizedString("yrs.error.transaction")
         }
+    }
+
+    /// Diagnostic context for logging (never shown to the user).
+    var debugContext: String {
+        switch self {
+        case .nullPointer(let ctx),
+             .applyFailed(let ctx),
+             .transactionError(let ctx):
+            return ctx
+        }
+    }
+
+    /// User-facing message for view-layer consumption (idiomatic alongside
+    /// `APIError.userFacingMessage()` and `AuthError.userFacingMessage()`).
+    func userFacingMessage() -> String {
+        errorDescription ?? Bundle.currentLocalizedString("yrs.error.technical")
     }
 }

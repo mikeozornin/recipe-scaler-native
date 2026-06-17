@@ -27,7 +27,7 @@ enum RecipeImageUploadAPI {
         )
         let response = try JSONDecoder().decode(APIResponse<RecipeImageUploadResult>.self, from: data)
         guard response.success, let payload = response.data else {
-            throw APIError.serverError(message: response.error ?? "Upload failed")
+            throw APIError.serverError(message: response.error ?? "recipe.image.upload-failed")
         }
         return payload
     }
@@ -38,7 +38,7 @@ enum RecipeImageUploadAPI {
             method: "DELETE"
         )
         guard response.success else {
-            throw APIError.serverError(message: response.error ?? "Delete failed")
+            throw APIError.serverError(message: response.error ?? "recipe.image.delete-failed")
         }
         await RecipeImageService.shared.removeCache(recipeId: recipeId)
     }

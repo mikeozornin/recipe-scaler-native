@@ -264,7 +264,7 @@ struct AuthView: View {
         do {
             _ = try await authService.registerAuto()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingAPIError.message(for: error)
             showError = true
         }
     }
@@ -278,7 +278,7 @@ struct AuthView: View {
         do {
             _ = try await authService.loginWithSeed(phrase)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingAPIError.message(for: error)
             showError = true
         }
     }

@@ -260,7 +260,7 @@ struct DataManagementView: View {
             } catch NativeImportError.emptyArchive {
                 exportError = "empty"
             } catch {
-                exportError = error.localizedDescription
+                exportError = UserFacingAPIError.message(for: error)
             }
             isExporting = false
             exportProgress = nil
@@ -273,7 +273,7 @@ struct DataManagementView: View {
             guard let url = urls.first else { return }
             startImport(from: url)
         case .failure(let error):
-            importError = error.localizedDescription
+            importError = UserFacingAPIError.message(for: error)
         }
     }
 
@@ -318,12 +318,12 @@ struct DataManagementView: View {
                     importOutcome = .thirdParty(result)
                 }
             } catch let error as NativeImportError {
-                importError = error.localizedDescription
+                importError = UserFacingAPIError.message(for: error)
             } catch let error as ThirdPartyImportError {
                 importError = ThirdPartyImportErrorLocalizer.localize(error)
             } catch {
                 if !importStopRequested {
-                    importError = error.localizedDescription
+                    importError = UserFacingAPIError.message(for: error)
                 }
             }
 

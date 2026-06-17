@@ -44,20 +44,25 @@ private final class UpdateObserverBox: @unchecked Sendable {
 private func mergeYjsUpdates(_ updates: [Data]) -> Data? {
     guard let doc = ydoc_new() else { return updates.last }
     defer { ydoc_destroy(doc) }
-    for update in updates {
-        let result = update.withUnsafeBytes { buffer -> UInt8 in
-            guard let base = buffer.baseAddress else { return 1 }
-            guard let txn = ydoc_write_transaction(doc, 0, nil) else { return 1 }
-            let res = ytransaction_apply(
-                txn,
-                base.assumingMemoryBound(to: CChar.self),
-                UInt32(buffer.count)
-            )
-            ytransaction_commit(txn)
-            return res
+
+    let applyFailed: Bool = {
+        guard let txn = ydoc_write_transaction(doc, 0, nil) else { return true }
+        defer { ytransaction_commit(txn) }
+        for update in updates {
+            let result = update.withUnsafeBytes { buffer -> UInt8 in
+                guard let base = buffer.baseAddress else { return 1 }
+                return ytransaction_apply(
+                    txn,
+                    base.assumingMemoryBound(to: CChar.self),
+                    UInt32(buffer.count)
+                )
+            }
+            if result != 0 { return true }
         }
-        if result != 0 { return updates.last }
-    }
+        return false
+    }()
+    if applyFailed { return updates.last }
+
     guard let txn = ydoc_read_transaction(doc) else { return updates.last }
     defer { ytransaction_commit(txn) }
     var len: UInt32 = 0
@@ -82,6 +87,7 @@ actor YrsDocument {
         var opts = yoptions()
         opts.flags |= UInt8(Y_SKIP_GC)
         guard let d = ydoc_new_with_options(opts) else {
+            AppLog.error(.document, "yrs_null_pointer", data: ["context": "ydoc_new_with_options"])
             throw YrsError.nullPointer(context: "ydoc_new_with_options")
         }
         return d
@@ -125,6 +131,7 @@ actor YrsDocument {
             return res
         }
         if result != 0 {
+            AppLog.error(.document, "yrs_apply_failed", data: ["context": "ytransaction_apply returned \(result)"])
             throw YrsError.applyFailed(context: "ytransaction_apply returned \(result)")
         }
     }
@@ -166,6 +173,7 @@ actor YrsDocument {
 
     func withReadTransaction<T>(_ block: (UnsafeMutablePointer<YDoc>, OpaquePointer) throws -> T) throws -> T {
         guard let txn = ydoc_read_transaction(doc) else {
+            AppLog.error(.document, "yrs_transaction_error", data: ["context": "ydoc_read_transaction returned null"])
             throw YrsError.transactionError(context: "ydoc_read_transaction returned null")
         }
         defer { ytransaction_commit(txn) }
@@ -174,6 +182,7 @@ actor YrsDocument {
 
     func withWriteTransaction<T>(_ block: (UnsafeMutablePointer<YDoc>, OpaquePointer) throws -> T) throws -> T {
         guard let txn = ydoc_write_transaction(doc, 0, nil) else {
+            AppLog.error(.document, "yrs_transaction_error", data: ["context": "ydoc_write_transaction returned null"])
             throw YrsError.transactionError(context: "ydoc_write_transaction returned null")
         }
         defer { ytransaction_commit(txn) }
@@ -181,6 +190,20 @@ actor YrsDocument {
     }
 
     // ─── Sync Operations ────────────────────────────────────────────────
+
+    /// Cheap state-vector fingerprint of the current document state.
+    ///
+    /// Used as a cache key by read-path optimizations (e.g. the XmlFragment→HTML
+    /// cache in `DocumentManager`). Returns `nil` only when the underlying FFI
+    /// call fails, which should never happen under a valid read transaction.
+    func stateVector() -> Data? {
+        var len: UInt32 = 0
+        guard let txn = ydoc_read_transaction(doc) else { return nil }
+        defer { ytransaction_commit(txn) }
+        guard let bytes = ytransaction_state_vector_v1(txn, &len) else { return nil }
+        defer { ybinary_destroy(bytes, len) }
+        return Data(bytes: bytes, count: Int(len))
+    }
 
     func applyUpdate(_ data: Data) throws {
         updateObserverBoxRef?.setSuppress(true)

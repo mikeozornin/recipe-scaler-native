@@ -284,7 +284,7 @@ struct AssistantSheet: View {
         do {
             threads = try await AssistantAPI.listThreads()
         } catch {
-            loadError = error.localizedDescription
+            loadError = UserFacingAPIError.message(for: error)
             threads = []
         }
 
@@ -324,7 +324,7 @@ struct AssistantSheet: View {
             threads.insert(thread, at: 0)
             persistSession()
         } catch {
-            loadError = error.localizedDescription
+            loadError = UserFacingAPIError.message(for: error)
         }
     }
 
@@ -336,7 +336,7 @@ struct AssistantSheet: View {
         do {
             threads = try await AssistantAPI.listThreads()
         } catch {
-            loadError = error.localizedDescription
+            loadError = UserFacingAPIError.message(for: error)
         }
     }
 
@@ -357,7 +357,7 @@ struct AssistantSheet: View {
             }
         } catch {
             deletingThreadId = nil
-            loadError = error.localizedDescription
+            loadError = UserFacingAPIError.message(for: error)
         }
     }
 
@@ -375,7 +375,7 @@ struct AssistantSheet: View {
                 )
             }
         } catch {
-            loadError = error.localizedDescription
+            loadError = UserFacingAPIError.message(for: error)
             if threadId == id {
                 threads.removeAll { $0.id == id }
                 startNewChat()
@@ -455,7 +455,7 @@ struct AssistantSheet: View {
                 AssistantMessage(
                     id: "error-\(UUID().uuidString)",
                     role: "assistant",
-                    text: error.localizedDescription,
+                    text: UserFacingAPIError.message(for: error),
                     isStreaming: false,
                     metadata: nil,
                     createdAt: Date()

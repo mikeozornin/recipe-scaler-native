@@ -137,7 +137,7 @@ struct ManageCollectionRecipesSheet: View {
         do {
             try await syncService.setRecipeFolders(recipeId: recipeId, folderIds: currentFolderIds)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingAPIError.message(for: error)
             showingError = true
         }
     }

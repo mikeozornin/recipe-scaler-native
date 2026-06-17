@@ -170,7 +170,7 @@ enum DiscoverAPI {
             path: "/api/discover/collections"
         )
         guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "Discover fetch failed")
+            throw APIError.serverError(message: response.error ?? "discover.fetch-failed")
         }
         return data
     }
@@ -180,7 +180,7 @@ enum DiscoverAPI {
             path: "/api/discover/collections/\(slug)"
         )
         guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "Collection fetch failed")
+            throw APIError.serverError(message: response.error ?? "discover.collection-failed")
         }
         return data
     }
@@ -190,7 +190,7 @@ enum DiscoverAPI {
             path: "/api/discover/recipes/\(id)"
         )
         guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "Recipe fetch failed")
+            throw APIError.serverError(message: response.error ?? "discover.recipe-failed")
         }
         return data
     }
@@ -203,7 +203,7 @@ enum DiscoverAPI {
             body: Body(locale: Locale.current.language.languageCode?.identifier ?? "en")
         )
         guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "Clone failed")
+            throw APIError.serverError(message: response.error ?? "discover.clone-failed")
         }
         return data.recipeId
     }
@@ -239,11 +239,12 @@ enum DiscoverAPI {
         do {
             let wrapped = try decoder.decode(APIResponse<PublicRecipeStateDTO>.self, from: data)
             guard wrapped.success, let payload = wrapped.data else {
-                throw APIError.serverError(message: wrapped.error ?? "Public recipe fetch failed")
+                throw APIError.serverError(message: wrapped.error ?? "discover.public-recipe-failed")
             }
             return payload
         } catch let error as DecodingError {
-            throw APIError.serverError(message: "Public recipe decode failed: \(error)")
+            AppLog.error(.document, "discover_public_recipe_decode_failed", data: ["error": "\(error)"])
+            throw APIError.serverError(message: "discover.public-recipe-failed")
         }
     }
 
@@ -255,7 +256,7 @@ enum DiscoverAPI {
             method: "POST"
         )
         guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "Copy failed")
+            throw APIError.serverError(message: response.error ?? "discover.copy-failed")
         }
         return data.recipeId
     }
@@ -290,11 +291,12 @@ enum DiscoverAPI {
         do {
             let wrapped = try decoder.decode(APIResponse<PublicProfileResponseDTO>.self, from: data)
             guard wrapped.success, let payload = wrapped.data else {
-                throw APIError.serverError(message: wrapped.error ?? "Public profile fetch failed")
+                throw APIError.serverError(message: wrapped.error ?? "discover.public-profile-failed")
             }
             return payload
         } catch let error as DecodingError {
-            throw APIError.serverError(message: "Public profile decode failed: \(error)")
+            AppLog.error(.document, "discover_public_profile_decode_failed", data: ["error": "\(error)"])
+            throw APIError.serverError(message: "discover.public-profile-failed")
         }
     }
 

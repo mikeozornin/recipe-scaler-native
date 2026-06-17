@@ -95,7 +95,7 @@ struct RecipeDetailActionsMenu: View {
             )
             postShoppingMessage(ShoppingAddFeedback.message(for: items.count))
         } catch {
-            postShoppingMessage(error.localizedDescription)
+            postShoppingMessage(UserFacingAPIError.message(for: error))
         }
     }
 
@@ -107,7 +107,7 @@ struct RecipeDetailActionsMenu: View {
         do {
             try await syncService.setRecipePinned(recipeId: recipeId, isPinned: !isPinned)
         } catch {
-            postShoppingMessage(error.localizedDescription)
+            postShoppingMessage(UserFacingAPIError.message(for: error))
         }
     }
 
@@ -115,7 +115,7 @@ struct RecipeDetailActionsMenu: View {
         do {
             try await syncService.deleteRecipeFromCollection(recipeId: recipeId)
         } catch {
-            postShoppingMessage(error.localizedDescription)
+            postShoppingMessage(UserFacingAPIError.message(for: error))
         }
     }
 }

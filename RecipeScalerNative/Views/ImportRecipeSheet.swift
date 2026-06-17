@@ -319,7 +319,7 @@ struct ImportRecipeSheet: View {
             selectedFileName = url.lastPathComponent
             errorMessage = nil
         case let .failure(error):
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingAPIError.message(for: error)
         }
     }
 

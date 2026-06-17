@@ -353,7 +353,7 @@ struct AssistantComposer: View {
             voiceErrorMessage = error.errorDescription
         } catch {
             voiceRecorder.markIdle()
-            voiceErrorMessage = error.localizedDescription
+            voiceErrorMessage = UserFacingAPIError.message(for: error)
         }
     }
 
@@ -366,7 +366,7 @@ struct AssistantComposer: View {
             voiceErrorMessage = error.errorDescription
         } catch {
             voiceRecorder.markIdle()
-            voiceErrorMessage = error.localizedDescription
+            voiceErrorMessage = UserFacingAPIError.message(for: error)
         }
     }
 
@@ -377,10 +377,10 @@ struct AssistantComposer: View {
             appendTranscription(transcribed)
         } catch let error as APIError {
             voiceRecorder.markIdle()
-            voiceErrorMessage = localizedAPIErrorMessage(error)
+            voiceErrorMessage = error.userFacingMessage()
         } catch {
             voiceRecorder.markIdle()
-            voiceErrorMessage = error.localizedDescription
+            voiceErrorMessage = UserFacingAPIError.message(for: error)
         }
     }
 
@@ -395,13 +395,6 @@ struct AssistantComposer: View {
         } else {
             text += " \(trimmed)"
         }
-    }
-
-    private func localizedAPIErrorMessage(_ error: APIError) -> String {
-        if case .serverError(let message) = error, message.hasPrefix("assistant.") {
-            return Bundle.currentLocalizedString(message)
-        }
-        return error.localizedDescription
     }
 }
 

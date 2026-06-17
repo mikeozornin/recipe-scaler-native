@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://recipe-scaler.ru/schemas/error-i18n/server-error-keys.json",
+  "title": "Server error dot-key contract",
+  "description": "Schema for validating the dot-key contract used between server response.error and iOS Localizable.xcstrings. See specs/031-error-i18n/server-error-keys.md.",
+  "type": "object",
+  "required": ["version", "format", "dotKeyPattern", "keys"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Contract version (semantic versioning).",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "default": "1.0"
+    },
+    "format": {
+      "type": "string",
+      "enum": ["dot-key"],
+      "description": "Format of the error message."
+    },
+    "dotKeyPattern": {
+      "type": "string",
+      "description": "Regular expression used by iOS client to detect dot-key format.",
+      "pattern": "^\\^.*\\$$",
+      "default": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*){1,}$"
+    },
+    "keys": {
+      "type": "array",
+      "description": "List of dot-key strings the server may return in response.error.",
+      "items": {
+        "type": "object",
+        "required": ["key", "endpoint", "method", "context"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*){1,}$",
+            "description": "dot-key returned by server."
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "HTTP endpoint path (with placeholders for params).",
+            "examples": ["/api/users/profile", "/api/recipes/:id/image"]
+          },
+          "method": {
+            "type": "string",
+            "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+            "description": "HTTP method."
+          },
+          "context": {
+            "type": "string",
+            "description": "Short human-readable context (English, for backend reference only).",
+            "examples": ["profile load", "decode error"]
+          }
+        }
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "localization": {
+      "type": "object",
+      "description": "Localization requirements for each key.",
+      "properties": {
+        "requiredLocales": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["en", "ru"]
+          },
+          "default": ["en", "ru"]
+        },
+        "catalog": {
+          "type": "string",
+          "description": "Path to the iOS String Catalog that holds translations.",
+          "default": "RecipeScalerNative/Resources/Localizable.xcstrings"
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "description": "Backward compatibility policy with legacy English messages.",
+      "properties": {
+        "legacyFormatAllowed": {
+          "type": "boolean",
+          "description": "If true, iOS client accepts raw English in response.error and shows generic localized message.",
+          "default": true
+        },
+        "fallbackKey": {
+          "type": "string",
+          "description": "Key shown when response.error is not a dot-key.",
+          "default": "api.error.server-generic"
+        }
+      }
+    }
+  }
+}

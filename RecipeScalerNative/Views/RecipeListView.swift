@@ -285,7 +285,7 @@ struct RecipeListView: View {
         do {
             try await syncService.setRecipePinned(recipeId: item.id, isPinned: !item.isPinned)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingAPIError.message(for: error)
             showingError = true
         }
     }
@@ -299,7 +299,7 @@ struct RecipeListView: View {
                 ShoppingFeedback.postStatus(String(localized: "shopping.no-items-to-add"))
             }
         } catch {
-            ShoppingFeedback.postStatus(error.localizedDescription)
+            ShoppingFeedback.postStatus(UserFacingAPIError.message(for: error))
         }
     }
 
@@ -311,7 +311,7 @@ struct RecipeListView: View {
                 navigationPath = NavigationPath()
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingAPIError.message(for: error)
             showingError = true
         }
     }
@@ -331,7 +331,7 @@ struct RecipeListView: View {
                 do {
                     try await syncService.setRecipeFolders(recipeId: recipeId, folderIds: [folderId])
                 } catch {
-                    errorMessage = error.localizedDescription
+                    errorMessage = UserFacingAPIError.message(for: error)
                     showingError = true
                 }
             }
@@ -344,7 +344,7 @@ struct RecipeListView: View {
                 )
             )
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingAPIError.message(for: error)
             showingError = true
         }
     }

@@ -380,7 +380,7 @@ struct ShoppingListView: View {
         do {
             try await operation()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingAPIError.message(for: error)
         }
     }
 
