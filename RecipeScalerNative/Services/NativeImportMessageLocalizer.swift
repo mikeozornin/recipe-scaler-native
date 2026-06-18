@@ -38,4 +38,17 @@ enum NativeImportMessageLocalizer {
             name
         )
     }
+
+    static func folderEmptySkipped() -> String {
+        Bundle.currentLocalizedString("account.data.import.folder-empty-skipped")
+    }
+
+    static func folderFailed(name: String, error: Error) -> String {
+        String(
+            format: Bundle.currentLocalizedString("account.data.import.folder-failed %@ %@"),
+            locale: AppLanguagePreference.current.locale,
+            name,
+            UserFacingAPIError.message(for: error)
+        )
+    }
 }

@@ -56,6 +56,13 @@ public enum DescriptionBlock: Sendable, Equatable {
     case paragraph(String)
     case heading(level: Int, String)
     case orderedListItem(String)
+    /// Synthesized metadata signals — carry the raw value; the consumer
+    /// (Native layer) is responsible for rendering a localized label.
+    /// These cases intentionally hold no user-facing text.
+    case prepTime(String)
+    case cookTime(String)
+    case durationMinutes(Int)
+    case difficulty(String)
 }
 
 public struct ThirdPartyRecipeDraft: Sendable, Equatable {

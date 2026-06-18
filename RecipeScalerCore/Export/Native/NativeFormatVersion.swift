@@ -8,6 +8,7 @@ public enum NativeFormatVersion: String, Sendable, CaseIterable, Comparable {
     case v1_2 = "1.2"
     case v1_3 = "1.3"
     case v1_4 = "1.4"
+    case v1_5 = "1.5"
 
     /// The `metadata.type` value for this version (where applicable).
     public var typeString: String? {
@@ -17,6 +18,7 @@ public enum NativeFormatVersion: String, Sendable, CaseIterable, Comparable {
         case .v1_2: "recipes-v1.2"
         case .v1_3: "recipes-v1.3"
         case .v1_4: "recipes-v1.4"
+        case .v1_5: "recipes-v1.5"
         }
     }
 
@@ -35,6 +37,15 @@ public enum NativeFormatVersion: String, Sendable, CaseIterable, Comparable {
         self >= .v1_2
     }
 
+    /// Whether this version supports the dedicated `amountText` field for
+    /// non-numeric ingredient amounts (e.g. `"1/2"`, `"to taste"`).
+    /// Introduced in v1.5 (finding #15). Older native exports lose such
+    /// amounts on roundtrip; web v1.4 emits them as a string `originalAmount`
+    /// and is parsed back via the polymorphic decoder on `NativeIngredient`.
+    public var supportsAmountText: Bool {
+        self >= .v1_5
+    }
+
     public static func < (lhs: NativeFormatVersion, rhs: NativeFormatVersion) -> Bool {
         lhs.sortOrder < rhs.sortOrder
     }
@@ -46,6 +57,7 @@ public enum NativeFormatVersion: String, Sendable, CaseIterable, Comparable {
         case .v1_2: 2
         case .v1_3: 3
         case .v1_4: 4
+        case .v1_5: 5
         }
     }
 }
@@ -67,6 +79,7 @@ public func normalizeNativeFormatVersion(
     }
     if let type {
         switch type {
+        case "recipes-v1.5": return .v1_5
         case "recipes-v1.4": return .v1_4
         case "recipes-v1.3": return .v1_3
         case "recipes-v1.2": return .v1_2

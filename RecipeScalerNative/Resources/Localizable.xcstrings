@@ -319,6 +319,40 @@
         }
       }
     },
+    "account.data.import.folder-empty-skipped" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder with empty name skipped."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пропущена папка с пустым именем."
+          }
+        }
+      }
+    },
+    "account.data.import.folder-failed %@ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to import folder \"%1$@\": %2$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось импортировать папку «%1$@»: %2$@"
+          }
+        }
+      }
+    },
     "account.data.import.folders %d" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7470,36 +7504,53 @@
         }
       }
     },
-    "recipe.import.folder-empty-skipped" : {
+    "recipe.import.metadata.prep-time %@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Folder with empty name skipped."
+            "value" : "Prep: %@"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Пропущена папка с пустым именем."
+            "value" : "Подготовка: %@"
           }
         }
       }
     },
-    "recipe.import.folder-failed-prefix" : {
+    "recipe.import.metadata.cook-time %@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to import folder"
+            "value" : "Cook: %@"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось импортировать папку"
+            "value" : "Готовка: %@"
+          }
+        }
+      }
+    },
+    "recipe.import.metadata.duration-minutes %d" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d min"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d мин"
           }
         }
       }

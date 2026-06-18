@@ -128,10 +128,10 @@ public enum PaprikaRecipeParser {
     private static func parseMetadataParagraphs(from object: [String: Any]) -> [DescriptionBlock] {
         var blocks: [DescriptionBlock] = []
         if let prep = trimmedString(object["prep_time"]) {
-            blocks.append(.paragraph("Prep: \(prep)"))
+            blocks.append(.prepTime(prep))
         }
         if let cook = trimmedString(object["cook_time"]) {
-            blocks.append(.paragraph("Cook: \(cook)"))
+            blocks.append(.cookTime(cook))
         }
         return blocks
     }

@@ -169,6 +169,24 @@ actor YrsDocument {
         _ = yxmlfragment(doc, "description")
     }
 
+    /// Borrow the root-level `Y.XmlFragment` for the given key (e.g. "description")
+    /// within an active transaction. Returns `nil` if the type does not exist.
+    /// Use inside `withReadTransaction` / `withWriteTransaction` blocks; do NOT
+    /// call `yxmlfragment(doc,)` while a transaction is open (yrs FFI deadlocks).
+    /// `nonisolated` — only uses the caller-provided `txn`, no actor state access.
+    nonisolated func xmlFragment(txn: OpaquePointer, name: String) -> YrsXmlFragment? {
+        guard let branch = ytype_get(txn, name) else { return nil }
+        return YrsXmlFragment(branch: branch)
+    }
+
+    /// Borrow the root-level `Y.Map` for the given key (e.g. "recipe") within
+    /// an active transaction. Convenience parity with `xmlFragment(txn:name:)`.
+    /// `nonisolated` — only uses the caller-provided `txn`, no actor state access.
+    nonisolated func recipeMap(txn: OpaquePointer, name: String = "recipe") -> YrsMap? {
+        guard let branch = ytype_get(txn, name) else { return nil }
+        return YrsMap(branch: branch)
+    }
+
     // ─── Transactions ────────────────────────────────────────────────────
 
     func withReadTransaction<T>(_ block: (UnsafeMutablePointer<YDoc>, OpaquePointer) throws -> T) throws -> T {

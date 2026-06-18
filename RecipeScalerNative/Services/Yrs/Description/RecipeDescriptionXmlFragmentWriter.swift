@@ -12,18 +12,15 @@
 //
 
 import Foundation
-import YrsC
 
 enum RecipeDescriptionXmlFragmentWriter {
-    /// Writes the parsed description as a Y.XmlFragment rooted at the top-level `description` key.
+    /// Writes the parsed description as a Y.XmlFragment rooted at the given fragment.
     /// Replaces any existing content.
-    static func apply(document: RecipeDescriptionDocument, rawDoc: UnsafeMutablePointer<YDoc>, txn: OpaquePointer) {
-        guard let fragment = ytype_get(txn, "description") else { return }
-
+    static func apply(document: RecipeDescriptionDocument, to fragment: YrsXmlFragment, txn: OpaquePointer) {
         // Drop any pre-existing children before inserting (defensive: import path always operates on a fresh doc).
-        let existing = yxmlelem_child_len(fragment, txn)
+        let existing = fragment.childLen(txn: txn)
         if existing > 0 {
-            yxmlelem_remove_range(fragment, txn, 0, existing)
+            fragment.removeRange(at: 0, count: existing, txn: txn)
         }
 
         var childIndex: UInt32 = 0
@@ -32,13 +29,13 @@ enum RecipeDescriptionXmlFragmentWriter {
 
         func flushOrdered() {
             guard !pendingSteps.isEmpty else { return }
-            guard let orderedList = yxmlelem_insert_elem(fragment, txn, childIndex, "orderedList") else {
+            guard let orderedList = fragment.insertElem(at: childIndex, name: "orderedList", txn: txn) else {
                 pendingSteps.removeAll()
                 return
             }
             childIndex += 1
             for (index, runs) in pendingSteps.enumerated() {
-                guard let listItem = yxmlelem_insert_elem(orderedList, txn, UInt32(index), "listItem") else { continue }
+                guard let listItem = orderedList.insertElem(at: UInt32(index), name: "listItem", txn: txn) else { continue }
                 insertParagraph(runs: runs, into: listItem, at: 0, txn: txn)
             }
             pendingSteps.removeAll()
@@ -46,13 +43,13 @@ enum RecipeDescriptionXmlFragmentWriter {
 
         func flushBullets() {
             guard !pendingBullets.isEmpty else { return }
-            guard let bulletList = yxmlelem_insert_elem(fragment, txn, childIndex, "bulletList") else {
+            guard let bulletList = fragment.insertElem(at: childIndex, name: "bulletList", txn: txn) else {
                 pendingBullets.removeAll()
                 return
             }
             childIndex += 1
             for (index, runs) in pendingBullets.enumerated() {
-                guard let listItem = yxmlelem_insert_elem(bulletList, txn, UInt32(index), "listItem") else { continue }
+                guard let listItem = bulletList.insertElem(at: UInt32(index), name: "listItem", txn: txn) else { continue }
                 insertParagraph(runs: runs, into: listItem, at: 0, txn: txn)
             }
             pendingBullets.removeAll()
@@ -88,24 +85,24 @@ enum RecipeDescriptionXmlFragmentWriter {
 
     private static func insertParagraph(
         runs: [RecipeDescriptionInlineRun],
-        into parent: UnsafeMutablePointer<Branch>,
+        into parent: YrsXmlContainer,
         at index: UInt32,
         txn: OpaquePointer
     ) {
-        guard let paragraph = yxmlelem_insert_elem(parent, txn, index, "paragraph") else { return }
+        guard let paragraph = parent.insertElem(at: index, name: "paragraph", txn: txn) else { return }
         appendInlineRuns(runs, into: paragraph, txn: txn)
     }
 
     private static func insertHeading(
         runs: [RecipeDescriptionInlineRun],
         level: Int,
-        into parent: UnsafeMutablePointer<Branch>,
+        into parent: YrsXmlContainer,
         at index: UInt32,
         txn: OpaquePointer
     ) {
-        guard let heading = yxmlelem_insert_elem(parent, txn, index, "heading") else { return }
+        guard let heading = parent.insertElem(at: index, name: "heading", txn: txn) else { return }
         let clamped = min(6, max(1, level))
-        insertAttribute(key: "level", value: String(clamped), on: heading, txn: txn)
+        heading.insertAttr(key: "level", value: String(clamped), txn: txn)
         appendInlineRuns(runs, into: heading, txn: txn)
     }
 
@@ -124,7 +121,7 @@ enum RecipeDescriptionXmlFragmentWriter {
 
     private static func appendInlineRuns(
         _ runs: [RecipeDescriptionInlineRun],
-        into parent: UnsafeMutablePointer<Branch>,
+        into parent: YrsXmlElement,
         txn: OpaquePointer
     ) {
         var textChildIndex: UInt32 = 0
@@ -162,17 +159,15 @@ enum RecipeDescriptionXmlFragmentWriter {
     @discardableResult
     private static func appendText(
         _ text: String,
-        into parent: UnsafeMutablePointer<Branch>,
+        into parent: YrsXmlElement,
         at index: UInt32,
         txn: OpaquePointer
     ) -> UInt32 {
         guard !text.isEmpty else { return index }
         // Create a dedicated text node at `index` for the run — matches ProseMirror's one-text-per-run
         // pattern produced by y-prosemirror when multiple marks/elements are interleaved.
-        guard let textNode = yxmlelem_insert_text(parent, txn, index) else { return index }
-        text.withCString { cstr in
-            yxmltext_insert(textNode, txn, 0, cstr, nil)
-        }
+        guard let textNode = parent.insertText(at: index, txn: txn) else { return index }
+        textNode.insert(at: 0, str: text, txn: txn)
         return index + 1
     }
 
@@ -180,16 +175,14 @@ enum RecipeDescriptionXmlFragmentWriter {
     private static func appendNestedMark(
         tag: String,
         text: String,
-        into parent: UnsafeMutablePointer<Branch>,
+        into parent: YrsXmlElement,
         at index: UInt32,
         txn: OpaquePointer
     ) -> UInt32 {
         guard !text.isEmpty else { return index }
-        guard let mark = yxmlelem_insert_elem(parent, txn, index, tag) else { return index }
-        if let textNode = yxmlelem_insert_text(mark, txn, 0) {
-            text.withCString { cstr in
-                yxmltext_insert(textNode, txn, 0, cstr, nil)
-            }
+        guard let mark = parent.insertElem(at: index, name: tag, txn: txn) else { return index }
+        if let textNode = mark.insertText(at: 0, txn: txn) {
+            textNode.insert(at: 0, str: text, txn: txn)
         }
         return index + 1
     }
@@ -198,18 +191,16 @@ enum RecipeDescriptionXmlFragmentWriter {
     private static func appendLink(
         url: String,
         text: String,
-        into parent: UnsafeMutablePointer<Branch>,
+        into parent: YrsXmlElement,
         at index: UInt32,
         txn: OpaquePointer
     ) -> UInt32 {
         guard !text.isEmpty else { return index }
         let href = url.isEmpty ? text : url
-        guard let link = yxmlelem_insert_elem(parent, txn, index, "link") else { return index }
-        insertAttribute(key: "href", value: href, on: link, txn: txn)
-        if let textNode = yxmlelem_insert_text(link, txn, 0) {
-            text.withCString { cstr in
-                yxmltext_insert(textNode, txn, 0, cstr, nil)
-            }
+        guard let link = parent.insertElem(at: index, name: "link", txn: txn) else { return index }
+        link.insertAttr(key: "href", value: href, txn: txn)
+        if let textNode = link.insertText(at: 0, txn: txn) {
+            textNode.insert(at: 0, str: text, txn: txn)
         }
         return index + 1
     }
@@ -218,24 +209,22 @@ enum RecipeDescriptionXmlFragmentWriter {
     @discardableResult
     private static func appendTimer(
         reference: RecipeDescriptionTimerReference,
-        into parent: UnsafeMutablePointer<Branch>,
+        into parent: YrsXmlElement,
         at index: UInt32,
         txn: OpaquePointer
     ) -> UInt32 {
-        guard let timer = yxmlelem_insert_elem(parent, txn, index, "timer") else { return index }
-        insertAttribute(key: "data-duration", value: String(reference.durationSeconds), on: timer, txn: txn)
-        insertAttribute(key: "data-type", value: reference.type.rawValue, on: timer, txn: txn)
+        guard let timer = parent.insertElem(at: index, name: "timer", txn: txn) else { return index }
+        timer.insertAttr(key: "data-duration", value: String(reference.durationSeconds), txn: txn)
+        timer.insertAttr(key: "data-type", value: reference.type.rawValue, txn: txn)
         if let name = reference.name, !name.isEmpty {
-            insertAttribute(key: "data-name", value: name, on: timer, txn: txn)
+            timer.insertAttr(key: "data-name", value: name, txn: txn)
         }
         let valueString = reference.valueAttribute
         if !valueString.isEmpty {
-            insertAttribute(key: "data-value", value: valueString, on: timer, txn: txn)
+            timer.insertAttr(key: "data-value", value: valueString, txn: txn)
         }
-        if let textNode = yxmlelem_insert_text(timer, txn, 0) {
-            reference.displayText.withCString { cstr in
-                yxmltext_insert(textNode, txn, 0, cstr, nil)
-            }
+        if let textNode = timer.insertText(at: 0, txn: txn) {
+            textNode.insert(at: 0, str: reference.displayText, txn: txn)
         }
         return index + 1
     }
@@ -249,27 +238,25 @@ enum RecipeDescriptionXmlFragmentWriter {
         ratio: Double?,
         originalAmount: String?,
         fallbackText: String,
-        into parent: UnsafeMutablePointer<Branch>,
+        into parent: YrsXmlElement,
         at index: UInt32,
         txn: OpaquePointer
     ) -> UInt32 {
-        guard let ingredient = yxmlelem_insert_elem(parent, txn, index, "ingredient") else { return index }
+        guard let ingredient = parent.insertElem(at: index, name: "ingredient", txn: txn) else { return index }
         if let id, !id.isEmpty {
-            insertAttribute(key: "data-ingredient-id", value: id, on: ingredient, txn: txn)
+            ingredient.insertAttr(key: "data-ingredient-id", value: id, txn: txn)
         }
         if let ratio {
-            insertAttribute(key: "data-ratio", value: formatAmount(ratio), on: ingredient, txn: txn)
+            ingredient.insertAttr(key: "data-ratio", value: formatAmount(ratio), txn: txn)
         }
         if let originalAmount, !originalAmount.isEmpty {
-            insertAttribute(key: "data-original-amount", value: originalAmount, on: ingredient, txn: txn)
+            ingredient.insertAttr(key: "data-original-amount", value: originalAmount, txn: txn)
         }
         // Some readers (XmlFragmentToHTML.wrapElement:215) fall back to inner text when
         // data-original-amount is absent — preserve display text in that case.
         if (originalAmount == nil || originalAmount?.isEmpty == true), !fallbackText.isEmpty {
-            if let textNode = yxmlelem_insert_text(ingredient, txn, 0) {
-                fallbackText.withCString { cstr in
-                    yxmltext_insert(textNode, txn, 0, cstr, nil)
-                }
+            if let textNode = ingredient.insertText(at: 0, txn: txn) {
+                textNode.insert(at: 0, str: fallbackText, txn: txn)
             }
         }
         return index + 1
@@ -278,29 +265,15 @@ enum RecipeDescriptionXmlFragmentWriter {
     @discardableResult
     private static func appendSelfClosing(
         tag: String,
-        into parent: UnsafeMutablePointer<Branch>,
+        into parent: YrsXmlElement,
         at index: UInt32,
         txn: OpaquePointer
     ) -> UInt32 {
-        guard yxmlelem_insert_elem(parent, txn, index, tag) != nil else { return index }
+        guard parent.insertElem(at: index, name: tag, txn: txn) != nil else { return index }
         return index + 1
     }
 
-    // MARK: - Attribute helpers
-
-    private static func insertAttribute(
-        key: String,
-        value: String,
-        on element: UnsafeMutablePointer<Branch>,
-        txn: OpaquePointer
-    ) {
-        key.withCString { keyCString in
-            value.withCString { valueCString in
-                var input = yinput_string(valueCString)
-                yxmlelem_insert_attr(element, txn, keyCString, &input)
-            }
-        }
-    }
+    // MARK: - Helpers
 
     private static func formatAmount(_ value: Double) -> String {
         // TP14 [review #14]: guard NaN/Inf and out-of-Int64 range before cast.

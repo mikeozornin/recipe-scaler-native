@@ -4,7 +4,6 @@
 //
 
 import Foundation
-import YrsC
 
 /// One-shot parser that turns a Yjs v1 state update (binary `Data`) into a
 /// minimal `RecipeData` for read-only display in Discover. Avoids activating
@@ -24,13 +23,14 @@ enum RecipeReader {
 
         do {
             try await doc.withReadTransaction { _, txn in
-                guard let mapBranch = ytype_get(txn, "recipe") else { return }
-                let map = YrsMap(branch: mapBranch)
+                guard let map = doc.recipeMap(txn: txn) else { return }
                 recipeFields = readFields(from: map, txn: txn)
 
                 // v3 description lives in XmlFragment — capture whenever it has content
                 // (public recipes may omit the `version` field).
-                xmlSnapshot = XmlFragmentToHTML.serializedFragment(txn: txn)
+                if let fragment = doc.xmlFragment(txn: txn, name: "description") {
+                    xmlSnapshot = XmlFragmentToHTML.serializedFragment(from: fragment, txn: txn)
+                }
             }
         } catch {
             return nil

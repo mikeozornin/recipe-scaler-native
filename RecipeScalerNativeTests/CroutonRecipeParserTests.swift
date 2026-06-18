@@ -40,9 +40,10 @@ final class CroutonRecipeParserTests: XCTestCase {
         XCTAssertEqual(headings, ["Dressing"])
     }
 
-    /// T063 [US7]: numeric `duration` (Int / NSNumber minutes) is rendered as
-    /// an "N min" paragraph before the steps.
-    func testDurationIntBecomesMinutesParagraph() throws {
+    /// T063 [US7]: numeric `duration` (Int / NSNumber minutes) is emitted as a
+    /// `.durationMinutes` structural block (Native layer renders a localized
+    /// paragraph via `DescriptionBlockLocalizer` — see review #30).
+    func testDurationIntBecomesMinutesSignal() throws {
         let payload: [String: Any] = [
             "uuid": "x",
             "name": "Cookies",
@@ -57,11 +58,11 @@ final class CroutonRecipeParserTests: XCTestCase {
             fileName: "cookies.crumb",
             sourceFormat: .croutonSingle
         )
-        XCTAssertEqual(draft.descriptionBlocks.first, .paragraph("10 min"))
+        XCTAssertEqual(draft.descriptionBlocks.first, .durationMinutes(10))
     }
 
     /// T063 [US7]: `cookingDuration` is used when `duration` is absent,
-    /// and a string `rawDifficulty` is appended as a separate paragraph.
+    /// and a string `rawDifficulty` is appended as a `.difficulty` structural block.
     func testCookingDurationAndDifficultyPrefix() throws {
         let payload: [String: Any] = [
             "uuid": "x",
@@ -80,8 +81,8 @@ final class CroutonRecipeParserTests: XCTestCase {
         )
         let prefix = Array(draft.descriptionBlocks.prefix(2))
         XCTAssertEqual(prefix, [
-            .paragraph("30 min"),
-            .paragraph("Easy")
+            .durationMinutes(30),
+            .difficulty("Easy")
         ])
     }
 
@@ -103,7 +104,7 @@ final class CroutonRecipeParserTests: XCTestCase {
             fileName: "dual.crumb",
             sourceFormat: .croutonSingle
         )
-        XCTAssertEqual(draft.descriptionBlocks.first, .paragraph("15 min"))
+        XCTAssertEqual(draft.descriptionBlocks.first, .durationMinutes(15))
     }
 
     /// Real Crouton export (2 recipes, one with non-ASCII filename).

@@ -63,10 +63,7 @@ struct RecipeScalerNativeApp: App {
 
     static let sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Recipe.self,
-            Ingredient.self,
-            RecipeTimer.self,
-            ApiCacheEntry.self
+            RecipeTimer.self
         ])
 
         let modelConfiguration = ModelConfiguration(

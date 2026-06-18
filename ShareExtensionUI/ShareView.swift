@@ -10,6 +10,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import RecipeScalerCore
 
 public struct ShareView: View {
     @Environment(\.dismiss) private var dismiss

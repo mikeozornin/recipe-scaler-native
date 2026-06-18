@@ -4,11 +4,6 @@ import YrsC
 @testable import RecipeScalerNative
 
 final class RecipeScalerNativeTests: XCTestCase {
-    func testRecipeHasSteps() {
-        let recipe = Recipe(name: "Toast", recipeDescription: "Spread and toast")
-        XCTAssertTrue(recipe.hasSteps)
-    }
-
     func testRecipeEditPolicyV3Only() {
         XCTAssertTrue(RecipeEditPolicy.supportsEditFormat(version: "3"))
         XCTAssertFalse(RecipeEditPolicy.supportsEditFormat(version: "1"))

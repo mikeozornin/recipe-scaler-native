@@ -9,6 +9,7 @@
 import Foundation
 import UIKit
 import UniformTypeIdentifiers
+import RecipeScalerCore
 
 /// Classified payload that an extension can import.
 public enum ShareContent: Equatable {

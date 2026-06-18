@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import SwiftData
 
 @MainActor
 class RecipeListViewModel: ObservableObject {

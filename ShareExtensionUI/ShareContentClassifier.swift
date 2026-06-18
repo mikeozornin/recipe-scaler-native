@@ -16,6 +16,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 public enum ShareContentClassifier {
 

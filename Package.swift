@@ -18,6 +18,10 @@ let package = Package(
             name: "RecipeScalerCore",
             targets: ["RecipeScalerCore"]
         ),
+        .library(
+            name: "ShareExtensionUI",
+            targets: ["ShareExtensionUI"]
+        ),
     ],
     dependencies: [
         // WebSocket support
@@ -50,11 +54,23 @@ let package = Package(
             exclude: [
                 ".DS_Store",
                 "Import/.DS_Store",
+                "UI/.DS_Store",
             ],
             resources: [
                 .process("Resources"),
                 .copy("Export/Native/schemas"),
             ]
+        ),
+
+        // Source target ShareExtensionUI. SwiftUI + UIKit glue for Share/Action
+        // extensions (`ShareView`, `ShareContentLoader`, `ShareContentClassifier`).
+        // Kept separate from Core so SPM-consumers of Core don't transitively
+        // link UIKit/SwiftUI/UniformTypeIdentifiers. Depends on Core for domain
+        // types (`ImportPhotoItem`, `RecipeImportAPI`, `ImportErrorLocalizer`).
+        .target(
+            name: "ShareExtensionUI",
+            dependencies: ["RecipeScalerCore"],
+            path: "ShareExtensionUI"
         ),
 
         // Main app target. Now declares its true dependencies on Core and YrsC.
@@ -84,6 +100,7 @@ let package = Package(
             dependencies: [
                 "RecipeScalerNative",
                 "RecipeScalerCore",
+                "ShareExtensionUI",
                 "YrsC",
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
             ],

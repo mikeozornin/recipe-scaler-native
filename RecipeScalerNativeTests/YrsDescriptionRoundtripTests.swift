@@ -42,7 +42,7 @@ final class YrsDescriptionRoundtripTests: XCTestCase {
 
         // Verify yrs can read back the content
         let html = try doc.withReadTransaction { _, txn in
-            XmlFragmentToHTML.serializedFragment(txn: txn)
+            doc.xmlFragment(txn: txn, name: "description").flatMap { XmlFragmentToHTML.serializedFragment(from: $0, txn: txn) }
         }
         XCTAssertNotNil(html, "yrs should read back the description")
         XCTAssertTrue(html?.contains("Привет, мир!") ?? false, "yrs should see the text content")
@@ -113,7 +113,7 @@ final class YrsDescriptionRoundtripTests: XCTestCase {
 
         // Verify yrs reads it back
         let html = try doc.withReadTransaction { _, txn in
-            XmlFragmentToHTML.serializedFragment(txn: txn)
+            doc.xmlFragment(txn: txn, name: "description").flatMap { XmlFragmentToHTML.serializedFragment(from: $0, txn: txn) }
         }
         XCTAssertNotNil(html)
         XCTAssertTrue(html?.contains("Разогреваем") ?? false)
@@ -128,7 +128,7 @@ final class YrsDescriptionRoundtripTests: XCTestCase {
         // Also verify: load state into a new doc → same content
         let doc2 = try YrsDocument(state: state)
         let html2 = try doc2.withReadTransaction { _, txn in
-            XmlFragmentToHTML.serializedFragment(txn: txn)
+            doc2.xmlFragment(txn: txn, name: "description").flatMap { XmlFragmentToHTML.serializedFragment(from: $0, txn: txn) }
         }
         XCTAssertEqual(html, html2, "yrs roundtrip should preserve content")
     }
@@ -172,7 +172,7 @@ final class YrsDescriptionRoundtripTests: XCTestCase {
 
         // Verify yrs reads all paragraphs
         let html = try doc.withReadTransaction { _, txn in
-            XmlFragmentToHTML.serializedFragment(txn: txn)
+            doc.xmlFragment(txn: txn, name: "description").flatMap { XmlFragmentToHTML.serializedFragment(from: $0, txn: txn) }
         }
         XCTAssertTrue(html?.contains("Параграф 1") ?? false)
         XCTAssertTrue(html?.contains("Параграф 2") ?? false)
@@ -186,7 +186,7 @@ final class YrsDescriptionRoundtripTests: XCTestCase {
         // Verify: new doc from state → same content
         let doc2 = try YrsDocument(state: state)
         let html2 = try doc2.withReadTransaction { _, txn in
-            XmlFragmentToHTML.serializedFragment(txn: txn)
+            doc2.xmlFragment(txn: txn, name: "description").flatMap { XmlFragmentToHTML.serializedFragment(from: $0, txn: txn) }
         }
         XCTAssertEqual(html, html2, "yrs roundtrip after multi-edit should preserve content")
     }
@@ -214,7 +214,7 @@ final class YrsDescriptionRoundtripTests: XCTestCase {
 
         // yrs roundtrip — must pass (sanity check)
         let html = try doc.withReadTransaction { _, txn in
-            XmlFragmentToHTML.serializedFragment(txn: txn)
+            doc.xmlFragment(txn: txn, name: "description").flatMap { XmlFragmentToHTML.serializedFragment(from: $0, txn: txn) }
         }
         XCTAssertNotNil(html, "yrs must read back description")
         XCTAssertTrue(html!.contains("Hello from yrs!"), "yrs must see inserted text")
@@ -260,7 +260,7 @@ final class YrsDescriptionRoundtripTests: XCTestCase {
 
         // Verify yrs reads back
         let html = try doc.withReadTransaction { _, txn in
-            XmlFragmentToHTML.serializedFragment(txn: txn)
+            doc.xmlFragment(txn: txn, name: "description").flatMap { XmlFragmentToHTML.serializedFragment(from: $0, txn: txn) }
         }
         XCTAssertNotNil(html)
         XCTAssertTrue(html!.contains("Preheat oven"))
@@ -283,7 +283,7 @@ final class YrsDescriptionRoundtripTests: XCTestCase {
         let doc = try YrsDocument(state: state)
 
         let html = try doc.withReadTransaction { _, txn in
-            XmlFragmentToHTML.serializedFragment(txn: txn)
+            doc.xmlFragment(txn: txn, name: "description").flatMap { XmlFragmentToHTML.serializedFragment(from: $0, txn: txn) }
         }
         XCTAssertNotNil(html, "yrs must read description from real API state")
         XCTAssertGreaterThan(html!.count, 100, "description should have substantial content")

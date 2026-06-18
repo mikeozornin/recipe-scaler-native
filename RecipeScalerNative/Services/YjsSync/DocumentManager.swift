@@ -120,12 +120,17 @@ actor DocumentManager {
         do {
             try await doc.applyUpdate(data)
         } catch {
-            Self.logger.warning("applyUpdate failed for \(key), deleting corrupted snapshot")
+            // yrs applyUpdate is atomic for malformed input, but transient FFI
+            // errors could leave the in-memory doc in an unpredictable state.
+            // Evict it so the next getOrCreateDoc rebuilds from the durable
+            // SQLite snapshot, but DO NOT delete the snapshot itself — it may
+            // contain unsynced local edits that we cannot reconstruct.
+            // See plans/005-preserve-snapshot-on-apply-failure.md (finding #16).
+            Self.logger.warning("applyUpdate failed for \(key), evicting in-memory doc but preserving snapshot: \(error)")
             docs.removeValue(forKey: key)
             observerTokens.removeValue(forKey: key)
             htmlCache.removeValue(forKey: key)
             plainTextCache.removeValue(forKey: key)
-            try? await store.deleteSnapshot(docKey: key)
             throw error
         }
 
@@ -217,17 +222,18 @@ actor DocumentManager {
         let txnStart = CFAbsoluteTimeGetCurrent()
         var xmlSnapshot: String?
         let recipe: RecipeData? = try await doc.withReadTransaction { rawDoc, txn in
-            guard let mapBranch = ytype_get(txn, "recipe") else {
+            guard let map = doc.recipeMap(txn: txn) else {
                 Self.logger.warning("No 'recipe' Y.Map found in recipe doc \(key)")
                 return nil as RecipeData?
             }
-            let map = YrsMap(branch: mapBranch)
             let parsed = self.parseRecipeData(from: map, txn: txn, recipeId: recipeId)
             // Skip the expensive FFI tree walk when the cache is already valid
             // for this state vector.
             if cachedHTML == nil,
                RecipeData.RecipeVersion.detect(parsed.version) == .v3 {
-                xmlSnapshot = XmlFragmentToHTML.serializedFragment(txn: txn)
+                if let fragment = doc.xmlFragment(txn: txn, name: "description") {
+                    xmlSnapshot = XmlFragmentToHTML.serializedFragment(from: fragment, txn: txn)
+                }
             }
             return parsed
         }
@@ -281,8 +287,7 @@ actor DocumentManager {
         }
 
         let index: RecipeSearchIndex? = try await doc.withReadTransaction { _, txn in
-            guard let mapBranch = ytype_get(txn, "recipe") else { return nil }
-            let map = YrsMap(branch: mapBranch)
+            guard let map = doc.recipeMap(txn: txn) else { return nil }
             let versionString = map.scalarString(key: "version", txn: txn)
             let version = RecipeData.RecipeVersion.detect(versionString)
             let ingredients = self.readSearchIngredients(from: map, txn: txn, version: version)
@@ -291,7 +296,11 @@ actor DocumentManager {
             if let cached = cachedPlainText {
                 descriptionPlain = cached
             } else if version == .v3 {
-                descriptionPlain = XmlFragmentToPlainText.plainText(txn: txn)
+                if let fragment = doc.xmlFragment(txn: txn, name: "description") {
+                    descriptionPlain = XmlFragmentToPlainText.plainText(from: fragment, txn: txn)
+                } else {
+                    descriptionPlain = ""
+                }
             } else if let raw = self.readDescription(from: map, txn: txn, version: version) {
                 descriptionPlain = RecipeSearchUtils.plainText(fromDescriptionHTML: raw)
             } else {
@@ -1039,12 +1048,14 @@ actor DocumentManager {
             let key = "\(userId):recipe:\(recipeId)"
             let doc = try await getOrCreateDoc(key: key)
             let document = RecipeDescriptionParser.parse(desc)
-            try await doc.withWriteTransaction { rawDoc, txn in
-                RecipeDescriptionXmlFragmentWriter.apply(
-                    document: document,
-                    rawDoc: rawDoc,
-                    txn: txn
-                )
+            try await doc.withWriteTransaction { _, txn in
+                if let fragment = doc.xmlFragment(txn: txn, name: "description") {
+                    RecipeDescriptionXmlFragmentWriter.apply(
+                        document: document,
+                        to: fragment,
+                        txn: txn
+                    )
+                }
             }
             await persistAndDeliver(recipeId: recipeId, docKey: key)
         }
@@ -1059,13 +1070,21 @@ actor DocumentManager {
             let isSep = ingredient.isSeparator ?? false
             let order = ingredient.order ?? (index + 1)
             let originalAmount: Double? = ingredient.originalAmount
+            let amountText: String? = ingredient.amountText?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
             let unit = ingredient.unit?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
+            // Finding #15: prefer the numeric `originalAmount`; fall back to
+            // `amountText` (v1.5 native exports) or a string `originalAmount`
+            // routed through `amountText` by the polymorphic decoder (web v1.4).
             let hasQuantity: Bool
             let amountString: String
             if let oa = originalAmount {
                 hasQuantity = true
                 amountString = String(oa)
+            } else if let text = amountText, !text.isEmpty {
+                hasQuantity = true
+                amountString = text
             } else {
                 hasQuantity = false
                 amountString = ""
@@ -1092,6 +1111,11 @@ actor DocumentManager {
 
     /// Deterministic third-party import (027): create v3 recipe from parsed draft.
     func applyImportedRecipe(_ draft: ThirdPartyRecipeDraft) async throws -> String {
+        // Resolve synthesized metadata blocks (Prep/Cook/duration/difficulty) into
+        // localized paragraphs here, before the writer (which only handles
+        // paragraph/heading/orderedListItem) and before hasSteps is computed.
+        let localizedDescriptionBlocks = DescriptionBlockLocalizer.localize(draft.descriptionBlocks)
+
         let trimmedName = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         let displayName = trimmedName.isEmpty
             ? Bundle.currentLocalizedString("recipe.create.new")
@@ -1109,7 +1133,7 @@ actor DocumentManager {
                !link.isEmpty {
                 map.insert(key: "originalRecipeLink", value: .string(link), txn: txn)
             }
-            if !draft.descriptionBlocks.isEmpty {
+            if !localizedDescriptionBlocks.isEmpty {
                 map.insert(key: "hasSteps", value: .bool(true), txn: txn)
             }
         }
@@ -1142,16 +1166,18 @@ actor DocumentManager {
         }
         try await addIngredients(recipeId: recipeId, ingredients: collectedIngredients)
 
-        if !draft.descriptionBlocks.isEmpty {
+        if !localizedDescriptionBlocks.isEmpty {
             guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
             let key = "\(userId):recipe:\(recipeId)"
             let doc = try await getOrCreateDoc(key: key)
-            try await doc.withWriteTransaction { rawDoc, txn in
-                DescriptionXmlFragmentWriter.apply(
-                    blocks: draft.descriptionBlocks,
-                    rawDoc: rawDoc,
-                    txn: txn
-                )
+            try await doc.withWriteTransaction { _, txn in
+                if let fragment = doc.xmlFragment(txn: txn, name: "description") {
+                    DescriptionXmlFragmentWriter.apply(
+                        blocks: localizedDescriptionBlocks,
+                        to: fragment,
+                        txn: txn
+                    )
+                }
             }
             await persistAndDeliver(recipeId: recipeId, docKey: key)
         }
@@ -1328,12 +1354,16 @@ actor DocumentManager {
         do {
             try await doc.applyLocalUpdate(update)
         } catch {
-            Self.logger.warning("applyDescriptionEditorUpdate failed for \(key), deleting corrupted snapshot")
+            // Same reasoning as applyUpdateToDoc: evict in-memory state,
+            // preserve SQLite snapshot. The description editor forwards
+            // incremental yjs wire bytes, so a transient applyLocalUpdate
+            // failure must not destroy the recipe snapshot.
+            // See plans/005-preserve-snapshot-on-apply-failure.md (finding #16).
+            Self.logger.warning("applyDescriptionEditorUpdate failed for \(key), evicting in-memory doc but preserving snapshot: \(error)")
             docs.removeValue(forKey: key)
             observerTokens.removeValue(forKey: key)
             htmlCache.removeValue(forKey: key)
             plainTextCache.removeValue(forKey: key)
-            try? await store.deleteSnapshot(docKey: key)
             throw error
         }
         // Description was just mutated; cached HTML/plain text for this recipe is stale.

@@ -90,4 +90,126 @@ final class NativeFormatValidatorTests: XCTestCase {
         XCTAssertEqual(result.recipeErrors.count, 1)
         XCTAssertTrue(result.recipeErrors[0].errors.contains("nutrition.calories must be >= 0"))
     }
+
+    // MARK: - v1.5 amountText validation (finding #15)
+
+    func testValidV15PayloadWithAmountTextPasses() {
+        let payload = NativeExportPayload(
+            metadata: NativeExportMetadata(
+                version: "1.5",
+                exportDate: "2026-06-18T12:00:00Z",
+                type: "recipes-v1.5",
+                count: 1
+            ),
+            recipes: [
+                NativeRecipe(
+                    id: "recipe-1",
+                    name: "Cake",
+                    ingredients: [
+                        NativeIngredient(
+                            id: "ing-1",
+                            name: "sugar",
+                            originalAmount: 2,
+                            unit: "cups",
+                            order: 1
+                        ),
+                        NativeIngredient(
+                            id: "ing-2",
+                            name: "salt",
+                            amountText: "to taste",
+                            unit: nil,
+                            order: 2
+                        )
+                    ]
+                )
+            ],
+            folders: nil,
+            imageFiles: nil
+        )
+
+        let result = NativeFormatValidator.validate(payload: payload, version: .v1_5)
+        XCTAssertTrue(result.isValid, "errors: \(result.structuralErrors + result.recipeErrors.flatMap { $0.errors })")
+    }
+
+    func testV15RejectsEmptyAmountText() {
+        let payload = NativeExportPayload(
+            metadata: NativeExportMetadata(
+                version: "1.5",
+                exportDate: "2026-06-18T12:00:00Z",
+                type: "recipes-v1.5",
+                count: 1
+            ),
+            recipes: [
+                NativeRecipe(
+                    id: "recipe-1",
+                    name: "Cake",
+                    ingredients: [
+                        NativeIngredient(
+                            id: "ing-1",
+                            name: "salt",
+                            amountText: "   ",
+                            order: 1
+                        )
+                    ]
+                )
+            ],
+            folders: nil,
+            imageFiles: nil
+        )
+
+        let result = NativeFormatValidator.validate(payload: payload, version: .v1_5)
+        XCTAssertEqual(result.recipeErrors.count, 1)
+        XCTAssertTrue(result.recipeErrors[0].errors.contains(where: { $0.contains("amountText must be non-empty") }))
+    }
+
+    func testV15RejectsOverlongAmountText() {
+        let overlong = String(repeating: "a", count: NativeFormatValidator.maxAmountTextLength + 1)
+        let payload = NativeExportPayload(
+            metadata: NativeExportMetadata(
+                version: "1.5",
+                exportDate: "2026-06-18T12:00:00Z",
+                type: "recipes-v1.5",
+                count: 1
+            ),
+            recipes: [
+                NativeRecipe(
+                    id: "recipe-1",
+                    name: "Cake",
+                    ingredients: [
+                        NativeIngredient(
+                            id: "ing-1",
+                            name: "salt",
+                            amountText: overlong,
+                            order: 1
+                        )
+                    ]
+                )
+            ],
+            folders: nil,
+            imageFiles: nil
+        )
+
+        let result = NativeFormatValidator.validate(payload: payload, version: .v1_5)
+        XCTAssertEqual(result.recipeErrors.count, 1)
+        XCTAssertTrue(result.recipeErrors[0].errors.contains(where: { $0.contains("exceeds") }))
+    }
+
+    func testV15TypeMismatchIsReported() {
+        let payload = NativeExportPayload(
+            metadata: NativeExportMetadata(
+                version: "1.5",
+                exportDate: "2026-06-18T12:00:00Z",
+                type: "recipes-v1.4",
+                count: 1
+            ),
+            recipes: [
+                NativeRecipe(id: "recipe-1", name: "Cake", ingredients: [])
+            ],
+            folders: nil,
+            imageFiles: nil
+        )
+
+        let result = NativeFormatValidator.validate(payload: payload, version: .v1_5)
+        XCTAssertTrue(result.structuralErrors.contains(where: { $0.contains("metadata.type") }))
+    }
 }

@@ -113,6 +113,87 @@ final class YrsServerMergeTests: XCTestCase {
     }
 }
 
+/// Regression for review finding #16 / plan 005:
+/// a malformed Yjs update must not delete the SQLite snapshot, because that
+/// snapshot may contain unsynced local edits. The fix evicts the in-memory doc
+/// on apply failure but preserves the durable snapshot for recovery.
+final class PreserveSnapshotOnApplyFailureTests: XCTestCase {
+    private func makeManager() throws -> (DocumentManager, YDocStore) {
+        let queue = try DatabaseQueue()
+        try YrsDatabase.migrateForTests(queue)
+        let store = YDocStore(dbQueue: queue)
+        return (DocumentManager(store: store), store)
+    }
+
+    func testApplyUpdateGarbageDataPreservesSnapshot() async throws {
+        let userId = "preserve-user"
+        let (manager, store) = try makeManager()
+        await manager.setUserId(userId)
+        let recipeId = try await manager.createRecipe(name: "Recipe")
+        let key = "\(userId):recipe:\(recipeId)"
+
+        // Mutate to force a persisted snapshot containing unsynced local state.
+        try await manager.updateRecipeName(recipeId: recipeId, name: "Edited Locally")
+        let snapshotBefore = try await store.loadSnapshot(docKey: key)
+        XCTAssertNotNil(snapshotBefore, "baseline snapshot must exist after a local edit")
+
+        // Apply malformed update — must throw.
+        do {
+            try await manager.applyUpdate(key: key, data: Data([0xFF, 0xEE, 0xDD]))
+            XCTFail("expected applyUpdate to throw on malformed data")
+        } catch {
+            // expected
+        }
+
+        // SQLite snapshot must be intact.
+        let snapshotAfter = try await store.loadSnapshot(docKey: key)
+        XCTAssertNotNil(snapshotAfter, "snapshot must NOT be deleted on apply failure")
+        XCTAssertEqual(
+            snapshotAfter?.state,
+            snapshotBefore?.state,
+            "snapshot bytes must be unchanged after apply failure"
+        )
+
+        // Recovery: next read rebuilds from the preserved snapshot, so the
+        // local edit must still be visible.
+        let recovered = try await manager.readRecipeData(recipeId: recipeId, userId: userId)
+        XCTAssertEqual(
+            recovered?.name,
+            "Edited Locally",
+            "local edit must survive apply failure via snapshot recovery"
+        )
+    }
+
+    func testApplyDescriptionEditorUpdateGarbageDataPreservesSnapshot() async throws {
+        let userId = "preserve-desc-user"
+        let (manager, store) = try makeManager()
+        await manager.setUserId(userId)
+        let recipeId = try await manager.createRecipe(name: "Recipe")
+        let key = "\(userId):recipe:\(recipeId)"
+
+        // Persist a baseline snapshot via a recipe mutation.
+        try await manager.updateRecipeName(recipeId: recipeId, name: "Baseline")
+        let snapshotBefore = try await store.loadSnapshot(docKey: key)
+        XCTAssertNotNil(snapshotBefore, "baseline snapshot must exist after a local edit")
+
+        // Apply malformed description-editor update — must throw.
+        do {
+            try await manager.applyDescriptionEditorUpdate(recipeId: recipeId, update: Data([0xAB, 0xCD]))
+            XCTFail("expected applyDescriptionEditorUpdate to throw on malformed data")
+        } catch {
+            // expected
+        }
+
+        let snapshotAfter = try await store.loadSnapshot(docKey: key)
+        XCTAssertNotNil(snapshotAfter, "snapshot must NOT be deleted on description editor apply failure")
+        XCTAssertEqual(
+            snapshotAfter?.state,
+            snapshotBefore?.state,
+            "snapshot bytes must be unchanged after description editor apply failure"
+        )
+    }
+}
+
 private extension YrsDatabase {
     static func migrateForTests(_ dbQueue: DatabaseQueue) throws {
         var migrator = DatabaseMigrator()

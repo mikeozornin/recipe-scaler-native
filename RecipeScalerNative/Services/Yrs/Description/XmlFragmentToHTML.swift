@@ -14,10 +14,8 @@ enum XmlFragmentToHTML {
     private static let maxDepth = 32
 
     /// Bounded tree walk inside an existing read transaction.
-    /// Uses `ytype_get(txn,)` — never `yxmlfragment(doc,)` while a txn is open (deadlocks in yrs FFI).
-    static func serializedFragment(txn: OpaquePointer) -> String? {
-        guard let fragment = ytype_get(txn, "description") else { return nil }
-        let childCount = yxmlelem_child_len(fragment, txn)
+    static func serializedFragment(from fragment: YrsXmlFragment, txn: OpaquePointer) -> String? {
+        let childCount = fragment.childLen(txn: txn)
         guard childCount > 0 else { return nil }
 
         var parts: [String] = []
@@ -26,8 +24,8 @@ enum XmlFragmentToHTML {
 
         for index in 0..<childCount {
             guard budget > 0 else { break }
-            guard let output = yxmlelem_get(fragment, txn, index) else { continue }
-            if let piece = renderNode(output, txn: txn, depth: 0, budget: &budget), !piece.isEmpty {
+            guard let node = fragment.child(at: index, txn: txn) else { continue }
+            if let piece = renderNode(node, txn: txn, depth: 0, budget: &budget), !piece.isEmpty {
                 parts.append(piece)
             }
         }
@@ -38,20 +36,19 @@ enum XmlFragmentToHTML {
 
     #if DEBUG
     /// Logs element/text shape from yrs walk (differs from `Y.XmlFragment.toString()` on web).
-    static func debugFragmentStructure(txn: OpaquePointer) -> String {
-        guard let fragment = ytype_get(txn, "description") else { return "no-fragment" }
+    static func debugFragmentStructure(from fragment: YrsXmlFragment, txn: OpaquePointer) -> String {
         var parts: [String] = []
         var budget = 80
-        let childCount = yxmlelem_child_len(fragment, txn)
+        let childCount = fragment.childLen(txn: txn)
         for index in 0..<childCount where budget > 0 {
-            guard let output = yxmlelem_get(fragment, txn, index) else { continue }
-            debugDescribeNode(output, txn: txn, depth: 0, parts: &parts, budget: &budget)
+            guard let node = fragment.child(at: index, txn: txn) else { continue }
+            debugDescribeNode(node, txn: txn, depth: 0, parts: &parts, budget: &budget)
         }
         return parts.joined(separator: ",")
     }
 
     private static func debugDescribeNode(
-        _ output: UnsafePointer<YOutput>,
+        _ node: YrsXmlNode,
         txn: OpaquePointer,
         depth: Int,
         parts: inout [String],
@@ -59,47 +56,49 @@ enum XmlFragmentToHTML {
     ) {
         guard budget > 0, depth < 6 else { return }
         budget -= 1
-        switch output.pointee.tag {
-        case YrsValue.Y_XML_ELEM:
-            guard let branch = youtput_read_yxmlelem(UnsafeMutablePointer(mutating: output)) else { return }
-            let tag = elementTag(branch)
+        switch node {
+        case let .element(elem):
+            let tag = elem.tag(txn: txn)
             parts.append("e:\(tag.isEmpty ? "?" : tag)")
-            let count = yxmlelem_child_len(branch, txn)
+            let count = elem.childLen(txn: txn)
             for index in 0..<count where budget > 0 {
-                guard let child = yxmlelem_get(branch, txn, index) else { continue }
+                guard let child = elem.child(at: index, txn: txn) else { continue }
                 debugDescribeNode(child, txn: txn, depth: depth + 1, parts: &parts, budget: &budget)
             }
-        case YrsValue.Y_XML_TEXT:
-            var chunkCount: UInt32 = 0
-            guard let branch = youtput_read_yxmltext(UnsafeMutablePointer(mutating: output)) else { return }
-            if let chunks = ytext_chunks(branch, txn, &chunkCount), chunkCount > 0 {
-                defer { ychunks_destroy(chunks, chunkCount) }
-                for index in 0..<chunkCount where budget > 0 {
-                    let chunk = chunks[Int(index)]
-                    var fmtKeys: [String] = []
-                    if let fmt = chunk.fmt, chunk.fmt_len > 0 {
-                        for fmtIndex in 0..<Int(chunk.fmt_len) {
-                            if let key = fmt[fmtIndex].key {
-                                fmtKeys.append(String(cString: key))
+        case let .text(text):
+            if let chunks = text.withChunks(txn: txn, { chunks in
+                var chunkParts: [String] = []
+                for index in 0..<chunks.count where budget > 0 {
+                    let fmtKeys = chunks.withFormatEntries(at: index) { fmt, fmtLen in
+                        var keys: [String] = []
+                        if let fmt, fmtLen > 0 {
+                            for fmtIndex in 0..<Int(fmtLen) {
+                                if let key = fmt[fmtIndex].key {
+                                    keys.append(String(cString: key))
+                                }
                             }
                         }
+                        return keys
                     }
-                    let href = linkHref(fromFormatEntries: chunk.fmt, count: chunk.fmt_len, txn: txn)
+                    let href = chunks.withFormatEntries(at: index) { fmt, fmtLen in
+                        linkHref(fromFormatEntries: fmt, count: fmtLen, txn: txn)
+                    }
                     let label = href.map { "link(\($0.prefix(30)))" }
                         ?? (fmtKeys.isEmpty ? "plain" : fmtKeys.joined(separator: "+"))
-                    if let text = stringFromOutput(chunk.data), text.contains("http") {
-                        parts.append("t[\(label)]:\(text.prefix(40))")
+                    if let textStr = chunks.string(at: index), textStr.contains("http") {
+                        chunkParts.append("t[\(label)]:\(textStr.prefix(40))")
                     } else {
-                        parts.append("t:\(label)")
+                        chunkParts.append("t:\(label)")
                     }
                     budget -= 1
                 }
+                return chunkParts.isEmpty ? nil : chunkParts.joined(separator: ",")
+            }) ?? nil {
+                parts.append(chunks)
             } else {
-                let hasLink = linkHrefFromTextAttributeKeys(branch: branch, txn: txn) != nil
+                let hasLink = linkHrefFromTextAttributeKeys(text: text, txn: txn) != nil
                 parts.append(hasLink ? "t:linkAttr" : "t:text")
             }
-        default:
-            parts.append("?")
         }
     }
     #endif
@@ -115,7 +114,7 @@ enum XmlFragmentToHTML {
     // MARK: - Bounded FFI walk (no yxmlelem_string)
 
     private static func renderNode(
-        _ output: UnsafePointer<YOutput>,
+        _ node: YrsXmlNode,
         txn: OpaquePointer,
         depth: Int,
         budget: inout Int
@@ -123,39 +122,31 @@ enum XmlFragmentToHTML {
         guard budget > 0, depth <= maxDepth else { return nil }
         budget -= 1
 
-        switch output.pointee.tag {
-        case YrsValue.Y_XML_ELEM:
-            guard let branch = youtput_read_yxmlelem(UnsafeMutablePointer(mutating: output)) else {
-                return nil
-            }
-            let tag = elementTag(branch)
-            let inner = renderChildren(of: branch, txn: txn, depth: depth + 1, budget: &budget)
-            return wrapElement(tag: tag, branch: branch, txn: txn, inner: inner)
-        case YrsValue.Y_XML_TEXT:
-            guard let branch = youtput_read_yxmltext(UnsafeMutablePointer(mutating: output)) else {
-                return nil
-            }
-            return renderXmlText(branch, txn: txn)
-        default:
-            return nil
+        switch node {
+        case let .element(elem):
+            let tag = elem.tag(txn: txn)
+            let inner = renderChildren(of: elem, txn: txn, depth: depth + 1, budget: &budget)
+            return wrapElement(tag: tag, element: elem, txn: txn, inner: inner)
+        case let .text(text):
+            return renderXmlText(text, txn: txn)
         }
     }
 
     private static func renderChildren(
-        of branch: UnsafeMutablePointer<Branch>,
+        of element: YrsXmlElement,
         txn: OpaquePointer,
         depth: Int,
         budget: inout Int
     ) -> String {
         guard budget > 0, depth <= maxDepth else { return "" }
-        let count = yxmlelem_child_len(branch, txn)
+        let count = element.childLen(txn: txn)
         guard count > 0 else { return "" }
 
         var parts: [String] = []
         for index in 0..<count {
             guard budget > 0 else { break }
-            guard let output = yxmlelem_get(branch, txn, index) else { continue }
-            if let piece = renderNode(output, txn: txn, depth: depth + 1, budget: &budget), !piece.isEmpty {
+            guard let node = element.child(at: index, txn: txn) else { continue }
+            if let piece = renderNode(node, txn: txn, depth: depth + 1, budget: &budget), !piece.isEmpty {
                 parts.append(piece)
             }
         }
@@ -164,7 +155,7 @@ enum XmlFragmentToHTML {
 
     private static func wrapElement(
         tag: String,
-        branch: UnsafeMutablePointer<Branch>,
+        element: YrsXmlElement,
         txn: OpaquePointer,
         inner: String
     ) -> String {
@@ -198,21 +189,21 @@ enum XmlFragmentToHTML {
         case "code":
             return wrap("code", inner)
         case "heading":
-            let level = elementAttribute(branch: branch, txn: txn, name: "level").flatMap(Int.init) ?? 1
+            let level = element.getAttr("level", txn: txn).flatMap(Int.init) ?? 1
             let clamped = min(6, max(1, level))
             return wrap("h\(clamped)", inner)
         case "link", "a":
-            let href = elementAttribute(branch: branch, txn: txn, name: "href") ?? ""
+            let href = element.getAttr("href", txn: txn) ?? ""
             guard !href.isEmpty else { return inner }
             return #"<a href="\#(escapeAttr(href))" target="_blank" rel="noopener noreferrer">\#(inner)</a>"#
         case "timer":
-            let attrs = timerDataAttributes(branch: branch, txn: txn)
-            let label = inner.isEmpty ? timerFallbackLabel(from: branch, txn: txn) : inner
+            let attrs = timerDataAttributes(element: element, txn: txn)
+            let label = inner.isEmpty ? timerFallbackLabel(from: element, txn: txn) : inner
             return #"<span class="timer-reference"\#(attrs)>\#(escapeHTML(label))</span>"#
         case "ingredient":
-            let id = elementAttribute(branch: branch, txn: txn, name: "data-ingredient-id") ?? ""
-            let ratio = elementAttribute(branch: branch, txn: txn, name: "data-ratio") ?? "1"
-            let amount = elementAttribute(branch: branch, txn: txn, name: "data-original-amount")
+            let id = element.getAttr("data-ingredient-id", txn: txn) ?? ""
+            let ratio = element.getAttr("data-ratio", txn: txn) ?? "1"
+            let amount = element.getAttr("data-original-amount", txn: txn)
                 ?? inner
             return #"<span class="ingredient-reference" data-ingredient-id="\#(escapeAttr(id))" data-ratio="\#(escapeAttr(ratio))">\#(escapeHTML(amount))</span>"#
         default:
@@ -221,56 +212,53 @@ enum XmlFragmentToHTML {
     }
 
     /// Tiptap/y-prosemirror stores link (and other marks) on `Y.XmlText` delta chunks, not as `href` on the node.
-    private static func renderXmlText(_ branch: UnsafeMutablePointer<Branch>, txn: OpaquePointer) -> String? {
-        var chunkCount: UInt32 = 0
-        if let chunks = ytext_chunks(branch, txn, &chunkCount), chunkCount > 0 {
-            defer { ychunks_destroy(chunks, chunkCount) }
+    private static func renderXmlText(_ text: YrsXmlText, txn: OpaquePointer) -> String? {
+        if let result = text.withChunks(txn: txn, { chunks in
             var parts: [String] = []
-            parts.reserveCapacity(Int(chunkCount))
-            for index in 0..<chunkCount {
-                let chunk = chunks[Int(index)]
-                guard let text = stringFromOutput(chunk.data), !text.isEmpty else { continue }
-                let escaped = escapeHTML(text)
-                let href = resolvedLinkHref(
-                    text: text,
-                    fmt: chunk.fmt,
-                    fmtLen: chunk.fmt_len,
-                    txn: txn
-                )
+            parts.reserveCapacity(Int(chunks.count))
+            for index in 0..<chunks.count {
+                guard let textStr = chunks.string(at: index), !textStr.isEmpty else { continue }
+                let escaped = escapeHTML(textStr)
+                let href = chunks.withFormatEntries(at: index) { fmt, fmtLen in
+                    resolvedLinkHref(
+                        text: textStr,
+                        fmt: fmt,
+                        fmtLen: fmtLen,
+                        txn: txn
+                    )
+                }
                 if let href, !href.isEmpty {
                     parts.append(#"<a href="\#(escapeAttr(href))" target="_blank" rel="noopener noreferrer">\#(escaped)</a>"#)
                 } else {
                     parts.append(
-                        wrapWithInlineMarks(
-                            escaped,
-                            fmt: chunk.fmt,
-                            fmtLen: chunk.fmt_len
-                        )
+                        chunks.withFormatEntries(at: index) { fmt, fmtLen in
+                            wrapWithInlineMarks(
+                                escaped,
+                                fmt: fmt,
+                                fmtLen: fmtLen
+                            )
+                        }
                     )
                 }
             }
             let joined = parts.joined()
-            if !joined.isEmpty { return joined }
+            return joined.isEmpty ? nil : joined
+        }) ?? nil {
+            return result
         }
 
-        guard let cStr = yxmltext_string(branch, txn) else { return nil }
-        defer { ystring_destroy(cStr) }
-        let text = escapeHTML(String(cString: cStr))
-        if let href = linkHrefFromTextAttributeKeys(branch: branch, txn: txn), !href.isEmpty {
-            return #"<a href="\#(escapeAttr(href))" target="_blank" rel="noopener noreferrer">\#(text)</a>"#
+        guard let str = text.string(txn: txn) else { return nil }
+        let escaped = escapeHTML(str)
+        if let href = linkHrefFromTextAttributeKeys(text: text, txn: txn), !href.isEmpty {
+            return #"<a href="\#(escapeAttr(href))" target="_blank" rel="noopener noreferrer">\#(escaped)</a>"#
         }
-        if let href = textAttribute(branch: branch, txn: txn, name: "href"), !href.isEmpty {
-            return #"<a href="\#(escapeAttr(href))" target="_blank" rel="noopener noreferrer">\#(text)</a>"#
+        if let href = text.getAttr("href", txn: txn), !href.isEmpty {
+            return #"<a href="\#(escapeAttr(href))" target="_blank" rel="noopener noreferrer">\#(escaped)</a>"#
         }
-        return text
+        return escaped
     }
 
-    private static func stringFromOutput(_ output: YOutput) -> String? {
-        withUnsafePointer(to: output) { ptr in
-            guard let cStr = youtput_read_string(ptr) else { return nil }
-            return String(cString: cStr)
-        }
-    }
+    // MARK: - YOutput value reads (mark/format payloads — not XML tree traversal)
 
     private static func resolvedLinkHref(
         text: String,
@@ -355,17 +343,16 @@ enum XmlFragmentToHTML {
     }
 
     private static func linkHrefFromTextAttributeKeys(
-        branch: UnsafeMutablePointer<Branch>,
+        text: YrsXmlText,
         txn: OpaquePointer
     ) -> String? {
-        guard let iter = yxmltext_attr_iter(branch, txn) else { return nil }
-        defer { yxmlattr_iter_destroy(iter) }
-        while let attr = yxmlattr_iter_next(iter) {
-            defer { yxmlattr_destroy(attr) }
-            guard let namePtr = attr.pointee.name else { continue }
-            let name = String(cString: namePtr)
+        guard let iter = text.attrIter(txn: txn) else { return nil }
+        for attr in iter {
+            let name = attr.name
             guard name == "link" || name.hasPrefix("link--") else { continue }
-            if let href = hrefFromMarkOutput(attr.pointee.value, txn: txn), !href.isEmpty {
+            if let href = attr.withValue({ value in
+                hrefFromMarkOutput(value, txn: txn)
+            }), !href.isEmpty {
                 return href
             }
         }
@@ -408,42 +395,22 @@ enum XmlFragmentToHTML {
         return nil
     }
 
-    private static func elementAttribute(
-        branch: UnsafeMutablePointer<Branch>,
-        txn: OpaquePointer,
-        name: String
-    ) -> String? {
-        guard let output = yxmlelem_get_attr(branch, txn, name) else { return nil }
-        defer { youtput_destroy(output) }
-        guard let cStr = youtput_read_string(output) else { return nil }
-        return String(cString: cStr)
-    }
+    // MARK: - Attribute helpers (via wrappers)
 
-    private static func timerDataAttributes(branch: UnsafeMutablePointer<Branch>, txn: OpaquePointer) -> String {
+    private static func timerDataAttributes(element: YrsXmlElement, txn: OpaquePointer) -> String {
         let keys = ["data-timer-id", "data-duration", "data-type", "data-name", "data-value"]
         var parts: [String] = []
         for key in keys {
-            if let value = elementAttribute(branch: branch, txn: txn, name: key), !value.isEmpty {
+            if let value = element.getAttr(key, txn: txn), !value.isEmpty {
                 parts.append(#"\#(key)="\#(escapeAttr(value))""#)
             }
         }
         return parts.isEmpty ? "" : " " + parts.joined(separator: " ")
     }
 
-    private static func textAttribute(
-        branch: UnsafeMutablePointer<Branch>,
-        txn: OpaquePointer,
-        name: String
-    ) -> String? {
-        guard let output = yxmltext_get_attr(branch, txn, name) else { return nil }
-        defer { youtput_destroy(output) }
-        guard let cStr = youtput_read_string(output) else { return nil }
-        return String(cString: cStr)
-    }
-
-    private static func timerFallbackLabel(from branch: UnsafeMutablePointer<Branch>, txn: OpaquePointer) -> String {
-        if let value = elementAttribute(branch: branch, txn: txn, name: "data-value"),
-           let unit = elementAttribute(branch: branch, txn: txn, name: "data-type") {
+    private static func timerFallbackLabel(from element: YrsXmlElement, txn: OpaquePointer) -> String {
+        if let value = element.getAttr("data-value", txn: txn),
+           let unit = element.getAttr("data-type", txn: txn) {
             return "\(value) \(unit)"
         }
         return ""
@@ -667,11 +634,6 @@ enum XmlFragmentToHTML {
             result += ns.substring(from: cursor)
         }
         return result
-    }
-
-    private static func elementTag(_ branch: UnsafeMutablePointer<Branch>) -> String {
-        guard let cStr = yxmlelem_tag(branch) else { return "" }
-        return String(cString: cStr)
     }
 
     private static func escapeAttr(_ value: String) -> String {

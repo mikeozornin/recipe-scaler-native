@@ -30,8 +30,8 @@
 | Ключ | Тип | → RS v3 | Примечание |
 |------|-----|---------|------------|
 | `servings` | string | `recipe.servings` | `"4"`, `"4-6"` → первое число или 1 |
-| `prep_time` | string | description prefix | текст «Prep: …» |
-| `cook_time` | string | description prefix | текст «Cook: …» |
+| `prep_time` | string | description `.prepTime` signal | localized «Prep: …» by Native layer |
+| `cook_time` | string | description `.cookTime` signal | localized «Cook: …» by Native layer |
 | `notes` | string | description `<p>` | до шагов |
 | `categories` | string[] | `folderIds` (P3, spec 026) | до 026 — skip |
 | `photo_data` | string (base64) | `imageUrl` via upload | JPEG; unescape `\/` |
@@ -146,8 +146,8 @@ Non-step sections break `<ol>`: close list before `<h3>`, open new `<ol>` after 
 | `serves` | `servings` |
 | `images[0]` | image upload |
 | `tags[]` | `folderIds` (P3) |
-| `duration`, `cookingDuration` | description prefix |
-| `rawDifficulty` | description prefix (optional) |
+| `duration`, `cookingDuration` | description `.durationMinutes` signal (Int minutes) → localized «N min» by Native layer; free-form strings pass through verbatim as `.paragraph` |
+| `rawDifficulty` | description `.difficulty` signal (verbatim pass-through as `.paragraph`; no deterministic localization) |
 | `folderIDs` | skip v1 (IDs without names in export) |
 | `rating` | skip |
 
@@ -160,6 +160,33 @@ Non-step sections break `<ol>`: close list before `<h3>`, open new `<ol>` after 
 3. Collection entry — через тот же path, что `createRecipe` (008).
 4. Partial batch failure: continue; return `{ imported: [ids], failed: [{ file, reason }] }`.
 5. Max batch size: **500** recipes per operation.
+
+### 3.1 Localization of synthesized metadata blocks (review #30)
+
+Core parsers (`PaprikaRecipeParser`, `CroutonRecipeParser`) emit **structural
+metadata signals** for `prep_time` / `cook_time` / `duration` / `rawDifficulty`
+instead of pre-baking English text. `DescriptionBlock` carries these as
+non-textual cases:
+
+- `.prepTime(String)` — Paprika `prep_time` value
+- `.cookTime(String)` — Paprika `cook_time` value
+- `.durationMinutes(Int)` — Crouton numeric `duration` / `cookingDuration`
+- `.difficulty(String)` — Crouton `rawDifficulty`
+
+The Native layer (`RecipeScalerNative/Services/DescriptionBlockLocalizer.swift`)
+resolves these into localized `.paragraph(String)` blocks using
+`Bundle.currentLocalizedString` + `AppLanguagePreference.current.locale` **before**
+the draft reaches `DescriptionXmlFragmentWriter.apply`. The Y.Doc schema is not
+changed: prep/cook/duration remain stored as paragraphs inside the
+`Y.XmlFragment('description')`.
+
+Localizable keys:
+- `recipe.import.metadata.prep-time %@`
+- `recipe.import.metadata.cook-time %@`
+- `recipe.import.metadata.duration-minutes %d`
+
+`difficulty` is free-form text authored by the source recipe's user (e.g. "Easy",
+"Лёгкий"); no deterministic localization applies, and it is emitted verbatim.
 
 ## 4. Test fixtures (research)
 

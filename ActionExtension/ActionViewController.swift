@@ -12,6 +12,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import WebKit
 import RecipeScalerCore
+import ShareExtensionUI
 
 @objc(ActionViewController)
 final class ActionViewController: UIViewController {

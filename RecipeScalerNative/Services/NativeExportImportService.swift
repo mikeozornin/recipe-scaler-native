@@ -77,10 +77,24 @@ final class NativeExportImportService {
                         name: recipeData.name,
                         description: recipeData.description,
                         ingredients: recipeData.ingredients.map { ing in
-                            ExportIngredient(
+                            // Finding #15: non-numeric amounts ("1/2", "2-3",
+                            // "1½", "to taste") must survive the roundtrip.
+                            // Numeric values go to `originalAmount`, raw
+                            // non-numeric text goes to `amountText`.
+                            let numeric = ing.numericValue
+                            let rawText = ing.originalAmount.isEmpty
+                                ? ing.amount
+                                : ing.originalAmount
+                            let amountText: String? = (numeric == nil)
+                                && ing.hasQuantity
+                                && !rawText.isEmpty
+                                ? rawText
+                                : nil
+                            return ExportIngredient(
                                 id: ing.id,
                                 name: ing.name,
-                                originalAmount: ing.numericValue,
+                                originalAmount: numeric,
+                                amountText: amountText,
                                 unit: ing.unit.isEmpty ? nil : ing.unit,
                                 order: ing.order,
                                 isSeparator: ing.isSeparator ? true : nil
@@ -285,7 +299,7 @@ final class NativeExportImportService {
             if Task.isCancelled { break }
             let trimmed = folder.name.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else {
-                errors.append(String(localized: "recipe.import.folder-empty-skipped"))
+                errors.append(NativeImportMessageLocalizer.folderEmptySkipped())
                 continue
             }
 
@@ -300,9 +314,7 @@ final class NativeExportImportService {
                 )
                 mapping[folder.id] = newId
             } catch {
-                let localized = UserFacingAPIError.message(for: error)
-                let prefix = String(localized: "recipe.import.folder-failed-prefix")
-                errors.append("\(prefix) \"\(trimmed)\": \(localized)")
+                errors.append(NativeImportMessageLocalizer.folderFailed(name: trimmed, error: error))
             }
         }
 

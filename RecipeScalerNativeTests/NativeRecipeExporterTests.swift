@@ -59,7 +59,9 @@ final class NativeRecipeExporterTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
         let parsed = try NativeRecipeImporter.parse(url: tempURL)
-        XCTAssertEqual(parsed.version, .v1_4)
+        // Exporter now produces v1.5 (introduces the amountText field for
+        // non-numeric amounts — finding #15).
+        XCTAssertEqual(parsed.version, .v1_5)
         XCTAssertEqual(parsed.recipes.count, 1)
 
         let imported = try XCTUnwrap(parsed.recipes.first)
@@ -216,5 +218,230 @@ final class NativeRecipeExporterTests: XCTestCase {
         let parsed = try NativeRecipeImporter.parse(url: tempURL)
         XCTAssertEqual(parsed.recipes.count, 1)
         XCTAssertEqual(parsed.recipes.first?.name, "Soup")
+    }
+
+    // MARK: - v1.5 amountText roundtrip (finding #15)
+
+    /// Non-numeric ingredient amounts ("1/2", "2-3", "to taste", …) must
+    /// survive export → parse roundtrip via the new `amountText` field.
+    func testV15RoundTripPreservesNonNumericAmountText() throws {
+        let recipe = ExportRecipe(
+            id: "recipe-text",
+            name: "Bread",
+            description: nil,
+            ingredients: [
+                ExportIngredient(
+                    id: "ing-text",
+                    name: "yeast",
+                    originalAmount: nil,
+                    amountText: "1/2",
+                    unit: "tsp",
+                    order: 1,
+                    isSeparator: nil
+                )
+            ],
+            color: "#3b82f6",
+            servings: 2,
+            createdAt: nil,
+            updatedAt: nil,
+            originalRecipeLink: nil,
+            originalRecipe: nil,
+            nutrition: nil,
+            imageUrl: nil
+        )
+
+        let export = try NativeRecipeExporter.export(
+            recipes: [recipe],
+            recipeFolderIds: [:],
+            folders: []
+        )
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("v15-text-\(UUID().uuidString).json")
+        try export.data.write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let parsed = try NativeRecipeImporter.parse(url: tempURL)
+        XCTAssertEqual(parsed.version, .v1_5)
+        XCTAssertEqual(parsed.recipes.count, 1)
+
+        let ing = try XCTUnwrap(parsed.recipes.first?.ingredients.first)
+        XCTAssertNil(ing.originalAmount, "Numeric originalAmount must be nil for text-only amount")
+        XCTAssertEqual(ing.amountText, "1/2")
+        XCTAssertEqual(ing.unit, "tsp")
+    }
+
+    /// Numeric and text amounts may coexist in the same recipe and must
+    /// each be preserved.
+    func testV15RoundTripPreservesMixedAmounts() throws {
+        let recipe = ExportRecipe(
+            id: "recipe-mixed",
+            name: "Stew",
+            description: nil,
+            ingredients: [
+                ExportIngredient(
+                    id: "ing-num",
+                    name: "carrots",
+                    originalAmount: 3,
+                    amountText: nil,
+                    unit: "pcs",
+                    order: 1,
+                    isSeparator: nil
+                ),
+                ExportIngredient(
+                    id: "ing-text",
+                    name: "salt",
+                    originalAmount: nil,
+                    amountText: "to taste",
+                    unit: nil,
+                    order: 2,
+                    isSeparator: nil
+                )
+            ],
+            color: "#3b82f6",
+            servings: 4,
+            createdAt: nil,
+            updatedAt: nil,
+            originalRecipeLink: nil,
+            originalRecipe: nil,
+            nutrition: nil,
+            imageUrl: nil
+        )
+
+        let export = try NativeRecipeExporter.export(
+            recipes: [recipe],
+            recipeFolderIds: [:],
+            folders: []
+        )
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("v15-mixed-\(UUID().uuidString).json")
+        try export.data.write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let parsed = try NativeRecipeImporter.parse(url: tempURL)
+        XCTAssertEqual(parsed.version, .v1_5)
+        let ings = try XCTUnwrap(parsed.recipes.first?.ingredients)
+        XCTAssertEqual(ings.count, 2)
+
+        XCTAssertEqual(ings[0].originalAmount, 3)
+        XCTAssertNil(ings[0].amountText)
+
+        XCTAssertNil(ings[1].originalAmount)
+        XCTAssertEqual(ings[1].amountText, "to taste")
+    }
+
+    /// Back-compat: a web v1.4 file may emit `originalAmount` as a raw JSON
+    /// string (web dumps ingredients as-is). The polymorphic decoder must
+    /// route it into `amountText` without throwing.
+    func testWebV14StringOriginalAmountParsesAsAmountText() throws {
+        let json = """
+        {
+          "metadata": {
+            "version": "1.4",
+            "exportDate": "2026-06-18T12:00:00Z",
+            "type": "recipes-v1.4",
+            "count": 1
+          },
+          "recipes": [
+            {
+              "id": "web-recipe",
+              "name": "Web Soup",
+              "ingredients": [
+                {
+                  "id": "web-ing",
+                  "name": "salt",
+                  "originalAmount": "to taste",
+                  "unit": null,
+                  "order": 1
+                }
+              ]
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+
+        let payload = try JSONDecoder().decode(NativeExportPayload.self, from: json)
+        XCTAssertEqual(payload.recipes.count, 1)
+        let ing = try XCTUnwrap(payload.recipes.first?.ingredients.first)
+        XCTAssertNil(ing.originalAmount, "String originalAmount must NOT land in the Double field")
+        XCTAssertEqual(ing.amountText, "to taste", "String originalAmount must be routed to amountText")
+    }
+
+    /// Polymorphic `originalAmount` decoder must handle all four input
+    /// shapes: missing key, null, number, string.
+    func testPolymorphicOriginalAmountAcceptsAllShapes() throws {
+        let json = """
+        {
+          "metadata": {"version": "1.5", "exportDate": "2026-06-18T12:00:00Z", "type": "recipes-v1.5", "count": 4},
+          "recipes": [
+            {"id": "r1", "name": "Missing", "ingredients": [
+              {"id": "i1", "name": "x", "unit": null, "order": 1}
+            ]},
+            {"id": "r2", "name": "Null", "ingredients": [
+              {"id": "i2", "name": "x", "originalAmount": null, "unit": null, "order": 1}
+            ]},
+            {"id": "r3", "name": "Number", "ingredients": [
+              {"id": "i3", "name": "x", "originalAmount": 2.5, "unit": null, "order": 1}
+            ]},
+            {"id": "r4", "name": "String", "ingredients": [
+              {"id": "i4", "name": "x", "originalAmount": "1/2", "unit": null, "order": 1}
+            ]}
+          ]
+        }
+        """.data(using: .utf8)!
+
+        let payload = try JSONDecoder().decode(NativeExportPayload.self, from: json)
+
+        let missing = payload.recipes[0].ingredients[0]
+        XCTAssertNil(missing.originalAmount)
+        XCTAssertNil(missing.amountText)
+
+        let null = payload.recipes[1].ingredients[0]
+        XCTAssertNil(null.originalAmount)
+        XCTAssertNil(null.amountText)
+
+        let number = payload.recipes[2].ingredients[0]
+        XCTAssertEqual(number.originalAmount, 2.5)
+        XCTAssertNil(number.amountText)
+
+        let string = payload.recipes[3].ingredients[0]
+        XCTAssertNil(string.originalAmount)
+        XCTAssertEqual(string.amountText, "1/2")
+    }
+
+    /// Back-compat: an old v1.4 native file (no amountText anywhere) must
+    /// still parse and produce the same shape as before — no regression.
+    func testV14FileWithoutAmountTextStillParses() throws {
+        let json = """
+        {
+          "metadata": {
+            "version": "1.4",
+            "exportDate": "2026-06-16T12:00:00Z",
+            "type": "recipes-v1.4",
+            "count": 1
+          },
+          "recipes": [
+            {
+              "id": "recipe-old",
+              "name": "Old Soup",
+              "ingredients": [
+                {"id": "ing-1", "name": "salt", "originalAmount": 1, "unit": "tsp", "order": 1}
+              ]
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("v14-old-\(UUID().uuidString).json")
+        try json.write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let parsed = try NativeRecipeImporter.parse(url: tempURL)
+        XCTAssertEqual(parsed.version, .v1_4)
+        let ing = try XCTUnwrap(parsed.recipes.first?.ingredients.first)
+        XCTAssertEqual(ing.originalAmount, 1)
+        XCTAssertNil(ing.amountText)
     }
 }

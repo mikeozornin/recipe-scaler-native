@@ -105,6 +105,23 @@
 
 ---
 
+## Architecture remediation (запланировано, 2026-06-18)
+
+Две серии архитектурных refactor'ов из review-kilo (#23-26), разбитые на 2 PR. Layout-аудит не требуется (бэкенд/модельный слой; единственная view-правка — удаление legacy `RecipeDetailView`).
+
+| # | Статус | Кратко |
+|---|--------|--------|
+| 24 | 🔧 | PR1 `033-architecture-modularization`: `YrsXmlFragment`/`YrsXmlElement`/`YrsXmlText`/`YrsXmlAttrIterator` (RAII по образцу `YrsMapEntry`); `YrsDocument.xmlFragment`/`recipeMap`; 5 Utils → `Services/Yrs/Description/`; 5 call sites `DocumentManager`; `project.pbxproj`; `YrsXmlFragmentTests` |
+| 25 | 🔧 | PR1 `033-architecture-modularization`: SPM-target `ShareExtensionUI` (depends on Core); `ShareView`/`ShareContentLoader`/`ShareContentClassifier` + `Shared.xcstrings` → `ShareExtensionUI/`; удалить `RecipeScalerCore/UI/`; `PBXNativeTarget` + link Share/Action; `ShareContentClassifierTests` → `@testable import ShareExtensionUI` |
+| 23 | 🔧 | PR2 `034-architecture-dedup-truth`: расширить Core `ImportPhotoItem` (`Identifiable`+`Sendable`+`Equatable` через hash(data+fileName)); объединить `ValidationError` cases (dot-key + args в `errorDescription`); перенести Native-only `ImportErrorLocalizer` cases в Core; удалить 2 Native-файла; обновить callers (`ImportRecipeSheet`, `DataManagementView`, `PluralizationTests`) |
+| 26 | 🔧 | PR2 `034-architecture-dedup-truth` (`keep_timer_only` + `extract_then_delete`): извлечь `StepsSection` → `Views/RecipeStepsSection.swift` и `DisplayIngredient` → `Models/YDoc/`; удалить `RecipeDetailView.swift` (444 LOC, unreachable в runtime) + snapshot-тесты; удалить `Models/Recipe.swift`/`Ingredient.swift`/`ApiCacheEntry.swift`; `RecipeScalerNativeApp.swift` Schema → `[RecipeTimer.self]`; обновить `TestSupport`/`SnapshotTests`/`RecipeListViewModel`/`ContentView #Preview`; обновить `docs/ARCHITECTURE.md`/`SETUP.md`/`PROJECT_STATUS.md`/`specs/001/` |
+
+**Очерёдность**: PR1 (#24 → #25) → PR2 (#26 → #23). Build verify: `xcodebuild build` (main + Share + Action schemes); test verify: `xcodebuild test`. Fix-until-green по `.agents/skills/fix-until-green/SKILL.md`.
+
+**Риски**: #24 — FFI-lifetime semantics (`ychunks_destroy`/`yxmlattr_destroy` в `deinit`), покрытие `YrsXmlFragmentTests` round-trip'ами; #25 — `Bundle.module` для `Shared.xcstrings` в новом SPM-target; #23 — `Identifiable`+`Sendable`+`Equatable` одновременно (UUID-with-default нарушает Equatable по-значению → hash(data+fileName)); #26 — потеря визуального регрессионного покрытия для legacy `RecipeDetailView` (unreachable в runtime, замены нет — зафиксировано в spec'е).
+
+---
+
 ## Находки (отсортированы по приоритету)
 
 ### Critical
@@ -242,28 +259,28 @@
 - ~~**Description**: Collection deep observer вызывает `Task { await refreshCollectionEntries() }` напрямую…~~ `scheduleCollectionEntriesRefresh` debounce 150ms.
 - ~~**Recommendation**: Дебаунсить/coalesce `refreshCollectionEntries`…~~
 
-#### 23. **[Architecture]** Дубликаты валидаторов/локализаторов между `RecipeScalerCore` и `RecipeScalerNative`
-- **Area**: `RecipeScalerCore/Import/ImportPhotoValidator.swift` vs `RecipeScalerNative/Utils/ImportPhotoValidator.swift`; аналогично `ImportErrorLocalizer`
-- **Description**: Два `ImportPhotoValidator` с разными `ValidationError` (Core: `.tooMany(count:)`, `.tooLarge(name:size:)`; Native: `.tooMany`, `.tooLarge`). Два `ImportPhotoItem` (Core — `Equatable + Sendable` без id; Native — `Identifiable` UUID, не `Sendable`). Native-файл импортирует Core и дизэмбигуирует `RecipeScalerCore.ImportPhotoValidator.maxRecipes`.
-- **Impact**: Type-juggling при пересечении границ модулей, дрейф лимитов/сообщений, два пути локализации, каждый фикс применяется дважды.
-- **Recommendation**: Удалить Native-дубликаты; main app потребляет Core public-типы, плюрализацию через `Bundle.main`.
+#### 23. ~~**[Architecture]** Дубликаты валидаторов/локализаторов между `RecipeScalerCore` и `RecipeScalerNative`~~ 🔧 Запланировано (2026-06-18, PR2 = `specs/034-architecture-dedup-truth`, задача #23)
+- ~~**Area**: `RecipeScalerCore/Import/ImportPhotoValidator.swift` vs `RecipeScalerNative/Utils/ImportPhotoValidator.swift`; аналогично `ImportErrorLocalizer`~~
+- ~~**Description**: Два `ImportPhotoValidator` с разными `ValidationError` (Core: `.tooMany(count:)`, `.tooLarge(name:size:)`; Native: `.tooMany`, `.tooLarge`). Два `ImportPhotoItem` (Core — `Equatable + Sendable` без id; Native — `Identifiable` UUID, не `Sendable`). Native-файл импортирует Core и дизэмбигуирует `RecipeScalerCore.ImportPhotoValidator.maxRecipes`.~~
+- ~~**Impact**: Type-juggling при пересечении границ модулей, дрейф лимитов/сообщений, два пути локализации, каждый фикс применяется дважды.~~
+- ~~**Recommendation**: Удалить Native-дубликаты; main app потребляет Core public-типы, плюрализацию через `Bundle.main`.~~ — план: расширить Core `ImportPhotoItem` (`Identifiable`+`Sendable`+`Equatable` через hash(data+fileName)), объединить `ValidationError` cases, перенести Native-only `ImportErrorLocalizer` cases в Core; удалить 2 Native-файла; обновить callers (`ImportRecipeSheet`, `DataManagementView`, `PluralizationTests`).
 
-#### 24. **[Architecture]** YrsC FFI вызывается из файлов `Utils/`, ломая границу `Services/Yrs/`
-- **Area**: `RecipeScalerNative/Utils/XmlFragmentToHTML.swift` (713 LOC), `Utils/DescriptionXmlFragmentWriter.swift`, `Utils/RecipeDescriptionXmlFragmentWriter.swift` (314 LOC), `Utils/RecipeReader.swift`
-- **Description**: Дизайн-намерение (AGENTS.md) — «`Yrs/` C FFI wrappers». В реальности `XmlFragmentToHTML.serializedFragment` (строка 18), `DescriptionXmlFragmentWriter.apply`, `RecipeReader` вызывают `ytype_get`, `yxmlelem_insert_elem` и т.п. напрямую на сыром `OpaquePointer`-txn, переданном из `DocumentManager`. У обёрток `Yrs*` вообще нет `XmlFragment`-типа.
-- **Impact**: Каждый FFI-фикс безопасности приходится выводить заново на каждом сайте вызова; рефакторинг FFI-поверхности невозможен без правок Utils.
-- **Recommendation**: Добавить `YrsXmlFragment`, `YrsXmlElement`, `YrsXmlText` под `Services/Yrs/`; переместить эти Utils в `Services/Yrs/Description/`.
+#### 24. ~~**[Architecture]** YrsC FFI вызывается из файлов `Utils/`, ломая границу `Services/Yrs/`~~ 🔧 Запланировано (2026-06-18, PR1 = `specs/033-architecture-modularization`, задача #24)
+- ~~**Area**: `RecipeScalerNative/Utils/XmlFragmentToHTML.swift` (713 LOC), `Utils/DescriptionXmlFragmentWriter.swift`, `Utils/RecipeDescriptionXmlFragmentWriter.swift` (314 LOC), `Utils/RecipeReader.swift`~~
+- ~~**Description**: Дизайн-намерение (AGENTS.md) — «`Yrs/` C FFI wrappers». В реальности `XmlFragmentToHTML.serializedFragment` (строка 18), `DescriptionXmlFragmentWriter.apply`, `RecipeReader` вызывают `ytype_get`, `yxmlelem_insert_elem` и т.п. напрямую на сыром `OpaquePointer`-txn, переданном из `DocumentManager`. У обёрток `Yrs*` вообще нет `XmlFragment`-типа.~~
+- ~~**Impact**: Каждый FFI-фикс безопасности приходится выводить заново на каждом сайте вызова; рефакторинг FFI-поверхности невозможен без правок Utils.~~
+- ~~**Recommendation**: Добавить `YrsXmlFragment`, `YrsXmlElement`, `YrsXmlText` под `Services/Yrs/`; переместить эти Utils в `Services/Yrs/Description/`.~~ — план: ввести `YrsXmlFragment`/`YrsXmlElement`/`YrsXmlText`/`YrsXmlAttrIterator` (RAII-обёртки по образцу `YrsMapEntry`), расширить `YrsDocument` (`xmlFragment(txn:name:)`, `recipeMap(txn:)`), переписать 5 Utils-файлов и перенести в `Services/Yrs/Description/`, обновить 5 call sites в `DocumentManager`, обновить `project.pbxproj`, покрыть `YrsXmlFragmentTests`.
 
-#### 25. **[Architecture]** `RecipeScalerCore/UI/` сцепляет «core»-фреймворк с UIKit/SwiftUI
-- **Area**: `RecipeScalerCore/UI/ShareContentLoader.swift:10` (`import UIKit`), `ShareContentLoader.swift:11` (`import UniformTypeIdentifiers`), `ShareView.swift:11` (`import SwiftUI`)
-- **Description**: AGENTS.md: «yrs writer in Core (no UIKit)». Но `UI/` внутри Core держит SwiftUI-views и UIKit-связанные loaders, не имеющие отношения к CRDT-writer'у или domain-логике; это extension-host glue. Нахождение их в Core заставляет каждого consumer'а Core линковать UIKit/SwiftUI.
-- **Recommendation**: Перенести `ShareContentLoader`, `ShareContentClassifier`, `ShareView` в выделенный `ShareExtensionUI`-таргет (или в сами extension-таргеты); оставить в Core только чистую логику.
+#### 25. ~~**[Architecture]** `RecipeScalerCore/UI/` сцепляет «core»-фреймворк с UIKit/SwiftUI~~ 🔧 Запланировано (2026-06-18, PR1 = `specs/033-architecture-modularization`, задача #25)
+- ~~**Area**: `RecipeScalerCore/UI/ShareContentLoader.swift:10` (`import UIKit`), `ShareContentLoader.swift:11` (`import UniformTypeIdentifiers`), `ShareView.swift:11` (`import SwiftUI`)~~
+- ~~**Description**: AGENTS.md: «yrs writer in Core (no UIKit)». Но `UI/` внутри Core держит SwiftUI-views и UIKit-связанные loaders, не имеющие отношения к CRDT-writer'у или domain-логике; это extension-host glue. Нахождение их в Core заставляет каждого consumer'а Core линковать UIKit/SwiftUI.~~
+- ~~**Recommendation**: Перенести `ShareContentLoader`, `ShareContentClassifier`, `ShareView` в выделенный `ShareExtensionUI`-таргет (или в сами extension-таргеты); оставить в Core только чистую логику.~~ — план: новый SPM-target `ShareExtensionUI` (depends on `RecipeScalerCore`), перенести 3 файла + `Shared.xcstrings` в `ShareExtensionUI/`, удалить `RecipeScalerCore/UI/`, обновить `project.pbxproj` (PBXNativeTarget + link Share/Action extensions), обновить `ShareContentClassifierTests` → `@testable import ShareExtensionUI`.
 
-#### 26. **[Architecture]** Двойной source of truth: SwiftData `Recipe` сосуществует с Y.Doc-производным `RecipeData`
-- **Area**: `RecipeScalerNative/Models/Recipe.swift` (`@Model`, зарегистрирован в `RecipeScalerNativeApp.swift:64-85`) vs `RecipeScalerNative/Models/YDoc/RecipeData.swift`
-- **Description**: AGENTS.md/`docs/ARCHITECTURE.md` объявляют Y.Doc source of truth. Но SwiftData-схема `Recipe`/`Ingredient`/`RecipeTimer`/`ApiCacheEntry` зарегистрирована в `ModelContainer`, и только `TimerManager` читает её через `FetchDescriptor<Recipe>`. Ни одного `@Query` против `Recipe` в views нет. Рядом живут legacy `RecipeDetailView.swift` (444 LOC) и Y.Doc-backed `YDocRecipeDetailView.swift` (1168 LOC).
-- **Impact**: Два параллельных представления рецепта, риск дрейфа, неясно новичку, что канонично. `Recipe` несёт legacy-поля (`scaleFactor`, `detailEtag`, `imagePreviewLocalPath`).
-- **Recommendation**: Либо уйти от SwiftData `Recipe` полностью (таймеры читают из `peekRecipeData`), либо явно ограничить SwiftData до `RecipeTimer`/`ApiCacheEntry` и удалить `Recipe`/`Ingredient`-модели. Удалить legacy `RecipeDetailView.swift`.
+#### 26. ~~**[Architecture]** Двойной source of truth: SwiftData `Recipe` сосуществует с Y.Doc-производным `RecipeData`~~ 🔧 Запланировано (2026-06-18, PR2 = `specs/034-architecture-dedup-truth`, задача #26)
+- ~~**Area**: `RecipeScalerNative/Models/Recipe.swift` (`@Model`, зарегистрирован в `RecipeScalerNativeApp.swift:64-85`) vs `RecipeScalerNative/Models/YDoc/RecipeData.swift`~~
+- ~~**Description**: AGENTS.md/`docs/ARCHITECTURE.md` объявляют Y.Doc source of truth. Но SwiftData-схема `Recipe`/`Ingredient`/`RecipeTimer`/`ApiCacheEntry` зарегистрирована в `ModelContainer`, и только `TimerManager` читает её через `FetchDescriptor<Recipe>`. Ни одного `@Query` против `Recipe` в views нет. Рядом живут legacy `RecipeDetailView.swift` (444 LOC) и Y.Doc-backed `YDocRecipeDetailView.swift` (1168 LOC).~~
+- ~~**Impact**: Два параллельных представления рецепта, риск дрейфа, неясно новичку, что канонично. `Recipe` несёт legacy-поля (`scaleFactor`, `detailEtag`, `imagePreviewLocalPath`).~~
+- ~~**Recommendation**: Либо уйти от SwiftData `Recipe` полностью (таймеры читают из `peekRecipeData`), либо явно ограничить SwiftData до `RecipeTimer`/`ApiCacheEntry` и удалить `Recipe`/`Ingredient`-модели. Удалить legacy `RecipeDetailView.swift`.~~ — план (вариант `keep_timer_only` + `extract_then_delete`): извлечь `StepsSection` → `Views/RecipeStepsSection.swift` и `DisplayIngredient` → `Models/YDoc/`, удалить `RecipeDetailView.swift` (444 LOC, unreachable в runtime) + его snapshot-тесты, удалить `Models/Recipe.swift`/`Ingredient.swift`/`ApiCacheEntry.swift`, обновить `RecipeScalerNativeApp.swift` Schema → `[RecipeTimer.self]`, обновить `TestSupport`/`SnapshotTests`/`RecipeListViewModel`/`ContentView #Preview`, обновить `docs/ARCHITECTURE.md`/`SETUP.md`/`PROJECT_STATUS.md`/`specs/001/`.
 
 #### 27. **[Architecture]** Нет composition root с DI; 14 синглтонов тянутся друг в друга
 - **Area**: `RecipeScalerNative/RecipeScalerNativeApp.swift`, `ContentView.swift:21-54`; синглтоны в `AuthService`, `TimerManager`, `APIClient`, `TimerSyncService`, `RecipeImageService`, `PushRegistrationService`, `PushScheduleService`, `ImageCacheService`, `PublicImageCacheService`, `TimerLiveActivityCoordinator`, `YjsMergeHelper`, `AssistantModels`, `DeepLinkRouter`

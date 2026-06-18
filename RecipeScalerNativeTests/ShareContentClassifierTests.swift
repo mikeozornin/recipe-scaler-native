@@ -5,7 +5,8 @@
 //
 
 import XCTest
-@testable import RecipeScalerCore
+import RecipeScalerCore
+@testable import ShareExtensionUI
 
 final class ShareContentClassifierTests: XCTestCase {
 

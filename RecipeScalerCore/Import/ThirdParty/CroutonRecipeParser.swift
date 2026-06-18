@@ -132,24 +132,28 @@ public enum CroutonRecipeParser {
     private static func parseDurationParagraphs(from object: [String: Any]) -> [DescriptionBlock] {
         var blocks: [DescriptionBlock] = []
         for key in ["duration", "cookingDuration"] {
-            let trimmed: String?
+            let minutes: Int?
             if let number = object[key] as? NSNumber, number.intValue > 0 {
-                trimmed = "\(number.intValue) min"
+                minutes = number.intValue
             } else if let value = object[key] as? Int, value > 0 {
-                trimmed = "\(value) min"
-            } else if let text = object[key] as? String {
-                trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                minutes = value
             } else {
-                trimmed = nil
+                minutes = nil
             }
-            if let text = trimmed, !text.isEmpty {
+            if let mins = minutes {
+                blocks.append(.durationMinutes(mins))
+                break
+            }
+            // Free-form string duration (e.g. "overnight") — pass through verbatim.
+            if let text = (object[key] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !text.isEmpty {
                 blocks.append(.paragraph(text))
                 break
             }
         }
         if let difficulty = (object["rawDifficulty"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
            !difficulty.isEmpty {
-            blocks.append(.paragraph(difficulty))
+            blocks.append(.difficulty(difficulty))
         }
         return blocks
     }

@@ -9,6 +9,7 @@ import UIKit
 import SwiftUI
 import UniformTypeIdentifiers
 import RecipeScalerCore
+import ShareExtensionUI
 
 @objc(ShareViewController)
 final class ShareViewController: UIViewController {

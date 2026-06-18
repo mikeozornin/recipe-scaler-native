@@ -5,24 +5,21 @@
 
 import Foundation
 import RecipeScalerCore
-import YrsC
 
 enum DescriptionXmlFragmentWriter {
-    static func apply(blocks: [DescriptionBlock], rawDoc: UnsafeMutablePointer<YDoc>, txn: OpaquePointer) {
-        guard let fragment = ytype_get(txn, "description") else { return }
-
+    static func apply(blocks: [DescriptionBlock], to fragment: YrsXmlFragment, txn: OpaquePointer) {
         var childIndex: UInt32 = 0
         var pendingListItems: [String] = []
 
         func flushList() {
             guard !pendingListItems.isEmpty else { return }
-            guard let orderedList = yxmlelem_insert_elem(fragment, txn, childIndex, "orderedList") else {
+            guard let orderedList = fragment.insertElem(at: childIndex, name: "orderedList", txn: txn) else {
                 pendingListItems = []
                 return
             }
             childIndex += 1
             for (index, item) in pendingListItems.enumerated() {
-                guard let listItem = yxmlelem_insert_elem(orderedList, txn, UInt32(index), "listItem") else {
+                guard let listItem = orderedList.insertElem(at: UInt32(index), name: "listItem", txn: txn) else {
                     continue
                 }
                 insertParagraph(item, into: listItem, at: 0, txn: txn)
@@ -42,6 +39,12 @@ enum DescriptionXmlFragmentWriter {
                 childIndex += 1
             case let .orderedListItem(text):
                 pendingListItems.append(text)
+            case .prepTime, .cookTime, .durationMinutes, .difficulty:
+                // Structural metadata signals — must be resolved into a
+                // localized `.paragraph` by `DescriptionBlockLocalizer` before
+                // reaching the writer. Reaching here is a pipeline bug;
+                // silently skip rather than lose the rest of the description.
+                continue
             }
         }
         flushList()
@@ -49,45 +52,29 @@ enum DescriptionXmlFragmentWriter {
 
     private static func insertParagraph(
         _ text: String,
-        into parent: UnsafeMutablePointer<Branch>,
+        into parent: YrsXmlContainer,
         at index: UInt32,
         txn: OpaquePointer
     ) {
-        guard let paragraph = yxmlelem_insert_elem(parent, txn, index, "paragraph") else { return }
+        guard let paragraph = parent.insertElem(at: index, name: "paragraph", txn: txn) else { return }
         insertText(text, into: paragraph, txn: txn)
     }
 
     private static func insertHeading(
         _ text: String,
         level: Int,
-        into parent: UnsafeMutablePointer<Branch>,
+        into parent: YrsXmlContainer,
         at index: UInt32,
         txn: OpaquePointer
     ) {
-        guard let heading = yxmlelem_insert_elem(parent, txn, index, "heading") else { return }
+        guard let heading = parent.insertElem(at: index, name: "heading", txn: txn) else { return }
         let clamped = min(6, max(1, level))
-        insertAttribute(key: "level", value: String(clamped), on: heading, txn: txn)
+        heading.insertAttr(key: "level", value: String(clamped), txn: txn)
         insertText(text, into: heading, txn: txn)
     }
 
-    private static func insertText(_ text: String, into element: UnsafeMutablePointer<Branch>, txn: OpaquePointer) {
-        guard let textNode = yxmlelem_insert_text(element, txn, 0) else { return }
-        text.withCString { cstr in
-            yxmltext_insert(textNode, txn, 0, cstr, nil)
-        }
-    }
-
-    private static func insertAttribute(
-        key: String,
-        value: String,
-        on element: UnsafeMutablePointer<Branch>,
-        txn: OpaquePointer
-    ) {
-        key.withCString { keyCString in
-            value.withCString { valueCString in
-                var input = yinput_string(valueCString)
-                yxmlelem_insert_attr(element, txn, keyCString, &input)
-            }
-        }
+    private static func insertText(_ text: String, into element: YrsXmlElement, txn: OpaquePointer) {
+        guard let textNode = element.insertText(at: 0, txn: txn) else { return }
+        textNode.insert(at: 0, str: text, txn: txn)
     }
 }

@@ -1,11 +1,15 @@
 import Foundation
 import ZIPFoundation
 
-/// Export recipes, folders, and images into the Recipe Scaler v1.4 format.
+/// Export recipes, folders, and images into the Recipe Scaler v1.5 format.
 ///
 /// Produces either a standalone JSON file (no images) or a ZIP archive
 /// (with `recipes.json` at the root and `images/<recipeId>/full.webp` +
 /// `images/<recipeId>/preview.webp` inside).
+///
+/// v1.5 adds the `amountText` field on ingredients to preserve non-numeric
+/// quantities (`"1/2"`, `"2-3"`, `"to taste"`, …) through the export → import
+/// roundtrip. Numeric amounts still go to `originalAmount`.
 ///
 /// This type lives in `RecipeScalerCore` so it can be reused from
 /// tests, Share Extensions, and the main app target.
@@ -179,9 +183,9 @@ public enum NativeRecipeExporter {
 
         return NativeExportPayload(
             metadata: NativeExportMetadata(
-                version: "1.4",
+                version: "1.5",
                 exportDate: ISO8601DateFormatter().string(from: Date()),
-                type: "recipes-v1.4",
+                type: "recipes-v1.5",
                 count: recipes.count
             ),
             recipes: recipes.map { recipe in
@@ -194,6 +198,7 @@ public enum NativeRecipeExporter {
                             id: ing.id,
                             name: ing.name,
                             originalAmount: ing.originalAmount,
+                            amountText: ing.amountText,
                             unit: ing.unit,
                             order: ing.order,
                             isSeparator: ing.isSeparator
@@ -432,6 +437,7 @@ public struct ExportIngredient: Sendable {
     public let id: String
     public let name: String
     public let originalAmount: Double?
+    public let amountText: String?
     public let unit: String?
     public let order: Int?
     public let isSeparator: Bool?
@@ -440,6 +446,7 @@ public struct ExportIngredient: Sendable {
         id: String,
         name: String,
         originalAmount: Double?,
+        amountText: String? = nil,
         unit: String?,
         order: Int?,
         isSeparator: Bool?
@@ -447,6 +454,7 @@ public struct ExportIngredient: Sendable {
         self.id = id
         self.name = name
         self.originalAmount = originalAmount
+        self.amountText = amountText
         self.unit = unit
         self.order = order
         self.isSeparator = isSeparator

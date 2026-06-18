@@ -23,19 +23,24 @@ extension YrsDocument {
 
     func testApplyDescriptionBlocks(_ blocks: [DescriptionBlock]) async throws {
         try await withWriteTransaction { rawDoc, txn in
-            DescriptionXmlFragmentWriter.apply(blocks: blocks, rawDoc: rawDoc, txn: txn)
+            if let fragment = xmlFragment(txn: txn, name: "description") {
+                DescriptionXmlFragmentWriter.apply(blocks: blocks, to: fragment, txn: txn)
+            }
         }
     }
 
     func testApplyDescriptionDocument(_ document: RecipeDescriptionDocument) async throws {
         try await withWriteTransaction { rawDoc, txn in
-            RecipeDescriptionXmlFragmentWriter.apply(document: document, rawDoc: rawDoc, txn: txn)
+            if let fragment = xmlFragment(txn: txn, name: "description") {
+                RecipeDescriptionXmlFragmentWriter.apply(document: document, to: fragment, txn: txn)
+            }
         }
     }
 
     func testSerializedDescriptionHTML() async throws -> String? {
         try await withReadTransaction { _, txn in
-            XmlFragmentToHTML.serializedFragment(txn: txn)
+            guard let fragment = xmlFragment(txn: txn, name: "description") else { return nil }
+            return XmlFragmentToHTML.serializedFragment(from: fragment, txn: txn)
         }
     }
 }

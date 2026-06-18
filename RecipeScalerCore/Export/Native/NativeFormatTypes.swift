@@ -2,20 +2,42 @@ import Foundation
 
 // MARK: - Ingredient
 
-/// Codable ingredient matching the export JSON shape (v1.0–v1.4).
+/// Codable ingredient matching the export JSON shape (v1.0–v1.5).
 /// Subset of `IngredientData` — only fields present in the export format.
+///
+/// `originalAmount` is polymorphic on the wire:
+/// - v1.0–v1.4 native: always `Double?` (numbers were lost for non-numeric amounts — finding #15).
+/// - Web v1.4: may be `String` (web dumps `recipe.ingredients` as-is).
+/// - v1.5 native: numeric amounts go to `originalAmount`, non-numeric (`"1/2"`,
+///   `"2-3"`, `"to taste"`, …) go to `amountText`.
+///
+/// The custom `Codable` accept any of `Double | String | null | missing` for
+/// `originalAmount`; a string value is transparently routed to `amountText`
+/// (overwriting any pre-existing `amountText`).
 public struct NativeIngredient: Codable, Sendable, Equatable {
     public var id: String?
     public var name: String
     public var originalAmount: Double?
+    public var amountText: String?
     public var unit: String?
     public var order: Int?
     public var isSeparator: Bool?
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case originalAmount
+        case amountText
+        case unit
+        case order
+        case isSeparator
+    }
 
     public init(
         id: String? = nil,
         name: String,
         originalAmount: Double? = nil,
+        amountText: String? = nil,
         unit: String? = nil,
         order: Int? = nil,
         isSeparator: Bool? = nil
@@ -23,9 +45,49 @@ public struct NativeIngredient: Codable, Sendable, Equatable {
         self.id = id
         self.name = name
         self.originalAmount = originalAmount
+        self.amountText = amountText
         self.unit = unit
         self.order = order
         self.isSeparator = isSeparator
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try c.decodeIfPresent(String.self, forKey: .id)
+        self.name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+        self.amountText = try c.decodeIfPresent(String.self, forKey: .amountText)
+        self.unit = try c.decodeIfPresent(String.self, forKey: .unit)
+        self.order = try c.decodeIfPresent(Int.self, forKey: .order)
+        self.isSeparator = try c.decodeIfPresent(Bool.self, forKey: .isSeparator)
+
+        // Polymorphic `originalAmount`: Double | String | null | missing.
+        // A web v1.4 file (or any other producer) may emit a raw string here
+        // for non-numeric amounts. Route such values to `amountText`.
+        if c.contains(.originalAmount) {
+            do {
+                self.originalAmount = try c.decodeIfPresent(Double.self, forKey: .originalAmount)
+            } catch DecodingError.typeMismatch {
+                // String form — back-compat with web v1.4 exports.
+                let stringValue = try c.decode(String.self, forKey: .originalAmount)
+                self.originalAmount = nil
+                if !stringValue.isEmpty {
+                    self.amountText = stringValue
+                }
+            }
+        } else {
+            self.originalAmount = nil
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(id, forKey: .id)
+        try c.encode(name, forKey: .name)
+        try c.encodeIfPresent(originalAmount, forKey: .originalAmount)
+        try c.encodeIfPresent(amountText, forKey: .amountText)
+        try c.encodeIfPresent(unit, forKey: .unit)
+        try c.encodeIfPresent(order, forKey: .order)
+        try c.encodeIfPresent(isSeparator, forKey: .isSeparator)
     }
 }
 

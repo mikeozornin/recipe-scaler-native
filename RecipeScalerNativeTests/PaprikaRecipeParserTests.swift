@@ -42,9 +42,11 @@ final class PaprikaRecipeParserTests: XCTestCase {
         XCTAssertEqual(steps, ["Mix flour and eggs.", "Bake for 30 minutes."])
     }
 
-    /// T063 [US7]: prep_time / cook_time / notes must be emitted as paragraph
-    /// blocks BEFORE the ordered list of steps so they appear as a metadata prefix.
-    func testMetadataFieldsBecomeParagraphPrefix() throws {
+    /// T063 [US7]: prep_time / cook_time / notes are emitted as STRUCTURAL
+    /// metadata blocks BEFORE the ordered list of steps. Synthetic blocks are
+    /// later resolved into localized paragraphs by `DescriptionBlockLocalizer`
+    /// in the Native layer (see review #30) — Core parsers carry no locale.
+    func testMetadataFieldsBecomeStructuralPrefix() throws {
         let payload: [String: Any] = [
             "name": "Bowl",
             "servings": "2",
@@ -61,11 +63,11 @@ final class PaprikaRecipeParserTests: XCTestCase {
             sourceFormat: .paprikaSingle
         )
 
-        // The first three blocks should be the metadata paragraphs in order.
+        // First three blocks: structural prep/cook signals + verbatim notes.
         let prefix = Array(draft.descriptionBlocks.prefix(3))
         XCTAssertEqual(prefix, [
-            .paragraph("Prep: 10 min"),
-            .paragraph("Cook: 20 min"),
+            .prepTime("10 min"),
+            .cookTime("20 min"),
             .paragraph("Rest overnight")
         ])
     }
