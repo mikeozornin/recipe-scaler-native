@@ -294,17 +294,17 @@
 - **Impact**: Per-property observation `@Observable` потеряна на самом высокочернонном сервисе; SwiftUI ре-рендерит целые поддеревья на любой `@Published`-запись.
 - **Recommendation**: Доделать миграцию: `YjsSyncService` → `@Observable`, затем `RecipeListViewModel`, `SpotlightIndexer`, `RemindersSyncService`.
 
-#### 29. **[Standards]** `NativeExportImportService` содержит захардкоженные английские ошибки/предупреждения
-- **Area**: `RecipeScalerNative/Services/NativeExportImportService.swift:266,281`
-- **Description**: Строки «Folder with empty name skipped.», «Failed to import folder "\(...)": ...» аппендятся в `errors`/`warnings`, которые `DataManagementView` рендерит как есть через `Text(error)`/`Text(warning)`.
-- **Impact**: Панель результата импорта показывает непереведённый английский; противоречит паттерну `ThirdPartyImportErrorLocalizer`/`NativeImportMessageLocalizer`.
-- **Recommendation**: Роутить через `NativeImportMessageLocalizer` с ключами вида `account.data.import.folder-empty-skipped`.
+#### 29. ~~**[Standards]** `NativeExportImportService` содержит захардкоженные английские ошибки/предупреждения~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeScalerNative/Services/NativeExportImportService.swift:266,281`~~
+- ~~**Description**: Строки «Folder with empty name skipped.», «Failed to import folder "\(...)": ...» аппендятся в `errors`/`warnings`, которые `DataManagementView` рендерит как есть через `Text(error)`/`Text(warning)`.~~ `importFolders` теперь использует `NativeImportMessageLocalizer.folderEmptySkipped()` и `NativeImportMessageLocalizer.folderFailed(name:error:)`; localizer расширен двумя методами, идёт через `Bundle.currentLocalizedString` + явный `AppLanguagePreference.current.locale` — единый паттерн с уже существующими `recipeFailed`/`imageFailed`.
+- ~~**Impact**: Панель результата импорта показывает непереведённый английский…~~ Закрыто.
+- ~~**Recommendation**: Роутить через `NativeImportMessageLocalizer`…~~ Выполнено. Ключи в `Localizable.xcstrings`: `account.data.import.folder-empty-skipped` (en: "Folder with empty name skipped.", ru: "Пропущена папка с пустым именем."), `account.data.import.folder-failed %@ %@` (en: "Failed to import folder \"%1$@\": %2$@", ru: "Не удалось импортировать папку «%1$@»: %2$@"). Удалены устаревшие `recipe.import.folder-empty-skipped` и `recipe.import.folder-failed-prefix`. Тесты в `NativeImportMessageLocalizerTests` (5 новых кейсов).
 
-#### 30. **[Standards]** Paprika/Crouton-парсеры вшивают английские лейблы в контент импортируемого рецепта
-- **Area**: `RecipeScalerCore/Import/ThirdParty/PaprikaRecipeParser.swift:122,125` («Prep:», «Cook:»); `CroutonRecipeParser.swift:124,126` («min»)
-- **Description**: Парсеры синтезируют параграфы с английскими словами из числовых метаданных и встраивают их в описание рецепта (`DescriptionBlock.paragraph`). Этот текст становится **данными** пользователя, не UI-строкой.
-- **Impact**: Импортированные рецепты навсегда содержат английские фрагменты для ru-пользователей; не лечится переводом, т.к. это данные.
-- **Recommendation**: Либо опускать синтезированные лейблы (хранить prep/cook структурно, рендерить локализованно), либо локализовать префикс по runtime-локали при импорте. Уточнить желаемое поведение в спеке.
+#### 30. ~~**[Standards]** Paprika/Crouton-парсеры вшивают английские лейблы в контент импортируемого рецепта~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeScalerCore/Import/ThirdParty/PaprikaRecipeParser.swift:122,125` («Prep:», «Cook:»); `CroutonRecipeParser.swift:124,126` («min»)~~
+- ~~**Description**: Парсеры синтезируют параграфы с английскими словами из числовых метаданных и встраивают их в описание рецепта (`DescriptionBlock.paragraph`). Этот текст становится **данными** пользователя, не UI-строкой.~~ Решение: Y.Doc-схема **не меняется** (см. `specs/027-paprika-crouton-import/contracts/third-party-recipe-formats.md` строки 33–34, 149–150 и `docs/I18N.md` секция «Импорт сторонних форматов — синтезированные лейблы»). Core-парсеры возвращают **структурные сигналы** через расширенный `DescriptionBlock` (новые case'ы `.prepTime(String)`, `.cookTime(String)`, `.durationMinutes(Int)`, `.difficulty(String)`); Native-слой локализует их в `.paragraph` в момент applying к Y.Doc через новый `DescriptionBlockLocalizer` (точка вызова — `DocumentManager.applyImportedRecipe`).
+- ~~**Impact**: Импортированные рецепты навсегда содержат английские фрагменты…~~ Закрыто: новые импорты получают лейблы по runtime-локали. Уже сохранённые рецепты (с захардкоженным «Prep:») **не мигрируются автоматически** — это допустимо, т.к. контент — данные пользователя, перезапись была бы более инвазивной.
+- ~~**Recommendation**: Либо опускать синтезированные лейблы…~~ Выбран второй вариант (локализованный префикс при импорте). Ключи в `Localizable.xcstrings`: `recipe.import.metadata.prep-time %@`, `recipe.import.metadata.cook-time %@`, `recipe.import.metadata.duration-minutes %d` (en/ru). `difficulty` — pass-through (free-form значение из исходного файла, не подлежит детерминированной локализации). Тесты: `DescriptionBlockLocalizerTests` (14 кейсов) + обновлённые `PaprikaRecipeParserTests` и `CroutonRecipeParserTests` (теперь проверяют структурные case'ы).
 
 #### 31. ~~**[Standards]** Логирование через `print()` вместо фасада `AppLog`~~ ✅ Исправлено (2026-06-18)
 - **Area**: `RecipeScalerNative/RecipeScalerNativeApp.swift:24` (провал APNs); `RecipeScalerNative/Views/RecipeDetailView.swift:227`
@@ -517,7 +517,7 @@
 - [ ] **Уязвимости безопасности аутентификации** — Critical №1–3, High №12–13
 - [ ] **Корректность бизнес-логики** — ~~High №14~~ ✅ (2026-06-18), High №15–16, Medium №35–37
 - [x] **Узкие места производительности (большая часть)** — ✅ №4, 5, 7, 18–22, 38–43, 65, 66 (2026-06-18); остаются **#6** (WKWebView merge), **#17** (Socket.IO wire format)
-- [ ] Код следует стандартам проекта — ~~Critical №11~~ ✅, High №29–31
+- [ ] Код следует стандартам проекта — ~~Critical №11~~ ✅, ~~High №29–30~~ ✅ (2026-06-18), №31 ✅ (2026-06-18)
 - [x] Маркеры `// TODO`/`FIXME`/`HACK` — не найдены
 - [x] Пустые `catch {}` — не найдены в проде
 - [ ] Комплексная обработка ошибок — ~~критично №11~~ ✅, №16, №46
@@ -537,7 +537,7 @@
 1. **Безопасность (блокирующе)**: Critical №1–3 — модель аутентификации на публичном `userId` + закоммиченный prod-UUID — это прямой путь к full account takeover. Минимум как срочный quick-win: ротировать debug-UUID, перенести `userId` в Keychain, добавить TLS-pinning.
 2. ~~**Производительность (блокирующе для целевых метрик)**: Critical №4–7 — O(N²)-импорт, decode архива в память, merge на main thread и export all-in-memory~~ ✅ Исправлено (2026-06-18), кроме **#6** (WKWebView merge) и **#17** (Socket.IO wire format).
 3. **Стабильность данных**: High №16 — оборонительное удаление снапшота при ошибке remote-апдейта может потерять несинхронизированные локальные правки.
-4. **i18n**: ~~Critical №11~~ ✅ + High №29–31 — захардкоженный английский в ошибках импорта/контенте.
+4. ~~**i18n**: ~~Critical №11~~ ✅ + High №29–31 — захардкоженный английский в ошибках импорта/контенте.~~ ✅ Исправлено (2026-06-18): №11, №29, №30, №31 — все закрыты.
 
 Архитектурные находки (god-объекты, ~~сломанный `Package.swift`~~ ✅, дубликаты Core/Native) — это технический долг, который не блокирует релиз, но должен попасть в roadmap: они блокируют тестируемость и ускоряют регрессии.
 
