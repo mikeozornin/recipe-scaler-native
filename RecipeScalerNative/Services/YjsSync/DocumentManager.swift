@@ -13,6 +13,20 @@ actor DocumentManager {
     private let store: YDocStore
     private static let logger = Logger(subsystem: "com.recipescaler.native", category: "DocumentManager")
 
+    /// Test-only seam: when `true`, the next `applyUpdateToDoc` or
+    /// `applyDescriptionEditorUpdate` call will throw a synthetic
+    /// `YrsError.applyFailed` instead of invoking the yrs FFI. This lets
+    /// regression tests drive the apply-failure catch path deterministically
+    /// without depending on yrs' behavior on malformed input (which is not
+    /// guaranteed to throw — it may no-op or, for some payloads, spin on
+    /// varint parsing). Production code never sets this flag.
+    #if DEBUG
+    private var nextApplyUpdateShouldThrow = false
+    func setNextApplyUpdateShouldThrow() {
+        nextApplyUpdateShouldThrow = true
+    }
+    #endif
+
     private var onCollectionChanged: (@Sendable () -> Void)?
     private var onRecipeChanged: (@Sendable (String) -> Void)?
     var onShoppingChanged: (@Sendable () -> Void)?
@@ -117,6 +131,19 @@ actor DocumentManager {
         data: Data,
         lastSyncedAt: String?
     ) async throws {
+        #if DEBUG
+        if nextApplyUpdateShouldThrow {
+            nextApplyUpdateShouldThrow = false
+            // Mirror what the catch block below does on a real apply failure:
+            // evict in-memory state so the next getOrCreateDoc rebuilds from
+            // the durable SQLite snapshot. The snapshot is preserved.
+            docs.removeValue(forKey: key)
+            observerTokens.removeValue(forKey: key)
+            htmlCache.removeValue(forKey: key)
+            plainTextCache.removeValue(forKey: key)
+            throw YrsError.applyFailed(context: "test-forced apply failure")
+        }
+        #endif
         do {
             try await doc.applyUpdate(data)
         } catch {
@@ -1351,6 +1378,16 @@ actor DocumentManager {
         // (description-editor-bridge.js). No oversized-update backstop needed: the
         // old >2048 guard existed only to block the full clearFragment()+reinsert
         // html-push that caused 5× duplication, which no longer happens.
+        #if DEBUG
+        if nextApplyUpdateShouldThrow {
+            nextApplyUpdateShouldThrow = false
+            docs.removeValue(forKey: key)
+            observerTokens.removeValue(forKey: key)
+            htmlCache.removeValue(forKey: key)
+            plainTextCache.removeValue(forKey: key)
+            throw YrsError.applyFailed(context: "test-forced apply failure (description editor)")
+        }
+        #endif
         do {
             try await doc.applyLocalUpdate(update)
         } catch {

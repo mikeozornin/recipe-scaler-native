@@ -371,6 +371,7 @@
 		REMINDERS0007AA0007BB07 /* RemindersListPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0008AA0008BB08 /* RemindersListPickerView.swift */; };
 		SCTA00002AA000200000002 /* ShortcutItemsUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */; };
 		YRSDOC01A293A4B701000001 /* YrsDocument+TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */; };
+		YJSOFF01A293A4B701000001 /* YjsOfflineSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -818,6 +819,7 @@
 		REMINDERS0008AA0008BB08 /* RemindersListPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersListPickerView.swift; sourceTree = "<group>"; };
 		SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutItemsUpdater.swift; sourceTree = "<group>"; };
 		YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "YrsDocument+TestSupport.swift"; sourceTree = "<group>"; };
+		YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsOfflineSyncTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1256,6 +1258,7 @@
 				A029031000305 /* NativeFormatHtmlImportRoundtripTests.swift */,
 				A029031000306 /* NativeImportImageSelectionTests.swift */,
 				YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */,
+				YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */,
 				A027027000117 /* Fixtures */,
 			);
 			path = RecipeScalerNativeTests;
@@ -2190,6 +2193,7 @@
 				A029031000315 /* NativeFormatHtmlImportRoundtripTests.swift in Sources */,
 				A029031000316 /* NativeImportImageSelectionTests.swift in Sources */,
 				YRSDOC01A293A4B701000001 /* YrsDocument+TestSupport.swift in Sources */,
+				YJSOFF01A293A4B701000001 /* YjsOfflineSyncTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

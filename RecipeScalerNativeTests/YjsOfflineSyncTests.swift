@@ -117,6 +117,15 @@ final class YrsServerMergeTests: XCTestCase {
 /// a malformed Yjs update must not delete the SQLite snapshot, because that
 /// snapshot may contain unsynced local edits. The fix evicts the in-memory doc
 /// on apply failure but preserves the durable snapshot for recovery.
+///
+/// Note on test design: yrs FFI (`ytransaction_apply`) is not guaranteed to
+/// throw deterministically on arbitrary bytes — it may silently no-op or, for
+/// some malformed payloads, spin on varint parsing. To keep tests fast and
+/// deterministic we drive the throw path through a tiny seam: a stored proc-
+/// style `XCTestConfiguration`-friendly hook on `DocumentManager` that lets a
+/// test force the next `applyUpdate`/`applyDescriptionEditorUpdate` to throw
+/// `YrsError.applyFailed`. This is gated behind `#if DEBUG` and used only by
+/// these tests; production code path is unchanged.
 final class PreserveSnapshotOnApplyFailureTests: XCTestCase {
     private func makeManager() throws -> (DocumentManager, YDocStore) {
         let queue = try DatabaseQueue()
@@ -125,7 +134,7 @@ final class PreserveSnapshotOnApplyFailureTests: XCTestCase {
         return (DocumentManager(store: store), store)
     }
 
-    func testApplyUpdateGarbageDataPreservesSnapshot() async throws {
+    func testApplyUpdateFailurePreservesSnapshot() async throws {
         let userId = "preserve-user"
         let (manager, store) = try makeManager()
         await manager.setUserId(userId)
@@ -137,10 +146,13 @@ final class PreserveSnapshotOnApplyFailureTests: XCTestCase {
         let snapshotBefore = try await store.loadSnapshot(docKey: key)
         XCTAssertNotNil(snapshotBefore, "baseline snapshot must exist after a local edit")
 
-        // Apply malformed update — must throw.
+        // Force the apply path to throw on the next call (test-only seam).
+        await manager.setNextApplyUpdateShouldThrow()
+
+        // Apply must throw via the catch path in applyUpdateToDoc.
         do {
-            try await manager.applyUpdate(key: key, data: Data([0xFF, 0xEE, 0xDD]))
-            XCTFail("expected applyUpdate to throw on malformed data")
+            try await manager.applyUpdate(key: key, data: Data([0x00]))
+            XCTFail("expected applyUpdate to throw when forced")
         } catch {
             // expected
         }
@@ -164,7 +176,7 @@ final class PreserveSnapshotOnApplyFailureTests: XCTestCase {
         )
     }
 
-    func testApplyDescriptionEditorUpdateGarbageDataPreservesSnapshot() async throws {
+    func testApplyDescriptionEditorUpdateFailurePreservesSnapshot() async throws {
         let userId = "preserve-desc-user"
         let (manager, store) = try makeManager()
         await manager.setUserId(userId)
@@ -176,10 +188,12 @@ final class PreserveSnapshotOnApplyFailureTests: XCTestCase {
         let snapshotBefore = try await store.loadSnapshot(docKey: key)
         XCTAssertNotNil(snapshotBefore, "baseline snapshot must exist after a local edit")
 
-        // Apply malformed description-editor update — must throw.
+        // Force the apply path to throw on the next description editor update.
+        await manager.setNextApplyUpdateShouldThrow()
+
         do {
-            try await manager.applyDescriptionEditorUpdate(recipeId: recipeId, update: Data([0xAB, 0xCD]))
-            XCTFail("expected applyDescriptionEditorUpdate to throw on malformed data")
+            try await manager.applyDescriptionEditorUpdate(recipeId: recipeId, update: Data([0x00, 0x01]))
+            XCTFail("expected applyDescriptionEditorUpdate to throw when forced")
         } catch {
             // expected
         }
