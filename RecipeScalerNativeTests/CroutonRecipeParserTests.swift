@@ -254,6 +254,124 @@ final class CroutonRecipeParserTests: XCTestCase {
         }
     }
 
+    // MARK: - TP-14 Int(amountValue) overflow safety (review #14)
+
+    /// TP14 [review #14]: oversized integer amount out of Int64 range must not
+    /// crash the import — falls back to String representation.
+    func testTP14_IntegerOverflowDoesNotCrash() throws {
+        let payload: [String: Any] = [
+            "uuid": "x",
+            "name": "Big",
+            "ingredients": [[
+                "order": 0,
+                "ingredient": ["name": "salt"],
+                "quantity": ["amount": 1e20, "quantityType": "GRAMS"]
+            ]]
+        ]
+        let data = try JSONSerialization.data(withJSONObject: payload)
+
+        let draft = try CroutonRecipeParser.parse(
+            jsonData: data,
+            fileName: "big.crumb",
+            sourceFormat: .croutonSingle
+        )
+
+        XCTAssertEqual(draft.ingredients.count, 1)
+        XCTAssertEqual(draft.ingredients[0].amount, "1e+20")
+        XCTAssertEqual(draft.ingredients[0].unit, "g")
+    }
+
+    /// TP14 [review #14]: integer amount at the upper edge of Int64 range is
+    /// still formatted losslessly as Int (no scientific notation).
+    func testTP14_LargeIntegerInRangeFormatsAsInt() throws {
+        let payload: [String: Any] = [
+            "uuid": "x",
+            "name": "Edge",
+            "ingredients": [[
+                "order": 0,
+                "ingredient": ["name": "salt"],
+                "quantity": ["amount": 9_000_000_000.0, "quantityType": "GRAMS"]
+            ]]
+        ]
+        let data = try JSONSerialization.data(withJSONObject: payload)
+
+        let draft = try CroutonRecipeParser.parse(
+            jsonData: data,
+            fileName: "edge.crumb",
+            sourceFormat: .croutonSingle
+        )
+
+        XCTAssertEqual(draft.ingredients[0].amount, "9000000000")
+    }
+
+    /// TP14 [review #14]: negative value within Int64 still formats as Int.
+    func testTP14_NegativeIntegerAmountFormatsAsInt() throws {
+        let payload: [String: Any] = [
+            "uuid": "x",
+            "name": "Neg",
+            "ingredients": [[
+                "order": 0,
+                "ingredient": ["name": "x"],
+                "quantity": ["amount": -5.0, "quantityType": "GRAMS"]
+            ]]
+        ]
+        let data = try JSONSerialization.data(withJSONObject: payload)
+
+        let draft = try CroutonRecipeParser.parse(
+            jsonData: data,
+            fileName: "neg.crumb",
+            sourceFormat: .croutonSingle
+        )
+
+        XCTAssertEqual(draft.ingredients[0].amount, "-5")
+    }
+
+    /// TP14 [review #14]: regression — normal integer amount still becomes
+    /// "225" without a decimal dot (existing format preserved).
+    func testTP14_NormalIntegerAmountStillFormatsWithoutDot() throws {
+        let payload: [String: Any] = [
+            "uuid": "x",
+            "name": "Normal",
+            "ingredients": [[
+                "order": 0,
+                "ingredient": ["name": "flour"],
+                "quantity": ["amount": 225.0, "quantityType": "GRAMS"]
+            ]]
+        ]
+        let data = try JSONSerialization.data(withJSONObject: payload)
+
+        let draft = try CroutonRecipeParser.parse(
+            jsonData: data,
+            fileName: "normal.crumb",
+            sourceFormat: .croutonSingle
+        )
+
+        XCTAssertEqual(draft.ingredients[0].amount, "225")
+    }
+
+    /// TP14 [review #14]: fractional amount is still rendered via String(Double)
+    /// (no rounding, no scientific notation for in-range values).
+    func testTP14_FractionalAmountStillUsesStringOfDouble() throws {
+        let payload: [String: Any] = [
+            "uuid": "x",
+            "name": "Frac",
+            "ingredients": [[
+                "order": 0,
+                "ingredient": ["name": "milk"],
+                "quantity": ["amount": 2.5, "quantityType": "CUPS"]
+            ]]
+        ]
+        let data = try JSONSerialization.data(withJSONObject: payload)
+
+        let draft = try CroutonRecipeParser.parse(
+            jsonData: data,
+            fileName: "frac.crumb",
+            sourceFormat: .croutonSingle
+        )
+
+        XCTAssertEqual(draft.ingredients[0].amount, "2.5")
+    }
+
     private func fixtureURL(named name: String, ext: String) throws -> URL {
         let bundle = Bundle(for: CroutonRecipeParserTests.self)
         guard let url = bundle.url(

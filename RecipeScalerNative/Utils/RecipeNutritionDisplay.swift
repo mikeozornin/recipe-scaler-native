@@ -102,20 +102,29 @@ enum RecipeNutritionDisplay {
     }
 
     static func formatCalories(_ value: Double) -> String {
-        String(Int(value.rounded()))
+        // TP14 [review #14]: NaN/Inf/overflow guard before Int cast.
+        guard value.isFinite, let intValue = Int(exactlySafe: value.rounded()) else {
+            return value.isFinite ? String(value.rounded()) : ""
+        }
+        return String(intValue)
     }
 
     static func formatMacroValue(_ value: Double) -> String {
-        if value == floor(value) {
-            return String(Int(value))
+        // TP14 [review #14]: `value == floor(value)` is false for NaN, but
+        // the explicit finite guard also rejects Infinity.
+        guard value.isFinite else { return "" }
+        if value == floor(value), let intValue = Int(exactlySafe: value) {
+            return String(intValue)
         }
         return String(format: "%.1f", value)
     }
 
     static func formatScaleFactorLabel(_ scaleFactor: Double) -> String {
+        // TP14 [review #14]: guard non-finite scale factors.
+        guard scaleFactor.isFinite else { return "×1" }
         let rounded = (scaleFactor * 100).rounded() / 100
-        if rounded == floor(rounded) {
-            return "×\(Int(rounded))"
+        if rounded == floor(rounded), let intValue = Int(exactlySafe: rounded) {
+            return "×\(intValue)"
         }
         var text = String(format: "%.2f", rounded)
         while text.contains(".") && (text.hasSuffix("0") || text.hasSuffix(".")) {

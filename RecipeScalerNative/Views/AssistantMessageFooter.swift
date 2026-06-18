@@ -398,16 +398,25 @@ private struct AssistantNumberInputWidget: View {
     }
 
     private var stepperRange: ClosedRange<Double> {
-        let lower = config.min ?? -Double.greatestFiniteMagnitude
-        let upper = config.max ?? Double.greatestFiniteMagnitude
+        // TP14 [review #14]: clamp to a sane Int-representable range to avoid
+        // Stepper overflow weirdness and keep `formattedValue` in safe Double territory.
+        // `±Double.greatestFiniteMagnitude` produced unusable steppers and could
+        // overflow `Int(value)` in `formattedValue` for large values.
+        let lower = config.min ?? Double(Int.min)
+        let upper = config.max ?? Double(Int.max)
         return lower...upper
     }
 
     private var formattedValue: String {
         // Drop trailing ".0" for integer-valued steps; keep precision for fractional ones.
+        // TP14 [review #14]: guard NaN/Inf and overflow before `Int(value)` cast.
+        if value.isNaN || value.isInfinite {
+            return ""
+        }
         if config.step.map { $0.truncatingRemainder(dividingBy: 1) == 0 } ?? true
-            && value.truncatingRemainder(dividingBy: 1) == 0 {
-            return String(Int(value))
+            && value.truncatingRemainder(dividingBy: 1) == 0,
+           let intValue = Int(exactly: value) {
+            return String(intValue)
         }
         return String(value)
     }

@@ -115,9 +115,17 @@ public enum CroutonRecipeParser {
         default: unit = type.isEmpty ? "" : type.lowercased()
         }
 
-        let amountString = amountValue.truncatingRemainder(dividingBy: 1) == 0
-            ? String(Int(amountValue))
-            : String(amountValue)
+        // TP14 [review #14]: guard against precondition trap on out-of-Int64
+        // Double (e.g. 1e20) and non-finite values (NaN/Infinity) which can slip
+        // through NSNumber bridges. Int(exactly:) returns nil on overflow.
+        let amountString: String
+        if amountValue.isNaN || amountValue.isInfinite {
+            amountString = ""
+        } else if let intValue = Int(exactly: amountValue) {
+            amountString = String(intValue)
+        } else {
+            amountString = String(amountValue)
+        }
         return (amountString, unit)
     }
 

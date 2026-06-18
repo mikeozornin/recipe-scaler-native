@@ -4,7 +4,7 @@ import Foundation
 enum RecipeServings {
     static func normalize(_ value: Double) -> Int? {
         guard value.isFinite, value > 0 else { return nil }
-        return max(1, Int(value.rounded()))
+        return max(1, Int(clampingFinite: value.rounded()))
     }
 
     static func normalize(_ value: Int) -> Int? {
@@ -17,7 +17,7 @@ enum RecipeServings {
         guard !trimmed.isEmpty else { return nil }
         let normalized = trimmed.replacingOccurrences(of: ",", with: ".")
         guard let parsed = Double(normalized), parsed.isFinite, parsed > 0 else { return nil }
-        return max(1, Int(parsed.rounded()))
+        return max(1, Int(clampingFinite: parsed.rounded()))
     }
 
     /// Base servings from Y.Doc `servings` (int, float, or string). `nil` when missing/invalid.
@@ -44,6 +44,6 @@ enum RecipeServings {
     static func scaledServings(base: Int, scaleFactor: Double) -> Int {
         let normalizedBase = max(1, base)
         let scale = scaleFactor.isFinite && scaleFactor > 0 ? scaleFactor : 1
-        return max(1, Int((Double(normalizedBase) * scale).rounded()))
+        return max(1, Int(clampingFinite: (Double(normalizedBase) * scale).rounded()))
     }
 }

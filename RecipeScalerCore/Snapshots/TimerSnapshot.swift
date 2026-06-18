@@ -62,14 +62,29 @@ public struct TimerSnapshot: Codable, Hashable, Sendable, Identifiable {
     public func remainingSeconds(now: Date = Date()) -> Int {
         switch phase {
         case .running:
-            guard let endDate else { return Int(totalDurationSeconds) }
-            return Int(endDate.timeIntervalSince(now).rounded())
+            // TP14 [review #14]: guard NaN/Inf/overflow before Int cast.
+            // `totalDurationSeconds` comes from app-internal state (bounded in
+            // practice) but defensive guards keep the widget/Live Activity alive
+            // if a malformed snapshot slips through.
+            guard totalDurationSeconds.isFinite else { return 0 }
+            guard let endDate else { return Self.clampingInt(totalDurationSeconds) }
+            return Self.clampingInt(endDate.timeIntervalSince(now).rounded())
         case .paused:
             return pausedRemainingSeconds ?? 0
         case .exceeded:
             guard let endDate else { return 0 }
-            return Int(endDate.timeIntervalSince(now).rounded())
+            return Self.clampingInt(endDate.timeIntervalSince(now).rounded())
         }
+    }
+
+    /// NaN/Infinity → 0; values outside Int range clamped to the nearest bound.
+    /// Local copy of `Int(clampingFinite:)` (Core cannot depend on Native's
+    /// `SafeIntCasts.swift`). See review #14.
+    private static func clampingInt(_ value: Double) -> Int {
+        if value.isNaN || value.isInfinite { return 0 }
+        if value >= Double(Int.max) { return Int.max }
+        if value <= Double(Int.min) { return Int.min }
+        return Int(value)
     }
 }
 

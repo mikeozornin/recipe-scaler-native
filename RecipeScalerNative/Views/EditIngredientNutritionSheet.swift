@@ -146,12 +146,16 @@ struct EditIngredientNutritionSheet: View {
 
     private static func formatCalories(_ value: Double) -> String {
         guard value != 0 else { return "" }
-        return String(Int(value.rounded()))
+        // TP14 [review #14]: NaN/Inf/overflow guard.
+        guard value.isFinite else { return "" }
+        return String(intRoundedClamped(value))
     }
 
     private static func formatMacro(_ value: Double) -> String {
         guard value != 0 else { return "" }
-        if value.rounded() == value { return String(Int(value)) }
+        // TP14 [review #14]: guard before Int cast.
+        guard value.isFinite else { return "" }
+        if value.rounded() == value, let intValue = Int(exactlySafe: value) { return String(intValue) }
         return String(format: "%.1f", value)
     }
 

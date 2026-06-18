@@ -702,8 +702,10 @@ enum XmlFragmentToHTML {
     }
 
     private static func formatAmount(_ value: Double) -> String {
-        if value.rounded(.towardZero) == value {
-            return String(Int(value.rounded()))
+        // TP14 [review #14]: guard NaN/Inf and out-of-Int64 range before cast.
+        guard value.isFinite else { return "" }
+        if value.rounded(.towardZero) == value, let intValue = Int(exactlySafe: value.rounded()) {
+            return String(intValue)
         }
         var text = String(format: "%.2f", value)
         while text.last == "0" { text.removeLast() }

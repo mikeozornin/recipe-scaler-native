@@ -20,6 +20,10 @@ enum TimerLiveActivityAccent {
 
     static func resolve(remainingSeconds: Int, totalDuration: TimeInterval) -> Self {
         if remainingSeconds < 0 { return .exceeded }
+        // TP14 [review #14]: guard NaN/Inf before Int cast. Inline because
+        // this file is compiled into TimerLiveActivityExtension, which can't
+        // import SafeIntCasts from the main app target.
+        guard totalDuration.isFinite, totalDuration < Double(Int.max) else { return .normal }
         if totalDuration > 0, remainingSeconds < Int(totalDuration) / 10 { return .soon }
         return .normal
     }

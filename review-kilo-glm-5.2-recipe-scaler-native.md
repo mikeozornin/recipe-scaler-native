@@ -86,6 +86,25 @@
 
 ---
 
+## Int(Double) overflow safety remediation (2026-06-18)
+
+Исправлена находка **#14** — Swift precondition trap на `Int(amountValue)` в Crouton-парсере. Audit также выявил и закрыл ~6 связанных сайтов с тем же классом бага.
+
+| # | Статус | Кратко |
+|---|--------|--------|
+| 14 | ✅ | `CroutonRecipeParser.parseQuantity` → `Int(exactly:)` + fallback на `String(amountValue)`; NaN/Inf → `""`; 5 TP14 edge-case тестов |
+| 14a | ✅ | `AssistantMessageFooter.formattedValue`/`stepperRange` — NaN/Inf guard + `Int(exactly:)` fallback; Stepper range clamp к `Double(Int.min)...Double(Int.max)` |
+| 14b | ✅ | `RecipeServings` / `RecipeNutritionDisplay` / `IngredientNutritionDisplay` / `EditIngredientNutritionSheet` — safe-casts через shared `Int(clampingFinite:)` / `Int(exactlySafe:)` |
+| 14c | ✅ | `XmlFragmentToHTML.formatAmount` / `RecipeDescriptionXmlFragmentWriter.formatAmount` — `Int(exactlySafe:)` guard |
+| 14d | ✅ | `DescriptionMarkupFlow.durationSeconds` / `parseDurationSeconds` / `ratioPercent` — `intRoundedClamped` |
+| 14e | ✅ | Timer internals: `TimerSnapshot.remainingSeconds`, `RecipeTimerActivityAttributes.remainingSeconds`, `TimerLiveActivityAccent.resolve`, `WidgetTimerAccent.resolve`, `TimerSyncService.timerCreatedPayload` — inline guards (extension-target-aware) |
+| 14f | ✅ | Shared helper `RecipeScalerNative/Utils/SafeIntCasts.swift` (`Int(exactlySafe:)`, `Int(clampingFinite:)`, `Int64(clampingFinite:)`, `intRoundedClamped`); зарегистрирован в `project.pbxproj` main app target |
+| 14g | ✅ | Документация: [docs/I18N.md](docs/I18N.md) — новая секция «Int(Double) safe casts» с таблицей API, примерами и правилами для extension-target кода |
+
+**Вне scope #14**: ad-hoc `Int(...)` на `BinaryInteger`/`UInt32` FFI-длинах (Yjs/Yrs C-pointer reads, `YjsPayloadBytes` byte boxing) — остаются `init(clamping:)` или `truncatingIfNeeded:` из stdlib, не относятся к `Double`-overflow.
+
+---
+
 ## Находки (отсортированы по приоритету)
 
 ### Critical
@@ -170,11 +189,11 @@
 - **Impact**: Атакующий с доверенным CA (enterprise MDM, jailbreak) может MITM'ить и читать `x-user-id`/тела. В связке с находкой №1 один перехваченный запрос = полный takeover.
 - **Recommendation**: Пинить API/WS-эндпоинты (SPKI-pinning — устойчивый выбор) через кастомный `URLSessionDelegate`, fail closed при несовпадении.
 
-#### 14. **[Business Logic]** Crouton `Int(amountValue)` крэшит на больших значениях
-- **Area**: `RecipeScalerCore/Import/ThirdParty/CroutonRecipeParser.swift:113-115`
-- **Description**: `parseQuantity` делает `Int(amountValue)`. При `quantity.amount` целочисленном Double вне диапазона `Int64` (напр. `1e19`) — это Swift-предусловие trap (overflow), не throw. Импорт — фича, обрабатывающая недоверенные `.crumb`/zip.
-- **Impact**: Crafted (или патологически большой) Crouton-файл прерывает весь импорт жёстким крэшем; нет изоляции per-entry-ошибок.
-- **Recommendation**: Гард через `Int(exactly: amountValue)` (вернёт `nil` при overflow) с fallback на `String(amountValue)`, либо clamp.
+#### 14. ~~**[Business Logic]** Crouton `Int(amountValue)` крэшит на больших значениях~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeScalerCore/Import/ThirdParty/CroutonRecipeParser.swift:113-115`~~
+- ~~**Description**: `parseQuantity` делает `Int(amountValue)`. При `quantity.amount` целочисленном Double вне диапазона `Int64` (напр. `1e19`) — это Swift-предусловие trap (overflow), не throw. Импорт — фича, обрабатывающая недоверенные `.crumb`/zip.~~ Заменено на `Int(exactly:)` с fallback на `String(amountValue)`; NaN/Infinity → пустая строка. Audit также выявил и закрыл ~6 связанных `Int(Double)`-сайтов (AssistantMessageFooter Stepper, RecipeServings/RecipeNutritionDisplay/IngredientNutritionDisplay/XmlFragmentToHTML/RecipeDescriptionXmlFragmentWriter/EditIngredientNutritionSheet/DescriptionMarkupFlow через shared helper, timer internals в `TimerSnapshot` / `RecipeTimerActivityAttributes` / `TimerLiveActivityAccent` / `WidgetTimerAccent` / `TimerSyncService`).
+- ~~**Impact**: Crafted (или патологически большой) Crouton-файл прерывает весь импорт жёстким крэшем; нет изоляции per-entry-ошибок.~~ Закрыто. 5 новых TP14 edge-case тестов (overflow / in-range-large / negative / normal / fractional) в `CroutonRecipeParserTests.swift` — все зелёные.
+- Shared helper: [`RecipeScalerNative/Utils/SafeIntCasts.swift`](../RecipeScalerNative/Utils/SafeIntCasts.swift) (`Int(exactlySafe:)`, `Int(clampingFinite:)`, `Int64(clampingFinite:)`). Для UI-форматирования — `IngredientData.formatScalarNumber`. Паттерн задокументирован в [docs/I18N.md](../docs/I18N.md) (секция «Int(Double) safe casts»).
 
 #### 15. **[Business Logic]** Нативный экспорт молча теряет нечисловые количества ингредиентов при roundtrip
 - **Area**: `RecipeScalerNative/Services/NativeExportImportService.swift:50`; `RecipeScalerNative/Models/YDoc/IngredientData.swift:127-132`
@@ -479,7 +498,7 @@
 - [x] Декомпрессионные бомбы изображений — обработаны (`RecipeImageUploadPreprocessor`)
 - [x] Path traversal в ZIP — нет (строгий 3-component-split для изображений)
 - [ ] **Уязвимости безопасности аутентификации** — Critical №1–3, High №12–13
-- [ ] **Корректность бизнес-логики** — High №14–16, Medium №35–37
+- [ ] **Корректность бизнес-логики** — ~~High №14~~ ✅ (2026-06-18), High №15–16, Medium №35–37
 - [x] **Узкие места производительности (большая часть)** — ✅ №4, 5, 7, 18–22, 38–43, 65, 66 (2026-06-18); остаются **#6** (WKWebView merge), **#17** (Socket.IO wire format)
 - [ ] Код следует стандартам проекта — ~~Critical №11~~ ✅, High №29–31
 - [x] Маркеры `// TODO`/`FIXME`/`HACK` — не найдены

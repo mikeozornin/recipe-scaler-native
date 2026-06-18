@@ -29,10 +29,11 @@ enum DescriptionTimerUnit: String, CaseIterable, Identifiable {
     }
 
     func durationSeconds(for value: Double) -> Int {
+        // TP14 [review #14]: clamp to Int range; NaN/Inf → 0.
         switch self {
-        case .hours: Int(value * 3600)
-        case .minutes: Int(value * 60)
-        case .seconds: Int(value)
+        case .hours: intRoundedClamped(value * 3600)
+        case .minutes: intRoundedClamped(value * 60)
+        case .seconds: intRoundedClamped(value)
         }
     }
 }
@@ -115,8 +116,10 @@ enum DescriptionMarkupFlow {
     static func parseDurationSeconds(_ raw: String) -> Int {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         if let intValue = Int(trimmed) { return intValue }
-        if let doubleValue = Double(trimmed.replacingOccurrences(of: ",", with: ".")) {
-            return Int(doubleValue.rounded())
+        if let doubleValue = Double(trimmed.replacingOccurrences(of: ",", with: ".")),
+           doubleValue.isFinite {
+            // TP14 [review #14]: clamp before Int cast.
+            return intRoundedClamped(doubleValue)
         }
         return 0
     }
@@ -251,7 +254,7 @@ private struct DescriptionIngredientRatioStepView: View {
 
     private var ratioPercent: Int? {
         guard let ratio = DescriptionMarkupFlow.ratio(for: selectedText, ingredient: ingredient) else { return nil }
-        return Int((ratio * 100).rounded())
+        return intRoundedClamped(ratio * 100)
     }
 
     var body: some View {

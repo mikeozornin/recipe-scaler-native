@@ -36,6 +36,10 @@ enum WidgetTimerAccent {
             return .exceeded
         case .paused, .running:
             if remainingSeconds < 0 { return .exceeded }
+            // TP14 [review #14]: guard NaN/Inf before Int cast. Bounded timer
+            // values fit easily in Int64, but defense-in-depth keeps the widget
+            // alive if a malformed snapshot slips through.
+            guard totalDuration.isFinite, totalDuration < Double(Int.max) else { return .normal }
             if totalDuration > 0, remainingSeconds < Int(totalDuration) / 10 { return .soon }
             return .normal
         }

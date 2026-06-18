@@ -160,24 +160,27 @@ final class TimerSyncService {
     }
 
     func timerCreatedPayload(for timer: RecipeTimer) -> [String: Any] {
+        // TP14 [review #14]: `timeIntervalSince1970 * 1000`, `TimeInterval` → Int
+        // and `TimeInterval` → Int64 are bounded in practice (a few billion ms for
+        // modern dates) but guard against NaN/Inf and overflow for defense-in-depth.
         var timerDict: [String: Any] = [
             "id": timer.id,
             "name": timer.name,
-            "duration": Int(timer.duration),
+            "duration": Int(clampingFinite: timer.duration),
             "isRunning": timer.isRunning,
             "isPaused": timer.isPaused,
             "createdAt": ISO8601DateFormatter().string(from: timer.createdAt),
             "type": timer.type.rawValue,
-            "lastUpdated": Int64(timer.lastUpdated.timeIntervalSince1970 * 1000),
+            "lastUpdated": Int64(clampingFinite: timer.lastUpdated.timeIntervalSince1970 * 1000),
         ]
         if let recipeId = timer.recipeId { timerDict["recipeId"] = recipeId }
-        if let endMs = timer.endTime.map({ Int64($0.timeIntervalSince1970 * 1000) }) {
+        if let endMs = timer.endTime.map({ Int64(clampingFinite: $0.timeIntervalSince1970 * 1000) }) {
             timerDict["endTime"] = endMs
         }
-        if let startedMs = timer.startedAt.map({ Int64($0.timeIntervalSince1970 * 1000) }) {
+        if let startedMs = timer.startedAt.map({ Int64(clampingFinite: $0.timeIntervalSince1970 * 1000) }) {
             timerDict["startedAt"] = startedMs
         }
-        if let remaining = timer.remainingTime { timerDict["remainingTime"] = Int(remaining) }
+        if let remaining = timer.remainingTime { timerDict["remainingTime"] = Int(clampingFinite: remaining) }
 
         return [
             "type": SyncedTimerEventType.timerCreated.rawValue,

@@ -47,14 +47,15 @@ enum IngredientNutritionDisplay {
         let fat = value(ingredient.fat ?? 0, ingredient: ingredient, baseServings: baseServings, viewServings: viewServings, mode: mode)
         let carbs = value(ingredient.carbs ?? 0, ingredient: ingredient, baseServings: baseServings, viewServings: viewServings, mode: mode)
 
-        let calText = String(Int(cal.rounded()))
+        // TP14 [review #14]: NaN/Inf-safe rounding before Int cast.
+        let calText = String(intRoundedClamped(cal))
         let proText = formatMacro(pro)
         let fatText = formatMacro(fat)
         let carbsText = formatMacro(carbs)
 
         return String(
             format: Bundle.currentLocalizedString("nutrition.ingredient.summary"),
-            Int(cal.rounded()),
+            intRoundedClamped(cal),
             proText,
             fatText,
             carbsText
@@ -62,8 +63,10 @@ enum IngredientNutritionDisplay {
     }
 
     private static func formatMacro(_ value: Double) -> String {
-        if value == floor(value) {
-            return String(Int(value))
+        // TP14 [review #14]: guard before Int cast.
+        guard value.isFinite else { return "" }
+        if value == floor(value), let intValue = Int(exactlySafe: value) {
+            return String(intValue)
         }
         return String(format: "%.1f", value)
     }
