@@ -289,11 +289,11 @@
 - **Impact**: Импортированные рецепты навсегда содержат английские фрагменты для ru-пользователей; не лечится переводом, т.к. это данные.
 - **Recommendation**: Либо опускать синтезированные лейблы (хранить prep/cook структурно, рендерить локализованно), либо локализовать префикс по runtime-локали при импорте. Уточнить желаемое поведение в спеке.
 
-#### 31. **[Standards]** Логирование через `print()` вместо фасада `AppLog`
+#### 31. ~~**[Standards]** Логирование через `print()` вместо фасада `AppLog`~~ ✅ Исправлено (2026-06-18)
 - **Area**: `RecipeScalerNative/RecipeScalerNativeApp.swift:24` (провал APNs); `RecipeScalerNative/Views/RecipeDetailView.swift:227`
-- **Description**: Используется сырой `print(...)` вместо `AppLog.error/info(...)`.
-- **Impact**: Эти провалы обходят NDJSON debug-session log и `/debug` agent-trace pipeline; невидимы для `pull-app-logs.sh`.
-- **Recommendation**: `AppLog.error(.push, "apns_register_failed", data: [...])` и `AppLog.error(.image, "image_cache_save_failed", data: [...])`.
+- **Description**: ~~Используется сырой `print(...)` вместо `AppLog.error/info(...)`.~~ Оба сайта заменены на `AppLog.error(...)` с dot-key event name + `data: [...]`.
+- **Impact**: ~~Эти провалы обходят NDJSON debug-session log и `/debug` agent-trace pipeline; невидимы для `pull-app-logs.sh`.~~ Провалы теперь идут через фасад → видны в NDJSON-журнале и `pull-app-logs.sh`.
+- **Recommendation**: ~~`AppLog.error(.push, "apns_register_failed", data: [...])` и `AppLog.error(.image, "image_cache_save_failed", data: [...])`.~~ Выполнено: `AppLog.error(.push, "apns_register_failed", data: ["error": ...])` и `AppLog.error(.app, "image_cache_save_failed", data: ["error": ...])`. Категория `.app` вместо рекомендованной `.image` — такой категории в `AppLog.Category` нет, прецедент `RecipeImageDiskCache.swift:81`. Коммит `05d0a40`; `xcodebuild build` → `BUILD SUCCEEDED`, `AppLogTests` 7/7 passed, `rg 'print(' RecipeScalerNative RecipeScalerCore` → 0 совпадений в продакшн-коде.
 
 ---
 
