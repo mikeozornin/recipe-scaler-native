@@ -14,6 +14,10 @@ let package = Package(
             name: "RecipeScalerNative",
             targets: ["RecipeScalerNative"]
         ),
+        .library(
+            name: "RecipeScalerCore",
+            targets: ["RecipeScalerCore"]
+        ),
     ],
     dependencies: [
         // WebSocket support
@@ -27,20 +31,44 @@ let package = Package(
 
         // SQLite storage for Y.Doc snapshots
         .package(url: "https://github.com/groue/GRDB.swift", from: "7.0.0"),
-
-        // BIP39 dependency removed for now (not used in code)
     ],
     targets: [
+        // Binary module YrsC (libyrs FFI).
+        // Module name comes from `module.modulemap` inside the xcframework;
+        // the on-disk folder is named `YrsXCFramework.xcframework`.
+        .binaryTarget(
+            name: "YrsC",
+            path: "Frameworks/YrsXCFramework.xcframework"
+        ),
+
+        // Source target RecipeScalerCore. Shared domain logic (networking,
+        // import, auth, snapshots). Only depends on system frameworks.
+        .target(
+            name: "RecipeScalerCore",
+            dependencies: [],
+            path: "RecipeScalerCore",
+            exclude: [
+                ".DS_Store",
+                "Import/.DS_Store",
+            ],
+            resources: [
+                .process("Resources"),
+                .copy("Export/Native/schemas"),
+            ]
+        ),
+
+        // Main app target. Now declares its true dependencies on Core and YrsC.
         .target(
             name: "RecipeScalerNative",
             dependencies: [
+                "RecipeScalerCore",
+                "YrsC",
                 .product(name: "SocketIO", package: "socket.io-client-swift"),
                 .product(name: "KeychainAccess", package: "KeychainAccess"),
                 .product(name: "GRDB", package: "GRDB.swift"),
             ],
             path: "RecipeScalerNative",
             exclude: [
-                "RecipeScalerNative.xcodeproj",
                 "Info.plist",
                 "Resources/Localizable.xcstrings"
             ],
@@ -48,12 +76,18 @@ let package = Package(
                 .process("Resources")
             ]
         ),
+
+        // Tests: `@testable import RecipeScalerCore` and `import YrsC` need both
+        // targets as explicit dependencies of the test target.
         .testTarget(
             name: "RecipeScalerNativeTests",
             dependencies: [
                 "RecipeScalerNative",
+                "RecipeScalerCore",
+                "YrsC",
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
-            ]
+            ],
+            path: "RecipeScalerNativeTests"
         ),
     ]
 )
