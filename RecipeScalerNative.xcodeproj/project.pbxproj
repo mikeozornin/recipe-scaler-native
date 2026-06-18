@@ -194,12 +194,12 @@
 		BB0000000000000000000007 /* RecipeScalerShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000007 /* RecipeScalerShortcuts.swift */; };
 		BFBD67F13972B46AF2DCF378 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 209008F3F2C5E8241023341F /* SocketIO */; };
 		BFE2BA65F094481E919A269A /* UpdateDebouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADB6B67450DB498D8B3BD5B3 /* UpdateDebouncer.swift */; };
+		C1C11128BFB54B4F83A1EBD5 /* ImportErrorLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A46C39B025B41C69FD12A6A /* ImportErrorLocalizer.swift */; };
 		C011ECA100000001 /* CollectionsRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C011ECB100000001 /* CollectionsRootView.swift */; };
 		C011ECA200000002 /* CollectionFolderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C011ECB200000002 /* CollectionFolderView.swift */; };
 		C011ECA300000003 /* CollectionAssignSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C011ECB300000003 /* CollectionAssignSheet.swift */; };
 		C011ECA400000004 /* ManageCollectionRecipesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C011ECB400000004 /* ManageCollectionRecipesSheet.swift */; };
 		C011ECA500000005 /* RecipesRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = C011ECB500000005 /* RecipesRoute.swift */; };
-		C1C11128BFB54B4F83A1EBD5 /* ImportErrorLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A46C39B025B41C69FD12A6A /* ImportErrorLocalizer.swift */; };
 		C6A1DD88D1724B5C9CE18505 /* YrsInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD3DE42F47CA47F4BC49DCBC /* YrsInput.swift */; };
 		C7880733D37729C2239DFD52 /* MartianGrotesk-StdLt.otf in Resources */ = {isa = PBXBuildFile; fileRef = 598814DB4C71176A7CC76A6A /* MartianGrotesk-StdLt.otf */; };
 		C7D3ECB704B645D8926FB811 /* RecipeEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5D272EB4ED4555A30CD3B2 /* RecipeEditViewModel.swift */; };

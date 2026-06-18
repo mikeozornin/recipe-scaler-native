@@ -54,7 +54,6 @@ let package = Package(
             exclude: [
                 ".DS_Store",
                 "Import/.DS_Store",
-                "UI/.DS_Store",
             ],
             resources: [
                 .process("Resources"),

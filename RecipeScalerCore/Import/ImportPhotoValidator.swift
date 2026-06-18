@@ -6,18 +6,32 @@
 import Foundation
 import UniformTypeIdentifiers
 
-public struct ImportPhotoItem: Sendable, Equatable {
+public struct ImportPhotoItem: Identifiable, Sendable, Equatable {
+    public let id: UUID
     public let data: Data
     public let fileName: String
     public let utType: UTType?
 
-    public init(data: Data, fileName: String, utType: UTType?) {
+    /// Primary init — explicit id (for tests / reconstruction).
+    public init(id: UUID = UUID(), data: Data, fileName: String, utType: UTType?) {
+        self.id = id
         self.data = data
         self.fileName = fileName
         self.utType = utType
     }
 
-    // Equatable — compare by data + fileName only; UTType is not Equatable.
+    /// Convenience init mirroring the former Native helper — defaults
+    /// `fileName` to `"image.jpg"` and infers `utType` from the extension.
+    public init(data: Data, fileName: String = "image.jpg", utType: UTType? = nil) {
+        self.id = UUID()
+        self.data = data
+        self.fileName = fileName
+        self.utType = utType ?? UTType(filenameExtension: (fileName as NSString).pathExtension) ?? .jpeg
+    }
+
+    public var byteCount: Int { data.count }
+
+    // Equatable — compare by data + fileName only (id and UTType excluded).
     public static func == (lhs: ImportPhotoItem, rhs: ImportPhotoItem) -> Bool {
         lhs.data == rhs.data && lhs.fileName == rhs.fileName
     }

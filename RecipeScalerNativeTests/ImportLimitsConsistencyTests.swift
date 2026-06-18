@@ -3,12 +3,13 @@ import RecipeScalerCore
 
 /// TP-5: `maxImageBytes` consistency across modules (review #63).
 ///
-/// Three places define the "25 MB" image cap with divergent numeric values:
+/// Two places define the "25 MB" image cap with divergent numeric values:
 /// - `ThirdPartyImportLimits.maxImageBytes = 25 * 1024 * 1024`  (26 214 400)
 /// - `RecipeScalerCore.ImportPhotoValidator.maxImageBytes = 25_000_000`
-/// - `RecipeScalerNative.ImportPhotoValidator.maxImageBytes = 25_000_000`
 ///
-/// After Phase D all three must reference the same underlying constant.
+/// After Phase D both must reference the same underlying constant.
+/// (The former `RecipeScalerNative.ImportPhotoValidator` duplicate was removed
+/// in spec 034 #23 — Core is now the single source of truth.)
 final class ImportLimitsConsistencyTests: XCTestCase {
 
     /// TP-5.2: numeric value must be the decimal MB 25 000 000 (matches web

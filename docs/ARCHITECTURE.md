@@ -117,14 +117,12 @@ Swift service that mirrors `yjs-client.ts` from the web app.
 
 ### 4. Local Storage
 
-SQLite (via SwiftData or GRDB) stores:
+SQLite (via GRDB) stores:
 - **Y state snapshots**: `recipeId → (yjsState: Data, lastSyncedAt: String)`
 - **Offline operation queue**: `[UInt8]` updates pending sync
 - **Device metadata**: `deviceId`, auth tokens
 
-SwiftData models for UI caching (derived from Y.Doc via observers):
-- Recipe list items (id, name, color, imageUrl, updatedAt, isPinned)
-- Used for fast list rendering without parsing full Y.Doc
+SwiftData is used only for `RecipeTimer` (active timers, read/written by `TimerManager`). The earlier Phase 1 `Recipe` / `Ingredient` / `ApiCacheEntry` `@Model` classes were removed in spec 034 (#26) — they were never read in production (`@Query` count: 0) and the list/detail UI is driven entirely by Y.Doc observers. See `specs/034-architecture-dedup-truth/`.
 
 ### 5. UI — SwiftUI
 

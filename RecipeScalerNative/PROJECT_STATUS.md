@@ -6,7 +6,7 @@ Read-only iOS app using REST + WebSocket notifications. No CRDT on device.
 
 ### Completed
 
-- [x] SwiftData models (Recipe, Ingredient, RecipeTimer)
+- [x] SwiftData model `RecipeTimer` (active timers); Phase 1 `Recipe` / `Ingredient` / `ApiCacheEntry` removed in spec 034 (#26) — never read in production, UI driven by Y.Doc observers
 - [x] REST API client (GET /api/recipes-v1/) — list/detail removed in Phase 2; images + auth remain
 - [x] WebSocket notifications (Socket.IO) — replaced by YjsSyncService in Phase 2
 - [x] Recipe list with search

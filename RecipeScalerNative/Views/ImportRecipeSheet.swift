@@ -400,7 +400,7 @@ struct ImportRecipeSheet: View {
                         onImport(result)
                         dismiss()
                     } catch {
-                        errorMessage = ImportErrorLocalizer.localize(error)
+                        errorMessage = ImportErrorLocalizer.localize(error, locale: AppLanguagePreference.current.locale)
                     }
                     return
                 }
@@ -478,7 +478,7 @@ struct ImportRecipeSheet: View {
             if mode == .file {
                 errorMessage = ThirdPartyImportErrorLocalizer.localize(.unsupportedFormat)
             } else {
-                errorMessage = ImportErrorLocalizer.localize(error)
+                errorMessage = ImportErrorLocalizer.localize(error, locale: AppLanguagePreference.current.locale)
             }
         }
     }

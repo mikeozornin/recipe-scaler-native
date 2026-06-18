@@ -122,7 +122,7 @@ Unit-тесты: `RecipeScalerNativeTests` → `testRecipeTitleEmoji*`.
 | Recipe list VM | `RecipeScalerNative/ViewModels/RecipeListViewModel.swift` | Rewrite — Y.Doc data source |
 | Recipe list view | `RecipeScalerNative/Views/RecipeListView.swift` | Update — use Y.Doc data, UI parity (FR-019–FR-021) |
 | Recipe title emoji | `RecipeScalerNative/Utils/RecipeTitleEmoji.swift` | Port of `shared/utils/recipe-title-emoji.ts` |
-| Recipe detail view | `RecipeScalerNative/Views/RecipeDetailView.swift` | Update — use Y.Doc data |
+| Recipe detail view | `RecipeScalerNative/Views/YDocRecipeDetailView.swift` | Y.Doc-backed detail (replaced legacy `RecipeDetailView.swift`, removed in spec 034) |
 | App entry | `RecipeScalerNative/RecipeScalerNativeApp.swift` | Update — init YjsSyncService |
 
 ### Data Flow for Development

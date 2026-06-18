@@ -189,30 +189,30 @@ scaledAmount = originalAmount * (targetServings / baseServings)
 
 **Note**: Nutrition Y.Map может содержать произвольные string→number пары. Только стандартные поля выше типизированы, остальные доступны как dictionary.
 
-## Existing Models (Unchanged)
+## Historical: SwiftData UI-cache models (removed in spec 034)
 
-### Recipe (SwiftData) — UI Cache
+> **Note (2026-06, spec 034 #26):** The `Recipe` and `Ingredient` `@Model` classes below were Phase 1 UI-cache layers intended to back `@Query`-driven SwiftUI views. In production they were never read (0 `@Query` sites, 0 production writers) — list/detail UI is driven entirely by Y.Doc observers via `@Published` on `YjsSyncService`. Both models, plus the dead `ApiCacheEntry` model, were deleted; `Schema` now registers only `RecipeTimer`. Kept here as historical context for the original Phase 1→2 migration design.
 
-Остаётся из Phase 1. Используется как UI cache layer. Данные заполняются из Y.Doc через observers. Поля в основном совпадают с RecipeData.
+### Recipe (SwiftData) — removed
 
-**Key difference**: Recipe SwiftData model имеет дополнительные поля для image caching (local paths, etags) для legacy `RecipeDetailView`. Поток Y.Doc использует файловый кэш — см. [003-recipe-image-offline-cache](../003-recipe-image-offline-cache/data-model.md).
+Originally a UI cache layer. Data was to be filled from Y.Doc via observers. Fields overlapped with `RecipeData`.
 
-### Ingredient (SwiftData) — UI Cache
+### Ingredient (SwiftData) — removed
 
-Остаётся из Phase 1. Заполняется из IngredientData.
+Originally a UI cache layer, cascade-related to `Recipe`. Filled from `IngredientData`.
 
-## Model Mapping
+## Model Mapping (historical Phase 1→2 design)
 
 ```mermaid
 graph LR
     YDOC[Y.Doc<br>binary state] -->|yrs read| YRS[YrsMap/YrsArray]
     YRS -->|parse| DOMAIN[Domain Models<br>CollectionEntry<br>RecipeData<br>IngredientData]
-    DOMAIN -->|update| SWIFTDATA[SwiftData Models<br>Recipe<br>Ingredient]
-    SWIFTDATA -->|@Query| UI[SwiftUI Views]
+    DOMAIN -.->|originally planned<br>removed 034| SWIFTDATA[SwiftData Models<br>removed 034]
+    DOMAIN -->|@Published observers| UI[SwiftUI Views]
 ```
 
-**Flow**:
-1. Y.Doc state загружен → yrs читает Y.Map/Y.Array
-2. Domain models создаются из Y.Doc values
-3. SwiftData models обновляются для UI rendering
-4. `@Query` в SwiftUI автоматически обновляет views
+**Actual flow (post-034)**:
+1. Y.Doc state loaded → yrs reads Y.Map/Y.Array
+2. Domain models (`CollectionEntry`, `RecipeData`, `IngredientData`) built from Y.Doc values
+3. `YjsSyncService` republishes via `@Published` → SwiftUI views update reactively
+4. SwiftData is used **only** for `RecipeTimer` (active timers, `TimerManager`)

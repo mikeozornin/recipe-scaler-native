@@ -65,7 +65,7 @@ SQLite for Y.Doc snapshots (required for Phase 2):
 https://github.com/groue/GRDB.swift                    # from 7.0.0 — YDocStore / YrsDatabase
 ```
 
-SwiftData remains for UI-side `Recipe` / `Ingredient` cache models.
+SwiftData is used only for `RecipeTimer` (active timers). The Phase 1 `Recipe` / `Ingredient` / `ApiCacheEntry` `@Model` classes were removed in spec 034 (#26) — list/detail UI is driven by Y.Doc observers, not SwiftData.
 
 ### 5. Configure Info.plist
 
@@ -130,9 +130,8 @@ RecipeScalerNative/
 ├── Config.swift
 │
 ├── Models/
-│   ├── Recipe.swift
-│   ├── Ingredient.swift
-│   └── RecipeTimer.swift
+│   ├── RecipeTimer.swift
+│   └── YDoc/                        # Domain models derived from Y.Doc (RecipeData, IngredientData, …)
 │
 ├── Services/
 │   ├── APIClient.swift              # REST (auth, images)
@@ -145,7 +144,8 @@ RecipeScalerNative/
 │
 ├── Views/
 │   ├── RecipeListView.swift
-│   ├── RecipeDetailView.swift
+│   ├── YDocRecipeDetailView.swift   # v3 detail (Y.Doc-backed)
+│   ├── RecipeStepsSection.swift     # StepsSection + IngredientRow (extracted in spec 034)
 │   ├── RecipeEditView.swift
 │   ├── DescriptionEditorView.swift  # WKWebView wrapper
 │   ├── ShoppingListView.swift

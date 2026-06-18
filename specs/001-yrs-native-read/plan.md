@@ -2,6 +2,8 @@
 
 **Branch**: `001-yrs-native-read` | **Date**: 2026-06-01 | **Spec**: [spec.md](./spec.md)
 
+> **Historical note (2026-06, spec 034 #26):** This plan reflects the Phase 2 design as originally shipped. References to keeping `Recipe.swift` / `Ingredient.swift` / `ApiCacheEntry.swift` as SwiftData UI-cache models, and to `RecipeDetailView.swift`, describe state that has since been removed — those models were never read in production and were deleted in spec 034. The current schema registers only `RecipeTimer.self`; recipe list/detail UI is driven by Y.Doc observers. Kept as-is for historical context.
+
 **Input**: Feature specification from `/specs/001-yrs-native-read/spec.md`
 
 ## Summary
