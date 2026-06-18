@@ -59,13 +59,20 @@ public enum ThirdPartyFormatDetector {
 
     public static func enumerateRecipeEntries(
         url: URL,
-        format: ThirdPartyFormat
+        format: ThirdPartyFormat,
+        maxEntryBytes: Int = .max,
+        maxArchiveBytes: Int = .max
     ) async throws -> [ThirdPartyArchiveEntry] {
         // Thin wrapper around the streaming variant for callers that still want the full
         // array in memory (existing tests, `validateEntryCount` on count, etc.). Iteration
         // semantics (including the `recipeLimitExceeded` guard) are identical.
         var collected: [ThirdPartyArchiveEntry] = []
-        let stream = enumerateRecipeEntriesStream(url: url, format: format)
+        let stream = enumerateRecipeEntriesStream(
+            url: url,
+            format: format,
+            maxEntryBytes: maxEntryBytes,
+            maxArchiveBytes: maxArchiveBytes
+        )
         for try await entry in stream {
             collected.append(entry)
         }
@@ -79,10 +86,20 @@ public enum ThirdPartyFormatDetector {
     /// (throws as soon as the count would exceed the limit) — callers do NOT need to call
     /// `validateEntryCount` after iterating.
     ///
+    /// - Parameters:
+    ///   - maxEntryBytes: Per-entry decompressed byte cap (defense vs decompression bombs).
+    ///     Defaults to `.max` (backward compatible). Real call sites should pass
+    ///     `ThirdPartyImportLimits.maxDecompressedEntryBytes`.
+    ///   - maxArchiveBytes: Aggregate decompressed byte cap across all entries.
+    ///     Defaults to `.max`. Real call sites should pass
+    ///     `ThirdPartyImportLimits.maxDecompressedArchiveBytes`.
+    ///
     /// Single-file formats (`.paprikaSingle`, `.croutonSingle`) yield exactly one entry.
     public static func enumerateRecipeEntriesStream(
         url: URL,
-        format: ThirdPartyFormat
+        format: ThirdPartyFormat,
+        maxEntryBytes: Int = .max,
+        maxArchiveBytes: Int = .max
     ) -> AsyncThrowingStream<ThirdPartyArchiveEntry, Error> {
         AsyncThrowingStream { continuation in
             // Pre-decide single-file paths synchronously to keep Archive lifecycle inside the task.
@@ -106,6 +123,8 @@ public enum ThirdPartyFormatDetector {
                 let result: Result<Void, Error> = await Self.yieldZipEntries(
                     url: url,
                     format: format,
+                    maxEntryBytes: maxEntryBytes,
+                    maxArchiveBytes: maxArchiveBytes,
                     continuation: continuation
                 )
                 switch result {
@@ -123,6 +142,8 @@ public enum ThirdPartyFormatDetector {
     private static func yieldZipEntries(
         url: URL,
         format: ThirdPartyFormat,
+        maxEntryBytes: Int,
+        maxArchiveBytes: Int,
         continuation: AsyncThrowingStream<ThirdPartyArchiveEntry, Error>.Continuation
     ) async -> Result<Void, Error> {
         let archive: Archive
@@ -142,6 +163,7 @@ public enum ThirdPartyFormatDetector {
 
         var count = 0
         var seenAny = false
+        var archiveRunningTotal = 0
 
         // Stable iteration: ZIPFoundation `Archive` conforms to `Sequence`. We iterate in
         // natural central-directory order and let callers sort when they need determinism.
@@ -159,18 +181,48 @@ public enum ThirdPartyFormatDetector {
                 ))
             }
 
+            // B1: pre-flight check against the central-directory `uncompressedSize`.
+            // Cheap (no decompression). Catches the common case of a CD that
+            // honestly reports an oversized entry.
+            let declaredSize = Int(entry.uncompressedSize)
+            if declaredSize > maxEntryBytes {
+                return .failure(ThirdPartyImportError.entrySizeLimitExceeded(fileName: path))
+            }
+            // B3: pre-flight aggregate check (uses CD's declared size).
+            if archiveRunningTotal + declaredSize > maxArchiveBytes {
+                return .failure(ThirdPartyImportError.archiveSizeLimitExceeded(fileName: path))
+            }
+
+            // B2: streaming running total — catches the case where the central
+            // directory lies (spoofed `uncompressedSize`) and the entry
+            // decompresses to more than `maxEntryBytes` for real.
             var data = Data()
+            var entryRunningTotal = 0
+            var streamingOverflow: ThirdPartyImportError?
             do {
                 _ = try archive.extract(entry) { chunk in
+                    entryRunningTotal += chunk.count
+                    if entryRunningTotal > maxEntryBytes {
+                        streamingOverflow = .entrySizeLimitExceeded(fileName: path)
+                        return
+                    }
+                    if archiveRunningTotal + entryRunningTotal > maxArchiveBytes {
+                        streamingOverflow = .archiveSizeLimitExceeded(fileName: path)
+                        return
+                    }
                     data.append(chunk)
                 }
             } catch {
                 return .failure(ThirdPartyImportError.corruptEntry(fileName: path))
             }
+            if let overflow = streamingOverflow {
+                return .failure(overflow)
+            }
             guard !data.isEmpty else {
                 return .failure(ThirdPartyImportError.corruptEntry(fileName: path))
             }
 
+            archiveRunningTotal += data.count
             seenAny = true
             continuation.yield(ThirdPartyArchiveEntry(fileName: path, data: data))
         }
@@ -240,50 +292,6 @@ public enum ThirdPartyFormatDetector {
         return .unsupported
     }
 
-    private static func enumerateZipEntries(
-        url: URL,
-        format: ThirdPartyFormat
-    ) throws -> [ThirdPartyArchiveEntry] {
-        guard let archive = openArchive(url: url) else {
-            throw ThirdPartyImportError.unsupportedFormat
-        }
-
-        let suffix: String
-        switch format {
-        case .paprikaArchive:
-            suffix = ".paprikarecipe"
-        case .croutonArchive:
-            suffix = ".crumb"
-        default:
-            throw ThirdPartyImportError.unsupportedFormat
-        }
-
-        var entries: [ThirdPartyArchiveEntry] = []
-        for entry in archive {
-            let path = decodeEntryPath(entry)
-            guard path.lowercased().hasSuffix(suffix) else { continue }
-            var data = Data()
-            do {
-                _ = try archive.extract(entry) { chunk in
-                    data.append(chunk)
-                }
-            } catch {
-                throw ThirdPartyImportError.corruptEntry(fileName: path)
-            }
-            guard !data.isEmpty else {
-                throw ThirdPartyImportError.corruptEntry(fileName: path)
-            }
-            entries.append(ThirdPartyArchiveEntry(fileName: path, data: data))
-        }
-
-        if entries.isEmpty {
-            throw ThirdPartyImportError.emptyArchive
-        }
-
-        entries.sort { $0.fileName.localizedStandardCompare($1.fileName) == .orderedAscending }
-        return entries
-    }
-
     private static func isGzipData(at url: URL) -> Bool {
         guard let handle = try? FileHandle(forReadingFrom: url) else { return false }
         defer { try? handle.close() }
@@ -293,6 +301,8 @@ public enum ThirdPartyFormatDetector {
 
     private static func isCroutonJSON(at url: URL) -> Bool {
         guard let data = try? Data(contentsOf: url),
+              // #32: pre-flight — oversized files cannot be Crouton JSON manifests.
+              data.count <= ThirdPartyImportLimits.maxRecipeJSONBytes,
               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return false
         }

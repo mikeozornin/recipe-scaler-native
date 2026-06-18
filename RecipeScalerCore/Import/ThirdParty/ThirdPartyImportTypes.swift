@@ -20,6 +20,12 @@ public enum ThirdPartyImportError: Error, Equatable, Sendable {
     case corruptEntry(fileName: String)
     case invalidJSON(fileName: String)
     case gzipFailed(fileName: String)
+    /// Single entry exceeds `maxDecompressedEntryBytes` (decompression-bomb guard).
+    case entrySizeLimitExceeded(fileName: String)
+    /// Aggregate extracted bytes for an archive exceed `maxDecompressedArchiveBytes`.
+    case archiveSizeLimitExceeded(fileName: String)
+    /// Pre-flight JSON byte-size check failed (`maxRecipeJSONBytes`).
+    case jsonSizeLimitExceeded(fileName: String)
 }
 
 public struct ThirdPartyArchiveEntry: Sendable, Equatable {
@@ -110,5 +116,20 @@ public struct ThirdPartyImportResult: Sendable {
 
 public enum ThirdPartyImportLimits {
     public static let maxRecipesPerImport = 500
-    public static let maxImageBytes = 25 * 1024 * 1024
+
+    /// Unified 25 MB image cap — decimal MB, matches web
+    /// `MAX_IMPORT_IMAGE_SIZE_BYTES`. Fixes review #63 (divergent constants).
+    public static let maxImageBytes = 25_000_000
+
+    /// Maximum decompressed bytes for a single archive entry (.paprikarecipe/.crumb).
+    public static let maxDecompressedEntryBytes = 50 * 1_000_000
+
+    /// Maximum aggregate decompressed bytes for a single archive (running total).
+    public static let maxDecompressedArchiveBytes = 500 * 1_000_000
+
+    /// Maximum decompressed bytes for a single Paprika gzip JSON.
+    public static let maxGzipJSONBytes = 16 * 1_000_000
+
+    /// Maximum JSON byte size before `JSONSerialization` pre-flight (defense-in-depth vs CPU-bombs).
+    public static let maxRecipeJSONBytes = 16 * 1_000_000
 }

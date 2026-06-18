@@ -232,6 +232,12 @@ public enum NativeImportError: Error, Sendable, LocalizedError {
     case corruptRecipe(String)
     case corruptFolder(String)
     case writeFailed(String)
+    /// Single entry exceeds the per-entry decompressed byte cap.
+    case entrySizeLimitExceeded(entryPath: String)
+    /// Aggregate extracted bytes exceed the archive cap.
+    case archiveSizeLimitExceeded
+    /// Pre-flight JSON byte-size check failed.
+    case jsonSizeLimitExceeded
 
     public var errorDescription: String? {
         switch self {
@@ -255,6 +261,12 @@ public enum NativeImportError: Error, Sendable, LocalizedError {
             return "Failed to import folder: \(name)"
         case .writeFailed(let detail):
             return "Failed to write to Y.Doc: \(detail)"
+        case .entrySizeLimitExceeded(let entryPath):
+            return "Entry too large: \(entryPath)"
+        case .archiveSizeLimitExceeded:
+            return "Archive total size exceeds the limit."
+        case .jsonSizeLimitExceeded:
+            return "JSON payload exceeds the size limit."
         }
     }
 }

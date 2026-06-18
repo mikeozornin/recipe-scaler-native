@@ -88,6 +88,32 @@ final class NativeRecipeImporterTests: XCTestCase {
         }
     }
 
+    // MARK: - TP-4.3 Oversized JSON rejected (review #32)
+
+    /// A native-export JSON larger than `maxRecipeJSONBytes` must be rejected with
+    /// `.jsonSizeLimitExceeded` BEFORE `JSONDecoder` is called.
+    func testTP4_3_RejectsOversizedJSON() throws {
+        let big = String(repeating: "x", count: ThirdPartyImportLimits.maxRecipeJSONBytes + 1_000)
+        // Format-valid envelope with a huge string field; decoder is not the target of this test.
+        let json = """
+        {
+          "metadata": { "version": "1.3", "exportDate": "2026-06-18T12:00:00Z", "type": "recipes-v1.3" },
+          "recipes": [ { "id": "r1", "name": "\(big)", "ingredients": [] } ]
+        }
+        """
+        let url = try writeTempFile(named: "huge.json", contents: json)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        XCTAssertThrowsError(try NativeRecipeImporter.parse(url: url)) { error in
+            switch error as? NativeImportError {
+            case .jsonSizeLimitExceeded:
+                break
+            default:
+                XCTFail("Expected .jsonSizeLimitExceeded, got \(error)")
+            }
+        }
+    }
+
     private func writeTempFile(named name: String, contents: String) throws -> URL {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
         try contents.write(to: url, atomically: true, encoding: .utf8)

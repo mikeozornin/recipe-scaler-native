@@ -94,6 +94,30 @@ final class PaprikaRecipeParserTests: XCTestCase {
         }
     }
 
+    // MARK: - TP-4.1 Oversized JSON rejected (review #32)
+
+    /// A Paprika JSON payload exceeding `maxRecipeJSONBytes` must be rejected with
+    /// `.jsonSizeLimitExceeded` BEFORE `JSONSerialization` is called.
+    func testTP4_1_RejectsOversizedJSON() throws {
+        let big = String(repeating: "x", count: ThirdPartyImportLimits.maxRecipeJSONBytes + 1_000)
+        let payload = "{\"name\":\"\(big)\",\"ingredients\":\"\"}"
+        let data = Data(payload.utf8)
+        XCTAssertGreaterThan(data.count, ThirdPartyImportLimits.maxRecipeJSONBytes)
+
+        XCTAssertThrowsError(
+            try PaprikaRecipeParser.parse(
+                jsonData: data,
+                fileName: "huge.paprikarecipe",
+                sourceFormat: .paprikaSingle
+            )
+        ) { error in
+            guard case .jsonSizeLimitExceeded(let fileName) = error as? ThirdPartyImportError else {
+                return XCTFail("Expected .jsonSizeLimitExceeded, got \(error)")
+            }
+            XCTAssertEqual(fileName, "huge.paprikarecipe")
+        }
+    }
+
     private func fixtureURL(named name: String, ext: String) throws -> URL {
         let bundle = Bundle(for: PaprikaRecipeParserTests.self)
         guard let url = bundle.url(

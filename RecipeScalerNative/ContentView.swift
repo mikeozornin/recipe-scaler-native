@@ -40,7 +40,7 @@ struct ContentView: View {
         _remindersService = StateObject(wrappedValue: RemindersSyncService(mapStore: mapStore))
         _spotlightIndexer = StateObject(wrappedValue: SpotlightIndexer(syncService: sync))
         // Sync APIClient credentials from SharedAuthStore so that Share/Action
-        // extensions can configure the same client via App Group UserDefaults.
+        // extensions can configure the same client via the shared Keychain.
         if let sharedUserId = SharedAuthStore.userId {
             APIClient.shared.configure(userId: sharedUserId)
         }

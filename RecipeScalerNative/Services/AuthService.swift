@@ -94,8 +94,6 @@ class AuthService {
     var token: String?
 
     private let keychain = Keychain(service: "com.recipescaler.native")
-    private let userDefaultsKey = "userId"
-    private let tokenKey = "authToken"
     private let seedPhraseKey = "seedPhrase"
 
     private var apiClient: APIClient {
@@ -113,26 +111,40 @@ class AuthService {
             return
         }
 
-        // Restore authentication state from storage
+        // One-shot purge of plaintext credentials from older app versions that
+        // stored userId / authToken in UserDefaults (both the standard suite and
+        // the App Group mirror). The current session is now backed by the Keychain
+        // (SharedAuthStore), so any leftover plaintext copy is removed unconditionally.
+        // Idempotent and cheap; runs once per cold start.
+        purgeLegacyUserDefaultsCredentials()
+
+        // Restore authentication state from Keychain
         restoreAuthenticationState()
     }
 
     // MARK: - Private Methods
     private func restoreAuthenticationState() {
-        // Try to restore userId from UserDefaults
-        if let restoredUserId = UserDefaults.standard.string(forKey: userDefaultsKey) {
+        // Restore userId from the shared Keychain store.
+        if let restoredUserId = SharedAuthStore.userId {
             self.userId = restoredUserId
             self.isAuthenticated = true
 
-            // Ignore any legacy tokens and use user id for auth
+            // Current auth model trusts userId alone (review finding #1); legacy
+            // bearer tokens are not used and never read back.
             self.token = nil
-            deleteTokenFromUserDefaults()
 
             apiClient.configure(userId: restoredUserId)
-
-            // Mirror to App Group so Share/Action extensions can read it.
-            SharedAuthStore.userId = restoredUserId
         }
+    }
+
+    /// Wipe plaintext credentials that older versions wrote to UserDefaults.
+    /// After this call the only durable copy of `userId` lives in the Keychain
+    /// via `SharedAuthStore`. Safe to invoke when nothing is stored yet.
+    private func purgeLegacyUserDefaultsCredentials() {
+        UserDefaults.standard.removeObject(forKey: "userId")
+        UserDefaults.standard.removeObject(forKey: "authToken")
+        UserDefaults(suiteName: AppGroup.id)?
+            .removeObject(forKey: SharedAuthStore.legacyAppGroupUserIdKey)
     }
 
     private func saveSeedPhraseToKeychain(_ seedPhrase: String) throws {
@@ -157,28 +169,12 @@ class AuthService {
         }
     }
 
-    private func saveUserIdToUserDefaults(_ userId: String) {
-        UserDefaults.standard.set(userId, forKey: userDefaultsKey)
-    }
-
-    private func saveTokenToUserDefaults(_ token: String) {
-        UserDefaults.standard.set(token, forKey: tokenKey)
-    }
-
     private func deleteSeedPhraseFromKeychain() throws {
         do {
             try keychain.remove(seedPhraseKey)
         } catch {
             throw AuthError.keychainError("delete_seed_phrase")
         }
-    }
-
-    private func deleteUserIdFromUserDefaults() {
-        UserDefaults.standard.removeObject(forKey: userDefaultsKey)
-    }
-
-    private func deleteTokenFromUserDefaults() {
-        UserDefaults.standard.removeObject(forKey: tokenKey)
     }
 
     private func buildAuthRequest(
@@ -253,9 +249,9 @@ class AuthService {
         // Save seed phrase to Keychain
         try saveSeedPhraseToKeychain(data.seedPhrase)
 
-        // Save userId to UserDefaults
-        saveUserIdToUserDefaults(data.user.id)
-        deleteTokenFromUserDefaults()
+        // Persist userId to the shared Keychain (readable by extensions via
+        // the keychain-access-groups entitlement).
+        SharedAuthStore.userId = data.user.id
 
         // Update published properties
         self.userId = data.user.id
@@ -264,9 +260,6 @@ class AuthService {
 
         // Configure API client with user id
         apiClient.configure(userId: data.user.id)
-
-        // Mirror to App Group so Share/Action extensions can read it.
-        SharedAuthStore.userId = data.user.id
 
         return (userId: data.user.id, seedPhrase: data.seedPhrase, token: "")
     }
@@ -302,9 +295,9 @@ class AuthService {
         // Save seed phrase to Keychain
         try saveSeedPhraseToKeychain(seedPhrase)
 
-        // Save userId to UserDefaults
-        saveUserIdToUserDefaults(data.user.id)
-        deleteTokenFromUserDefaults()
+        // Persist userId to the shared Keychain (readable by extensions via
+        // the keychain-access-groups entitlement).
+        SharedAuthStore.userId = data.user.id
 
         // Update published properties
         self.userId = data.user.id
@@ -314,9 +307,6 @@ class AuthService {
         // Configure API client with user id
         apiClient.configure(userId: data.user.id)
 
-        // Mirror to App Group so Share/Action extensions can read it.
-        SharedAuthStore.userId = data.user.id
-
         return (userId: data.user.id, token: "")
     }
 
@@ -325,9 +315,9 @@ class AuthService {
         // Delete seed phrase from Keychain
         try deleteSeedPhraseFromKeychain()
 
-        // Delete user data from UserDefaults
-        deleteUserIdFromUserDefaults()
-        deleteTokenFromUserDefaults()
+        // Remove the shared userId from the Keychain so extensions can no
+        // longer authenticate on behalf of this user.
+        SharedAuthStore.clear()
 
         // Reset published properties
         self.userId = nil
@@ -337,9 +327,6 @@ class AuthService {
         // Reset API client
         apiClient.configure(authToken: nil)
         apiClient.configure(userId: nil)
-
-        // Clear the App Group mirror so extensions can no longer authenticate.
-        SharedAuthStore.clear()
     }
 
     /// Get the current authentication status

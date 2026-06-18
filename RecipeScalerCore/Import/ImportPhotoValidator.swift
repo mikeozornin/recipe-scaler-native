@@ -28,8 +28,9 @@ public enum ImportPhotoValidator {
     public static let maxImages = 8
     /// Same as web `MAX_IMPORT_RECIPES`.
     public static let maxRecipes = 25
-    /// 25 MB — same as web `MAX_IMPORT_IMAGE_SIZE_BYTES`.
-    public static let maxImageBytes = 25_000_000
+    /// Unified 25 MB image cap. Mirrors `ThirdPartyImportLimits.maxImageBytes`
+    /// (decimal MB, matches web `MAX_IMPORT_IMAGE_SIZE_BYTES`).
+    public static let maxImageBytes = ThirdPartyImportLimits.maxImageBytes
 
     public static let supportedUTTypes: [UTType] = [.jpeg, .png, .webP, .heic]
 

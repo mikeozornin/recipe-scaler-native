@@ -230,6 +230,30 @@ final class CroutonRecipeParserTests: XCTestCase {
         }
     }
 
+    // MARK: - TP-4.2 Oversized JSON rejected (review #32)
+
+    /// A Crouton JSON payload exceeding `maxRecipeJSONBytes` must be rejected with
+    /// `.jsonSizeLimitExceeded` BEFORE `JSONSerialization` is called.
+    func testTP4_2_RejectsOversizedJSON() throws {
+        let big = String(repeating: "x", count: ThirdPartyImportLimits.maxRecipeJSONBytes + 1_000)
+        let payload = "{\"uuid\":\"x\",\"name\":\"\(big)\",\"ingredients\":[]}"
+        let data = Data(payload.utf8)
+        XCTAssertGreaterThan(data.count, ThirdPartyImportLimits.maxRecipeJSONBytes)
+
+        XCTAssertThrowsError(
+            try CroutonRecipeParser.parse(
+                jsonData: data,
+                fileName: "huge.crumb",
+                sourceFormat: .croutonSingle
+            )
+        ) { error in
+            guard case .jsonSizeLimitExceeded(let fileName) = error as? ThirdPartyImportError else {
+                return XCTFail("Expected .jsonSizeLimitExceeded, got \(error)")
+            }
+            XCTAssertEqual(fileName, "huge.crumb")
+        }
+    }
+
     private func fixtureURL(named name: String, ext: String) throws -> URL {
         let bundle = Bundle(for: CroutonRecipeParserTests.self)
         guard let url = bundle.url(

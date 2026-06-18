@@ -11,6 +11,11 @@ public enum CroutonRecipeParser {
         fileName: String,
         sourceFormat: ThirdPartyFormat
     ) throws -> ThirdPartyRecipeDraft {
+        // #32: pre-flight JSON byte cap — defense-in-depth against CPU/memory bombs.
+        guard jsonData.count <= ThirdPartyImportLimits.maxRecipeJSONBytes else {
+            throw ThirdPartyImportError.jsonSizeLimitExceeded(fileName: fileName)
+        }
+
         let object: [String: Any]
         do {
             object = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] ?? [:]

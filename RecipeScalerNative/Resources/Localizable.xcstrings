@@ -6044,6 +6044,54 @@
         }
       }
     },
+    "import.third-party-archive-too-large" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive is too large to import"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Архив слишком большой для импорта"
+          }
+        }
+      }
+    },
+    "import.third-party-entry-too-large" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An entry in the archive is too large to extract"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Один из файлов архива слишком большой"
+          }
+        }
+      }
+    },
+    "import.third-party-json-too-large" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The recipe file is too large to parse"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл рецепта слишком большой для разбора"
+          }
+        }
+      }
+    },
     "import.third-party-empty" : {
       "extractionState" : "stale",
       "localizations" : {

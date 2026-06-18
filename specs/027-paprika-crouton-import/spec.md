@@ -23,6 +23,7 @@
 | US9 Unsupported / empty errors | ✅ | Localized, no collection mutation |
 | US10 Offline + sync | ✅ | `deliverPendingLocalUpdate` per recipe |
 | Unit tests (parsers, detector, XmlWriter) | ✅ | 18 green |
+| Decompression bomb hardening | ✅ | spec `032-import-decompression-bomb`: triple-guard + JSON pre-flight + unified `maxImageBytes` |
 | Integration tests (DocumentManager) | 🟡 | `XCTSkip` — test host stalls on Yjs sync; CI host needed |
 | Manual quickstart scenarios | 🟡 | Pending device smoke (T034/T038/T048/T051/T068/T069) |
 

@@ -55,7 +55,12 @@ final class ThirdPartyRecipeImportService {
         var photosSkippedOffline = 0
         var photosFailed = 0
 
-        let stream = ThirdPartyFormatDetector.enumerateRecipeEntriesStream(url: url, format: format)
+        let stream = ThirdPartyFormatDetector.enumerateRecipeEntriesStream(
+            url: url,
+            format: format,
+            maxEntryBytes: ThirdPartyImportLimits.maxDecompressedEntryBytes,
+            maxArchiveBytes: ThirdPartyImportLimits.maxDecompressedArchiveBytes
+        )
         var index = 0
         for try await entry in stream {
             if Task.isCancelled {
@@ -144,6 +149,12 @@ enum ThirdPartyImportErrorLocalizer {
             return String(format: template, locale: AppLanguagePreference.current.locale, limit)
         case .corruptEntry, .invalidJSON, .gzipFailed:
             return Bundle.currentLocalizedString("import.third-party-unsupported")
+        case .entrySizeLimitExceeded:
+            return Bundle.currentLocalizedString("import.third-party-entry-too-large")
+        case .archiveSizeLimitExceeded:
+            return Bundle.currentLocalizedString("import.third-party-archive-too-large")
+        case .jsonSizeLimitExceeded:
+            return Bundle.currentLocalizedString("import.third-party-json-too-large")
         }
     }
 

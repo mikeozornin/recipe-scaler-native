@@ -6,5 +6,9 @@
 	<array>
 		<string>group.ru.recipescaler.RecipeScalerNative</string>
 	</array>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)ru.recipescaler.RecipeScalerNative</string>
+	</array>
 </dict>
 </plist>

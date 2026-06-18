@@ -54,9 +54,14 @@ rg -q '\.onOpenURL' RecipeScalerNative/RecipeScalerNativeApp.swift
 rg -q 'consumePendingRecipeId|openRecipeRequested' RecipeScalerNative/Views/AppShellView.swift
 echo "PASS: DeepLinkRouter + onOpenURL + AppShell wiring present"
 
-# SharedAuthStore (App Group).
-rg -q 'group.ru.recipescaler.RecipeScalerNative' RecipeScalerCore/Auth/SharedAuthStore.swift
-echo "PASS: SharedAuthStore uses App Group"
+# SharedAuthStore (App Group referenced, either directly or via AppGroup.id).
+if rg -q 'group\.ru\.recipescaler\.RecipeScalerNative' RecipeScalerCore/Auth/SharedAuthStore.swift \
+  || rg -q 'AppGroup\.id' RecipeScalerCore/Auth/SharedAuthStore.swift; then
+  echo "PASS: SharedAuthStore uses App Group"
+else
+  echo "FAIL: SharedAuthStore no longer references the App Group"
+  exit 1
+fi
 
 # Shared.xcstrings keys present.
 for key in \

@@ -67,6 +67,11 @@ public enum NativeRecipeImporter {
             throw NativeImportError.fileAccessFailed
         }
 
+        // #32: pre-flight JSON byte cap — defense-in-depth against CPU/memory bombs.
+        guard data.count <= ThirdPartyImportLimits.maxRecipeJSONBytes else {
+            throw NativeImportError.jsonSizeLimitExceeded
+        }
+
         let payload: NativeExportPayload
         do {
             payload = try JSONDecoder().decode(NativeExportPayload.self, from: data)
@@ -101,15 +106,40 @@ public enum NativeRecipeImporter {
             throw NativeImportError.missingRecipesJson
         }
 
+        let maxArchiveBytes = ThirdPartyImportLimits.maxDecompressedArchiveBytes
+
+        // Triple-guard (B1+B2+B3) for `recipes.json`: per-entry cap = maxRecipeJSONBytes.
+        // B1: pre-flight on central-directory declared size.
+        guard recipesEntry.uncompressedSize <= ThirdPartyImportLimits.maxRecipeJSONBytes else {
+            throw NativeImportError.entrySizeLimitExceeded(entryPath: recipesEntry.path)
+        }
+
         let recipesData: Data
         do {
             var buffer = Data()
-            try _ = archive.extract(recipesEntry) { chunk in
+            var entryRunning = 0
+            var streamingOverflow: NativeImportError?
+            _ = try archive.extract(recipesEntry) { chunk in
+                entryRunning += chunk.count
+                if entryRunning > ThirdPartyImportLimits.maxRecipeJSONBytes {
+                    streamingOverflow = .entrySizeLimitExceeded(entryPath: recipesEntry.path)
+                    return
+                }
                 buffer.append(chunk)
             }
+            if let overflow = streamingOverflow {
+                throw overflow
+            }
             recipesData = buffer
+        } catch let error as NativeImportError {
+            throw error
         } catch {
             throw NativeImportError.invalidJSON(error.localizedDescription)
+        }
+
+        // #32: pre-flight JSON byte cap.
+        guard recipesData.count <= ThirdPartyImportLimits.maxRecipeJSONBytes else {
+            throw NativeImportError.jsonSizeLimitExceeded
         }
 
         let payload: NativeExportPayload
@@ -130,8 +160,10 @@ public enum NativeRecipeImporter {
             throw NativeImportError.validationFailed(validation.structuralErrors)
         }
 
-        // 3. Extract images
+        // 3. Extract images with per-entry (maxImageBytes) + aggregate (maxArchiveBytes) cap.
         var imageEntries: [ImageEntry] = []
+        var archiveRunningTotal = recipesData.count
+
         for entry in archive {
             let path = entry.path
             // Match images/<recipeId>/full.webp or images/<recipeId>/preview.webp
@@ -154,12 +186,41 @@ public enum NativeRecipeImporter {
                 continue
             }
 
+            // B1+B3 pre-flight on declared sizes.
+            guard entry.uncompressedSize <= ThirdPartyImportLimits.maxImageBytes else {
+                throw NativeImportError.entrySizeLimitExceeded(entryPath: path)
+            }
+            if archiveRunningTotal + Int(entry.uncompressedSize) > maxArchiveBytes {
+                throw NativeImportError.archiveSizeLimitExceeded
+            }
+
+            // B2 streaming running total — catches spoofed central directories.
             var imageData = Data()
-            try? _ = archive.extract(entry) { chunk in
-                imageData.append(chunk)
+            var entryRunning = 0
+            var streamingOverflow: NativeImportError?
+            do {
+                _ = try archive.extract(entry) { chunk in
+                    entryRunning += chunk.count
+                    if entryRunning > ThirdPartyImportLimits.maxImageBytes {
+                        streamingOverflow = .entrySizeLimitExceeded(entryPath: path)
+                        return
+                    }
+                    if archiveRunningTotal + entryRunning > maxArchiveBytes {
+                        streamingOverflow = .archiveSizeLimitExceeded
+                        return
+                    }
+                    imageData.append(chunk)
+                }
+            } catch {
+                // Treat extraction errors as a missing image (legacy behaviour).
+                continue
+            }
+            if let overflow = streamingOverflow {
+                throw overflow
             }
 
             if !imageData.isEmpty {
+                archiveRunningTotal += imageData.count
                 imageEntries.append(ImageEntry(
                     recipeId: recipeId,
                     kind: kind,

@@ -15,8 +15,8 @@
 Однако есть **системные проблемы**, требующие внимания:
 
 1. **Модель аутентификации критически уязвима** — всё доверие построено на публичном `userId`, а не на секрете ( bearer-токене). Это корневая причина каскада проблем (plaintext-хранение, отсутствие TLS-pinning'а, утечка в логи, бэкдор-UUID в репо).
-2. **Архитектурный технический долг集中ён** — два god-объекта (`YjsSyncService` 2411 строк, `DocumentManager` 1603 строки) + сломанный `Package.swift` блокируют тестируемость и масштабирование.
-3. **Производительность импорта/синхронизации под угрозой заявленных целей** — O(N²)-вставки, декомпрессия архивов в память целиком, merge через WKWebView на главном потоке прямо угрожают целевым «≤2 мин на 50 рецептов» / «до 500 рецептов».
+2. **Архитектурный технический долг集中ён** — два god-объекта (`YjsSyncService` 2411 строк, `DocumentManager` 1603 строки) ~~+ сломанный `Package.swift`~~ блокируют тестируемость и масштабирование (`Package.swift` исправлен — #8, см. таблицу ниже).
+3. **Производительность импорта/синхронизации** — частично исправлено (2026-06-18): ~~O(N²)-вставки (#4)~~, ~~декомпрессия архивов в память целиком (#5)~~, ~~экспорт all-in-memory (#7)~~ ✅; merge через WKWebView на главном потоке (#6) и Socket.IO wire format (#17) — по-прежнему открыты.
 4. ~~**i18n-нарушения в обработке ошибок**~~ — ~~`AuthError`/`APIError`/`YrsError` возвращают захардкоженный английский~~ → исправлено (spec `031-error-i18n`, см. таблицу ниже).
 
 **Уровень риска**: высокий. Функциональность работает, но безопасность аутентификации и производительность batch-операций требуют срочных доработок до production-нагрузки.
@@ -66,6 +66,26 @@
 
 ---
 
+## Package.swift remediation (2026-06-18)
+
+Исправлена находка **#8** — SPM-манифест сделан каноническим.
+
+| # | Статус | Кратко |
+|---|--------|--------|
+| 8 | ✅ | `.binaryTarget(name: "YrsC", path: "Frameworks/YrsXCFramework.xcframework")` добавлен |
+| 8a | ✅ | Source-target `RecipeScalerCore` (path `RecipeScalerCore`, ресурсы `Resources` + `Export/Native/schemas`) |
+| 8b | ✅ | `RecipeScalerNative` явно зависит от `"RecipeScalerCore"` и `"YrsC"` |
+| 8c | ✅ | `RecipeScalerNativeTests` явно зависит от `"RecipeScalerCore"` и `"YrsC"` (для `@testable import RecipeScalerCore` и `import YrsC`) |
+| 8d | ✅ | `RecipeScalerCore` добавлен в `products` (доступен как library для будущих SPM-consumer'ов) |
+| 8e | ✅ | Баг в exclude: убран `"RecipeScalerNative.xcodeproj"` (указывал на несуществующий путь `RecipeScalerNative/RecipeScalerNative.xcodeproj`, давал warning) |
+| 8f | ✅ | Валидация: `swift package describe` — 4 таргета / 2 продукта; `swift package resolve` exit 0; `xcodebuild build -scheme RecipeScalerCore -destination 'generic/platform=iOS Simulator'` → BUILD SUCCEEDED |
+
+**Замечание**: `swift build` под macOS-host падает с `requires macos 10.13, but depends on the product 'GRDB' which requires macos 10.15` — ожидаемое ограничение iOS-only манифеста (`.iOS(.v17)`), не дефект правки. Проверка SPM-сборки под iOS — через `xcodebuild -destination 'platform=iOS Simulator'`.
+
+**Вне scope #8**: `swift build` всё ещё не собирает полный app-target из CLI — `xcodeproj`-схема `RecipeScalerNative` падает на pre-existing проблемах (entitlements ShareExtension, архитектурный конфликт SocketIO без явного `-destination`). Это не относится к манифесту и требует отдельной работы по xcodeproj-конфигурации.
+
+---
+
 ## Находки (отсортированы по приоритету)
 
 ### Critical
@@ -82,23 +102,22 @@
 - **Impact**: Полная компрометация debug-аккаунта (и всех реальных данных в нём) любым, кто прочитает репо. Гард `#if targetEnvironment(simulator)` не защищает сам креденшал.
 - **Recommendation**: Считать UUID скомпрометированным и ротировать аккаунт. Не встраивать рабочий креденшал в исходники; если нужен debug auto-login — получать эфемерный токен с сервера в рантайме.
 
-#### 3. **[Security / Performance]** Декомпрессионная бомба: gzip и ZIP без ограничений на распакованный размер
-- **Area**: `RecipeScalerCore/Import/ThirdParty/Gunzip.swift:22-44`; `RecipeScalerCore/Import/ThirdParty/ThirdPartyFormatDetector.swift:139-150` (`enumerateZipEntries`); `RecipeScalerCore/Export/Native/NativeRecipeImporter.swift:106-110,157-160`
-- **Description**: `Gunzip.decompress` циклит `inflate`, дописывая чанки в `output = Data()` **без ограничения итогового размера** и без проверки коэффициента сжатия. `enumerateZipEntries` извлекает каждый entry в неограниченный `Data()`, держит все entries в памяти одновременно, без ограничения `uncompressedSize`/`compressedSize`/количества entries. (`maxRecipesPerImport = 500` ограничивает только распарсенные рецепты, не байты.) Записи `.paprikarecipe` — gzip-сжатый JSON из пользовательских архивов.
-- **Impact**: Многомегабайтный gzip-stream разрастается до многих ГБ → OOM/краш (локальный DoS) при импорте crafted-файла. Маленький crafted `.zip` может распаковаться до произвольного размера.
-- **Recommendation**: Ввести жёсткий максимум распакованного размера (масштабированный под `ThirdPartyImportLimits`), прерывать поток при превышении, проверять `entry.uncompressedSize`/`compressedSize` до извлечения, считать running total и отвергать архив заранее; для больших entries предпочитать streaming-извлечение на диск.
+#### 3. ~~**[Security / Performance]** Декомпрессионная бомба: gzip и ZIP без ограничений на распакованный размер~~ ✅ Исправлено (2026-06-18, spec [`032-import-decompression-bomb`](specs/032-import-decompression-bomb/spec.md))
+- ~~**Area**: `RecipeScalerCore/Import/ThirdParty/Gunzip.swift:22-44`; `RecipeScalerCore/Import/ThirdParty/ThirdPartyFormatDetector.swift:139-150` (`enumerateZipEntries`); `RecipeScalerCore/Export/Native/NativeRecipeImporter.swift:106-110,157-160`~~
+- ~~**Description**: `Gunzip.decompress` циклит `inflate`, дописывая чанки в `output = Data()` **без ограничения итогового размера**…~~ Triple-guard (pre-flight `entry.uncompressedSize` + streaming running total + aggregate cap) во всех путях; JSON pre-flight (см. #32); TDD-покрытие 21 кейсом.
+- ~~**Impact**: Многомегабайтный gzip-stream разрастается до многих ГБ → OOM/краш…~~ Закрыто.
 
-#### 4. **[Performance / Business Logic]** O(N²)-вставка ингредиентов + двойная full-doc кодировка при импорте
-- **Area**: `RecipeScalerNative/Services/YjsSync/DocumentManager.swift:318-326,1492-1499,1058-1090,1189-1207`
-- **Description**: `applyImportedRecipe`/`applyNativeRecipe` вызывают `addIngredient` по одному ингредиенту. Каждый `addIngredient` запускает `renumberIngredientOrders`, который обходит **весь** массив ингредиентов (O(N) на добавление → O(N²) на рецепт). Каждый вызов проходит через `mutateRecipe`, который (a) открывает write-txn, (b) `persistSnapshot` → `encodeStateAsUpdate` (весь документ), (c) `deliverPendingLocalUpdate` → `consumePendingLocalUpdates` + **вторая** `encodeStateAsUpdate` + запись SQLite. Для рецепта с K ингредиентами: K×O(K) renumber + 2K full-document кодировок CRDT + K записей SQLite.
-- **Impact**: Импорт не укладывается в целевые «≤2 мин на 50 рецептов»; CPU/GC доминируют; главный поток может stall'ить, т.к. import-service на `@MainActor`.
-- **Recommendation**: Батчить весь массив ингредиентов в одну write-транзакцию (без per-item `renumber`), затем один `persistSnapshot` + один `deliverPendingLocalUpdate` на рецепт; в `deliverPendingLocalUpdate` переиспользовать уже закодированное состояние вместо двойной кодировки.
+#### 4. ~~**[Performance / Business Logic]** O(N²)-вставка ингредиентов + двойная full-doc кодировка при импорте~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeScalerNative/Services/YjsSync/DocumentManager.swift:318-326,1492-1499,1058-1090,1189-1207`~~
+- ~~**Description**: `applyImportedRecipe`/`applyNativeRecipe` вызывают `addIngredient` по одному ингредиенту…~~ Батч-вставка ингредиентов + один renumber; `persistAndDeliver` — одна кодировка (#43).
+- ~~**Impact**: Импорт не укладывается в целевые «≤2 мин на 50 рецептов»…~~
+- ~~**Recommendation**: Батчить весь массив ингредиентов…~~
 
-#### 5. **[Performance]** Весь архив декодируется в память до цикла импорта
-- **Area**: `RecipeScalerCore/Import/ThirdParty/ThirdPartyFormatDetector.swift:117-159`; `RecipeScalerNative/Services/ThirdPartyRecipeImportService.swift:38-42`
-- **Description**: `enumerateZipEntries` извлекает и буферизует **полную распакованную Data** каждого entry заранее (плюс позже декодируется и держится base64 `photo_data` каждого). Для 500-рецептного Paprika-архива это могут быть сотни МБ resident-памяти одновременно.
-- **Impact**: OOM на устройствах с малым RAM; пиковая память масштабируется с размером архива, а не с одним рецептом; подрывает безопасность лимита в 500 рецептов.
-- **Recommendation**: Стримить entries лениво — сначала enumerate путей, затем extract+parse+import по одному entry за раз (освобождать Data перед следующим), чтобы пик ≈ один рецепт + одно изображение.
+#### 5. ~~**[Performance]** Весь архив декодируется в память до цикла импорта~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeScalerCore/Import/ThirdParty/ThirdPartyFormatDetector.swift:117-159`; `RecipeScalerNative/Services/ThirdPartyRecipeImportService.swift:38-42`~~
+- ~~**Description**: `enumerateZipEntries` извлекает и буферизует **полную распакованную Data** каждого entry заранее…~~ Streaming ZIP import.
+- ~~**Impact**: OOM на устройствах с малым RAM…~~
+- ~~**Recommendation**: Стримить entries лениво…~~
 
 #### 6. **[Performance]** Yjs merge/encode выполняется на главном потоке через WKWebView
 - **Area**: `RecipeScalerNative/Services/YjsSync/YjsMergeHelper.swift:10-67`; вызовы `UpdateDebouncer.swift:54-69`, `YjsSyncService.swift:286,1535,1721,1738`
@@ -106,17 +125,17 @@
 - **Impact**: Каждый merge блокирует главный поток (JS синхронный для `evaluateJavaScript`); большие апдейты дают видимый jank/freeze при reconnect-storms. Boxing в NSNumber удваивает память и аллоцирует тяжело.
 - **Recommendation**: Реализовать merge нативно в yrs (Rust `merge_updates_v1`/`encode_state_as_update` уже доступны через FFI, обёрнутый в `YrsDocument`); полностью уйти с `@MainActor`. Если WebView остаётся — хотя бы убрать NSNumber-boxing в пользу base64.
 
-#### 7. **[Performance]** Экспорт грузит все рецепты + все байты изображений в память на MainActor
-- **Area**: `RecipeScalerNative/Services/NativeExportImportService.swift:34-94`
-- **Description**: `exportAll` сначала обходит все рецепты через `readRecipeData` (каждый — полный Y.Doc read + XmlFragment→HTML), накапливая все `ExportRecipe` в памяти; затем вторым проходом грузит **и full, и preview** изображения `Data(contentsOf:)` для каждого рецепта в `imageData: [String:(full,preview)]` — всё до сериализации.
-- **Impact**: Для сотен рецептов с изображениями пиковая память = сумма всех картинок на диске (легко >1 ГБ); работает на `@MainActor` → UI заморожен на всё время экспорта. Вероятный OOM на больших библиотеках.
-- **Recommendation**: Стримить в экспортёр (записывать каждый рецепт/изображение в вывод по мере обработки,释放 после эмиссии); уйти с MainActor.
+#### 7. ~~**[Performance]** Экспорт грузит все рецепты + все байты изображений в память на MainActor~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeScalerNative/Services/NativeExportImportService.swift:34-94`~~
+- ~~**Description**: `exportAll` сначала обходит все рецепты…~~ Streaming export off MainActor (`Task.detached`).
+- ~~**Impact**: Для сотен рецептов с изображениями пиковая память…~~
+- ~~**Recommendation**: Стримить в экспортёр…~~
 
-#### 8. **[Architecture]** `Package.swift` сломан: не объявляет `RecipeScalerCore` и `YrsC`
-- **Area**: `Package.swift:33-58`; реальный сборка живёт в `RecipeScalerNative.xcodeproj`
-- **Description**: SPM-манифест опускает таргет `RecipeScalerCore` и XCFramework `YrsC`. `swift build` из CLI не работает; только Xcode-проект (встраивает `RecipeScalerCore.framework` через `project.pbxproj:86,128,162,204`) может собрать приложение. Два графа сборки дрейфуют незаметно.
-- **Impact**: CI-скрипты, agent-loops и внешний tooling, вызывающие `swift build`, получают ложный green или жёсткий fail; любой SwiftPM-native consumer не может зависеть от пакета. Блокирует миграцию на чистый SPM-workspace.
-- **Recommendation**: Либо удалить `Package.swift` и задокументировать Xcode-only, либо сделать его каноническим: добавить таргет `RecipeScalerCore` (path `RecipeScalerCore`), `.binaryTarget(name: "YrsC", path: "Frameworks/YrsC.xcframework")`, объявить `YrsC`/`RecipeScalerCore` зависимостями `RecipeScalerNative`.
+#### 8. ~~**[Architecture]** `Package.swift` сломан: не объявляет `RecipeScalerCore` и `YrsC`~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `Package.swift:33-58`; реальный сборка живёт в `RecipeScalerNative.xcodeproj`~~
+- ~~**Description**: SPM-манифест опускает таргет `RecipeScalerCore` и XCFramework `YrsC`. `swift build` из CLI не работает; только Xcode-проект…~~ Манифест сделан каноническим: добавлены `.binaryTarget(name: "YrsC", path: "Frameworks/YrsXCFramework.xcframework")`, source-target `RecipeScalerCore` (path `RecipeScalerCore`, ресурсы `Resources/Shared.xcstrings` + `.copy("Export/Native/schemas")`), явные зависимости `RecipeScalerCore`/`YrsC` у `RecipeScalerNative` и `RecipeScalerNativeTests`, `RecipeScalerCore` добавлен в `products`. Заодно убран баг в exclude (`"RecipeScalerNative.xcodeproj"` указывал на несуществующий путь внутри `RecipeScalerNative/`). Валидация: `swift package describe` — 4 таргета / 2 продукта корректно описаны; `swift package resolve` exit 0; `xcodebuild build -scheme RecipeScalerCore -destination 'generic/platform=iOS Simulator'` → **BUILD SUCCEEDED**.
+- ~~**Impact**: CI-скрипты, agent-loops и внешний tooling, вызывающие `swift build`, получают ложный green или жёсткий fail…~~ Граф SPM теперь определён и согласован с графом Xcode.
+- ~~**Recommendation**: Либо удалить `Package.swift`…~~ Выполнено (канонический путь). Замечание: `swift build` под macOS-host всё равно падает с `requires macos 10.13, but depends on the product 'GRDB' which requires macos 10.15` — это ожидаемое ограничение iOS-only манифеста (`.iOS(.v17)`), не дефект правки. Для проверки используется `xcodebuild -scheme ... -destination 'platform=iOS Simulator'`.
 
 #### 9. **[Architecture]** `YjsSyncService` — god-объект на 2411 строк, `@MainActor ObservableObject`
 - **Area**: `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift`
@@ -139,11 +158,11 @@
 
 ### High
 
-#### 12. **[Security]** Креденшал (`userId`) хранится plaintext в UserDefaults, не в Keychain
-- **Area**: `RecipeScalerNative/Services/AuthService.swift:117-119,154-156`; `RecipeScalerCore/Auth/SharedAuthStore.swift:24-34`
-- **Description**: `userId` (единственный креденшал по находке №1) персистится в `UserDefaults.standard` и зеркалируется в App Group `UserDefaults`. UserDefaults — plaintext plist на диске. Keychain (правильно используемый для сид-фразы) дал бы hardware-backed шифрованное хранилище.
-- **Impact**: На скомпрометированном/резервном устройстве forensic-инструменты читают UserDefaults тривиально; получение userId = полный takeover.
-- **Recommendation**: Хранить креденшал в Keychain (класс `.afterFirstUnlockThisDeviceOnly`); если extensions должны читать — добавить keychain access group в entitlements.
+#### 12. ~~**[Security]** Креденшал (`userId`) хранится plaintext в UserDefaults, не в Keychain~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeScalerNative/Services/AuthService.swift:117-119,154-156`; `RecipeScalerCore/Auth/SharedAuthStore.swift:24-34`~~
+- ~~**Description**: `userId` (единственный креденшал по находке №1) персистится в `UserDefaults.standard` и зеркалируется в App Group `UserDefaults`. UserDefaults — plaintext plist на диске. Keychain (правильно используемый для сид-фразы) дал бы hardware-backed шифрованное хранилище.~~ `SharedAuthStore` переписан на `kSecClassGenericPassword` через raw Security framework (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`); `AuthService` пишет/читает `userId` только через Keychain; legacy plaintext-следы в `UserDefaults.standard` и App Group `UserDefaults` вычищаются один раз за холодный старт (`purgeLegacyUserDefaultsCredentials`).
+- ~~**Impact**: На скомпрометированном/резервном устройстве forensic-инструменты читают UserDefaults тривиально; получение userId = полный takeover.~~
+- ~~**Recommendation**: Хранить креденшал в Keychain (класс `.afterFirstUnlockThisDeviceOnly`); если extensions должны читать — добавить keychain access group в entitlements.~~ Выполнено: `keychain-access-groups = [$(AppIdentifierPrefix)ru.recipescaler.RecipeScalerNative]` добавлен во все 5 entitlements (main + Share/Action/HomeWidget/TimerLiveActivity); тесты `SharedAuthStoreTests` (6) + `AuthServiceMigrationTests` (3) зелёные.
 
 #### 13. **[Security]** Нет TLS certificate/SPKI-pinning'а
 - **Area**: `RecipeScalerCore/Networking/APIClient.swift:145`; Socket.IO в `YjsSyncService.swift:1120`
@@ -175,34 +194,34 @@
 - **Impact**: Усиление памяти 2–3× на каждом sync round-trip; тяжёлый Obj-C bridging + autorelease; GC-stall'ы на больших апдейтах.
 - **Recommendation**: Использовать binary/`Data` Socket.IO (или base64 в JSON); если сервер требует JSON number-array — кодировать через `Array(UnsafeBufferPointer)` без per-element boxing.
 
-#### 18. **[Performance]** Полная конверсия XmlFragment→HTML на каждом чтении рецепта
-- **Area**: `RecipeScalerNative/Services/YjsSync/DocumentManager.swift:189-211`; `RecipeScalerNative/Utils/XmlFragmentToHTML.swift:108-476`
-- **Description**: `readRecipeData` всегда прогоняет `XmlFragmentToHTML.serializedFragment` + `html(fromSerializedXML:)`, который применяет ~15 `NSRegularExpression`-проходов (`replacingOccurrences` + match-циклы) по всей строке описания. Выполняется для `refreshCurrentRecipe`, `peekRecipeData` (поиск до 100 рецептов, Spotlight), экспорта, покупок.
-- **Impact**: Поиск по 100 рецептам = 100 полных чтений + 100 HTML-конверсий на каждое нажатие; Spotlight-reindex столь же тяжёлый.
-- **Recommendation**: Кешировать сконвертированный HTML/`RecipeDescriptionDocument` по состоянию документа (`updatedAt`); для поиска/индекса читать лёгкую plain-text-проекцию вместо полного HTML.
+#### 18. ~~**[Performance]** Полная конверсия XmlFragment→HTML на каждом чтении рецепта~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeScalerNative/Services/YjsSync/DocumentManager.swift:189-211`; `RecipeScalerNative/Utils/XmlFragmentToHTML.swift:108-476`~~
+- ~~**Description**: `readRecipeData` всегда прогоняет `XmlFragmentToHTML.serializedFragment`…~~ Кеш по stateVector.
+- ~~**Impact**: Поиск по 100 рецептам = 100 полных чтений…~~
+- ~~**Recommendation**: Кешировать сконвертированный HTML…~~
 
-#### 19. **[Performance]** Spotlight-индексация полностью на `@MainActor` + синхронные дисковые чтения + NSAttributedString HTML
-- **Area**: `RecipeScalerNative/Services/SpotlightIndexer.swift:18,103-156,233-265`
-- **Description**: `SpotlightIndexer` — `@MainActor`. `indexOne` вызывает `peekRecipeData` (полный doc read + HTML-конверсия), `Data(contentsOf:)` (синхронный дисковый read) для thumbnail и `plainText(fromHTML:)` через `NSAttributedString(..., documentType: .html)` — одну из самых дорогих UIKit-операций — на главном потоке, на каждый dirty-рецепт. Уже есть план-документ `plans/007-move-spotlight-off-main-thread.md`.
-- **Impact**: Reindex-всплески (коллекция, импорт) stall'ят главный поток; `NSAttributedString` HTML-init может занимать десятки ms на рецепт.
-- **Recommendation**: Вынести тяжёлую per-recipe работу в background-`Task`; заменить `NSAttributedString` HTML на нативный `RecipeDescriptionParser` plain-text.
+#### 19. ~~**[Performance]** Spotlight-индексация полностью на `@MainActor` + синхронные дисковые чтения + NSAttributedString HTML~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeScalerNative/Services/SpotlightIndexer.swift:18,103-156,233-265`~~
+- ~~**Description**: `SpotlightIndexer` — `@MainActor`. `indexOne` вызывает `peekRecipeData`…~~ `Task.detached` + NSCache plainText.
+- ~~**Impact**: Reindex-всплески stall'ят главный поток…~~
+- ~~**Recommendation**: Вынести тяжёлую per-recipe работу в background-`Task`…~~
 
-#### 20. **[Performance]** Image upload preprocessor до ~112 encode-проходов на `@MainActor`
-- **Area**: `RecipeScalerNative/Utils/RecipeImageUploadPreprocessor.swift:34-60,134-165`; вызов `YjsSyncService.swift:620-621`
-- **Description**: `payloadForUpload` работает на главном actor'е. В не-passthrough-режиме декодирует, затем `imageDataUnderLimit` циклит до 14 resize-итераций, каждая пробует 8 уровней качества WebP/JPEG `CGImageDestinationFinalize` — до ~112 полных encode-проходов синхронно на main.
-- **Impact**: При multi-recipe импорте с изображениями каждая картинка замораживает UI на время поиска encode; большой battery/CPU.
-- **Recommendation**: Вынести preprocess в `Task.detached`; сократить quality-ladder (один WebP q=0.8, один JPEG-fallback); полагаться на даунсэмплинг вместо brute-force.
+#### 20. ~~**[Performance]** Image upload preprocessor до ~112 encode-проходов на `@MainActor`~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeScalerNative/Utils/RecipeImageUploadPreprocessor.swift:34-60,134-165`; вызов `YjsSyncService.swift:620-621`~~
+- ~~**Description**: `payloadForUpload` работает на главном actor'е…~~ ≤3 encode qualities + `Task.detached`.
+- ~~**Impact**: При multi-recipe импорте с изображениями…~~
+- ~~**Recommendation**: Вынести preprocess в `Task.detached`…~~
 
-#### 21. **[Performance]** Offline-очередь: full-table fetch на рецепт (N+1) и per-row DELETE
-- **Area**: `YjsSyncService.swift:313-328` (`hasUnsyncedLocalChanges`), вызовы в циклах 375,1518-1521,1694-1696; per-entry deletes 1639-1645, 1682-1686
-- **Description**: `hasUnsyncedLocalChanges` вызывает `offlineQueue.fetchAll()` (full scan) и `.contains(where:)` для одного рецепта, но вызывается **раз на рецепт** в `fetchAndMergeServerDocuments`, `refreshWireSnapshotsForRecipes`, `pushUnsyncedWireSnapshots`. `handleSyncConfirmed`/`drainOfflineQueue` удаляют entries по одному `deleteEntry(id:)` (отдельные транзакции).
-- **Impact**: Reconnect/offline-drain с R рецептами и Q entries — O(R×Q) чтений + O(Q) транзакций; квадратичное масштабирование.
-- **Recommendation**: Фетчить очередь один раз, построить `Set<String>` pending recipeIds, проверять membership; заменить per-row deletes на единый `DELETE ... WHERE recipeId = ?`.
+#### 21. ~~**[Performance]** Offline-очередь: full-table fetch на рецепт (N+1) и per-row DELETE~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `YjsSyncService.swift:313-328` (`hasUnsyncedLocalChanges`), вызовы в циклах 375,1518-1521,1694-1696; per-entry deletes 1639-1645, 1682-1686~~
+- ~~**Description**: `hasUnsyncedLocalChanges` вызывает `offlineQueue.fetchAll()`…~~ `recipeIdsInQueue` + batch `deleteEntries`.
+- ~~**Impact**: Reconnect/offline-drain с R рецептами…~~
+- ~~**Recommendation**: Фетчить очередь один раз…~~
 
-#### 22. **[Performance]** Каскад `refreshCollectionEntries` не дебаунсится и перезапускается на каждую мутацию
-- **Area**: `YjsSyncService.swift:2129-2154`; observer wiring 2213-2218
-- **Description**: Collection deep observer вызывает `Task { await refreshCollectionEntries() }` напрямую (без debounce/coalescing). Каждый вызов: полный `readCollectionEntries`, `CollectionRecipesIndexBuilder.build`, `readFolders`, `scheduleImagePrefetch`, `refreshImageCacheStatus` (цикл по всем, 2 stat'а), `refreshRecipeDocumentCacheStatus` (цикл, 1 SQLite-запрос). При импорте коллекция меняется раз на рецепт → 50-рецептный импорт = ~50 полных каскадов.
-- **Recommendation**: Дебаунсить/coalesce `refreshCollectionEntries` (cancel-in-flight + задержка, как `scheduleRecipeDocumentsBatchLoad`); считать cache-статусы из уже прочитанных entries без доп. SQLite/stat-проходов.
+#### 22. ~~**[Performance]** Каскад `refreshCollectionEntries` не дебаунсится и перезапускается на каждую мутацию~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `YjsSyncService.swift:2129-2154`; observer wiring 2213-2218~~
+- ~~**Description**: Collection deep observer вызывает `Task { await refreshCollectionEntries() }` напрямую…~~ `scheduleCollectionEntriesRefresh` debounce 150ms.
+- ~~**Recommendation**: Дебаунсить/coalesce `refreshCollectionEntries`…~~
 
 #### 23. **[Architecture]** Дубликаты валидаторов/локализаторов между `RecipeScalerCore` и `RecipeScalerNative`
 - **Area**: `RecipeScalerCore/Import/ImportPhotoValidator.swift` vs `RecipeScalerNative/Utils/ImportPhotoValidator.swift`; аналогично `ImportErrorLocalizer`
@@ -261,10 +280,10 @@
 
 ### Medium
 
-#### 32. **[Security]** Недоверенные архивы парсятся без ограничения размера ввода
-- **Area**: `PaprikaRecipeParser.swift:37`, `CroutonRecipeParser.swift:16` (`JSONSerialization.jsonObject`); `NativeRecipeImporter.swift:72,117`; `ThirdPartyFormatDetector.isCroutonJSON:169`
-- **Description**: JSON из attacker-контролируемых файлов декодируется без byte-size/depth-гарда. `JSONSerialization` не закалён против deep-nesting CPU-бомб.
-- **Impact**: Патологический JSON (большой/глубокий) потребляет много CPU/памяти — локальный DoS.
+#### 32. ~~**[Security]** Недоверенные архивы парсятся без ограничения размера ввода~~ ✅ Исправлено (2026-06-18, spec `032-import-decompression-bomb`)
+- ~~**Area**: `PaprikaRecipeParser.swift:37`, `CroutonRecipeParser.swift:16` (`JSONSerialization.jsonObject`); `NativeRecipeImporter.swift:72,117`; `ThirdPartyFormatDetector.isCroutonJSON:169`~~
+- ~~**Description**: JSON из attacker-контролируемых файлов декодируется без byte-size/depth-гарда…~~ Добавлен pre-flight cap `ThirdPartyImportLimits.maxRecipeJSONBytes` (16 MB) во всех 4 местах.
+- ~~**Impact**: Патологический JSON (большой/глубокий) потребляет много CPU/памяти — локальный DoS.~~ Закрыто.
 - **Recommendation**: Валидировать `Data.count` против разумного ceiling'а перед парсингом; предпочитать `JSONDecoder` для attacker-input.
 
 #### 33. **[Security]** Расширения аутентифицируются только plaintext, не-секретным `userId`
@@ -292,35 +311,35 @@
 - **Description**: Сбрасывается только когда `recipeBatchLoadCompleted >= recipeBatchLoadTotal`. Если сервер вернёт подмножество запрошенных ids — `completed` никогда не достигнет `total`, `isDownloading` зависнет `true`.
 - **Recommendation**: Сбрасывать по таймауту или сверять `total` с реально возвращёнными ids.
 
-#### 38. **[Performance]** N индивидуальных SQLite-запросов для missing/cached снапшотов
-- **Area**: `YjsSyncService.swift:1916-1926`, `2046-2073`
-- **Description**: Оба метода циклят коллекцию и вызывают `store.loadSnapshot(docKey:)` раз на рецепт — один DB round-trip на рецепт, без батчинга. `refreshRecipeDocumentCacheStatus` гоняется на каждом refresh коллекции.
-- **Recommendation**: Один `SELECT docKey FROM ydoc_snapshots WHERE docKey IN (...)` или фетчить все ключи раз в `Set`; кешировать множество до инвалидации.
+#### 38. ~~**[Performance]** N индивидуальных SQLite-запросов для missing/cached снапшотов~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `YjsSyncService.swift:1916-1926`, `2046-2073`~~
+- ~~**Description**: Оба метода циклят коллекцию и вызывают `store.loadSnapshot(docKey:)`…~~ Batch `loadSnapshots` / `existingSnapshotKeys`.
+- ~~**Recommendation**: Один `SELECT docKey FROM ydoc_snapshots WHERE docKey IN (...)`…~~
 
-#### 39. **[Performance]** Проверка миграции дискового кеша на каждом lookup пути изображения
-- **Area**: `RecipeScalerNative/Services/RecipeImageDiskCache.swift:14-18` (`fileURL` → `migrateFromCachesIfNeeded`)
-- **Description**: `fileURL(...)` (самая вызываемая функция) безусловно вызывает `migrateFromCachesIfNeeded()`, который читает `UserDefaults.standard.bool` на каждом вызове и до установки флага перечисляет legacy-директорию.
-- **Recommendation**: Запускать миграцию раз при запуске; `fileURL` должна быть чистой арифметикой.
+#### 39. ~~**[Performance]** Проверка миграции дискового кеша на каждом lookup пути изображения~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeScalerNative/Services/RecipeImageDiskCache.swift:14-18` (`fileURL` → `migrateFromCachesIfNeeded`)~~
+- ~~**Description**: `fileURL(...)` безусловно вызывает `migrateFromCachesIfNeeded()`…~~ Migration once at app launch (`AppShellView`).
+- ~~**Recommendation**: Запускать миграцию раз при запуске…~~
 
-#### 40. **[Performance]** Статус кеша изображений делает 2 `fileExists`-stat'а на рецепт, часто
-- **Area**: `RecipeImageService.swift:44-89` (`cacheStatus`), через `refreshImageCacheStatus`
-- **Description**: `cacheStatus(for:)` вызывает `isVariantCached` дважды (preview + full), каждый `FileManager.fileExists` + UserDefaults read. Весь массив ре-сканируется на каждое `recipeImageDidCache`/status-уведомление (дебаунс 300ms) и каждый refresh коллекции.
-- **Recommendation**: Держать in-memory cached/known set, обновляемый на write/delete; статить только когда set dirty. Агрессивнее дебаунсить при активном prefetch.
+#### 40. ~~**[Performance]** Статус кеша изображений делает 2 `fileExists`-stat'а на рецепт, часто~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeImageService.swift:44-89` (`cacheStatus`), через `refreshImageCacheStatus`~~
+- ~~**Description**: `cacheStatus(for:)` вызывает `isVariantCached` дважды…~~ Memoized `cacheStatus` fingerprint.
+- ~~**Recommendation**: Держать in-memory cached/known set…~~
 
-#### 41. **[Performance]** MainActor-таймер 0.5 c гоняет рефреш панели + Live Activity
-- **Area**: `RecipeScalerNative/Services/TimerManager.swift:29,320-352`
-- **Description**: `timerUpdateInterval = 0.5s`; `updateRunningTimers` мутирует `remainingTime` на каждом бегущем таймере каждые 0.5 c и зовёт `refreshPanelTimers()` (`persistTimerSnapshot` → App Group write + `WidgetCenter.reloadTimelines`, дебаунс 0.2 c) и `syncLiveActivityProgress` (троттл 3 c). Мутация `remainingTime` на `@Observable` инвалидирует SwiftUI-диффинг 2 Гц для всей панели таймеров.
-- **Recommendation**: Гнать видимый отсчёт через display-link/seconds-гранулярность только для on-screen rows; не мутировать published `remainingTime` на 2 Гц для невидимых таймеров.
+#### 41. ~~**[Performance]** MainActor-таймер 0.5 c гоняет рефреш панели + Live Activity~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeScalerNative/Services/TimerManager.swift:29,320-352`~~
+- ~~**Description**: `timerUpdateInterval = 0.5s`; `updateRunningTimers` мутирует `remainingTime`…~~ Panel refresh only on displayed-second change.
+- ~~**Recommendation**: Гнать видимый отсчёт через display-link/seconds-гранулярность…~~
 
-#### 42. **[Performance]** Поиск на каждое нажатие грузит до 100 полных doc-ов
-- **Area**: `RecipeListSearchStore.swift:97-115`; `peekRecipeData` `YjsSyncService.swift:1027-1031`
-- **Description**: На каждый query фоновый `Task` вызывает `peekRecipeData` для до 100 name-miss-кандидатов; каждый — `getOrCreateDoc` + полный `readRecipeData` incl. XmlFragment→HTML (см. №18). Первичный проход по свежему термину над большой библиотекой тяжёлый.
-- **Recommendation**: Индексировать лёгкий нормализованный text-blob (name + ингредиенты + plain-описание) раз на изменение рецепта и искать по нему; лимитировать/рейт-лимитить candidate-loading.
+#### 42. ~~**[Performance]** Поиск на каждое нажатие грузит до 100 полных doc-ов~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeListSearchStore.swift:97-115`; `peekRecipeData` `YjsSyncService.swift:1027-1031`~~
+- ~~**Description**: На каждый query фоновый `Task` вызывает `peekRecipeData` для до 100 name-miss-кандидатов…~~ `readSearchIndex` / `peekSearchIndex`.
+- ~~**Recommendation**: Индексировать лёгкий нормализованный text-blob…~~
 
-#### 43. **[Performance]** Избыточные полные кодировки документа на каждую мутацию
-- **Area**: `DocumentManager.swift:107-126,428-438,1189-1207`
-- **Description**: Одна локальная мутация триггерит: write-txn → `persistSnapshot` (`encodeStateAsUpdate`), затем `deliverPendingLocalUpdate` → `consumePendingLocalUpdates` + **вторая** `encodeStateAsUpdate`. Remote `applyUpdate` тоже ре-кодирует+saves на каждый входящий delta.
-- **Recommendation**: Кодировать раз и переиспользовать байты для персистентности и outbound-доставки; пропускать re-persist на pure remote-apply, когда снапшот уже актуален.
+#### 43. ~~**[Performance]** Избыточные полные кодировки документа на каждую мутацию~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `DocumentManager.swift:107-126,428-438,1189-1207`~~
+- ~~**Description**: Одна локальная мутация триггерит: write-txn → `persistSnapshot`…~~ `persistAndDeliver` — single encode.
+- ~~**Recommendation**: Кодировать раз и переиспользовать байты…~~
 
 #### 44. **[Architecture]** App Group identifier захардкожен в двух местах
 - **Area**: `RecipeScalerCore/AppGroup.swift:28`; `RecipeScalerCore/Auth/SharedAuthStore.swift:14`
@@ -368,10 +387,10 @@
 - **Description**: View инспектирует, начинается ли serverError с «assistant.», чтобы решить, локализовать ли как ключ. Дублирует и хардкодит API-конвенцию именования ключей внутри view.
 - **Recommendation**: Заставить serverError нести типизированный индикатор (enum/dedicated `localizedKey`) вместо prefix-сниффинга.
 
-#### 53. **[Standards]** `YrsError.errorDescription` возвращает захардкоженный английский
-- **Area**: `RecipeScalerNative/Services/Yrs/YrsError.swift:12-25`
-- **Description**: «Yrs null pointer: ...», «Yrs apply failed: ...». `YDocRecipeDetailView` назначает `error.localizedDescription` в `editErrorMessage`.
-- **Recommendation**: Локализовать через ключи либо держать внутренним (не выводить в UI, гейтить generic-сообщением).
+#### 53. ~~**[Standards]** `YrsError.errorDescription` возвращает захардкоженный английский~~ ✅ Исправлено (2026-06-18, вместе с #11)
+- ~~**Area**: `RecipeScalerNative/Services/Yrs/YrsError.swift:12-25`~~
+- ~~**Description**: «Yrs null pointer: ...», «Yrs apply failed: ...»…~~ Локализация через `Bundle.currentLocalizedString`; view-layer через `UserFacingAPIError.message(for:)`.
+- ~~**Recommendation**: Локализовать через ключи…~~
 
 #### 54. **[Standards]** Silent catch без логирования на провал кеша изображений
 - **Area**: `RecipeScalerNative/Views/RecipeDetailView.swift:224-232`
@@ -416,22 +435,22 @@
 - **Area**: `ThirdPartyIngredientAmountSplitter.swift:9-12` vs `CroutonRecipeParser.swift:95-111`
 - **Recommendation**: Единая таблица нормализации единиц для обоих путей.
 
-#### 63. **[Business Logic]** Дивергентные константы `maxImageBytes` между путями импорта
-- **Area**: `ThirdPartyImportTypes.swift:113` (26 214 400) vs `ImportPhotoValidator.swift:16/32` (25 000 000)
-- **Recommendation**: Одна shared-константа.
+#### 63. ~~**[Business Logic]** Дивергентные константы `maxImageBytes` между путями импорта~~ ✅ Исправлено (2026-06-18, spec `032-import-decompression-bomb`)
+- ~~**Area**: `ThirdPartyImportTypes.swift:113` (26 214 400) vs `ImportPhotoValidator.swift:16/32` (25 000 000)~~
+- ~~**Recommendation**: Одна shared-константа.~~ `ThirdPartyImportLimits.maxImageBytes = 25_000_000`, все сайты ссылаются на неё.
 
 #### 64. **[Business Logic]** `NativeFormatDetector.detect()` классифицирует не-object JSON как v1.0
 - **Area**: `NativeFormatDetector.swift:17-28`
 - **Recommendation**: При не-object JSON кидать `invalidJSON`.
 
-#### 65. **[Performance]** Список без pagination/virtualization-гарда
-- **Area**: `RecipeListView.swift:106-124,362-436`
-- **Description**: `RecipeRow` не `Equatable`; `pinnedRowItems`/`unpinnedRowItems` — computed-свойства, ребилдятся на каждом рендере.
-- **Recommendation**: Мемоизировать split-массивы; `RecipeRow` сделать `Equatable`/`EquatableView`.
+#### 65. ~~**[Performance]** Список без pagination/virtualization-гарда~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeListView.swift:106-124,362-436`~~
+- ~~**Description**: `RecipeRow` не `Equatable`; `pinnedRowItems`/`unpinnedRowItems` — computed-свойства…~~ Equatable rows + memoized pin split.
+- ~~**Recommendation**: Мемоизировать split-массивы…~~
 
-#### 66. **[Performance]** `mergeYjsUpdates` (native fallback) аллоцирует ydoc + коммит на апдейт
-- **Area**: `RecipeScalerNative/Services/Yrs/YrsDocument.swift:44-67`
-- **Recommendation**: Применять все updates в одной write-транзакции.
+#### 66. ~~**[Performance]** `mergeYjsUpdates` (native fallback) аллоцирует ydoc + коммит на апдейт~~ ✅ Исправлено (2026-06-18)
+- ~~**Area**: `RecipeScalerNative/Services/Yrs/YrsDocument.swift:44-67`~~
+- ~~**Recommendation**: Применять все updates в одной write-транзакции.~~ Single write-txn в `mergeYjsUpdates`.
 
 #### 67. **[Architecture]** Пустая директория `RecipeScalerNative/Routing/`; роутер в `Utils/`
 - **Area**: `RecipeScalerNative/Routing/` (0 entries); `Utils/DeepLinkRouter.swift`
@@ -461,13 +480,13 @@
 - [x] Path traversal в ZIP — нет (строгий 3-component-split для изображений)
 - [ ] **Уязвимости безопасности аутентификации** — Critical №1–3, High №12–13
 - [ ] **Корректность бизнес-логики** — High №14–16, Medium №35–37
-- [ ] **Узкие места производительности** — Critical №4–7, High №17–22
-- [ ] Код следует стандартам проекта — нарушений i18n много (Critical №11, High №29–31)
+- [x] **Узкие места производительности (большая часть)** — ✅ №4, 5, 7, 18–22, 38–43, 65, 66 (2026-06-18); остаются **#6** (WKWebView merge), **#17** (Socket.IO wire format)
+- [ ] Код следует стандартам проекта — ~~Critical №11~~ ✅, High №29–31
 - [x] Маркеры `// TODO`/`FIXME`/`HACK` — не найдены
 - [x] Пустые `catch {}` — не найдены в проде
-- [ ] Комплексная обработка ошибок — нет (критично №11, №16, №46)
+- [ ] Комплексная обработка ошибок — ~~критично №11~~ ✅, №16, №46
 - [x] Тесты новые (Paprika/Crouton/XmlFragmentWriter) — есть, хорошо названы
-- [ ] Документация — `Package.swift` не соответствует реальности (№8)
+- [x] Документация — ~~`Package.swift` не соответствует реальности (№8)~~ ✅ Исправлено (2026-06-18)
 - [ ] Архитектура — god-объекты (№9, №10), сломанные границы (№24, №25)
 - [ ] Deployment-концерны — debug-UUID в репо (№2)
 
@@ -480,10 +499,10 @@
 Функциональность проекта работает и дизайн offline-first CRDT-архитектуры продуман, но перед production-нагрузкой обязательно устранить:
 
 1. **Безопасность (блокирующе)**: Critical №1–3 — модель аутентификации на публичном `userId` + закоммиченный prod-UUID — это прямой путь к full account takeover. Минимум как срочный quick-win: ротировать debug-UUID, перенести `userId` в Keychain, добавить TLS-pinning.
-2. **Производительность (блокирующе для целевых метрик)**: Critical №4–7 — O(N²)-импорт, decode архива в память, merge на main thread и export all-in-memory прямо угрожают заявленным «≤2 мин / 50 рецептов» и «до 500 рецептов».
+2. ~~**Производительность (блокирующе для целевых метрик)**: Critical №4–7 — O(N²)-импорт, decode архива в память, merge на main thread и export all-in-memory~~ ✅ Исправлено (2026-06-18), кроме **#6** (WKWebView merge) и **#17** (Socket.IO wire format).
 3. **Стабильность данных**: High №16 — оборонительное удаление снапшота при ошибке remote-апдейта может потерять несинхронизированные локальные правки.
-4. **i18n**: Critical №11 + High №29–31 — захардкоженный английский в ошибках и контенте импорта нарушает заявленную конвенцию.
+4. **i18n**: ~~Critical №11~~ ✅ + High №29–31 — захардкоженный английский в ошибках импорта/контенте.
 
-Архитектурные находки (god-объекты, сломанный `Package.swift`, дубликаты Core/Native) — это технический долг, который не блокирует релиз, но должен попасть в roadmap: они блокируют тестируемость и ускоряют регрессии.
+Архитектурные находки (god-объекты, ~~сломанный `Package.swift`~~ ✅, дубликаты Core/Native) — это технический долг, который не блокирует релиз, но должен попасть в roadmap: они блокируют тестируемость и ускоряют регрессии.
 
 Позитив: новые import-фичи (парсеры, локализаторы ошибок, валидаторы) демонстрируют правильное применение i18n-паттернов и хорошее тестовое покрытие — их стоит взять за образец для приведения остального кода в норму.

@@ -12,8 +12,9 @@ import UniformTypeIdentifiers
 enum ImportPhotoValidator {
 
     static let maxImages = 8
-    /// 25 MB — same as web `MAX_IMPORT_IMAGE_SIZE_BYTES`.
-    static let maxImageBytes = 25_000_000
+    /// Unified 25 MB image cap. Mirrors `ThirdPartyImportLimits.maxImageBytes`
+    /// (decimal MB, matches web `MAX_IMPORT_IMAGE_SIZE_BYTES`).
+    static let maxImageBytes = ThirdPartyImportLimits.maxImageBytes
 
     static let supportedUTTypes: [UTType] = [.jpeg, .png, .webP, .heic]
 
