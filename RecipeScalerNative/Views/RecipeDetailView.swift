@@ -224,7 +224,7 @@ struct RecipeDetailView: View {
                 do {
                     try modelContext.save()
                 } catch {
-                    print("Failed to save image cache: \(error)")
+                    AppLog.error(.app, "image_cache_save_failed", data: ["error": "\(error)"])
                 }
             }
         } catch {

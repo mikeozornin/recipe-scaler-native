@@ -21,7 +21,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        print("[APNs] Registration failed: \(error.localizedDescription)")
+        AppLog.error(.push, "apns_register_failed", data: ["error": error.localizedDescription])
     }
 
     // MARK: - Home Screen Quick Actions
