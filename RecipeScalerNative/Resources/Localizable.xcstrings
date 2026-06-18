@@ -5464,9 +5464,6 @@
         }
       }
     },
-    "Error: %@" : {
-
-    },
     "Hours" : {
 
     },
@@ -6061,6 +6058,23 @@
         }
       }
     },
+    "import.third-party-archive-too-large" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The archive is too large to import"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Архив слишком большой для импорта"
+          }
+        }
+      }
+    },
     "import.third-party-cancel" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6078,23 +6092,25 @@
         }
       }
     },
-    "import.third-party-archive-too-large" : {
+    "import.third-party-empty" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The archive is too large to import"
+            "value" : "The archive contains no recipes"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Архив слишком большой для импорта"
+            "value" : "Архив не содержит рецептов"
           }
         }
       }
     },
     "import.third-party-entry-too-large" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6111,6 +6127,7 @@
       }
     },
     "import.third-party-json-too-large" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6122,23 +6139,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Файл рецепта слишком большой для разбора"
-          }
-        }
-      }
-    },
-    "import.third-party-empty" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The archive contains no recipes"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Архив не содержит рецептов"
           }
         }
       }
@@ -7504,23 +7504,6 @@
         }
       }
     },
-    "recipe.import.metadata.prep-time %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prep: %@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подготовка: %@"
-          }
-        }
-      }
-    },
     "recipe.import.metadata.cook-time %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7551,6 +7534,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%d мин"
+          }
+        }
+      }
+    },
+    "recipe.import.metadata.prep-time %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prep: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подготовка: %@"
           }
         }
       }
@@ -10222,6 +10222,23 @@
         }
       }
     },
+    "Your recipes will appear here" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your recipes will appear here"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Здесь появятся ваши рецепты"
+          }
+        }
+      }
+    },
     "yrs.error.apply-failed" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10269,23 +10286,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Не удалось открыть транзакцию документа"
-          }
-        }
-      }
-    },
-    "Your recipes will appear here" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your recipes will appear here"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Здесь появятся ваши рецепты"
           }
         }
       }
