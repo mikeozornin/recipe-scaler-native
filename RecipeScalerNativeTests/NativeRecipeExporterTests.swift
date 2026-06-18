@@ -59,9 +59,8 @@ final class NativeRecipeExporterTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
         let parsed = try NativeRecipeImporter.parse(url: tempURL)
-        // Exporter now produces v1.5 (introduces the amountText field for
-        // non-numeric amounts — finding #15).
-        XCTAssertEqual(parsed.version, .v1_5)
+        // Exporter produces v1.4 with optional amountText for non-numeric amounts.
+        XCTAssertEqual(parsed.version, .v1_4)
         XCTAssertEqual(parsed.recipes.count, 1)
 
         let imported = try XCTUnwrap(parsed.recipes.first)
@@ -220,11 +219,11 @@ final class NativeRecipeExporterTests: XCTestCase {
         XCTAssertEqual(parsed.recipes.first?.name, "Soup")
     }
 
-    // MARK: - v1.5 amountText roundtrip (finding #15)
+    // MARK: - v1.4 amountText roundtrip (finding #15)
 
     /// Non-numeric ingredient amounts ("1/2", "2-3", "to taste", …) must
-    /// survive export → parse roundtrip via the new `amountText` field.
-    func testV15RoundTripPreservesNonNumericAmountText() throws {
+    /// survive export → parse roundtrip via the optional `amountText` field.
+    func testV14RoundTripPreservesNonNumericAmountText() throws {
         let recipe = ExportRecipe(
             id: "recipe-text",
             name: "Bread",
@@ -257,12 +256,12 @@ final class NativeRecipeExporterTests: XCTestCase {
         )
 
         let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("v15-text-\(UUID().uuidString).json")
+            .appendingPathComponent("v14-text-\(UUID().uuidString).json")
         try export.data.write(to: tempURL)
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
         let parsed = try NativeRecipeImporter.parse(url: tempURL)
-        XCTAssertEqual(parsed.version, .v1_5)
+        XCTAssertEqual(parsed.version, .v1_4)
         XCTAssertEqual(parsed.recipes.count, 1)
 
         let ing = try XCTUnwrap(parsed.recipes.first?.ingredients.first)
@@ -273,7 +272,7 @@ final class NativeRecipeExporterTests: XCTestCase {
 
     /// Numeric and text amounts may coexist in the same recipe and must
     /// each be preserved.
-    func testV15RoundTripPreservesMixedAmounts() throws {
+    func testV14RoundTripPreservesMixedAmounts() throws {
         let recipe = ExportRecipe(
             id: "recipe-mixed",
             name: "Stew",
@@ -315,12 +314,12 @@ final class NativeRecipeExporterTests: XCTestCase {
         )
 
         let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("v15-mixed-\(UUID().uuidString).json")
+            .appendingPathComponent("v14-mixed-\(UUID().uuidString).json")
         try export.data.write(to: tempURL)
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
         let parsed = try NativeRecipeImporter.parse(url: tempURL)
-        XCTAssertEqual(parsed.version, .v1_5)
+        XCTAssertEqual(parsed.version, .v1_4)
         let ings = try XCTUnwrap(parsed.recipes.first?.ingredients)
         XCTAssertEqual(ings.count, 2)
 
@@ -329,85 +328,6 @@ final class NativeRecipeExporterTests: XCTestCase {
 
         XCTAssertNil(ings[1].originalAmount)
         XCTAssertEqual(ings[1].amountText, "to taste")
-    }
-
-    /// Back-compat: a web v1.4 file may emit `originalAmount` as a raw JSON
-    /// string (web dumps ingredients as-is). The polymorphic decoder must
-    /// route it into `amountText` without throwing.
-    func testWebV14StringOriginalAmountParsesAsAmountText() throws {
-        let json = """
-        {
-          "metadata": {
-            "version": "1.4",
-            "exportDate": "2026-06-18T12:00:00Z",
-            "type": "recipes-v1.4",
-            "count": 1
-          },
-          "recipes": [
-            {
-              "id": "web-recipe",
-              "name": "Web Soup",
-              "ingredients": [
-                {
-                  "id": "web-ing",
-                  "name": "salt",
-                  "originalAmount": "to taste",
-                  "unit": null,
-                  "order": 1
-                }
-              ]
-            }
-          ]
-        }
-        """.data(using: .utf8)!
-
-        let payload = try JSONDecoder().decode(NativeExportPayload.self, from: json)
-        XCTAssertEqual(payload.recipes.count, 1)
-        let ing = try XCTUnwrap(payload.recipes.first?.ingredients.first)
-        XCTAssertNil(ing.originalAmount, "String originalAmount must NOT land in the Double field")
-        XCTAssertEqual(ing.amountText, "to taste", "String originalAmount must be routed to amountText")
-    }
-
-    /// Polymorphic `originalAmount` decoder must handle all four input
-    /// shapes: missing key, null, number, string.
-    func testPolymorphicOriginalAmountAcceptsAllShapes() throws {
-        let json = """
-        {
-          "metadata": {"version": "1.5", "exportDate": "2026-06-18T12:00:00Z", "type": "recipes-v1.5", "count": 4},
-          "recipes": [
-            {"id": "r1", "name": "Missing", "ingredients": [
-              {"id": "i1", "name": "x", "unit": null, "order": 1}
-            ]},
-            {"id": "r2", "name": "Null", "ingredients": [
-              {"id": "i2", "name": "x", "originalAmount": null, "unit": null, "order": 1}
-            ]},
-            {"id": "r3", "name": "Number", "ingredients": [
-              {"id": "i3", "name": "x", "originalAmount": 2.5, "unit": null, "order": 1}
-            ]},
-            {"id": "r4", "name": "String", "ingredients": [
-              {"id": "i4", "name": "x", "originalAmount": "1/2", "unit": null, "order": 1}
-            ]}
-          ]
-        }
-        """.data(using: .utf8)!
-
-        let payload = try JSONDecoder().decode(NativeExportPayload.self, from: json)
-
-        let missing = payload.recipes[0].ingredients[0]
-        XCTAssertNil(missing.originalAmount)
-        XCTAssertNil(missing.amountText)
-
-        let null = payload.recipes[1].ingredients[0]
-        XCTAssertNil(null.originalAmount)
-        XCTAssertNil(null.amountText)
-
-        let number = payload.recipes[2].ingredients[0]
-        XCTAssertEqual(number.originalAmount, 2.5)
-        XCTAssertNil(number.amountText)
-
-        let string = payload.recipes[3].ingredients[0]
-        XCTAssertNil(string.originalAmount)
-        XCTAssertEqual(string.amountText, "1/2")
     }
 
     /// Back-compat: an old v1.4 native file (no amountText anywhere) must

@@ -86,6 +86,11 @@
                     "null"
                   ]
                 },
+                "amountText": {
+                  "type": "string",
+                  "description": "Raw non-numeric amount (e.g. '1/2', '2-3', 'to taste'). Optional v1.4 extension; older readers ignore it.",
+                  "maxLength": 64
+                },
                 "unit": {
                   "type": "string"
                 },

@@ -123,3 +123,27 @@ Unit-тесты: exporter round-trip, importer per-version fixtures, version nor
 ## Артефакты
 
 - [plan.md](plan.md)
+
+---
+
+## Changelog
+
+### 2026-06-19 — amountText extension field (spec [033](../033-native-export-amount-text/spec.md))
+
+В `NativeIngredient` добавлено optional поле `amountText: String?` для нечисловых
+количеств (`"1/2"`, `"2-3"`, `"1½"`, `"to taste"`, …). Wire-формат остаётся
+**v1.4** — `additionalProperties: true` в JSON Schema веба и отсутствие
+валидации ингредиентных полей позволяют веб-импортёру принимать `amountText`
+без bump'а версии. Finding #15 из
+[review-kilo-glm-5.2-recipe-scaler-native.md](../../review-kilo-glm-5.2-recipe-scaler-native.md).
+
+Поддержка back-compat:
+- v1.0–v1.4 native файлы — читаются без регрессий (потерянные ранее
+  нечисловые количества не возвращаются — это уже утраченные данные).
+- Native v1.4 с `amountText` — полный roundtrip нечисловых количеств;
+  веб-импортёр принимает (pass-through ingredients).
+
+Acceptance-критерии:
+- SC-001: «валидный v1.4 JSON/ZIP файл, импортируемый вебом».
+- SC-004 расширен: «Round-trip сохраняет нечисловые количества через
+  `amountText`».

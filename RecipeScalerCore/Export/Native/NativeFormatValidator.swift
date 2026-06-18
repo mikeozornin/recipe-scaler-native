@@ -89,16 +89,14 @@ public enum NativeFormatValidator {
                 }
             }
 
-            // v1.5+: amountText validation (non-numeric ingredient amounts).
-            if version >= .v1_5 {
-                for (ingIndex, ingredient) in recipe.ingredients.enumerated() {
-                    if let text = ingredient.amountText {
-                        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if trimmed.isEmpty {
-                            errors.append("recipe[\(index)].ingredients[\(ingIndex)].amountText must be non-empty")
-                        } else if trimmed.count > Self.maxAmountTextLength {
-                            errors.append("recipe[\(index)].ingredients[\(ingIndex)].amountText exceeds \(Self.maxAmountTextLength) characters")
-                        }
+            // amountText validation (optional v1.4 extension for non-numeric amounts).
+            for (ingIndex, ingredient) in recipe.ingredients.enumerated() {
+                if let text = ingredient.amountText {
+                    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if trimmed.isEmpty {
+                        errors.append("recipe[\(index)].ingredients[\(ingIndex)].amountText must be non-empty")
+                    } else if trimmed.count > Self.maxAmountTextLength {
+                        errors.append("recipe[\(index)].ingredients[\(ingIndex)].amountText exceeds \(Self.maxAmountTextLength) characters")
                     }
                 }
             }

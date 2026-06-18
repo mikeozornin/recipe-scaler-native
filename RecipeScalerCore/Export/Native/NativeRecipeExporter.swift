@@ -1,13 +1,13 @@
 import Foundation
 import ZIPFoundation
 
-/// Export recipes, folders, and images into the Recipe Scaler v1.5 format.
+/// Export recipes, folders, and images into the Recipe Scaler v1.4 format.
 ///
 /// Produces either a standalone JSON file (no images) or a ZIP archive
 /// (with `recipes.json` at the root and `images/<recipeId>/full.webp` +
 /// `images/<recipeId>/preview.webp` inside).
 ///
-/// v1.5 adds the `amountText` field on ingredients to preserve non-numeric
+/// v1.4 with optional `amountText` on ingredients preserves non-numeric
 /// quantities (`"1/2"`, `"2-3"`, `"to taste"`, …) through the export → import
 /// roundtrip. Numeric amounts still go to `originalAmount`.
 ///
@@ -183,9 +183,9 @@ public enum NativeRecipeExporter {
 
         return NativeExportPayload(
             metadata: NativeExportMetadata(
-                version: "1.5",
+                version: "1.4",
                 exportDate: ISO8601DateFormatter().string(from: Date()),
-                type: "recipes-v1.5",
+                type: "recipes-v1.4",
                 count: recipes.count
             ),
             recipes: recipes.map { recipe in

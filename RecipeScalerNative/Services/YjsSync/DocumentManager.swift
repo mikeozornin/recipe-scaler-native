@@ -1102,8 +1102,7 @@ actor DocumentManager {
             let unit = ingredient.unit?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
             // Finding #15: prefer the numeric `originalAmount`; fall back to
-            // `amountText` (v1.5 native exports) or a string `originalAmount`
-            // routed through `amountText` by the polymorphic decoder (web v1.4).
+            // optional `amountText` for non-numeric quantities.
             let hasQuantity: Bool
             let amountString: String
             if let oa = originalAmount {

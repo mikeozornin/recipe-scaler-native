@@ -91,14 +91,14 @@ final class NativeFormatValidatorTests: XCTestCase {
         XCTAssertTrue(result.recipeErrors[0].errors.contains("nutrition.calories must be >= 0"))
     }
 
-    // MARK: - v1.5 amountText validation (finding #15)
+    // MARK: - v1.4 amountText validation (finding #15)
 
-    func testValidV15PayloadWithAmountTextPasses() {
+    func testV14PayloadWithAmountTextPasses() {
         let payload = NativeExportPayload(
             metadata: NativeExportMetadata(
-                version: "1.5",
+                version: "1.4",
                 exportDate: "2026-06-18T12:00:00Z",
-                type: "recipes-v1.5",
+                type: "recipes-v1.4",
                 count: 1
             ),
             recipes: [
@@ -127,16 +127,16 @@ final class NativeFormatValidatorTests: XCTestCase {
             imageFiles: nil
         )
 
-        let result = NativeFormatValidator.validate(payload: payload, version: .v1_5)
+        let result = NativeFormatValidator.validate(payload: payload, version: .v1_4)
         XCTAssertTrue(result.isValid, "errors: \(result.structuralErrors + result.recipeErrors.flatMap { $0.errors })")
     }
 
-    func testV15RejectsEmptyAmountText() {
+    func testV14RejectsEmptyAmountText() {
         let payload = NativeExportPayload(
             metadata: NativeExportMetadata(
-                version: "1.5",
+                version: "1.4",
                 exportDate: "2026-06-18T12:00:00Z",
-                type: "recipes-v1.5",
+                type: "recipes-v1.4",
                 count: 1
             ),
             recipes: [
@@ -157,18 +157,18 @@ final class NativeFormatValidatorTests: XCTestCase {
             imageFiles: nil
         )
 
-        let result = NativeFormatValidator.validate(payload: payload, version: .v1_5)
+        let result = NativeFormatValidator.validate(payload: payload, version: .v1_4)
         XCTAssertEqual(result.recipeErrors.count, 1)
         XCTAssertTrue(result.recipeErrors[0].errors.contains(where: { $0.contains("amountText must be non-empty") }))
     }
 
-    func testV15RejectsOverlongAmountText() {
+    func testV14RejectsOverlongAmountText() {
         let overlong = String(repeating: "a", count: NativeFormatValidator.maxAmountTextLength + 1)
         let payload = NativeExportPayload(
             metadata: NativeExportMetadata(
-                version: "1.5",
+                version: "1.4",
                 exportDate: "2026-06-18T12:00:00Z",
-                type: "recipes-v1.5",
+                type: "recipes-v1.4",
                 count: 1
             ),
             recipes: [
@@ -189,17 +189,17 @@ final class NativeFormatValidatorTests: XCTestCase {
             imageFiles: nil
         )
 
-        let result = NativeFormatValidator.validate(payload: payload, version: .v1_5)
+        let result = NativeFormatValidator.validate(payload: payload, version: .v1_4)
         XCTAssertEqual(result.recipeErrors.count, 1)
         XCTAssertTrue(result.recipeErrors[0].errors.contains(where: { $0.contains("exceeds") }))
     }
 
-    func testV15TypeMismatchIsReported() {
+    func testV14TypeMismatchIsReported() {
         let payload = NativeExportPayload(
             metadata: NativeExportMetadata(
-                version: "1.5",
+                version: "1.4",
                 exportDate: "2026-06-18T12:00:00Z",
-                type: "recipes-v1.4",
+                type: "recipes-v1.3",
                 count: 1
             ),
             recipes: [
@@ -209,7 +209,7 @@ final class NativeFormatValidatorTests: XCTestCase {
             imageFiles: nil
         )
 
-        let result = NativeFormatValidator.validate(payload: payload, version: .v1_5)
+        let result = NativeFormatValidator.validate(payload: payload, version: .v1_4)
         XCTAssertTrue(result.structuralErrors.contains(where: { $0.contains("metadata.type") }))
     }
 }
