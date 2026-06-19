@@ -49,6 +49,13 @@ private func mergeYjsUpdates(_ updates: [Data]) -> Data? {
         guard let txn = ydoc_write_transaction(doc, 0, nil) else { return true }
         defer { ytransaction_commit(txn) }
         for update in updates {
+            guard update.count <= UInt32.max else {
+                AppLog.notice(.document, "yrs_update_oversized", data: [
+                    "count": "\(update.count)",
+                    "limit": "\(UInt32.max)"
+                ])
+                continue
+            }
             let result = update.withUnsafeBytes { buffer -> UInt8 in
                 guard let base = buffer.baseAddress else { return 1 }
                 return ytransaction_apply(
@@ -121,6 +128,13 @@ actor YrsDocument {
     private static func applyState(_ state: Data, to doc: UnsafeMutablePointer<YDoc>) throws {
         let result = state.withUnsafeBytes { (buffer: UnsafeRawBufferPointer) -> UInt8 in
             guard let baseAddress = buffer.baseAddress else { return 1 }
+            guard buffer.count <= UInt32.max else {
+                AppLog.error(.document, "yrs_apply_oversized", data: [
+                    "count": "\(buffer.count)",
+                    "limit": "\(UInt32.max)"
+                ])
+                return 2
+            }
             guard let txn = ydoc_write_transaction(doc, 0, nil) else { return 1 }
             let res = ytransaction_apply(
                 txn,
@@ -131,8 +145,11 @@ actor YrsDocument {
             return res
         }
         if result != 0 {
-            AppLog.error(.document, "yrs_apply_failed", data: ["context": "ytransaction_apply returned \(result)"])
-            throw YrsError.applyFailed(context: "ytransaction_apply returned \(result)")
+            let ctx = result == 2
+                ? "state too large for UInt32: \(state.count)"
+                : "ytransaction_apply returned \(result)"
+            AppLog.error(.document, "yrs_apply_failed", data: ["context": ctx])
+            throw YrsError.applyFailed(context: ctx)
         }
     }
 
