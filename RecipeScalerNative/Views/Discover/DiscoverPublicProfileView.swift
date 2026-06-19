@@ -27,18 +27,21 @@ struct DiscoverPublicProfileView: View {
                 content(for: response)
             } else if isLoading {
                 ProgressView(Bundle.currentLocalizedString("discover.loading"))
+                    .mobileTimerPanelBottomPadding()
             } else if let errorMessage {
                 ContentUnavailableView {
                     AppEmptyState.label("discover.profile.not-found", symbol: "person.crop.circle.badge.exclamationmark")
                 } description: {
                     Text(errorMessage).appBody()
                 }
+                .mobileTimerPanelBottomPadding()
             } else {
                 ContentUnavailableView {
                     AppEmptyState.label("discover.profile.not-found", symbol: "person.crop.circle.badge.exclamationmark")
                 } description: {
                     Text("discover.profile.not-found-description").appBody()
                 }
+                .mobileTimerPanelBottomPadding()
             }
         }
         .searchable(
@@ -89,6 +92,7 @@ struct DiscoverPublicProfileView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
+            .mobileTimerPanelBottomPadding()
         }
     }
 
@@ -98,7 +102,7 @@ struct DiscoverPublicProfileView: View {
             HStack(alignment: .center, spacing: 12) {
                 DiscoverAvatar(
                     avatarURL: DiscoverAPI.avatarURL(fromPublicProfile: profile.avatarUrl),
-                    size: 56
+                    size: 64
                 )
                 VStack(alignment: .leading, spacing: 2) {
                     Text(profile.name ?? profile.username)

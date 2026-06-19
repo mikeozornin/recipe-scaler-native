@@ -17,12 +17,14 @@ struct DiscoverRootView: View {
             Group {
                 if isLoading, data == nil {
                     ProgressView()
+                        .mobileTimerPanelBottomPadding()
                 } else if let errorMessage, data == nil {
                     ContentUnavailableView {
                         AppEmptyState.label("discover.error", symbol: "wifi.exclamationmark")
                     } description: {
                         Text(errorMessage).appBody()
                     }
+                    .mobileTimerPanelBottomPadding()
                 } else if let data, !data.collections.isEmpty || !data.profiles.isEmpty {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 24) {
@@ -61,6 +63,7 @@ struct DiscoverRootView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 20)
+                        .mobileTimerPanelBottomPadding()
                     }
                 } else {
                     ContentUnavailableView {
@@ -68,6 +71,7 @@ struct DiscoverRootView: View {
                     } description: {
                         Text("discover.empty-description").appBody()
                     }
+                    .mobileTimerPanelBottomPadding()
                 }
             }
             .localizedNavigationTitle("discover.title")
@@ -278,10 +282,12 @@ private struct DiscoverRecipeCountBadge: View {
     }
 }
 
-/// Circular avatar for a public profile / collection author.
+/// Rounded-square avatar for discover public profiles (matches `DiscoverPreviewThumbnail`).
 struct DiscoverAvatar: View {
     let avatarURL: URL?
     var size: CGFloat = 40
+
+    private var cornerRadius: CGFloat { 8 }
 
     var body: some View {
         ZStack {
@@ -296,8 +302,11 @@ struct DiscoverAvatar: View {
             }
         }
         .frame(width: size, height: size)
-        .clipShape(Circle())
-        .overlay(Circle().strokeBorder(Color.primary.opacity(0.05), lineWidth: 0.5))
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.05), lineWidth: 0.5)
+        )
     }
 
     private var placeholder: some View {
@@ -305,6 +314,9 @@ struct DiscoverAvatar: View {
             .font(.system(size: size * 0.5, weight: .regular))
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Circle().fill(Color(.tertiarySystemFill)))
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(Color(.tertiarySystemFill))
+            )
     }
 }

@@ -25,6 +25,7 @@ struct DiscoverCollectionView: View {
                 } description: {
                     Text(errorMessage).appBody()
                 }
+                .mobileTimerPanelBottomPadding()
             } else {
                 ProgressView(Bundle.currentLocalizedString("discover.collection.loading"))
             }
@@ -50,6 +51,7 @@ struct DiscoverCollectionView: View {
             } description: {
                 Text("discover.collection.empty").appBody()
             }
+            .mobileTimerPanelBottomPadding()
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -72,6 +74,7 @@ struct DiscoverCollectionView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
+                .mobileTimerPanelBottomPadding()
             }
         }
     }

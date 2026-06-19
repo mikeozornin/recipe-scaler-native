@@ -102,6 +102,7 @@ struct DiscoverRecipeView: View {
                     .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
                 }
             }
+            .mobileTimerPanelBottomPadding()
         }
         .contentMargins(.horizontal, 0, for: .scrollContent)
         .navigationBarTitleDisplayMode(.inline)
