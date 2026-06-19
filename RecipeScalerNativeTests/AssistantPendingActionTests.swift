@@ -448,14 +448,14 @@ final class AssistantPendingActionTests: XCTestCase {
     }
 
     private func makeResolution(source: String, disposition: String) -> AssistantActionResolution {
-        let json = """
-        {
-            "pendingActionId": "01997de3-e1b0-4af6-9dc0-ca558bb62686",
-            "disposition": "\\(disposition)",
-            "source": "\\(source)",
-            "createdAt": "2026-06-15T21:11:05.000Z"
-        }
-        """.data(using: .utf8)!
-        return try! JSONDecoder().decode(AssistantActionResolution.self, from: json)
+        // Direct memberwise init — avoids building JSON literals via string interpolation.
+        // The previous raw-string version emitted a literal `\(` into the JSON payload
+        // (invalid JSON escape), which made `try!` crash the test host app.
+        return AssistantActionResolution(
+            pendingActionId: "01997de3-e1b0-4af6-9dc0-ca558bb62686",
+            disposition: disposition,
+            source: source,
+            createdAt: "2026-06-15T21:11:05.000Z"
+        )
     }
 }
