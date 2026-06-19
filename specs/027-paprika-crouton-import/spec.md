@@ -142,7 +142,7 @@
 
 - Не вызывать LLM; не **выдумывать** количества.
 - Paprika: каждая непустая строка → один Y.Map; best-effort split «количество + имя»; при сомнении — вся строка в `name`, `amount` пустой.
-- Crouton: `amount` = человекочитаемая строка из `quantity.amount` + `quantityType` (например `225 g`); `name` = `ingredient.name`; без конвертации единиц в другую систему.
+- Crouton: `amount` = строка из `quantity.amount`; `unit` = `quantity.quantityType` (raw lowercased, **без** каноникализации в короткие суффиксы — MIK-145 / review #62); `name` = `ingredient.name`; без конвертации единиц в другую систему.
 
 **Описание — notes**:
 

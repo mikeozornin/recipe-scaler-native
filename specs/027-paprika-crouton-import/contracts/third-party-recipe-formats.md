@@ -49,10 +49,12 @@
 
 1. Split by `\n`, trim, drop empty.
 2. Для каждой строки `line`:
-   - Regex prefix: `^([\d.,/\s]+(?:g|kg|ml|l|oz|lb|cup|cups|tbsp|tsp|шт\.?)?)\s+(.+)$` (case-insensitive) → `amount`, `name`.
+   - Regex prefix: `^([\d.,/\s]+)\s+(.+)$` → ведущее число в `amount`, остаток в `name` (без распознавания единиц).
    - Иначе: `name = line`, `amount = ""`.
-3. Для строки с количеством: `ThirdPartyIngredientAmountSplitter` разделяет combined amount (`"200 g"`) → `amount` = `"200"`, `unit` = `"g"`.
-4. Y.Map: `id` (UUID, lowercase), `name` (если `unit` непустой — `"{name}, {unit}"`, как server import), `amount` (число), `originalAmount` = `amount`, `unit`, `order` = 1-based index.
+3. `ThirdPartyIngredientAmountSplitter` валидирует, что `amount` чисто числовой (`[\d.,/\s]+`); если да — оставляет как есть, иначе весь ввод возвращается как `amount` целиком. **`unit` всегда `""`** — никакой каноникализации (review #62 / MIK-145).
+4. Y.Map: `id` (UUID, lowercase), `name`, `amount` (как извлечён), `originalAmount` = `amount`, `unit` = `""`, `order` = 1-based index.
+
+> **MIK-145 (review #62):** ранее Paprika-путь распознавал фиксированный список единиц (`g|kg|ml|...|cups|tbsp|tsp|шт`) и сохранял их в `unit`. Это приводило к дивергенции с Crouton-путём (`cups` vs `cup`). Решено: импорт **не нормализует** единицы, все они уходят в `name` как часть текста (для Paprika) или сохраняются raw lowercased (для Crouton). Каноническая форма `unit` теперь всегда `""` у сторонних источников.
 
 ### 1.5 Directions → description
 
@@ -104,29 +106,33 @@
 
 | Crouton | RS ingredient map |
 |---------|-------------------|
-| `ingredient.name` | `name` (если `unit` непустой — `"{name}, {unit}"`) |
+| `ingredient.name` | `name` |
 | `quantity.amount` | `amount` (numeric string) |
-| `quantity.quantityType` | `unit` (suffix, см. таблицу ниже) |
+| `quantity.quantityType` | `unit` (raw lowercased, без каноникализации) |
 | `order` | `order` (1-based) |
 | — | `id` = new UUID (lowercase) |
 | `amount` | `originalAmount` = same as `amount` |
 
-**quantityType → unit** (v1, без конвертации; `quantityType` не сохраняется отдельно):
+**quantityType → unit** (MIK-145 / review #62): канонической таблицы маппинга больше нет. Значение `quantityType` сохраняется **как есть** (только `lowercased()`), без схлопывания `GRAMS → g`, `PIECES → ""` и т. п.
 
-| quantityType | `unit` |
-|--------------|--------|
-| `GRAMS` | `g` |
-| `KILOGRAMS` | `kg` |
-| `MILLILITERS` | `ml` |
-| `LITERS` | `l` |
-| `OUNCES` | `oz` |
-| `POUNDS` | `lb` |
-| `CUPS` | `cup` |
-| `TABLESPOONS` | `tbsp` |
-| `TEASPOONS` | `tsp` |
-| `PIECES` / unknown | `""` |
+| quantityType | `unit` (после MIK-145) |
+|--------------|------------------------|
+| `GRAMS` | `grams` |
+| `KILOGRAMS` | `kilograms` |
+| `MILLILITERS` | `milliliters` |
+| `LITERS` | `liters` |
+| `OUNCES` | `ounces` |
+| `POUNDS` | `pounds` |
+| `CUPS` / `CUP` | `cups` / `cup` (как в исходнике) |
+| `TABLESPOONS` / `TABLESPOON` | `tablespoons` / `tablespoon` |
+| `TEASPOONS` / `TEASPOON` | `teaspoons` / `teaspoon` |
+| `PIECES` / `ITEM` | `pieces` / `item` (больше **не** схлопывается в `""`) |
+| любое другое | lowercased значение как есть |
+| отсутствует / null | `""` |
 
-Example: `{ amount: 225, quantityType: "GRAMS" }` → `amount: "225"`, `unit: "g"`.
+Example: `{ amount: 225, quantityType: "GRAMS" }` → `amount: "225"`, `unit: "grams"`.
+
+> **Известное последствие (принято осознанно):** `IngredientData.resolvedWeightGrams` (проверка `unit == "г" || unit == "g"`) не сработает на `"grams"` — расчёт веса грамма для импортированных ингредиентов Crouton/Paprika сломается. Это фиксируется отдельной задачей за пределами MIK-145.
 
 ### 2.4 Steps → description
 

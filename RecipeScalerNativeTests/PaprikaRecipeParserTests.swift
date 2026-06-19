@@ -21,8 +21,8 @@ final class PaprikaRecipeParserTests: XCTestCase {
         XCTAssertEqual(draft.originalRecipeLink, "https://example.com/recipe")
         XCTAssertEqual(draft.categoryLabels, ["Dinner", "Quick"])
         XCTAssertEqual(draft.ingredients[0].amount, "200")
-        XCTAssertEqual(draft.ingredients[0].unit, "g")
-        XCTAssertEqual(draft.ingredients[0].name, "flour")
+        XCTAssertEqual(draft.ingredients[0].unit, "")
+        XCTAssertEqual(draft.ingredients[0].name, "g flour")
         XCTAssertEqual(draft.ingredients[2].name, "salt")
     }
 

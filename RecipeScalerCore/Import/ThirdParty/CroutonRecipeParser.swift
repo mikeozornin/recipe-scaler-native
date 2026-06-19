@@ -95,25 +95,11 @@ public enum CroutonRecipeParser {
         }()
         guard let amountValue else { return ("", "") }
 
-        let type = (quantity["quantityType"] as? String)?.uppercased() ?? ""
-        let unit: String
-        switch type {
-        case "GRAMS": unit = "g"
-        case "KILOGRAMS": unit = "kg"
-        case "MILLILITERS": unit = "ml"
-        case "LITERS": unit = "l"
-        case "OUNCES": unit = "oz"
-        case "POUNDS": unit = "lb"
-        case "CUPS": unit = "cup"
-        case "CUP": unit = "cup"
-        case "TABLESPOONS": unit = "tbsp"
-        case "TABLESPOON": unit = "tbsp"
-        case "TEASPOONS": unit = "tsp"
-        case "TEASPOON": unit = "tsp"
-        case "PIECES": unit = ""
-        case "ITEM": unit = ""
-        default: unit = type.isEmpty ? "" : type.lowercased()
-        }
+        // MIK-145 [review #62]: do not canonicalize quantityType to short
+        // suffixes. Store the raw value lowercased — the source format is
+        // preserved verbatim (no `GRAMS → g`, no `PIECES → ""` collapse).
+        let rawType = (quantity["quantityType"] as? String) ?? ""
+        let unit = rawType.lowercased()
 
         // TP14 [review #14]: guard against precondition trap on out-of-Int64
         // Double (e.g. 1e20) and non-finite values (NaN/Infinity) which can slip

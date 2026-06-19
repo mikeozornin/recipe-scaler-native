@@ -18,10 +18,10 @@ final class CroutonRecipeParserTests: XCTestCase {
         XCTAssertEqual(countOrderedListItems(in: draft.descriptionBlocks), expected["stepCount"] as? Int)
         XCTAssertEqual(draft.servings, 2)
         XCTAssertEqual(draft.ingredients[0].amount, "225")
-        XCTAssertEqual(draft.ingredients[0].unit, "g")
+        XCTAssertEqual(draft.ingredients[0].unit, "grams")
         XCTAssertEqual(draft.ingredients[0].name, "Cucumber")
         XCTAssertEqual(draft.ingredients[1].amount, "2")
-        XCTAssertEqual(draft.ingredients[1].unit, "tbsp")
+        XCTAssertEqual(draft.ingredients[1].unit, "tablespoons")
     }
 
     func testSectionStepBecomesHeading() throws {
@@ -154,6 +154,8 @@ final class CroutonRecipeParserTests: XCTestCase {
     }
 
     /// Debug session 6eea62: Crouton uses singular quantityType values (CUP, TEASPOON).
+    /// MIK-145 [review #62]: no canonicalization — the raw `quantityType` is
+    /// preserved lowercased (no `CUP → cup`, no `ITEM → ""` collapse).
     func testRealExportParsesIngredientUnits() async throws {
         let url = try fixtureURL(named: "crouton-real-export", ext: "zip")
         let entries = try await ThirdPartyFormatDetector.enumerateRecipeEntries(
@@ -176,9 +178,9 @@ final class CroutonRecipeParserTests: XCTestCase {
         XCTAssertEqual(flour?.amount, "3")
         XCTAssertEqual(flour?.unit, "cup")
         XCTAssertEqual(eggs?.amount, "2")
-        XCTAssertEqual(eggs?.unit, "")
+        XCTAssertEqual(eggs?.unit, "item")
         let vanilla = draft.ingredients.first { $0.name.contains("vanilla") }
-        XCTAssertEqual(vanilla?.unit, "tsp")
+        XCTAssertEqual(vanilla?.unit, "teaspoon")
     }
 
     func testRealExportHandlesNonASCIIRecipe() async throws {
@@ -279,7 +281,7 @@ final class CroutonRecipeParserTests: XCTestCase {
 
         XCTAssertEqual(draft.ingredients.count, 1)
         XCTAssertEqual(draft.ingredients[0].amount, "1e+20")
-        XCTAssertEqual(draft.ingredients[0].unit, "g")
+        XCTAssertEqual(draft.ingredients[0].unit, "grams")
     }
 
     /// TP14 [review #14]: integer amount at the upper edge of Int64 range is
