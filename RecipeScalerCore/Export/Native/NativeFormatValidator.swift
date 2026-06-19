@@ -77,6 +77,11 @@ public enum NativeFormatValidator {
                 if let c = nutrition.carbs, c < 0 {
                     errors.append("nutrition.carbs must be >= 0")
                 }
+                // totalWeight: must be a finite positive number if present.
+                // Matches web validator (v1.4-validator.ts nutrition.totalWeight).
+                if let tw = nutrition.totalWeight, !tw.isFinite || tw <= 0 {
+                    errors.append("nutrition.totalWeight must be a finite number greater than 0 if present")
+                }
             }
 
             // v1.4+: folderIds must be non-empty strings

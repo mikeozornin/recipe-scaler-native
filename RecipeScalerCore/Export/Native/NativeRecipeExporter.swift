@@ -217,7 +217,8 @@ public enum NativeRecipeExporter {
                             fat: n.fat,
                             carbs: n.carbs,
                             calculatedAt: n.calculatedAt,
-                            nutritionOutdated: n.nutritionOutdated
+                            nutritionOutdated: n.nutritionOutdated,
+                            totalWeight: n.totalWeight
                         )
                     }
                 )
@@ -468,6 +469,7 @@ public struct ExportNutrition: Sendable {
     public let carbs: Double?
     public let calculatedAt: String?
     public let nutritionOutdated: Bool?
+    public let totalWeight: Double?
 
     public init(
         calories: Double?,
@@ -475,7 +477,8 @@ public struct ExportNutrition: Sendable {
         fat: Double?,
         carbs: Double?,
         calculatedAt: String?,
-        nutritionOutdated: Bool?
+        nutritionOutdated: Bool?,
+        totalWeight: Double? = nil
     ) {
         self.calories = calories
         self.protein = protein
@@ -483,6 +486,7 @@ public struct ExportNutrition: Sendable {
         self.carbs = carbs
         self.calculatedAt = calculatedAt
         self.nutritionOutdated = nutritionOutdated
+        self.totalWeight = totalWeight
     }
 }
 

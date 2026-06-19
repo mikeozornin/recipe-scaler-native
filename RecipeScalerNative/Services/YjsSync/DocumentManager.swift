@@ -1048,21 +1048,40 @@ actor DocumentManager {
                 map.insert(key: "updatedAt", value: .string(updatedAt), txn: txn)
             }
 
-            // Nutrition
+            // Nutrition — write as nested Y.Map so readNutrition (which expects
+            // a nested map at key "nutrition") round-trips correctly, including
+            // optional `totalWeight`. Same pattern as updateNutrition below.
             if let nutrition = draft.nutrition {
+                var fields: [(String, YrsInput)] = []
                 if let cal = nutrition.calories {
-                    map.insert(key: "nutritionCalories", value: .double(cal), txn: txn)
+                    fields.append(("calories", .double(cal)))
                 }
                 if let p = nutrition.protein {
-                    map.insert(key: "nutritionProtein", value: .double(p), txn: txn)
+                    fields.append(("protein", .double(p)))
                 }
                 if let f = nutrition.fat {
-                    map.insert(key: "nutritionFat", value: .double(f), txn: txn)
+                    fields.append(("fat", .double(f)))
                 }
                 if let c = nutrition.carbs {
-                    map.insert(key: "nutritionCarbs", value: .double(c), txn: txn)
+                    fields.append(("carbs", .double(c)))
+                }
+                if let tw = nutrition.totalWeight {
+                    fields.append(("totalWeight", .double(tw)))
                 }
                 let outdated = nutrition.nutritionOutdated ?? true
+                fields.append(("nutritionOutdated", .bool(outdated)))
+
+                if map.isNullOrMissing(key: "nutrition", txn: txn) {
+                    map.insert(key: "nutrition", value: .map(fields), txn: txn)
+                } else {
+                    try map.withNestedMap(key: "nutrition", txn: txn) { nMap in
+                        for (key, value) in fields {
+                            nMap.insert(key: key, value: value, txn: txn)
+                        }
+                    }
+                }
+                // Root-level flag is read by readNutrition as `rootOutdated`
+                // (parity with server edit API).
                 map.insert(key: "nutritionOutdated", value: .bool(outdated), txn: txn)
             }
         }

@@ -212,4 +212,107 @@ final class NativeFormatValidatorTests: XCTestCase {
         let result = NativeFormatValidator.validate(payload: payload, version: .v1_4)
         XCTAssertTrue(result.structuralErrors.contains(where: { $0.contains("metadata.type") }))
     }
+
+    // MARK: - nutrition.totalWeight validation (finding #36 / MIK-115)
+
+    func testV14AcceptsPositiveTotalWeight() {
+        let payload = NativeExportPayload(
+            metadata: NativeExportMetadata(
+                version: "1.4",
+                exportDate: "2026-06-19T12:00:00Z",
+                type: "recipes-v1.4",
+                count: 1
+            ),
+            recipes: [
+                NativeRecipe(
+                    id: "recipe-1",
+                    name: "Stew",
+                    ingredients: [],
+                    nutrition: NativeNutrition(
+                        calories: 500,
+                        protein: 20,
+                        fat: 15,
+                        carbs: 60,
+                        calculatedAt: nil,
+                        nutritionOutdated: false,
+                        totalWeight: 1200
+                    )
+                )
+            ],
+            folders: nil,
+            imageFiles: nil
+        )
+
+        let result = NativeFormatValidator.validate(payload: payload, version: .v1_4)
+        XCTAssertTrue(result.isValid, "errors: \(result.structuralErrors + result.recipeErrors.flatMap { $0.errors })")
+    }
+
+    func testV14RejectsZeroTotalWeight() {
+        let payload = NativeExportPayload(
+            metadata: NativeExportMetadata(
+                version: "1.4",
+                exportDate: "2026-06-19T12:00:00Z",
+                type: "recipes-v1.4",
+                count: 1
+            ),
+            recipes: [
+                NativeRecipe(
+                    id: "recipe-1",
+                    name: "Stew",
+                    ingredients: [],
+                    nutrition: NativeNutrition(
+                        calories: 100,
+                        protein: nil,
+                        fat: nil,
+                        carbs: nil,
+                        calculatedAt: nil,
+                        nutritionOutdated: false,
+                        totalWeight: 0
+                    )
+                )
+            ],
+            folders: nil,
+            imageFiles: nil
+        )
+
+        let result = NativeFormatValidator.validate(payload: payload, version: .v1_4)
+        XCTAssertEqual(result.recipeErrors.count, 1)
+        XCTAssertTrue(
+            result.recipeErrors[0].errors.contains(where: { $0.contains("nutrition.totalWeight") }),
+            "expected totalWeight error, got: \(result.recipeErrors[0].errors)"
+        )
+    }
+
+    func testV14RejectsNegativeTotalWeight() {
+        let payload = NativeExportPayload(
+            metadata: NativeExportMetadata(
+                version: "1.4",
+                exportDate: "2026-06-19T12:00:00Z",
+                type: "recipes-v1.4",
+                count: 1
+            ),
+            recipes: [
+                NativeRecipe(
+                    id: "recipe-1",
+                    name: "Stew",
+                    ingredients: [],
+                    nutrition: NativeNutrition(
+                        calories: 100,
+                        protein: nil,
+                        fat: nil,
+                        carbs: nil,
+                        calculatedAt: nil,
+                        nutritionOutdated: false,
+                        totalWeight: -50
+                    )
+                )
+            ],
+            folders: nil,
+            imageFiles: nil
+        )
+
+        let result = NativeFormatValidator.validate(payload: payload, version: .v1_4)
+        XCTAssertEqual(result.recipeErrors.count, 1)
+        XCTAssertTrue(result.recipeErrors[0].errors.contains(where: { $0.contains("nutrition.totalWeight") }))
+    }
 }

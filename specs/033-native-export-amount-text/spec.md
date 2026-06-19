@@ -116,7 +116,7 @@ flowchart LR
 - **Web changes** — веб уже принимает `amountText` через `additionalProperties: true`.
 - **Paprika/Crouton importer** — `applyImportedRecipe` уже правильно пишет `.string(...)`.
 - **Миграция старых v1.4 native-файлов** — они валидны, но потерянные при первой экспорте данные не вернуть.
-- Находки **#36** (totalWeight), **#61**, **#62**, **#64** — отдельные задачи.
+- Находки **#61**, **#62**, **#64** — отдельные задачи. Находка **#36** (totalWeight) закрыта в MIK-115: `ExportNutrition.totalWeight` + round-trip через вложенную Y.Map `nutrition` в `applyNativeRecipe`.
 
 ## Risks
 

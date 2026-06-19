@@ -113,7 +113,8 @@ final class NativeExportImportService {
                                 fat: n.fat,
                                 carbs: n.carbs,
                                 calculatedAt: nil,
-                                nutritionOutdated: n.nutritionOutdated
+                                nutritionOutdated: n.nutritionOutdated,
+                                totalWeight: n.extra["totalWeight"]
                             )
                         },
                         imageUrl: recipeData.imageUrl

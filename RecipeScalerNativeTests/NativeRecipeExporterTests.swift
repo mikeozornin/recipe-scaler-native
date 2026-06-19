@@ -29,7 +29,8 @@ final class NativeRecipeExporterTests: XCTestCase {
                 fat: 2,
                 carbs: 18,
                 calculatedAt: nil,
-                nutritionOutdated: false
+                nutritionOutdated: false,
+                totalWeight: 850
             ),
             imageUrl: nil
         )
@@ -72,6 +73,7 @@ final class NativeRecipeExporterTests: XCTestCase {
         XCTAssertEqual(imported.ingredients.count, 1)
         XCTAssertEqual(imported.ingredients[0].name, "tomatoes")
         XCTAssertEqual(imported.nutrition?.calories, 120)
+        XCTAssertEqual(imported.nutrition?.totalWeight, 850)
         XCTAssertEqual(parsed.folders.count, 1)
         XCTAssertEqual(parsed.folders[0].name, "Soups")
     }
@@ -363,5 +365,102 @@ final class NativeRecipeExporterTests: XCTestCase {
         let ing = try XCTUnwrap(parsed.recipes.first?.ingredients.first)
         XCTAssertEqual(ing.originalAmount, 1)
         XCTAssertNil(ing.amountText)
+    }
+
+    // MARK: - nutrition.totalWeight roundtrip (finding #36 / MIK-115)
+
+    /// `nutrition.totalWeight` must survive export → parse roundtrip.
+    /// Regression for the bug where ExportNutrition dropped `extra["totalWeight"]`.
+    func testV14RoundTripPreservesNutritionTotalWeight() throws {
+        let recipe = ExportRecipe(
+            id: "recipe-tw",
+            name: "Heavy Stew",
+            description: nil,
+            ingredients: [],
+            color: "#3b82f6",
+            servings: 6,
+            createdAt: nil,
+            updatedAt: nil,
+            originalRecipeLink: nil,
+            originalRecipe: nil,
+            nutrition: ExportNutrition(
+                calories: 500,
+                protein: 20,
+                fat: 15,
+                carbs: 60,
+                calculatedAt: nil,
+                nutritionOutdated: false,
+                totalWeight: 1200
+            ),
+            imageUrl: nil
+        )
+
+        let export = try NativeRecipeExporter.export(
+            recipes: [recipe],
+            recipeFolderIds: [:],
+            folders: []
+        )
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("v14-tw-\(UUID().uuidString).json")
+        try export.data.write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let parsed = try NativeRecipeImporter.parse(url: tempURL)
+        XCTAssertEqual(parsed.version, .v1_4)
+
+        let nutrition = try XCTUnwrap(parsed.recipes.first?.nutrition)
+        XCTAssertEqual(nutrition.calories, 500)
+        XCTAssertEqual(nutrition.totalWeight, 1200)
+    }
+
+    /// `totalWeight` is optional. A recipe without it must still export and
+    /// parse, and the field must be absent from JSON (not `null`).
+    func testV14RoundTripWithoutTotalWeightOmitsField() throws {
+        let recipe = ExportRecipe(
+            id: "recipe-no-tw",
+            name: "Light Salad",
+            description: nil,
+            ingredients: [],
+            color: "#3b82f6",
+            servings: 2,
+            createdAt: nil,
+            updatedAt: nil,
+            originalRecipeLink: nil,
+            originalRecipe: nil,
+            nutrition: ExportNutrition(
+                calories: 150,
+                protein: 3,
+                fat: 1,
+                carbs: 10,
+                calculatedAt: nil,
+                nutritionOutdated: true
+                // totalWeight intentionally omitted
+            ),
+            imageUrl: nil
+        )
+
+        let export = try NativeRecipeExporter.export(
+            recipes: [recipe],
+            recipeFolderIds: [:],
+            folders: []
+        )
+
+        // Total weight must not be present in JSON output (Codable skips nil).
+        let jsonString = String(data: export.data, encoding: .utf8) ?? ""
+        XCTAssertFalse(
+            jsonString.contains("\"totalWeight\""),
+            "totalWeight must be omitted from JSON when nil, not serialized as null"
+        )
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("v14-no-tw-\(UUID().uuidString).json")
+        try export.data.write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let parsed = try NativeRecipeImporter.parse(url: tempURL)
+        let nutrition = try XCTUnwrap(parsed.recipes.first?.nutrition)
+        XCTAssertEqual(nutrition.calories, 150)
+        XCTAssertNil(nutrition.totalWeight)
     }
 }
