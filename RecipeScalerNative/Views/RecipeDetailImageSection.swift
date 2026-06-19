@@ -171,6 +171,7 @@ struct RecipeDetailImageSection: View {
         defer { isDeleting = false }
         do {
             try await RecipeImageUploadAPI.delete(recipeId: recipeId)
+            await RecipeImageService.shared.removeCache(recipeId: recipeId)
             try await syncService.applyRecipeImageDeletion(recipeId: recipeId)
         } catch {
             await MainActor.run {

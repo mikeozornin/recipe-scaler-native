@@ -282,7 +282,7 @@ struct AssistantSheet: View {
         defer { isBootstrapping = false }
 
         do {
-            threads = try await AssistantAPI.listThreads()
+            threads = try await AssistantAPI.listThreads(language: AppLanguagePreference.current.rawValue)
         } catch {
             loadError = UserFacingAPIError.message(for: error)
             threads = []
@@ -319,7 +319,7 @@ struct AssistantSheet: View {
     private func ensureThread() async {
         guard threadId == nil else { return }
         do {
-            let thread = try await AssistantAPI.createThread()
+            let thread = try await AssistantAPI.createThread(language: AppLanguagePreference.current.rawValue)
             threadId = thread.id
             threads.insert(thread, at: 0)
             persistSession()
@@ -334,7 +334,7 @@ struct AssistantSheet: View {
         }
         defer { isLoadingThreads = false }
         do {
-            threads = try await AssistantAPI.listThreads()
+            threads = try await AssistantAPI.listThreads(language: AppLanguagePreference.current.rawValue)
         } catch {
             loadError = UserFacingAPIError.message(for: error)
         }
@@ -343,7 +343,7 @@ struct AssistantSheet: View {
     private func deleteThread(_ id: String) async {
         deletingThreadId = id
         do {
-            try await AssistantAPI.deleteThread(threadId: id)
+            try await AssistantAPI.deleteThread(threadId: id, language: AppLanguagePreference.current.rawValue)
             let needsNewActive = threadId == id
             withAnimation(.easeInOut(duration: 0.25)) {
                 threads.removeAll { $0.id == id }
@@ -363,7 +363,7 @@ struct AssistantSheet: View {
 
     private func loadHistory(for id: String) async {
         do {
-            let history = try await AssistantAPI.getMessages(threadId: id)
+            let history = try await AssistantAPI.getMessages(threadId: id, language: AppLanguagePreference.current.rawValue)
             messages = history.map {
                 AssistantMessage(
                     id: $0.id,
@@ -510,7 +510,8 @@ struct AssistantSheet: View {
         let stream = try await AssistantAPI.stream(
             threadId: threadId,
             message: message,
-            attachedRecipeIds: attachedRecipeIds
+            attachedRecipeIds: attachedRecipeIds,
+            language: AppLanguagePreference.current.rawValue
         )
         for try await event in stream {
             switch event {
@@ -528,10 +529,10 @@ struct AssistantSheet: View {
                 streamingToolStatusKey = nil
                 applyFinal(data, optimisticAssistantId: assistantMessageId)
                 return
-            case .error(let serverMessage):
+            case .error(let code):
                 streamingToolStatusKey = nil
                 updateStreamingMessage(id: assistantMessageId) { msg in
-                    msg.text = Bundle.currentLocalizedString(serverMessage)
+                    msg.text = Bundle.currentLocalizedString(code.rawValue)
                     msg.isStreaming = false
                 }
                 return

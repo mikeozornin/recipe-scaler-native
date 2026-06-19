@@ -36,64 +36,58 @@ enum AssistantStreamEvent: Sendable {
     case textDelta(String)
     case toolStart(toolName: String, toolCallId: String)
     case final(AssistantStreamFinalData)
-    case error(String)
+    case error(ServerErrorCode)
 }
 
 // MARK: - API
 
-@MainActor
 enum AssistantAPI {
     /// `POST /api/assistant/threads` body `{title?}` → thread.
-    static func createThread(title: String? = nil) async throws -> AssistantThreadDTO {
+    static func createThread(title: String? = nil, language: String? = nil) async throws -> AssistantThreadDTO {
         struct Body: Encodable { let title: String? }
         let response: APIResponse<AssistantThreadDTO> = try await APIClient.shared.requestJSON(
             path: "/api/assistant/threads",
             method: "POST",
             body: Body(title: title?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty),
-            extraHeaders: languageHeader()
+            extraHeaders: languageHeaders(language)
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "assistant.threads.create.failed")
-        }
-        return data
+        return try APIClient.unwrapResponse(response, fallback: .assistantThreadsCreateFailed)
     }
 
     /// `GET /api/assistant/threads` → threads ordered by `lastMessageAt DESC`.
-    static func listThreads() async throws -> [AssistantThreadDTO] {
+    static func listThreads(language: String? = nil) async throws -> [AssistantThreadDTO] {
         let response: APIResponse<[AssistantThreadDTO]> = try await APIClient.shared.requestJSON(
             path: "/api/assistant/threads",
             method: "GET",
-            extraHeaders: languageHeader()
+            extraHeaders: languageHeaders(language)
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "assistant.threads.list.failed")
-        }
-        return data
+        return try APIClient.unwrapResponse(response, fallback: .assistantThreadsListFailed)
     }
 
     /// `GET /api/assistant/threads/:id/messages` → messages oldest-first.
-    static func getMessages(threadId: String) async throws -> [AssistantMessageDTO] {
+    static func getMessages(threadId: String, language: String? = nil) async throws -> [AssistantMessageDTO] {
         let response: APIResponse<[AssistantMessageDTO]> = try await APIClient.shared.requestJSON(
             path: "/api/assistant/threads/\(threadId)/messages",
             method: "GET",
-            extraHeaders: languageHeader()
+            extraHeaders: languageHeaders(language)
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "assistant.messages.load.failed")
-        }
-        return data
+        return try APIClient.unwrapResponse(response, fallback: .assistantMessagesLoadFailed)
     }
 
     /// `DELETE /api/assistant/threads/:id`.
-    static func deleteThread(threadId: String) async throws {
+    static func deleteThread(threadId: String, language: String? = nil) async throws {
         struct DeletedPayload: Decodable { let deletedThreadId: String? }
         let response: APIResponse<DeletedPayload> = try await APIClient.shared.requestJSON(
             path: "/api/assistant/threads/\(threadId)",
             method: "DELETE",
-            extraHeaders: languageHeader()
+            extraHeaders: languageHeaders(language)
         )
         guard response.success else {
-            throw APIError.serverError(message: response.error ?? "assistant.threads.delete.failed")
+            let code = ServerErrorCode.from(
+                serverValue: response.error,
+                fallback: .assistantThreadsDeleteFailed
+            )
+            throw APIError.serverError(code: code)
         }
     }
 
@@ -104,14 +98,15 @@ enum AssistantAPI {
     static func stream(
         threadId: String,
         message: String,
-        attachedRecipeIds: [String] = []
+        attachedRecipeIds: [String] = [],
+        language: String? = nil
     ) async throws -> AsyncThrowingStream<AssistantStreamEvent, Error> {
         let trimmedMessage = message.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedMessage.isEmpty else {
-            throw APIError.serverError(message: "assistant.message.empty")
+            throw APIError.serverError(code: .assistantMessageEmpty)
         }
         guard trimmedMessage.count <= 8000 else {
-            throw APIError.serverError(message: "assistant.message.too-long")
+            throw APIError.serverError(code: .assistantMessageTooLong)
         }
         let limitedAttachments = Array(attachedRecipeIds.prefix(10))
 
@@ -126,7 +121,7 @@ enum AssistantAPI {
             path: "/api/assistant/threads/\(threadId)/respond-stream",
             method: "POST",
             body: body,
-            headers: languageHeader()
+            headers: languageHeaders(language)
         )
         request.setValue("application/x-ndjson", forHTTPHeaderField: "Accept")
 
@@ -138,22 +133,16 @@ enum AssistantAPI {
                     let http = response as? HTTPURLResponse
                     let status = http?.statusCode ?? -1
                     if !(200...299).contains(status) {
-                        // Server may still emit an `error` line in the body even on non-2xx.
-                        var serverMessage: String? = nil
+                        var serverCode: ServerErrorCode? = nil
                         for try await line in bytes.lines {
                             if let evt = parseLine(line),
-                               case .error(let msg) = evt {
-                                serverMessage = msg
+                               case .error(let code) = evt {
+                                serverCode = code
                                 break
                             }
                         }
-                        // Surface the HTTP status separately by also throwing `httpError`,
-                        // but carry the server dot-key message via a side log. View layer
-                        // resolves via `APIError.userFacingMessage()` (4xx/5xx categorical
-                        // fallback). The server dot-key (when present) is preferred when
-                        // surfaced via `serverError`.
-                        if let serverMessage {
-                            throw APIError.serverError(message: serverMessage)
+                        if let code = serverCode {
+                            throw APIError.serverError(code: code)
                         }
                         throw APIError.httpError(statusCode: status)
                     }
@@ -161,8 +150,6 @@ enum AssistantAPI {
                         if Task.isCancelled { return }
                         if let event = parseLine(line) {
                             continuation.yield(event)
-                            // Termination events don't close the stream from URLSession.bytes,
-                            // but we finish the continuation to mirror web client behavior.
                             switch event {
                             case .final, .error:
                                 return
@@ -201,24 +188,28 @@ enum AssistantAPI {
             throw APIError.decodingError(error)
         }
         guard payload.success, let text = payload.data?.text else {
-            let messageKey: String
+            let code: ServerErrorCode
             switch payload.error {
             case "audio_too_long":
-                messageKey = "assistant.voice-error.too-long"
+                code = .assistantVoiceErrorTooLong
             case "transcription_not_configured", "transcription_failed":
-                messageKey = "assistant.voice-error.transcription"
+                code = .assistantVoiceErrorTranscription
             default:
-                messageKey = payload.error ?? "assistant.voice-error.transcription"
+                code = ServerErrorCode.from(
+                    serverValue: payload.error,
+                    fallback: .assistantVoiceErrorTranscription
+                )
             }
-            throw APIError.serverError(message: messageKey)
+            throw APIError.serverError(code: code)
         }
         return text
     }
 
     // MARK: - Helpers
 
-    private static func languageHeader() -> [String: String] {
-        ["X-App-Language": AppLanguagePreference.current.rawValue]
+    private static func languageHeaders(_ language: String?) -> [String: String] {
+        guard let language else { return [:] }
+        return ["X-App-Language": language]
     }
 
     /// Parses one NDJSON line into a stream event. Ignores malformed / unknown payloads.
@@ -242,16 +233,11 @@ enum AssistantAPI {
             }
             return nil
         case "final":
-            // The server emits `{"type":"final","data":{...}}`. We must decode the *inner* `data`
-            // object as AssistantStreamFinalData — NOT the whole envelope (which would decode to
-            // all-nil optionals silently).
             let final: AssistantStreamFinalData?
             if let dataDict = json["data"] as? [String: Any],
                let innerData = try? JSONSerialization.data(withJSONObject: dataDict) {
                 final = try? JSONDecoder().decode(AssistantStreamFinalData.self, from: innerData)
             } else {
-                // Fallback: try decoding the whole line as-is (legacy behaviour, will yield nil
-                // fields if server ever wraps the data again).
                 final = try? JSONDecoder().decode(AssistantStreamFinalData.self, from: data)
             }
             guard let final else {
@@ -259,20 +245,17 @@ enum AssistantAPI {
             }
             return .final(final)
         case "error":
-            let message = (json["message"] as? String) ?? "assistant.error-unavailable"
-            return .error(message)
+            let raw = (json["message"] as? String) ?? ServerErrorCode.assistantErrorUnavailable.rawValue
+            let code = ServerErrorCode.from(
+                serverValue: raw,
+                fallback: .assistantErrorUnavailable
+            )
+            return .error(code)
         default:
             return nil
         }
     }
 }
-
-// MARK: - APIError helper
-// Removed `httpError(statusCode:message:)` extension — it converted to
-// `serverError(message: "\(message) [HTTP \(statusCode)]")`, masking the
-// status code from `userFacingMessage()`. Call sites now throw
-// `.serverError(message:)` directly with a dot-key. See
-// `specs/031-error-i18n/server-error-keys.md`.
 
 private extension String {
     var nilIfEmpty: String? {

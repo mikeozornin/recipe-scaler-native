@@ -17,7 +17,6 @@ struct TelegramConnectionStatusDTO: Decodable, Sendable {
     let connectedAt: String?
 }
 
-@MainActor
 enum TelegramAPI {
     static func connect() async throws -> TelegramConnectionCodeDTO {
         struct EmptyBody: Encodable {}
@@ -26,20 +25,14 @@ enum TelegramAPI {
             method: "POST",
             body: EmptyBody()
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "telegram.failed-to-get-code")
-        }
-        return data
+        return try APIClient.unwrapResponse(response, fallback: .telegramFailedToGetCode)
     }
 
     static func status() async throws -> TelegramConnectionStatusDTO {
         let response: APIResponse<TelegramConnectionStatusDTO> = try await APIClient.shared.requestJSON(
             path: "/api/telegram/status"
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "telegram.status-failed")
-        }
-        return data
+        return try APIClient.unwrapResponse(response, fallback: .telegramStatusFailed)
     }
 
     static func disconnect() async throws {
@@ -50,7 +43,11 @@ enum TelegramAPI {
             body: EmptyBody()
         )
         guard response.success else {
-            throw APIError.serverError(message: response.error ?? "telegram.failed-to-disconnect")
+            let code = ServerErrorCode.from(
+                serverValue: response.error,
+                fallback: .telegramFailedToDisconnect
+            )
+            throw APIError.serverError(code: code)
         }
     }
 }

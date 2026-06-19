@@ -15,7 +15,6 @@ enum ImportedRecipeImageUploadError: Error {
     case preprocessingFailed
 }
 
-@MainActor
 enum RecipeImageUploadAPI {
     static func upload(recipeId: String, payload: RecipeImageUploadPayload) async throws -> RecipeImageUploadResult {
         let data = try await APIClient.shared.uploadMultipart(
@@ -26,10 +25,7 @@ enum RecipeImageUploadAPI {
             mimeType: payload.mimeType
         )
         let response = try JSONDecoder().decode(APIResponse<RecipeImageUploadResult>.self, from: data)
-        guard response.success, let payload = response.data else {
-            throw APIError.serverError(message: response.error ?? "recipe.image.upload-failed")
-        }
-        return payload
+        return try APIClient.unwrapResponse(response, fallback: .recipeImageUploadFailed)
     }
 
     static func delete(recipeId: String) async throws {
@@ -38,8 +34,11 @@ enum RecipeImageUploadAPI {
             method: "DELETE"
         )
         guard response.success else {
-            throw APIError.serverError(message: response.error ?? "recipe.image.delete-failed")
+            let code = ServerErrorCode.from(
+                serverValue: response.error,
+                fallback: .recipeImageDeleteFailed
+            )
+            throw APIError.serverError(code: code)
         }
-        await RecipeImageService.shared.removeCache(recipeId: recipeId)
     }
 }

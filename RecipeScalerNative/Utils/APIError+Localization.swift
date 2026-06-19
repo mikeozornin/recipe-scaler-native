@@ -18,8 +18,8 @@ extension APIError {
     ///
     /// - `invalidURL` / `invalidResponse` / `decodingError` / `unauthorized`: fixed localized keys.
     /// - `httpError(code)`: categorical fallback (4xx vs 5xx) — never leaks the raw status code.
-    /// - `serverError(message)`: dot-key detection via `DotKeyLocalizer`. Legacy English
-    ///   server messages fall back to a generic localized message.
+    /// - `serverError(code)`: the typed code's `rawValue` is a known dot-key, resolved
+    ///   directly via `Bundle.currentLocalizedString`.
     func userFacingMessage() -> String {
         switch self {
         case .invalidURL:
@@ -36,11 +36,21 @@ extension APIError {
             return Bundle.currentLocalizedString("api.error.http-5xx")
         case .httpError:
             return Bundle.currentLocalizedString("api.error.server-generic")
-        case .serverError(let message):
-            return DotKeyLocalizer.localize(
-                message: message,
-                fallbackKey: "api.error.server-generic"
-            )
+        case .serverError(let code):
+            return Bundle.currentLocalizedString(code.rawValue)
+        }
+    }
+}
+
+extension RecipeLLMParseAPI.LLMParseError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .emptyDescription:
+            return Bundle.currentLocalizedString("llm.parse-empty")
+        case .server(let message):
+            return message.isEmpty
+                ? Bundle.currentLocalizedString("llm.parse-error")
+                : message
         }
     }
 }

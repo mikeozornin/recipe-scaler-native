@@ -61,7 +61,7 @@ public enum RecipeImportAPI {
     /// `recipeImportApi.ImportRecipeImages` on the web.
     public static func importImages(_ items: [ImportPhotoItem]) async throws -> ImportRecipesResultDTO {
         guard !items.isEmpty else {
-            throw APIError.serverError(message: "recipe.import.no-images")
+            throw APIError.serverError(code: .recipeImportNoImages)
         }
 
         let files: [(fileName: String, data: Data, mimeType: String)] = items.map { item in
@@ -78,10 +78,7 @@ public enum RecipeImportAPI {
     }
 
     private static func unwrap<T>(_ response: APIResponse<T>) throws -> T {
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "recipe.import.failed")
-        }
-        return data
+        return try APIClient.unwrapResponse(response, fallback: .recipeImportFailed)
     }
 
     private static func mimeType(for utType: UTType?) -> String {

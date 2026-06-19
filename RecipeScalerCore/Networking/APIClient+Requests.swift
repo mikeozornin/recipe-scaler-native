@@ -76,7 +76,7 @@ extension APIClient {
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             let code = (response as? HTTPURLResponse)?.statusCode ?? -1
             if let apiError = Self.parseAPIFailureBody(data) {
-                throw APIError.serverError(message: apiError)
+                throw APIError.serverError(code: apiError)
             }
             throw APIError.httpError(statusCode: code)
         }
@@ -97,14 +97,25 @@ extension APIClient {
         return try JSONDecoder().decode(T.self, from: data)
     }
 
-    private static func parseAPIFailureBody(_ data: Data) -> String? {
+    /// Unwrap an `APIResponse<T>` into `T`, throwing `APIError.serverError` if the
+    /// response is not successful or has no data. `fallback` is used when
+    /// `response.error` is nil/empty or does not match a known `ServerErrorCode`.
+    public static func unwrapResponse<T>(_ response: APIResponse<T>, fallback: ServerErrorCode) throws -> T {
+        guard response.success, let data = response.data else {
+            let code = ServerErrorCode.from(serverValue: response.error, fallback: fallback)
+            throw APIError.serverError(code: code)
+        }
+        return data
+    }
+
+    private static func parseAPIFailureBody(_ data: Data) -> ServerErrorCode? {
         struct Empty: Decodable {}
         guard let json = try? JSONDecoder().decode(APIResponse<Empty>.self, from: data),
               !json.success,
               let error = json.error, !error.isEmpty else {
             return nil
         }
-        return error
+        return ServerErrorCode(rawValue: error)
     }
 }
 

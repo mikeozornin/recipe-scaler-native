@@ -379,6 +379,7 @@
 		SCTA00002AA000200000002 /* ShortcutItemsUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */; };
 		YRSDOC01A293A4B701000001 /* YrsDocument+TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */; };
 		YJSOFF01A293A4B701000001 /* YjsOfflineSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */; };
+		5A3A3288082F455BA73D41F3 /* ServerErrorCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69F9BFE990A641C6A64D4CFC /* ServerErrorCode.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -834,6 +835,7 @@
 		SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutItemsUpdater.swift; sourceTree = "<group>"; };
 		YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "YrsDocument+TestSupport.swift"; sourceTree = "<group>"; };
 		YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsOfflineSyncTests.swift; sourceTree = "<group>"; };
+		69F9BFE990A641C6A64D4CFC /* ServerErrorCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/ServerErrorCode.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1202,6 +1204,7 @@
 				E3CBCE9817864C1C8B333764 /* Config.swift */,
 				922F28300880430B97A0348C /* APIClient.swift */,
 				41F1A2877817482DAC0FE2DC /* APIClient+Requests.swift */,
+				69F9BFE990A641C6A64D4CFC /* ServerErrorCode.swift */,
 				DA95C7943B584B11A547EB85 /* RecipeImportAPI.swift */,
 				D24E09F4CE9D4C34852A98AF /* ImportContentClassifier.swift */,
 				6C6A0A37120248F8AAB066E8 /* ImportPhotoValidator.swift */,
@@ -1878,6 +1881,7 @@
 				D963C6002ACA43AE8B000E1D /* Config.swift in Sources */,
 				1BAEE2C386A5454CB68D9C8B /* APIClient.swift in Sources */,
 				1A94422F09EA4C03BD017D23 /* APIClient+Requests.swift in Sources */,
+				5A3A3288082F455BA73D41F3 /* ServerErrorCode.swift in Sources */,
 				9F1626D0C1684DB3AC78F8C0 /* RecipeImportAPI.swift in Sources */,
 				857BCD5170F747838D6F5D7B /* ImportContentClassifier.swift in Sources */,
 				A520DBD4E2174DD9B97FDF13 /* ImportPhotoValidator.swift in Sources */,

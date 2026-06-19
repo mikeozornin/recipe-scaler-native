@@ -160,7 +160,7 @@ public enum APIError: LocalizedError {
     case invalidURL
     case invalidResponse
     case httpError(statusCode: Int)
-    case serverError(message: String)
+    case serverError(code: ServerErrorCode)
     case decodingError(Error)
     case unauthorized
 
@@ -176,8 +176,8 @@ public enum APIError: LocalizedError {
             return "api.error.invalid-response"
         case .httpError(let code):
             return "api.error.http:\(code)"
-        case .serverError(let message):
-            return message
+        case .serverError(let code):
+            return code.rawValue
         case .decodingError:
             return "api.error.decoding"
         case .unauthorized:

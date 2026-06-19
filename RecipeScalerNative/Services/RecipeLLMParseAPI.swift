@@ -16,22 +16,10 @@
 import Foundation
 import RecipeScalerCore
 
-@MainActor
 enum RecipeLLMParseAPI {
-    enum LLMParseError: LocalizedError {
+    enum LLMParseError: Error {
         case emptyDescription
         case server(message: String)
-
-        var errorDescription: String? {
-            switch self {
-            case .emptyDescription:
-                return Bundle.currentLocalizedString("llm.parse-empty")
-            case .server(let message):
-                return message.isEmpty
-                    ? Bundle.currentLocalizedString("llm.parse-error")
-                    : message
-            }
-        }
     }
 
     private struct ParseBody: Encodable {
@@ -45,16 +33,19 @@ enum RecipeLLMParseAPI {
 
     /// `POST /api/v1/recipes/{id}/parse` with `apply: true`.
     /// Server applies the LLM result; sync delivers updates. Caller just needs success/failure.
-    static func parseAndApply(recipeId: String, stepsHtml: String) async throws {
+    /// - Parameter language: optional `X-App-Language` header value (e.g. `"ru"`, `"en"`).
+    static func parseAndApply(recipeId: String, stepsHtml: String, language: String? = nil) async throws {
         let trimmed = stepsHtml.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw LLMParseError.emptyDescription }
 
+        var headers: [String: String] = [:]
+        if let language { headers["X-App-Language"] = language }
         let bodyData = try JSONEncoder().encode(ParseBody(stepsText: stepsHtml, apply: true))
         let request = try APIClient.shared.buildRequest(
             path: "/api/v1/recipes/\(recipeId)/parse",
             method: "POST",
             body: bodyData,
-            headers: ["X-App-Language": AppLanguagePreference.current.rawValue]
+            headers: headers
         )
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {

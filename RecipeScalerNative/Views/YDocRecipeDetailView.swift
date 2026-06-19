@@ -695,7 +695,7 @@ struct YDocRecipeDetailView: View {
 
         let html = await bridge.requestHTML()
         do {
-            try await RecipeLLMParseAPI.parseAndApply(recipeId: recipeId, stepsHtml: html)
+            try await RecipeLLMParseAPI.parseAndApply(recipeId: recipeId, stepsHtml: html, language: AppLanguagePreference.current.rawValue)
             // Sync delivers recipe_updated / collection_updated / document_loaded.
         } catch {
             descriptionParseError = UserFacingAPIError.message(for: error)

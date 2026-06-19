@@ -559,7 +559,7 @@ private struct ShoppingListShareSheet: View {
             settingsLoaded = true
             return
         }
-        if let data = await SharingAPI.fetchShoppingListSettings() {
+        if let data = try? await SharingAPI.fetchShoppingListSettings() {
             publicId = data.public_id
             shareEnabled = data.share_enabled
         }

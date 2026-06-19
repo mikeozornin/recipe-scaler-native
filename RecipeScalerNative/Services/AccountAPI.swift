@@ -51,26 +51,19 @@ enum PublicShareMode: String, CaseIterable, Identifiable, Hashable, Sendable {
 
 // MARK: - API
 
-@MainActor
 enum AccountAPI {
     static func fetchProfile() async throws -> UserProfileDTO {
         let response: APIResponse<UserProfileDTO> = try await APIClient.shared.requestJSON(
             path: "/api/users/profile"
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "account.profile.load-failed")
-        }
-        return data
+        return try APIClient.unwrapResponse(response, fallback: .accountProfileLoadFailed)
     }
 
     static func fetchSharingSettings() async throws -> SharingSettingsDTO {
         let response: APIResponse<SharingSettingsDTO> = try await APIClient.shared.requestJSON(
             path: "/api/users/sharing-settings"
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "account.sharing.load-failed")
-        }
-        return data
+        return try APIClient.unwrapResponse(response, fallback: .accountSharingLoadFailed)
     }
 
     static func patchSharingSettings(
@@ -105,10 +98,7 @@ enum AccountAPI {
                 allowRecipeDownloads: allowRecipeDownloads
             )
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "account.sharing.update-failed")
-        }
-        return data
+        return try APIClient.unwrapResponse(response, fallback: .accountSharingUpdateFailed)
     }
 
     static func patchDisplayName(_ name: String) async throws {
@@ -150,10 +140,7 @@ enum AccountAPI {
         let response: APIResponse<UserSettingsDTO> = try await APIClient.shared.requestJSON(
             path: "/api/settings"
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "account.settings.load-failed")
-        }
-        return data
+        return try APIClient.unwrapResponse(response, fallback: .accountSettingsLoadFailed)
     }
 
     static func updateNutritionEnabled(_ enabled: Bool) async throws {

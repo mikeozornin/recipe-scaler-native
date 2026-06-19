@@ -28,10 +28,6 @@ struct DiscoveryCollectionDTO: Decodable, Identifiable, Sendable {
     }
 }
 
-/// Preview of a public profile as returned by `/api/discover/collections`.
-/// The server returns `avatar_url` as a *raw storage path* (e.g.
-/// `cfcd839f.../avatar/original.webp`) — **not** a usable URL. iOS builds the
-/// avatar URL via `DiscoverAPI.avatarURL(username:)` and ignores this field.
 struct PublicProfilePreviewDTO: Decodable, Identifiable, Sendable {
     var id: String { username }
     let username: String
@@ -52,9 +48,6 @@ struct DiscoveryDataDTO: Decodable, Sendable {
     let profiles: [PublicProfilePreviewDTO]
 }
 
-/// Recipe preview as listed inside a collection or a public profile.
-/// `imageURL` is a raw storage path, not a usable URL — use
-/// `DiscoverAPI.recipeImageURL(recipeId:)` instead.
 struct CuratedRecipeMetadataDTO: Decodable, Identifiable, Sendable {
     let id: String
     let name: String
@@ -80,9 +73,6 @@ struct CollectionWithRecipesDTO: Decodable, Sendable {
     }
 }
 
-/// Public recipe state from `GET /api/v2/recipes/public/{id}/state`. Returns
-/// ready-to-use metadata (name, color, imageUrl) plus a binary `yjsState` update
-/// that must be applied to a fresh `Y.Doc` to read ingredients/description.
 struct PublicRecipeStateDTO: Decodable, Sendable {
     let id: String
     let name: String?
@@ -91,7 +81,6 @@ struct PublicRecipeStateDTO: Decodable, Sendable {
     let username: String?
     let createdAt: Date?
     let updatedAt: Date?
-    /// Yjs v1 state update (array of bytes).
     let yjsState: [Int]?
 }
 
@@ -126,21 +115,16 @@ struct CloneRecipeResultDTO: Decodable, Sendable {
     let recipeId: String
 }
 
-/// How a public profile exposes its recipes. Mirrors web `ShareMode`.
 enum PublicProfileShareMode: String, Decodable, Sendable {
     case oneByOne = "one_by_one"
     case all
     case withImagesAndSteps = "with_images_and_steps"
 }
 
-/// Full public profile from `GET /api/users/public/:username` — server response
-/// is camelCase (`avatarUrl`, `recipeCount`, `allowRecipeDownloads`, `shareMode`).
 struct PublicProfileDTO: Decodable, Identifiable, Sendable {
     var id: String { username }
     let username: String
     let name: String?
-    /// Ready-to-use relative URL like `/api/users/{username}/avatar?preview=true&v=...`.
-    /// Use `DiscoverAPI.avatarURL(fromPublicProfile:)` to resolve to absolute.
     let avatarUrl: String?
     let recipeCount: Int
     let description: String?
@@ -152,7 +136,6 @@ struct PublicRecipePreviewDTO: Decodable, Identifiable, Sendable {
     let id: String
     let name: String
     let description: String?
-    /// Raw storage path (not usable) — use `DiscoverAPI.recipeImageURL(recipeId:)`.
     let imageUrl: String?
     let color: String?
     let createdAt: Date?
@@ -163,36 +146,26 @@ struct PublicProfileResponseDTO: Decodable, Sendable {
     let recipes: [PublicRecipePreviewDTO]
 }
 
-@MainActor
 enum DiscoverAPI {
     static func fetchDiscovery() async throws -> DiscoveryDataDTO {
         let response: APIResponse<DiscoveryDataDTO> = try await APIClient.shared.requestJSON(
             path: "/api/discover/collections"
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "discover.fetch-failed")
-        }
-        return data
+        return try APIClient.unwrapResponse(response, fallback: .discoverFetchFailed)
     }
 
     static func fetchCollection(slug: String) async throws -> CollectionWithRecipesDTO {
         let response: APIResponse<CollectionWithRecipesDTO> = try await APIClient.shared.requestJSON(
             path: "/api/discover/collections/\(slug)"
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "discover.collection-failed")
-        }
-        return data
+        return try APIClient.unwrapResponse(response, fallback: .discoverCollectionFailed)
     }
 
     static func fetchRecipe(id: String) async throws -> CuratedRecipeDTO {
         let response: APIResponse<CuratedRecipeDTO> = try await APIClient.shared.requestJSON(
             path: "/api/discover/recipes/\(id)"
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "discover.recipe-failed")
-        }
-        return data
+        return try APIClient.unwrapResponse(response, fallback: .discoverRecipeFailed)
     }
 
     static func cloneRecipe(id: String) async throws -> String {
@@ -202,10 +175,7 @@ enum DiscoverAPI {
             method: "POST",
             body: Body(locale: Locale.current.language.languageCode?.identifier ?? "en")
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "discover.clone-failed")
-        }
-        return data.recipeId
+        return try APIClient.unwrapResponse(response, fallback: .discoverCloneFailed).recipeId
     }
 
     /// Fetch a public recipe state: top-level metadata (name, color, imageUrl)
@@ -238,13 +208,10 @@ enum DiscoverAPI {
         }
         do {
             let wrapped = try decoder.decode(APIResponse<PublicRecipeStateDTO>.self, from: data)
-            guard wrapped.success, let payload = wrapped.data else {
-                throw APIError.serverError(message: wrapped.error ?? "discover.public-recipe-failed")
-            }
-            return payload
+            return try APIClient.unwrapResponse(wrapped, fallback: .discoverPublicRecipeFailed)
         } catch let error as DecodingError {
             AppLog.error(.document, "discover_public_recipe_decode_failed", data: ["error": "\(error)"])
-            throw APIError.serverError(message: "discover.public-recipe-failed")
+            throw APIError.serverError(code: .discoverPublicRecipeFailed)
         }
     }
 
@@ -255,10 +222,7 @@ enum DiscoverAPI {
             path: "/api/v2/recipes/\(id)/copy",
             method: "POST"
         )
-        guard response.success, let data = response.data else {
-            throw APIError.serverError(message: response.error ?? "discover.copy-failed")
-        }
-        return data.recipeId
+        return try APIClient.unwrapResponse(response, fallback: .discoverCopyFailed).recipeId
     }
 
     static func fetchPublicProfile(username: String) async throws -> PublicProfileResponseDTO {
@@ -290,27 +254,19 @@ enum DiscoverAPI {
         }
         do {
             let wrapped = try decoder.decode(APIResponse<PublicProfileResponseDTO>.self, from: data)
-            guard wrapped.success, let payload = wrapped.data else {
-                throw APIError.serverError(message: wrapped.error ?? "discover.public-profile-failed")
-            }
-            return payload
+            return try APIClient.unwrapResponse(wrapped, fallback: .discoverPublicProfileFailed)
         } catch let error as DecodingError {
             AppLog.error(.document, "discover_public_profile_decode_failed", data: ["error": "\(error)"])
-            throw APIError.serverError(message: "discover.public-profile-failed")
+            throw APIError.serverError(code: .discoverPublicProfileFailed)
         }
     }
 
     // MARK: - Image URLs
 
-    /// Curated recipe image for discover collection grids
-    /// (web `/api/discover/recipes/:id/image`, `aspect-video object-cover`).
     static func discoverRecipeImageURL(recipeId: String) -> URL? {
         URL(string: "\(Config.baseURL)/api/discover/recipes/\(recipeId)/image")
     }
 
-    /// Public recipe image. Same endpoint as for private recipes —
-    /// server serves it without auth for discoverable recipes.
-    /// `preview=true` returns a smaller variant; grids use `preview: false` (web parity).
     static func recipeImageURL(recipeId: String, preview: Bool = true) -> URL? {
         URL(string: "\(Config.baseURL)/api/recipes/\(recipeId)/image\(preview ? "?preview=true" : "")")
     }
@@ -334,14 +290,10 @@ enum DiscoverAPI {
         return recipeImageURL(recipeId: recipe.id, preview: false)
     }
 
-    /// Public avatar for a `username` (preview variant is smaller).
     static func avatarURL(username: String, preview: Bool = true) -> URL? {
         URL(string: "\(Config.baseURL)/api/users/\(username)/avatar\(preview ? "?preview=true" : "")")
     }
 
-    /// Resolve the `avatarUrl` field returned by `GET /api/users/public/:username`.
-    /// Server returns a ready-to-use relative URL (e.g.
-    /// `/api/users/{username}/avatar?preview=true&v=...`); we just attach the host.
     static func avatarURL(fromPublicProfile relativeURL: String?) -> URL? {
         guard let relativeURL, !relativeURL.isEmpty else { return nil }
         if let absolute = URL(string: relativeURL), absolute.scheme != nil {
@@ -351,9 +303,6 @@ enum DiscoverAPI {
         return URL(string: "\(Config.baseURL)\(separator)\(relativeURL)")
     }
 
-    /// Cover image for a curated collection. Server returns a raw storage path
-    /// in `cover_image_url`; we currently don't have a usable proxy, so this
-    /// returns `nil` for relative paths (placeholder is shown instead).
     static func collectionCoverURL(from coverImageURL: String?) -> URL? {
         guard let coverImageURL, !coverImageURL.isEmpty else { return nil }
         if let absolute = URL(string: coverImageURL), absolute.scheme != nil {
@@ -363,9 +312,6 @@ enum DiscoverAPI {
     }
 }
 
-/// Tolerant ISO8601 parser — accepts both `2025-09-12T11:29:08.641+00:00`
-/// (server format with fractional seconds) and `2025-09-12T11:29:08Z`
-/// (standard). Swift's built-in `.iso8601` strategy rejects fractional seconds.
 enum DiscoverDateParser {
     private static let withFractionalSeconds: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
