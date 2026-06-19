@@ -15,6 +15,8 @@
 
 yrs is the CRDT engine (Rust). It compiles as an XCFramework that Swift calls via C FFI (`libyrs.h`).
 
+The build script pins a specific [y-crdt](https://github.com/y-crdt/y-crdt) release via `Y_CRDT_REF` in [`scripts/build-yrs-xcframework.sh`](../scripts/build-yrs-xcframework.sh) (currently `v0.26.0`). Each rebuild writes `Frameworks/YrsXCFramework.xcframework/VERSION.txt` with tag, commit SHA, and crate versions.
+
 ```bash
 # Install Rust toolchain
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -22,14 +24,16 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 # Add iOS targets
 rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim
 
-# From repo root — clones y-crdt if needed, builds all slices
+# From repo root — clones pinned y-crdt tag, builds all slices
 ./scripts/build-yrs-xcframework.sh
 
-# Or with an existing y-crdt checkout:
+# Or with an existing y-crdt checkout (must match Y_CRDT_REF or will be re-cloned):
 ./scripts/build-yrs-xcframework.sh ~/repos/y-crdt ./Frameworks
 ```
 
-Output: `Frameworks/YrsXCFramework.xcframework` (device + simulator slices, `libyrs.h`, `module.modulemap`).
+**Bump yrs version:** edit `Y_CRDT_REF` in `scripts/build-yrs-xcframework.sh`, run the script, commit `Frameworks/YrsXCFramework.xcframework/` (including `VERSION.txt`) and sync `RecipeScalerNative/Bridging/libyrs.h` if the header changed.
+
+Output: `Frameworks/YrsXCFramework.xcframework` (device + simulator slices, `libyrs.h`, `module.modulemap`, `VERSION.txt`).
 
 Bridging headers for Xcode: `RecipeScalerNative/Bridging/libyrs.h` and `module.modulemap` (module `YrsC`).
 

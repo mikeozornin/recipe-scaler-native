@@ -32,6 +32,8 @@ YFFI_CRATE="yffi"
 LIB_NAME="libyrs.a"
 FRAMEWORK_NAME="YrsXCFramework.xcframework"
 HEADER_NAME="libyrs.h"
+# Pinned y-crdt release — bump deliberately; rebuild XCFramework + commit VERSION.txt.
+Y_CRDT_REF="v0.26.0"
 
 # iOS targets
 DEVICE_TARGET="aarch64-apple-ios"
@@ -67,12 +69,23 @@ info "Prerequisites OK."
 
 # ─── Clone or update y-crdt ──────────────────────────────────────────────────
 
+if [ -d "$Y_CRDT_DIR/.git" ]; then
+    current_ref="$(git -C "$Y_CRDT_DIR" describe --tags --exact-match 2>/dev/null || git -C "$Y_CRDT_DIR" rev-parse HEAD)"
+    if [ "$current_ref" != "$Y_CRDT_REF" ]; then
+        warn "Existing checkout at $current_ref, but Y_CRDT_REF=$Y_CRDT_REF — re-cloning"
+        rm -rf "$Y_CRDT_DIR"
+    fi
+fi
+
 if [ ! -d "$Y_CRDT_DIR" ]; then
-    info "Cloning y-crdt to $Y_CRDT_DIR..."
-    git clone --depth 1 https://github.com/y-crdt/y-crdt.git "$Y_CRDT_DIR"
+    info "Cloning y-crdt ($Y_CRDT_REF) to $Y_CRDT_DIR..."
+    git clone --depth 1 --branch "$Y_CRDT_REF" https://github.com/y-crdt/y-crdt.git "$Y_CRDT_DIR"
 else
     info "Using existing y-crdt at $Y_CRDT_DIR"
 fi
+
+Y_CRDT_COMMIT="$(git -C "$Y_CRDT_DIR" rev-parse HEAD)"
+info "y-crdt pinned to $Y_CRDT_REF ($Y_CRDT_COMMIT)"
 
 HEADER_SOURCE="$Y_CRDT_DIR/tests-ffi/include/$HEADER_NAME"
 if [ ! -f "$HEADER_SOURCE" ]; then
@@ -96,13 +109,13 @@ module YrsC {
 MODULEMAP
 
 info "Building for $DEVICE_TARGET (iOS device)..."
-cargo build -p "$YFFI_CRATE" --release --target "$DEVICE_TARGET" --manifest-path "$Y_CRDT_DIR/Cargo.toml"
+cargo build -p "$YFFI_CRATE" --release --target "$DEVICE_TARGET" --target-dir "$BUILD_DIR" --manifest-path "$Y_CRDT_DIR/Cargo.toml"
 
 info "Building for $SIM_ARM64_TARGET (iOS simulator - Apple Silicon)..."
-cargo build -p "$YFFI_CRATE" --release --target "$SIM_ARM64_TARGET" --manifest-path "$Y_CRDT_DIR/Cargo.toml"
+cargo build -p "$YFFI_CRATE" --release --target "$SIM_ARM64_TARGET" --target-dir "$BUILD_DIR" --manifest-path "$Y_CRDT_DIR/Cargo.toml"
 
 info "Building for $SIM_X86_TARGET (iOS simulator - Intel)..."
-cargo build -p "$YFFI_CRATE" --release --target "$SIM_X86_TARGET" --manifest-path "$Y_CRDT_DIR/Cargo.toml"
+cargo build -p "$YFFI_CRATE" --release --target "$SIM_X86_TARGET" --target-dir "$BUILD_DIR" --manifest-path "$Y_CRDT_DIR/Cargo.toml"
 
 # ─── Create universal simulator library ──────────────────────────────────────
 
@@ -142,12 +155,30 @@ if [ -d "$XCFRAMEWORK_PATH" ]; then
     echo "Library slices:"
     echo "$SLICES"
     echo ""
+
+    YFFI_VERSION="$(grep -m1 '^version = ' "$Y_CRDT_DIR/yffi/Cargo.toml" | sed 's/^version = "\(.*\)"/\1/')"
+    YRS_VERSION="$(grep -m1 '^version = ' "$Y_CRDT_DIR/yrs/Cargo.toml" 2>/dev/null | sed 's/^version = "\(.*\)"/\1/' || echo "unknown")"
+    VERSION_FILE="$XCFRAMEWORK_PATH/VERSION.txt"
+    cat > "$VERSION_FILE" <<EOF
+tag: $Y_CRDT_REF
+commit: $Y_CRDT_COMMIT
+built-at: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+yffi-version: $YFFI_VERSION
+yrs-version: $YRS_VERSION
+
+# Rust merge/diff helpers are linked into libyrs.a (verify: nm libyrs.a | rg merge_updates_v1)
+# but are not exported through yffi C ABI (libyrs.h). Native Y.mergeUpdates parity requires a
+# yffi shim — see review finding #6 (WKWebView merge on main thread).
+EOF
+    info "Wrote $VERSION_FILE"
+
     info "Output: $XCFRAMEWORK_PATH"
     echo ""
     info "Next steps:"
     echo "  1. Add $XCFRAMEWORK_PATH to Xcode project"
     echo "  2. Set 'Embed & Sign' in target settings"
     echo "  3. Import as: import YrsC"
+    echo "  4. Commit Frameworks/YrsXCFramework.xcframework + VERSION.txt after rebuild"
 else
     error "Failed to create XCFramework at $XCFRAMEWORK_PATH"
 fi
