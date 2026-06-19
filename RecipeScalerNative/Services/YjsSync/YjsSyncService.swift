@@ -944,7 +944,7 @@ final class YjsSyncService {
             return
         }
 
-        logger.info("Starting YjsSync for user \(userId)")
+        logger.info("Starting YjsSync for user \(UserIdFormatter.redact(userId))")
         connectSocket()
     }
 
@@ -1356,7 +1356,7 @@ final class YjsSyncService {
             "userId": userId,
             "deviceId": deviceId,
         ])
-        logger.info("Emitted auth for user \(userId)")
+        logger.info("Emitted auth for user \(UserIdFormatter.redact(userId))")
         return true
     }
 
@@ -1901,7 +1901,7 @@ final class YjsSyncService {
                 data: stateData,
                 lastSyncedAt: lastSyncedAt
             )
-            logger.info("Merged server document into \(docKey) (\(stateData.count) bytes)")
+            logger.info("Merged server document into \(UserIdFormatter.redactDocKey(docKey)) (\(stateData.count) bytes)")
         } else {
             try await documentManager.replaceDocument(
                 key: docKey,
@@ -1913,7 +1913,7 @@ final class YjsSyncService {
 
     private func handleDocumentLoaded(recipeId: String, stateData: Data, lastSyncedAt: String?) async {
         let docKey = docKeyFor(recipeId: recipeId)
-        logger.info("document_loaded: \(docKey), \(stateData.count) bytes")
+        logger.info("document_loaded: \(UserIdFormatter.redactDocKey(docKey)), \(stateData.count) bytes")
         if recipeId != "collection", recipeId != ShoppingListConstants.offlineRecipeId {
             persistServerDocumentBytes(recipeId: recipeId, bytes: stateData.count)
         }
@@ -1929,7 +1929,7 @@ final class YjsSyncService {
             )
             mergeSucceeded = true
         } catch {
-            logger.error("Failed to apply document state for \(docKey): \(error)")
+            logger.error("Failed to apply document state for \(UserIdFormatter.redactDocKey(docKey)): \(error)")
         }
 
         if isRecipeDocument(recipeId: recipeId) {
@@ -1967,7 +1967,7 @@ final class YjsSyncService {
                     loadedRecipeIds.append(recipeId)
                 }
             } catch {
-                logger.error("Failed to apply batch doc \(docKey): \(error)")
+                logger.error("Failed to apply batch doc \(UserIdFormatter.redactDocKey(docKey)): \(error)")
             }
         }
         if shouldRefreshCollection {
@@ -2031,7 +2031,7 @@ final class YjsSyncService {
 
     private func handleRecipeUpdated(recipeId: String, updateData: Data) async {
         let docKey = docKeyFor(recipeId: recipeId)
-        logger.debug("recipe_updated: \(docKey), \(updateData.count) bytes")
+        logger.debug("recipe_updated: \(UserIdFormatter.redactDocKey(docKey)), \(updateData.count) bytes")
         lastSuccessfulSyncAt = Date()
 
         let suppressObserver = recipeRefreshSuspended > 0 && activeRecipeId == recipeId
@@ -2042,7 +2042,7 @@ final class YjsSyncService {
                 suppressRecipeChangeNotification: suppressObserver
             )
         } catch {
-            logger.error("Failed to apply recipe update for \(docKey): \(error)")
+            logger.error("Failed to apply recipe update for \(UserIdFormatter.redactDocKey(docKey)): \(error)")
             requestDocumentReload(recipeId: recipeId)
             return
         }
@@ -2484,7 +2484,7 @@ final class YjsSyncService {
 
         _ = disconnectTimestamp
         disconnectTimestamp = nil
-        logger.info("Reload requested after reconnect for \(collectionKey)")
+        logger.info("Reload requested after reconnect for \(UserIdFormatter.redactDocKey(collectionKey))")
     }
 
     // MARK: - Persistence

@@ -96,6 +96,18 @@ SIMCTL_CHILD_AGENT_DEBUG_LOG=/absolute/path/to/.debug-session.ndjson
 
 Поля `data` — только `[String: String]`. Без секретов, токенов, PII.
 
+### Что нельзя логировать
+
+| Поле | Почему | Как логировать |
+|------|--------|----------------|
+| `userId` | креденшал (см. Review #1 — auth построен на публичном userId) | `UserIdFormatter.redact(userId)` → `<user:cfcd83>` |
+| `docKey`, `collectionKey`, `shoppingKey` | содержат userId как prefix | `UserIdFormatter.redactDocKey(docKey)` |
+| `authToken`, bearer token | секрет | никогда |
+| `deviceId` | стабильный идентификатор устройства | никогда (или отдельный redact) |
+| email, телефон | PII | никогда |
+
+`UserIdFormatter` живёт в `RecipeScalerNative/Models/UserIdFormatter.swift`.
+
 ## Как добавить лог в код
 
 ```swift

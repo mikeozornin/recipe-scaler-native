@@ -30,7 +30,7 @@ enum RecipeReadDiagnostics {
             hypothesisId: "A",
             location: "RecipeReadDiagnostics.swift:runAfterCollectionLoad",
             message: "diag_start",
-            data: ["recipeId": recipeId, "userId": userId]
+            data: ["recipeId": recipeId, "userId": UserIdFormatter.redact(userId)]
         )
 
         let docKey = "\(userId):recipe:\(recipeId)"

@@ -88,16 +88,16 @@ actor DocumentManager {
 
         let doc: YrsDocument
         if let snapshot = try? await store.loadSnapshot(docKey: key) {
-            Self.logger.info("Loading doc \(key) from SQLite snapshot (\(snapshot.state.count) bytes)")
+            Self.logger.info("Loading doc \(UserIdFormatter.redactDocKey(key)) from SQLite snapshot (\(snapshot.state.count) bytes)")
             do {
                 doc = try YrsDocument(state: snapshot.state)
             } catch {
-                Self.logger.warning("Corrupted snapshot for \(key), deleting and creating empty doc")
+                Self.logger.warning("Corrupted snapshot for \(UserIdFormatter.redactDocKey(key)), deleting and creating empty doc")
                 try? await store.deleteSnapshot(docKey: key)
                 doc = try YrsDocument()
             }
         } else {
-            Self.logger.info("Creating empty doc for \(key)")
+            Self.logger.info("Creating empty doc for \(UserIdFormatter.redactDocKey(key))")
             doc = try YrsDocument()
         }
 
@@ -153,7 +153,7 @@ actor DocumentManager {
             // SQLite snapshot, but DO NOT delete the snapshot itself — it may
             // contain unsynced local edits that we cannot reconstruct.
             // See plans/005-preserve-snapshot-on-apply-failure.md (finding #16).
-            Self.logger.warning("applyUpdate failed for \(key), evicting in-memory doc but preserving snapshot: \(error)")
+            Self.logger.warning("applyUpdate failed for \(UserIdFormatter.redactDocKey(key)), evicting in-memory doc but preserving snapshot: \(error)")
             docs.removeValue(forKey: key)
             observerTokens.removeValue(forKey: key)
             htmlCache.removeValue(forKey: key)
@@ -182,13 +182,13 @@ actor DocumentManager {
         try? await store.saveSnapshot(docKey: key, state: state, lastSyncedAt: lastSyncedAt)
         await installLocalUpdateBridge(key: key, doc: doc)
         await installObservers(key: key, doc: doc)
-        Self.logger.info("Replaced doc \(key) from server snapshot (\(state.count) bytes)")
+        Self.logger.info("Replaced doc \(UserIdFormatter.redactDocKey(key)) from server snapshot (\(state.count) bytes)")
     }
 
     func evictDoc(key: String) {
         docs.removeValue(forKey: key)
         observerTokens.removeValue(forKey: key)
-        Self.logger.info("Evicted doc \(key) from memory")
+        Self.logger.info("Evicted doc \(UserIdFormatter.redactDocKey(key)) from memory")
     }
 
     func evictAll() {
@@ -230,7 +230,7 @@ actor DocumentManager {
         } else if let restored = try? await getOrCreateDoc(key: key) {
             doc = restored
         } else {
-            Self.logger.info("Recipe doc \(key) not loaded")
+            Self.logger.info("Recipe doc \(UserIdFormatter.redactDocKey(key)) not loaded")
             return nil
         }
 
@@ -250,7 +250,7 @@ actor DocumentManager {
         var xmlSnapshot: String?
         let recipe: RecipeData? = try await doc.withReadTransaction { rawDoc, txn in
             guard let map = doc.recipeMap(txn: txn) else {
-                Self.logger.warning("No 'recipe' Y.Map found in recipe doc \(key)")
+                Self.logger.warning("No 'recipe' Y.Map found in recipe doc \(UserIdFormatter.redactDocKey(key))")
                 return nil as RecipeData?
             }
             let parsed = self.parseRecipeData(from: map, txn: txn, recipeId: recipeId)
@@ -599,7 +599,7 @@ actor DocumentManager {
                     suppressRecipeChangeNotification: true
                 )
             } catch {
-                Self.logger.warning("Failed to apply offline queue update for \(entry.docKey): \(error)")
+                Self.logger.warning("Failed to apply offline queue update for \(UserIdFormatter.redactDocKey(entry.docKey)): \(error)")
             }
         }
         Self.logger.info("Applied \(sorted.count) offline queue updates to local docs")
@@ -613,7 +613,7 @@ actor DocumentManager {
         do {
             try await store.saveSnapshot(docKey: docKey, state: state, lastSyncedAt: lastSyncedAt)
         } catch {
-            Self.logger.warning("Failed to persist snapshot for \(docKey): \(error)")
+            Self.logger.warning("Failed to persist snapshot for \(UserIdFormatter.redactDocKey(docKey)): \(error)")
         }
     }
 
@@ -628,7 +628,7 @@ actor DocumentManager {
         guard let doc = docs[docKey] else { return }
         _ = await doc.consumePendingLocalUpdates()
         guard let state = await doc.encodeStateAsUpdate(), !state.isEmpty else {
-            Self.logger.warning("No local Yjs update to sync for \(docKey)")
+            Self.logger.warning("No local Yjs update to sync for \(UserIdFormatter.redactDocKey(docKey))")
             return
         }
         // Drop any cached HTML/plain text so the next read sees the new state.
@@ -638,7 +638,7 @@ actor DocumentManager {
         do {
             try await store.saveSnapshot(docKey: docKey, state: state, lastSyncedAt: lastSyncedAt)
         } catch {
-            Self.logger.warning("Failed to persist snapshot for \(docKey): \(error)")
+            Self.logger.warning("Failed to persist snapshot for \(UserIdFormatter.redactDocKey(docKey)): \(error)")
         }
         guard let handler = onLocalRecipeUpdate else { return }
         // Do not await: handler hops to @MainActor YjsSyncService while caller may be blocked on this actor.
@@ -1395,7 +1395,7 @@ actor DocumentManager {
             // incremental yjs wire bytes, so a transient applyLocalUpdate
             // failure must not destroy the recipe snapshot.
             // See plans/005-preserve-snapshot-on-apply-failure.md (finding #16).
-            Self.logger.warning("applyDescriptionEditorUpdate failed for \(key), evicting in-memory doc but preserving snapshot: \(error)")
+            Self.logger.warning("applyDescriptionEditorUpdate failed for \(UserIdFormatter.redactDocKey(key)), evicting in-memory doc but preserving snapshot: \(error)")
             docs.removeValue(forKey: key)
             observerTokens.removeValue(forKey: key)
             htmlCache.removeValue(forKey: key)
@@ -1442,7 +1442,7 @@ actor DocumentManager {
         _ = await doc.consumePendingLocalUpdates()
         let encodePayload = await doc.encodeStateAsUpdate()
         guard let update = encodePayload, !update.isEmpty else {
-            Self.logger.warning("No local Yjs update to sync for \(key)")
+            Self.logger.warning("No local Yjs update to sync for \(UserIdFormatter.redactDocKey(key))")
             return
         }
         // Do not await: handler hops to @MainActor YjsSyncService while caller may be blocked on this actor.

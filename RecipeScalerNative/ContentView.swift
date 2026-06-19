@@ -170,7 +170,7 @@ struct ContentView: View {
                 AgentSyncDebugLog.sync(
                     location: "ContentView.swift:appShell",
                     message: "app_shell_start",
-                    data: ["userId": effectiveUserId ?? "nil"]
+                    data: ["userId": UserIdFormatter.redact(effectiveUserId)]
                 )
                 #endif
                 if let userId = effectiveUserId {
