@@ -38,6 +38,14 @@ final class AppLogTests: XCTestCase {
         XCTAssertTrue(contents?.contains("\"category\":\"app\"") == true)
     }
 
+    func testImageCategoryWritesNDJSONLine() {
+        AppLog.info(.image, "recipe_image_fetch_failed", data: ["recipeId": "test-id"])
+        let contents = try? String(contentsOf: logURL, encoding: .utf8)
+        XCTAssertNotNil(contents)
+        XCTAssertTrue(contents?.contains("\"message\":\"recipe_image_fetch_failed\"") == true)
+        XCTAssertTrue(contents?.contains("\"category\":\"image\"") == true)
+    }
+
     func testAgentWritePreservesHypothesisId() {
         AppLog.agent(hypothesisId: "sync", location: "Test.swift:1", message: "sync_event", data: ["topic": "sync"])
         let contents = try? String(contentsOf: logURL, encoding: .utf8)

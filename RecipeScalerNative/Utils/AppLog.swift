@@ -23,6 +23,7 @@ enum AppLog {
         case agent
         case ui
         case reminders
+        case image
     }
 
     enum Level: String, Sendable {

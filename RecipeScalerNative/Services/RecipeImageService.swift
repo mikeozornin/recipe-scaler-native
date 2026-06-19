@@ -322,6 +322,11 @@ actor RecipeImageService {
             await postCacheStatusChanged()
             return result.localURL
         } catch {
+            AppLog.info(.image, "recipe_image_fetch_failed", data: [
+                "recipeId": recipeId,
+                "variant": variant.rawValue,
+                "error": error.localizedDescription,
+            ])
             return await ImageCacheService.shared.cachedImageURL(recipeId: recipeId, variant: variant)
         }
     }

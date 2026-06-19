@@ -72,14 +72,18 @@ enum RecipeImageDiskCache {
                 try fileManager.moveItem(at: source, to: destination)
                 movedCount += 1
             } catch {
+                AppLog.info(.image, "recipe_image_migration_move_failed", data: [
+                    "file": source.lastPathComponent,
+                    "error": error.localizedDescription,
+                ])
                 continue
             }
         }
 
         if movedCount > 0 {
-            #if DEBUG
-            AppLog.info(.app, "RecipeImageDiskCache: migrated \(movedCount) file(s) from Caches to Application Support")
-            #endif
+            AppLog.info(.image, "recipe_image_migration_completed", data: [
+                "movedCount": "\(movedCount)",
+            ])
         }
 
         try? fileManager.removeItem(at: legacyDir)

@@ -427,10 +427,10 @@
 - ~~**Description**: «Yrs null pointer: ...», «Yrs apply failed: ...»…~~ Локализация через `Bundle.currentLocalizedString`; view-layer через `UserFacingAPIError.message(for:)`.
 - ~~**Recommendation**: Локализовать через ключи…~~
 
-#### 54. **[Standards]** Silent catch без логирования на провал кеша изображений
-- **Area**: `RecipeScalerNative/Views/RecipeDetailView.swift:224-232`
-- **Description**: Внешний `catch { // Ignore full image cache errors }` проглатывает без лога; внутренний использует `print` (№31).
-- **Recommendation**: Логировать оба через `AppLog.info(.image, ...)`.
+#### 54. ~~**[Standards]** Silent catch без логирования на провал кеша изображений~~ ✅ Исправлено (2026-06-19, MIK-137)
+- ~~**Area**: `RecipeScalerNative/Views/RecipeDetailView.swift:224-232`~~ → `RecipeScalerNative/Services/RecipeImageService.swift` (`fetchAndStore`); `RecipeScalerNative/Services/RecipeImageDiskCache.swift` (migration)
+- ~~**Description**: Внешний `catch { // Ignore full image cache errors }` проглатывает без лога; внутренний использует `print` (№31).~~ `RecipeDetailView` удалён (#26); провал fetch логируется в `RecipeImageService.fetchAndStore` через `AppLog.info(.image, "recipe_image_fetch_failed", …)` с fallback на stale cache; migration move-failures — `recipe_image_migration_move_failed`. Добавлена категория `AppLog.Category.image`.
+- ~~**Recommendation**: Логировать оба через `AppLog.info(.image, ...)`.~~ Выполнено. `AppLogTests.testImageCategoryWritesNDJSONLine` — smoke категории `.image`.
 
 #### 55. **[Standards]** Захардкоженный лейбл кнопки «OK» вне namespace проекта
 - **Area**: `RecipeScalerNative/Views/AssistantSheet.swift:119`
