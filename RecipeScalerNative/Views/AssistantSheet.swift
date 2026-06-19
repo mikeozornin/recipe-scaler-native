@@ -116,7 +116,7 @@ struct AssistantSheet: View {
                     set: { if !$0 { loadError = nil } }
                 )
             ) {
-                Button("OK", role: .cancel) { loadError = nil }
+                Button("common.ok", role: .cancel) { loadError = nil }
             } message: {
                 if let loadError {
                     Text(verbatim: loadError)
