@@ -216,14 +216,15 @@ final class LocalizationConsistencyTests: XCTestCase {
             "recipe.image.delete-failed",
             "recipe.import.no-images",
             "recipe.import.failed",
-            "recipe.import.folder-failed-prefix",
-            "recipe.import.folder-empty-skipped",
+            "account.data.import.folder-failed %@ %@",
+            "account.data.import.folder-empty-skipped",
             "sharing.update-failed",
             "telegram.status-failed",
             "telegram.failed-to-get-code",
             "telegram.failed-to-disconnect",
             "assistant.message.empty",
-            "assistant.message.too-long"
+            "assistant.message.too-long",
+            "assistant.stream.http-error"
         ]
 
         for lang in ["en", "ru"] {

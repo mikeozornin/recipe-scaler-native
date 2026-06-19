@@ -5,9 +5,11 @@
 //    1. `DotKeyLocalizer.looksLikeDotKey` correctly classifies messages.
 //    2. `DotKeyLocalizer.localize` resolves dot-keys via the runtime bundle,
 //       and falls back to a generic key for legacy English strings.
-//    3. `APIError.userFacingMessage()` resolves all cases without leaking
+//    3. `ServerErrorCode.from(serverValue:fallback:)` collapses unknown / legacy
+//       server strings into a known fallback code.
+//    4. `APIError.userFacingMessage()` resolves all cases without leaking
 //       raw status codes or server-supplied English.
-//    4. `UserFacingAPIError.message(for:)` returns "" for CancellationError
+//    5. `UserFacingAPIError.message(for:)` returns "" for CancellationError
 //       (callers rely on this to skip UI).
 //
 
@@ -59,6 +61,62 @@ final class ErrorLocalizationTests: XCTestCase {
                           "Fallback key should be resolved, not returned as-is")
     }
 
+    // MARK: - ServerErrorCode
+
+    func testServerErrorCode_rawValuesMatchDotKeyContract() {
+        // Every case's rawValue must satisfy the dot-key regex — otherwise
+        // `Bundle.currentLocalizedString(code.rawValue)` would not resolve.
+        for code in ServerErrorCode.allCases {
+            XCTAssertTrue(
+                DotKeyLocalizer.looksLikeDotKey(code.rawValue),
+                "ServerErrorCode.\(code) rawValue '\(code.rawValue)' is not a dot-key"
+            )
+        }
+    }
+
+    func testServerErrorCode_from_acceptsKnownDotKey() {
+        let code = ServerErrorCode.from(
+            serverValue: "assistant.threads.create.failed",
+            fallback: .apiErrorServerGeneric
+        )
+        XCTAssertEqual(code, .assistantThreadsCreateFailed)
+    }
+
+    func testServerErrorCode_from_rejectsLegacyEnglishAndUsesFallback() {
+        let code = ServerErrorCode.from(
+            serverValue: "Profile load failed",
+            fallback: .accountProfileLoadFailed
+        )
+        XCTAssertEqual(code, .accountProfileLoadFailed,
+                       "Legacy English must collapse into the endpoint fallback")
+    }
+
+    func testServerErrorCode_from_handlesNilAndEmpty() {
+        XCTAssertEqual(
+            ServerErrorCode.from(serverValue: nil, fallback: .discoverFetchFailed),
+            .discoverFetchFailed
+        )
+        XCTAssertEqual(
+            ServerErrorCode.from(serverValue: "", fallback: .discoverFetchFailed),
+            .discoverFetchFailed
+        )
+        XCTAssertEqual(
+            ServerErrorCode.from(serverValue: "   ", fallback: .discoverFetchFailed),
+            .discoverFetchFailed
+        )
+    }
+
+    func testServerErrorCode_from_rejectsUnknownDotKey() {
+        // A syntactically-valid dot-key that is NOT in the enum should fall back —
+        // otherwise an unknown server code would silently resolve to the raw key.
+        let code = ServerErrorCode.from(
+            serverValue: "unknown.future.endpoint.failed",
+            fallback: .apiErrorServerGeneric
+        )
+        XCTAssertEqual(code, .apiErrorServerGeneric,
+                       "Unknown dot-key must collapse into the endpoint fallback")
+    }
+
     // MARK: - APIError.userFacingMessage()
 
     func testAPIError_fixedCasesResolve() {
@@ -83,16 +141,27 @@ final class ErrorLocalizationTests: XCTestCase {
         XCTAssertFalse(fiveHundred.contains("500"), "5xx leaked status: \(fiveHundred)")
     }
 
-    func testAPIError_serverErrorWithDotKeyResolves() {
-        let msg = APIError.serverError(message: "discover.fetch-failed").userFacingMessage()
+    func testAPIError_serverErrorWithTypedCodeResolves() {
+        let msg = APIError.serverError(code: .discoverFetchFailed).userFacingMessage()
         XCTAssertNotEqual(msg, "discover.fetch-failed",
-                          "serverError dot-key should be resolved, not returned as-is")
+                          "serverError code rawValue should be resolved, not returned as-is")
     }
 
-    func testAPIError_serverErrorWithLegacyEnglishUsesFallback() {
-        let msg = APIError.serverError(message: "Old English error").userFacingMessage()
-        XCTAssertNotEqual(msg, "Old English error",
-                          "Legacy English must not leak from serverError")
+    func testAPIError_serverErrorNeverLeaksRawDotKey() {
+        // After the typed-code migration there is no way for English to leak
+        // through `serverError` — `ServerErrorCode.from(...fallback:)` collapses
+        // unknown / legacy strings into a known fallback at the throw-site, so
+        // `userFacingMessage()` always receives a valid dot-key. The one thing
+        // we still want to assert is that the bundle actually resolves it
+        // (i.e. the rawValue is not returned verbatim, which would indicate a
+        // missing key in `Localizable.xcstrings`).
+        for code in ServerErrorCode.allCases {
+            let msg = APIError.serverError(code: code).userFacingMessage()
+            XCTAssertFalse(msg.isEmpty,
+                           "Empty message for \(code)")
+            XCTAssertNotEqual(msg, code.rawValue,
+                              "Raw dot-key returned for \(code): key missing in Localizable.xcstrings")
+        }
     }
 
     // MARK: - UserFacingAPIError

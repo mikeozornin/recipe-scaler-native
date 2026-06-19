@@ -66,6 +66,32 @@ iOS-клиент принимает оба формата:
 
 После миграции сервера на dot-key можно удалить regex-детекцию (она станет no-op).
 
+## Client API (post-MIK-135 — типизация)
+
+Throw-сайты **не** передают строку напрямую. Используется enum `ServerErrorCode`
+(`RecipeScalerCore/Networking/ServerErrorCode.swift`) — исчерпывающий список всех
+dot-key контракта. Неизвестные / legacy строки коллапсируют в endpoint-специфичный
+fallback ещё на throw-сайте:
+
+```swift
+// Было (хрупко — английский мог утекать в Bundle.currentLocalizedString):
+throw APIError.serverError(message: response.error ?? "account.profile.load-failed")
+
+// Стало (типизировано — fallback гарантирует валидный dot-key):
+let code = ServerErrorCode.from(
+    serverValue: response.error,
+    fallback: .accountProfileLoadFailed
+)
+throw APIError.serverError(code: code)
+```
+
+`APIError.userFacingMessage()` теперь вызывает `Bundle.currentLocalizedString(code.rawValue)`
+напрямую — никакой prefix-детекции на view-слое для типизированных путей.
+
+`DotKeyLocalizer` сохранён как safe-decoder helper для нетипизированных
+edge-кейсов (`AuthError.apiError(_, message:)`, `ImportPhotoValidator`). Когда эти
+пути тоже мигрируют на `ServerErrorCode`, helper можно будет удалить.
+
 ## Локализация
 
 iOS-каталог `Localizable.xcstrings` содержит переводы en + ru для всех ключей выше. Бэкенду **не нужно** локализовать сообщения — клиент резолвит по ключу.

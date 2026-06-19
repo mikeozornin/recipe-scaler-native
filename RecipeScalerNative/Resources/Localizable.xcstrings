@@ -2142,7 +2142,7 @@
       }
     },
     "assistant.messages.load.failed" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2323,6 +2323,23 @@
         }
       }
     },
+    "assistant.stream.http-error" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistant stream failed"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось связаться с ассистентом"
+          }
+        }
+      }
+    },
     "assistant.thinking" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2373,7 +2390,7 @@
       }
     },
     "assistant.threads.create.failed" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2390,7 +2407,7 @@
       }
     },
     "assistant.threads.delete.failed" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2407,7 +2424,7 @@
       }
     },
     "assistant.threads.list.failed" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {

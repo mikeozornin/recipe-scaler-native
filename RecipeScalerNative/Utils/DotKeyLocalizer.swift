@@ -2,9 +2,19 @@
 //  DotKeyLocalizer.swift
 //  RecipeScalerNative
 //
-//  Shared helper for detecting server-supplied dot-key messages
-//  (e.g. `assistant.threads.create.failed`) and resolving them via the
-//  runtime-language bundle. Used by APIError and AuthError localization.
+//  Safe-decoder helper for server-supplied dot-key messages
+//  (e.g. `assistant.threads.create.failed`) — resolves them via the
+//  runtime-language bundle, with a fallback key for legacy English.
+//
+//  Scope (after spec 031 v2 — typed `ServerErrorCode`):
+//  - Most throw-sites now build `APIError.serverError(code: ServerErrorCode)` directly.
+//    `ServerErrorCode.from(serverValue:fallback:)` collapses unknown / legacy strings
+//    into a known fallback, and `userFacingMessage()` resolves via `code.rawValue`.
+//    No prefix-sniffing at the view layer for these paths.
+//  - `DotKeyLocalizer` is retained for the few code paths that still pass a raw
+//    `String` from the server (notably `AuthError.apiError(_, message:)` in
+//    `AuthService.swift`) until those are migrated to `ServerErrorCode` too.
+//  - Tests in `ErrorLocalizationTests` cover the regex itself.
 //
 //  Contract: specs/031-error-i18n/server-error-keys.md
 //
