@@ -208,6 +208,31 @@ final class PreserveSnapshotOnApplyFailureTests: XCTestCase {
     }
 }
 
+final class YjsPayloadBytesTests: XCTestCase {
+    func testRoundTripUsingUInt8Array() {
+        let original = Data([0, 1, 2, 255, 128, 42, 7])
+        let array = YjsPayloadBytes.array(from: original)
+        let restored = YjsPayloadBytes.data(from: array)
+        XCTAssertEqual(restored, original)
+    }
+
+    func testRoundTripThroughNSNumber() {
+        // Socket.IO JSON round-trips [UInt8] as [NSNumber]
+        let original = Data([0, 1, 255, 42])
+        let asNSNumbers: [NSNumber] = original.map { NSNumber(value: $0) }
+        let restored = YjsPayloadBytes.data(from: asNSNumbers)
+        XCTAssertEqual(restored, original)
+    }
+
+    func testRoundTripThroughIntArray() {
+        // Backward compatibility: [Int] from web client
+        let original = Data([0, 1, 255, 42])
+        let asInts: [Int] = original.map { Int($0) }
+        let restored = YjsPayloadBytes.data(from: asInts)
+        XCTAssertEqual(restored, original)
+    }
+}
+
 private extension YrsDatabase {
     static func migrateForTests(_ dbQueue: DatabaseQueue) throws {
         var migrator = DatabaseMigrator()

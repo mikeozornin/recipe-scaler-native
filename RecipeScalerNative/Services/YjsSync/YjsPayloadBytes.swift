@@ -1,9 +1,9 @@
 import Foundation
 
-/// Converts Socket.IO JSON payloads (`[Int]`, `[Double]`, `[NSNumber]`, …) into binary Y.Doc data.
+/// Converts Socket.IO JSON payloads (`[UInt8]`, `[Int]`, `[Double]`, `[NSNumber]`, …) into binary Y.Doc data.
 enum YjsPayloadBytes {
-    static func array(from data: Data) -> [Int] {
-        data.map { Int($0) }
+    static func array(from data: Data) -> [UInt8] {
+        Array(data)
     }
 
     static func data(from value: Any?) -> Data? {
