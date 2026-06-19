@@ -72,19 +72,20 @@ struct DescriptionNodeClick: Equatable {
 }
 
 @MainActor
-final class DescriptionEditorBridge: ObservableObject {
+@Observable
+final class DescriptionEditorBridge {
     enum Phase: Equatable {
         case loading
         case ready
         case error(String)
     }
 
-    @Published private(set) var phase: Phase = .loading
-    @Published private(set) var isFocused = false
-    @Published private(set) var contentHeight: CGFloat = DescriptionEditorLayoutMetrics.minEmbeddedHeight
-    @Published private(set) var selectionState = DescriptionEditorSelectionState()
-    @Published private(set) var lastNodeClick: DescriptionNodeClick?
-    @Published private(set) var nodeClickSequence: UInt = 0
+    private(set) var phase: Phase = .loading
+    private(set) var isFocused = false
+    private(set) var contentHeight: CGFloat = DescriptionEditorLayoutMetrics.minEmbeddedHeight
+    private(set) var selectionState = DescriptionEditorSelectionState()
+    private(set) var lastNodeClick: DescriptionNodeClick?
+    private(set) var nodeClickSequence: UInt = 0
 
     private var suppressIncomingFocus = false
     private var htmlContinuations: [CheckedContinuation<String, Never>] = []

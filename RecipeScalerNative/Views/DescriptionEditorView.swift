@@ -11,16 +11,16 @@ struct DescriptionEditorView: View {
     let recipeId: String
     let accentColor: Color
 
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var bridge: DescriptionEditorBridge
+    @State private var bridge: DescriptionEditorBridge
     @State private var dismissBlockedMessage: String?
 
     init(recipeId: String, accentColor: Color, syncService: YjsSyncService) {
         self.recipeId = recipeId
         self.accentColor = accentColor
-        _bridge = StateObject(
-            wrappedValue: DescriptionEditorBridge(
+        _bridge = State(
+            initialValue: DescriptionEditorBridge(
                 recipeId: recipeId,
                 syncService: syncService,
                 presentation: .fullscreen

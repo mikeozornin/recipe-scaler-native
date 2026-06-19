@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 struct RecipeListView: View {
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
     @Binding var navigationPath: NavigationPath
     @State private var searchText = ""
     @State private var showingError = false
@@ -842,7 +842,7 @@ extension Color {
 
 #Preview {
     RecipeListView()
-        .environmentObject({
+        .environment({
             let database = try! YrsDatabase()
             let store = YDocStore(dbQueue: database.dbQueue)
             return YjsSyncService(store: store)

@@ -176,7 +176,12 @@
 		B3APIC01B293A4B701000006 /* APIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APIC01B293A4B701000005 /* APIClientTests.swift */; };
 		B3KCA01B293A4B701000001 /* SharedAuthStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3KCA01A293A4B701000001 /* SharedAuthStoreTests.swift */; };
 		B3KCA02B293A4B701000001 /* AuthServiceMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */; };
+		B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */; };
+		B3APPTEST02B293A4B70100001 /* ObservableMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */; };
 		B3APPLOG01B293A4B70100002 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPLOG01A293A4B70100001 /* AppLog.swift */; };
+		APP0000000000000000000091 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000001 /* AppContainer.swift */; };
+		APP0000000000000000000092 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000002 /* AppEnvironment.swift */; };
+		APP0000000000000000000093 /* TimerEventBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000003 /* TimerEventBridge.swift */; };
 		B3APPLOG02B293A4B70100002 /* AppLogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPLOG02A293A4B70100001 /* AppLogTests.swift */; };
 		B3C33C8186E14EA2B37291D4 /* RecipeScalerCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E05920822F344D9691E82401 /* RecipeScalerCore.framework */; };
 		B3PLUR01B293A4B701000002 /* PluralizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3PLUR01A293A4B701000001 /* PluralizationTests.swift */; };
@@ -635,7 +640,12 @@
 		B3APIC01B293A4B701000005 /* APIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientTests.swift; sourceTree = "<group>"; };
 		B3KCA01A293A4B701000001 /* SharedAuthStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAuthStoreTests.swift; sourceTree = "<group>"; };
 		B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthServiceMigrationTests.swift; sourceTree = "<group>"; };
+		B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainerTests.swift; sourceTree = "<group>"; };
+		B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableMigrationTests.swift; sourceTree = "<group>"; };
 		B3APPLOG01A293A4B70100001 /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
+		APP0000000000000000000001 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
+		APP0000000000000000000002 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		APP0000000000000000000003 /* TimerEventBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerEventBridge.swift; sourceTree = "<group>"; };
 		B3APPLOG02A293A4B70100001 /* AppLogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogTests.swift; sourceTree = "<group>"; };
 		B3PLUR01A293A4B701000001 /* PluralizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluralizationTests.swift; sourceTree = "<group>"; };
 		B45B89CCA2BD6814320CF091 /* TimerWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimerWidget.swift; sourceTree = "<group>"; };
@@ -909,9 +919,10 @@
 				E5F60718293A4B70000B004 /* RecipeSymbol.swift */,
 				B2C3D4E5F60718293A4B5F /* RecipeAccentColor.swift */,
 				0913FBEDF877DA9B6F52F552 /* Assets.xcassets */,
-				EA4BEBE2780DE29A70E2D8AC /* ContentView.swift */,
-				296450B0B341AB25920D2100 /* RecipeScalerNativeApp.swift */,
-				CC0005AA0005BB0005CC0005 /* RecipeScalerNative.entitlements */,
+			EA4BEBE2780DE29A70E2D8AC /* ContentView.swift */,
+			296450B0B341AB25920D2100 /* RecipeScalerNativeApp.swift */,
+			APP0000000000000000000008 /* App */,
+			CC0005AA0005BB0005CC0005 /* RecipeScalerNative.entitlements */,
 				AA0000000000000000000008 /* AppIntents */,
 				565720722B00D99641496ED4 /* Models */,
 				EDE97F98D203CDB041112403 /* Services */,
@@ -1229,6 +1240,8 @@
 				B3APIC01B293A4B701000005 /* APIClientTests.swift */,
 				B3KCA01A293A4B701000001 /* SharedAuthStoreTests.swift */,
 				B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */,
+				B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */,
+				B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */,
 				E5F60718293A4B7000000095 /* RecipeSearchUtilsTests.swift */,
 				D5SS01A293A4B7010000001 /* DiscoverSearchStoreTests.swift */,
 				A5MD058293A4B7010000005 /* AssistantMarkdownRendererTests.swift */,
@@ -1306,6 +1319,16 @@
 				AA0000000000000000000007 /* RecipeScalerShortcuts.swift */,
 			);
 			path = AppIntents;
+			sourceTree = "<group>";
+		};
+		APP0000000000000000000008 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				APP0000000000000000000001 /* AppContainer.swift */,
+				APP0000000000000000000002 /* AppEnvironment.swift */,
+				APP0000000000000000000003 /* TimerEventBridge.swift */,
+			);
+			path = App;
 			sourceTree = "<group>";
 		};
 		D0574E4BB4D0DE3B5AE7CFAB /* Yrs */ = {
@@ -2003,6 +2026,9 @@
 				E5F60718293A4B7000000058 /* RecipeDescriptionStyle.swift in Sources */,
 				E5F60718293A4B700000005A /* RecipeDescriptionInlineTextView.swift in Sources */,
 				B3APPLOG01B293A4B70100002 /* AppLog.swift in Sources */,
+				APP0000000000000000000091 /* AppContainer.swift in Sources */,
+				APP0000000000000000000092 /* AppEnvironment.swift in Sources */,
+				APP0000000000000000000093 /* TimerEventBridge.swift in Sources */,
 				E5F60718293A4B700000000C /* AgentSyncDebugLog.swift in Sources */,
 				E5F60719293A4B7000000093 /* AgentDebugLogging.swift in Sources */,
 				E5F60719293A4B7000000089 /* DebugSessionNDJSONLog.swift in Sources */,
@@ -2164,6 +2190,8 @@
 				B3APIC01B293A4B701000006 /* APIClientTests.swift in Sources */,
 				B3KCA01B293A4B701000001 /* SharedAuthStoreTests.swift in Sources */,
 				B3KCA02B293A4B701000001 /* AuthServiceMigrationTests.swift in Sources */,
+				B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */,
+				B3APPTEST02B293A4B70100001 /* ObservableMigrationTests.swift in Sources */,
 				7F2675404F75AD0EC794F971 /* RecipeSearchUtilsTests.swift in Sources */,
 				D5SS01B293A4B7010000002 /* DiscoverSearchStoreTests.swift in Sources */,
 				F3445BCB3A10712298441A5C /* AssistantMarkdownRendererTests.swift in Sources */,

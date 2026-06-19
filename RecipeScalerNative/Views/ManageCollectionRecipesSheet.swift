@@ -7,7 +7,7 @@ import SwiftUI
 struct ManageCollectionRecipesSheet: View {
     let folderId: String
 
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
     @Environment(\.dismiss) private var dismiss
 
     @State private var searchText = ""

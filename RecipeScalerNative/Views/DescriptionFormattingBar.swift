@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct DescriptionFormattingBar: View {
-    @ObservedObject var bridge: DescriptionEditorBridge
+    @Bindable var bridge: DescriptionEditorBridge
     var accentColor: Color
     var onMarkTimer: (() -> Void)?
     var onMarkIngredient: (() -> Void)?

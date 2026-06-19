@@ -16,6 +16,7 @@
 - Monorepo: native здесь, web — `../recipe-scaler-web`, API — `https://recipe-scaler.ru`.
 - Offline-first; debug builds auto-login prod debug user.
 - Recipes v1/v2 — read-only на iOS; v3 editing и миграция — только web.
+- **DI / composition root:** все app-level сервисы строятся в `RecipeScalerNative/App/AppContainer.swift` и инжектятся через `.appEnvironment(_:)` (`RecipeScalerNativeApp` → `ContentView`). View-код читает сервисы через `@Environment(ServiceType.self)`, не через `.shared`. `.shared` на сервисах — shim для AppIntents / pre-bootstrap; OS-фасады (`SharedAuthStore`, `AppGroup`, `TimerSnapshotStore`, `APIClient.shared`) — cross-process IPC. Подробности — [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (секция Composition Root).
 
 ## Журналирование (агент)
 

@@ -9,7 +9,7 @@ struct CollectionAssignSheet: View {
     let recipeId: String
     let recipeName: String
 
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
     @Environment(\.dismiss) private var dismiss
 
     /// Local working copy of selected folder ids (committed on Done).

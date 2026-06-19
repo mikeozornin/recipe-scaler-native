@@ -8,7 +8,7 @@ import SwiftUI
 
 struct AccountProfileEditView: View {
     @Bindable var viewModel: AccountSettingsViewModel
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
 
     @State private var avatarItem: PhotosPickerItem?
     @State private var usernameDraft: String

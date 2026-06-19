@@ -16,7 +16,9 @@ struct DiscoverRecipeView: View {
     var allowRecipeDownloads: Bool = true
     var imageSource: DiscoverRecipeImageSource = .curatedDiscover
 
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
+    @Environment(TimerManager.self) private var timerManager
     @AppStorage(NutritionSettings.globalEnabledKey) private var showNutritionGlobal = true
     @State private var recipe: RecipeData?
     @State private var isLoading = true
@@ -176,7 +178,7 @@ struct DiscoverRecipeView: View {
             case .idle, .failed:
                 Task { await clone() }
             case .done(let newRecipeId):
-                DeepLinkRouter.shared.handle(.openRecipe(recipeId: newRecipeId))
+                deepLinkRouter.handle(.openRecipe(recipeId: newRecipeId))
             case .copying:
                 break
             }
@@ -250,7 +252,7 @@ struct DiscoverRecipeView: View {
 
     private func startDescriptionTimer(from reference: RecipeDescriptionTimerReference) {
         guard reference.isStartable else { return }
-        _ = TimerManager.shared.createAndStartTimer(
+        _ = timerManager.createAndStartTimer(
             name: reference.resolvedName,
             duration: TimeInterval(reference.durationSeconds),
             type: reference.type,

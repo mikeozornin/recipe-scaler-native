@@ -15,7 +15,27 @@ import RecipeScalerCore
 @MainActor
 @Observable
 final class TimerManager: NSObject {
-    static let shared = TimerManager()
+    /// Shim: returns `AppContainer.shared.timer` when the container is
+    /// constructed, otherwise a stand-alone instance.
+    static var shared: TimerManager {
+        if let container = AppContainer.shared {
+            return container.timer
+        }
+        return Standalone
+    }
+
+    private static let Standalone: TimerManager = {
+        // Stand-alone instance keeps legacy behaviour for non-app contexts
+        // (DEBUG previews, tests). Does not wire timerSync back-references —
+        // those happen via AppContainer only.
+        let timerSync = TimerSyncService.shared
+        return TimerManager(
+            timerSync: timerSync,
+            liveActivity: TimerLiveActivityCoordinator.shared,
+            pushSchedule: PushScheduleService.shared,
+            modelContext: ModelContext(RecipeScalerNativeApp.sharedModelContainer)
+        )
+    }()
 
     private(set) var timers: [RecipeTimer] = []
     /// All timers for the mobile panel (sorted like web `TimerPanel`).
@@ -27,6 +47,10 @@ final class TimerManager: NSObject {
 
     private let notificationCenter = UNUserNotificationCenter.current()
     private let timerUpdateInterval: TimeInterval = 0.5
+
+    private let timerSync: TimerSyncService
+    private let liveActivity: TimerLiveActivityCoordinator
+    private let pushSchedule: PushScheduleService
 
     private var serverScheduledPushTimerIds: Set<String> = []
 
@@ -50,16 +74,35 @@ final class TimerManager: NSObject {
         }
     }
 
-    override init() {
+    init(
+        timerSync: TimerSyncService,
+        liveActivity: TimerLiveActivityCoordinator,
+        pushSchedule: PushScheduleService,
+        modelContext: ModelContext
+    ) {
+        self.timerSync = timerSync
+        self.liveActivity = liveActivity
+        self.pushSchedule = pushSchedule
+        self.modelContext = modelContext
         super.init()
         notificationCenter.delegate = self
         registerNotificationCategories()
+        // Cross-reference back to TimerSyncService (formerly done in `configure(modelContext:)`).
+        timerSync.timerManager = self
+        loadTimers()
+        installLiveActivitySupport()
     }
 
+    /// Backwards-compatible one-arg configure. Kept because `RecipeScalerNativeApp`
+    /// still calls it from `RecipeScalerNativeApp.init`-level SwiftData setup in
+    /// some legacy paths. When the container owns the instance, this is a no-op
+    /// (modelContext was already passed to `init`).
     func configure(modelContext: ModelContext) {
-        self.modelContext = modelContext
-        loadTimers()
-        TimerSyncService.shared.timerManager = self
+        if self.modelContext == nil {
+            self.modelContext = modelContext
+            loadTimers()
+        }
+        timerSync.timerManager = self
         installLiveActivitySupport()
     }
 
@@ -399,7 +442,7 @@ final class TimerManager: NSObject {
             durationSeconds = Int(timer.duration)
         }
         Task {
-            let ok = await PushScheduleService.shared.schedule(
+            let ok = await pushSchedule.schedule(
                 timerId: timerId,
                 name: name,
                 durationSeconds: durationSeconds,
@@ -411,7 +454,7 @@ final class TimerManager: NSObject {
 
     private func pushCancel(_ timerId: String) {
         serverScheduledPushTimerIds.remove(timerId)
-        Task { await PushScheduleService.shared.cancel(timerId: timerId) }
+        Task { await pushSchedule.cancel(timerId: timerId) }
     }
 
     // MARK: - Notifications

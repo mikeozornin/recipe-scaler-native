@@ -23,9 +23,9 @@ struct AssistantComposer: View {
     let onSend: () -> Void
 
     @Environment(\.locale) private var locale
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
+    @Environment(AssistantRecipeContext.self) private var recipeContext
     @State private var showAttachSheet = false
-    @State private var recipeContext = AssistantRecipeContext.shared
     @State private var voiceRecorder = AssistantVoiceRecorder()
     @State private var voiceLimitAlertVisible = false
     @State private var voiceErrorMessage: String?

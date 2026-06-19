@@ -9,32 +9,33 @@ import RecipeScalerCore
 /// Replaces the old WebSocketService. Manages the full lifecycle:
 /// connect → auth → load collection → receive real-time updates.
 ///
-/// UI binds to `@Published collectionEntries` and `@Published connectionState`.
+/// UI binds to `@Observable collectionEntries` and `@Observable connectionState`.
 @MainActor
-final class YjsSyncService: ObservableObject {
-    @Published private(set) var collectionEntries: [CollectionEntry] = []
+@Observable
+final class YjsSyncService {
+    private(set) var collectionEntries: [CollectionEntry] = []
     /// Active (non-deleted) folders from the collection doc, sorted for display.
-    @Published private(set) var folders: [RecipeFolder] = []
+    private(set) var folders: [RecipeFolder] = []
     /// Derived in-memory index for the collections view.
-    @Published private(set) var collectionIndex: CollectionRecipesIndex = CollectionRecipesIndex(
+    private(set) var collectionIndex: CollectionRecipesIndex = CollectionRecipesIndex(
         live: [], uncategorized: [], countByFolder: [:], folderRecipesById: [:]
     )
-    @Published private(set) var shoppingSnapshot: ShoppingListSnapshot = .empty
-    @Published private(set) var currentRecipe: RecipeData?
+    private(set) var shoppingSnapshot: ShoppingListSnapshot = .empty
+    private(set) var currentRecipe: RecipeData?
     /// Whether the initial local snapshot load has completed. Used by collection views
     /// to avoid rendering empty state during cold start.
-    @Published private(set) var isLocalDataLoaded = false
-    @Published private(set) var connectionState: ConnectionState = .disconnected
+    private(set) var isLocalDataLoaded = false
+    private(set) var connectionState: ConnectionState = .disconnected
     /// Polling-first matches PWA `websocket-service` and avoids Starscream direct-WSS hangs on iOS.
-    @Published private(set) var connectionTransport: SyncConnectionTransport = .pollingAndWebsocket
-    @Published private(set) var writeSyncStates: [String: WriteSyncState] = [:]
-    @Published var syncErrorMessage: String?
-    @Published private(set) var activeRecipeWasRemoved = false
-    @Published private(set) var imageCacheStatus = RecipeImageCacheStatus()
-    @Published private(set) var recipeDocumentCacheStatus = RecipeDocumentCacheStatus()
-    @Published private(set) var lastSuccessfulSyncAt: Date?
+    private(set) var connectionTransport: SyncConnectionTransport = .pollingAndWebsocket
+    private(set) var writeSyncStates: [String: WriteSyncState] = [:]
+    var syncErrorMessage: String?
+    private(set) var activeRecipeWasRemoved = false
+    private(set) var imageCacheStatus = RecipeImageCacheStatus()
+    private(set) var recipeDocumentCacheStatus = RecipeDocumentCacheStatus()
+    private(set) var lastSuccessfulSyncAt: Date?
     /// Read-mode reconnect: headless WebView export when queue/wire push is insufficient.
-    @Published private(set) var descriptionWireExportRecipeIds: Set<String> = []
+    private(set) var descriptionWireExportRecipeIds: Set<String> = []
 
     func acknowledgeRecipeRemoved() {
         activeRecipeWasRemoved = false
@@ -44,6 +45,12 @@ final class YjsSyncService: ObservableObject {
     private let store: YDocStore
     private let offlineQueue: OfflineWriteQueue
     private let eventHandler: SyncEventHandler
+
+    /// Injected dependencies (review #27 — were previously reached via `.shared`).
+    private let timerSync: TimerSyncService
+    private let pushRegistration: PushRegistrationService
+    private let recipeImage: RecipeImageService
+    private let yjsMergeHelper: YjsMergeHelper
     private var manager: SocketManager?
     private var socket: SocketIOClient?
     /// Guards socket handlers: stale clients must not overwrite `connectionState` after reconnect.
@@ -69,8 +76,16 @@ final class YjsSyncService: ObservableObject {
     private var changeHandlersInstalled = false
     private var localUpdateHandlerInstalled = false
     private var recipeRefreshSuspended = 0
-    private lazy var updateDebouncer: UpdateDebouncer = UpdateDebouncer { [weak self] recipeId, update in
-        await self?.sendDebouncedUpdate(recipeId: recipeId, update: update)
+    @ObservationIgnored private var _updateDebouncer: UpdateDebouncer?
+    private var updateDebouncer: UpdateDebouncer {
+        if let _updateDebouncer {
+            return _updateDebouncer
+        }
+        let d = UpdateDebouncer { [weak self] recipeId, update in
+            await self?.sendDebouncedUpdate(recipeId: recipeId, update: update)
+        }
+        _updateDebouncer = d
+        return d
     }
     private var imageCacheStatusRefreshTask: Task<Void, Never>?
     private var collectionEntriesRefreshTask: Task<Void, Never>?
@@ -140,11 +155,21 @@ final class YjsSyncService: ObservableObject {
         persistUnsyncedRecipeIds()
     }
 
-    init(store: YDocStore) {
+    init(
+        store: YDocStore,
+        timerSync: TimerSyncService,
+        pushRegistration: PushRegistrationService,
+        recipeImage: RecipeImageService,
+        yjsMergeHelper: YjsMergeHelper
+    ) {
         self.store = store
         self.offlineQueue = OfflineWriteQueue(store: store)
         self.documentManager = DocumentManager(store: store)
         self.eventHandler = SyncEventHandler()
+        self.timerSync = timerSync
+        self.pushRegistration = pushRegistration
+        self.recipeImage = recipeImage
+        self.yjsMergeHelper = yjsMergeHelper
 
         // Persistent device ID
         if let existing = UserDefaults.standard.string(forKey: "deviceId") {
@@ -157,6 +182,30 @@ final class YjsSyncService: ObservableObject {
 
         wireEventHandler()
 
+    }
+
+    /// Convenience for previews/tests that only need a YjsSyncService-shaped object
+    /// backed by stand-alone service instances. Production code goes through
+    /// `AppContainer` which builds the full dependency graph.
+    init(store: YDocStore) {
+        self.store = store
+        self.offlineQueue = OfflineWriteQueue(store: store)
+        self.documentManager = DocumentManager(store: store)
+        self.eventHandler = SyncEventHandler()
+        self.timerSync = TimerSyncService.shared
+        self.pushRegistration = PushRegistrationService.shared
+        self.recipeImage = RecipeImageService.shared
+        self.yjsMergeHelper = YjsMergeHelper.shared
+
+        if let existing = UserDefaults.standard.string(forKey: "deviceId") {
+            self.deviceId = existing
+        } else {
+            let newId = UUID().uuidString
+            UserDefaults.standard.set(newId, forKey: "deviceId")
+            self.deviceId = newId
+        }
+
+        wireEventHandler()
     }
 
 
@@ -216,7 +265,7 @@ final class YjsSyncService: ObservableObject {
         )
         await refreshCurrentRecipe(recipeId: recipeId)
         await refreshCollectionEntries()
-        await RecipeImageService.shared.removeCache(recipeId: recipeId)
+        await recipeImage.removeCache(recipeId: recipeId)
         if connectionState == .connected {
             let entry = collectionEntry(for: recipeId)
                 ?? CollectionEntry(
@@ -228,7 +277,7 @@ final class YjsSyncService: ObservableObject {
                     deleted: false,
                     isPinned: false
                 )
-            await RecipeImageService.shared.prefetchPreviews(
+            await recipeImage.prefetchPreviews(
                 entries: [entry],
                 allowNetwork: true
             )
@@ -237,7 +286,7 @@ final class YjsSyncService: ObservableObject {
 
     func applyRecipeImageDeletion(recipeId: String) async throws {
         try await documentManager.clearRecipeImage(recipeId: recipeId)
-        await RecipeImageService.shared.removeCache(recipeId: recipeId)
+        await recipeImage.removeCache(recipeId: recipeId)
         await refreshCurrentRecipe(recipeId: recipeId)
         await refreshCollectionEntries()
     }
@@ -284,7 +333,7 @@ final class YjsSyncService: ObservableObject {
             guard !payloads.isEmpty else { continue }
             if payloads.count == 1 {
                 await sendDebouncedUpdate(recipeId: recipeId, update: payloads[0])
-            } else if let merged = try? await YjsMergeHelper.shared.mergeUpdates(payloads) {
+            } else if let merged = try? await yjsMergeHelper.mergeUpdates(payloads) {
                 await sendDebouncedUpdate(recipeId: recipeId, update: merged)
             } else {
                 for payload in payloads {
@@ -852,7 +901,12 @@ final class YjsSyncService: ObservableObject {
     }
 
     /// Start synchronization for the given user.
-    /// Should be called after successful authentication.
+    ///
+    /// Side-effects that previously lived here (configuring `APIClient`,
+    /// `TimerSyncService`, `TimerSyncService.sendTimerEvent` callback,
+    /// `ImageCacheService` observers, `TimerLiveActivityMetadataProvider`
+    /// recipe-name lookup) have been moved to `AppContainer.bootstrap` per
+    /// review #27. This keeps `start()` focused on socket + document lifecycle.
     func start(userId: String) async {
         let isSameUser = self.userId == userId
         if !isSameUser, self.userId != nil {
@@ -864,23 +918,20 @@ final class YjsSyncService: ObservableObject {
         loadUnsyncedRecipeIds()
         startNetworkMonitorIfNeeded()
         await documentManager.setUserId(userId)
-        APIClient.shared.configure(userId: userId)
-        TimerSyncService.shared.configure(
-            userId: userId,
-            deviceId: deviceId,
-            timerManager: TimerManager.shared
-        )
-        TimerSyncService.shared.sendTimerEvent = { [weak self] type, timerId, payload in
-            await self?.emitTimerEvent(type: type, timerId: timerId, eventData: payload) ?? false
-        }
-        installImageCacheObserversIfNeeded()
 
         // Connect before SQLite snapshot IO so UI is not stuck on "Offline" while docs load.
         beginSocketSession(isSameUser: isSameUser, userId: userId)
 
-
         await loadLocalSnapshots()
+    }
 
+    /// Re-enter an existing session without re-running first-time wiring.
+    /// Called by `AppContainer.bootstrap` when the user has not changed.
+    func resumeSession(userId: String) async {
+        self.userId = userId
+        startNetworkMonitorIfNeeded()
+        resumeSocketSession()
+        await loadLocalSnapshots()
     }
 
     private func beginSocketSession(isSameUser: Bool, userId: String) {
@@ -1003,7 +1054,7 @@ final class YjsSyncService: ObservableObject {
                 isPinned: false
             )
 
-        await RecipeImageService.shared.prefetchPreviews(
+        await recipeImage.prefetchPreviews(
             entries: [entry],
             allowNetwork: true
         )
@@ -1169,7 +1220,7 @@ final class YjsSyncService: ObservableObject {
             Task { @MainActor in
                 guard let self, self.isCurrentSocketSession(sessionId) else { return }
                 guard let payload = data.first as? [String: Any] else { return }
-                TimerSyncService.shared.handleWebSocketPayload(payload)
+                self.timerSync.handleWebSocketPayload(payload)
             }
         }
 
@@ -1398,8 +1449,8 @@ final class YjsSyncService: ObservableObject {
             loadCollectionDocument()
             Task { await syncPendingDocumentsAfterReconnect() }
         }
-        TimerSyncService.shared.initializeAfterAuth()
-        Task { await PushRegistrationService.shared.registerIfNeeded() }
+        timerSync.initializeAfterAuth()
+        Task { await pushRegistration.registerIfNeeded() }
     }
 
     /// Sends a timer sync event over Socket.IO (ack); used by `TimerSyncService`.
@@ -1589,7 +1640,7 @@ final class YjsSyncService: ObservableObject {
             return
         }
         let updates = parts
-        guard let full = try? await YjsMergeHelper.shared.encodeFullState(
+        guard let full = try? await yjsMergeHelper.encodeFullState(
             bootstrap: bootstrap,
             updates: updates
         ), full.count > 2 else {
@@ -1773,14 +1824,14 @@ final class YjsSyncService: ObservableObject {
         let bootstrap = wireBootstrap ?? yrsBootstrap
 
         if !parts.isEmpty, let bootstrap {
-            if let full = try? await YjsMergeHelper.shared.encodeFullState(
+            if let full = try? await yjsMergeHelper.encodeFullState(
                 bootstrap: bootstrap,
                 updates: parts
             ), full.count > 2 {
                 return full
             }
             if parts.count == 1 { return parts[0] }
-            if let merged = try? await YjsMergeHelper.shared.mergeUpdates(parts) { return merged }
+            if let merged = try? await yjsMergeHelper.mergeUpdates(parts) { return merged }
             return parts.last
         }
 
@@ -1790,7 +1841,7 @@ final class YjsSyncService: ObservableObject {
 
         if isLocalAheadOfServer(recipeId: recipeId),
            let bootstrap,
-           let full = try? await YjsMergeHelper.shared.encodeFullState(bootstrap: bootstrap, updates: []),
+           let full = try? await yjsMergeHelper.encodeFullState(bootstrap: bootstrap, updates: []),
            full.count > 2 {
             return full
         }
@@ -2135,7 +2186,7 @@ final class YjsSyncService: ObservableObject {
     }
 
     func refreshImageCacheStatus() async {
-        let status = await RecipeImageService.shared.cacheStatus(for: collectionEntries)
+        let status = await recipeImage.cacheStatus(for: collectionEntries)
         imageCacheStatus = status
     }
 
@@ -2148,7 +2199,7 @@ final class YjsSyncService: ObservableObject {
         }
     }
 
-    private func installImageCacheObserversIfNeeded() {
+    func installImageCacheObserversIfNeeded() {
         guard !imageCacheObserversInstalled else { return }
         imageCacheObserversInstalled = true
         let names: [Notification.Name] = [
@@ -2171,7 +2222,7 @@ final class YjsSyncService: ObservableObject {
         let allowNetwork = connectionState == .connected
         scheduleImageCacheStatusRefresh()
         Task {
-            await RecipeImageService.shared.prefetchPreviews(
+            await recipeImage.prefetchPreviews(
                 entries: entries,
                 allowNetwork: allowNetwork
             )

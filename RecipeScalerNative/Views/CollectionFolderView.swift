@@ -7,7 +7,7 @@ import SwiftUI
 struct CollectionFolderView: View {
     let folderId: String
 
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
     @Binding var navigationPath: NavigationPath
 
     @State private var isEditingName = false

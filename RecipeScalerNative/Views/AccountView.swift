@@ -13,10 +13,10 @@ private enum AccountSheet: Identifiable {
 }
 
 struct AccountView: View {
-    @EnvironmentObject private var syncService: YjsSyncService
-    @EnvironmentObject private var remindersService: RemindersSyncService
+    @Environment(YjsSyncService.self) private var syncService
+    @Environment(RemindersSyncService.self) private var remindersService
+    @Environment(AuthService.self) private var authService
     @Environment(\.locale) private var locale
-    @State private var authService = AuthService.shared
     @State private var viewModel = AccountSettingsViewModel()
 
     @State private var showingLogoutConfirmation = false
@@ -488,7 +488,7 @@ struct AccountView: View {
 // MARK: - Seed phrase (biometrics + QR)
 
 private struct AccountSeedPhraseSheet: View {
-    @State private var authService = AuthService.shared
+    @Environment(AuthService.self) private var authService
     @Environment(\.dismiss) private var dismiss
     @State private var unlocked = false
     @State private var authError: String?

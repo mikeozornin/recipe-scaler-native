@@ -2,9 +2,10 @@ import Foundation
 import SwiftUI
 
 @MainActor
-class RecipeListViewModel: ObservableObject {
-    @Published var isLoading = false
-    @Published var errorMessage: String?
+@Observable
+final class RecipeListViewModel {
+    var isLoading = false
+    var errorMessage: String?
 
     private let syncService: YjsSyncService
 

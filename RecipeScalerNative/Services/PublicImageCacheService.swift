@@ -14,7 +14,16 @@ struct PublicCachedImageResult {
 
 /// Disk cache for public URLs (Discover recipes, avatars). Stored in Caches — ephemeral.
 actor PublicImageCacheService {
-    static let shared = PublicImageCacheService()
+    /// Shim: returns `AppContainer.shared.publicImageCache` when the container
+    /// is constructed, otherwise a lazily-instantiated stand-alone actor.
+    static var shared: PublicImageCacheService {
+        if let container = AppContainer.shared {
+            return container.publicImageCache
+        }
+        return Standalone
+    }
+
+    private static let Standalone = PublicImageCacheService()
 
     private static let maxCacheBytes = 150 * 1024 * 1024
 
@@ -22,7 +31,7 @@ actor PublicImageCacheService {
     private let defaults = UserDefaults.standard
     private var inFlight = Set<String>()
 
-    private init() {}
+    init() {}
 
     func cachedFileURL(for url: URL) -> URL? {
         PublicImageDiskCache.existingFileURL(for: url)

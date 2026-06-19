@@ -9,13 +9,22 @@ enum YjsMergeHelperError: Error {
 /// Runs `Y.mergeUpdates` / `Y.encodeStateAsUpdate` via bundled yjs (web parity).
 @MainActor
 final class YjsMergeHelper: NSObject {
-    static let shared = YjsMergeHelper()
+    /// Shim: returns `AppContainer.shared.yjsMergeHelper` when the container
+    /// is constructed, otherwise a stand-alone instance.
+    static var shared: YjsMergeHelper {
+        if let container = AppContainer.shared {
+            return container.yjsMergeHelper
+        }
+        return Standalone
+    }
+
+    private static let Standalone = YjsMergeHelper()
 
     private var webView: WKWebView?
     private var ready = false
     private var loadContinuations: [CheckedContinuation<Void, Never>] = []
 
-    private override init() {
+    override init() {
         super.init()
     }
 

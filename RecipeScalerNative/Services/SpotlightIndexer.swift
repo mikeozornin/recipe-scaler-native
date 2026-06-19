@@ -1,4 +1,3 @@
-import Combine
 import CoreSpotlight
 import Foundation
 
@@ -9,14 +8,16 @@ import UIKit
 
 /// Indexes the user's recipe collection into the system Spotlight index.
 ///
-/// Indexing is reactive: subscribes to `YjsSyncService.$collectionEntries` and
-/// reindexes on change (debounced). Each recipe produces a `CSSearchableItem`
-/// with title, description, ingredient keywords, thumbnail, and an
-/// `addToShopping` action button (declared in Info.plist `CoreSpotlightActions`).
+/// Indexing is reactive: observes `YjsSyncService.collectionEntries` (via
+/// Observation) and reindexes on change (debounced). Each recipe produces a
+/// `CSSearchableItem` with title, description, ingredient keywords, thumbnail,
+/// and an `addToShopping` action button (declared in Info.plist
+/// `CoreSpotlightActions`).
 ///
 /// Tap handling: see `RecipeScalerNativeApp` `.onContinueUserActivity(CSSearchableItemActionType)`.
 @MainActor
-final class SpotlightIndexer: ObservableObject {
+@Observable
+final class SpotlightIndexer {
     static let domainIdentifier = "ru.recipescaler.RecipeScalerNative.recipes"
 
     /// Mirrors `CoreSpotlightActionIdentifier` in Info.plist.
@@ -26,34 +27,54 @@ final class SpotlightIndexer: ObservableObject {
     private static let previewFormatVersion = "2"
 
     private let syncService: YjsSyncService
-    private var cancellables = Set<AnyCancellable>()
     /// recipeId → updatedAt. Used to skip reindex when content unchanged.
     private var indexedFingerprints: [String: String] = [:]
     private var isStarted = false
     private var reindexTask: Task<Void, Never>?
+    private var observeTask: Task<Void, Never>?
 
     init(syncService: YjsSyncService) {
         self.syncService = syncService
+    }
+
+    nonisolated deinit {
+        // Tasks self-cancel on deinit; explicit MainActor cancel would be unsafe here.
     }
 
     func start() {
         guard !isStarted else { return }
         isStarted = true
 
-        syncService.$collectionEntries
-            .debounce(for: .seconds(1), scheduler: RunLoop.main)
-            .sink { [weak self] entries in
-                Task { [weak self] in
-                    await self?.reindex(entries: entries)
+        // Observe `collectionEntries` via Observation framework (replaces Combine subscription).
+        observeTask?.cancel()
+        observeTask = Task { @MainActor [weak self] in
+            var lastSeen: [CollectionEntry]?
+            while !Task.isCancelled {
+                guard let self else { return }
+                let snapshot: [CollectionEntry] = withObservationTracking {
+                    self.syncService.collectionEntries
+                } onChange: { [weak self] in
+                    Task { @MainActor [weak self] in self?.start() }
+                }
+                if lastSeen != snapshot {
+                    lastSeen = snapshot
+                    // Debounce: wait 1s before reindexing (web parity with Combine .debounce).
+                    try? await Task.sleep(for: .seconds(1))
+                    guard !Task.isCancelled else { return }
+                    await self.reindex(entries: snapshot)
+                } else {
+                    // No change in this iteration; wait briefly before re-observing.
+                    try? await Task.sleep(for: .milliseconds(100))
                 }
             }
-            .store(in: &cancellables)
+        }
     }
 
     func stop() {
         reindexTask?.cancel()
         reindexTask = nil
-        cancellables.removeAll()
+        observeTask?.cancel()
+        observeTask = nil
         isStarted = false
     }
 

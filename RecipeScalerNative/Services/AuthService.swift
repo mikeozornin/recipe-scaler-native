@@ -87,7 +87,17 @@ enum AuthError: LocalizedError {
 @MainActor
 @Observable
 class AuthService {
-    static let shared = AuthService()
+    /// Shim: returns `AppContainer.shared.auth` when the container is
+    /// constructed, otherwise a stand-alone instance. Stand-alone is created
+    /// lazily on first access (e.g. from a DEBUG preview without container).
+    static var shared: AuthService {
+        if let container = AppContainer.shared {
+            return container.auth
+        }
+        return Standalone
+    }
+
+    private static let Standalone = AuthService()
 
     var isAuthenticated = false
     var userId: String?
@@ -100,7 +110,7 @@ class AuthService {
         APIClient.shared
     }
 
-    private init() {
+    init() {
         let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
         let isUITesting = ProcessInfo.processInfo.arguments.contains("ui-testing")
 

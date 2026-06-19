@@ -18,11 +18,20 @@ struct CachedImageResult {
 }
 
 actor ImageCacheService {
-    static let shared = ImageCacheService()
+    /// Shim: returns `AppContainer.shared.imageCache` when the container is
+    /// constructed, otherwise a lazily-instantiated stand-alone actor.
+    static var shared: ImageCacheService {
+        if let container = AppContainer.shared {
+            return container.imageCache
+        }
+        return Standalone
+    }
+
+    private static let Standalone = ImageCacheService()
 
     private let fileManager = FileManager.default
 
-    private init() {}
+    init() {}
 
     func cachedImageURL(recipeId: String, variant: CachedImageVariant) -> URL? {
         RecipeImageDiskCache.existingFileURL(recipeId: recipeId, variant: variant)

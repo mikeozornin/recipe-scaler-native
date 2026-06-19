@@ -8,11 +8,20 @@ import RecipeScalerCore
 
 @MainActor
 final class PushScheduleService {
-    static let shared = PushScheduleService()
+    /// Shim: returns `AppContainer.shared.pushSchedule` when the container is
+    /// constructed, otherwise a lazily-instantiated stand-alone service.
+    static var shared: PushScheduleService {
+        if let container = AppContainer.shared {
+            return container.pushSchedule
+        }
+        return Standalone
+    }
+
+    private static let Standalone = PushScheduleService()
 
     private struct VoidData: Decodable {}
 
-    private init() {}
+    init() {}
 
     /// Schedule a server-side push for the given timer. Returns true on success.
     /// Server applies reminder logic: if duration_seconds > 1800, also sends a 2-min reminder.

@@ -17,7 +17,7 @@ struct RecipeDetailImageSection: View {
     let isEditing: Bool
     let allowsNetworkRefresh: Bool
 
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
     @State private var photoItem: PhotosPickerItem?
     @State private var isPhotoPickerPresented = false
     @State private var isUploading = false

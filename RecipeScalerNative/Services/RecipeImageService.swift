@@ -23,7 +23,22 @@ enum RecipeImageVersion {
 
 /// Offline-first recipe images: REST download → `ImageCacheService` files; UI reads local paths only.
 actor RecipeImageService {
-    static let shared = RecipeImageService()
+    /// Shim: returns `AppContainer.shared.recipeImage` when the container is
+    /// constructed, otherwise a lazily-instantiated stand-alone actor.
+    static var shared: RecipeImageService {
+        if let container = AppContainer.shared {
+            return container.recipeImage
+        }
+        return Standalone
+    }
+
+    private static let Standalone = RecipeImageService(
+        imageCache: ImageCacheService.shared,
+        publicImageCache: PublicImageCacheService.shared
+    )
+
+    private let imageCache: ImageCacheService
+    private let publicImageCache: PublicImageCacheService
 
     private let defaults = UserDefaults.standard
     private var inFlight = Set<String>()
@@ -35,10 +50,13 @@ actor RecipeImageService {
     private var cacheStatusNotifyTask: Task<Void, Never>?
     private var cacheStatusMemo: (fingerprint: Set<String>, status: RecipeImageCacheStatus)?
 
-    private init() {}
+    init(imageCache: ImageCacheService, publicImageCache: PublicImageCacheService) {
+        self.imageCache = imageCache
+        self.publicImageCache = publicImageCache
+    }
 
     func localFileURL(recipeId: String, variant: CachedImageVariant) async -> URL? {
-        await ImageCacheService.shared.cachedImageURL(recipeId: recipeId, variant: variant)
+        await imageCache.cachedImageURL(recipeId: recipeId, variant: variant)
     }
 
     /// Snapshot of disk cache vs collection entries (no network).
@@ -117,7 +135,7 @@ actor RecipeImageService {
         }
 
         guard allowNetwork else {
-            return await ImageCacheService.shared.cachedImageURL(recipeId: recipeId, variant: variant)
+            return await imageCache.cachedImageURL(recipeId: recipeId, variant: variant)
         }
 
         return await fetchAndStore(recipeId: recipeId, imageUrl: imageUrl, variant: variant)

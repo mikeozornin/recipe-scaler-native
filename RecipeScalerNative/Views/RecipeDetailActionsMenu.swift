@@ -12,7 +12,7 @@ struct RecipeDetailActionsMenu: View {
     let isEditing: Bool
     let isPinned: Bool
 
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
 
     @State private var recipePendingDelete = false
     @State private var showingAssignSheet = false

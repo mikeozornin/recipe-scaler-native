@@ -193,12 +193,21 @@ struct AssistantStreamFinalData: Decodable, Sendable {
 @MainActor
 @Observable
 final class AssistantRecipeContext {
-    static let shared = AssistantRecipeContext()
+    /// Shim: returns `AppContainer.shared.assistantRecipeContext` when the
+    /// container is constructed, otherwise a stand-alone instance.
+    static var shared: AssistantRecipeContext {
+        if let container = AppContainer.shared {
+            return container.assistantRecipeContext
+        }
+        return Standalone
+    }
+
+    private static let Standalone = AssistantRecipeContext()
 
     private(set) var visibleRecipeId: String?
     var isAssistantSheetOpen = false
 
-    private init() {}
+    init() {}
 
     func setVisibleRecipeId(_ recipeId: String) {
         visibleRecipeId = recipeId

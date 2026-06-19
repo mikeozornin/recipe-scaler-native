@@ -1,14 +1,11 @@
 import Combine
 import SwiftUI
+import SwiftData
 import WidgetKit
 import RecipeScalerCore
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @State private var authService = AuthService.shared
-    @StateObject private var syncService: YjsSyncService
-    @StateObject private var remindersService: RemindersSyncService
-    @StateObject private var spotlightIndexer: SpotlightIndexer
+    @Environment(\.appContainer) private var container: AppContainer?
     @State private var showSplash = true
     @State private var appTheme = AppThemePreference.current
     @State private var appLanguage = AppLanguagePreference.current
@@ -18,60 +15,32 @@ struct ContentView: View {
     /// Debug: auto-authenticate on simulator
     private let debugUserId = "cfcd839f-56f2-4411-9632-7795b75f96d1"
 
-    init() {
-        let database: YrsDatabase
-        do {
-            database = try YrsDatabase()
-        } catch {
-            // Fallback to in-memory if on-disk DB is corrupted or write-protected.
-            // App will function but snapshots won't persist across launches.
-            YrsDatabase.logInitFailure(error)
-            do {
-                database = try YrsDatabase.makeInMemoryFallback()
-            } catch {
-                YrsDatabase.logInitFailure(error)
-                fatalError("Cannot initialize local database: \(error)")
-            }
-        }
-        let store = YDocStore(dbQueue: database.dbQueue)
-        let mapStore = RemindersMapStore(dbQueue: database.dbQueue)
-        let sync = YjsSyncService(store: store)
-        _syncService = StateObject(wrappedValue: sync)
-        _remindersService = StateObject(wrappedValue: RemindersSyncService(mapStore: mapStore))
-        _spotlightIndexer = StateObject(wrappedValue: SpotlightIndexer(syncService: sync))
-        // Sync APIClient credentials from SharedAuthStore so that Share/Action
-        // extensions can configure the same client via the shared Keychain.
-        if let sharedUserId = SharedAuthStore.userId {
-            APIClient.shared.configure(userId: sharedUserId)
-        }
-        // #region agent log
-        AgentSyncDebugLog.sync(
-            location: "ContentView.init",
-            message: "contentview_init",
-            data: [:]
-        )
-        // #endregion
-    }
+    /// Fallback construction for previews/tests when no AppContainer is in
+    /// the environment. Returns nil in production (container is always present).
+    private var syncService: YjsSyncService? { container?.sync }
+    private var remindersService: RemindersSyncService? { container?.reminders }
+    private var spotlightIndexer: SpotlightIndexer? { container?.spotlight }
+    private var authService: AuthService? { container?.auth }
 
     private var effectiveUserId: String? {
         #if targetEnvironment(simulator)
         if ProcessInfo.processInfo.arguments.contains("-DisableDebugAutoLogin=1") {
-            return authService.userId
+            return authService?.userId
         }
         return debugUserId
         #else
-        return authService.userId
+        return authService?.userId
         #endif
     }
 
     private var isAuthenticated: Bool {
         #if targetEnvironment(simulator)
         if ProcessInfo.processInfo.arguments.contains("-DisableDebugAutoLogin=1") {
-            return authService.isAuthenticated
+            return authService?.isAuthenticated ?? false
         }
         return true
         #else
-        return authService.isAuthenticated
+        return authService?.isAuthenticated ?? false
         #endif
     }
 
@@ -79,25 +48,27 @@ struct ContentView: View {
         ZStack {
             if showSplash {
                 SplashView()
-            } else if isAuthenticated {
+            } else if isAuthenticated, let container {
                 #if DEBUG
                 if RecipeDescriptionFixture.showsPreview {
                     DescriptionFixturePreviewView()
                 } else {
-                    appShell(syncService: syncService)
+                    appShell(container: container)
                 }
                 #else
-                appShell(syncService: syncService)
+                appShell(container: container)
                 #endif
-            } else {
+            } else if container != nil {
                 AuthView()
+            } else {
+                ProgressView()
             }
         }
         .task {
             #if DEBUG
             if isUITesting || DebugLaunchOptions.shouldSkipSplash {
                 showSplash = false
-                if ShoppingSmokeTest.shouldRun, let userId = effectiveUserId {
+                if ShoppingSmokeTest.shouldRun, let userId = effectiveUserId, let syncService {
                     Task.detached { @MainActor in
                         await ShoppingSmokeTest.Launcher.launchIfNeeded(
                             syncService: syncService,
@@ -152,33 +123,37 @@ struct ContentView: View {
             }
         }
         #if !targetEnvironment(simulator)
-        .onChange(of: authService.isAuthenticated) { _, authenticated in
+        .onChange(of: authService?.isAuthenticated ?? false) { _, authenticated in
+            guard let container else { return }
             if !authenticated {
-                syncService.stop()
+                container.sync.stop()
                 Task { @MainActor in
-                    spotlightIndexer.stop()
-                    await spotlightIndexer.clearAll()
+                    container.spotlight.stop()
+                    await container.spotlight.clearAll()
                 }
             }
         }
         #endif
         .onChange(of: scenePhase) { _, phase in
+            guard let container else { return }
             switch phase {
             case .background:
                 // Persist, then drop the socket so suspended requests don't time out on resume.
-                Task { await syncService.persistAll() }
-                syncService.handleEnteredBackground()
+                Task { await container.sync.persistAll() }
+                container.sync.handleEnteredBackground()
                 // Refresh Home/Lock Screen widgets with the latest timer snapshot
                 // so the countdown stays correct while the app isn't foreground.
                 WidgetCenter.shared.reloadAllTimelines()
             case .inactive:
                 // Transient (app switcher, notification shade) — persist but keep the socket.
-                Task { await syncService.persistAll() }
+                Task { await container.sync.persistAll() }
             case .active:
                 TimerLiveActivityActionQueue.drainIfNeeded()
-                ShoppingIntentDrainer.drainIfNeeded(syncService: syncService)
-                syncService.handleEnteredForeground()
-                Task { await remindersService.reconcileRemindersToUserSnapshot() }
+                if let syncService {
+                    ShoppingIntentDrainer.drainIfNeeded(syncService: syncService)
+                    syncService.handleEnteredForeground()
+                }
+                Task { await container.reminders.reconcileRemindersToUserSnapshot() }
             @unknown default:
                 break
             }
@@ -186,16 +161,9 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    private func appShell(syncService: YjsSyncService) -> some View {
+    private func appShell(container: AppContainer) -> some View {
+        let syncService = container.sync
         AppShellView()
-            .environmentObject(syncService)
-            .environment(TimerManager.shared)
-            .environmentObject(remindersService)
-            .environmentObject(spotlightIndexer)
-            .onAppear {
-                installTimerLiveActivityRecipeLookup(syncService: syncService)
-                TimerManager.shared.configure(modelContext: modelContext)
-            }
             .task(id: effectiveUserId) {
                 #if DEBUG
                 if ShoppingSmokeTest.shouldRun { return }
@@ -206,35 +174,35 @@ struct ContentView: View {
                 )
                 #endif
                 if let userId = effectiveUserId {
-                    await syncService.start(userId: userId)
-                    remindersService.attach(to: syncService)
-                    spotlightIndexer.start()
-                    ShortcutItemsUpdater.update(from: syncService.collectionEntries)
-                    RecipeSnapshotStore.save(syncService.collectionEntries)
+                    // #region agent log
+                    AgentSyncDebugLog.sync(
+                        location: "ContentView.init",
+                        message: "contentview_init",
+                        data: [:]
+                    )
+                    // #endregion
+                    await container.bootstrap(userId: userId)
                 } else {
-                    syncService.stop()
-                    spotlightIndexer.stop()
-                    await spotlightIndexer.clearAll()
+                    container.sync.stop()
+                    container.spotlight.stop()
+                    await container.spotlight.clearAll()
                 }
             }
             .onChange(of: syncService.collectionEntries) { _, entries in
                 ShortcutItemsUpdater.update(from: entries)
                 RecipeSnapshotStore.save(entries)
-                installTimerLiveActivityRecipeLookup(syncService: syncService)
-                TimerManager.shared.refreshLiveActivities()
+                TimerLiveActivityMetadataProvider.recipeNameLookup = { recipeId in
+                    entries.first(where: { $0.id == recipeId && !$0.deleted })?.name
+                }
+                container.timer.refreshLiveActivities()
             }
-    }
-
-    private func installTimerLiveActivityRecipeLookup(syncService: YjsSyncService) {
-        TimerLiveActivityMetadataProvider.recipeNameLookup = { recipeId in
-            syncService.collectionEntries
-                .first(where: { $0.id == recipeId && !$0.deleted })?
-                .name
-        }
     }
 }
 
 #Preview {
-    ContentView()
+    let modelContainer = try! ModelContainer(for: RecipeTimer.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+    let container = try! AppContainer(modelContext: ModelContext(modelContainer))
+    return ContentView()
+        .appEnvironment(container)
         .modelContainer(for: RecipeTimer.self, inMemory: true)
 }

@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct AssistantSheet: View {
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
 
     let contextRecipeId: String?
 

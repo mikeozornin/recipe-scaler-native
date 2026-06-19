@@ -16,7 +16,7 @@ final class DescriptionEditorWKWebView: WKWebView {
 }
 
 struct DescriptionEditorWebView: UIViewRepresentable {
-    @ObservedObject var bridge: DescriptionEditorBridge
+    @Bindable var bridge: DescriptionEditorBridge
     var allowsScrolling: Bool
     var accentColor: Color = .purple
     var onKeyboardDone: (() -> Void)?

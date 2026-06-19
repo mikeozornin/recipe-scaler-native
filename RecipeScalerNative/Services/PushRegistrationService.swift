@@ -8,24 +8,38 @@ import RecipeScalerCore
 
 @MainActor
 final class PushRegistrationService {
-    static let shared = PushRegistrationService()
+    /// Shim: returns `AppContainer.shared.pushRegistration` when the container is
+    /// constructed, otherwise lazily instantiates a stand-alone service backed by
+    /// `AuthService.shared`. This keeps AppIntents / non-SwiftUI call sites working
+    /// during the staged DI migration (review #27).
+    static var shared: PushRegistrationService {
+        if let container = AppContainer.shared {
+            return container.pushRegistration
+        }
+        return Standalone
+    }
 
+    private static let Standalone = PushRegistrationService(auth: AuthService.shared)
+
+    private let auth: AuthService
     private let tokenKey = "apnsDeviceToken"
     private struct VoidData: Decodable {}
 
-    private init() {}
+    init(auth: AuthService) {
+        self.auth = auth
+    }
 
     /// Called from AppDelegate after APNs issues a device token.
     func register(apnsToken: String) async {
         UserDefaults.standard.set(apnsToken, forKey: tokenKey)
-        guard AuthService.shared.isAuthenticated else { return }
+        guard auth.isAuthenticated else { return }
         await upload(token: apnsToken)
     }
 
     /// Called after authentication completes to upload any cached token.
     func registerIfNeeded() async {
         guard let token = UserDefaults.standard.string(forKey: tokenKey),
-              AuthService.shared.isAuthenticated else { return }
+              auth.isAuthenticated else { return }
         await upload(token: token)
     }
 

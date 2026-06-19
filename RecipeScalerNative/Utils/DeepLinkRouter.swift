@@ -23,13 +23,24 @@ enum DeepLink: Equatable, Sendable {
 
 // MARK: - DeepLinkRouter
 
-/// Singleton that holds the most recent unprocessed deep link.
-/// Callers write via `handle(_:)`, the scene reads via `pending`
-/// and clears via `clear()` after consumption.
+/// Central deep-link dispatcher for Spotlight taps, URL scheme links,
+/// and future sources (Universal Links, notifications).
+///
+/// The active `AppShellView` observes `pending` and consumes the link once.
+///
 @MainActor
 @Observable
 final class DeepLinkRouter {
-    static let shared = DeepLinkRouter()
+    /// Shim: returns `AppContainer.shared.deepLinkRouter` when the container is
+    /// constructed, otherwise a stand-alone instance.
+    static var shared: DeepLinkRouter {
+        if let container = AppContainer.shared {
+            return container.deepLinkRouter
+        }
+        return Standalone
+    }
+
+    private static let Standalone = DeepLinkRouter()
 
     /// UserDefaults key for `recipe-scaler://recipe/{id}` links persisted
     /// by Share/Action extensions.
@@ -37,7 +48,7 @@ final class DeepLinkRouter {
 
     var pending: DeepLink?
 
-    private init() {}
+    init() {}
 
     func handle(_ link: DeepLink) {
         pending = link

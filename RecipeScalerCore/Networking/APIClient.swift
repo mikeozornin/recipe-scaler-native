@@ -36,7 +36,7 @@ public struct CachedAPIResponse<T> {
 
 // MARK: - API Client
 
-public final class APIClient: ObservableObject, @unchecked Sendable {
+public final class APIClient: @unchecked Sendable {
     public static let shared = APIClient()
 
     private let baseURL: String

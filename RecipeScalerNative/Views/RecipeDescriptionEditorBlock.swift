@@ -13,11 +13,11 @@ struct RecipeDescriptionEditorBlock: View {
     let syncService: YjsSyncService
     let scaleFactor: Double
     let ingredients: [IngredientData]
-    @ObservedObject var chrome: DescriptionEditorChromeState
+    @Bindable var chrome: DescriptionEditorChromeState
     var onNodeClick: ((DescriptionNodeClick) -> Void)?
 
     @Environment(\.locale) private var locale
-    @StateObject private var bridge: DescriptionEditorBridge
+    @State private var bridge: DescriptionEditorBridge
 
     init(
         recipeId: String,
@@ -35,8 +35,8 @@ struct RecipeDescriptionEditorBlock: View {
         self.ingredients = ingredients
         self.chrome = chrome
         self.onNodeClick = onNodeClick
-        _bridge = StateObject(
-            wrappedValue: DescriptionEditorBridge(
+        _bridge = State(
+            initialValue: DescriptionEditorBridge(
                 recipeId: recipeId,
                 syncService: syncService,
                 presentation: .inline

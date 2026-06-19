@@ -7,7 +7,10 @@ struct YDocRecipeDetailView: View {
     var startInEditMode: Bool = false
     var startDescriptionEdit: Bool = false
 
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
+    @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
+    @Environment(TimerManager.self) private var timerManager
+    @Environment(\.appContainer) private var appContainer
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     /// UI-only scale (web `recipe-scale:{id}` in localStorage). Not written to Y.Doc.
@@ -22,7 +25,7 @@ struct YDocRecipeDetailView: View {
     @State private var saveInFlight = false
     @State private var didApplyStartInEditMode = false
     @State private var shouldAutoFocusRecipeTitle = false
-    @StateObject private var descriptionChrome = DescriptionEditorChromeState()
+    @State private var descriptionChrome = DescriptionEditorChromeState()
     @State private var didApplyStartDescriptionEdit = false
     @State private var dismissRecipeTitleKeyboard = false
     @State private var commitTitleNonce = 0
@@ -448,8 +451,8 @@ struct YDocRecipeDetailView: View {
             }
         }
         .onDisappear {
-            guard !AssistantRecipeContext.shared.isAssistantSheetOpen else { return }
-            AssistantRecipeContext.shared.clearVisibleRecipeId(recipeId)
+            guard !assistantRecipeContext.isAssistantSheetOpen else { return }
+            assistantRecipeContext.clearVisibleRecipeId(recipeId)
             deactivateScreenAwake()
         }
         .task(id: recipeId) {
@@ -464,7 +467,7 @@ struct YDocRecipeDetailView: View {
         }
         .task(id: "\(recipeId)-\(headerImageUrl ?? "")-\(allowsImageNetworkRefresh)") {
             guard let imageUrl = headerImageUrl else { return }
-            await RecipeImageService.shared.prefetchFull(
+            await appContainer?.recipeImage.prefetchFull(
                 recipeId: recipeId,
                 imageUrl: imageUrl,
                 allowNetwork: allowsImageNetworkRefresh
@@ -500,7 +503,7 @@ struct YDocRecipeDetailView: View {
             applyStartDescriptionEditIfNeeded()
         }
         .onAppear {
-            AssistantRecipeContext.shared.setVisibleRecipeId(recipeId)
+            assistantRecipeContext.setVisibleRecipeId(recipeId)
             applyStartInEditModeIfNeeded()
             applyStartDescriptionEditIfNeeded()
             scheduleDebugDescriptionEditorIfNeeded()
@@ -614,7 +617,7 @@ struct YDocRecipeDetailView: View {
         guard reference.isStartable else { return }
         let displayName = recipe?.name
             ?? syncService.collectionEntries.first(where: { $0.id == recipeId })?.name
-        _ = TimerManager.shared.createAndStartTimer(
+        _ = timerManager.createAndStartTimer(
             name: reference.resolvedName,
             duration: TimeInterval(reference.durationSeconds),
             type: reference.type,

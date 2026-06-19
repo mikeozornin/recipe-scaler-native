@@ -47,9 +47,10 @@ private struct AppTabBarLabel: View {
 }
 
 struct AppShellView: View {
-    @EnvironmentObject private var syncService: YjsSyncService
-    @State private var timerManager = TimerManager.shared
-    @State private var deepLinkRouter = DeepLinkRouter.shared
+    @Environment(YjsSyncService.self) private var syncService
+    @Environment(TimerManager.self) private var timerManager
+    @Environment(DeepLinkRouter.self) private var deepLinkRouter
+    @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
     @State private var selectedTab: AppTab = .recipes
     @State private var previousTab: AppTab = .recipes
     @State private var showImportSheet = false
@@ -115,22 +116,22 @@ struct AppShellView: View {
                 .presentationDetents([.large])
             }
         .onChange(of: showAssistant) { _, isOpen in
-            AssistantRecipeContext.shared.isAssistantSheetOpen = isOpen
+            assistantRecipeContext.isAssistantSheetOpen = isOpen
         }
         .sheet(isPresented: $showAssistant, onDismiss: {
-            AssistantRecipeContext.shared.isAssistantSheetOpen = false
+            assistantRecipeContext.isAssistantSheetOpen = false
             assistantContextRecipeId = nil
         }) {
             AssistantSheet(
-                contextRecipeId: assistantContextRecipeId ?? AssistantRecipeContext.shared.visibleRecipeId
+                contextRecipeId: assistantContextRecipeId ?? assistantRecipeContext.visibleRecipeId
             )
-                .environmentObject(syncService)
+                .environment(syncService)
         }
         .overlay(alignment: .bottomTrailing) {
             if !showAssistant {
                 Button {
-                    assistantContextRecipeId = AssistantRecipeContext.shared.visibleRecipeId
-                    AssistantRecipeContext.shared.isAssistantSheetOpen = true
+                    assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
+                    assistantRecipeContext.isAssistantSheetOpen = true
                     showAssistant = true
                 } label: {
                     AppSymbol.image("sparkles")
@@ -210,8 +211,8 @@ struct AppShellView: View {
         .onAppear {
             openDebugTabIfNeeded()
             if DebugLaunchOptions.showAssistant {
-                assistantContextRecipeId = AssistantRecipeContext.shared.visibleRecipeId
-                AssistantRecipeContext.shared.isAssistantSheetOpen = true
+                assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
+                assistantRecipeContext.isAssistantSheetOpen = true
                 showAssistant = true
             }
             consumePendingDeepLinkIfNeeded()

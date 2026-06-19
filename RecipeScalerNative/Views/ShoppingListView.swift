@@ -16,7 +16,7 @@ private enum ShoppingPurchaseTiming {
 }
 
 struct ShoppingListView: View {
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
     @Binding var path: NavigationPath
     @State private var bottomDraft = ""
     @State private var inlineEditItemId: String?
@@ -90,7 +90,7 @@ struct ShoppingListView: View {
         #endif
         .sheet(isPresented: $showShareSheet) {
             ShoppingListShareSheet(isOnline: isOnline)
-                .environmentObject(syncService)
+                .environment(syncService)
         }
         .alert("Error", isPresented: Binding(
             get: { errorMessage != nil },
@@ -442,7 +442,7 @@ private extension View {
 // MARK: - Share sheet
 
 private struct ShoppingListShareSheet: View {
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
     @Environment(\.dismiss) private var dismiss
 
     let isOnline: Bool

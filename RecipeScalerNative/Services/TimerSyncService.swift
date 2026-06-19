@@ -69,7 +69,16 @@ struct TimerSyncHTTPResponse: Decodable {
 
 @MainActor
 final class TimerSyncService {
-    static let shared = TimerSyncService()
+    /// Shim: returns `AppContainer.shared.timerSync` when the container is
+    /// constructed, otherwise a stand-alone instance.
+    static var shared: TimerSyncService {
+        if let container = AppContainer.shared {
+            return container.timerSync
+        }
+        return Standalone
+    }
+
+    private static let Standalone = TimerSyncService()
 
     private let storageKey = "timer_sync_state"
     private let minSyncInterval: TimeInterval = 2
@@ -88,7 +97,7 @@ final class TimerSyncService {
     weak var timerManager: TimerManager?
     var sendTimerEvent: ((SyncedTimerEventType, String, [String: Any]) async -> Bool)?
 
-    private init() {
+    init() {
         loadState()
         deviceId = Self.storedDeviceId()
     }

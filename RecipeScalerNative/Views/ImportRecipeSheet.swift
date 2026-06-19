@@ -25,7 +25,7 @@ struct ImportRecipesResult {
 struct ImportRecipeSheet: View {
     let onImport: (ImportRecipesResult) -> Void
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
 
     @State private var mode: ImportMode = .text
     @State private var bodyText = ""

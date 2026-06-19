@@ -5,61 +5,41 @@
 //  Observable chrome for inline editor toolbar (019).
 //
 
-import Combine
 import Foundation
 
 @MainActor
-final class DescriptionEditorChromeState: ObservableObject {
-    @Published private(set) var isFocused = false
-    @Published private(set) var isEditorReady = false
-    @Published private(set) var suppressFormattingBar = false
+@Observable
+final class DescriptionEditorChromeState {
+    private(set) var suppressFormattingBar = false
     private(set) var bridge: DescriptionEditorBridge?
 
-    private var cancellables = Set<AnyCancellable>()
+    init() {}
 
     /// Formatting bar only when the description field is actively focused and no modal chrome is open.
+    /// Reads directly from the (already @Observable) `bridge` — observation is automatic.
     var showsFormattingBar: Bool {
-        bridge != nil && isEditorReady && isFocused && !suppressFormattingBar
+        guard let bridge else { return false }
+        return bridge.phase == .ready && bridge.isFocused && !suppressFormattingBar
     }
 
-    /// One-time bind: subscribe to bridge publishers so chrome stays in sync automatically.
+    /// Whether the description editor is currently focused. Mirrors `bridge.isFocused`.
+    var isFocused: Bool {
+        bridge?.isFocused ?? false
+    }
+
+    /// Whether the description editor has finished loading. Mirrors `bridge.phase == .ready`.
+    var isEditorReady: Bool {
+        bridge?.phase == .ready
+    }
+
+    /// One-time bind. Once `bridge` is set, all state reads derive from it via Observation.
     func bind(bridge: DescriptionEditorBridge) {
         guard self.bridge !== bridge else { return }
         self.bridge = bridge
-        cancellables.removeAll()
-
-        // Defer the initial @Published snapshot to the next runloop tick. `bind` is
-        // typically called from `.onAppear`, which runs synchronously during the SwiftUI
-        // body / layout pass; mutating `@Published` here triggers
-        // "Publishing changes from within view updates is not allowed".
-        let initialFocused = bridge.isFocused
-        let initialReady = bridge.phase == .ready
-        DispatchQueue.main.async { [weak self] in
-            self?.isFocused = initialFocused
-            self?.isEditorReady = initialReady
-        }
-
-        // Subscribe to future changes — single source of truth
-        bridge.$isFocused
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] focused in
-                self?.isFocused = focused
-            }
-            .store(in: &cancellables)
-
-        bridge.$phase
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] phase in
-                self?.isEditorReady = phase == .ready
-            }
-            .store(in: &cancellables)
     }
 
     func reset() {
         bridge = nil
-        cancellables.removeAll()
-        isFocused = false
-        isEditorReady = false
         suppressFormattingBar = false
     }
 
@@ -69,7 +49,6 @@ final class DescriptionEditorChromeState: ObservableObject {
     }
 
     func blurEditor() {
-        isFocused = false
         if let bridge {
             bridge.dismissEditingFocus()
         }

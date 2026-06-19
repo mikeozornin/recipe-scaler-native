@@ -5,6 +5,7 @@
 //
 
 import RecipeScalerCore
+import SwiftData
 import SwiftUI
 
 /// Example view demonstrating TimerManager usage
@@ -292,5 +293,10 @@ struct TimerRow: View {
 
 #Preview {
     TimerExampleView()
-        .environment(TimerManager())
+        .environment(TimerManager(
+            timerSync: TimerSyncService.shared,
+            liveActivity: TimerLiveActivityCoordinator.shared,
+            pushSchedule: PushScheduleService.shared,
+            modelContext: ModelContext(RecipeScalerNativeApp.sharedModelContainer)
+        ))
 }

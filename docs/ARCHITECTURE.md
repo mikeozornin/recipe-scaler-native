@@ -319,3 +319,70 @@ and repository** (019 T021, 2026-06-15).
 | Description editor | Tiptap (DOM) | Tiptap (WKWebView) |
 | Schema | Y.Map/Y.Array/XmlFragment | Same structure via yrs C API |
 | lastSyncedAt | IndexedDB per doc | SQLite per doc |
+
+## Composition Root / Dependency Injection
+
+The app uses an explicit composition root — `RecipeScalerNative/App/AppContainer.swift` —
+instead of a web of `.shared` singletons reaching into each other.
+
+```mermaid
+flowchart TB
+  subgraph main [App.init — @main]
+    APP[RecipeScalerNativeApp]
+    APP -->|creates @State| AC[AppContainer @MainActor @Observable]
+  end
+
+  subgraph container [AppContainer — single source of truth]
+    AC --> YSS[YjsSyncService]
+    AC --> REM[RemindersSyncService]
+    AC --> SP[SpotlightIndexer]
+    AC --> AUTH[AuthService]
+    AC --> TIM[TimerManager]
+    AC --> DLR[DeepLinkRouter]
+    AC --> ARC[AssistantRecipeContext]
+  end
+
+  subgraph ui [SwiftUI]
+    CV[ContentView]
+    CV -->|@Environment AppContainer.self| AC
+    AC -->|@Environment| YSS
+  end
+
+  AC -->|configures| OSF[OS facades: SharedAuthStore, AppGroup, TimerSnapshotStore, APIClient.shared]
+```
+
+**Key points:**
+
+- All app-level services are constructed once in `AppContainer.init` in dependency order.
+- `RecipeScalerNativeApp.init` creates the container and provides it to SwiftUI
+  via `.appEnvironment(container)` (see `AppEnvironment.swift`).
+- SwiftUI views read services via `@Environment(YjsSyncService.self)` etc. — per-property
+  observation through the `@Observable` macro.
+- AppIntents and non-SwiftUI callers use the process-wide `AppContainer.shared` handle
+  (set during `init`).
+- `.shared` static properties on services still exist as **shims**: they forward to
+  `AppContainer.shared.<service>` when the container is constructed, falling back to a
+  lazily-instantiated `Standalone` for previews/tests/early-launch paths.
+- **OS facades remain singletons** (`SharedAuthStore`, `AppGroup`, `TimerSnapshotStore`,
+  `APIClient.shared`): they back cross-process IPC with extensions and must remain
+  process-global.
+- The cyclic callback `TimerSyncService.sendTimerEvent ↔ YjsSyncService.emitTimerEvent`
+  is wired by `TimerEventBridge` (owned by `AppContainer`) using weak references on both sides.
+
+## Observation framework
+
+All app-level state-holder classes use the Swift `@Observable` macro (no `ObservableObject`).
+This enables per-property SwiftUI observation — only views that actually read a changed
+property re-render, instead of every view bound to the object.
+
+| Class | Notes |
+|-------|-------|
+| `YjsSyncService` | Migrated from `ObservableObject` (15 `@Published`). |
+| `RemindersSyncService` | Migrated from `ObservableObject` (2 `@Published`). |
+| `SpotlightIndexer` | Vestigial `ObservableObject` removed. |
+| `RecipeListViewModel` | Migrated + made `final`. |
+| `DescriptionEditorBridge` | Migrated from `ObservableObject` (6 `@Published`). |
+| `DescriptionEditorChromeState` | Migrated; reads focus/ready from the bound `bridge`. |
+| `AuthService`, `TimerManager`, `DeepLinkRouter`, `AssistantRecipeContext` | Already on `@Observable`. |
+| `APIClient` | Vestigial `ObservableObject` removed; not `@Observable` (it's a stateless network facade). |
+

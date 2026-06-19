@@ -6,7 +6,7 @@ import SwiftUI
 /// with recipe counts, and an inline "New collection" create row.
 /// Supports two layouts: plain list and folder grid (configurable in Profile).
 struct CollectionsRootView: View {
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
     @Binding var navigationPath: NavigationPath
 
     @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)

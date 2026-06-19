@@ -9,15 +9,15 @@ import SwiftUI
 
 struct DescriptionWireExportHost: View {
     let recipeId: String
-    @ObservedObject var syncService: YjsSyncService
-    @StateObject private var bridge: DescriptionEditorBridge
+    @Bindable var syncService: YjsSyncService
+    @State private var bridge: DescriptionEditorBridge
     @State private var exportSessionActive = false
 
     init(recipeId: String, syncService: YjsSyncService) {
         self.recipeId = recipeId
         self.syncService = syncService
-        _bridge = StateObject(
-            wrappedValue: DescriptionEditorBridge(
+        _bridge = State(
+            initialValue: DescriptionEditorBridge(
                 recipeId: recipeId,
                 syncService: syncService,
                 presentation: .inline

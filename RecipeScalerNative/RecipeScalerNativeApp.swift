@@ -45,6 +45,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 struct RecipeScalerNativeApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    /// Single source of truth for all app-level services (review #27).
+    /// Built once on cold start; provided to SwiftUI via `@Environment(AppContainer.self)`
+    /// through `appEnvironment(_:)`. AppIntents and other non-SwiftUI callers access
+    /// it via `AppContainer.shared`.
+    @State private var container: AppContainer
+
     init() {
         // Install bundle swizzle + apply stored language preference before any
         // SwiftUI view body evaluates `String(localized:)` / `LocalizedStringKey`.
@@ -59,6 +65,18 @@ struct RecipeScalerNativeApp: App {
         Agentation.shared.toolbarHorizontalAlignment = .leading
         Agentation.shared.install()
         #endif
+
+        // Construct the dependency graph. SwiftData ModelContainer is created
+        // synchronously first (separate from AppContainer; owned by WindowGroup).
+        let modelContext = ModelContext(Self.sharedModelContainer)
+        do {
+            container = try AppContainer(modelContext: modelContext)
+        } catch {
+            // The only failure path is YrsDatabase corruption; AppContainer
+            // already tries an in-memory fallback internally before rethrowing,
+            // so by this point recovery is impossible.
+            fatalError("Cannot initialize AppContainer: \(error)")
+        }
     }
 
     static let sharedModelContainer: ModelContainer = {
@@ -84,6 +102,7 @@ struct RecipeScalerNativeApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .appEnvironment(container)
                 .onOpenURL { url in
                     DeepLinkRouter.handle(url)
                 }

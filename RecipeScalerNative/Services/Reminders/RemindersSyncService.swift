@@ -29,19 +29,21 @@ import EventKit
 import UIKit
 
 @MainActor
-final class RemindersSyncService: ObservableObject {
+@Observable
+final class RemindersSyncService {
 
-    // MARK: - Published state (read by AccountSettingsViewModel)
+    // MARK: - Observable state (read by AccountSettingsViewModel)
 
-    @Published private(set) var authorizationStatus: EKAuthorizationStatus = .notDetermined
-    @Published private(set) var availableLists: [EKCalendar] = []
+    private(set) var authorizationStatus: EKAuthorizationStatus = .notDetermined
+    private(set) var availableLists: [EKCalendar] = []
 
     // MARK: - Private
 
     private let store = EKEventStore()
     private let mapStore: RemindersMapStore
     private weak var syncService: YjsSyncService?
-    private var cancellables = Set<AnyCancellable>()
+    private var crdtObserveTask: Task<Void, Never>?
+    private var eventStoreObserver: NSObjectProtocol?
     private var isRunningSync = false
 
     static let dedicatedListName = "Recipe Scaler"
@@ -51,6 +53,10 @@ final class RemindersSyncService: ObservableObject {
     init(mapStore: RemindersMapStore) {
         self.mapStore = mapStore
         refreshAuthorizationStatus()
+    }
+
+    nonisolated deinit {
+        // Tasks cancel themselves on deinit; MainActor-isolated cancellation is unsafe here.
     }
 
     // MARK: - Wiring
@@ -125,29 +131,55 @@ final class RemindersSyncService: ObservableObject {
     private func startObserving(syncService: YjsSyncService) {
         stopObserving()
 
-        // CRDT → Reminders: react to every snapshot change.
-        syncService.$shoppingSnapshot
-            .dropFirst()
-            .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
-            .sink { [weak self] snapshot in
-                guard let self else { return }
-                Task { await self.reconcileCRDTToReminders(snapshot: snapshot) }
+        // CRDT → Reminders: react to every snapshot change via Observation.
+        crdtObserveTask?.cancel()
+        crdtObserveTask = Task { @MainActor [weak self, weak syncService] in
+            var hasFirstSnapshot = false
+            while !Task.isCancelled {
+                guard let self, let syncService else { return }
+                let snapshot: ShoppingListSnapshot = withObservationTracking {
+                    syncService.shoppingSnapshot
+                } onChange: { [weak self] in
+                    Task { @MainActor [weak self] in self?.restartCRDTObservation(syncService: syncService) }
+                }
+                if hasFirstSnapshot {
+                    // Debounce: web parity with Combine .debounce(300ms).
+                    try? await Task.sleep(for: .milliseconds(300))
+                    guard !Task.isCancelled else { return }
+                    await self.reconcileCRDTToReminders(snapshot: snapshot)
+                } else {
+                    hasFirstSnapshot = true
+                }
             }
-            .store(in: &cancellables)
+        }
 
-        // Reminders → CRDT: react to external EventKit changes.
-        NotificationCenter.default
-            .publisher(for: .EKEventStoreChanged, object: store)
-            .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                Task { await self.reconcileRemindersToUserSnapshot() }
+        // Reminders → CRDT: react to external EventKit changes (kept on Combine; pure notification).
+        eventStoreObserver = NotificationCenter.default.addObserver(
+            forName: .EKEventStoreChanged,
+            object: store,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(500))
+                guard !Task.isCancelled else { return }
+                await self.reconcileRemindersToUserSnapshot()
             }
-            .store(in: &cancellables)
+        }
+    }
+
+    /// Restart the CRDT observation loop after a change notification fires.
+    private func restartCRDTObservation(syncService: YjsSyncService) {
+        startObserving(syncService: syncService)
     }
 
     private func stopObserving() {
-        cancellables.removeAll()
+        crdtObserveTask?.cancel()
+        crdtObserveTask = nil
+        if let observer = eventStoreObserver {
+            NotificationCenter.default.removeObserver(observer)
+            eventStoreObserver = nil
+        }
     }
 
     // MARK: - CRDT → Reminders reconciliation

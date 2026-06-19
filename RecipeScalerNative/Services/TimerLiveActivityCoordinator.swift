@@ -9,7 +9,16 @@ import os
 
 @MainActor
 final class TimerLiveActivityCoordinator {
-    static let shared = TimerLiveActivityCoordinator()
+    /// Shim: returns `AppContainer.shared.timerLiveActivityCoordinator` when
+    /// the container is constructed, otherwise a stand-alone instance.
+    static var shared: TimerLiveActivityCoordinator {
+        if let container = AppContainer.shared {
+            return container.timerLiveActivityCoordinator
+        }
+        return Standalone
+    }
+
+    private static let Standalone = TimerLiveActivityCoordinator()
 
 
     private var activityByTimerId: [String: Activity<RecipeTimerActivityAttributes>] = [:]
@@ -17,7 +26,7 @@ final class TimerLiveActivityCoordinator {
 
     private static let exceededDismissDelay: TimeInterval = 30 * 60
 
-    private init() {}
+    init() {}
 
     func restoreFromSystem() {
         for activity in Activity<RecipeTimerActivityAttributes>.activities {

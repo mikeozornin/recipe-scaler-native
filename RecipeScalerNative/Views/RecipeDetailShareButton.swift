@@ -42,7 +42,7 @@ struct RecipeDetailShareButton: View {
 // MARK: - Sheet
 
 private struct RecipeShareSheet: View {
-    @EnvironmentObject private var syncService: YjsSyncService
+    @Environment(YjsSyncService.self) private var syncService
     @Environment(\.dismiss) private var dismiss
 
     let recipeId: String
