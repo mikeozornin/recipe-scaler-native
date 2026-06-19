@@ -466,7 +466,7 @@ actor DocumentManager {
     }
 
     func updateRecipeColor(recipeId: String, color: String) async throws {
-        let normalized = Self.normalizeColor(color)
+        let normalized = RecipeAccentColor.normalizedStored(color)
         let touchedAt = Self.isoTimestamp()
         try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { map, txn in
             map.insert(key: "color", value: .string(normalized), txn: txn)
@@ -981,7 +981,7 @@ actor DocumentManager {
         let touchedAt = Self.isoTimestamp()
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let displayName = trimmedName.isEmpty ? Bundle.currentLocalizedString("recipe.create.new") : trimmedName
-        let normalizedColor = Self.normalizeColor(color)
+        let normalizedColor = RecipeAccentColor.normalizedStored(color)
 
         try await appendCollectionEntryIfNotExists(
             recipeId: recipeId,
@@ -1471,12 +1471,6 @@ actor DocumentManager {
     private func notifyRecipeChangedIfNeeded(recipeId: String) {
         guard suppressRecipeObserverDepth == 0 else { return }
         onRecipeChanged?(recipeId)
-    }
-
-    private static func normalizeColor(_ value: String) -> String {
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.hasPrefix("#"), trimmed.count == 7 || trimmed.count == 4 else { return trimmed }
-        return trimmed.uppercased()
     }
 
     private func installLocalUpdateBridge(key: String, doc: YrsDocument) async {

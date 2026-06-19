@@ -184,6 +184,7 @@
 		APP0000000000000000000093 /* TimerEventBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000003 /* TimerEventBridge.swift */; };
 		B3APPLOG02B293A4B70100002 /* AppLogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPLOG02A293A4B70100001 /* AppLogTests.swift */; };
 		B3UIDFMT02B293A4B70100002 /* UserIdFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3UIDFMT02A293A4B70100001 /* UserIdFormatterTests.swift */; };
+		B3RACLRT02B293A4B70100002 /* RecipeAccentColorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3RACLRT02A293A4B70100001 /* RecipeAccentColorTests.swift */; };
 		B3C33C8186E14EA2B37291D4 /* RecipeScalerCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E05920822F344D9691E82401 /* RecipeScalerCore.framework */; };
 		B3PLUR01B293A4B701000002 /* PluralizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3PLUR01A293A4B701000001 /* PluralizationTests.swift */; };
 		B3SNAP01B293A4B701000004 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = B3SNAP01A293A4B701000003 /* SnapshotTesting */; };
@@ -649,6 +650,7 @@
 		APP0000000000000000000003 /* TimerEventBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerEventBridge.swift; sourceTree = "<group>"; };
 		B3APPLOG02A293A4B70100001 /* AppLogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogTests.swift; sourceTree = "<group>"; };
 		B3UIDFMT02A293A4B70100001 /* UserIdFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserIdFormatterTests.swift; sourceTree = "<group>"; };
+		B3RACLRT02A293A4B70100001 /* RecipeAccentColorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeAccentColorTests.swift; sourceTree = "<group>"; };
 		B3PLUR01A293A4B701000001 /* PluralizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluralizationTests.swift; sourceTree = "<group>"; };
 		B45B89CCA2BD6814320CF091 /* TimerWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimerWidget.swift; sourceTree = "<group>"; };
 		B723ECE01A3D4E2F85D856AC /* Shared.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Resources/Shared.xcstrings; sourceTree = "<group>"; };
@@ -1239,6 +1241,7 @@
 				B3TESTERR0020 /* ErrorLocalizationTests.swift */,
 				B3APPLOG02A293A4B70100001 /* AppLogTests.swift */,
 				B3UIDFMT02A293A4B70100001 /* UserIdFormatterTests.swift */,
+				B3RACLRT02A293A4B70100001 /* RecipeAccentColorTests.swift */,
 				B3PLUR01A293A4B701000001 /* PluralizationTests.swift */,
 				B3APIC01B293A4B701000005 /* APIClientTests.swift */,
 				B3KCA01A293A4B701000001 /* SharedAuthStoreTests.swift */,
@@ -2190,6 +2193,7 @@
 				B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */,
 				B3APPLOG02B293A4B70100002 /* AppLogTests.swift in Sources */,
 				B3UIDFMT02B293A4B70100002 /* UserIdFormatterTests.swift in Sources */,
+				B3RACLRT02B293A4B70100002 /* RecipeAccentColorTests.swift in Sources */,
 				B3PLUR01B293A4B701000002 /* PluralizationTests.swift in Sources */,
 				B3APIC01B293A4B701000006 /* APIClientTests.swift in Sources */,
 				B3KCA01B293A4B701000001 /* SharedAuthStoreTests.swift in Sources */,
