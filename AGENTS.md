@@ -51,7 +51,11 @@ at specs/034-architecture-dedup-truth/plan.md
 - All app text must use the project typeface (Martian), not the default SF — if a text block renders in the system font, it's a bug.
 - Verify UI changes via the simulator accessibility server, not screenshot reads — `read`-tool image rendering is unreliable for visual verification.
 - For Figma-driven UI: write `layout.md` + `layout-audit.json` before SwiftUI views; human reviews `layout.md`; run `audit-ui-layout.sh` in the agent loop.
+- Never use the `composer-fast` model for subagents — always use the primary model (composer-2.5).
+- After completing a code fix, commit the changes and close the corresponding Linear issue; user says «закрой задачу».
+- Prefer plan-driven implementation: `specs/<feature>/spec.md` → `plan.md` → `tasks.md` → execute tasks sequentially without stopping.
 
 ## Learned Workspace Facts
 
-_(none yet)_
+- Small fixes and review cleanups are done on `master` directly; feature branches used only for larger specs.
+- Plan-driven specs live under `specs/<number>-<feature>/` (e.g. `specs/034-architecture-dedup-truth/`).

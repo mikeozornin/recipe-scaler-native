@@ -281,3 +281,67 @@ Chronological log of substantive choices (newest last).
 **Rationale:** Two confirmation blocks rendered simultaneously, causing a flicker of a "second confirmation". Single inline component matches web parity.
 
 ---
+
+### 2026-06-19 — Pin Swift Package dependencies (commit Package.resolved)
+
+**Decision:** `RecipeScalerNative.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved` is committed to the repo to pin all Swift Package dependencies, matching web's lockfile practice.
+
+**Rationale:** User explicitly requested dependency pinning after discovering Package.resolved was gitignored. Prevents surprise version bumps during CI or team checkout.
+
+---
+
+### 2026-06-19 — Typed ServerErrorCode enum replaces string prefix matching
+
+**Decision:** Replace `switch errorString.hasPrefix("…")` patterns in `ServerError.swift` with a typed `ServerErrorCode` enum (`enum ServerErrorCode: String`) that maps known server error codes. Unknown codes fall through to a generic case; localization keys stay unchanged.
+
+**Rationale:** String-prefix matching is fragile across localization changes and masks typos. A typed enum provides compile-time safety and makes the contract between server and client explicit (MIK-135 / review #52).
+
+---
+
+### 2026-06-19 — Drop ingredient unit canonicalization in Paprika/Crouton imports
+
+**Decision:** Remove regex-based ingredient unit canonicalization (`tablespoon → ст.л.`, `cup → стакан`, etc.) from both Paprika and Crouton import parsers. Import ingredients as-is from the source file — "как пришло так и пришло". The standard typed ingredient structure (name + amount + unit) is still parsed; only unit-name rewriting is removed.
+
+**Rationale:** Divergent normalization rules between Paprika and Crouton parsers produced inconsistent ingredient display (MIK-145 / review #62). User chose fidelity over normalization: regex rewriting added complexity without clear user benefit, and the original unit names are understandable as-is.
+
+---
+
+### 2026-06-19 — Linear MCP as primary bug tracker for code review findings
+
+**Decision:** All findings from the system-wide code review document (`review-kilo-glm-5.2-recipe-scaler-native.md`) are migrated to Linear issues via `plugin-linear-linear` MCP, categorized by priority and tagged by area (e.g. `Architecture`, `Business Logic`, `Performance`, `Security`). The markdown review file remains as a reference index but issues are tracked and closed in Linear.
+
+**Rationale:** User explicitly requested migration of even completed items into Linear for unified tracking. Linear provides better prioritization, assignment, and visibility than a static markdown file.
+
+---
+
+### 2026-06-20 — SwiftData ModelContainer graceful fallback to in-memory store
+
+**Decision:** When SwiftData `ModelContainer` initialization fails (e.g. corrupted store, schema migration error), fall back to an in-memory store instead of crashing with `fatalError`. The app remains functional with a warning; data is not persisted but the user isn't locked out.
+
+**Rationale:** `fatalError` on store init failure bricks the app with no recovery path (MIK-152 / review #68). In-memory fallback lets the user continue using the app while the underlying store issue can be diagnosed and fixed on next launch.
+
+---
+
+### 2026-06-20 — Per-recipe sync flags move from UserDefaults to SQLite
+
+**Decision:** Per-recipe sync-state flags (currently stored as `UserDefaults` keys keyed by recipe ID) are migrated to the SQLite database as a proper table column or dedicated table, decoupled from `UserDefaults`.
+
+**Rationale:** `UserDefaults` is designed for small, user-facing preferences, not per-entity state that grows with the number of recipes (MIK-128 / review #45). SQLite provides transactional safety, queryability, and avoids `UserDefaults` plist bloat as the recipe count grows.
+
+---
+
+### 2026-06-20 — Regex literal `try!` at static init → compile-once pattern
+
+**Decision:** Replace `static let pattern = try! NSRegularExpression(pattern:..., options: [])` declarations (which force-unwrap regex compilation at static init time) with a lazy `static var` that throws only when accessed, or use `#/regex/#` literals (Swift 5.7+) where possible. The `try!` sites in `PaprikaRecipeParser.swift` and `CroutonRecipeParser.swift` are refactored.
+
+**Rationale:** `try!` on regex literals crashes the entire app on launch if any regex pattern is malformed (MIK-143 / review #59). While regex literals are deterministic, the crash-on-launch cost is disproportionate. Compile-once + lazy access limits blast radius.
+
+---
+
+### 2026-06-20 — Socket.IO binary payloads: fix byte-per-int inflation
+
+**Decision:** Socket.IO sync payloads that transmit raw Yjs binary updates now use the minimal byte encoding instead of the legacy one-byte-per-32bit-int representation that inflated payloads 4×. The fix targets the `SyncPayload` encoding layer shared by `YjsSyncService` and the Socket.IO transport.
+
+**Rationale:** Each `Uint8Array` byte was packed as a 32-bit integer in JSON, inflating binary CRDT payloads by ~4× (MIK-100 / review #17). The user explicitly required that sync not break — the fix is isolated to the transport encoding layer, keeping the Yjs protocol unchanged.
+
+---
