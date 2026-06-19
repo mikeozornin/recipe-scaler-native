@@ -11,7 +11,9 @@ public enum ThirdPartyIngredientAmountSplitter {
     /// whole input to be returned as `amount` (unit stays empty). This avoids
     /// the previous divergence where `cups` survived in Paprika but was
     /// canonicalized to `cup` in Crouton.
-    private static let quantityPattern = try! NSRegularExpression(
+    //
+    // MIK-143 [review #59]: safe static-init — `try?` + nil-guard in consumer.
+    private static let quantityPattern: NSRegularExpression? = try? NSRegularExpression(
         pattern: #"^([\d.,/\s]+)$"#
     )
 
@@ -20,6 +22,7 @@ public enum ThirdPartyIngredientAmountSplitter {
     public static func split(_ combined: String) -> (amount: String, unit: String) {
         let trimmed = combined.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return ("", "") }
+        guard let quantityPattern else { return (trimmed, "") }
 
         let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
         guard let match = quantityPattern.firstMatch(in: trimmed, range: range),

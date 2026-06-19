@@ -10,13 +10,16 @@ enum PaprikaIngredientSplitter {
     /// token is extracted into `amount`; everything after it goes to `name`
     /// verbatim. The splitter no longer recognizes a fixed set of units
     /// (g/kg/ml/cups/tbsp/…), so the unit field is always empty here.
-    private static let quantityPattern = try! NSRegularExpression(
+    //
+    // MIK-143 [review #59]: safe static-init — `try?` + nil-guard in consumer.
+    private static let quantityPattern: NSRegularExpression? = try? NSRegularExpression(
         pattern: #"^([\d.,/\s]+)\s+(.+)$"#
     )
 
     static func split(line: String) -> (amount: String, name: String) {
         let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return ("", "") }
+        guard let quantityPattern else { return ("", trimmed) }
 
         let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
         if let match = quantityPattern.firstMatch(in: trimmed, range: range),

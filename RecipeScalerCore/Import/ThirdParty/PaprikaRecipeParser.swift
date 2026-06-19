@@ -6,7 +6,8 @@
 import Foundation
 
 public enum PaprikaRecipeParser {
-    private static let stepNumberPattern = try! NSRegularExpression(
+    // MIK-143 [review #59]: safe static-init — `try?` + nil-guard in consumer.
+    private static let stepNumberPattern: NSRegularExpression? = try? NSRegularExpression(
         pattern: #"^\d+[\.\)]\s*"#
     )
 
@@ -147,6 +148,7 @@ public enum PaprikaRecipeParser {
     }
 
     private static func stripStepNumber(from line: String) -> String {
+        guard let stepNumberPattern else { return line }
         let range = NSRange(line.startIndex..<line.endIndex, in: line)
         let stripped = stepNumberPattern.stringByReplacingMatches(
             in: line,
