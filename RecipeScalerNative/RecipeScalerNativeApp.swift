@@ -95,7 +95,32 @@ struct RecipeScalerNativeApp: App {
                 configurations: [modelConfiguration]
             )
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            AppLog.error(.database, "SwiftData store corrupted, recreating: \(error)")
+
+            // Delete corrupted store files (including WAL journal and shared memory)
+            let appSupport = FileManager.default.urls(
+                for: .applicationSupportDirectory,
+                in: .userDomainMask
+            )[0]
+            let storeFiles = [
+                "default.store",
+                "default.store-wal",
+                "default.store-shm"
+            ]
+            for fileName in storeFiles {
+                let url = appSupport.appendingPathComponent(fileName)
+                try? FileManager.default.removeItem(at: url)
+            }
+
+            // Retry with fresh store
+            do {
+                return try ModelContainer(
+                    for: schema,
+                    configurations: [modelConfiguration]
+                )
+            } catch {
+                fatalError("Could not create ModelContainer after deleting corrupted store: \(error)")
+            }
         }
     }()
 
