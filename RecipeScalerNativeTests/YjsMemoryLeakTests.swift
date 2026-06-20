@@ -91,4 +91,63 @@ final class YjsMemoryLeakTests: XCTestCase {
         // Ensure dummyTask is cancelled
         XCTAssertTrue(dummyTask.isCancelled)
     }
+
+    /// MIK-167: deleting a recipe (server `sync_error.recipeDeleted`
+    /// or local `deleteRecipeFromCollection`) must clear that recipeId's
+    /// entries in all four per-recipe dicts immediately — not wait for
+    /// global teardown. Otherwise mid-load continuations, wire-snapshot
+    /// refresh tasks, and description-editor sessions leak until stop().
+    @MainActor
+    func testCancelPendingWorkForRecipeClearsAllFourEntries() async throws {
+        let store = makeStubStore()
+        let sync = YjsSyncService(store: store)
+
+        // Arrange: populate all four per-recipe dicts for two recipeIds.
+        let wireTaskA = Task { _ = try? await Task.sleep(nanoseconds: 1_000_000_000) }
+        let wireTaskB = Task { _ = try? await Task.sleep(nanoseconds: 1_000_000_000) }
+        let loadTaskA = Task<Bool, Never> { _ = try? await Task.sleep(nanoseconds: 1_000_000_000); return false }
+        let loadTaskB = Task<Bool, Never> { _ = try? await Task.sleep(nanoseconds: 1_000_000_000); return false }
+        sync.test_simulateWireSnapshotRefreshTask(recipeId: "recipe-a", task: wireTaskA)
+        sync.test_simulateWireSnapshotRefreshTask(recipeId: "recipe-b", task: wireTaskB)
+        sync.test_simulateLoadTask(recipeId: "recipe-a", task: loadTaskA)
+        sync.test_simulateLoadTask(recipeId: "recipe-b", task: loadTaskB)
+        sync.test_simulateAddSession(recipeId: "recipe-a", session: DescriptionEditorSession())
+        sync.test_simulateAddSession(recipeId: "recipe-b", session: DescriptionEditorSession())
+
+        let contExpectation = expectation(description: "continuation for recipe-a resumed with false")
+        Task {
+            let result = await withCheckedContinuation { (cont: CheckedContinuation<Bool, Never>) in
+                sync.test_simulateLoadDocument(recipeId: "recipe-a", continuation: cont)
+            }
+            XCTAssertFalse(result)
+            contExpectation.fulfill()
+        }
+        // Let the Task register the continuation
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(sync.test_wireSnapshotRefreshTasksCount, 2)
+        XCTAssertEqual(sync.test_documentLoadTasksCount, 2)
+        XCTAssertEqual(sync.test_documentLoadContinuationsCount, 1)
+        XCTAssertEqual(sync.test_descriptionEditorSessionsCount, 2)
+
+        // Act: cancel pending work for recipe-a only.
+        sync.test_cancelPendingWork(forRecipeId: "recipe-a")
+
+        // Continuation must have resumed returning false.
+        await fulfillment(of: [contExpectation], timeout: 2.0)
+
+        // Assert: recipe-a entries cleared; recipe-b untouched.
+        XCTAssertEqual(sync.test_wireSnapshotRefreshTasksCount, 1)
+        XCTAssertEqual(sync.test_documentLoadTasksCount, 1)
+        XCTAssertEqual(sync.test_documentLoadContinuationsCount, 0)
+        XCTAssertEqual(sync.test_descriptionEditorSessionsCount, 1)
+
+        XCTAssertTrue(wireTaskA.isCancelled)
+        XCTAssertTrue(loadTaskA.isCancelled)
+        XCTAssertFalse(wireTaskB.isCancelled)
+        XCTAssertFalse(loadTaskB.isCancelled)
+
+        // Cleanup so it does not outlive the test.
+        sync.stop()
+    }
 }

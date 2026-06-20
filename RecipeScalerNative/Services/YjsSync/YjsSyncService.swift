@@ -684,6 +684,7 @@ final class YjsSyncService {
 
     func deleteRecipeFromCollection(recipeId: String) async throws {
         try await documentManager.tombstoneCollectionEntry(recipeId: recipeId)
+        cancelPendingWork(forRecipeId: recipeId)
         if activeRecipeId == recipeId {
             currentRecipe = nil
             activeRecipeId = nil
@@ -1203,6 +1204,25 @@ final class YjsSyncService {
             task.cancel()
         }
         documentLoadTasks.removeAll()
+    }
+
+    /// MIK-167: cancel and clear every per-recipe dict entry for one recipeId.
+    ///
+    /// Used when a recipe is deleted — either via a server `sync_error` with
+    /// `.recipeDeleted`, or via a local `deleteRecipeFromCollection`. Without
+    /// this, mid-load tasks, pending continuations, scheduled wire-snapshot
+    /// refreshes, and description-editor sessions stay pinned to the recipeId
+    /// until global teardown, leaving zombie entries that violate the
+    /// "lifetime tied to owner" contract from MIK-130.
+    ///
+    /// Order matches `cancelAllPendingDocumentLoads`: resume the continuation
+    /// first (so the awaiting TaskGroup completes naturally), then cancel the
+    /// wrapping Task, then drop the remaining entries.
+    private func cancelPendingWork(forRecipeId recipeId: String) {
+        documentLoadContinuations.removeValue(forKey: recipeId)?.resume(returning: false)
+        documentLoadTasks.removeValue(forKey: recipeId)?.cancel()
+        wireSnapshotRefreshTasks.removeValue(forKey: recipeId)?.cancel()
+        descriptionEditorSessions.removeValue(forKey: recipeId)
     }
 
     private func connectSocket() {
@@ -2434,6 +2454,7 @@ final class YjsSyncService {
 
         case .recipeDeleted:
             guard let recipeId else { return }
+            cancelPendingWork(forRecipeId: recipeId)
             if activeRecipeId == recipeId {
                 currentRecipe = nil
                 activeRecipeId = nil
@@ -2542,12 +2563,20 @@ extension YjsSyncService {
         documentLoadContinuations[recipeId] = continuation
     }
 
+    func test_simulateLoadTask(recipeId: String, task: Task<Bool, Never>) {
+        documentLoadTasks[recipeId] = task
+    }
+
     func test_simulateWireSnapshotRefreshTask(recipeId: String, task: Task<Void, Never>) {
         wireSnapshotRefreshTasks[recipeId] = task
     }
 
     func test_simulateAddSession(recipeId: String, session: DescriptionEditorSession) {
         descriptionEditorSessions[recipeId] = session
+    }
+
+    func test_cancelPendingWork(forRecipeId recipeId: String) {
+        cancelPendingWork(forRecipeId: recipeId)
     }
 
     func test_pruneSessions() {
