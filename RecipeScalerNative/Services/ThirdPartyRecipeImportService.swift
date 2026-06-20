@@ -54,6 +54,7 @@ final class ThirdPartyRecipeImportService {
         var failed: [(fileName: String, error: ThirdPartyImportError)] = []
         var photosSkippedOffline = 0
         var photosFailed = 0
+        var photosOversized = 0
 
         let stream = ThirdPartyFormatDetector.enumerateRecipeEntriesStream(
             url: url,
@@ -85,6 +86,11 @@ final class ThirdPartyRecipeImportService {
                     } else {
                         photosSkippedOffline += 1
                     }
+                } else if draft.imageOversized {
+                    // MIK-119 [review #35]: photo was present in the source but
+                    // exceeded the size cap — surface a dedicated counter so the
+                    // import summary can warn the user instead of dropping silently.
+                    photosOversized += 1
                 }
 
                 // US8: map Paprika `categories` / Crouton `tags` → recipe folders.
@@ -110,7 +116,8 @@ final class ThirdPartyRecipeImportService {
             importedRecipeIds: importedRecipeIds,
             failed: failed,
             photosSkippedOffline: photosSkippedOffline,
-            photosFailed: photosFailed
+            photosFailed: photosFailed,
+            photosOversized: photosOversized
         )
     }
 
@@ -166,23 +173,41 @@ enum ThirdPartyImportErrorLocalizer {
     }
 
     static func photoWarningMessage(for result: ThirdPartyImportResult) -> String? {
+        // MIK-119 [review #35]: surface all photo warnings (oversized + offline
+        // + failed), not just the first one. Joined with newlines so the import
+        // summary is honest about every dropped photo bucket.
+        var messages: [String] = []
+        if result.photosOversized > 0 {
+            let template = Bundle.currentLocalizedString("import.third-party-photo-oversized")
+            messages.append(
+                String(
+                    format: template,
+                    locale: AppLanguagePreference.current.locale,
+                    result.photosOversized
+                )
+            )
+        }
         if result.photosSkippedOffline > 0 {
             let template = Bundle.currentLocalizedString("import.third-party-photo-skipped-offline")
-            return String(
-                format: template,
-                locale: AppLanguagePreference.current.locale,
-                result.photosSkippedOffline
+            messages.append(
+                String(
+                    format: template,
+                    locale: AppLanguagePreference.current.locale,
+                    result.photosSkippedOffline
+                )
             )
         }
         if result.photosFailed > 0 {
             let template = Bundle.currentLocalizedString("import.third-party-photo-failed")
-            return String(
-                format: template,
-                locale: AppLanguagePreference.current.locale,
-                result.photosFailed
+            messages.append(
+                String(
+                    format: template,
+                    locale: AppLanguagePreference.current.locale,
+                    result.photosFailed
+                )
             )
         }
-        return nil
+        return messages.isEmpty ? nil : messages.joined(separator: "\n")
     }
 
     static func progressMessage(completed: Int, total: Int) -> String {

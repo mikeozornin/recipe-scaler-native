@@ -375,6 +375,31 @@ final class CroutonRecipeParserTests: XCTestCase {
         XCTAssertEqual(draft.ingredients[0].amount, "2.5")
     }
 
+    /// MIK-119 [review #35]: empty `images` array must not set the flag — there
+    /// is nothing to warn about. Also documents that the oversized-image branch
+    /// is unreachable through a valid JSON payload today —
+    /// `maxRecipeJSONBytes` (16 MB) < `maxImageBytes` (25 MB), so oversized
+    /// images are rejected earlier with `.jsonSizeLimitExceeded`
+    /// (covered by `testTP4_2_RejectsOversizedJSON`). The `imageOversized`
+    /// guard stays as defense-in-depth.
+    func testMIK119_NoImagesDoesNotSetFlag() throws {
+        let payload: [String: Any] = [
+            "uuid": "x",
+            "name": "No Images",
+            "ingredients": [["order": 0, "ingredient": ["name": "x"]]],
+            "images": []
+        ]
+        let data = try JSONSerialization.data(withJSONObject: payload)
+        let draft = try CroutonRecipeParser.parse(
+            jsonData: data,
+            fileName: "noimg.crumb",
+            sourceFormat: .croutonSingle
+        )
+
+        XCTAssertNil(draft.imageData)
+        XCTAssertFalse(draft.imageOversized)
+    }
+
     private func fixtureURL(named name: String, ext: String) throws -> URL {
         let bundle = Bundle(for: CroutonRecipeParserTests.self)
         guard let url = bundle.url(

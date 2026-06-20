@@ -100,8 +100,7 @@ final class PaprikaRecipeParserTests: XCTestCase {
 
     /// A Paprika JSON payload exceeding `maxRecipeJSONBytes` must be rejected with
     /// `.jsonSizeLimitExceeded` BEFORE `JSONSerialization` is called.
-    func testTP4_1_RejectsOversizedJSON() throws {
-        let big = String(repeating: "x", count: ThirdPartyImportLimits.maxRecipeJSONBytes + 1_000)
+    func testTP4_1_RejectsOversizedJSON() throws {        let big = String(repeating: "x", count: ThirdPartyImportLimits.maxRecipeJSONBytes + 1_000)
         let payload = "{\"name\":\"\(big)\",\"ingredients\":\"\"}"
         let data = Data(payload.utf8)
         XCTAssertGreaterThan(data.count, ThirdPartyImportLimits.maxRecipeJSONBytes)
@@ -118,6 +117,29 @@ final class PaprikaRecipeParserTests: XCTestCase {
             }
             XCTAssertEqual(fileName, "huge.paprikarecipe")
         }
+    }
+
+    /// MIK-119 [review #35]: when there is no photo at all, `imageOversized`
+    /// must stay false (otherwise the import service would over-report drops).
+    /// Also documents that the oversized-photo branch is unreachable through a
+    /// valid JSON payload today — `maxRecipeJSONBytes` (16 MB) < `maxImageBytes`
+    /// (25 MB), so oversized photos are rejected earlier with
+    /// `.jsonSizeLimitExceeded` (covered by `testTP4_1_RejectsOversizedJSON`).
+    /// The `imageOversized` guard stays as defense-in-depth.
+    func testMIK119_MissingPhotoDoesNotSetFlag() throws {
+        let payload: [String: Any] = [
+            "name": "No Photo",
+            "ingredients": "egg"
+        ]
+        let data = try JSONSerialization.data(withJSONObject: payload)
+        let draft = try PaprikaRecipeParser.parse(
+            jsonData: data,
+            fileName: "nophoto.paprikarecipe",
+            sourceFormat: .paprikaSingle
+        )
+
+        XCTAssertNil(draft.imageData)
+        XCTAssertFalse(draft.imageOversized)
     }
 
     private func fixtureURL(named name: String, ext: String) throws -> URL {

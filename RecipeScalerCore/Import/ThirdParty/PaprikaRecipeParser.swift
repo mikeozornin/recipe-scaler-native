@@ -63,7 +63,7 @@ public enum PaprikaRecipeParser {
         }
         descriptionBlocks.append(contentsOf: directionBlocks)
 
-        let imageData = decodePhotoData(object["photo_data"], fileName: fileName)
+        let photo = decodePhotoData(object["photo_data"], fileName: fileName)
 
         return ThirdPartyRecipeDraft(
             name: name,
@@ -72,10 +72,11 @@ public enum PaprikaRecipeParser {
             descriptionBlocks: descriptionBlocks,
             originalRecipe: trimmedString(object["source"]),
             originalRecipeLink: trimmedString(object["source_url"]),
-            imageData: imageData,
+            imageData: photo.data,
             categoryLabels: object["categories"] as? [String] ?? [],
             sourceFileName: fileName,
-            sourceFormat: sourceFormat
+            sourceFormat: sourceFormat,
+            imageOversized: photo.oversized
         )
     }
 
@@ -158,14 +159,23 @@ public enum PaprikaRecipeParser {
         return stripped.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private static func decodePhotoData(_ value: Any?, fileName: String) -> Data? {
-        guard var base64 = value as? String, !base64.isEmpty else { return nil }
+    private static func decodePhotoData(_ value: Any?, fileName: String) -> (data: Data?, oversized: Bool) {
+        guard var base64 = value as? String, !base64.isEmpty else { return (nil, false) }
         base64 = base64.replacingOccurrences(of: "\\/", with: "/")
         guard let data = Data(base64Encoded: base64, options: [.ignoreUnknownCharacters]) else {
-            return nil
+            return (nil, false)
         }
-        guard data.count <= ThirdPartyImportLimits.maxImageBytes else { return nil }
-        return data
+        // MIK-119 [review #35]: distinguish "no photo" from "photo too large" so
+        // the import service can surface a dedicated warning instead of dropping
+        // the photo silently.
+        //
+        // NOTE: under current limits this branch is unreachable through a valid
+        // JSON payload — `maxRecipeJSONBytes` (16 MB) < `maxImageBytes` (25 MB),
+        // so any base64 photo larger than 25 MB forces the surrounding JSON past
+        // the pre-flight cap and is rejected earlier with `.jsonSizeLimitExceeded`.
+        // The guard is kept as defense-in-depth in case the limits ever diverge.
+        guard data.count <= ThirdPartyImportLimits.maxImageBytes else { return (nil, true) }
+        return (data, false)
     }
 
     private static func trimmedString(_ value: Any?) -> String? {

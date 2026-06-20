@@ -41,17 +41,18 @@ public enum CroutonRecipeParser {
         let ingredients = parseIngredients(object["ingredients"])
         var descriptionBlocks = parseDurationParagraphs(from: object)
         descriptionBlocks.append(contentsOf: parseSteps(object["steps"]))
-        let imageData = decodeFirstImage(object["images"], fileName: fileName)
+        let photo = decodeFirstImage(object["images"], fileName: fileName)
 
         return ThirdPartyRecipeDraft(
             name: name,
             servings: servings,
             ingredients: ingredients,
             descriptionBlocks: descriptionBlocks,
-            imageData: imageData,
+            imageData: photo.data,
             categoryLabels: object["tags"] as? [String] ?? [],
             sourceFileName: fileName,
-            sourceFormat: sourceFormat
+            sourceFormat: sourceFormat,
+            imageOversized: photo.oversized
         )
     }
 
@@ -163,14 +164,23 @@ public enum CroutonRecipeParser {
         }
     }
 
-    private static func decodeFirstImage(_ value: Any?, fileName: String) -> Data? {
+    private static func decodeFirstImage(_ value: Any?, fileName: String) -> (data: Data?, oversized: Bool) {
         guard let images = value as? [String], let base64 = images.first, !base64.isEmpty else {
-            return nil
+            return (nil, false)
         }
         guard let data = Data(base64Encoded: base64, options: [.ignoreUnknownCharacters]) else {
-            return nil
+            return (nil, false)
         }
-        guard data.count <= ThirdPartyImportLimits.maxImageBytes else { return nil }
-        return data
+        // MIK-119 [review #35]: distinguish "no image" from "image too large" so
+        // the import service can surface a dedicated warning instead of dropping
+        // the image silently.
+        //
+        // NOTE: under current limits this branch is unreachable through a valid
+        // JSON payload — `maxRecipeJSONBytes` (16 MB) < `maxImageBytes` (25 MB),
+        // so any base64 image larger than 25 MB forces the surrounding JSON past
+        // the pre-flight cap and is rejected earlier with `.jsonSizeLimitExceeded`.
+        // The guard is kept as defense-in-depth in case the limits ever diverge.
+        guard data.count <= ThirdPartyImportLimits.maxImageBytes else { return (nil, true) }
+        return (data, false)
     }
 }

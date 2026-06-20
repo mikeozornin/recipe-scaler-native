@@ -6194,6 +6194,22 @@
         }
       }
     },
+    "import.third-party-photo-oversized" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d photo(s) skipped (exceeds 25 MB limit)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d фото пропущено (превышен лимит 25 МБ)"
+          }
+        }
+      }
+    },
     "import.third-party-photo-skipped-offline" : {
       "extractionState" : "stale",
       "localizations" : {
