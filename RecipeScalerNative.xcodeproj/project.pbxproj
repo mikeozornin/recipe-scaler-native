@@ -936,6 +936,7 @@
 				D60774181BE9BA4A89FEDEAD /* ViewModels */,
 				E5F60718293A4B7000000005 /* Utils */,
 				2C4753BF21C7787912B3866F /* Views */,
+				B3EE97F98D203CDB04111240 /* Routing */,
 			);
 			path = RecipeScalerNative;
 			sourceTree = "<group>";
@@ -1448,7 +1449,6 @@
 				E5F60718293A4B703691736C /* ShoppingListPlainText.swift */,
 				E5F60718293A4B7024E554ED /* ShoppingSmokeTest.swift */,
 				E5F60718293A4B70898823B7 /* PublicURLBuilder.swift */,
-				0EF2B3F0EB5A4599AE467921 /* DeepLinkRouter.swift */,
 				E5F60718293A4B701A6B5339 /* ScreenAwakeController.swift */,
 				E5F60718293A4B7066BF06C8 /* TimerUtils.swift */,
 				E5F60718293A4B70DEADB001 /* SharingSettingsCache.swift */,
@@ -1461,6 +1461,14 @@
 				E5F60718293A4B7019BAC15E /* DiscoverSearch.swift */,
 			);
 			path = Utils;
+			sourceTree = "<group>";
+		};
+		B3EE97F98D203CDB04111240 /* Routing */ = {
+			isa = PBXGroup;
+			children = (
+				0EF2B3F0EB5A4599AE467921 /* DeepLinkRouter.swift */,
+			);
+			path = Routing;
 			sourceTree = "<group>";
 		};
 		E5F60718293A4B700000007E /* DescriptionEditor */ = {

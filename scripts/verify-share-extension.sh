@@ -49,7 +49,7 @@ fi
 echo "PASS: recipe-scaler URL scheme declared in main Info.plist"
 
 # DeepLinkRouter source + onOpenURL wiring.
-rg -q 'class DeepLinkRouter' RecipeScalerNative/Utils/DeepLinkRouter.swift
+rg -q 'class DeepLinkRouter' RecipeScalerNative/Routing/DeepLinkRouter.swift
 rg -q '\.onOpenURL' RecipeScalerNative/RecipeScalerNativeApp.swift
 rg -q 'consumePendingRecipeId|openRecipeRequested' RecipeScalerNative/Views/AppShellView.swift
 echo "PASS: DeepLinkRouter + onOpenURL + AppShell wiring present"
@@ -76,8 +76,8 @@ done
 echo "PASS: critical share-extension.* i18n keys present"
 
 # ShareContentClassifier exists and is wired into ShareContentLoader.
-rg -q 'enum ShareContentClassifier' RecipeScalerCore/UI/ShareContentClassifier.swift
-rg -q 'ShareContentClassifier.classify' RecipeScalerCore/UI/ShareContentLoader.swift
+rg -q 'enum ShareContentClassifier' ShareExtensionUI/ShareContentClassifier.swift
+rg -q 'ShareContentClassifier.classify' ShareExtensionUI/ShareContentLoader.swift
 echo "PASS: ShareContentClassifier implemented and wired"
 
 echo

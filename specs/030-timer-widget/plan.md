@@ -89,7 +89,7 @@ HomeWidgetExtension/
 
 ## Изменения в существующем коде
 
-1. **`RecipeScalerNative/Utils/DeepLinkRouter.swift`**: добавить `case openHome` + парсинг `recipe-scaler://home` в `handle(_ url:)`.
+1. **`RecipeScalerNative/Routing/DeepLinkRouter.swift`**: добавить `case openHome` + парсинг `recipe-scaler://home` в `handle(_ url:)`.
 2. **`RecipeScalerNative/Views/AppShellView.swift`**: case `.openHome` → `selectedTab = .recipes` + `clear()`.
 3. **`RecipeScalerNative/Services/TimerManager.swift`**: hook сохранения snapshot + reload timeline на persist/mutate (debounce 200мс).
 4. **`RecipeScalerNative/App/RecipeScalerNativeApp.swift`** (или `ContentView`): `scenePhase → .background` → `WidgetCenter.shared.reloadAllTimelines()`.
