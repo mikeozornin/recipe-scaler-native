@@ -182,6 +182,16 @@ actor YrsDocument {
         _ = yxmlfragment(doc, "description")
     }
 
+    /// Ensures the collection doc root `Y.Array`s (`recipes`, `folders`) exist
+    /// before the first write transaction. `yarray(doc,)` opens its own internal
+    /// write transaction in yrs C FFI, so calling it from inside another active
+    /// transaction on the same `YDoc` deadlocks on `event_listener::Listener::wait`.
+    /// Same rule as `ensureRootMap`/`ensureRecipeCreateRoots`.
+    func ensureCollectionRoots() {
+        _ = yarray(doc, RecipeFolderConstants.recipesArrayKey)
+        _ = yarray(doc, RecipeFolderConstants.foldersArrayKey)
+    }
+
     /// Borrow the root-level `Y.XmlFragment` for the given key (e.g. "description")
     /// within an active transaction. Returns `nil` if the type does not exist.
     /// Use inside `withReadTransaction` / `withWriteTransaction` blocks; do NOT

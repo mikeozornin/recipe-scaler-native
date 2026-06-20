@@ -103,6 +103,10 @@ actor DocumentManager {
         docs[key] = doc
         if key.hasSuffix(":shoppingList") {
             await doc.ensureRootMap(named: ShoppingListConstants.rootMapKey)
+        } else if key.hasSuffix(":collection") {
+            // Pre-create root `Y.Array`s so writes never need to lazily register
+            // them inside another active transaction (yrs FFI deadlock — MIK-155).
+            await doc.ensureCollectionRoots()
         }
         await installObservers(key: key, doc: doc)
         return doc
@@ -723,9 +727,12 @@ actor DocumentManager {
             let array: YrsArray
             if let branch = ytype_get(txn, RecipeFolderConstants.foldersArrayKey) {
                 array = YrsArray(branch: branch)
-            } else if let branch = yarray(rawDoc, RecipeFolderConstants.foldersArrayKey) {
-                array = YrsArray(branch: branch)
             } else {
+                // Roots are pre-created in getOrCreateDoc (:collection) — if this
+                // branch hits, the doc was opened through a code path that skipped
+                // ensureCollectionRoots (e.g. legacy snapshot recovery). Fail loudly
+                // rather than recurse into `yarray(rawDoc,)` here, which deadlocks
+                // yrs FFI when another txn is active (MIK-155).
                 throw RecipeEditError.documentNotLoaded
             }
             // Insert an empty map, then mutate its keys in place (same pattern
@@ -1239,9 +1246,8 @@ actor DocumentManager {
             let array: YrsArray
             if let branch = ytype_get(txn, RecipeFolderConstants.recipesArrayKey) {
                 array = YrsArray(branch: branch)
-            } else if let branch = yarray(rawDoc, RecipeFolderConstants.recipesArrayKey) {
-                array = YrsArray(branch: branch)
             } else {
+                // Roots are pre-created in getOrCreateDoc (:collection) — see MIK-155.
                 throw RecipeEditError.documentNotLoaded
             }
             let len = array.length(txn: txn)
