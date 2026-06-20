@@ -434,10 +434,10 @@
 - **Description**: Восемь разных timer `Task`-полей координируют socket/engine/auth/collection/network-recovery. Корректность зависит от отмены каждого таймера в каждой ветке. Повторяющийся `socketSessionId`-UUID-гард — code smell.
 - **Recommendation**: Смоделировать соединение как `ConnectionStateMachine` enum с одним таймером на переход.
 
-#### 50. **[Architecture]** Неконсистентное размещение HTTP API-сервисов
-- **Area**: `RecipeScalerCore/Networking/APIClient.swift`+`RecipeImportAPI.swift` (Core) vs `RecipeScalerNative/Services/{AccountAPI,AssistantAPI,DiscoverAPI,RecipeImageUploadAPI,RecipeLLMParseAPI,SharingAPI,TelegramAPI}.swift` (Native)
-- **Description**: Нет правила, какой API-клиент где живёт. `RecipeImageUploadAPI`/`RecipeLLMParseAPI` в Native без UI-coupling.
-- **Recommendation**: Установить правило (напр. все `APIClient`-endpoint helpers в Core/Networking/Endpoints).
+#### 50. ~~**[Architecture]** Неконсистентное размещение HTTP API-сервисов~~ ✅ Remediated (2026-06-20, MIK-131)
+- ~~**Area**: `RecipeScalerCore/Networking/APIClient.swift`+`RecipeImportAPI.swift` (Core) vs `RecipeScalerNative/Services/{AccountAPI,AssistantAPI,DiscoverAPI,RecipeImageUploadAPI,RecipeLLMParseAPI,SharingAPI,TelegramAPI}.swift` (Native)~~
+- ~~**Description**: Нет правила, какой API-клиент где живёт. `RecipeImageUploadAPI`/`RecipeLLMParseAPI` в Native без UI-coupling.~~ — **сделано**: правило зафиксировано в `docs/ARCHITECTURE.md` (секция «HTTP API фасады»): все endpoint-хелперы → `RecipeScalerCore/Networking/Endpoints/` (`public enum`, без `@MainActor`, только `APIClient.shared`, DTO рядом). Централизована развёртка ответа через `APIClient.unwrapResponse()` + типизированный `ServerErrorCode`; локализация ошибок остаётся в Native (`APIError+Localization.swift`). Снят `@MainActor` со всех API-фасадов; `RecipeImageUploadAPI`/`RecipeLLMParseAPI` отвязаны от UI-зависимостей (`RecipeImageService`, `AppLanguagePreference`). Физическая миграция `RecipeScalerNative/Services/*API.swift` → Core/Endpoints — отложена как поэтапный рефакторинг (файлы уже следуют новому контракту).
+- ~~**Recommendation**: Установить правило (напр. все `APIClient`-endpoint helpers в Core/Networking/Endpoints).~~
 
 #### 51. **[Architecture]** Concurrency-safety сырых FFI-указателей через actor-closures не верифицирована
 - **Area**: `YrsDocument.withReadTransaction`/`withWriteTransaction` (167-181); closures в `DocumentManager.mutateRecipe`

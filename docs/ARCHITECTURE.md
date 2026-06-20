@@ -292,7 +292,7 @@ RecipeScalerNative/Utils/APIError+Localization.swift
 По состоянию на июнь 2026:
 
 - `RecipeScalerCore/Import/RecipeImportAPI.swift` — **уже в Core**, без `@MainActor`, использует приватный `unwrap()` (образец для будущего `unwrapResponse()`).
-- `RecipeScalerNative/Services/*API.swift` (DiscoverAPI, AccountAPI, AssistantAPI и др.) — **пока в Native**, с `@MainActor` и инлайн-развёрткой. Мигрируют в `RecipeScalerCore/Networking/Endpoints/` по мере рефакторинга.
+- `RecipeScalerNative/Services/*API.swift` (DiscoverAPI, AccountAPI, AssistantAPI и др.) — **пока в Native** по пути файлов, но уже без `@MainActor` и с `APIClient.unwrapResponse()`. Мигрируют в `RecipeScalerCore/Networking/Endpoints/` по мере рефакторинга (перенос файлов, `public` DTO).
 
 ## Phase 2 iOS Implementation (done)
 
