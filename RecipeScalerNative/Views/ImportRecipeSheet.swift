@@ -33,6 +33,7 @@ struct ImportRecipeSheet: View {
     @State private var photoPreviews: [ImportPhotoItem] = []
     @State private var isProcessing = false
     @State private var errorMessage: String?
+    @State private var photoWarning: String?
     @State private var selectedFileURL: URL?
     @State private var selectedFileName = ""
     @State private var showFileImporter = false
@@ -84,6 +85,14 @@ struct ImportRecipeSheet: View {
                             .appFootnote()
                     }
                 }
+
+                if let photoWarning {
+                    Section {
+                        Text(photoWarning)
+                            .foregroundStyle(.orange)
+                            .appFootnote()
+                    }
+                }
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.importSheet)
             .localizedNavigationTitle("import.title")
@@ -127,6 +136,7 @@ struct ImportRecipeSheet: View {
             .onAppear { resetState() }
             .onChange(of: mode) { _, _ in
                 errorMessage = nil
+                photoWarning = nil
                 fileImportProgress = nil
             }
             .onDisappear {
@@ -360,6 +370,7 @@ struct ImportRecipeSheet: View {
 
         isProcessing = true
         errorMessage = nil
+        photoWarning = nil
         fileImportProgress = nil
         defer {
             isProcessing = false
@@ -462,9 +473,7 @@ struct ImportRecipeSheet: View {
                     return
                 }
 
-                if let photoWarning = ThirdPartyImportErrorLocalizer.photoWarningMessage(for: importResult) {
-                    errorMessage = photoWarning
-                }
+                photoWarning = ThirdPartyImportErrorLocalizer.photoWarningMessage(for: importResult)
 
                 let result = ImportRecipesResult(recipeIds: importResult.importedRecipeIds)
                 onImport(result)
@@ -520,6 +529,7 @@ struct ImportRecipeSheet: View {
         selectedFileURL = nil
         selectedFileName = ""
         errorMessage = nil
+        photoWarning = nil
         fileImportProgress = nil
     }
 
