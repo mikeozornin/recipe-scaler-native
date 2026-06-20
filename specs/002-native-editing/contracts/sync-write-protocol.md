@@ -62,13 +62,14 @@ socket.emit("sync_request", [
 
 ## Ошибки (запись)
 
-Та же таблица, что `sync_error` в Phase 2; при ошибке записи — `WriteSyncState.error`, не помечать synced.
+Каталог dot-key кодов для `sync_error`, legacy English-паттернов и клиентских действий поддерживается в едином контракте: [`specs/031-error-i18n/sync-error-codes.md`](../../031-error-i18n/sync-error-codes.md). При ошибке записи iOS устанавливает `WriteSyncState.error` и не помечает рецепт `synced`.
 
-| Паттерн | Действие при записи |
-|---------|---------------------|
-| Ownership failed | Показать ошибку; не считать dequeue успехом |
-| Рецепт удалён | Очистить очередь рецепта; закрыть UI |
-| Invalid update | Перезагрузить документ с сервера; отбросить failed queue entry |
+| `code` | Действие при записи |
+|--------|---------------------|
+| `sync.error.ownership` | Показать ошибку; не считать dequeue успехом |
+| `sync.error.recipe-deleted` | Очистить очередь рецепта; закрыть UI |
+| `sync.error.invalid-update` / `sync.error.empty-update` | Перезагрузить документ с сервера; отбросить failed queue entry |
+| `sync.error.generic` | Sleep 5s, перезагрузить документ |
 
 ## Матрица двунаправленного теста
 

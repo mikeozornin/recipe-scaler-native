@@ -26,7 +26,14 @@ final class SyncEventHandler {
     var onShoppingListUpdated: ((Data) -> Void)?
 
     /// Called on sync error.
-    var onSyncError: ((String, String?) -> Void)?
+    ///
+    /// - Parameters in closure: `(code, message, recipeId)`
+    ///   - `code`: typed `SyncErrorCode` resolved from `payload["code"]` (future)
+    ///     or from the legacy English `payload["error"]` substring.
+    ///   - `message`: raw `payload["error"]` string (kept for logging only —
+    ///     never reaches the UI directly).
+    ///   - `recipeId`: optional related recipe id.
+    var onSyncError: ((SyncErrorCode, String, String?) -> Void)?
 
     /// Called when sync is confirmed (recipeId, lastSyncedAt).
     var onSyncConfirmed: ((String, String?) -> Void)?
@@ -182,10 +189,16 @@ final class SyncEventHandler {
         }
 
         let message = payload["error"] as? String ?? "Unknown sync error"
+        let codeValue = payload["code"] as? String
         let recipeId = payload["recipeId"] as? String
+        let code = SyncErrorCode.from(code: codeValue, legacyMessage: message)
 
-        AppLog.error(.sync, "sync_error: \(message), recipeId: \(recipeId ?? "none")")
-        onSyncError?(message, recipeId)
+        AppLog.error(.sync, "sync_error_classified", data: [
+            "code": code.rawValue,
+            "message": message,
+            "recipeId": recipeId ?? "none"
+        ])
+        onSyncError?(code, message, recipeId)
     }
 
     /// Web sends `recipeId: undefined` for the collection; server may omit the field or send null.

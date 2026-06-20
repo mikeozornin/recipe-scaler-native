@@ -86,6 +86,10 @@ Yrs-сайты создания ошибок (`YrsDocument.swift:85,128,169,177`
 - `APIErrorUserLocalizerTests` — dot-key распознаётся; гибрид резолвится; сырой английский → generic.
 - `YrsErrorLocalizationTests` — `errorDescription` всех живых кейсов локализован.
 
+### FR-031-010 — Socket.IO `sync_error` типизация (MIK-129)
+
+Ввести тип `SyncErrorCode` (`RecipeScalerNative/Services/YjsSync/SyncErrorCode.swift`) для классификации `sync_error`-события Socket.IO. Заменяет substring-sniffing в `YjsSyncService.handleSyncError` / удалённом `localizedSyncError` на единый `SyncErrorCode.from(code:legacyMessage:fallback:)` + `switch code`. Финальный `return message` (утечка английского в UI) устранён — `.generic` fallback гарантирует локализованное сообщение. Контракт для backend — `specs/031-error-i18n/sync-error-codes.md` + `sync-error-codes.schema.json` (поле `code: string` в payload). Тесты — `RecipeScalerNativeTests/SyncErrorCodeTests.swift`.
+
 ## Вне scope
 
 - Перевод пользовательских данных (контент рецептов).
@@ -104,5 +108,7 @@ Yrs-сайты создания ошибок (`YrsDocument.swift:85,128,169,177`
 
 - `specs/031-error-i18n/spec.md` — этот документ
 - `specs/031-error-i18n/plan.md` — план реализации
-- `specs/031-error-i18n/server-error-keys.md` — контракт для бэкенда
-- `specs/031-error-i18n/schema.json` — JSON-схема валидации
+- `specs/031-error-i18n/server-error-keys.md` — контракт для бэкенда (REST)
+- `specs/031-error-i18n/schema.json` — JSON-схема валидации (REST)
+- `specs/031-error-i18n/sync-error-codes.md` — контракт Socket.IO `sync_error` (MIK-129)
+- `specs/031-error-i18n/sync-error-codes.schema.json` — JSON-схема валидации (Socket.IO)

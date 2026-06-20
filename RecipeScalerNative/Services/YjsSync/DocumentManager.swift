@@ -82,7 +82,6 @@ actor DocumentManager {
 
     func getOrCreateDoc(key: String) async throws -> YrsDocument {
         if let existing = docs[key] {
-            await installLocalUpdateBridge(key: key, doc: existing)
             return existing
         }
 
@@ -105,7 +104,6 @@ actor DocumentManager {
         if key.hasSuffix(":shoppingList") {
             await doc.ensureRootMap(named: ShoppingListConstants.rootMapKey)
         }
-        await installLocalUpdateBridge(key: key, doc: doc)
         await installObservers(key: key, doc: doc)
         return doc
     }
@@ -180,7 +178,6 @@ actor DocumentManager {
         let doc = try YrsDocument(state: state)
         docs[key] = doc
         try? await store.saveSnapshot(docKey: key, state: state, lastSyncedAt: lastSyncedAt)
-        await installLocalUpdateBridge(key: key, doc: doc)
         await installObservers(key: key, doc: doc)
         Self.logger.info("Replaced doc \(UserIdFormatter.redactDocKey(key)) from server snapshot (\(state.count) bytes)")
     }
@@ -1471,11 +1468,6 @@ actor DocumentManager {
     private func notifyRecipeChangedIfNeeded(recipeId: String) {
         guard suppressRecipeObserverDepth == 0 else { return }
         onRecipeChanged?(recipeId)
-    }
-
-    private func installLocalUpdateBridge(key: String, doc: YrsDocument) async {
-        _ = key
-        _ = doc
     }
 
     private func installObservers(key: String, doc: YrsDocument) async {

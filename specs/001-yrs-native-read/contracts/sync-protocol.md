@@ -185,19 +185,15 @@ Socket.IO события, используемые в Phase 2 (read-only). Фо�
 
 ```json
 {
-  "error": "string — error message",
+  "code": "sync.error.ownership",
+  "error": "string — legacy English message (back-compat, logs only)",
   "recipeId": "optional string — related recipe"
 }
 ```
 
 **Known error scenarios and client actions**:
 
-| Error Pattern | Client Action |
-|---------------|--------------|
-| "Ownership validation failed" | Show user-friendly error, don't retry |
-| "Recipe is deleted" / tombstone | Remove recipe from local list, mark as deleted |
-| "Empty update" / "Invalid update" | Log warning, request full document reload |
-| Other errors | Log warning, retry once after 5 seconds |
+Полный каталог dot-key кодов, legacy English-паттернов и клиентских действий поддерживается в едином контракте: [`specs/031-error-i18n/sync-error-codes.md`](../../031-error-i18n/sync-error-codes.md) (JSON-схема — `sync-error-codes.schema.json`). iOS-сторона парсит payload через `SyncErrorCode.from(code:legacyMessage:fallback:)` и роутит по enum — substring-matching оставлен только для back-compat с серверами без поля `code`.
 
 ## Binary Update Format
 

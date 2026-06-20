@@ -178,6 +178,7 @@
 		B3KCA02B293A4B701000001 /* AuthServiceMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */; };
 		B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */; };
 		B3APPTEST02B293A4B70100001 /* ObservableMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */; };
+		B3APPTEST03B293A4B70100001 /* YjsMemoryLeakTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */; };
 		B3APPLOG01B293A4B70100002 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPLOG01A293A4B70100001 /* AppLog.swift */; };
 		APP0000000000000000000091 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000001 /* AppContainer.swift */; };
 		APP0000000000000000000092 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000002 /* AppEnvironment.swift */; };
@@ -215,6 +216,7 @@
 		CC1101AABB000100000001 /* SyncEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1101AABB000200000001 /* SyncEventHandler.swift */; };
 		CC1101AABB000100000002 /* YjsSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1101AABB000200000002 /* YjsSyncService.swift */; };
 		CC1101AABB000100000003 /* YjsPayloadBytes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1101AABB000200000003 /* YjsPayloadBytes.swift */; };
+		CC1101AABB000100000004 /* SyncErrorCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1101AABB000200000004 /* SyncErrorCode.swift */; };
 		CF426B33FE3F47E4B8249F09 /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAF82F83AFCF4454AA71B812 /* ActionViewController.swift */; };
 		CF8E368196962A4E338F79E6 /* TimerAccessoryCircularView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FDE9DAE2E060C387083B297 /* TimerAccessoryCircularView.swift */; };
 		CF9CD12E0E41C65FE02AE3E9 /* WidgetFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770923D279017ABF70397F4B /* WidgetFonts.swift */; };
@@ -328,6 +330,7 @@
 		B3DOTKEYLOC001 /* DotKeyLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DOTKEYLOC002 /* DotKeyLocalizer.swift */; };
 		B3APIERRLOC001 /* APIError+Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APIELOC002 /* APIError+Localization.swift */; };
 		B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TESTERR0020 /* ErrorLocalizationTests.swift */; };
+		B3SYNCERR0010 /* SyncErrorCodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3SYNCERR0020 /* SyncErrorCodeTests.swift */; };
 		E5F60718293A4B70D78B092E /* ShoppingListFromRecipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7040751435 /* ShoppingListFromRecipe.swift */; };
 		E5F60718293A4B70D7CEFCAD /* AssistantModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70ED0922D8 /* AssistantModels.swift */; };
 		E5F60718293A4B70D9D24CAE /* RecipeImageUploadAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7097235780 /* RecipeImageUploadAPI.swift */; };
@@ -645,6 +648,7 @@
 		B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthServiceMigrationTests.swift; sourceTree = "<group>"; };
 		B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainerTests.swift; sourceTree = "<group>"; };
 		B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableMigrationTests.swift; sourceTree = "<group>"; };
+		B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsMemoryLeakTests.swift; sourceTree = "<group>"; };
 		B3APPLOG01A293A4B70100001 /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		APP0000000000000000000001 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
 		APP0000000000000000000002 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
@@ -674,6 +678,7 @@
 		CC1101AABB000200000001 /* SyncEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncEventHandler.swift; sourceTree = "<group>"; };
 		CC1101AABB000200000002 /* YjsSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsSyncService.swift; sourceTree = "<group>"; };
 		CC1101AABB000200000003 /* YjsPayloadBytes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsPayloadBytes.swift; sourceTree = "<group>"; };
+		CC1101AABB000200000004 /* SyncErrorCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorCode.swift; sourceTree = "<group>"; };
 		CDC8307193209458433B2DAF /* SnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotTests.swift; sourceTree = "<group>"; };
 		CEF518ADEDA245B099EC5C7E /* TimerLiveActivityIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityIntents.swift; sourceTree = "<group>"; };
 		D24E09F4CE9D4C34852A98AF /* ImportContentClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Import/ImportContentClassifier.swift; sourceTree = "<group>"; };
@@ -791,6 +796,7 @@
 		B3DOTKEYLOC002 /* DotKeyLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DotKeyLocalizer.swift; sourceTree = "<group>"; };
 		B3APIELOC002 /* APIError+Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIError+Localization.swift"; sourceTree = "<group>"; };
 		B3TESTERR0020 /* ErrorLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorLocalizationTests.swift; sourceTree = "<group>"; };
+		B3SYNCERR0020 /* SyncErrorCodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorCodeTests.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelegramConnectionView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70D1881049 /* DiscoverRecipeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverRecipeView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70DEADB001 /* SharingSettingsCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingSettingsCache.swift; sourceTree = "<group>"; };
@@ -1243,6 +1249,7 @@
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
 				B3TESTERR0020 /* ErrorLocalizationTests.swift */,
+				B3SYNCERR0020 /* SyncErrorCodeTests.swift */,
 				B3APPLOG02A293A4B70100001 /* AppLogTests.swift */,
 				B3UIDFMT02A293A4B70100001 /* UserIdFormatterTests.swift */,
 				B3RACLRT02A293A4B70100001 /* RecipeAccentColorTests.swift */,
@@ -1252,6 +1259,7 @@
 				B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */,
 				B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */,
 				B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */,
+				B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */,
 				E5F60718293A4B7000000095 /* RecipeSearchUtilsTests.swift */,
 				D5SS01A293A4B7010000001 /* DiscoverSearchStoreTests.swift */,
 				A5MD058293A4B7010000005 /* AssistantMarkdownRendererTests.swift */,
@@ -1397,6 +1405,7 @@
 				E5F60718293A4B7000000015 /* RecipeScaleStorage.swift */,
 				E5F60718293A4B7000000063 /* NutritionViewModeStorage.swift */,
 				CC1101AABB000200000003 /* YjsPayloadBytes.swift */,
+				CC1101AABB000200000004 /* SyncErrorCode.swift */,
 				A1B2C3D4E5F60718293A4B62 /* OfflineWriteQueue.swift */,
 				ADB6B67450DB498D8B3BD5B3 /* UpdateDebouncer.swift */,
 				082DDFB9F64449A7BCF4D3FA /* WriteSyncState.swift */,
@@ -2001,6 +2010,7 @@
 				F1A2B3C4D5E60718293A4B04 /* YjsMergeHelper.swift in Sources */,
 				F1A2B3C4D5E60718293A4B02 /* YjsWireSnapshot.swift in Sources */,
 				CC1101AABB000100000003 /* YjsPayloadBytes.swift in Sources */,
+				CC1101AABB000100000004 /* SyncErrorCode.swift in Sources */,
 				2D50E94419BB114AE83F8C41 /* Database.swift in Sources */,
 				AB245CF76E7C618304E6E89E /* YDocStore.swift in Sources */,
 				D48DC5DC2A861BEBACF7ED71 /* CollectionEntry.swift in Sources */,
@@ -2203,6 +2213,7 @@
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
 				B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */,
+				B3SYNCERR0010 /* SyncErrorCodeTests.swift in Sources */,
 				B3APPLOG02B293A4B70100002 /* AppLogTests.swift in Sources */,
 				B3UIDFMT02B293A4B70100002 /* UserIdFormatterTests.swift in Sources */,
 				B3RACLRT02B293A4B70100002 /* RecipeAccentColorTests.swift in Sources */,
@@ -2212,6 +2223,7 @@
 				B3KCA02B293A4B701000001 /* AuthServiceMigrationTests.swift in Sources */,
 				B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */,
 				B3APPTEST02B293A4B70100001 /* ObservableMigrationTests.swift in Sources */,
+				B3APPTEST03B293A4B70100001 /* YjsMemoryLeakTests.swift in Sources */,
 				7F2675404F75AD0EC794F971 /* RecipeSearchUtilsTests.swift in Sources */,
 				D5SS01B293A4B7010000002 /* DiscoverSearchStoreTests.swift in Sources */,
 				F3445BCB3A10712298441A5C /* AssistantMarkdownRendererTests.swift in Sources */,

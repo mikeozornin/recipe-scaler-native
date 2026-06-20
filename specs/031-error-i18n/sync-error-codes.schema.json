@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://recipe-scaler.ru/schemas/error-i18n/sync-error-codes.json",
+  "title": "Socket.IO sync_error code contract",
+  "description": "Schema for validating the dot-key contract used in the Socket.IO `sync_error` event payload. See specs/031-error-i18n/sync-error-codes.md.",
+  "type": "object",
+  "required": ["version", "transport", "event", "dotKeyPattern", "codes"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Contract version (semantic versioning).",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "default": "1.0"
+    },
+    "transport": {
+      "type": "string",
+      "enum": ["socket.io"],
+      "description": "Transport used for the error event."
+    },
+    "event": {
+      "type": "string",
+      "enum": ["sync_error"],
+      "description": "Socket.IO event name."
+    },
+    "dotKeyPattern": {
+      "type": "string",
+      "description": "Regular expression validating the `code` field format.",
+      "pattern": "^\\^.*\\$$",
+      "default": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*){1,}$"
+    },
+    "payloadShape": {
+      "type": "object",
+      "description": "Expected fields in the sync_error payload.",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Dot-key code (takes precedence over legacy `error` for classification).",
+          "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*){1,}$"
+        },
+        "error": {
+          "type": "string",
+          "description": "Legacy English message — kept for back-compat and logs."
+        },
+        "recipeId": {
+          "type": ["string", "null"],
+          "description": "Related recipe id, omitted/null for collection documents."
+        }
+      },
+      "required": ["code", "error"]
+    },
+    "codes": {
+      "type": "array",
+      "description": "List of recognized dot-key codes for the sync_error event.",
+      "items": {
+        "type": "object",
+        "required": ["code", "legacyPattern", "clientAction", "localizationKey"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^sync\\.error\\.[a-z][a-z0-9-]*$",
+            "description": "Dot-key code emitted in `payload.code`."
+          },
+          "legacyPattern": {
+            "type": "string",
+            "description": "Substring of the legacy English `payload.error` that maps to this code."
+          },
+          "clientAction": {
+            "type": "string",
+            "description": "Short description of the iOS-side action triggered by this code."
+          },
+          "localizationKey": {
+            "type": "string",
+            "pattern": "^sync\\.error\\.[a-z][a-z0-9-]*$",
+            "description": "Localization key resolved via Localizable.xcstrings."
+          }
+        }
+      },
+      "minItems": 5,
+      "uniqueItems": true
+    },
+    "localization": {
+      "type": "object",
+      "description": "Localization requirements for each code.",
+      "properties": {
+        "requiredLocales": {
+          "type": "array",
+          "items": { "enum": ["en", "ru"] },
+          "default": ["en", "ru"]
+        },
+        "catalog": {
+          "type": "string",
+          "default": "RecipeScalerNative/Resources/Localizable.xcstrings"
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "description": "Backward compatibility policy with legacy English-only servers.",
+      "properties": {
+        "legacyFormatAllowed": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, iOS client matches legacy `error` substring when `code` is absent."
+        },
+        "fallbackCode": {
+          "type": "string",
+          "pattern": "^sync\\.error\\.[a-z][a-z0-9-]*$",
+          "default": "sync.error.generic"
+        }
+      }
+    }
+  }
+}

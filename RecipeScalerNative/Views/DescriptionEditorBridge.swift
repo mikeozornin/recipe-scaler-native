@@ -8,6 +8,27 @@
 import Foundation
 import SwiftUI
 
+final class DescriptionEditorDeinitCleaner: @unchecked Sendable {
+    private let recipeId: String
+    private weak var syncService: YjsSyncService?
+    weak var bridge: DescriptionEditorBridge?
+
+    init(recipeId: String, syncService: YjsSyncService) {
+        self.recipeId = recipeId
+        self.syncService = syncService
+    }
+
+    func clean() {
+        let service = self.syncService
+        let recipeId = self.recipeId
+        let bridge = self.bridge
+        Task { @MainActor in
+            guard let bridge else { return }
+            service?.unregisterDescriptionEditor(recipeId: recipeId, bridge: bridge)
+        }
+    }
+}
+
 enum DescriptionEditorPresentation {
     case inline
     case fullscreen
@@ -97,6 +118,7 @@ final class DescriptionEditorBridge {
     /// Serializes WebView → yrs applies so flush can await the last keystroke.
     private var applyChain: Task<Void, Never>?
     private var outboundFlushContinuations: [CheckedContinuation<Void, Never>] = []
+    private let cleaner: DescriptionEditorDeinitCleaner
 
     var heightMode: DescriptionEditorHeightMode {
         contentHeight > DescriptionEditorLayoutMetrics.embeddedMaxHeight ? .focus : .embedded
@@ -110,7 +132,13 @@ final class DescriptionEditorBridge {
         self.recipeId = recipeId
         self.presentation = presentation
         self.syncService = syncService
+        self.cleaner = DescriptionEditorDeinitCleaner(recipeId: recipeId, syncService: syncService)
         syncService.registerDescriptionEditor(self)
+        cleaner.bridge = self
+    }
+
+    deinit {
+        cleaner.clean()
     }
 
     func attach(webView: DescriptionEditorWebView.Coordinator) {
@@ -317,7 +345,7 @@ final class DescriptionEditorBridge {
     }
 
     func teardown() {
-        syncService?.unregisterDescriptionEditor(recipeId: recipeId)
+        syncService?.unregisterDescriptionEditor(recipeId: recipeId, bridge: self)
         resumeHtmlWaiters(with: "")
     }
 

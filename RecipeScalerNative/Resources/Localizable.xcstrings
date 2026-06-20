@@ -8694,53 +8694,87 @@
         }
       }
     },
-    "sync.error.invalid_update" : {
+    "sync.error.empty-update" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid sync update"
+            "value" : "Sync failed. The recipe will be reloaded."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Некорректное обновление синхронизации"
+            "value" : "Сбой синхронизации. Рецепт будет перезагружен."
           }
         }
       }
     },
-    "sync.error.ownership_failed" : {
+    "sync.error.generic" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ownership validation failed"
+            "value" : "Sync error. The recipe will be reloaded."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось проверить владельца документа"
+            "value" : "Ошибка синхронизации. Рецепт будет перезагружен."
           }
         }
       }
     },
-    "sync.error.recipe_deleted" : {
+    "sync.error.invalid-update" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recipe was deleted"
+            "value" : "Sync failed. The recipe will be reloaded."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Рецепт удалён"
+            "value" : "Сбой синхронизации. Рецепт будет перезагружен."
+          }
+        }
+      }
+    },
+    "sync.error.ownership" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You do not have permission to edit this recipe."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет прав на редактирование этого рецепта."
+          }
+        }
+      }
+    },
+    "sync.error.recipe-deleted" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This recipe was deleted."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот рецепт удалён."
           }
         }
       }

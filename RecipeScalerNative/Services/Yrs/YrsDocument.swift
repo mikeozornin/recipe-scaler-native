@@ -85,10 +85,6 @@ actor YrsDocument {
     private var updateObserverBox: UnsafeMutableRawPointer?
     private var updateObserverBoxRef: UpdateObserverBox?
 
-    func setOnLocalUpdateHandler(_ handler: @escaping @Sendable (Data) -> Void) {
-        _ = handler
-    }
-
     /// Recipe editing docs: skip GC so yrs does not emit `Skip` structures that y-prosemirror (yjs 13) cannot read.
     private static func createDocument() throws -> UnsafeMutablePointer<YDoc> {
         var opts = yoptions()

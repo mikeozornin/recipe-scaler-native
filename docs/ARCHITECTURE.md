@@ -216,10 +216,17 @@ sequenceDiagram
 
 ## Error Handling
 
-Server `sync_error` events are mainly business-rule violations:
-- **Ownership validation failed**: show error, don't retry
-- **Recipe is deleted (tombstone)**: remove from local list
-- **Empty/invalid update**: rebuild snapshot or reload document
+Server `sync_error` Socket.IO events are typed via `SyncErrorCode`
+(`RecipeScalerNative/Services/YjsSync/SyncErrorCode.swift`). `SyncErrorCode.from(code:legacyMessage:fallback:)`
+resolves the future `code` dot-key, falling back to legacy English substring matching
+for un-migrated servers. `YjsSyncService.handleSyncError` routes by enum case:
+
+- `sync.error.ownership` — show error, don't retry
+- `sync.error.recipe-deleted` (tombstone) — remove from local list, clear offline queue
+- `sync.error.empty-update` / `sync.error.invalid-update` — reload document
+- `sync.error.generic` — sleep 5s, then reload document
+
+Full catalog (dot-key ↔ legacy English ↔ client action): [`specs/031-error-i18n/sync-error-codes.md`](../specs/031-error-i18n/sync-error-codes.md).
 
 CRDT handles concurrent edits automatically — no manual conflict resolution needed.
 
