@@ -2675,6 +2675,11 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScalerNative;
+				// MIK-139 [review #56]: DEBUG-only ATS local-networking exception.
+				// Release config does not define this setting, so Info.plist's
+				// $(RS_ALLOWS_LOCAL_NETWORKING) resolves to empty and ATS stays
+				// fully enforced in production.
+				RS_ALLOWS_LOCAL_NETWORKING = YES;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
