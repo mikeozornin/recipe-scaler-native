@@ -1270,8 +1270,12 @@ final class YjsSyncService {
                 guard let self, self.isCurrentSocketSession(sessionId) else { return }
                 let message = data.first as? [String: Any]
                 let detail = message?["message"] as? String ?? "Authentication failed"
+                // Log the raw server detail for diagnostics, but never route it to the UI —
+                // a compromised server or MITM could otherwise inject arbitrary text into
+                // the trusted sync banner (`ConnectionState.displayLabel`). MIK-163.
                 self.logger.error("Socket.IO auth_error: \(detail)")
-                self.setConnectionState(.error(detail), reason: "auth_error")
+                let userMessage = Bundle.currentLocalizedString("connection.state.auth-error")
+                self.setConnectionState(.error(userMessage), reason: "auth_error")
             }
         }
 

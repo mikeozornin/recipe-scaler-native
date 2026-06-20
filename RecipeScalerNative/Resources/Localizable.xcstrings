@@ -3724,6 +3724,23 @@
         }
       }
     },
+    "connection.state.auth-error" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign-in failed. Please log in again."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось войти. Войдите снова."
+          }
+        }
+      }
+    },
     "connection.state.error" : {
       "extractionState" : "manual",
       "localizations" : {

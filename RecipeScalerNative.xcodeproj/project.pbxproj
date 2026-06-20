@@ -331,6 +331,7 @@
 		B3APIERRLOC001 /* APIError+Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APIELOC002 /* APIError+Localization.swift */; };
 		B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TESTERR0020 /* ErrorLocalizationTests.swift */; };
 		B3SYNCERR0010 /* SyncErrorCodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3SYNCERR0020 /* SyncErrorCodeTests.swift */; };
+		B3AUTHERR0010 /* AuthErrorLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AUTHERR0020 /* AuthErrorLocalizationTests.swift */; };
 		E5F60718293A4B70D78B092E /* ShoppingListFromRecipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7040751435 /* ShoppingListFromRecipe.swift */; };
 		E5F60718293A4B70D7CEFCAD /* AssistantModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70ED0922D8 /* AssistantModels.swift */; };
 		E5F60718293A4B70D9D24CAE /* RecipeImageUploadAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7097235780 /* RecipeImageUploadAPI.swift */; };
@@ -797,6 +798,7 @@
 		B3APIELOC002 /* APIError+Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIError+Localization.swift"; sourceTree = "<group>"; };
 		B3TESTERR0020 /* ErrorLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorLocalizationTests.swift; sourceTree = "<group>"; };
 		B3SYNCERR0020 /* SyncErrorCodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorCodeTests.swift; sourceTree = "<group>"; };
+		B3AUTHERR0020 /* AuthErrorLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthErrorLocalizationTests.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelegramConnectionView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70D1881049 /* DiscoverRecipeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverRecipeView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70DEADB001 /* SharingSettingsCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingSettingsCache.swift; sourceTree = "<group>"; };
@@ -1250,6 +1252,7 @@
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
 				B3TESTERR0020 /* ErrorLocalizationTests.swift */,
 				B3SYNCERR0020 /* SyncErrorCodeTests.swift */,
+				B3AUTHERR0020 /* AuthErrorLocalizationTests.swift */,
 				B3APPLOG02A293A4B70100001 /* AppLogTests.swift */,
 				B3UIDFMT02A293A4B70100001 /* UserIdFormatterTests.swift */,
 				B3RACLRT02A293A4B70100001 /* RecipeAccentColorTests.swift */,
@@ -2214,6 +2217,7 @@
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
 				B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */,
 				B3SYNCERR0010 /* SyncErrorCodeTests.swift in Sources */,
+				B3AUTHERR0010 /* AuthErrorLocalizationTests.swift in Sources */,
 				B3APPLOG02B293A4B70100002 /* AppLogTests.swift in Sources */,
 				B3UIDFMT02B293A4B70100002 /* UserIdFormatterTests.swift in Sources */,
 				B3RACLRT02B293A4B70100002 /* RecipeAccentColorTests.swift in Sources */,
