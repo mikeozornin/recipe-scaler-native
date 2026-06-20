@@ -1995,11 +1995,11 @@ final class YjsSyncService {
         }
         if !loadedRecipeIds.isEmpty {
             recipeBatchLoadCompleted += loadedRecipeIds.count
-            if recipeBatchLoadCompleted >= recipeBatchLoadTotal {
-                recipeBatchLoadInFlight = false
-            }
-            await refreshRecipeDocumentCacheStatus()
         }
+        recipeBatchLoadInFlight = false
+        recipeBatchLoadTotal = 0
+        recipeBatchLoadCompleted = 0
+        await refreshRecipeDocumentCacheStatus()
         if let active = activeRecipeId, loadedRecipeIds.contains(active) {
             await refreshCurrentRecipe(recipeId: active)
         }
