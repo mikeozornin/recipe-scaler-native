@@ -15,14 +15,19 @@ public enum NativeFormatDetector {
         }
 
         do {
-            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-            guard let metadata = json?["metadata"] as? [String: Any] else {
+            let jsonObject = try JSONSerialization.jsonObject(with: data)
+            guard let json = jsonObject as? [String: Any] else {
+                throw NativeImportError.invalidJSON("Root JSON is not an object")
+            }
+            guard let metadata = json["metadata"] as? [String: Any] else {
                 // No metadata at all — legacy v1.0 format
                 return .v1_0
             }
             let version = metadata["version"] as? String
             let type = metadata["type"] as? String
             return normalizeNativeFormatVersion(version: version, type: type)
+        } catch let error as NativeImportError {
+            throw error
         } catch {
             throw NativeImportError.invalidJSON(error.localizedDescription)
         }

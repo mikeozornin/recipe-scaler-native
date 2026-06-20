@@ -77,6 +77,18 @@ final class NativeRecipeImporterTests: XCTestCase {
         XCTAssertEqual(try NativeFormatDetector.detect(url: url), .v1_0)
     }
 
+    func testDetectThrowsForNonObjectJson() throws {
+        let json = "[1, 2, 3]"
+        let url = try writeTempFile(named: "array.json", contents: json)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        XCTAssertThrowsError(try NativeFormatDetector.detect(url: url)) { error in
+            guard case NativeImportError.invalidJSON = error else {
+                return XCTFail("Expected invalidJSON, got \(error)")
+            }
+        }
+    }
+
     func testInvalidJsonThrows() throws {
         let url = try writeTempFile(named: "broken.json", contents: "{ not json")
         defer { try? FileManager.default.removeItem(at: url) }
