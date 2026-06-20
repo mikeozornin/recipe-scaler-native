@@ -223,6 +223,77 @@ Server `sync_error` events are mainly business-rule violations:
 
 CRDT handles concurrent edits automatically — no manual conflict resolution needed.
 
+## HTTP API фасады (facades)
+
+Все HTTP API endpoint-хелперы (фасады) живут в `RecipeScalerCore/Networking/Endpoints/`.
+Каждый файл — один `public enum` со статическими методами, по одному на endpoint.
+
+### Формат
+
+```swift
+// RecipeScalerCore/Networking/Endpoints/ExampleAPI.swift
+import Foundation
+
+public enum ExampleAPI {
+    public static func fetchSomething(id: String) async throws -> SomeDTO {
+        let response: APIResponse<SomeDTO> = try await APIClient.shared.requestJSON(
+            path: "/api/example/\(id)"
+        )
+        return try unwrapResponse(response, fallbackCode: .apiErrorServerGeneric)
+    }
+}
+```
+
+**Правила:**
+
+- **`public enum`, не `@MainActor`.** Фасады в Core — stateless и non-isolated; их можно вызывать из main app, Share/Action extensions и AppIntents без привязки к главному актору. `APIClient.shared` сам по себе `nonisolated` и потокобезопасен (доступ к `authToken`/`userId` через `OSAllocatedUnfairLock`).
+- **Только `APIClient.shared`.** Никаких `buildRequest(...)` + ручной работы с `URLSession` в фасадах. Вся сериализация, аутентификация и разбор HTTP-статусов — внутри `APIClient`.
+- **DTO в том же файле** (если не используются в других модулях). DTO — `public struct: Decodable, Sendable`, с `CodingKeys` для snake_case → camelCase.
+
+### Централизованная развёртка ответа: `unwrapResponse()`
+
+Каждый фасад использует общую утилиту для развёртки `APIResponse<T>` → `T`:
+
+```swift
+// RecipeScalerCore/Networking/Endpoints/unwrapResponse.swift
+public func unwrapResponse<T>(
+    _ response: APIResponse<T>,
+    fallbackCode: ServerErrorCode
+) throws -> T {
+    guard response.success, let data = response.data else {
+        let code = ServerErrorCode.from(
+            serverValue: response.error,
+            fallback: fallbackCode
+        )
+        throw APIError.serverError(code: code)
+    }
+    return data
+}
+```
+
+**Не инлайнить** развёртку в каждом методе — дублирование `guard response.success, let data` ведёт к расхождению логики обработки ошибок между фасадами.
+
+### Локализация ошибок — в Native, не в Core
+
+`APIError` определён в Core (`RecipeScalerCore/Networking/APIClient.swift`) и реализует `LocalizedError` — но только для dot-key идентификаторов. `errorDescription` возвращает строки вида `"api.error.http-4xx"`, `"discover.fetch-failed"` и т.д. Сама **локализация** (разрешение dot-key в пользовательский текст через `Bundle.currentLocalizedString`) принадлежит Native-слою:
+
+```
+RecipeScalerNative/Utils/APIError+Localization.swift
+```
+
+Расширение `APIError` с методом `userFacingMessage()` — единственная точка, где Core-ошибки превращаются в читаемый текст. Core **не** импортирует SwiftUI- или Bundle-зависимости для UI-текста.
+
+### Коды ошибок сервера: `ServerErrorCode`
+
+`RecipeScalerCore/Networking/ServerErrorCode.swift` — типизированный каталог dot-ключей, которые сервер может вернуть в поле `APIResponse.error`. Throw-site строит экземпляр через `ServerErrorCode.from(serverValue:fallback:)` — неизвестные или legacy-строки коллапсируют в fallback, гарантируя, что до view-слоя доходят только валидные dot-ключи.
+
+### Текущее состояние и миграция
+
+По состоянию на июнь 2026:
+
+- `RecipeScalerCore/Import/RecipeImportAPI.swift` — **уже в Core**, без `@MainActor`, использует приватный `unwrap()` (образец для будущего `unwrapResponse()`).
+- `RecipeScalerNative/Services/*API.swift` (DiscoverAPI, AccountAPI, AssistantAPI и др.) — **пока в Native**, с `@MainActor` и инлайн-развёрткой. Мигрируют в `RecipeScalerCore/Networking/Endpoints/` по мере рефакторинга.
+
 ## Phase 2 iOS Implementation (done)
 
 Swift modules under `RecipeScalerNative/Services/`:

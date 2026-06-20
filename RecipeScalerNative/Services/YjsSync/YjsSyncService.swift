@@ -96,63 +96,65 @@ final class YjsSyncService {
     private var wireSnapshotRefreshTasks: [String: Task<Void, Never>] = [:]
     private var documentLoadContinuations: [String: CheckedContinuation<Bool, Never>] = [:]
     private var isNetworkReachable = true
-    /// Last `document_loaded` payload size per recipe (detect local-ahead recovery).
-    private var lastServerDocumentBytes: [String: Int] = [:]
-
-    private func persistedServerDocumentBytes(recipeId: String) -> Int? {
-        let key = "lastServerDocBytes:\(recipeId)"
-        let value = UserDefaults.standard.integer(forKey: key)
-        return value > 0 ? value : nil
-    }
-
-    private func persistServerDocumentBytes(recipeId: String, bytes: Int) {
-        lastServerDocumentBytes[recipeId] = bytes
-        UserDefaults.standard.set(bytes, forKey: "lastServerDocBytes:\(recipeId)")
-    }
-
-    private func resolvedServerDocumentBytes(recipeId: String) -> Int? {
-        lastServerDocumentBytes[recipeId] ?? persistedServerDocumentBytes(recipeId: recipeId)
-    }
 
     /// Deterministic replacement for the old `localBytes > serverBytes + 128` heuristic.
     ///
     /// A recipe is "unsynced / local-ahead" iff it carries an explicit flag set on every local
-    /// write and cleared only on `sync_confirmed`. The set is persisted to UserDefaults so it
-    /// survives an app kill (closes the cold-start gap the byte heuristic tried to guess at),
-    /// and CRDT byte sizes never feed the decision — removing the false "local ahead" that
-    /// wedged a doc into perpetual skip-pull after a merge.
+    /// write and cleared only on `sync_confirmed`. The set is persisted in SQLite
+    /// (`recipe_sync_state`, MIK-128) so it survives an app kill (closes the cold-start gap
+    /// the byte heuristic tried to guess at), and CRDT byte sizes never feed the decision —
+    /// removing the false "local ahead" that wedged a doc into perpetual skip-pull after a merge.
     private var unsyncedRecipeIds: Set<String> = []
 
-    private func unsyncedRecipeIdsKey() -> String? {
-        guard let userId else { return nil }
-        return "unsyncedRecipeIds:\(userId)"
+    /// Load unsynced flags from SQLite. Replaces the old plist array
+    /// `unsyncedRecipeIds:{userId}` (one shared set was previously scoped per user via the
+    /// plist key; now the table is wiped on logout via `store.deleteAll()`).
+    private func loadUnsyncedRecipeIds() async {
+        let stored = (try? await store.loadUnsyncedRecipeIds()) ?? []
+        unsyncedRecipeIds = stored
     }
 
-    private func loadUnsyncedRecipeIds() {
-        guard let key = unsyncedRecipeIdsKey(),
-              let stored = UserDefaults.standard.array(forKey: key) as? [String] else {
-            unsyncedRecipeIds = []
-            return
+    /// MIK-128 one-time data migration: move the old `unsyncedRecipeIds:{userId}` plist
+    /// array into `recipe_sync_state` and drop the dead-write `lastServerDocBytes:{recipeId}`
+    /// keys. Idempotent — guarded by a per-user plist flag so it runs exactly once.
+    private func migratePlistSyncKeysIfNeeded(userId: String) async {
+        let migrationFlag = "mik128_sync_keys_migrated:\(userId)"
+        guard !UserDefaults.standard.bool(forKey: migrationFlag) else { return }
+
+        // Port unsynced flags from the legacy per-user plist array.
+        let legacyKey = "unsyncedRecipeIds:\(userId)"
+        if let stored = UserDefaults.standard.array(forKey: legacyKey) as? [String] {
+            for recipeId in stored {
+                try? await store.setRecipeUnsynced(recipeId: recipeId, unsynced: true)
+            }
+            UserDefaults.standard.removeObject(forKey: legacyKey)
         }
-        unsyncedRecipeIds = Set(stored)
-    }
 
-    private func persistUnsyncedRecipeIds() {
-        guard let key = unsyncedRecipeIdsKey() else { return }
-        UserDefaults.standard.set(Array(unsyncedRecipeIds), forKey: key)
+        // Sweep the dead-write `lastServerDocBytes:{recipeId}` keys left over by
+        // earlier app versions (never cleaned on logout).
+        let legacyBytesPrefix = "lastServerDocBytes:"
+        let staleKeys = UserDefaults.standard
+            .dictionaryRepresentation()
+            .keys
+            .filter { $0.hasPrefix(legacyBytesPrefix) }
+        for key in staleKeys {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+
+        UserDefaults.standard.set(true, forKey: migrationFlag)
     }
 
     /// Flag a recipe as having local edits the server has not confirmed yet.
-    private func markRecipeUnsynced(_ recipeId: String) {
+    private func markRecipeUnsynced(_ recipeId: String) async {
         guard isRecipeDocument(recipeId: recipeId) else { return }
         guard unsyncedRecipeIds.insert(recipeId).inserted else { return }
-        persistUnsyncedRecipeIds()
+        try? await store.setRecipeUnsynced(recipeId: recipeId, unsynced: true)
     }
 
     /// Clear the unsynced flag once the server acknowledges the recipe (`sync_confirmed`/delete).
-    private func markRecipeSynced(_ recipeId: String) {
+    private func markRecipeSynced(_ recipeId: String) async {
         guard unsyncedRecipeIds.remove(recipeId) != nil else { return }
-        persistUnsyncedRecipeIds()
+        try? await store.setRecipeUnsynced(recipeId: recipeId, unsynced: false)
     }
 
     init(
@@ -562,7 +564,7 @@ final class YjsSyncService {
     /// Full yjs wire state from WebView flush (`syncState`) — persist, push when online, replace stale queue rows.
     func applyDescriptionSyncState(recipeId: String, state: Data) async {
         guard isRecipeDocument(recipeId: recipeId), state.count > 2 else { return }
-        markRecipeUnsynced(recipeId)
+        await markRecipeUnsynced(recipeId)
         let docKey = docKeyFor(recipeId: recipeId)
         do {
             try await documentManager.applyDescriptionEditorUpdate(
@@ -655,7 +657,7 @@ final class YjsSyncService {
             activeRecipeWasRemoved = true
         }
         writeSyncStates.removeValue(forKey: recipeId)
-        markRecipeSynced(recipeId)
+        await markRecipeSynced(recipeId)
         await refreshCollectionEntries()
     }
 
@@ -915,7 +917,8 @@ final class YjsSyncService {
             unsyncedRecipeIds = []
         }
         self.userId = userId
-        loadUnsyncedRecipeIds()
+        await migratePlistSyncKeysIfNeeded(userId: userId)
+        await loadUnsyncedRecipeIds()
         startNetworkMonitorIfNeeded()
         await documentManager.setUserId(userId)
 
@@ -1063,9 +1066,6 @@ final class YjsSyncService {
 
     /// Full local teardown on logout (web: IndexedDB + realtime destroy).
     func clearSessionForLogout() async {
-        if let key = unsyncedRecipeIdsKey() {
-            UserDefaults.standard.removeObject(forKey: key)
-        }
         unsyncedRecipeIds = []
         stop()
         collectionEntries = []
@@ -1551,14 +1551,14 @@ final class YjsSyncService {
     }
 
     private func handleLocalRecipeUpdate(recipeId: String, update: Data) async {
-        markRecipeUnsynced(recipeId)
+        await markRecipeUnsynced(recipeId)
         writeSyncStates[recipeId] = .pendingLocal
         await updateDebouncer.schedule(recipeId: recipeId, update: update)
     }
 
     private func handleDescriptionYjsUpdate(recipeId: String, update: Data) async {
         guard !update.isEmpty, update.count > 2 else { return }
-        markRecipeUnsynced(recipeId)
+        await markRecipeUnsynced(recipeId)
         writeSyncStates[recipeId] = .pendingLocal
         let docKey = docKeyFor(recipeId: recipeId)
         if !canSendLiveSync() {
@@ -1720,7 +1720,7 @@ final class YjsSyncService {
 
     private func handleSyncConfirmed(recipeId: String, lastSyncedAt: String?) async {
         guard recipeId != "unknown" else { return }
-        markRecipeSynced(recipeId)
+        await markRecipeSynced(recipeId)
         lastSuccessfulSyncAt = Date()
         let docKey = docKeyFor(recipeId: recipeId)
         if recipeId != "collection", recipeId != ShoppingListConstants.offlineRecipeId {
@@ -1730,13 +1730,6 @@ final class YjsSyncService {
         if let doc = await documentManager.getDoc(key: docKey),
            let state = await doc.encodeStateAsUpdate() {
             try? await store.saveSnapshot(docKey: docKey, state: state, lastSyncedAt: lastSyncedAt)
-            if isRecipeDocument(recipeId: recipeId) {
-                if let wire = try? await store.loadYjsWireSnapshot(docKey: docKey) {
-                    persistServerDocumentBytes(recipeId: recipeId, bytes: wire.state.count)
-                } else {
-                    persistServerDocumentBytes(recipeId: recipeId, bytes: state.count)
-                }
-            }
         }
 
         if isRecipeDocument(recipeId: recipeId) {
@@ -1914,9 +1907,6 @@ final class YjsSyncService {
     private func handleDocumentLoaded(recipeId: String, stateData: Data, lastSyncedAt: String?) async {
         let docKey = docKeyFor(recipeId: recipeId)
         logger.info("document_loaded: \(UserIdFormatter.redactDocKey(docKey)), \(stateData.count) bytes")
-        if recipeId != "collection", recipeId != ShoppingListConstants.offlineRecipeId {
-            persistServerDocumentBytes(recipeId: recipeId, bytes: stateData.count)
-        }
         lastSuccessfulSyncAt = Date()
 
         var mergeSucceeded = false
@@ -2420,7 +2410,7 @@ final class YjsSyncService {
             }
             try? await offlineQueue.clear(forRecipeId: recipeId)
             writeSyncStates.removeValue(forKey: recipeId)
-            markRecipeSynced(recipeId)
+            await markRecipeSynced(recipeId)
             await refreshCollectionEntries()
             return
         }

@@ -184,3 +184,32 @@ func testErrorDescriptionLocalized() {
 - **R1**: Изменение `APIError.errorDescription` с английского литерала на dot-key может сломать существующие тесты, сравнивающие строки. Проверить все тесты на `APIError.*.errorDescription`.
 - **R2**: Удаление dead-code `YrsError.invalidState`/`corruptedState` может вскрыть неявные ссылки — прогнать grep перед удалением.
 - **R3**: Some `response.error` от сервера могут содержать локализованные строки для ru-локали (если сервер уже i18n-aware) — fallback-логика может их маскировать. Это acceptable, т.к. dot-key контракт — требуемый путь.
+
+## Этап 8 (post-MIK-135) — Типизация server errors
+
+**Статус**: ✅ Реализовано (Linear MIK-135, review finding #52)
+
+Проблема: runtime-проверка через `DotKeyLocalizer.localize(...)` для `APIError.serverError(message:)`
+оставалась хрупкой — view-слой всё ещё полагался на string-prefix-сниффинг и мог
+пропустить raw-английский, если контракт нарушался. Замена найдки review #52:
+`AssistantSheet.swift:534` безусловно вызывал `Bundle.currentLocalizedString(serverMessage)`.
+
+Решение: `APIError.serverError(message: String)` → `APIError.serverError(code: ServerErrorCode)`.
+
+- `RecipeScalerCore/Networking/ServerErrorCode.swift` — enum с полным каталогом dot-key
+  (28 кейсов из контракта выше) + `from(serverValue:fallback:)` для safe-decode.
+- `APIError.serverError(code:)` — типизированный payload.
+- `APIError.userFacingMessage()` — `Bundle.currentLocalizedString(code.rawValue)` напрямую,
+  без `DotKeyLocalizer`.
+- `AssistantStreamEvent.error` — `case error(ServerErrorCode)` вместо `case error(String)`.
+- `DotKeyLocalizer` сохранён как helper для `AuthError.apiError(_, message:)` (edge case).
+
+Артефакты:
+- 28 throw-сайтов обновлены в 8 сервисах (`AccountAPI`, `AssistantAPI`, `DiscoverAPI`,
+  `TelegramAPI`, `SharingAPI`, `RecipeImageUploadAPI`, `RecipeImportAPI`, `APIClient+Requests`).
+- 4 xcstrings-ключа возвращены из `stale` в `manual` (assistant.* — теперь используются
+  через `code.rawValue`, Xcode их не видит как литералы).
+- Добавлен ключ `assistant.stream.http-error`.
+- `ErrorLocalizationTests` расширены: `ServerErrorCode.from(...)` принимает dot-key,
+  rejects legacy English, rejects unknown dot-key; rawValue каждого case удовлетворяет
+  regex; `userFacingMessage()` не возвращает raw dot-key.

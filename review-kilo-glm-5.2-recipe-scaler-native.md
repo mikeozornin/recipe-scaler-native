@@ -1,6 +1,7 @@
 # Code Review: recipe-scaler-native (весь проект)
 
 **Дата**: 2026-06-17
+**Linear**: все находки (#1–#72) перенесены в [Recipe Scaler Native](https://linear.app/mikeozornin/project/recipe-scaler-native-298e6590576a) — трекинг в Linear, этот файл — архив review.
 **Ревьюер**: Kilo (glm-5.2), 5 параллельных специализированных сабагентов
 **Объект**: весь проект `master`, не отдельная ветка
 **Объём**: ~44 455 LOC Swift, 278 файлов (RecipeScalerNative 225 / RecipeScalerCore 31 / extensions)
@@ -225,6 +226,32 @@
 - **Description**: При любом throw из `doc.applyUpdate`/`applyLocalUpdate` код делает `docs.removeValue`, `observerTokens.removeValue` и `store.deleteSnapshot(docKey:)` перед re-throw. yrs `applyUpdate` обычно атомарный (плохой remote-апдейт отвергается без мутации), поэтому эта оборонительная очистка слишком агрессивна: один malformed **remote**-апдейт (или транзиентная ошибка yrs) уничтожает снапшот, который может содержать несинхронизированные локальные правки. Последующий `requestDocumentReload` → `replaceDocument` с сервера навсегда их дропает.
 - **Impact**: Транзиентный/мусорный remote `recipe_updated` может вызвать перманентную потерю offline-first локальных правок этого рецепта.
 - **Recommendation**: При ошибке remote-апдейта не удалять локальный снапшот; только эвиктить in-memory doc (или ретраить yrs). Резервировать удаление снапшота для случая, когда он доказуемо повреждён (как в `getOrCreateDoc:72-77`).
+
+#### 71. **[Architecture / Testing]** Hosted test-target boot'ит продакшн-сессию sync → unit-тесты не прогоняются
+- **Area**: `RecipeScalerNative.xcodeproj/project.pbxproj` (test-target `RecipeScalerNativeTests`, `TEST_HOST = $(BUILT_PRODUCTS_DIR)/RecipeScalerNative.app/RecipeScalerNative`); `RecipeScalerNative/Services/AppContainer.swift:176` (`await sync.start(userId:)`); `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift` (`start(userId:)` → `beginSocketSession` → `connectSocket` к `recipe-scaler.ru`); `RecipeScalerNativeTests/YjsOfflineSyncTests.swift:129-209` (`PreserveSnapshotOnApplyFailureTests`).
+- **Description**: Единственный test-target hosted в app (`TEST_HOST = RecipeScalerNative.app`). При запуске любых unit-тестов Xcode сначала грузит full app-lifecycle: `AppContainer.bootstrap(userId:)` → `YjsSyncService.start(userId:)` → на debug-сборке автологин prod debug-юзера (`ContentView.swift:19`, `cfcd839f-...`) → коннект к проде `recipe-scaler.ru` → socket-polling (`sync_request`/`sync_error` каждые ~25 cек). App-lifecycle парковал main-thread на socket auth ack timeout → watchdog kill → `Test crashed with signal kill`, assertions даже не стартуют (`duration: 0s`). Подтверждено прогонами `xcodebuild test-without-building -only-testing:RecipeScalerNativeTests/PreserveSnapshotOnApplyFailureTests` на iPhone 16 / iPhone 16e (simulator): exit 65, `Test crashed with signal kill`, `Executed 0 tests`.
+- **Impact**:
+  - `PreserveSnapshotOnApplyFailureTests` (2 кейса, для review-находки #16) **не верифицируемы в CI/shell** — тесты стабильно крашатся до выполнения assertions, хотя по коду корректны.
+  - В `RecipeScalerNativeTests.swift:1271-1277` уже зафиксирован этот симптом комментарием *"Test host stalls on Yjs sync; needs CI host without local snapshots"* и **2 теста явно `XCTSkipIf`-нуты** — то есть проблема системная и уже наблюдается в коде.
+  - Любой будущий hosted unit-тест на sync/document/timer-стек упрётся в ту же стену.
+  - Тесты `YjsServerMergeTests`, `YjsWireSnapshotStoreTests`, `PreserveSnapshotOnApplyFailureTests` формально hosted, но по коду не нуждаются в socket-рантайме (чистая GRDB/`DocumentManager`-работа).
+- **Recommendation**: Не запускать socket/sync-старт в test-run. Минимум — распространить уже существующий паттерн из `AuthService.swift:114` (`let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil`) на chokepoint `AppContainer.bootstrap(userId:)` вокруг `await sync.start(userId:)` (строка ~176). Это:
+  1. Не ломает ничего — audit 39 тест-файлов показал: ни один тест не инстанцирует `YjsSyncService` через `.shared` ожидая предзапущенный сокет; единственная ссылка на `YjsSyncService(store:)` — в `ObservableMigrationTests` через test-only seam без вызова `.start()`.
+  2. Unskip'ает 2 уже-XCTSkip-нутых теста.
+  3. Unblock'ает `PreserveSnapshotOnApplyFailureTests` и закрытие review-находки #16.
+  4. Соответствует industry-стандарту: test-host не должен boot'ить продакшн-сессию (DI / ports & adapters / gated-start — любой из вариантов приемлем).
+- **Долгосрочно**: ввести выделенный logic-test-target без `TEST_HOST` для чистой domain-логики (CRDT/`DocumentManager`/`YDocStore`/парсеры); оставить hosted-target только для UI/integration-тестов. Это закрывает корневую причину и делает тесты детерминированными и быстрыми.
+- **Linear**: [MIK-154](https://linear.app/mikeozornin/issue/MIK-154)
+
+#### 72. **[Architecture / Testing]** yrs FFI `event_listener::wait` hang в `DocumentManager.createRecipe` блокирует hosted unit-тесты
+- **Area**: `RecipeScalerNative/Services/YjsSync/DocumentManager.swift:1222` (`appendCollectionEntryIfNotExists` → `yarray(rawDoc, ...)`); `RecipeScalerNativeTests/YjsOfflineSyncTests.swift:129-209` (`PreserveSnapshotOnApplyFailureTests`).
+- **Description**: После partial-fix #71 (guard `isTesting` в `AppContainer.bootstrap`) socket/sync больше не стартует, но hosted unit-тесты всё ещё не проходят. Sample stuck process (simulator): main thread в XCTest runner → `DocumentManager.createRecipe` → `appendCollectionEntryIfNotExists:1222` → `yarray` → Rust yrs `event_listener::Listener::wait` → бесконечный `_pthread_cond_wait`. Отдельный баг от #71: yrs observer/listener lifecycle в hosted test context.
+- **Impact**:
+  - `PreserveSnapshotOnApplyFailureTests` (2 кейса для #16) **не верифицируемы** — тесты timeout/hang до assertions.
+  - Любой hosted unit-тест, вызывающий `createRecipe` / collection doc mutation через yrs FFI, упрётся в тот же hang.
+  - Блокирует formal closure #16 (код fix in place, test-run INCONCLUSIVE).
+- **Recommendation**: Расследовать yrs `event_listener` lifecycle (observer registration/teardown в test harness); альтернатива — logic-test-target без `TEST_HOST` для чистой `DocumentManager`/GRDB работы. Связано: #71 (partial), #16 (blocked verification).
+- **Linear**: [MIK-155](https://linear.app/mikeozornin/issue/MIK-155) (High)
 
 #### 17. **[Performance]** Socket.IO sync-payloads упаковывают каждый байт в `[Int]`
 - **Area**: `RecipeScalerNative/Services/YjsSync/YjsPayloadBytes.swift:5-7`; `YjsSyncService.swift:1590`; `SyncEventHandler.swift:83-125`
@@ -453,9 +480,9 @@
 - **Area**: `YjsSyncService.swift:886,1291`; `Database.swift:21`; DEBUG-трейсы в `ContentView.init`
 - **Recommendation**: Редактировать userId в логах (или фиксить №1, чтобы userId не был креденшалом).
 
-#### 59. **[Security / Standards]** `try!` на regex-литералах при static-init
-- **Area**: `PaprikaRecipeParser.swift:9`, `ThirdPartyIngredientAmountSplitter.swift:9`, `PaprikaIngredientSplitter.swift:9`
-- **Recommendation**: Лениво-инициализируемый shared-инстанс с safe-fallback.
+#### 59. ~~**[Security / Standards]** `try!` на regex-литералах при static-init~~ ✅ Исправлено (2026-06-20, MIK-143)
+- ~~**Area**: `PaprikaRecipeParser.swift:9`, `ThirdPartyIngredientAmountSplitter.swift:9`, `PaprikaIngredientSplitter.swift:9`~~
+- ~~**Recommendation**: Лениво-инициализируемый shared-инстанс с safe-fallback.~~ Все три `private static let ... = try! NSRegularExpression(...)` заменены на `try?` + тип `NSRegularExpression?` + nil-guard в consumer'е (по образцу `AssistantMessageFooter.swift:289` и `RecipeTitleEmoji.swift:14-29`): `PaprikaRecipeParser.stripStepNumber` при nil-regex возвращает `line` как есть; `PaprikaIngredientSplitter.split` при nil-regex возвращает `("", trimmed)`; `ThirdPartyIngredientAmountSplitter.split` при nil-regex возвращает `(trimmed, "")` — идентично существующему fallback при `firstMatch == nil`. Build green (3 scheme: `RecipeScalerCore`, `RecipeScalerNative`, `ShareExtensionUI`); tests green (`PaprikaRecipeParserTests` 5/5, `CroutonRecipeParserTests` 16/16, включая `testParseStripsStepNumbers`); `rg 'try!\s*NSRegularExpression' RecipeScalerCore RecipeScalerNative` → 0 совпадений.
 
 #### 60. **[Business Logic]** `normalizeColor` — баг приоритета операторов + дубль нормализации
 - **Area**: `DocumentManager.swift:1214-1218`
@@ -521,6 +548,7 @@
 - [x] Пустые `catch {}` — не найдены в проде
 - [ ] Комплексная обработка ошибок — ~~критично №11~~ ✅, №16, №46
 - [x] Тесты новые (Paprika/Crouton/XmlFragmentWriter) — есть, хорошо названы
+- [ ] **Testability** — hosted test-target boot'ит прод-сессию sync → unit-тесты (`PreserveSnapshotOnApplyFailureTests` и 2 `XCTSkipIf`-нутых) фактически не прогоняемы (№71)
 - [x] Документация — ~~`Package.swift` не соответствует реальности (№8)~~ ✅ Исправлено (2026-06-18)
 - [ ] Архитектура — god-объекты (№9, №10), сломанные границы (№24, №25)
 - [ ] Deployment-концерны — debug-UUID в репо (№2)
@@ -535,7 +563,7 @@
 
 1. **Безопасность (блокирующе)**: Critical №1–3 — модель аутентификации на публичном `userId` + закоммиченный prod-UUID — это прямой путь к full account takeover. Минимум как срочный quick-win: ротировать debug-UUID, перенести `userId` в Keychain, добавить TLS-pinning.
 2. ~~**Производительность (блокирующе для целевых метрик)**: Critical №4–7 — O(N²)-импорт, decode архива в память, merge на main thread и export all-in-memory~~ ✅ Исправлено (2026-06-18), кроме **#6** (WKWebView merge) и **#17** (Socket.IO wire format).
-3. **Стабильность данных**: High №16 — оборонительное удаление снапшота при ошибке remote-апдейта может потерять несинхронизированные локальные правки.
+3. **Стабильность данных**: High №16 — оборонительное удаление снапшота при ошибке remote-апдейта может потерять несинхронизированные локальные правки. Код-фикс уже на месте (эвикт in-memory doc, сохранение SQLite snapshot; `deleteSnapshot` отсутствует в apply catch-блоках `DocumentManager.swift:147-162, 1390-1404`), но **формальное закрытие блокируется №71**: регрессионные тесты `PreserveSnapshotOnApplyFailureTests` фактически не прогоняемы из-за hosted-test-target, который boot'ит прод-сессию sync. Сначала №71, потом верификация №71→№16.
 4. ~~**i18n**: ~~Critical №11~~ ✅ + High №29–31 — захардкоженный английский в ошибках импорта/контенте.~~ ✅ Исправлено (2026-06-18): №11, №29, №30, №31 — все закрыты.
 
 Архитектурные находки (god-объекты, ~~сломанный `Package.swift`~~ ✅, дубликаты Core/Native) — это технический долг, который не блокирует релиз, но должен попасть в roadmap: они блокируют тестируемость и ускоряют регрессии.

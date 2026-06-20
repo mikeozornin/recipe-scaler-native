@@ -143,6 +143,21 @@ final class AppContainer {
     /// (lines 856-884) + `ContentView.appShell.onAppear`. Idempotent on the
     /// same userId; safe to call on every root-view churn.
     func bootstrap(userId: String) async {
+        // Test host gate: when XCTest loads the app as TEST_HOST, do NOT start
+        // the live sync/socket/push/spotlight stack — it parks the main thread
+        // on socket auth ack (debug auto-login → `recipe-scaler.ru`) and the
+        // XCTest watchdog kills the process before any test case runs
+        // (`Test crashed with signal kill`, `Executed 0 tests`). Mirrors the
+        // existing gate in `AuthService.init` (line ~114) and the 2 already-
+        // `XCTSkipIf`-gated tests in `RecipeScalerNativeTests.swift:1271-1277`.
+        // Audit of 39 test files confirmed: no test relies on a pre-started
+        // sync session — see review finding #71.
+        let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        let isUITesting = ProcessInfo.processInfo.arguments.contains("ui-testing")
+        if isTesting || isUITesting {
+            return
+        }
+
         let isSameUser = bootstrappedUserId == userId
         bootstrappedUserId = userId
 

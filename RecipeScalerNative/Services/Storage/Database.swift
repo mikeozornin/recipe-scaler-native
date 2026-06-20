@@ -100,6 +100,16 @@ final class YrsDatabase {
             }
         }
 
+        // MIK-128: per-recipe sync flags moved out of UserDefaults.standard.
+        // Replaces the old `unsyncedRecipeIds:{userId}` plist key (one array per user) and
+        // retires the dead-write `lastServerDocBytes:{recipeId}` plist keys.
+        migrator.registerMigration("v5_create_recipe_sync_state") { db in
+            try db.create(table: "recipe_sync_state") { t in
+                t.column("recipeId", .text).primaryKey()
+                t.column("unsynced", .boolean).notNull().defaults(to: false)
+            }
+        }
+
         try migrator.migrate(dbQueue)
     }
 }

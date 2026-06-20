@@ -15,6 +15,18 @@ struct YDocSnapshot: Codable, FetchableRecord, MutablePersistableRecord {
     var updatedAt: String
 }
 
+/// Per-recipe sync flag stored in SQLite (MIK-128).
+///
+/// Replaces the old `unsyncedRecipeIds:{userId}` plist key. `recipeId` is the bare
+/// recipe id (without the `{userId}:recipe:` prefix) — same shape used by
+/// `YjsSyncService.unsyncedRecipeIds` before the migration.
+struct RecipeSyncState: Codable, FetchableRecord, MutablePersistableRecord {
+    static let databaseTableName = "recipe_sync_state"
+
+    var recipeId: String
+    var unsynced: Bool
+}
+
 /// Thread-safe CRUD operations for Y.Doc snapshots using GRDB.
 actor YDocStore {
     private let dbQueue: DatabaseQueue
@@ -87,6 +99,38 @@ actor YDocStore {
     func deleteAll() throws {
         try dbQueue.write { db in
             try YDocSnapshot.deleteAll(db)
+            try RecipeSyncState.deleteAll(db)
+        }
+    }
+
+    // MARK: - Recipe sync state (MIK-128)
+
+    /// Upsert the unsynced flag for a recipe. Called from
+    /// `YjsSyncService.markRecipeUnsynced` / `markRecipeSynced`.
+    func setRecipeUnsynced(recipeId: String, unsynced: Bool) throws {
+        var state = RecipeSyncState(recipeId: recipeId, unsynced: unsynced)
+        try dbQueue.write { db in
+            try state.save(db)
+        }
+    }
+
+    /// Recipe ids with `unsynced = 1`. Replaces the old plist array
+    /// `unsyncedRecipeIds:{userId}`.
+    func loadUnsyncedRecipeIds() throws -> Set<String> {
+        try dbQueue.read { db in
+            let ids = try String.fetchAll(
+                db,
+                sql: "SELECT recipeId FROM recipe_sync_state WHERE unsynced = 1"
+            )
+            return Set(ids)
+        }
+    }
+
+    /// Remove a single recipe's sync-state row. Called when the recipe is deleted
+    /// locally so the table doesn't accumulate orphan rows.
+    func deleteRecipeSyncState(recipeId: String) throws {
+        try dbQueue.write { db in
+            _ = try RecipeSyncState.deleteOne(db, key: recipeId)
         }
     }
 
