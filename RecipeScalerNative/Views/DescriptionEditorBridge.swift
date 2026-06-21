@@ -119,6 +119,7 @@ final class DescriptionEditorBridge {
     private var applyChain: Task<Void, Never>?
     private var outboundFlushContinuations: [CheckedContinuation<Void, Never>] = []
     private let cleaner: DescriptionEditorDeinitCleaner
+    private var didRegisterWithSyncService = false
 
     var heightMode: DescriptionEditorHeightMode {
         contentHeight > DescriptionEditorLayoutMetrics.embeddedMaxHeight ? .focus : .embedded
@@ -133,7 +134,6 @@ final class DescriptionEditorBridge {
         self.presentation = presentation
         self.syncService = syncService
         self.cleaner = DescriptionEditorDeinitCleaner(recipeId: recipeId, syncService: syncService)
-        syncService.registerDescriptionEditor(self)
         cleaner.bridge = self
     }
 
@@ -143,6 +143,13 @@ final class DescriptionEditorBridge {
 
     func attach(webView: DescriptionEditorWebView.Coordinator) {
         self.webView = webView
+        registerWithSyncServiceIfNeeded()
+    }
+
+    private func registerWithSyncServiceIfNeeded() {
+        guard !didRegisterWithSyncService else { return }
+        didRegisterWithSyncService = true
+        syncService?.registerDescriptionEditor(self)
     }
 
     func detach(webView: DescriptionEditorWebView.Coordinator) {

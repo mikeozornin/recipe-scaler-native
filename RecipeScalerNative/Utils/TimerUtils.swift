@@ -46,4 +46,22 @@ enum TimerUtils {
             return remainingSeconds(for: lhs) < remainingSeconds(for: rhs)
         }
     }
+
+    /// Whole seconds shown in the mobile timer panel; also drives `TimerManager` refresh cadence.
+    /// Must stay aligned with `MobileTimerPanel` countdown rendering.
+    static func panelDisplayedSeconds(for timer: RecipeTimer, now: Date = Date()) -> Int {
+        remainingSeconds(for: timer, now: now)
+    }
+
+    /// Returns `true` when the panel-visible second changed and `refreshPanelTimers()` should run.
+    static func advancePanelDisplayedSecond(
+        lastDisplayedSeconds: inout [String: Int],
+        timer: RecipeTimer,
+        now: Date = Date()
+    ) -> Bool {
+        let displayedSecond = panelDisplayedSeconds(for: timer, now: now)
+        guard lastDisplayedSeconds[timer.id] != displayedSecond else { return false }
+        lastDisplayedSeconds[timer.id] = displayedSecond
+        return true
+    }
 }

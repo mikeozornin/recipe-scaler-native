@@ -221,6 +221,7 @@ struct YDocRecipeDetailView: View {
                 .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
             }
         }
+        .mobileTimerPanelBottomPadding()
         .dismissPopoverOnVerticalDrag(isActive: descriptionTimerPopover != nil) {
             descriptionTimerPopover = nil
         }

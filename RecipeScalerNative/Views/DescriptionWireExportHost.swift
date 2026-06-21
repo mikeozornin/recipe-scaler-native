@@ -10,24 +10,12 @@ import SwiftUI
 struct DescriptionWireExportHost: View {
     let recipeId: String
     @Bindable var syncService: YjsSyncService
-    @State private var bridge: DescriptionEditorBridge
+    @State private var bridge: DescriptionEditorBridge?
     @State private var exportSessionActive = false
-
-    init(recipeId: String, syncService: YjsSyncService) {
-        self.recipeId = recipeId
-        self.syncService = syncService
-        _bridge = State(
-            initialValue: DescriptionEditorBridge(
-                recipeId: recipeId,
-                syncService: syncService,
-                presentation: .inline
-            )
-        )
-    }
 
     var body: some View {
         Group {
-            if exportSessionActive {
+            if exportSessionActive, let bridge {
                 DescriptionEditorWebView(
                     bridge: bridge,
                     allowsScrolling: false
@@ -39,25 +27,42 @@ struct DescriptionWireExportHost: View {
             }
         }
         .onAppear {
-            exportSessionActive = syncService.descriptionWireExportRecipeIds.contains(recipeId)
+            syncExportSessionActive(with: syncService.descriptionWireExportRecipeIds)
         }
         .onChange(of: syncService.descriptionWireExportRecipeIds) { _, ids in
-            let should = ids.contains(recipeId)
-            guard should != exportSessionActive else { return }
-            exportSessionActive = should
-            if !should {
-                bridge.teardown()
-            }
+            syncExportSessionActive(with: ids)
         }
-        .onChange(of: bridge.phase) { _, phase in
-            guard exportSessionActive, phase == .ready else { return }
+        .onChange(of: exportSessionActive && (bridge?.phase == .ready)) { _, ready in
+            guard ready else { return }
             Task { await runExport() }
         }
     }
 
+    private func syncExportSessionActive(with ids: Set<String>) {
+        let should = ids.contains(recipeId)
+        guard should != exportSessionActive else { return }
+        if should {
+            if bridge == nil {
+                bridge = DescriptionEditorBridge(
+                    recipeId: recipeId,
+                    syncService: syncService,
+                    presentation: .inline
+                )
+            }
+            exportSessionActive = true
+        } else {
+            exportSessionActive = false
+            bridge?.teardown()
+            bridge = nil
+        }
+    }
+
     private func runExport() async {
+        guard let bridge else { return }
         await bridge.flushEditorEdits()
         syncService.finishDescriptionWireExport(recipeId: recipeId)
         exportSessionActive = false
+        bridge.teardown()
+        self.bridge = nil
     }
 }

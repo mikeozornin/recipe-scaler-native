@@ -177,9 +177,11 @@
 		B3KCA01B293A4B701000001 /* SharedAuthStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3KCA01A293A4B701000001 /* SharedAuthStoreTests.swift */; };
 		B3KCA02B293A4B701000001 /* AuthServiceMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */; };
 		B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */; };
+		B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */; };
 		B3APPTEST02B293A4B70100001 /* ObservableMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */; };
 		B3APPTEST03B293A4B70100001 /* YjsMemoryLeakTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */; };
 		B3APPLOG01B293A4B70100002 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPLOG01A293A4B70100001 /* AppLog.swift */; };
+
 		APP0000000000000000000091 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000001 /* AppContainer.swift */; };
 		APP0000000000000000000092 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000002 /* AppEnvironment.swift */; };
 		APP0000000000000000000093 /* TimerEventBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000003 /* TimerEventBridge.swift */; };
@@ -648,9 +650,11 @@
 		B3KCA01A293A4B701000001 /* SharedAuthStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAuthStoreTests.swift; sourceTree = "<group>"; };
 		B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthServiceMigrationTests.swift; sourceTree = "<group>"; };
 		B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainerTests.swift; sourceTree = "<group>"; };
+		B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPanelRefreshTests.swift; sourceTree = "<group>"; };
 		B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableMigrationTests.swift; sourceTree = "<group>"; };
 		B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsMemoryLeakTests.swift; sourceTree = "<group>"; };
 		B3APPLOG01A293A4B70100001 /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
+
 		APP0000000000000000000001 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
 		APP0000000000000000000002 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		APP0000000000000000000003 /* TimerEventBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerEventBridge.swift; sourceTree = "<group>"; };
@@ -1261,6 +1265,7 @@
 				B3KCA01A293A4B701000001 /* SharedAuthStoreTests.swift */,
 				B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */,
 				B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */,
+				B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */,
 				B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */,
 				B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */,
 				E5F60718293A4B7000000095 /* RecipeSearchUtilsTests.swift */,
@@ -1451,6 +1456,7 @@
 				E5F60718293A4B7000000053 /* RecipeDescriptionParser.swift */,
 				E5F60718293A4B7000000059 /* RecipeDescriptionStyle.swift */,
 				B3APPLOG01A293A4B70100001 /* AppLog.swift */,
+
 				E5F60718293A4B700000000D /* AgentSyncDebugLog.swift */,
 				E5F60719293A4B7000000092 /* AgentDebugLogging.swift */,
 				E5F60719293A4B7000000088 /* DebugSessionNDJSONLog.swift */,
@@ -2057,6 +2063,7 @@
 				E5F60718293A4B7000000058 /* RecipeDescriptionStyle.swift in Sources */,
 				E5F60718293A4B700000005A /* RecipeDescriptionInlineTextView.swift in Sources */,
 				B3APPLOG01B293A4B70100002 /* AppLog.swift in Sources */,
+
 				APP0000000000000000000091 /* AppContainer.swift in Sources */,
 				APP0000000000000000000092 /* AppEnvironment.swift in Sources */,
 				APP0000000000000000000093 /* TimerEventBridge.swift in Sources */,
@@ -2226,6 +2233,7 @@
 				B3KCA01B293A4B701000001 /* SharedAuthStoreTests.swift in Sources */,
 				B3KCA02B293A4B701000001 /* AuthServiceMigrationTests.swift in Sources */,
 				B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */,
+				B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */,
 				B3APPTEST02B293A4B70100001 /* ObservableMigrationTests.swift in Sources */,
 				B3APPTEST03B293A4B70100001 /* YjsMemoryLeakTests.swift in Sources */,
 				7F2675404F75AD0EC794F971 /* RecipeSearchUtilsTests.swift in Sources */,

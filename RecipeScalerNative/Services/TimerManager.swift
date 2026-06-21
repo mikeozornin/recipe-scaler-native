@@ -382,9 +382,10 @@ final class TimerManager: NSObject {
             guard let endTime = timer.endTime else { continue }
             let remaining = endTime.timeIntervalSinceNow
             timer.remainingTime = remaining
-            let displayedSecond = max(0, Int(ceil(remaining)))
-            if lastDisplayedSeconds[timer.id] != displayedSecond {
-                lastDisplayedSeconds[timer.id] = displayedSecond
+            if TimerUtils.advancePanelDisplayedSecond(
+                lastDisplayedSeconds: &lastDisplayedSeconds,
+                timer: timer
+            ) {
                 panelNeedsRefresh = true
             }
             if remaining <= 0, !timer.hasCompleted {

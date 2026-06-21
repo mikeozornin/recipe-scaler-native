@@ -88,29 +88,31 @@ struct MobileTimerPanel: View {
 
     @ViewBuilder
     private var collapsedSummary: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .center, spacing: 4) {
-                ForEach(Array(timerManager.activeTimers.enumerated()), id: \.element.id) { index, timer in
-                    let remaining = TimerUtils.remainingSeconds(for: timer)
-                    let color = chipColor(remaining: remaining, duration: Int(timer.duration))
-                    Text(timer.name)
-                        .font(AppTypography.bodySemibold)
-                        .foregroundStyle(color)
-                    Text(TimerUtils.formatTime(seconds: remaining))
-                        .font(AppTypography.mono(AppTypography.bodySize).monospacedDigit())
-                        .foregroundStyle(color)
-                    if index < timerManager.activeTimers.count - 1 {
-                        Text("·")
-                            .font(AppTypography.body)
-                            .foregroundStyle(.secondary)
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .center, spacing: 4) {
+                    ForEach(Array(timerManager.activeTimers.enumerated()), id: \.element.id) { index, timer in
+                        let remaining = TimerUtils.remainingSeconds(for: timer, now: context.date)
+                        let color = chipColor(remaining: remaining, duration: Int(timer.duration))
+                        Text(timer.name)
+                            .font(AppTypography.bodySemibold)
+                            .foregroundStyle(color)
+                        Text(TimerUtils.formatTime(seconds: remaining))
+                            .font(AppTypography.mono(AppTypography.bodySize).monospacedDigit())
+                            .foregroundStyle(color)
+                        if index < timerManager.activeTimers.count - 1 {
+                            Text("·")
+                                .font(AppTypography.body)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
+                .frame(height: MobileTimerPanelLayout.barHeight)
             }
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             .frame(height: MobileTimerPanelLayout.barHeight)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-        .frame(height: MobileTimerPanelLayout.barHeight)
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func chipColor(remaining: Int, duration: Int) -> Color {
@@ -190,24 +192,26 @@ private struct MobileTimerRow: View {
     @Environment(TimerManager.self) private var timerManager
     let timer: RecipeTimer
 
-    private var remaining: Int {
-        TimerUtils.remainingSeconds(for: timer)
-    }
-
-    private var progress: Double {
-        guard timer.duration > 0 else { return 0 }
-        let elapsed = timer.duration - Double(remaining)
-        return min(1, max(0, elapsed / timer.duration))
-    }
-
-    private var statusColor: Color {
-        if remaining < 0 { return .red }
-        if timer.duration > 0, remaining < Int(timer.duration) / 10 { return .yellow }
-        return .primary
-    }
-
     var body: some View {
-        HStack(spacing: 0) {
+        Group {
+            if timer.isRunning, !timer.isPaused {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    rowContent(now: context.date)
+                }
+            } else {
+                rowContent(now: Date())
+            }
+        }
+        .frame(height: MobileTimerPanelLayout.barHeight)
+        .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerChip(timerId: timer.id))
+    }
+
+    private func rowContent(now: Date) -> some View {
+        let remaining = TimerUtils.remainingSeconds(for: timer, now: now)
+        let progress = progress(for: remaining)
+        let statusColor = statusColor(for: remaining)
+
+        return HStack(spacing: 0) {
             Button(action: toggleTimer) {
                 TimerPanelIcon.playPause(isRunning: timer.isRunning && !timer.isPaused)
                     .frame(width: MobileTimerPanelLayout.barHeight, height: MobileTimerPanelLayout.barHeight)
@@ -215,7 +219,7 @@ private struct MobileTimerRow: View {
             .buttonStyle(.plain)
             .disabled(remaining < 0)
             .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerToggle(timerId: timer.id))
-            .accessibilityLabel(toggleAccessibilityLabel)
+            .accessibilityLabel(toggleAccessibilityLabel(for: remaining))
 
             VStack(alignment: .leading, spacing: MobileTimerPanelLayout.titleToProgressSpacing) {
                 HStack(spacing: 4) {
@@ -229,7 +233,7 @@ private struct MobileTimerRow: View {
                         .foregroundStyle(statusColor)
                 }
                 ProgressView(value: progress)
-                    .tint(progressTint)
+                    .tint(progressTint(for: remaining))
                     .frame(height: 2)
             }
             .padding(.vertical, 6)
@@ -242,24 +246,35 @@ private struct MobileTimerRow: View {
             .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerDelete(timerId: timer.id))
             .accessibilityLabel("timer.delete")
         }
-        .frame(height: MobileTimerPanelLayout.barHeight)
-        .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerChip(timerId: timer.id))
     }
 
-    private var toggleAccessibilityLabel: String {
+    private func progress(for remaining: Int) -> Double {
+        guard timer.duration > 0 else { return 0 }
+        let elapsed = timer.duration - Double(remaining)
+        return min(1, max(0, elapsed / timer.duration))
+    }
+
+    private func statusColor(for remaining: Int) -> Color {
+        if remaining < 0 { return .red }
+        if timer.duration > 0, remaining < Int(timer.duration) / 10 { return .yellow }
+        return .primary
+    }
+
+    private func toggleAccessibilityLabel(for remaining: Int) -> String {
         if remaining < 0 { return Bundle.currentLocalizedString("timer.toggle.overdue") }
         if timer.isRunning, !timer.isPaused { return Bundle.currentLocalizedString("timer.toggle.pause") }
         if timer.isPaused { return Bundle.currentLocalizedString("timer.toggle.resume") }
         return Bundle.currentLocalizedString("timer.toggle.start")
     }
 
-    private var progressTint: Color {
+    private func progressTint(for remaining: Int) -> Color {
         if remaining < 0 { return .red }
         if timer.duration > 0, remaining < Int(timer.duration) / 10 { return .yellow }
         return .primary
     }
 
     private func toggleTimer() {
+        let remaining = TimerUtils.remainingSeconds(for: timer)
         guard remaining >= 0 else { return }
         if timer.isRunning, !timer.isPaused {
             timerManager.pauseTimer(id: timer.id)
