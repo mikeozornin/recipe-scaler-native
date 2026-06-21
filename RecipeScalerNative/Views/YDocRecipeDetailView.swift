@@ -258,19 +258,7 @@ struct YDocRecipeDetailView: View {
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if isEditing,
-               descriptionChrome.showsFormattingBar,
-               let bridge = descriptionChrome.bridge {
-                DescriptionFormattingBar(
-                    bridge: bridge,
-                    accentColor: accentColor,
-                    onMarkTimer: beginDescriptionTimerMarkup,
-                    onMarkIngredient: beginDescriptionIngredientMarkup,
-                    onParseRecipe: {
-                        Task { await runDescriptionLLMParse(bridge: bridge) }
-                    }
-                )
-            }
+            formattingBarInset
         }
         .sheet(item: $descriptionTimerMarkupDraft, onDismiss: finishDescriptionMarkupSheet) { draft in
             DescriptionTimerTypeSheet(
@@ -548,6 +536,36 @@ struct YDocRecipeDetailView: View {
             isScreenAwakeActive = false
         }
         ScreenAwakeController.deactivate()
+    }
+
+    @ViewBuilder
+    private var formattingBarInset: some View {
+        let showsBar = isEditing
+            && descriptionChrome.showsFormattingBar
+            && descriptionChrome.bridge != nil
+        // #region agent log
+        let _ = DebugModeLog.write(
+            "safeAreaInset.bottom evaluated",
+            hypothesisId: "H1",
+            data: [
+                "isEditing": isEditing ? "true" : "false",
+                "showsFormattingBar": descriptionChrome.showsFormattingBar ? "true" : "false",
+                "bridgePresent": (descriptionChrome.bridge != nil) ? "true" : "false",
+                "willRenderBar": showsBar ? "true" : "false",
+            ]
+        )
+        // #endregion
+        if showsBar, let bridge = descriptionChrome.bridge {
+            DescriptionFormattingBar(
+                bridge: bridge,
+                accentColor: accentColor,
+                onMarkTimer: beginDescriptionTimerMarkup,
+                onMarkIngredient: beginDescriptionIngredientMarkup,
+                onParseRecipe: {
+                    Task { await runDescriptionLLMParse(bridge: bridge) }
+                }
+            )
+        }
     }
 
     private func applyStartInEditModeIfNeeded() {

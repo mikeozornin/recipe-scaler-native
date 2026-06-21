@@ -86,6 +86,16 @@ struct RecipeDescriptionEditorBlock: View {
             await syncService.suspendRecipeRefresh()
         }
         .onAppear {
+            // #region agent log
+            let _ = DebugModeLog.write(
+                "RecipeDescriptionEditorBlock.onAppear",
+                hypothesisId: "H4",
+                data: [
+                    "phase": String(describing: bridge.phase),
+                    "isFocused": bridge.isFocused ? "true" : "false",
+                ]
+            )
+            // #endregion
             chrome.bind(bridge: bridge)
             pushScaleToEditor()
         }

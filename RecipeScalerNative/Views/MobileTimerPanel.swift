@@ -312,7 +312,20 @@ struct MobileTimerPanelBottomPaddingModifier: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        content.padding(.bottom, height)
+        let _ = {
+            // #region agent log
+            DebugModeLog.write(
+                "MobileTimerPanelBottomPaddingModifier.body",
+                hypothesisId: "H3",
+                data: [
+                    "height": String(describing: height),
+                    "activeCount": String(timerManager.activeTimers.count),
+                    "isCollapsed": isCollapsed ? "true" : "false",
+                ]
+            )
+            // #endregion
+        }()
+        return content.padding(.bottom, height)
     }
 }
 
