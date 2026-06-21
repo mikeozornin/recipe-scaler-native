@@ -121,6 +121,14 @@ final class TimerSyncService {
         Task { await loadActiveTimersFromServer() }
     }
 
+    /// Push queued timer events immediately (bypasses debounce). Used after
+    /// notification actions that extend a timer so the server has the new
+    /// `endTime` before the next `loadActiveTimersFromServer` pull.
+    func flushPendingSyncImmediately() async {
+        lastSyncTime = .distantPast
+        await syncPendingEvents()
+    }
+
     func handleWebSocketPayload(_ payload: [String: Any]) {
         guard let remoteDeviceId = payload["deviceId"] as? String else { return }
         guard remoteDeviceId != deviceId else { return }
@@ -209,6 +217,10 @@ final class TimerSyncService {
         isLoadingTimers = true
         lastLoadTime = Date()
         defer { isLoadingTimers = false }
+
+        // Flush outbound queue first so a just-extended timer is on the server
+        // before we replace local state from GET /active.
+        await flushPendingSyncImmediately()
 
         do {
             let response: ActiveTimersResponse = try await APIClient.shared.performDecodable(

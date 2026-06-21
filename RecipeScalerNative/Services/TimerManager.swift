@@ -61,6 +61,13 @@ final class TimerManager: NSObject {
     private static let backgroundTaskIdentifier = "com.recipescaler.timerUpdate"
     private static var didRegisterBackgroundTasks = false
 
+    // MARK: - Notification identifiers
+
+    static let timerCompleteCategoryIdentifier = "TIMER_COMPLETE"
+    static let addActionOneMinuteIdentifier = "ADD_ONE_MINUTE"
+    static let addActionFiveMinutesIdentifier = "ADD_FIVE_MINUTES"
+    static let deleteTimerIdentifier = "DELETE_TIMER"
+
     static func registerBackgroundTasksIfNeeded() {
         guard !didRegisterBackgroundTasks else { return }
         didRegisterBackgroundTasks = true
@@ -187,6 +194,16 @@ final class TimerManager: NSObject {
         recipeId: String? = nil,
         recipeDisplayName: String? = nil
     ) -> RecipeTimer {
+        // Lazily request notification authorization the first time a user starts
+        // a timer (if we don't yet know the system answer). Without this the
+        // default-on `TimerNotificationPreferences.isEnabled` is meaningless:
+        // system status stays `.notDetermined` and no UN is ever delivered.
+        Task { @MainActor in
+            let status = await notificationAuthorizationStatus()
+            if status == .notDetermined {
+                _ = await requestNotificationAuthorization()
+            }
+        }
         let timer = RecipeTimer(
             id: Self.makeTimerId(),
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -246,11 +263,41 @@ final class TimerManager: NSObject {
         syncLiveActivity(for: timer)
     }
 
+    /// Adds `minutes * 60` seconds to a running or completed timer.
+    ///
+    /// Used by notification action buttons (`ADD_ONE_MINUTE`, `ADD_FIVE_MINUTES`).
+    /// Syncs via `timer_started` with explicit `endTime` — the server ignores
+    /// `endTime` on `timer_resumed` and would otherwise revert the extension.
+    func addTime(id: String, minutes: Int) {
+        guard minutes > 0 else { return }
+        guard let timer = timers.first(where: { $0.id == id }) else { return }
+        let now = Date()
+        let extra = TimeInterval(minutes * 60)
+        let baseEnd = timer.endTime ?? now
+        timer.endTime = baseEnd.addingTimeInterval(extra)
+        timer.remainingTime = (timer.remainingTime ?? max(0, baseEnd.timeIntervalSinceNow)) + extra
+        timer.isRunning = true
+        timer.isPaused = false
+        timer.hasCompleted = false
+        timer.startedAt = now
+        timer.lastUpdated = now
+        persist(timer)
+        refreshPanelTimers()
+        startUpdateTimer()
+        scheduleBackgroundTask()
+        syncEnqueue(.timerStarted, timer: timer, extra: ["endTime": millis(timer.endTime) as Any])
+        Task { await timerSync.flushPendingSyncImmediately() }
+        pushSchedule(timer)
+        syncLiveActivity(for: timer)
+    }
+
     func deleteTimer(id: String) {
         guard let index = timers.firstIndex(where: { $0.id == id }) else { return }
         let timer = timers[index]
         timers.remove(at: index)
-        notificationCenter.removePendingNotificationRequests(withIdentifiers: [timer.id])
+        let completeRequestId = "\(timer.id)-complete"
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: [timer.id, completeRequestId])
+        notificationCenter.removeDeliveredNotifications(withIdentifiers: [timer.id, completeRequestId])
         deleteFromStore(timer)
         refreshPanelTimers()
         stopUpdateLoopIfIdle()
@@ -273,8 +320,16 @@ final class TimerManager: NSObject {
     // MARK: - Sync (TimerSyncService)
 
     func replaceTimersFromServer(_ serverTimers: [RecipeTimer]) {
+        let localById = Dictionary(uniqueKeysWithValues: timers.map { ($0.id, $0) })
+        let merged = serverTimers.map { serverTimer -> RecipeTimer in
+            guard let local = localById[serverTimer.id] else { return serverTimer }
+            let localMs = Int64(local.lastUpdated.timeIntervalSince1970 * 1000)
+            let serverMs = Int64(serverTimer.lastUpdated.timeIntervalSince1970 * 1000)
+            return localMs > serverMs ? local : serverTimer
+        }
+
         guard let modelContext else {
-            timers = serverTimers
+            timers = merged
             refreshPanelTimers()
             if timers.contains(where: \.isRunning) { startUpdateTimer() }
             reconcileLiveActivities()
@@ -286,7 +341,7 @@ final class TimerManager: NSObject {
                 modelContext.delete(item)
             }
             timers = []
-            for timer in serverTimers {
+            for timer in merged {
                 modelContext.insert(timer)
                 timers.append(timer)
             }
@@ -300,7 +355,7 @@ final class TimerManager: NSObject {
             reconcileLiveActivities()
         } catch {
             AppLog.error(.timer, "Error replacing timers from server: \(error.localizedDescription)")
-            timers = serverTimers
+            timers = merged
             refreshPanelTimers()
             reconcileLiveActivities()
         }
@@ -470,11 +525,24 @@ final class TimerManager: NSObject {
     // MARK: - Notifications
 
     private func registerNotificationCategories() {
-        let snooze = UNNotificationAction(identifier: "SNOOZE_ACTION", title: "Snooze 5 min", options: [])
-        let dismiss = UNNotificationAction(identifier: "DISMISS_ACTION", title: "Dismiss", options: [.destructive])
+        let addOneMinute = UNNotificationAction(
+            identifier: Self.addActionOneMinuteIdentifier,
+            title: String(localized: "timer.notification.action.add-minute"),
+            options: []
+        )
+        let addFiveMinutes = UNNotificationAction(
+            identifier: Self.addActionFiveMinutesIdentifier,
+            title: String(localized: "timer.notification.action.add-five-minutes"),
+            options: []
+        )
+        let deleteTimer = UNNotificationAction(
+            identifier: Self.deleteTimerIdentifier,
+            title: String(localized: "timer.notification.action.delete"),
+            options: [.destructive]
+        )
         let timerComplete = UNNotificationCategory(
-            identifier: "TIMER_COMPLETE",
-            actions: [snooze, dismiss],
+            identifier: Self.timerCompleteCategoryIdentifier,
+            actions: [addOneMinute, addFiveMinutes, deleteTimer],
             intentIdentifiers: [],
             options: []
         )
@@ -482,26 +550,46 @@ final class TimerManager: NSObject {
     }
 
     private func sendCompletionNotification(for timer: RecipeTimer) {
-        guard TimerNotificationPreferences.isEnabled else { return }
+        let prefsEnabled = TimerNotificationPreferences.isEnabled
+        guard prefsEnabled else {
+            return
+        }
         Task { @MainActor in
             let status = await notificationAuthorizationStatus()
-            guard status == .authorized else { return }
+            guard status == .authorized else {
+                return
+            }
             deliverCompletionNotification(for: timer)
         }
     }
 
     private func deliverCompletionNotification(for timer: RecipeTimer) {
-        // Skip local notification when server push was successfully scheduled — it will arrive via APNs.
+        // Skip local notification when server push was successfully scheduled AND
+        // APNs is actually wired up (paid account + registered device token).
+        // Without APNs the server "ok" is meaningless — local UN is the only
+        // channel that will actually reach the user.
         if serverScheduledPushTimerIds.contains(timer.id) {
-            serverScheduledPushTimerIds.remove(timer.id)
-            return
+            if APnsAvailability.hasRegisteredToken {
+                serverScheduledPushTimerIds.remove(timer.id)
+                return
+            } else {
+                serverScheduledPushTimerIds.remove(timer.id)
+                // fall through to deliver the local notification
+            }
         }
         let content = UNMutableNotificationContent()
-        content.title = "Timer Complete"
-        content.body = "\(timer.name) has finished"
+        content.title = String(localized: "timer.notification.title")
+        content.body = String(
+            format: Bundle.currentLocalizedString("timer.notification.body"),
+            timer.name
+        )
         content.sound = .default
-        content.userInfo = ["timerId": timer.id, "timerName": timer.name]
-        content.categoryIdentifier = "TIMER_COMPLETE"
+        var userInfo: [String: Any] = ["timerId": timer.id, "timerName": timer.name]
+        if let recipeId = timer.recipeId, !recipeId.isEmpty {
+            userInfo["recipeId"] = recipeId
+        }
+        content.userInfo = userInfo
+        content.categoryIdentifier = Self.timerCompleteCategoryIdentifier
 
         let request = UNNotificationRequest(
             identifier: "\(timer.id)-complete",
@@ -675,10 +763,32 @@ final class TimerManager: NSObject {
 
 enum TimerNotificationPreferences {
     private static let enabledKey = "timerNotificationsEnabled"
+    private static let userOverrideKey = "timerNotificationsUserDidOverride"
 
+    /// Defaults to `true` (timers are useful without notifications being useless).
+    /// Once the user explicitly toggles the switch in Account Settings, that
+    /// choice is honoured regardless of the default.
     static var isEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: enabledKey) }
-        set { UserDefaults.standard.set(newValue, forKey: enabledKey) }
+        get {
+            if UserDefaults.standard.bool(forKey: userOverrideKey) {
+                return UserDefaults.standard.bool(forKey: enabledKey)
+            }
+            return true
+        }
+        set {
+            UserDefaults.standard.set(true, forKey: userOverrideKey)
+            UserDefaults.standard.set(newValue, forKey: enabledKey)
+        }
+    }
+}
+
+/// Whether server-side APNs is actually wired up (entitlements + token issued).
+/// Without a paid developer program, `registerForRemoteNotifications` returns
+/// nothing, so this stays `false` and the local UN must fire unconditionally.
+private enum APnsAvailability {
+    private static let tokenKey = "apnsDeviceToken"
+    static var hasRegisteredToken: Bool {
+        !(UserDefaults.standard.string(forKey: tokenKey) ?? "").isEmpty
     }
 }
 
@@ -704,9 +814,11 @@ extension TimerManager: UNUserNotificationCenterDelegate {
 
         if let timerId {
             switch response.actionIdentifier {
-            case "SNOOZE_ACTION":
-                Task { @MainActor in self.snoozeTimer(id: timerId) }
-            case "DISMISS_ACTION":
+            case Self.addActionOneMinuteIdentifier:
+                Task { @MainActor in self.addTime(id: timerId, minutes: 1) }
+            case Self.addActionFiveMinutesIdentifier:
+                Task { @MainActor in self.addTime(id: timerId, minutes: 5) }
+            case Self.deleteTimerIdentifier:
                 Task { @MainActor in self.deleteTimer(id: timerId) }
             default:
                 break
@@ -724,18 +836,5 @@ extension TimerManager: UNUserNotificationCenterDelegate {
         }
 
         completionHandler()
-    }
-
-    private func snoozeTimer(id: String) {
-        guard let timer = timers.first(where: { $0.id == id }) else { return }
-        timer.remainingTime = 5 * 60
-        timer.endTime = Date().addingTimeInterval(5 * 60)
-        timer.isRunning = true
-        timer.isPaused = false
-        timer.hasCompleted = false
-        persist(timer)
-        refreshPanelTimers()
-        startUpdateTimer()
-        scheduleBackgroundTask()
     }
 }
