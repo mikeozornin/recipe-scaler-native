@@ -76,6 +76,12 @@ final class YjsSyncService {
     private var userId: String?
     private let deviceId: String
     private var isSocketAuthenticated = false
+    /// Guards against duplicate `auth` emits within a single socket session.
+    /// `emitAuth()` has three call sites (`.connect` handler, `resumeSocketSession`,
+    /// `handleStuckEngineConnect`); without this flag, concurrent triggers would
+    /// emit `auth` twice and the server would ack twice — producing the duplicate
+    /// "Emitted auth" / "Socket.IO authenticated" log lines observed on cold start.
+    private var didEmitAuthThisSession = false
     private var hasRequestedCollectionLoad = false
     private var hasRequestedShoppingLoad = false
     private var recipeBatchLoadTask: Task<Void, Never>?
@@ -1184,6 +1190,7 @@ final class YjsSyncService {
         socket = nil
         manager = nil
         isSocketAuthenticated = false
+        didEmitAuthThisSession = false
         hasRequestedCollectionLoad = false
         hasRequestedShoppingLoad = false
         cancelAllPendingDocumentLoads()
@@ -1233,6 +1240,7 @@ final class YjsSyncService {
         teardownSocket()
 
         isSocketAuthenticated = false
+        didEmitAuthThisSession = false
         hasRequestedCollectionLoad = false
         hasRequestedShoppingLoad = false
         let serverURL = URL(string: Config.baseURL)!
@@ -1272,6 +1280,10 @@ final class YjsSyncService {
                 guard let payload = data.first as? [String: Any], payload["message"] != nil else {
                     return
                 }
+                // Server may ack multiple times if it received multiple `auth`
+                // emits (e.g. transport upgrade races). Only the first ack should
+                // drive the state machine; subsequent ones are no-ops.
+                guard !self.isSocketAuthenticated else { return }
                 self.logger.info("Socket.IO authenticated (server ack)")
                 self.markAuthenticatedAndLoadCollection(sessionId: sessionId)
             }
@@ -1307,6 +1319,7 @@ final class YjsSyncService {
                 }
                 self.logger.info("Socket.IO disconnected")
                 self.isSocketAuthenticated = false
+                self.didEmitAuthThisSession = false
                 self.hasRequestedCollectionLoad = false
                 self.hasRequestedShoppingLoad = false
                 self.transition(to: .disconnected)
@@ -1326,6 +1339,7 @@ final class YjsSyncService {
             Task { @MainActor in
                 guard let self, self.isCurrentSocketSession(sessionId) else { return }
                 self.isSocketAuthenticated = false
+                self.didEmitAuthThisSession = false
                 self.hasRequestedCollectionLoad = false
                 self.hasRequestedShoppingLoad = false
                 self.setConnectionState(.reconnecting, reason: "reconnect_attempt")
@@ -1339,6 +1353,7 @@ final class YjsSyncService {
                 self.logger.info("Socket.IO reconnected (awaiting connect for auth)")
                 self.setConnectionState(.connecting, reason: "socket.reconnect")
                 self.isSocketAuthenticated = false
+                self.didEmitAuthThisSession = false
                 self.hasRequestedCollectionLoad = false
                 self.hasRequestedShoppingLoad = false
             }
@@ -1455,6 +1470,13 @@ final class YjsSyncService {
     @discardableResult
     private func performAuthEmit(userId: String) -> Bool {
         guard let socket, socket.status == .connected else { return false }
+        guard !didEmitAuthThisSession else {
+            // Auth already emitted in this socket session — server ack is pending
+            // or has arrived. Emitting again would produce a duplicate ack and
+            // re-trigger markAuthenticatedAndLoadCollection.
+            return true
+        }
+        didEmitAuthThisSession = true
         socket.emit("auth", [
             "userId": userId,
             "deviceId": deviceId,

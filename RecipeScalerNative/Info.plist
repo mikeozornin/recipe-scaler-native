@@ -41,14 +41,6 @@
 	<true/>
 	<key>NSUserNotificationAlertStyle</key>
 	<string>alert</string>
-	<key>UIAppFonts</key>
-	<array>
-		<string>MartianGrotesk-NrLt.otf</string>
-		<string>MartianGrotesk-NrMd.otf</string>
-		<string>MartianGrotesk-StdLt.otf</string>
-		<string>MartianGrotesk-StdxBd.otf</string>
-		<string>MartianMono-NrLt.otf</string>
-	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>

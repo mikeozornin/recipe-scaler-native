@@ -56,8 +56,12 @@ struct RecipeScalerNativeApp: App {
         // SwiftUI view body evaluates `String(localized:)` / `LocalizedStringKey`.
         AppLanguagePreference.bootstrap()
         // Force CoreText registration of bundled Martian OTF faces now, so the
-        // first .environment(\.font, AppTypography.body) lookup can't race the
-        // lazy UIAppFonts registration from Info.plist.
+        // first .environment(\.font, AppTypography.body) lookup resolves them.
+        // This is the single source of truth for the main app target — the
+        // Info.plist of RecipeScalerNative intentionally has no UIAppFonts key,
+        // otherwise UIKit re-registers the same files lazily and CoreText logs
+        // "GSFont: file already registered" warnings. Widget extensions still
+        // use UIAppFonts because they have no app delegate to call this from.
         AppFonts.registerBundledFontsIfNeeded()
         TimerManager.registerBackgroundTasksIfNeeded()
         AppChromeAppearance.configure()
