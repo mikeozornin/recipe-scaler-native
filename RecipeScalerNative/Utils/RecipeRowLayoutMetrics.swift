@@ -73,12 +73,6 @@ enum RecipeRowLayoutMetrics {
     static var editListReorderControlTopOffset: CGFloat {
         ingredientRowVerticalPadding
     }
-    /// Vertical center of reorder grip — aligned with minus.circle.fill center.
-    static var editListReorderControlTargetCenterY: CGFloat {
-        editListReorderControlTopOffset + editListDeleteControlSize * 0.5
-    }
-    /// Leading drag handle in edit ingredient rows (left slot, former minus-button area).
-    static let editListLeadingDragHandleWidth: CGFloat = 28
     /// Approximate UITableView reorder control width in edit mode.
     static let editListReorderControlWidth: CGFloat = 36
     /// Gap between amount field and reorder handle inside edit `List`.

@@ -558,7 +558,6 @@ struct YDocIngredientsEditSection: View {
             .background(Color(.systemBackground))
             .ingredientEditListRowChrome()
             .offset(x: isDeleteRevealed ? -IngredientEditList.deleteRevealWidth : 0)
-            .background(IngredientEditListReorderAligner())
         }
         .clipped()
         .reportIngredientEditRowHeight(rowId: ingredientId)
@@ -780,116 +779,6 @@ private struct IngredientMonoQuantityText: View {
     }
 }
 
-/// Marker in edit ingredient rows; triggers post-layout reorder alignment via swizzled `layoutSubviews`.
-private struct IngredientEditListReorderAligner: UIViewRepresentable {
-    func makeUIView(context: Context) -> IngredientEditListReorderAlignerView {
-        IngredientEditListReorderAlignerView()
-    }
-
-    func updateUIView(_ uiView: IngredientEditListReorderAlignerView, context: Context) {}
-}
-
-private final class IngredientEditListReorderAlignerView: UIView {
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        isUserInteractionEnabled = false
-        backgroundColor = .clear
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        nil
-    }
-
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
-        guard window != nil, let cell = enclosingListCell() else { return }
-        IngredientEditListReorderLayoutHook.installIfNeeded(for: cell)
-        IngredientEditList.alignReorderControl(in: cell)
-    }
-}
-
-private enum IngredientEditListReorderLayoutHook {
-    private static var hookedClassNames = Set<String>()
-
-    static func installIfNeeded(for cell: UIView) {
-        let cellClass: AnyClass = type(of: cell)
-        let className = NSStringFromClass(cellClass)
-        guard !hookedClassNames.contains(className) else { return }
-        hookedClassNames.insert(className)
-        guard
-            let original = class_getInstanceMethod(cellClass, #selector(UIView.layoutSubviews)),
-            let swizzled = class_getInstanceMethod(
-                UICollectionViewCell.self,
-                #selector(UICollectionViewCell.ingredientEdit_alignReorderAfterLayout)
-            )
-        else { return }
-        method_exchangeImplementations(original, swizzled)
-    }
-}
-
-private extension UICollectionViewCell {
-    @objc func ingredientEdit_alignReorderAfterLayout() {
-        ingredientEdit_alignReorderAfterLayout()
-        guard reorderControlView() != nil, containsIngredientEditReorderAligner() else { return }
-        IngredientEditList.alignReorderControl(in: self)
-    }
-
-    func containsIngredientEditReorderAligner() -> Bool {
-        func search(_ view: UIView) -> Bool {
-            if view is IngredientEditListReorderAlignerView { return true }
-            return view.subviews.contains(where: search)
-        }
-        return search(contentView)
-    }
-}
-
-private extension UIView {
-    func enclosingListCell() -> UIView? {
-        var view: UIView? = self
-        while let current = view {
-            let typeName = String(describing: type(of: current))
-            if current is UITableViewCell
-                || current is UICollectionViewCell
-                || typeName.contains("ListCollectionViewCell") {
-                return current
-            }
-            view = current.superview
-        }
-        return nil
-    }
-
-}
-
-private extension UIView {
-    /// Vertical center of the visible grip inside `_UICollectionViewListCellReorderControl`.
-    var reorderGripCenterY: CGFloat {
-        if let grip = subviews.first(where: { $0 is UIImageView }) {
-            return grip.center.y
-        }
-        return bounds.midY
-    }
-
-    func reorderControlView() -> UIView? {
-        if let direct = subviews.first(where: {
-            String(describing: type(of: $0)).localizedCaseInsensitiveContains("ListCellReorder")
-        }) {
-            return direct
-        }
-        func search(_ view: UIView) -> UIView? {
-            let typeName = String(describing: type(of: view))
-            if typeName.localizedCaseInsensitiveContains("Reorder") {
-                return view
-            }
-            for child in view.subviews {
-                if let found = search(child) { return found }
-            }
-            return nil
-        }
-        return search(self)
-    }
-}
-
 enum IngredientEditList {
     /// Edit `List` row insets: leading matches servings row (`listHorizontalInset`), trailing gap before reorder.
     /// Trailing delete affordance width when minus reveals delete (matches swipe action).
@@ -901,38 +790,6 @@ enum IngredientEditList {
         bottom: 0,
         trailing: RecipeRowLayoutMetrics.editRowQtyToReorderSpacing
     )
-
-    static func alignReorderControl(in cell: UIView) {
-        guard let reorder = cell.reorderControlView() else { return }
-        deactivateReorderConstraints(reorder, in: cell)
-        let gripCenterY = reorder.reorderGripCenterY
-        let targetTop = RecipeRowLayoutMetrics.editListReorderControlTargetCenterY - gripCenterY
-        reorder.translatesAutoresizingMaskIntoConstraints = true
-        var frame = reorder.frame
-        frame.origin.y = targetTop
-        reorder.frame = frame
-        alignReorderGripImage(in: reorder, targetTop: targetTop)
-    }
-
-    private static func deactivateReorderConstraints(_ reorder: UIView, in cell: UIView) {
-        let related = { (constraint: NSLayoutConstraint) -> Bool in
-            constraint.firstItem as? UIView === reorder || constraint.secondItem as? UIView === reorder
-        }
-        NSLayoutConstraint.deactivate(reorder.constraints.filter(related))
-        if let superview = reorder.superview {
-            NSLayoutConstraint.deactivate(superview.constraints.filter(related))
-        }
-        NSLayoutConstraint.deactivate(cell.constraints.filter(related))
-    }
-
-    private static func alignReorderGripImage(in reorder: UIView, targetTop: CGFloat) {
-        guard let grip = reorder.subviews.first(where: { $0 is UIImageView }) else { return }
-        grip.translatesAutoresizingMaskIntoConstraints = true
-        let gripCenterInReorder = RecipeRowLayoutMetrics.editListReorderControlTargetCenterY - targetTop
-        var frame = grip.frame
-        frame.origin.y = gripCenterInReorder - frame.height * 0.5
-        grip.frame = frame
-    }
 
     static func estimatedRowHeight(ingredient: IngredientData, nutritionEnabled: Bool) -> CGFloat {
         let pad = RecipeRowLayoutMetrics.ingredientRowVerticalPadding
