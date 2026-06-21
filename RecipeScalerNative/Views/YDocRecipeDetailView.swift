@@ -92,12 +92,11 @@ struct YDocRecipeDetailView: View {
         return -keyboardOverlapHeight
     }
 
+    /// Pulls scroll content up when UIKit still applies keyboard safe-area inset
+    /// (WKWebView focus). `safeAreaInset` for the formatting bar already reserves
+    /// bar height — do not add `scrollClearanceHeight` on top (double gap on focus).
     private var descriptionEditorScrollBottomInset: CGFloat {
-        var inset = descriptionEditorKeyboardCompensation
-        if descriptionChrome.showsFormattingBar {
-            inset += DescriptionFormattingBarLayoutMetrics.scrollClearanceHeight
-        }
-        return inset
+        descriptionEditorKeyboardCompensation
     }
 
     var body: some View {
@@ -238,9 +237,6 @@ struct YDocRecipeDetailView: View {
             .padding(.bottom, descriptionEditorScrollBottomInset)
         }
         .mobileTimerPanelBottomPadding(suppress: isEditing)
-        .modifier(DescriptionEditorScrollKeyboardPolicy(
-            ignoresKeyboardSafeArea: isEditing && descriptionChrome.isFocused
-        ))
         .dismissPopoverOnVerticalDrag(isActive: descriptionTimerPopover != nil) {
             descriptionTimerPopover = nil
         }
@@ -269,6 +265,9 @@ struct YDocRecipeDetailView: View {
         }
         #endif
         }
+        .modifier(DescriptionEditorScrollKeyboardPolicy(
+            ignoresKeyboardSafeArea: isEditing && descriptionChrome.isFocused
+        ))
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .top, spacing: 0) {
@@ -378,6 +377,9 @@ struct YDocRecipeDetailView: View {
             }
         }
         .onChange(of: descriptionChrome.isFocused) { _, focused in
+            if !focused {
+                keyboardOverlapHeight = 0
+            }
             guard focused else { return }
             clearIngredientFocusToken += 1
             dismissRecipeTitleKeyboard = true
@@ -395,9 +397,18 @@ struct YDocRecipeDetailView: View {
         ) { note in
             guard let frame = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey]
                     as? CGRect else { return }
-            let screenHeight = UIScreen.main.bounds.height
-            let overlap = max(0, screenHeight - frame.minY)
+            let windowHeight = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap(\.windows)
+                .first(where: \.isKeyWindow)?
+                .bounds.height ?? UIScreen.main.bounds.height
+            let overlap = max(0, windowHeight - frame.minY)
             keyboardOverlapHeight = overlap
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
+        ) { _ in
+            keyboardOverlapHeight = 0
         }
         .alert(
             Bundle.currentLocalizedString("edit.error.title"),
