@@ -76,6 +76,11 @@ struct ContentView: View {
                         )
                     }
                 }
+                if TimerNotificationSmokeTest.shouldRun, let container {
+                    Task.detached { @MainActor in
+                        TimerNotificationSmokeTest.Launcher.launchIfNeeded(timerManager: container.timer)
+                    }
+                }
                 return
             }
             #else

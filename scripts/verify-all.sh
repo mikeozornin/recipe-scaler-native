@@ -17,6 +17,7 @@ scripts=(
   verify-sharing.sh
   verify-account-settings.sh
   verify-timers-sync.sh
+  verify-timer-notifications.sh
   verify-assistant.sh
   verify-recipe-image-upload.sh
 )

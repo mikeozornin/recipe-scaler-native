@@ -54,7 +54,6 @@ struct TimerWidgetProvider: TimelineProvider {
         timers.contains { timer in
             guard timer.phase == .running || timer.phase == .exceeded else { return false }
             let remaining = timer.remainingSeconds(now: now)
-            guard remaining != 0 else { return false }
             let magnitude = abs(remaining)
             return magnitude < WidgetTimerFormatting.liveCountdownThresholdSeconds
         }
@@ -65,8 +64,12 @@ struct TimerWidgetProvider: TimelineProvider {
             guard timer.phase == .running || timer.phase == .exceeded else { return nil }
             let remaining = timer.remainingSeconds(now: now)
             let magnitude = abs(remaining)
-            guard magnitude > 0, magnitude < WidgetTimerFormatting.liveCountdownThresholdSeconds else {
+            guard magnitude < WidgetTimerFormatting.liveCountdownThresholdSeconds else {
                 return nil
+            }
+            // At 0s keep ticking into overdue (`-1s`, `-2s`, …) for up to one minute.
+            if magnitude == 0 {
+                return WidgetTimerFormatting.liveCountdownThresholdSeconds
             }
             return magnitude
         }.max() ?? 0
@@ -95,6 +98,8 @@ struct TimerWidgetProvider: TimelineProvider {
                     if let endDate = timer.endDate, endDate > now {
                         candidates.append(endDate)
                     }
+                } else if remaining == 0 {
+                    candidates.append(now.addingTimeInterval(1))
                 } else if remaining < 0 {
                     candidates.append(now.addingTimeInterval(1))
                 }

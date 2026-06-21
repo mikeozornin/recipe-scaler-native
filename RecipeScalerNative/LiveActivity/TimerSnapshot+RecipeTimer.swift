@@ -27,7 +27,7 @@ extension TimerSnapshot {
             pausedSeconds = Int(timer.remainingTime ?? 0)
         } else if timer.isRunning, let endTime = timer.endTime {
             let remainingNow = Int(endTime.timeIntervalSinceNow.rounded())
-            phase = remainingNow < 0 ? .exceeded : .running
+            phase = remainingNow <= 0 ? .exceeded : .running
             endDate = endTime
             pausedSeconds = nil
         } else {

@@ -178,6 +178,8 @@
 		B3KCA02B293A4B701000001 /* AuthServiceMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */; };
 		B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */; };
 		B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */; };
+		B3TIMENOTIF01B293A4B70100001 /* TimerNotificationActionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */; };
+		B3TIMEWIDGET01B293A4B70100001 /* TimerWidgetTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */; };
 		B3APPTEST02B293A4B70100001 /* ObservableMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */; };
 		B3APPTEST03B293A4B70100001 /* YjsMemoryLeakTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */; };
 		B3APPLOG01B293A4B70100002 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPLOG01A293A4B70100001 /* AppLog.swift */; };
@@ -325,6 +327,7 @@
 		E5F60718293A4B70C1A2B3D4 /* RecipeDetailImageSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70C1A2B3D3 /* RecipeDetailImageSection.swift */; };
 		E5F60718293A4B70C2E684EE /* DiscoverRecipeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70D1881049 /* DiscoverRecipeView.swift */; };
 		E5F60718293A4B70C440D93D /* ShoppingSmokeTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7024E554ED /* ShoppingSmokeTest.swift */; };
+		E5F60718293A4B70C440D94D /* TimerNotificationSmokeTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7024E554FD /* TimerNotificationSmokeTest.swift */; };
 		E5F60718293A4B70CC88F2B7 /* ScreenAwakeToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7065B733F2 /* ScreenAwakeToggle.swift */; };
 		E5F60718293A4B70CD074276 /* ImportRecipeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7060097EA7 /* ImportRecipeSheet.swift */; };
 		E5F60718293A4B70CD094881 /* LocalizedNavigationTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */; };
@@ -651,6 +654,8 @@
 		B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthServiceMigrationTests.swift; sourceTree = "<group>"; };
 		B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainerTests.swift; sourceTree = "<group>"; };
 		B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPanelRefreshTests.swift; sourceTree = "<group>"; };
+		B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerNotificationActionsTests.swift; sourceTree = "<group>"; };
+		B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerWidgetTimelineTests.swift; sourceTree = "<group>"; };
 		B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableMigrationTests.swift; sourceTree = "<group>"; };
 		B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsMemoryLeakTests.swift; sourceTree = "<group>"; };
 		B3APPLOG01A293A4B70100001 /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
@@ -763,6 +768,7 @@
 		E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountCheckmarkSelectionView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70220BC4FC /* AssistantComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantComposer.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7024E554ED /* ShoppingSmokeTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingSmokeTest.swift; sourceTree = "<group>"; };
+		E5F60718293A4B7024E554FD /* TimerNotificationSmokeTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerNotificationSmokeTest.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70309B38A2 /* DescriptionTimerPopoverState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionTimerPopoverState.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70322645C2 /* DiscoverPublicProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverPublicProfileView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70344FA5B3 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
@@ -1266,6 +1272,8 @@
 				B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */,
 				B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */,
 				B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */,
+				B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */,
+				B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */,
 				B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */,
 				B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */,
 				E5F60718293A4B7000000095 /* RecipeSearchUtilsTests.swift */,
@@ -1466,6 +1474,7 @@
 				E5F60718293A4B7040751435 /* ShoppingListFromRecipe.swift */,
 				E5F60718293A4B703691736C /* ShoppingListPlainText.swift */,
 				E5F60718293A4B7024E554ED /* ShoppingSmokeTest.swift */,
+				E5F60718293A4B7024E554FD /* TimerNotificationSmokeTest.swift */,
 				E5F60718293A4B70898823B7 /* PublicURLBuilder.swift */,
 				E5F60718293A4B701A6B5339 /* ScreenAwakeController.swift */,
 				E5F60718293A4B7066BF06C8 /* TimerUtils.swift */,
@@ -2086,6 +2095,7 @@
 				E5F60718293A4B70D78B092E /* ShoppingListFromRecipe.swift in Sources */,
 				E5F60718293A4B707BD2B9B5 /* ShoppingListPlainText.swift in Sources */,
 				E5F60718293A4B70C440D93D /* ShoppingSmokeTest.swift in Sources */,
+				E5F60718293A4B70C440D94D /* TimerNotificationSmokeTest.swift in Sources */,
 				E5F60718293A4B70F4B04DF3 /* PublicURLBuilder.swift in Sources */,
 				E5F60718293A4B70267CA7BD /* ShoppingListData.swift in Sources */,
 				E5F60718293A4B7055FFBBCC /* DocumentManager+ShoppingList.swift in Sources */,
@@ -2234,6 +2244,8 @@
 				B3KCA02B293A4B701000001 /* AuthServiceMigrationTests.swift in Sources */,
 				B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */,
 				B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */,
+				B3TIMENOTIF01B293A4B70100001 /* TimerNotificationActionsTests.swift in Sources */,
+				B3TIMEWIDGET01B293A4B70100001 /* TimerWidgetTimelineTests.swift in Sources */,
 				B3APPTEST02B293A4B70100001 /* ObservableMigrationTests.swift in Sources */,
 				B3APPTEST03B293A4B70100001 /* YjsMemoryLeakTests.swift in Sources */,
 				7F2675404F75AD0EC794F971 /* RecipeSearchUtilsTests.swift in Sources */,
