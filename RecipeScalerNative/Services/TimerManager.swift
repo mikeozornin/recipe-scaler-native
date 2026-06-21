@@ -41,6 +41,10 @@ final class TimerManager: NSObject {
     /// All timers for the mobile panel (sorted like web `TimerPanel`).
     private(set) var activeTimers: [RecipeTimer] = []
 
+    /// When `true`, `AppShellView` omits the tab-root timer panel safe-area inset so
+    /// nested screens (e.g. description formatting bar) can occupy that slot.
+    private(set) var suppressPanelSafeAreaInset = false
+
     private var modelContext: ModelContext?
     private var updateTimer: Timer?
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
@@ -335,6 +339,11 @@ final class TimerManager: NSObject {
     }
 
     // MARK: - Panel
+
+    func setSuppressPanelSafeAreaInset(_ suppress: Bool) {
+        guard suppressPanelSafeAreaInset != suppress else { return }
+        suppressPanelSafeAreaInset = suppress
+    }
 
     private func refreshPanelTimers() {
         activeTimers = TimerUtils.sortTimers(timers)

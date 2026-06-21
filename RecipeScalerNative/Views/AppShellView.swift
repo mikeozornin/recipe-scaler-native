@@ -275,7 +275,9 @@ struct AppShellView: View {
         content
             .environment(\.mobileTimerPanelIsCollapsed, mobileTimerPanelCollapsed)
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                mobileTimerPanel
+                if !timerManager.suppressPanelSafeAreaInset {
+                    mobileTimerPanel
+                }
             }
             .tabItem { tabItem() }
     }

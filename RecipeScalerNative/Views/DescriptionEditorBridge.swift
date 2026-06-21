@@ -58,7 +58,10 @@ enum DescriptionEditorHeightMode: Equatable {
 }
 
 enum DescriptionEditorLayoutMetrics {
+    /// Placeholder while the editor bundle loads.
     static let minEmbeddedHeight: CGFloat = 280
+    /// Inline frame floor once content is measured (tap target for empty editor).
+    static let minInlineContentHeight: CGFloat = 36
     static let embeddedMaxHeight: CGFloat = 2000
     static let focusMinHeight: CGFloat = 320
 }
@@ -103,7 +106,7 @@ final class DescriptionEditorBridge {
 
     private(set) var phase: Phase = .loading
     private(set) var isFocused = false
-    private(set) var contentHeight: CGFloat = DescriptionEditorLayoutMetrics.minEmbeddedHeight
+    private(set) var contentHeight: CGFloat = DescriptionEditorLayoutMetrics.minInlineContentHeight
     private(set) var selectionState = DescriptionEditorSelectionState()
     private(set) var lastNodeClick: DescriptionNodeClick?
     private(set) var nodeClickSequence: UInt = 0

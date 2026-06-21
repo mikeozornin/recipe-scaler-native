@@ -156,7 +156,7 @@ ContentUnavailableView {
 ## Web parity
 
 - UX/UI parity with the **mobile web** layout (same hierarchy and behavior; pixel-perfect match not required).
-- Match web behavior for shared UI: masked `userId`, ingredient rows without unit labels, component-level nutrition editing, recipe ellipsis menu order, ingredient qty column right-aligned to main value with compact drag handle and swipe-from-right delete only; description formatting toolbar active states must mirror Tiptap `selectionState` (e.g. H1 must not imply bold).
+- Match web behavior for shared UI: masked `userId`, ingredient rows without unit labels, component-level nutrition editing, recipe ellipsis menu order, ingredient qty column right-aligned to main value with compact drag handle and swipe-from-right delete only; description formatting toolbar active states must mirror Tiptap `selectionState` (e.g. H1 must not imply bold). **Layout и keyboard/inset-поведение панели на iOS** — см. [Recipe detail — inline description editor](#recipe-detail--inline-description-editor-019).
 
 ## Экраны и паттерны
 
@@ -176,3 +176,139 @@ Folder rename uses inline **Cancel / Done** toolbar, auto-focus with select-all,
 
 - **Discover** — horizontal cards (photo right, 16:9 previews, count badge, no username, list-level padding only).
 - **Assistant** — no Close on swipe-dismissible sheets, keyboard Done, history left / new chat right, always-visible timestamps/copy, `.appFootnote()` text, attach picker sort matches All Recipes flat list.
+
+### Recipe detail — inline description editor (019)
+
+Редактирование описания на экране рецепта — **WKWebView + Tiptap** внутри родительского `ScrollView`. Панель форматирования — **нативный SwiftUI chrome**, не часть WebView. Спека: [specs/019-recipe-description-inline-edit](../specs/019-recipe-description-inline-edit/spec.md).
+
+#### Схема слоёв
+
+```mermaid
+flowchart TB
+    subgraph detail["YDocRecipeDetailView"]
+        SV["ScrollView (единственный вертикальный скролл)"]
+        RDE["RecipeDescriptionEditorBlock<br/>WKWebView allowsScrolling: false"]
+        KBP["descriptionEditorScrollBottomInset<br/>компенсация клавиатуры + clearance панели"]
+        KPOL["DescriptionEditorScrollKeyboardPolicy<br/>ignoresSafeArea(.keyboard) при фокусе"]
+        BAR["safeAreaInset(.bottom) → DescriptionFormattingBar"]
+    end
+    subgraph chrome["DescriptionEditorChromeState"]
+        SHOW["showsFormattingBar"]
+    end
+    subgraph tab["AppShellView tab root"]
+        TIMER["safeAreaInset → MobileTimerPanel<br/>suppress при isEditing"]
+    end
+    RDE --> SV
+    SV --> KBP
+    SV --> KPOL
+    SHOW --> BAR
+    chrome --> RDE
+    detail --> tab
+```
+
+#### Ключевые файлы
+
+| Файл | Роль |
+|---|---|
+| `YDocRecipeDetailView.swift` | ScrollView, keyboard compensation, `safeAreaInset` панели, suppression таймера |
+| `RecipeDescriptionEditorBlock.swift` | Inline WebView, высота = `bridge.contentHeight`, bind chrome |
+| `DescriptionEditorChromeState.swift` | `showsFormattingBar`, `blurEditor()`, suppress |
+| `DescriptionFormattingBar.swift` | Кнопки форматирования + Done, layout metrics |
+| `DescriptionEditorWebView.swift` | Inline: **без** UIKit `inputAccessoryView`; fullscreen — с accessory |
+| `AppShellView.swift` | Панель таймеров на tab root; `suppressPanelSafeAreaInset` в edit |
+| `MobileTimerPanel.swift` | `.mobileTimerPanelBottomPadding(suppress:)` для ScrollView на деталке |
+
+#### Когда показывается панель
+
+`DescriptionEditorChromeState.showsFormattingBar` == `true` только если **все** условия:
+
+1. `bridge.phase == .ready` (Tiptap загружен)
+2. `bridge.isFocused` (курсор в описании)
+3. `!suppressFormattingBar`
+
+Suppression задаётся в `syncDescriptionChromeSuppression()` (`YDocRecipeDetailView`):
+
+- открыт sheet разметки таймера / ингредиента;
+- контекстное меню timer/ingredient node;
+- фокус в полях ингредиентов или названия рецепта (панель скрывается, редактор blur).
+
+**Не меняй** логику `showsFormattingBar` на «просто isEditing» — панель должна быть только при активном фокусе в описании.
+
+#### Размещение панели: только `safeAreaInset`
+
+Панель рендерится в `.safeAreaInset(edge: .bottom)` на `YDocRecipeDetailView`, **не** в `ToolbarItemGroup(placement: .keyboard)`.
+
+**Почему:** keyboard toolbar не показывал панель (SwiftUI + WKWebView); UITest `testDescriptionKeyboardDoneHidesFormattingBar` ищет `description_formatting_bar` как `otherElements` в иерархии экрана.
+
+**Done для inline:** кнопка «Готово» на `DescriptionFormattingBar` (`onDone → descriptionChrome.blurEditor()`). У inline WebView (`presentation == .inline`) **нет** UIKit `customInputAccessoryView` — иначе дублируется Done и ломается layout.
+
+#### Скролл: один ScrollView, WebView не скроллится
+
+| Режим | Поведение |
+|---|---|
+| Inline (деталка) | `allowsScrolling: false`; высота WebView = полная высота контента Tiptap; скроллит **родительский** `ScrollView` |
+| Fullscreen sheet | WebView может иметь свой scroll + UIKit keyboard accessory |
+
+**Запрещено** для inline: включать `allowsScrolling: true` и/или ограничивать высоту WebView фиксированным viewport — WebView начнёт скроллиться отдельно от экрана (regression).
+
+#### Keyboard + bottom inset (критично, легко сломать)
+
+Три связанных механизма на `ScrollView` контента деталки:
+
+1. **`DescriptionEditorScrollKeyboardPolicy`** — при `isEditing && descriptionChrome.isFocused` включает `.ignoresSafeArea(.keyboard, edges: .bottom)`. Модifier должен оставаться **стабильным** (не оборачивать ScrollView в `if/else` с разной иерархией — иначе пересоздаётся WebView и мигает chrome).
+
+2. **`descriptionEditorKeyboardCompensation`** — отрицательный padding ≈ `-keyboardOverlapHeight` из `keyboardWillChangeFrame`, чтобы **отменить двойной** keyboard safe area inset (иначе огромный зазор между текстом и панелью).
+
+3. **`descriptionEditorScrollBottomInset`** — сумма compensation + `DescriptionFormattingBarLayoutMetrics.scrollClearanceHeight` (52 pt), когда `showsFormattingBar`. Без clearance низ документа **перекрывается** панелью.
+
+```swift
+// YDocRecipeDetailView — не разносить по разным местам без причины
+.padding(.bottom, descriptionEditorScrollBottomInset)
+.modifier(DescriptionEditorScrollKeyboardPolicy(
+    ignoresKeyboardSafeArea: isEditing && descriptionChrome.isFocused
+))
+```
+
+Если меняешь высоту панели — обнови **`scrollClearanceHeight`** в `DescriptionFormattingBarLayoutMetrics` (52 pt ≈ vertical padding 8+8 + ~36 pt controls).
+
+#### Панель таймеров vs режим редактирования
+
+На tab root (`AppShellView.tabRoot`) панель таймеров в `safeAreaInset(.bottom)`.
+
+На деталке рецепта параллельно:
+
+- `timerManager.setSuppressPanelSafeAreaInset(isEditing)` — скрывает tab-root inset в edit;
+- `.mobileTimerPanelBottomPadding(suppress: isEditing)` — **не** добавляет padding под таймер в ScrollView при edit (иначе двойной bottom inset).
+
+В **view mode** деталка использует `.mobileTimerPanelBottomPadding()` без suppress — контент не уходит под панель таймеров.
+
+#### Вёрстка `DescriptionFormattingBar`
+
+- Горизонтальный `ScrollView` с кнопками форматирования + опциональный блок Done справа.
+- Разделители: `Rectangle` 1×28 pt, `.padding(.horizontal, 4)`.
+- **Done:** divider `.padding(.leading, 4)` + кнопка `.padding(.leading, 4)` + `.padding(.trailing, 12)` — **4 pt между линией и текстом «Готово»**.
+- Стили кнопок: `AppToolbarStyle` / `.appToolbarTextButton()`; active state зеркалит Tiptap `selectionState` (см. Web parity).
+- Accessibility: `description_formatting_bar`, `description_editor_keyboard_done` (`AccessibilityIdentifiers`).
+
+#### Чеклист перед изменениями
+
+- [ ] Панель по-прежнему в `safeAreaInset`, не в keyboard toolbar?
+- [ ] Inline WebView: `allowsScrolling: false`, полная `contentHeight`?
+- [ ] `descriptionEditorScrollBottomInset` учитывает высоту панели при `showsFormattingBar`?
+- [ ] Keyboard compensation не убран (нет двойного gap)?
+- [ ] `DescriptionEditorScrollKeyboardPolicy` не toggles через смену ветки `if/else` на ScrollView?
+- [ ] UITest `testDescriptionKeyboardDoneHidesFormattingBar` проходит?
+- [ ] Verify: `bash scripts/verify-description-editor.sh [recipe-uuid]`
+
+#### Типичные регрессии (не повторять)
+
+| Изменение | Симптом |
+|---|---|
+| Панель в `.keyboard` toolbar | Панель не видна |
+| `if focused { ScrollView… } else { ScrollView… }` для keyboard policy | Мигание / teardown WebView, пропадание панели |
+| Internal scroll WebView в inline | Два независимых скролла |
+| Убрать `scrollClearanceHeight` | Низ описания под панелью |
+| Убрать keyboard compensation | Огромный зазор при фокусе |
+| Таймер на деталке без suppress в edit | Конфликт bottom inset с панелью форматирования |
+| UIKit Done accessory в inline | Дубли Done, лишний chrome |
+

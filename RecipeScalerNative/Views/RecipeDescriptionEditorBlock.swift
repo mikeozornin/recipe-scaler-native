@@ -46,7 +46,12 @@ struct RecipeDescriptionEditorBlock: View {
 
     /// Full content height — parent ScrollView scrolls; WebView never scrolls inline.
     private var resolvedHeight: CGFloat {
-        max(DescriptionEditorLayoutMetrics.minEmbeddedHeight, bridge.contentHeight)
+        switch bridge.phase {
+        case .loading, .error:
+            return DescriptionEditorLayoutMetrics.minEmbeddedHeight
+        case .ready:
+            return max(DescriptionEditorLayoutMetrics.minInlineContentHeight, bridge.contentHeight)
+        }
     }
 
     var body: some View {
@@ -86,16 +91,6 @@ struct RecipeDescriptionEditorBlock: View {
             await syncService.suspendRecipeRefresh()
         }
         .onAppear {
-            // #region agent log
-            let _ = DebugModeLog.write(
-                "RecipeDescriptionEditorBlock.onAppear",
-                hypothesisId: "H4",
-                data: [
-                    "phase": String(describing: bridge.phase),
-                    "isFocused": bridge.isFocused ? "true" : "false",
-                ]
-            )
-            // #endregion
             chrome.bind(bridge: bridge)
             pushScaleToEditor()
         }

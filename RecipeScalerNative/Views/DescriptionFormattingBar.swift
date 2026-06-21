@@ -7,9 +7,15 @@
 
 import SwiftUI
 
+enum DescriptionFormattingBarLayoutMetrics {
+    /// Bottom scroll clearance while the bar is shown in `safeAreaInset`.
+    static let scrollClearanceHeight: CGFloat = 52
+}
+
 struct DescriptionFormattingBar: View {
     @Bindable var bridge: DescriptionEditorBridge
     var accentColor: Color
+    var onDone: (() -> Void)?
     var onMarkTimer: (() -> Void)?
     var onMarkIngredient: (() -> Void)?
     var onParseRecipe: (() -> Void)?
@@ -17,7 +23,8 @@ struct DescriptionFormattingBar: View {
     private var selection: DescriptionEditorSelectionState { bridge.selectionState }
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 4) {
                 barButton(
                     systemName: "textformat.size.larger",
@@ -101,6 +108,17 @@ struct DescriptionFormattingBar: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
+            }
+
+            if let onDone {
+                divider
+                    .padding(.leading, 4)
+                Button("edit.done", action: onDone)
+                    .appToolbarTextButton()
+                    .padding(.leading, 4)
+                    .padding(.trailing, 12)
+                    .accessibilityIdentifier(AccessibilityIdentifiers.descriptionEditorKeyboardDone)
+            }
         }
         .background(.bar)
         .accessibilityIdentifier("description_formatting_bar")

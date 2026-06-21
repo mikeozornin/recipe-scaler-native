@@ -16,7 +16,8 @@
   } = YjsBundle;
 
   const handlerName = 'descriptionEditor';
-  const MIN_INLINE_HEIGHT = 280;
+  const MIN_FULLSCREEN_HEIGHT = 280;
+  const MIN_INLINE_CONTENT_HEIGHT = 36;
 
   let ydoc = null;
   let editor = null;
@@ -175,7 +176,10 @@
   function measureContentHeightNow() {
     const dom = editorDom();
     if (!dom) return;
-    const height = Math.max(MIN_INLINE_HEIGHT, dom.scrollHeight + 8);
+    const measured = dom.scrollHeight;
+    const height = inlineMode
+      ? Math.max(MIN_INLINE_CONTENT_HEIGHT, measured)
+      : Math.max(MIN_FULLSCREEN_HEIGHT, measured + 8);
     post('contentHeight', { height: height });
   }
 

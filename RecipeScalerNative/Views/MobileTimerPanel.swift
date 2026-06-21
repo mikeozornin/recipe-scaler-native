@@ -304,34 +304,27 @@ struct MobileTimerPanelBottomPaddingModifier: ViewModifier {
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var isCollapsed
 
+    /// When `true`, this modifier contributes no bottom padding (e.g. while editing,
+    /// another bottom inset is already active). Must be passed explicitly (not via env)
+    /// because env set on the content does not reach the modifier's own context.
+    var suppress: Bool = false
+
     private var height: CGFloat {
-        MobileTimerPanelLayout.height(
+        guard !suppress else { return 0 }
+        return MobileTimerPanelLayout.height(
             timerCount: timerManager.activeTimers.count,
             isExpanded: !isCollapsed
         )
     }
 
     func body(content: Content) -> some View {
-        let _ = {
-            // #region agent log
-            DebugModeLog.write(
-                "MobileTimerPanelBottomPaddingModifier.body",
-                hypothesisId: "H3",
-                data: [
-                    "height": String(describing: height),
-                    "activeCount": String(timerManager.activeTimers.count),
-                    "isCollapsed": isCollapsed ? "true" : "false",
-                ]
-            )
-            // #endregion
-        }()
-        return content.padding(.bottom, height)
+        content.padding(.bottom, height)
     }
 }
 
 extension View {
-    func mobileTimerPanelBottomPadding() -> some View {
-        modifier(MobileTimerPanelBottomPaddingModifier())
+    func mobileTimerPanelBottomPadding(suppress: Bool = false) -> some View {
+        modifier(MobileTimerPanelBottomPaddingModifier(suppress: suppress))
     }
 }
 

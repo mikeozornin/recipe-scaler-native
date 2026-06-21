@@ -53,7 +53,7 @@ struct DescriptionEditorWebView: UIViewRepresentable {
 
         context.coordinator.webView = webView
         bridge.attach(webView: context.coordinator)
-        webView.customInputAccessoryView = context.coordinator.makeKeyboardToolbar()
+        applyInlineKeyboardAccessory(on: webView, context: context)
         context.coordinator.loadEditor(in: webView)
         return webView
     }
@@ -61,6 +61,17 @@ struct DescriptionEditorWebView: UIViewRepresentable {
     func updateUIView(_ uiView: DescriptionEditorWKWebView, context: Context) {
         context.coordinator.onKeyboardDone = onKeyboardDone
         applyScrollPolicy(on: uiView, allowsScrolling: allowsScrolling)
+        applyInlineKeyboardAccessory(on: uiView, context: context)
+    }
+
+    /// Inline editor: Done on `DescriptionFormattingBar`; full-screen keeps UIKit accessory.
+    private func applyInlineKeyboardAccessory(on webView: DescriptionEditorWKWebView, context: Context) {
+        let nextAccessory: UIView? = bridge.presentation == .inline
+            ? nil
+            : context.coordinator.makeKeyboardToolbar()
+        guard webView.customInputAccessoryView !== nextAccessory else { return }
+        webView.customInputAccessoryView = nextAccessory
+        webView.reloadInputViews()
     }
 
     private func applyScrollPolicy(on webView: DescriptionEditorWKWebView, allowsScrolling: Bool) {

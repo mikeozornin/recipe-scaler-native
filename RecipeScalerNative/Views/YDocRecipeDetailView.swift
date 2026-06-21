@@ -42,6 +42,7 @@ struct YDocRecipeDetailView: View {
     @State private var clearIngredientFocusToken = 0
     @State private var isParsingDescription = false
     @State private var descriptionParseError: String?
+    @State private var keyboardOverlapHeight: CGFloat = 0
 
 
     private var recipe: RecipeData? {
@@ -83,6 +84,20 @@ struct YDocRecipeDetailView: View {
 
     private var allowsImageNetworkRefresh: Bool {
         syncService.connectionState == .connected
+    }
+
+    /// Cancels duplicate keyboard scroll inset while `safeAreaInset` formatting bar is active.
+    private var descriptionEditorKeyboardCompensation: CGFloat {
+        guard isEditing, descriptionChrome.isFocused, keyboardOverlapHeight > 0 else { return 0 }
+        return -keyboardOverlapHeight
+    }
+
+    private var descriptionEditorScrollBottomInset: CGFloat {
+        var inset = descriptionEditorKeyboardCompensation
+        if descriptionChrome.showsFormattingBar {
+            inset += DescriptionFormattingBarLayoutMetrics.scrollClearanceHeight
+        }
+        return inset
     }
 
     var body: some View {
@@ -220,8 +235,12 @@ struct YDocRecipeDetailView: View {
                 }
                 .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
             }
+            .padding(.bottom, descriptionEditorScrollBottomInset)
         }
-        .mobileTimerPanelBottomPadding()
+        .mobileTimerPanelBottomPadding(suppress: isEditing)
+        .modifier(DescriptionEditorScrollKeyboardPolicy(
+            ignoresKeyboardSafeArea: isEditing && descriptionChrome.isFocused
+        ))
         .dismissPopoverOnVerticalDrag(isActive: descriptionTimerPopover != nil) {
             descriptionTimerPopover = nil
         }
@@ -358,26 +377,27 @@ struct YDocRecipeDetailView: View {
                 }
             }
         }
-        .toolbar {
-            if isEditing,
-               canEnterEditMode,
-               descriptionChrome.isFocused,
-               !ingredientFieldsFocused,
-               !(editViewModel?.isEditingTitleField ?? false) {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("edit.done") {
-                        descriptionChrome.blurEditor()
-                    }
-                    .appToolbarTextButton()
-                    .accessibilityIdentifier(AccessibilityIdentifiers.descriptionEditorKeyboardDone)
-                }
-            }
-        }
         .onChange(of: descriptionChrome.isFocused) { _, focused in
             guard focused else { return }
             clearIngredientFocusToken += 1
             dismissRecipeTitleKeyboard = true
+        }
+        .onChange(of: isEditing) { _, editing in
+            timerManager.setSuppressPanelSafeAreaInset(editing)
+        }
+        .onAppear {
+            timerManager.setSuppressPanelSafeAreaInset(isEditing)
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIResponder.keyboardWillChangeFrameNotification
+            )
+        ) { note in
+            guard let frame = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey]
+                    as? CGRect else { return }
+            let screenHeight = UIScreen.main.bounds.height
+            let overlap = max(0, screenHeight - frame.minY)
+            keyboardOverlapHeight = overlap
         }
         .alert(
             Bundle.currentLocalizedString("edit.error.title"),
@@ -440,6 +460,7 @@ struct YDocRecipeDetailView: View {
             }
         }
         .onDisappear {
+            timerManager.setSuppressPanelSafeAreaInset(false)
             guard !assistantRecipeContext.isAssistantSheetOpen else { return }
             assistantRecipeContext.clearVisibleRecipeId(recipeId)
             deactivateScreenAwake()
@@ -540,25 +561,13 @@ struct YDocRecipeDetailView: View {
 
     @ViewBuilder
     private var formattingBarInset: some View {
-        let showsBar = isEditing
-            && descriptionChrome.showsFormattingBar
-            && descriptionChrome.bridge != nil
-        // #region agent log
-        let _ = DebugModeLog.write(
-            "safeAreaInset.bottom evaluated",
-            hypothesisId: "H1",
-            data: [
-                "isEditing": isEditing ? "true" : "false",
-                "showsFormattingBar": descriptionChrome.showsFormattingBar ? "true" : "false",
-                "bridgePresent": (descriptionChrome.bridge != nil) ? "true" : "false",
-                "willRenderBar": showsBar ? "true" : "false",
-            ]
-        )
-        // #endregion
-        if showsBar, let bridge = descriptionChrome.bridge {
+        if isEditing,
+           descriptionChrome.showsFormattingBar,
+           let bridge = descriptionChrome.bridge {
             DescriptionFormattingBar(
                 bridge: bridge,
                 accentColor: accentColor,
+                onDone: { descriptionChrome.blurEditor() },
                 onMarkTimer: beginDescriptionTimerMarkup,
                 onMarkIngredient: beginDescriptionIngredientMarkup,
                 onParseRecipe: {
@@ -1169,6 +1178,17 @@ private extension View {
     /// Dismisses an overlay on vertical scroll without stealing horizontal List row swipes.
     func dismissPopoverOnVerticalDrag(isActive: Bool, onDismiss: @escaping () -> Void) -> some View {
         modifier(DismissPopoverOnVerticalDragModifier(isActive: isActive, onDismiss: onDismiss))
+    }
+}
+
+private struct DescriptionEditorScrollKeyboardPolicy: ViewModifier {
+    var ignoresKeyboardSafeArea: Bool
+
+    func body(content: Content) -> some View {
+        content.ignoresSafeArea(
+            ignoresKeyboardSafeArea ? .keyboard : SafeAreaRegions(),
+            edges: .bottom
+        )
     }
 }
 
