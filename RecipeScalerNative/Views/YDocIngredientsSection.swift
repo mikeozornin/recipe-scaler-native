@@ -1054,6 +1054,13 @@ private struct IngredientRowMarkerSlot: View {
     }
 }
 
+private enum IngredientHeaderLabelStyle {
+    static let fontSize = AppTypography.bodySize
+    /// 2% of body size (0.02 em).
+    static let letterSpacing = fontSize * 0.02
+    static var font: Font { AppTypography.sansMedium(fontSize) }
+}
+
 private struct IngredientRowHeaderLabel: View {
     let text: String
 
@@ -1062,10 +1069,10 @@ private struct IngredientRowHeaderLabel: View {
             ingredients: {
                 IngredientGridIngredientsColumn(markerLabel: nil) {
                     Text(text)
-                        .font(AppTypography.sansMedium(AppTypography.compactSize))
+                        .font(IngredientHeaderLabelStyle.font)
                         .textCase(.uppercase)
-                        .tracking(0.5)
-                        .foregroundStyle(.secondary)
+                        .tracking(IngredientHeaderLabelStyle.letterSpacing)
+                        .foregroundStyle(.primary)
                 }
             },
             baseQty: { EmptyView() },
@@ -1101,6 +1108,8 @@ struct IngredientDraft {
 private struct ExpandingIngredientNameField: View {
     let placeholderKey: String
     @Binding var text: String
+    var font: Font = AppTypography.body
+    var tracking: CGFloat = 0
     @Environment(\.locale) private var locale
 
     private var resolvedPlaceholder: String {
@@ -1115,14 +1124,18 @@ private struct ExpandingIngredientNameField: View {
 
     var body: some View {
         Text(sizingText)
-            .appBody()
+            .font(font)
+            .tracking(tracking)
+            .lineSpacing(AppTypography.bodyLineSpacing)
             .lineLimit(1...)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .hidden()
             .overlay(alignment: .topLeading) {
                 TextField(resolvedPlaceholder, text: $text, axis: .vertical)
-                    .appBodyFieldTypography()
+                    .font(font)
+                    .tracking(tracking)
+                    .lineSpacing(AppTypography.bodyLineSpacing)
                     .lineLimit(1...)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -1166,11 +1179,13 @@ struct YDocIngredientEditRow: View {
             HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.gridIngredientsToQtySpacing) {
                 ExpandingIngredientNameField(
                     placeholderKey: "edit.ingredient.name",
-                    text: $name
+                    text: $name,
+                    font: IngredientHeaderLabelStyle.font,
+                    tracking: IngredientHeaderLabelStyle.letterSpacing
                 )
                 .focused(focusedField, equals: .name(ingredient.id))
                 .textCase(.uppercase)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .contentShape(Rectangle())
