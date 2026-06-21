@@ -1090,7 +1090,11 @@ final class RecipeScalerNativeTests: XCTestCase {
                 "Missing SF Symbol for tab \(tab.rawValue): \(tab.tabBarSymbol)"
             )
         }
-        XCTAssertNotNil(UIImage(systemName: "globe.fill"))
+        XCTAssertNotNil(UIImage(systemName: "globe"))
+        XCTAssertNotNil(
+            UIImage(systemName: "sun.max"),
+            "Missing SF Symbol for keep-awake toolbar: sun.max"
+        )
         // Sanity check: a deliberately-invalid symbol name must yield `nil`.
         // We use this to ensure `UIImage(systemName:)` actually fails for unknown symbols.
         XCTAssertNil(

@@ -21,15 +21,6 @@ enum AppToolbarStyle {
     }
 
     @ViewBuilder
-    static func icon(_ symbol: RecipeSymbol) -> some View {
-        symbol.toolbarImage()
-            .resizable()
-            .scaledToFit()
-            .frame(width: iconSide, height: iconSide)
-            .foregroundStyle(Color.accentColor)
-    }
-
-    @ViewBuilder
     static func actionText(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(AppTypography.body)
@@ -51,29 +42,8 @@ enum AppToolbarStyle {
     }
 
     @ViewBuilder
-    static func labeledIcon(_ symbol: RecipeSymbol, title: LocalizedStringKey) -> some View {
-        HStack(spacing: 4) {
-            icon(symbol)
-            actionText(title)
-        }
-        .fixedSize(horizontal: true, vertical: false)
-        .padding(.leading, iconButtonPadding)
-        .padding(.trailing, 0)
-        .frame(minHeight: minimumTapSide)
-        .contentShape(Rectangle())
-    }
-
-    @ViewBuilder
     static func iconOnly(systemName: String, isActive: Bool = false) -> some View {
         icon(systemName)
-            .frame(width: minimumTapSide, height: minimumTapSide)
-            .background(activeBackground(isActive))
-            .contentShape(Rectangle())
-    }
-
-    @ViewBuilder
-    static func iconOnly(_ symbol: RecipeSymbol, isActive: Bool = false) -> some View {
-        icon(symbol)
             .frame(width: minimumTapSide, height: minimumTapSide)
             .background(activeBackground(isActive))
             .contentShape(Rectangle())
