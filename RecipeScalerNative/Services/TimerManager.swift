@@ -273,9 +273,10 @@ final class TimerManager: NSObject {
         guard let timer = timers.first(where: { $0.id == id }) else { return }
         let now = Date()
         let extra = TimeInterval(minutes * 60)
-        let baseEnd = timer.endTime ?? now
+        let endIsPast = timer.endTime.map { $0 <= now } ?? true
+        let baseEnd = (timer.hasCompleted || endIsPast) ? now : (timer.endTime ?? now)
         timer.endTime = baseEnd.addingTimeInterval(extra)
-        timer.remainingTime = (timer.remainingTime ?? max(0, baseEnd.timeIntervalSinceNow)) + extra
+        timer.remainingTime = (timer.hasCompleted || endIsPast ? 0 : (timer.remainingTime ?? max(0, baseEnd.timeIntervalSinceNow))) + extra
         timer.isRunning = true
         timer.isPaused = false
         timer.hasCompleted = false
@@ -415,6 +416,23 @@ final class TimerManager: NSObject {
         snapshotWriteWorkItem?.cancel()
         let work = DispatchWorkItem {
             let document = self.timers.timerSnapshotDocument()
+            // #region agent log
+            #if DEBUG
+            let summary = document.timers.map {
+                "\($0.id.prefix(6)):\($0.phase.rawValue):\($0.remainingSeconds())"
+            }.joined(separator: ",")
+            TimerSnapshotStore.agentDebugLog(
+                sessionId: "2c9af3",
+                hypothesisId: "A",
+                location: "TimerManager.persistTimerSnapshot",
+                message: "snapshot_saved",
+                data: [
+                    "timerCount": String(document.timers.count),
+                    "timers": summary,
+                ]
+            )
+            #endif
+            // #endregion
             TimerSnapshotStore.save(document)
             WidgetCenter.shared.reloadTimelines(ofKind: TimerWidgetKind.id)
         }
@@ -453,6 +471,21 @@ final class TimerManager: NSObject {
                 panelNeedsRefresh = true
             }
             if remaining <= 0, !timer.hasCompleted {
+                // #region agent log
+                #if DEBUG
+                TimerSnapshotStore.agentDebugLog(
+                    sessionId: "2c9af3",
+                    hypothesisId: "B",
+                    location: "TimerManager.updateRunningTimers",
+                    message: "will_complete",
+                    data: [
+                        "timerId": timer.id,
+                        "remaining": String(Int(remaining.rounded())),
+                        "panelNeedsRefresh": String(panelNeedsRefresh),
+                    ]
+                )
+                #endif
+                // #endregion
                 handleTimerReachedZero(timer)
             } else if remaining <= 0 {
                 syncLiveActivityIfOverdue(timer)
@@ -490,6 +523,23 @@ final class TimerManager: NSObject {
         guard !timer.hasCompleted else { return }
         timer.hasCompleted = true
         persist(timer)
+        refreshPanelTimers()
+        // #region agent log
+        #if DEBUG
+        TimerSnapshotStore.agentDebugLog(
+            sessionId: "2c9af3",
+            hypothesisId: "A",
+            location: "TimerManager.handleTimerReachedZero",
+            message: "timer_reached_zero",
+            data: [
+                "timerId": timer.id,
+                "hasCompleted": String(timer.hasCompleted),
+                "isRunning": String(timer.isRunning),
+                "remaining": String(Int(timer.remainingTime ?? 0)),
+            ]
+        )
+        #endif
+        // #endregion
         sendCompletionNotification(for: timer)
         syncLiveActivity(for: timer)
     }
@@ -578,11 +628,11 @@ final class TimerManager: NSObject {
             }
         }
         let content = UNMutableNotificationContent()
-        content.title = String(localized: "timer.notification.title")
-        content.body = String(
-            format: Bundle.currentLocalizedString("timer.notification.body"),
+        content.title = String(
+            format: Bundle.currentLocalizedString("timer.notification.title"),
             timer.name
         )
+        content.body = String(localized: "timer.notification.body")
         content.sound = .default
         var userInfo: [String: Any] = ["timerId": timer.id, "timerName": timer.name]
         if let recipeId = timer.recipeId, !recipeId.isEmpty {

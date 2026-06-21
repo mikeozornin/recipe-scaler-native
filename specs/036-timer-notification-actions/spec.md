@@ -2,7 +2,7 @@
 
 **Ветка**: `036-timer-notification-actions`
 **Дата**: 2026-06-21
-**Статус**: 🟡 В работе
+**Статус**: 🟢 DONE
 **Зависимости**: [014-timers-sync](../014-timers-sync/spec.md) (DONE), [026-timer-live-activity](../026-timer-live-activity/spec.md) (in progress), [023-push-notifications](../023-push-notifications/spec.md) (push-coexistence)
 **Не требует платного аккаунта**: локальные `UNNotification`, без APNs/Associated Domains.
 
@@ -36,13 +36,13 @@
 
 | Key | RU | EN |
 |-----|----|----|
-| `timer.notification.title` | Таймер завершён | Timer complete |
-| `timer.notification.body` | %@ — время вышло | %@ has finished |
+| `timer.notification.title` | Таймер «%@» завершен! | Timer "%@" completed! |
+| `timer.notification.body` | Проверьте, что вы там готовите | Go and check what you're cooking |
 | `timer.notification.action.add-minute` | +1 минута | +1 minute |
 | `timer.notification.action.add-five-minutes` | +5 минут | +5 minutes |
 | `timer.notification.action.delete` | Удалить | Delete |
 
-`%@` в `body` подставляется через `String(localized: "timer.notification.body \(timer.name)")` (xcstrings interpolation).
+Паритет с веб push (`server/src/locales/{ru,en}.json`: `notifications.timer-completed` / `notifications.time-expired`). `%@` в `title` — имя таймера; `body` — статичный призыв.
 
 ## Lifecycle
 
@@ -82,9 +82,9 @@ flowchart TD
 
 ### FR-036-004 — Локализация уведомления
 
-В `deliverCompletionNotification(for:)`:
-- `content.title = String(localized: "timer.notification.title")`
-- `content.body = String(localized: "timer.notification.body \(timer.name)")`
+В `deliverCompletionNotification(for:)` (паритет с веб push):
+- `content.title = String(format: Bundle.currentLocalizedString("timer.notification.title"), timer.name)`
+- `content.body = String(localized: "timer.notification.body")`
 
 ### FR-036-005 — Cancel-id fix
 
@@ -116,6 +116,13 @@ flowchart TD
 - Все строки в карточке и кнопках локализованы через `Localizable.xcstrings` (RU по умолчанию).
 - `xcodebuild -scheme RecipeScalerNative build` зелёный.
 - `verify-timer-notifications.sh` проходит.
+
+## Verification (2026-06-21)
+
+- `bash scripts/verify-timer-notifications.sh` — static grep + `xcodebuild` + `TimerNotificationActionsTests` + simulator smoke (`-TimerNotificationSmokeTest=1`).
+- Smoke steps: `categoryRegistered`, `timerCreated`, `timerCompleted`, `addOneMinute`, `addFiveMinutes`, `deleteTimer`.
+- `addTime` extends from `now` when the timer has already completed (notification action path).
+- Screenshots: `specs/036-timer-notification-actions/screenshots/`.
 
 ## Артефакты
 

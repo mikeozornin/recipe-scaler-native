@@ -10341,13 +10341,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Timer complete"
+            "value": "Timer \"%@\" completed!"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Таймер завершён"
+            "value": "Таймер «%@» завершен!"
           }
         }
       }
@@ -10358,13 +10358,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ has finished"
+            "value": "Go and check what you're cooking"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ — время вышло"
+            "value": "Проверьте, что вы там готовите"
           }
         }
       }
