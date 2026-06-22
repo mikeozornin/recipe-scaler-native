@@ -209,7 +209,7 @@ actor DocumentManager {
             let array = YrsArray(branch: arrayBranch)
             var result: [CollectionEntry] = []
             try array.forEachMap(txn: txn) { map in
-                result.append(self.parseCollectionEntry(from: map, txn: txn))
+                result.append(RecipeYjsCodec.parseCollectionEntry(from: map, txn: txn))
             }
             if result.isEmpty {
                 Self.logger.warning("Parsed 0 collection entries (recipes array length=\(array.length(txn: txn)))")
@@ -254,7 +254,7 @@ actor DocumentManager {
                 Self.logger.warning("No 'recipe' Y.Map found in recipe doc \(UserIdFormatter.redactDocKey(key))")
                 return nil as RecipeData?
             }
-            let parsed = self.parseRecipeData(from: map, txn: txn, recipeId: recipeId)
+            let parsed = RecipeYjsCodec.parseRecipeData(from: map, txn: txn, recipeId: recipeId)
             // Skip the expensive FFI tree walk when the cache is already valid
             // for this state vector.
             if cachedHTML == nil,
@@ -318,7 +318,7 @@ actor DocumentManager {
             guard let map = doc.recipeMap(txn: txn) else { return nil }
             let versionString = map.scalarString(key: "version", txn: txn)
             let version = RecipeData.RecipeVersion.detect(versionString)
-            let ingredients = self.readSearchIngredients(from: map, txn: txn, version: version)
+            let ingredients = RecipeYjsCodec.readSearchIngredients(from: map, txn: txn, version: version)
 
             let descriptionPlain: String
             if let cached = cachedPlainText {
@@ -329,7 +329,7 @@ actor DocumentManager {
                 } else {
                     descriptionPlain = ""
                 }
-            } else if let raw = self.readDescription(from: map, txn: txn, version: version) {
+            } else if let raw = RecipeYjsCodec.readDescription(from: map, txn: txn, version: version) {
                 descriptionPlain = RecipeSearchUtils.plainText(fromDescriptionHTML: raw)
             } else {
                 descriptionPlain = ""
@@ -551,7 +551,7 @@ actor DocumentManager {
 
                 var moved: IngredientData?
                 array.withMap(at: UInt32(fromIndex), txn: txn) { ingMap in
-                    moved = Self.parseIngredientMap(ingMap, txn: txn, fallbackOrder: fromIndex + 1)
+                    moved = RecipeYjsCodec.parseIngredientMap(ingMap, txn: txn, fallbackOrder: fromIndex + 1)
                 }
                 guard let moved else { return }
 
@@ -697,7 +697,7 @@ actor DocumentManager {
             let array = YrsArray(branch: arrayBranch)
             var result: [RecipeFolder] = []
             try array.forEachMap(txn: txn) { map in
-                if let folder = Self.parseRecipeFolder(from: map, txn: txn) {
+                if let folder = RecipeYjsCodec.parseRecipeFolder(from: map, txn: txn) {
                     result.append(folder)
                 }
             }
@@ -919,28 +919,7 @@ actor DocumentManager {
 
     /// Parse a folder Y.Map into `RecipeFolder`. Returns nil when the entry
     /// is missing an `id` or the id is empty (matches web `folderEntryToObject`).
-    private static func parseRecipeFolder(from map: YrsMap, txn: OpaquePointer) -> RecipeFolder? {
-        guard let id = map.scalarString(key: "id", txn: txn), !id.isEmpty else {
-            return nil
-        }
-        let updatedAt = map.scalarString(key: "updatedAt", txn: txn) ?? Self.isoTimestamp()
-        let rawName = map.scalarString(key: "name", txn: txn) ?? ""
-        let trimmedName = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let storedName = trimmedName.isEmpty
-            ? RecipeFolderConstants.untitledFolderNameSentinel
-            : trimmedName
-        let color = map.scalarString(key: "color", txn: txn) ?? RecipeFolderConstants.defaultFolderColor
-        let createdAt = map.scalarString(key: "createdAt", txn: txn) ?? updatedAt
-        let deleted = map.bool(key: "deleted", txn: txn) ?? false
-        return RecipeFolder(
-            id: id,
-            name: storedName,
-            color: color,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
-            deleted: deleted
-        )
-    }
+    /// → Moved to `RecipeYjsCodec.parseRecipeFolder`.
 
     /// Dedupe and trim requested folder ids, keeping only those that refer to
     /// active (non-deleted) folders. Mirrors web `validateActiveCollectionIds`.
@@ -1522,252 +1501,13 @@ actor DocumentManager {
         return id.isEmpty ? nil : id
     }
 
-    // ─── Parsing Helpers ─────────────────────────────────────────────────
+    // ─── Parsing Helpers → moved to RecipeYjsCodec ─────────────────────
 
-    private func parseCollectionEntry(from map: YrsMap, txn: OpaquePointer) -> CollectionEntry {
-        let id = map.scalarString(key: "id", txn: txn) ?? UUID().uuidString
-        let deleted = map.bool(key: "deleted", txn: txn) ?? false
-        // `folderIds` is a plain JSON-array primitive on the map (not a Y.Array).
-        // Missing key / non-array value → empty array (web `getRecipeFolderIds`).
-        let folderIds = map.stringArray(key: RecipeFolderConstants.folderIdsKey, txn: txn)
-
-        return CollectionEntry(
-            id: id,
-            name: map.scalarString(key: "name", txn: txn) ?? "",
-            color: map.scalarString(key: "color", txn: txn) ?? "#3b82f6",
-            imageUrl: map.scalarString(key: "imageUrl", txn: txn),
-            updatedAt: map.scalarString(key: "updatedAt", txn: txn) ?? "",
-            deleted: deleted,
-            isPinned: map.bool(key: "isPinned", txn: txn) ?? false,
-            folderIds: folderIds
-        )
-    }
-
-    private func parseRecipeData(from map: YrsMap, txn: OpaquePointer, recipeId: String) -> RecipeData {
-        let versionString = map.scalarString(key: "version", txn: txn)
-        let version = RecipeData.RecipeVersion.detect(versionString)
-        let ingredients = readIngredients(from: map, txn: txn, version: version)
-
-        return RecipeData(
-            id: recipeId,
-            name: readRecipeName(from: map, txn: txn),
-            servings: RecipeServings.baseServings(from: map, txn: txn),
-            color: map.scalarString(key: "color", txn: txn) ?? "#3b82f6",
-            version: versionString ?? "v1",
-            description: readDescription(from: map, txn: txn, version: version),
-            ingredients: ingredients,
-            nutrition: readNutrition(from: map, txn: txn, version: version),
-            isPublic: map.bool(key: "isPublic", txn: txn) ?? false,
-            hasSteps: map.bool(key: "hasSteps", txn: txn) ?? false,
-            createdAt: map.scalarString(key: "createdAt", txn: txn) ?? "",
-            updatedAt: map.scalarString(key: "updatedAt", txn: txn) ?? "",
-            imageUrl: map.scalarString(key: "imageUrl", txn: txn),
-            imageAspectRatio: map.double(key: "imageAspectRatio", txn: txn),
-            originalRecipeLink: map.scalarString(key: "originalRecipeLink", txn: txn),
-            originalRecipe: map.scalarString(key: "originalRecipe", txn: txn)
-        )
-    }
-
-    // ─── Version-Aware Field Readers ─────────────────────────────────────
-
-    private func readRecipeName(from map: YrsMap, txn: OpaquePointer) -> String {
-        if let name = map.string(key: "name", txn: txn), !name.isEmpty {
-            return name
-        }
-        if let nestedName = map.withNestedText(key: "name", txn: txn, { $0.string(txn: txn) }),
-           let text = nestedName,
-           !text.isEmpty {
-            return text
-        }
-        return ""
-    }
-
-    private func readDescription(from map: YrsMap, txn: OpaquePointer, version: RecipeData.RecipeVersion) -> String? {
-        switch version {
-        case .v1:
-            return map.string(key: "description", txn: txn)
-        case .v2:
-            if let text = map.withNestedText(key: "description", txn: txn, { $0.string(txn: txn) }) {
-                return text
-            }
-            return map.string(key: "description", txn: txn)
-        case .v3:
-            // Filled from XmlFragment after the read transaction (see readRecipeData).
-            if let text = map.withNestedText(key: "description", txn: txn, { $0.string(txn: txn) }) {
-                return text
-            }
-            return map.string(key: "description", txn: txn)
-        }
-    }
-
-    private struct SearchIngredientProjection {
-        let names: [String]
-        let amounts: [String]
-    }
-
-    private func readSearchIngredients(
-        from map: YrsMap,
-        txn: OpaquePointer,
-        version: RecipeData.RecipeVersion
-    ) -> SearchIngredientProjection {
-        switch version {
-        case .v1:
-            guard let json = map.string(key: "ingredients", txn: txn) else {
-                return SearchIngredientProjection(names: [], amounts: [])
-            }
-            return searchIngredientsFromJSON(json)
-        case .v2, .v3:
-            let projection = (try? map.withNestedArray(key: "ingredients", txn: txn) { array in
-                var names: [String] = []
-                var amounts: [String] = []
-                array.forEachMap(txn: txn) { ingMap in
-                    let isSeparator = ingMap.bool(key: "isSeparator", txn: txn) ?? false
-                    guard !isSeparator else { return }
-                    let name = ingMap.scalarString(key: "name", txn: txn) ?? ""
-                    guard !name.isEmpty else { return }
-                    names.append(name)
-                    let hasOriginal = !ingMap.isNullOrMissing(key: "originalAmount", txn: txn)
-                    let originalAmount = ingMap.scalarString(key: "originalAmount", txn: txn) ?? ""
-                    let amount = ingMap.scalarString(key: "amount", txn: txn) ?? ""
-                    let hasQuantity = hasOriginal && !originalAmount.isEmpty
-                    amounts.append(hasQuantity ? originalAmount : amount)
-                }
-                return SearchIngredientProjection(names: names, amounts: amounts)
-            })
-            return projection ?? SearchIngredientProjection(names: [], amounts: [])
-        }
-    }
-
-    private func searchIngredientsFromJSON(_ json: String) -> SearchIngredientProjection {
-        guard let data = json.data(using: .utf8),
-              let raw = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
-            return SearchIngredientProjection(names: [], amounts: [])
-        }
-        var names: [String] = []
-        var amounts: [String] = []
-        for dict in raw {
-            let isSeparator = dict["isSeparator"] as? Bool ?? false
-            guard !isSeparator else { continue }
-            let name = dict["name"] as? String ?? ""
-            guard !name.isEmpty else { continue }
-            names.append(name)
-            let originalAmount: String = {
-                if dict["originalAmount"] is NSNull { return "" }
-                if let number = dict["originalAmount"] as? NSNumber {
-                    return IngredientData.formatScalarNumber(number.doubleValue)
-                }
-                if let string = dict["originalAmount"] as? String { return string }
-                return ""
-            }()
-            let amount: String = {
-                if let number = dict["amount"] as? NSNumber {
-                    return IngredientData.formatScalarNumber(number.doubleValue)
-                }
-                if let string = dict["amount"] as? String { return string }
-                return ""
-            }()
-            amounts.append(!originalAmount.isEmpty ? originalAmount : amount)
-        }
-        return SearchIngredientProjection(names: names, amounts: amounts)
-    }
-
-    private func readIngredients(
-        from map: YrsMap,
-        txn: OpaquePointer,
-        version: RecipeData.RecipeVersion
-    ) -> [IngredientData] {
-        switch version {
-        case .v1:
-            guard let json = map.string(key: "ingredients", txn: txn) else { return [] }
-            return parseJSONIngredients(json)
-        case .v2, .v3:
-            return (try? map.withNestedArray(key: "ingredients", txn: txn) { array in
-                var ingredients: [IngredientData] = []
-                var index = 0
-                array.forEachMap(txn: txn) { ingMap in
-                    ingredients.append(Self.parseIngredientMap(ingMap, txn: txn, fallbackOrder: index + 1))
-                    index += 1
-                }
-                return ingredients
-            }) ?? []
-        }
-    }
-
-    private func readNutrition(
-        from map: YrsMap,
-        txn: OpaquePointer,
-        version: RecipeData.RecipeVersion
-    ) -> NutritionData? {
-        // Root-level flag set by server edit API (recipe-edit-service.ts).
-        let rootOutdated = map.bool(key: "nutritionOutdated", txn: txn) ?? false
-
-        if let parsed = try? map.withNestedMap(key: "nutrition", txn: txn, { nMap in
-            var extra: [String: Double] = [:]
-            if let totalWeight = nMap.double(key: "totalWeight", txn: txn) {
-                extra["totalWeight"] = totalWeight
-            }
-            let nutritionOutdated = nMap.bool(key: "nutritionOutdated", txn: txn) ?? false
-            return NutritionData(
-                calories: nMap.double(key: "calories", txn: txn),
-                protein: nMap.double(key: "protein", txn: txn),
-                fat: nMap.double(key: "fat", txn: txn),
-                carbs: nMap.double(key: "carbs", txn: txn),
-                nutritionOutdated: rootOutdated || nutritionOutdated,
-                extra: extra
-            )
-        }) {
-            return parsed
-        }
-
-        guard let val = map.value(key: "nutrition", txn: txn),
-              val.tag == YrsValue.Y_JSON_STR,
-              let json = val.stringValue else {
-            return nil
-        }
-        var result = parseJSONNutrition(json)
-        if rootOutdated, var modifiable = result {
-            result = NutritionData(
-                calories: modifiable.calories,
-                protein: modifiable.protein,
-                fat: modifiable.fat,
-                carbs: modifiable.carbs,
-                nutritionOutdated: true,
-                extra: modifiable.extra
-            )
-        }
-        return result
-    }
-
-    // ─── JSON Fallback Parsers (v1) ──────────────────────────────────────
-
-    private static func parseIngredientMap(
-        _ ingMap: YrsMap,
-        txn: OpaquePointer,
-        fallbackOrder: Int
-    ) -> IngredientData {
-        let unit = ingMap.scalarString(key: "unit", txn: txn) ?? ""
-        let amount = ingMap.scalarString(key: "amount", txn: txn) ?? ""
-        let hasOriginal = !ingMap.isNullOrMissing(key: "originalAmount", txn: txn)
-        let originalAmount = ingMap.scalarString(key: "originalAmount", txn: txn) ?? ""
-        let isSeparator = ingMap.bool(key: "isSeparator", txn: txn) ?? false
-        let hasQuantity = hasOriginal && !originalAmount.isEmpty
-
-        return IngredientData(
-            id: ingMap.scalarString(key: "id", txn: txn) ?? UUID().uuidString,
-            name: ingMap.scalarString(key: "name", txn: txn) ?? "",
-            amount: amount,
-            originalAmount: originalAmount,
-            unit: unit,
-            order: ingMap.int(key: "order", txn: txn) ?? fallbackOrder,
-            isSeparator: isSeparator,
-            hasQuantity: hasQuantity,
-            calories: ingMap.double(key: "calories", txn: txn),
-            protein: ingMap.double(key: "protein", txn: txn),
-            fat: ingMap.double(key: "fat", txn: txn),
-            carbs: ingMap.double(key: "carbs", txn: txn),
-            weight: ingMap.double(key: "weight", txn: txn)
-        )
-    }
+    // All private parser / reader helpers (parseCollectionEntry, parseRecipeData,
+    // readRecipeName, readDescription, readIngredients, readNutrition,
+    // readSearchIngredients, searchIngredientsFromJSON, parseIngredientMap,
+    // parseJSONIngredients, parseJSONNutrition, SearchIngredientProjection) now
+    // live in `RecipeYjsCodec` so they can be shared with `RecipeReader` (Discover).
 
     private static func isoTimestamp() -> String {
         ISO8601DateFormatter().string(from: Date())
@@ -1860,69 +1600,5 @@ actor DocumentManager {
         }
     }
 
-    private func parseJSONIngredients(_ json: String) -> [IngredientData] {
-        guard let data = json.data(using: .utf8),
-              let raw = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
-            return []
-        }
-        return raw.enumerated().map { index, dict in
-            let id = dict["id"] as? String ?? UUID().uuidString
-            let name = dict["name"] as? String ?? ""
-            let unit = dict["unit"] as? String ?? ""
-            let isSeparator = dict["isSeparator"] as? Bool ?? false
-            let order = dict["order"] as? Int ?? (index + 1)
-
-            let originalAmount: String = {
-                if dict["originalAmount"] is NSNull { return "" }
-                if let number = dict["originalAmount"] as? NSNumber {
-                    return IngredientData.formatScalarNumber(number.doubleValue)
-                }
-                if let string = dict["originalAmount"] as? String { return string }
-                return ""
-            }()
-
-            let amount: String = {
-                if let number = dict["amount"] as? NSNumber {
-                    return IngredientData.formatScalarNumber(number.doubleValue)
-                }
-                if let string = dict["amount"] as? String { return string }
-                return ""
-            }()
-
-            let hasQuantity = !originalAmount.isEmpty || !amount.isEmpty
-
-            return IngredientData(
-                id: id,
-                name: name,
-                amount: amount,
-                originalAmount: originalAmount.isEmpty ? amount : originalAmount,
-                unit: unit,
-                order: order,
-                isSeparator: isSeparator,
-                hasQuantity: hasQuantity,
-                calories: dict["calories"] as? Double ?? (dict["calories"] as? NSNumber)?.doubleValue,
-                protein: dict["protein"] as? Double ?? (dict["protein"] as? NSNumber)?.doubleValue,
-                fat: dict["fat"] as? Double ?? (dict["fat"] as? NSNumber)?.doubleValue,
-                carbs: dict["carbs"] as? Double ?? (dict["carbs"] as? NSNumber)?.doubleValue,
-                weight: dict["weight"] as? Double ?? (dict["weight"] as? NSNumber)?.doubleValue
-            )
-        }
-    }
-
-    private func parseJSONNutrition(_ json: String) -> NutritionData? {
-        guard let data = json.data(using: .utf8) else { return nil }
-        guard let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return nil
-        }
-        let nutritionOutdated = dict["nutritionOutdated"] as? Bool ?? false
-        return NutritionData(
-            calories: dict["calories"] as? Double,
-            protein: dict["protein"] as? Double,
-            fat: dict["fat"] as? Double,
-            carbs: dict["carbs"] as? Double,
-            nutritionOutdated: nutritionOutdated,
-            extra: dict.compactMapValues { $0 as? Double }
-                .filter { !["calories", "protein", "fat", "carbs"].contains($0.key) }
-        )
-    }
+    // parseJSONIngredients / parseJSONNutrition → moved to RecipeYjsCodec.
 }
