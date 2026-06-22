@@ -13,6 +13,11 @@ struct ManageCollectionRecipesSheet: View {
     @State private var searchText = ""
     @State private var showingError = false
     @State private var errorMessage = ""
+    @State private var memberIds: Set<String> = []
+    /// Lazy recipe loader + highlight cache scoped to this sheet.
+    @State private var searchStore = RecipeListSearchStore()
+    /// Tokens derived from `searchText` once per change.
+    @State private var searchTokens: [String] = []
 
     private var folder: RecipeFolder? {
         syncService.folders.first { $0.id == folderId }
@@ -30,25 +35,17 @@ struct ManageCollectionRecipesSheet: View {
         )
     }
 
-    /// Recipes in this folder (for quick lookup).
-    private var memberIds: Set<String> {
-        Set(
-            syncService.collectionEntries
-                .filter { !$0.deleted && $0.folderIds.contains(folderId) }
-                .map(\.id)
-        )
+    private var isSearching: Bool {
+        !searchTokens.isEmpty
     }
 
+    /// Entries to render: precomputed filtered snapshot when searching, full
+    /// list otherwise.
     private var filteredRecipes: [CollectionEntry] {
-        let trimmed = searchText.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return allRecipes }
-
-        let tokens = tokenizeQuery(trimmed)
-        return allRecipes.filter { entry in
-            tokens.allSatisfy { token in
-                normalizeForSearch(entry.name).contains(token)
-            }
+        if isSearching {
+            return searchStore.filteredSnapshot
         }
+        return allRecipes
     }
 
     var body: some View {
@@ -112,6 +109,20 @@ struct ManageCollectionRecipesSheet: View {
             } message: {
                 Text(errorMessage)
             }
+            .task {
+                searchStore.bind(syncService: syncService)
+                refreshMemberIds()
+            }
+            .onChange(of: searchText) { _, query in
+                searchTokens = RecipeSearchUtils.tokenizeQuery(query)
+                searchStore.refresh(entries: allRecipes, query: query)
+            }
+            .onChange(of: syncService.collectionEntries.map(\.id)) { _, _ in
+                refreshMemberIds()
+                if isSearching {
+                    searchStore.refresh(entries: allRecipes, query: searchText)
+                }
+            }
         }
     }
 
@@ -142,44 +153,15 @@ struct ManageCollectionRecipesSheet: View {
         }
     }
 
-    // MARK: - Search helpers
+    // MARK: - Member-id cache
 
-    private func tokenizeQuery(_ query: String) -> [String] {
-        var tokens: [String] = []
-        var remaining = query[...]
-
-        while !remaining.isEmpty {
-            remaining = Substring(remaining.trimmingCharacters(in: .whitespaces))
-            if remaining.isEmpty { break }
-
-            if remaining.hasPrefix("\"") {
-                remaining = remaining.dropFirst()
-                if let end = remaining.range(of: "\"") {
-                    let phrase = String(remaining[..<end.lowerBound])
-                    if !phrase.isEmpty {
-                        tokens.append(normalizeForSearch(phrase))
-                    }
-                    remaining = remaining[end.upperBound...]
-                } else {
-                    tokens.append(normalizeForSearch(String(remaining)))
-                    break
-                }
-            } else {
-                if let space = remaining.range(of: " ") {
-                    let word = String(remaining[..<space.lowerBound])
-                    tokens.append(normalizeForSearch(word))
-                    remaining = remaining[space.upperBound...]
-                } else {
-                    tokens.append(normalizeForSearch(String(remaining)))
-                    break
-                }
-            }
-        }
-
-        return tokens
-    }
-
-    private func normalizeForSearch(_ value: String) -> String {
-        RecipeSearchUtils.normalizeForSearch(value)
+    /// Recompute `memberIds` once per structural change to `collectionEntries`,
+    /// instead of on every re-render.
+    private func refreshMemberIds() {
+        memberIds = Set(
+            syncService.collectionEntries
+                .filter { !$0.deleted && $0.folderIds.contains(folderId) }
+                .map(\.id)
+        )
     }
 }

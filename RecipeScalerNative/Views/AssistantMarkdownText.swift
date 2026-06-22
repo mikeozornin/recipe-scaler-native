@@ -9,7 +9,7 @@ struct AssistantMarkdownText: View {
     let content: String
 
     private var blocks: [AssistantMarkdownBlock] {
-        AssistantMarkdownRenderer.blocks(from: content)
+        MarkdownCache.shared.blocks(for: content)
     }
 
     var body: some View {

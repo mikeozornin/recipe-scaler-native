@@ -38,7 +38,13 @@ final class RecipeListSearchStore {
     private(set) var isActive: Bool = false
 
     private var loadTask: Task<Void, Never>?
+    private var debounceTask: Task<Void, Never>?
     private weak var syncService: YjsSyncService?
+
+    /// Debounce window for content-match loading (`peekSearchIndex`). Name matches
+    /// stay synchronous so the list updates instantly on every keystroke; only the
+    /// expensive background scan of up to 100 candidates is delayed.
+    static let contentLoadDebounceNanoseconds: UInt64 = 150_000_000
 
     func bind(syncService: YjsSyncService) {
         self.syncService = syncService
@@ -46,7 +52,9 @@ final class RecipeListSearchStore {
 
     func reset() {
         loadTask?.cancel()
+        debounceTask?.cancel()
         loadTask = nil
+        debounceTask = nil
         filteredSnapshot = []
         highlights = [:]
         normalizedNames = [:]
@@ -57,11 +65,13 @@ final class RecipeListSearchStore {
     /// Recompute the search snapshot for `entries` against `query`.
     ///
     /// Synchronously publishes the name-match subset of the snapshot (so the UI
-    /// updates instantly on every keystroke), then kicks off a cancellable
-    /// background load of up to 100 name-miss recipes via `peekSearchIndex`,
-    /// merging content matches into the snapshot as they resolve.
+    /// updates instantly on every keystroke), then kicks off (debounced) a
+    /// cancellable background load of up to 100 name-miss recipes via
+    /// `peekSearchIndex`, merging content matches into the snapshot as they resolve.
     func refresh(entries: [CollectionEntry], query: String) {
         loadTask?.cancel()
+        debounceTask?.cancel()
+        debounceTask = nil
 
         let tokens = RecipeSearchUtils.tokenizeQuery(query)
         guard !tokens.isEmpty else {
@@ -84,6 +94,22 @@ final class RecipeListSearchStore {
 
         guard let syncService else { return }
 
+        // Debounce the expensive background scan (`peekSearchIndex` for up to 100
+        // candidates). When the user is typing quickly, only the last keystroke's
+        // scan survives — earlier ones are cancelled by the next `refresh` call.
+        debounceTask = Task { [weak self, weak syncService] in
+            try? await Task.sleep(nanoseconds: Self.contentLoadDebounceNanoseconds)
+            if Task.isCancelled { return }
+            guard let self, let syncService else { return }
+            self.startContentMatchLoad(entries: entries, tokens: tokens, syncService: syncService)
+        }
+    }
+
+    private func startContentMatchLoad(
+        entries: [CollectionEntry],
+        tokens: [String],
+        syncService: YjsSyncService
+    ) {
         let candidatesToLoad = entries.filter { entry in
             guard let normalized = normalizedNames[entry.id] else { return false }
             if RecipeSearchUtils.matchesName(normalized: normalized, tokens: tokens) {
@@ -94,13 +120,14 @@ final class RecipeListSearchStore {
 
         guard !candidatesToLoad.isEmpty else { return }
 
-        loadTask = Task { [weak self] in
+        loadTask = Task { [weak self, weak syncService] in
             guard let self else { return }
 
             var newlyLoaded: [String: RecipeSearchIndex] = [:]
             for entry in candidatesToLoad {
                 if Task.isCancelled { return }
-                guard let index = await syncService.peekSearchIndex(recipeId: entry.id) else {
+                guard let syncService,
+                      let index = await syncService.peekSearchIndex(recipeId: entry.id) else {
                     continue
                 }
                 newlyLoaded[entry.id] = index

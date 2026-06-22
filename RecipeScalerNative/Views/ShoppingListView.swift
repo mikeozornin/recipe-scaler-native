@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-private enum ToBuyPurchasePhase: Equatable {
+enum ToBuyPurchasePhase: Equatable {
     case staging
     case exiting
 }
@@ -24,6 +24,7 @@ struct ShoppingListView: View {
     @State private var showShareSheet = false
     @State private var errorMessage: String?
     @State private var purchasePhases: [String: ToBuyPurchasePhase] = [:]
+    @State private var shoppingModel = ShoppingViewModel()
     @FocusState private var focusedField: Field?
 
     private enum Field: Hashable {
@@ -40,18 +41,11 @@ struct ShoppingListView: View {
     }
 
     private var toBuy: [ShoppingListItem] {
-        sorted(snapshot.items.filter { item in
-            if item.purchased {
-                return purchasePhases[item.id] != nil
-            }
-            return true
-        })
+        shoppingModel.sortedToBuy
     }
 
     private var purchased: [ShoppingListItem] {
-        sorted(snapshot.items.filter { item in
-            item.purchased && purchasePhases[item.id] == nil
-        })
+        shoppingModel.sortedPurchased
     }
 
     var body: some View {
@@ -99,6 +93,15 @@ struct ShoppingListView: View {
             Button("common.ok", role: .cancel) { errorMessage = nil }
         } message: {
             Text(errorMessage ?? "")
+        }
+        .task {
+            shoppingModel.recompute(snapshot: snapshot, purchasePhases: purchasePhases)
+        }
+        .onChange(of: snapshot) { _, newValue in
+            shoppingModel.recompute(snapshot: newValue, purchasePhases: purchasePhases)
+        }
+        .onChange(of: purchasePhases) { _, newValue in
+            shoppingModel.recompute(snapshot: snapshot, purchasePhases: newValue)
         }
     }
 
@@ -295,23 +298,6 @@ struct ShoppingListView: View {
                 Task { try? await syncService.setShoppingSortMode(mode) }
             }
         )
-    }
-
-    private func sorted(_ items: [ShoppingListItem]) -> [ShoppingListItem] {
-        switch snapshot.meta.sortMode {
-        case .recipe:
-            return items.sorted { lhs, rhs in
-                let ln = lhs.recipeName.isEmpty ? "~" : lhs.recipeName
-                let rn = rhs.recipeName.isEmpty ? "~" : rhs.recipeName
-                if ln != rn { return ln.localizedCompare(rn) == .orderedAscending }
-                return lhs.label.localizedCompare(rhs.label) == .orderedAscending
-            }
-        case .alphabet:
-            return items.sorted {
-                ShoppingListFromRecipe.sortName(for: $0.label)
-                    .localizedCompare(ShoppingListFromRecipe.sortName(for: $1.label)) == .orderedAscending
-            }
-        }
     }
 
     private func isManualItem(_ item: ShoppingListItem) -> Bool {
