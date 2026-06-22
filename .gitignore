@@ -65,3 +65,5 @@ scripts/node_modules/
 .playwright-mcp
 tmp
 .verify-screenshots
+.test-fast-results.xcresult
+.test-fast.log
