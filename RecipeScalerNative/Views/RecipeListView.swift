@@ -7,7 +7,6 @@ struct RecipeListView: View {
     @State private var searchText = ""
     @State private var showingError = false
     @State private var errorMessage = ""
-    @State private var showingSyncStatus = false
     @State private var recipePendingDelete: RecipeRowData?
     @State private var isCreatingRecipe = false
     @State private var assignSheetRecipeId: String?
@@ -197,15 +196,6 @@ struct RecipeListView: View {
                     viewModeToggle
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    SyncStatusIndicator(
-                        connectionState: syncService.connectionState,
-                        imageCacheStatus: syncService.imageCacheStatus,
-                        recipeDocumentCacheStatus: syncService.recipeDocumentCacheStatus
-                    ) {
-                        showingSyncStatus = true
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         Task { @MainActor in
                             await handleCreateRecipe(folderId: nil)
@@ -218,20 +208,6 @@ struct RecipeListView: View {
                     .accessibilityLabel("recipes.add-button")
                     .accessibilityIdentifier(AccessibilityIdentifiers.recipeListAdd)
                 }
-            }
-            .sheet(isPresented: $showingSyncStatus) {
-                SyncStatusSheet(
-                    connectionState: syncService.connectionState,
-                    connectionTransport: syncService.connectionTransport,
-                    imageCacheStatus: syncService.imageCacheStatus,
-                    recipeDocumentCacheStatus: syncService.recipeDocumentCacheStatus,
-                    onRetryImageDownload: {
-                        syncService.retryImagePrefetch()
-                    },
-                    onRetryRecipeDocumentsDownload: {
-                        syncService.retryRecipeDocumentsBatchLoad()
-                    }
-                )
             }
             .sheet(item: Binding<RecipeListAssignSheetItem?>(
                 get: {
@@ -533,126 +509,6 @@ extension View {
             )
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
-    }
-}
-
-// MARK: - Sync + image cache indicator
-
-private struct SyncStatusIndicator: View {
-    let connectionState: ConnectionState
-    let imageCacheStatus: RecipeImageCacheStatus
-    let recipeDocumentCacheStatus: RecipeDocumentCacheStatus
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            ZStack {
-                connectionGlyph
-                    .font(AppTypography.footnote)
-
-                if recipeDocumentCacheStatus.totalRecipes > 0 {
-                    recipeDocumentBadge
-                        .font(AppTypography.footnote)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
-
-                if imageCacheStatus.recipesWithImage > 0 {
-                    imageCacheBadge
-                        .font(AppTypography.footnote)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                }
-            }
-            .frame(minWidth: 32, minHeight: 32)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(accessibilityLabel)
-    }
-
-    @ViewBuilder
-    private var connectionGlyph: some View {
-        switch connectionState {
-        case .connecting, .reconnecting:
-            ProgressView()
-                .controlSize(.small)
-        case .connected:
-            AppSymbol.image("checkmark.circle")
-                .foregroundStyle(connectionTint)
-        case .error:
-            AppSymbol.image("exclamationmark.circle")
-                .foregroundStyle(.red)
-        case .disconnected:
-            AppSymbol.image("wifi.slash")
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    @ViewBuilder
-    private var recipeDocumentBadge: some View {
-        if recipeDocumentCacheStatus.isDownloading {
-            AppSymbol.image("arrow.down.doc.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.white, .indigo)
-        } else if recipeDocumentCacheStatus.isFullyCached {
-            AppSymbol.image("doc.fill")
-                .foregroundStyle(.green)
-        } else {
-            // `doc.badge.exclamationmark.fill` is not a real SF Symbol name; use `doc.fill`
-            // with orange tint to signal "partial / stale" — mirrors the green `doc.fill`
-            // for the fully-cached branch above.
-            AppSymbol.image("doc.fill")
-                .foregroundStyle(.orange)
-        }
-    }
-
-    @ViewBuilder
-    private var imageCacheBadge: some View {
-        if imageCacheStatus.isDownloading {
-            AppSymbol.image("arrow.down.circle.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.white, .blue)
-        } else if imageCacheStatus.isFullyCached {
-            AppSymbol.image("photo.fill")
-                .foregroundStyle(.green)
-        } else {
-            AppSymbol.image("photo.badge.exclamationmark.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.white, .orange)
-        }
-    }
-
-    private var connectionTint: Color {
-        if recipeDocumentCacheStatus.totalRecipes > 0, !recipeDocumentCacheStatus.isFullyCached {
-            return .orange
-        }
-        if imageCacheStatus.recipesWithImage > 0, !imageCacheStatus.isFullyCached {
-            return .orange
-        }
-        return .green
-    }
-
-    private var accessibilityLabel: String {
-        var parts = [connectionState.displayLabel]
-        if recipeDocumentCacheStatus.totalRecipes > 0 {
-            parts.append(
-                String(
-                    format: String(localized: "sync.status.a11y.recipes"),
-                    locale: .current,
-                    recipeDocumentCacheStatus.cachedRecipes,
-                    recipeDocumentCacheStatus.totalRecipes
-                )
-            )
-        }
-        if imageCacheStatus.recipesWithImage > 0 {
-            parts.append(
-                String(
-                    format: String(localized: "sync.status.a11y.images"),
-                    locale: .current,
-                    imageCacheStatus.fullCached,
-                    imageCacheStatus.recipesWithImage
-                )
-            )
-        }
-        return parts.joined(separator: ", ")
     }
 }
 

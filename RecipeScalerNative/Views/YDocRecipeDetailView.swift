@@ -338,7 +338,12 @@ struct YDocRecipeDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 0) {
-                    if let recipe, !isEditing {
+                    if isEditing, canEnterEditMode {
+                        Button("edit.done") {
+                            Task { await toggleEditMode() }
+                        }
+                        .appToolbarConfirmButton()
+                    } else if let recipe {
                         RecipeDetailActionsMenu(
                             recipeId: recipeId,
                             recipeName: recipe.name,
@@ -365,14 +370,6 @@ struct YDocRecipeDetailView: View {
                             .appToolbarIconButton()
                         }
                     }
-                }
-            }
-            if canEnterEditMode, isEditing {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("edit.done") {
-                        Task { await toggleEditMode() }
-                    }
-                    .appToolbarConfirmButton()
                 }
             }
         }

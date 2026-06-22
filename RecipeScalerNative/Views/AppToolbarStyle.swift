@@ -11,6 +11,14 @@ enum AppToolbarStyle {
     static let minimumTapSide: CGFloat = 44
     static let iconButtonPadding: CGFloat = (minimumTapSide - iconSide) / 2
 
+    /// iOS 26 Liquid Glass toolbar pills hug label bounds; pre-26 toolbar chrome adds trailing inset.
+    private static var labeledIconTrailingPadding: CGFloat {
+        if #available(iOS 26.0, *) {
+            return iconButtonPadding
+        }
+        return 0
+    }
+
     @ViewBuilder
     static func icon(_ systemName: String) -> some View {
         AppSymbol.toolbarImage(systemName)
@@ -36,7 +44,7 @@ enum AppToolbarStyle {
         }
         .fixedSize(horizontal: true, vertical: false)
         .padding(.leading, iconButtonPadding)
-        .padding(.trailing, 0)
+        .padding(.trailing, labeledIconTrailingPadding)
         .frame(minHeight: minimumTapSide)
         .contentShape(Rectangle())
     }
