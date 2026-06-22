@@ -13,10 +13,10 @@ struct RecipeListView: View {
     @State private var assignSheetRecipeName: String?
     /// Lazy recipe loader + highlight cache for full-text search.
     @State private var searchStore = RecipeListSearchStore()
+    /// Owns pinned/unpinned row snapshots and the filtered entries feed.
+    @State private var viewModel = RecipeListViewModel()
     /// Tokens derived from `searchText` once per change, not per render.
     @State private var searchTokens: [String] = []
-    @State private var cachedPinnedRows: [RecipeRowData] = []
-    @State private var cachedUnpinnedRows: [RecipeRowData] = []
 
     /// Persisted view mode: `nil` = default (collections).
     @AppStorage(RecipeFolderRoutes.viewModeStorageKey)
@@ -49,25 +49,11 @@ struct RecipeListView: View {
     /// sorted list otherwise. Reads the store's single published snapshot —
     /// never re-filters or re-sorts in the render path.
     private var filteredEntries: [CollectionEntry] {
-        if isSearching {
-            return searchStore.filteredSnapshot
-        }
-        return RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
+        viewModel.filteredEntries
     }
 
-    private var pinnedRowItems: [RecipeRowData] { cachedPinnedRows }
-    private var unpinnedRowItems: [RecipeRowData] { cachedUnpinnedRows }
-
-    private var rowItemsCacheKey: [String] {
-        filteredEntries.map {
-            "\($0.id)|\($0.isPinned)|\($0.name)|\($0.imageUrl ?? "")|\($0.color ?? "")"
-        }
-    }
-
-    private func rebuildRowItemsCache() {
-        cachedPinnedRows = filteredEntries.filter(\.isPinned).map(RecipeRowData.init(entry:))
-        cachedUnpinnedRows = filteredEntries.filter { !$0.isPinned }.map(RecipeRowData.init(entry:))
-    }
+    private var pinnedRowItems: [RecipeRowData] { viewModel.pinnedRows }
+    private var unpinnedRowItems: [RecipeRowData] { viewModel.unpinnedRows }
 
     private var hasAnyRows: Bool {
         !pinnedRowItems.isEmpty || !unpinnedRowItems.isEmpty
@@ -152,20 +138,21 @@ struct RecipeListView: View {
             .searchable(text: $searchText, prompt: Text("search.recipes"))
             .onAppear {
                 searchStore.bind(syncService: syncService)
+                viewModel.bind(syncService: syncService, searchStore: searchStore)
             }
-            .onChange(of: rowItemsCacheKey, initial: true) { _, _ in
-                rebuildRowItemsCache()
+            .onChange(of: syncService.collectionEntries.map(\.id), initial: true) { _, _ in
+                if isSearching {
+                    let sorted = RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
+                    searchStore.refresh(entries: sorted, query: searchText)
+                }
+                viewModel.refresh()
             }
             .onChange(of: searchText) { _, query in
                 // Tokens computed once per change (was: 16–26× per render).
                 searchTokens = RecipeSearchUtils.tokenizeQuery(query)
                 let sorted = RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
                 searchStore.refresh(entries: sorted, query: query)
-            }
-            .onChange(of: syncService.collectionEntries.map(\.id)) { _, _ in
-                guard isSearching else { return }
-                let sorted = RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
-                searchStore.refresh(entries: sorted, query: searchText)
+                viewModel.refresh()
             }
             .localizedNavigationTitle("Recipes")
             .appListBodyTypography()
