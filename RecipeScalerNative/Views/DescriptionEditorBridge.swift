@@ -121,6 +121,11 @@ final class DescriptionEditorBridge {
     /// Serializes WebView → yrs applies so flush can await the last keystroke.
     private var applyChain: Task<Void, Never>?
     private var outboundFlushContinuations: [CheckedContinuation<Void, Never>] = []
+    /// True while WebView has pending Yjs bytes we expect `outboundFlushed` to ack.
+    /// JS only emits `outboundFlushed` when it actually flushed something; without this
+    /// flag an idle `flushEditorEdits()` (e.g. on Done with no description edits) waits
+    /// the full 2 s timeout before giving up.
+    private var hasPendingOutbound = false
     private let cleaner: DescriptionEditorDeinitCleaner
     private var didRegisterWithSyncService = false
 
@@ -275,8 +280,12 @@ final class DescriptionEditorBridge {
     /// Push debounced WebView Yjs bytes into yrs and wait until applied (Done / leave edit).
     func flushEditorEdits() async {
         guard phase == .ready else { return }
-        sendCommand(name: "flush")
-        await waitForOutboundFlushed()
+        // Fast path: nothing enqueued since the last ack — JS won't emit `outboundFlushed`,
+        // so don't send `flush` and don't wait (otherwise we burn the full 2 s timeout).
+        if hasPendingOutbound {
+            sendCommand(name: "flush")
+            await waitForOutboundFlushed()
+        }
         await applyChain?.value
     }
 
@@ -284,6 +293,7 @@ final class DescriptionEditorBridge {
         let service = syncService
         let id = recipeId
         let prior = applyChain
+        hasPendingOutbound = true
         applyChain = Task { @MainActor in
             await prior?.value
             try? await service?.applyDescriptionEditorUpdate(recipeId: id, update: data)
@@ -301,6 +311,7 @@ final class DescriptionEditorBridge {
     }
 
     private func resumeOutboundFlushWaiters() {
+        hasPendingOutbound = false
         let waiters = outboundFlushContinuations
         outboundFlushContinuations.removeAll()
         for waiter in waiters {
