@@ -156,7 +156,6 @@ RecipeScalerNative/
 │   └── TimerExampleView.swift
 │
 ├── ViewModels/
-│   ├── RecipeListViewModel.swift
 │   └── RecipeEditViewModel.swift
 │
 ├── Resources/

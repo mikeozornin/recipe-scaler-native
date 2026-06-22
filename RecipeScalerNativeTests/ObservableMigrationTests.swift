@@ -3,12 +3,12 @@ import XCTest
 @testable import RecipeScalerCore
 @testable import RecipeScalerNative
 
-/// Verifies that the seven ObservableObject types listed in review #28 now use the
+/// Verifies that the six ObservableObject types listed in review #28 now use the
 /// `@Observable` macro (or have had vestigial `ObservableObject` conformance removed).
 @MainActor
 final class ObservableMigrationTests: XCTestCase {
 
-    /// All seven types must now conform to `Observable` (or, for `APIClient`, neither
+    /// All six types must now conform to `Observable` (or, for `APIClient`, neither
     /// `Observable` nor `ObservableObject` — its conformance was vestigial).
     func test_migratedTypes_conformToObservable() {
         let stubStore = makeStubStore()
@@ -22,10 +22,6 @@ final class ObservableMigrationTests: XCTestCase {
         XCTAssertTrue(
             isObservable(SpotlightIndexer(syncService: sync)),
             "SpotlightIndexer must be @Observable"
-        )
-        XCTAssertTrue(
-            isObservable(RecipeListViewModel(syncService: sync)),
-            "RecipeListViewModel must be @Observable"
         )
         XCTAssertTrue(
             isObservable(DescriptionEditorBridge(recipeId: "test", syncService: sync)),

@@ -304,6 +304,7 @@
 		E5F60718293A4B704B61748D /* DiscoverAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7011DA2DE4 /* DiscoverAPI.swift */; };
 		E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */; };
 		E5F60718293A4B7055FFBBCC /* DocumentManager+ShoppingList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */; };
+		RYJC0DE1001001001001001A001 /* RecipeYjsCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = RYJC0DE1001001001001001A002 /* RecipeYjsCodec.swift */; };
 		E5F60718293A4B705777B4EE /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A5EF6DCE /* AppShellView.swift */; };
 		E5F60718293A4B7058D1A50A /* AccountOptionLabels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70E32FCAE0 /* AccountOptionLabels.swift */; };
 		E5F60718293A4B7061726B18 /* TelegramConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */; };
@@ -757,6 +758,7 @@
 		E5F60718293A4B7001851F51 /* AssistantSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSheet.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7004E397E0 /* DescriptionTimerStartPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionTimerStartPopover.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DocumentManager+ShoppingList.swift"; sourceTree = "<group>"; };
+		RYJC0DE1001001001001001A002 /* RecipeYjsCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeYjsCodec.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70093D4CC7 /* AccountAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountAPI.swift; sourceTree = "<group>"; };
 		E5F60718293A4B700A5738C7 /* ShoppingListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B700AF73307 /* DiscoverRecipeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverRecipeCard.swift; sourceTree = "<group>"; };
@@ -1413,6 +1415,7 @@
 			isa = PBXGroup;
 			children = (
 				3D966868028D4B6CFD6DE498 /* DocumentManager.swift */,
+				RYJC0DE1001001001001001A002 /* RecipeYjsCodec.swift */,
 				E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */,
 				7485486C3DAE972B94C9AE9B /* ConnectionState.swift */,
 				CC1101AABB000200000001 /* SyncEventHandler.swift */,
@@ -2098,6 +2101,7 @@
 				E5F60718293A4B70F4B04DF3 /* PublicURLBuilder.swift in Sources */,
 				E5F60718293A4B70267CA7BD /* ShoppingListData.swift in Sources */,
 				E5F60718293A4B7055FFBBCC /* DocumentManager+ShoppingList.swift in Sources */,
+				RYJC0DE1001001001001001A001 /* RecipeYjsCodec.swift in Sources */,
 				E5F60718293A4B704B61748D /* DiscoverAPI.swift in Sources */,
 				E5F60718293A4B70D9D24CAE /* RecipeImageUploadAPI.swift in Sources */,
 				E5F60718293A4B709F00BE94 /* SharingAPI.swift in Sources */,

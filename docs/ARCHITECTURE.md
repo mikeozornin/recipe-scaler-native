@@ -458,7 +458,6 @@ property re-render, instead of every view bound to the object.
 | `YjsSyncService` | Migrated from `ObservableObject` (15 `@Published`). |
 | `RemindersSyncService` | Migrated from `ObservableObject` (2 `@Published`). |
 | `SpotlightIndexer` | Vestigial `ObservableObject` removed. |
-| `RecipeListViewModel` | Migrated + made `final`. |
 | `DescriptionEditorBridge` | Migrated from `ObservableObject` (6 `@Published`). |
 | `DescriptionEditorChromeState` | Migrated; reads focus/ready from the bound `bridge`. |
 | `AuthService`, `TimerManager`, `DeepLinkRouter`, `AssistantRecipeContext` | Already on `@Observable`. |
