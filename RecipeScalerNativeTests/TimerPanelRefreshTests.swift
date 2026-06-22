@@ -1,3 +1,4 @@
+import RecipeScalerCore
 import SwiftData
 import XCTest
 @testable import RecipeScalerNative
@@ -136,6 +137,46 @@ final class TimerPanelRefreshTests: XCTestCase {
         XCTAssertEqual(manager.activeTimers.count, beforeCount)
         XCTAssertEqual(manager.activeTimers.map(\.id), beforeIds,
                        "Tick must not reassign activeTimers — drives safeAreaInset on tab roots")
+    }
+
+    /// Regression MIK-187 follow-up: widget snapshot must still be republished on tick.
+    /// The widget has no other source of truth for overdue-phase progression; removing
+    /// `persistTimerSnapshot()` from the tick (alongside `refreshPanelTimers()`) froze
+    /// the widget at the last structural state. The fix republishes the snapshot
+    /// without reassigning `activeTimers`.
+    func testUpdateRunningTimers_republishesWidgetSnapshotOnTick() throws {
+        let manager = try makeTimerManager()
+        TimerSnapshotStore.clear()
+        _ = manager.createAndStartTimer(name: "Pasta", duration: 120, type: .seconds)
+
+        // `createAndStartTimer` triggers a structural `refreshPanelTimers()` →
+        // `persistTimerSnapshot()` debounced 200ms. Drain it so we get a clean
+        // baseline `generatedAt` before the tick.
+        let baselineDocument = drainSnapshotWriteAndLoad()
+        XCTAssertFalse(baselineDocument.timers.isEmpty,
+                       "Structural mutation must have published an initial widget snapshot")
+
+        manager.tickUpdateRunningTimersForTests()
+
+        let afterTickDocument = drainSnapshotWriteAndLoad()
+        XCTAssertGreaterThanOrEqual(
+            afterTickDocument.generatedAt,
+            baselineDocument.generatedAt,
+            "Tick must republish the widget snapshot so the widget can advance overdue/running phase"
+        )
+    }
+
+    // MARK: - Helpers
+
+    private func drainSnapshotWriteAndLoad() -> TimerSnapshotDocument {
+        // `persistTimerSnapshot()` schedules a write 0.2s out on the main queue.
+        // Wait long enough to drain it, then read.
+        let expectation = XCTestExpectation(description: "drain snapshot write")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 2.0)
+        return TimerSnapshotStore.load()
     }
 
     // MARK: - Helpers

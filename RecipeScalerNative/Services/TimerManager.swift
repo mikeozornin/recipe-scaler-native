@@ -439,21 +439,30 @@ final class TimerManager: NSObject {
 
     private var lastLiveActivityProgressSync: [String: Date] = [:]
 
-    /// Tick: discovers completion and refreshes Live Activity. Does NOT mutate
-    /// `remainingTime` (UI countdown is driven by `TimelineView` in
-    /// `MobileTimerPanel`) and does NOT reassign `activeTimers` (which would
-    /// invalidate `safeAreaInset` on every tab root every second).
+    /// Tick: discovers completion, refreshes Live Activity, and pushes a debounced
+    /// snapshot to the widget. Does NOT mutate `remainingTime` (UI countdown is
+    /// driven by `TimelineView` in `MobileTimerPanel`) and does NOT reassign
+    /// `activeTimers` (which would invalidate `safeAreaInset` on every tab root
+    /// every second). Widget snapshot is republished on every tick — the widget
+    /// has no other source of truth for overdue-phase progression.
     private func updateRunningTimers() {
+        var snapshotNeedsRepublish = false
         for timer in timers where timer.isRunning {
             guard let endTime = timer.endTime else { continue }
             let remaining = endTime.timeIntervalSinceNow
             if remaining <= 0, !timer.hasCompleted {
                 handleTimerReachedZero(timer)
+                snapshotNeedsRepublish = true
             } else if remaining <= 0 {
                 syncLiveActivityIfOverdue(timer)
+                snapshotNeedsRepublish = true
             } else {
                 syncLiveActivityProgress(timer)
+                snapshotNeedsRepublish = true
             }
+        }
+        if snapshotNeedsRepublish {
+            persistTimerSnapshot()
         }
     }
 
