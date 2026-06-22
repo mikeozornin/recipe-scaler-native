@@ -50,7 +50,7 @@ final class TimerManager: NSObject {
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
 
     private let notificationCenter = UNUserNotificationCenter.current()
-    private let timerUpdateInterval: TimeInterval = 0.5
+    private let timerUpdateInterval: TimeInterval = 1.0
 
     private let timerSync: TimerSyncService
     private let liveActivity: TimerLiveActivityCoordinator
@@ -438,21 +438,15 @@ final class TimerManager: NSObject {
     }
 
     private var lastLiveActivityProgressSync: [String: Date] = [:]
-    /// Last displayed whole-second per timer; panel/widget refresh only when this changes.
-    private var lastDisplayedSeconds: [String: Int] = [:]
 
+    /// Tick: discovers completion and refreshes Live Activity. Does NOT mutate
+    /// `remainingTime` (UI countdown is driven by `TimelineView` in
+    /// `MobileTimerPanel`) and does NOT reassign `activeTimers` (which would
+    /// invalidate `safeAreaInset` on every tab root every second).
     private func updateRunningTimers() {
-        var panelNeedsRefresh = false
         for timer in timers where timer.isRunning {
             guard let endTime = timer.endTime else { continue }
             let remaining = endTime.timeIntervalSinceNow
-            timer.remainingTime = remaining
-            if TimerUtils.advancePanelDisplayedSecond(
-                lastDisplayedSeconds: &lastDisplayedSeconds,
-                timer: timer
-            ) {
-                panelNeedsRefresh = true
-            }
             if remaining <= 0, !timer.hasCompleted {
                 handleTimerReachedZero(timer)
             } else if remaining <= 0 {
@@ -460,9 +454,6 @@ final class TimerManager: NSObject {
             } else {
                 syncLiveActivityProgress(timer)
             }
-        }
-        if panelNeedsRefresh {
-            refreshPanelTimers()
         }
     }
 
@@ -755,6 +746,14 @@ final class TimerManager: NSObject {
             await TimerLiveActivityCoordinator.shared.reconcile(with: timers)
         }
     }
+
+    #if DEBUG
+    /// Test hook: invokes the periodic update loop without waiting for the scheduled timer.
+    @MainActor
+    func tickUpdateRunningTimersForTests() {
+        updateRunningTimers()
+    }
+    #endif
 
     nonisolated deinit {
         Task { @MainActor in
