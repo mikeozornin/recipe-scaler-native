@@ -51,7 +51,7 @@ actor ImageCacheService {
     ) async throws -> CachedImageResult {
         let localURL = RecipeImageDiskCache.fileURL(recipeId: recipeId, variant: variant)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await AppURLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
         }

@@ -189,7 +189,7 @@ enum DiscoverAPI {
             body: nil,
             headers: [:]
         )
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await AppURLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
@@ -235,7 +235,7 @@ enum DiscoverAPI {
             body: nil,
             headers: [:]
         )
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await AppURLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }

@@ -34,6 +34,7 @@
 		36868E6A4338C22FDD6F8EAD /* TimerSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11026E6FBE228038C3769C04 /* TimerSnapshot.swift */; };
 		3784074202890D721AEDB2D0 /* TimerExampleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4E0F52196856ADAA6F5C473 /* TimerExampleView.swift */; };
 		39CBF56DFACE248C54B1D988 /* ImageCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDFDC56713A0842CA6B33517 /* ImageCacheService.swift */; };
+		APURL0001000200030004000A3 /* AppURLSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = APURL0001000200030004000A2 /* AppURLSession.swift */; };
 		3CC3D76CA52B4B3293D8D000 /* TimerLiveActivityCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816A3426E81C4E58B85FD44B /* TimerLiveActivityCoordinator.swift */; };
 		3F2854C6A861495B098D027B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EA48CAFA747D30B7BE80A3B /* Foundation.framework */; };
 		40FCBD3240184C3DA0D2D673 /* ActionExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 7E906824536341C2920D9DC5 /* ActionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -674,6 +675,7 @@
 		B7951C990E84C9EFE9685023 /* YrsValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YrsValue.swift; sourceTree = "<group>"; };
 		B8E4D1A7552D487F80885A2F /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		BDFDC56713A0842CA6B33517 /* ImageCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCacheService.swift; sourceTree = "<group>"; };
+		APURL0001000200030004000A2 /* AppURLSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppURLSession.swift; sourceTree = "<group>"; };
 		C011ECB100000001 /* CollectionsRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsRootView.swift; sourceTree = "<group>"; };
 		C011ECB200000002 /* CollectionFolderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionFolderView.swift; sourceTree = "<group>"; };
 		C011ECB300000003 /* CollectionAssignSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionAssignSheet.swift; sourceTree = "<group>"; };
@@ -1545,6 +1547,7 @@
 				E5F60718293A4B70ED0922D8 /* AssistantModels.swift */,
 				E5F60718293A4B705F98774E /* TelegramAPI.swift */,
 				C45A57EDAC270C757266F8FA /* AuthService.swift */,
+				APURL0001000200030004000A2 /* AppURLSession.swift */,
 				BDFDC56713A0842CA6B33517 /* ImageCacheService.swift */,
 				E5F60718293A4B7000000011 /* RecipeImageService.swift */,
 				E5F60718293A4B7000000020 /* RecipeImageCacheStatus.swift */,
@@ -1975,6 +1978,7 @@
 				4CE1EBBF8B610A4B091090FF /* AuthView.swift in Sources */,
 				72BCE454FF7ECB782A54D4ED /* ContentView.swift in Sources */,
 				39CBF56DFACE248C54B1D988 /* ImageCacheService.swift in Sources */,
+				APURL0001000200030004000A3 /* AppURLSession.swift in Sources */,
 				E5F60718293A4B7000000010 /* RecipeImageService.swift in Sources */,
 				E5F60718293A4B7000000021 /* RecipeImageCacheStatus.swift in Sources */,
 				E5F60718293A4B7000000029 /* RecipeDocumentCacheStatus.swift in Sources */,

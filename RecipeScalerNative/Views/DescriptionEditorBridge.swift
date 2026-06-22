@@ -149,6 +149,13 @@ final class DescriptionEditorBridge {
         registerWithSyncServiceIfNeeded()
     }
 
+    /// Test-only: registers the bridge with its sync service without requiring
+    /// a real WebView coordinator. Mirrors what `attach(webView:)` does for the
+    /// YjsMemoryLeakTests that assert the session count immediately after init.
+    func test_registerWithSyncService() {
+        registerWithSyncServiceIfNeeded()
+    }
+
     private func registerWithSyncServiceIfNeeded() {
         guard !didRegisterWithSyncService else { return }
         didRegisterWithSyncService = true

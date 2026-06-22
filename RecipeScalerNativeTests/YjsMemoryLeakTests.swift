@@ -15,9 +15,11 @@ final class YjsMemoryLeakTests: XCTestCase {
         let sync = YjsSyncService(store: store)
 
         var oldBridge: DescriptionEditorBridge? = DescriptionEditorBridge(recipeId: "recipe-1", syncService: sync)
+        oldBridge?.test_registerWithSyncService()
         XCTAssertEqual(sync.test_descriptionEditorSessionsCount, 1)
 
         let newBridge = DescriptionEditorBridge(recipeId: "recipe-1", syncService: sync)
+        newBridge.test_registerWithSyncService()
         XCTAssertEqual(sync.test_descriptionEditorSessionsCount, 1)
         XCTAssertTrue(sync.test_descriptionEditorSessionBridge(for: "recipe-1") === newBridge)
 
@@ -32,13 +34,14 @@ final class YjsMemoryLeakTests: XCTestCase {
     func testDescriptionEditorSessionLeaksClearedOnDeinit() async throws {
         let store = makeStubStore()
         let sync = YjsSyncService(store: store)
-        
+
         // 1. Initially 0 sessions
         XCTAssertEqual(sync.test_descriptionEditorSessionsCount, 0)
-        
+
         // 2. Register a bridge within a local scope
         do {
             let bridge = DescriptionEditorBridge(recipeId: "recipe-1", syncService: sync)
+            bridge.test_registerWithSyncService()
             XCTAssertEqual(sync.test_descriptionEditorSessionsCount, 1)
             _ = bridge
         }

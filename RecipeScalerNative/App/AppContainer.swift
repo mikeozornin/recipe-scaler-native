@@ -68,11 +68,22 @@ final class AppContainer {
 
     init(modelContext: ModelContext) throws {
         let database: YrsDatabase
-        do {
-            database = try YrsDatabase()
-        } catch {
-            YrsDatabase.logInitFailure(error)
-            database = try YrsDatabase.makeInMemoryFallback()
+        // Under XCTest/UI-test hosts we don't need on-disk persistence (each test
+        // builds its own `YDocStore.inMemory()`), and the test host's sandbox often
+        // carries stale schema from previous runs that triggers the slow fallback
+        // path AND the "Local storage unavailable" banner. Skip straight to the
+        // in-memory DB in that case — mirrors `bootstrap(userId:)`'s gate.
+        let isTestingHost = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || ProcessInfo.processInfo.arguments.contains("ui-testing")
+        if isTestingHost {
+            database = try YrsDatabase.makeInMemoryForTesting()
+        } else {
+            do {
+                database = try YrsDatabase()
+            } catch {
+                YrsDatabase.logInitFailure(error)
+                database = try YrsDatabase.makeInMemoryFallback()
+            }
         }
         self.database = database
         self.store = YDocStore(dbQueue: database.dbQueue)

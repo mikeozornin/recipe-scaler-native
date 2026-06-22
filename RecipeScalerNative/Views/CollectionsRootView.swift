@@ -29,8 +29,15 @@ struct CollectionsRootView: View {
         syncService.collectionIndex.uncategorized.count
     }
 
+    /// Mirrors `RecipeListView.isUITestingHost` — skip the cold-start spinner when
+    /// `AppContainer.bootstrap` short-circuits sync under XCTest/UI-test hosts.
+    private var isUITestingHost: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || ProcessInfo.processInfo.arguments.contains("ui-testing")
+    }
+
     var body: some View {
-        if !syncService.isLocalDataLoaded {
+        if !isUITestingHost && !syncService.isLocalDataLoaded {
             ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
                 .mobileTimerPanelBottomPadding()
         } else {

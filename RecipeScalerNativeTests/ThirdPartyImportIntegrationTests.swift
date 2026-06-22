@@ -6,14 +6,13 @@ final class ThirdPartyImportIntegrationTests: XCTestCase {
     /// T021: applyImportedRecipe must produce a recipe that DocumentManager
     /// can read back with the same name and ingredient count.
     ///
-    /// Note: in this build environment the test host app performs full Yjs sync on
-    /// launch (debug auto-login) which loads the signed-in user's real recipe list
-    /// and triggers Spotlight reindexing, stalling the test host for several minutes.
-    /// The test itself uses an isolated in-memory DocumentManager and is correct;
-    /// it is skipped here pending a dedicated test plan / CI host that does not
-    /// perform live network IO at launch.
+    /// History: was `XCTSkipIf(true)`'d because the test host used to perform
+    /// live Yjs sync on launch (debug auto-login + Spotlight reindex), stalling
+    /// the bundle. The launch-time sync is now gated by
+    /// `XCTestConfigurationFilePath` in `AppContainer.bootstrap` (and
+    /// `AuthService.init`), so the skip is no longer needed. The test itself
+    /// uses an isolated in-memory DocumentManager.
     func testApplyImportedRecipeRoundTripsViaReader() async throws {
-        try XCTSkipIf(true, "Test host performs live Yjs sync on launch; needs CI host without debug auto-login")
         let userId = "user-import-integration"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
@@ -46,7 +45,6 @@ final class ThirdPartyImportIntegrationTests: XCTestCase {
 
     /// Description blocks survive the round-trip as an ordered list.
     func testApplyImportedRecipeWritesDescriptionBlocks() async throws {
-        try XCTSkipIf(true, "Test host performs live Yjs sync on launch; needs CI host without debug auto-login")
         let userId = "user-import-desc"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)

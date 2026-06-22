@@ -33,7 +33,7 @@ struct AuthAvatarImage: View {
             etag: nil,
             lastModified: nil
         )
-        guard let (data, _) = try? await URLSession.shared.data(for: req),
+        guard let (data, _) = try? await AppURLSession.shared.data(for: req),
               let img = UIImage(data: data) else { return }
         uiImage = img
     }

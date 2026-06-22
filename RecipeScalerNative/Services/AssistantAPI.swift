@@ -129,7 +129,7 @@ enum AssistantAPI {
             let task = Task {
                 defer { continuation.finish() }
                 do {
-                    let (bytes, response) = try await URLSession.shared.bytes(for: request)
+                    let (bytes, response) = try await AppURLSession.shared.bytes(for: request)
                     let http = response as? HTTPURLResponse
                     let status = http?.statusCode ?? -1
                     if !(200...299).contains(status) {

@@ -35,6 +35,16 @@ final class YrsDatabase {
     /// App will function but snapshots won't persist across launches.
     static func makeInMemoryFallback() throws -> YrsDatabase {
         dbInitFailed = true
+        return try makeInMemoryQueue()
+    }
+
+    /// In-memory DB for XCTest/UI-test hosts. Does not set `dbInitFailed` — the
+    /// ephemeral store is expected, not a corruption recovery path.
+    static func makeInMemoryForTesting() throws -> YrsDatabase {
+        try makeInMemoryQueue()
+    }
+
+    private static func makeInMemoryQueue() throws -> YrsDatabase {
         let queue = try DatabaseQueue(configuration: Configuration())
         try migrate(queue)
         return YrsDatabase(dbQueue: queue)

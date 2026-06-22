@@ -202,7 +202,7 @@ final class YjsSyncService {
         }
 
         wireEventHandler()
-
+        markLocalDataLoadedIfTestingHost()
     }
 
     /// Convenience for previews/tests that only need a YjsSyncService-shaped object
@@ -227,6 +227,7 @@ final class YjsSyncService {
         }
 
         wireEventHandler()
+        markLocalDataLoadedIfTestingHost()
     }
 
 
@@ -2374,6 +2375,17 @@ final class YjsSyncService {
             logger.info("Loaded shopping list from local snapshot")
         }
         isLocalDataLoaded = true
+    }
+
+    /// Under XCTest/UI-test hosts `AppContainer.bootstrap` never loads local snapshots,
+    /// so collection views would spin forever on `isLocalDataLoaded == false`. Mark ready
+    /// at construction time for those hosts only.
+    private func markLocalDataLoadedIfTestingHost() {
+        let isTestingHost = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || ProcessInfo.processInfo.arguments.contains("ui-testing")
+        if isTestingHost {
+            isLocalDataLoaded = true
+        }
     }
 
     private func installChangeHandlersIfNeeded() async {

@@ -34,6 +34,14 @@ struct RecipeListView: View {
     @State private var didOpenDebugRecipe = false
     #endif
 
+    /// True under XCTest / UI-test hosts. The list view uses it to skip the
+    /// cold-start loading spinner, which would otherwise spin forever because
+    /// `AppContainer.bootstrap` short-circuits sync startup in those hosts.
+    private var isUITestingHost: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || ProcessInfo.processInfo.arguments.contains("ui-testing")
+    }
+
     private var isSearching: Bool {
         !searchTokens.isEmpty
     }
@@ -72,7 +80,14 @@ struct RecipeListView: View {
     }
 
     private var showsDatabaseInitFailedBanner: Bool {
-        YrsDatabase.dbInitFailed
+        // Under XCTest/UI-test hosts the in-memory DB fallback is expected and
+        // not actionable — the banner only confuses screenshot tests. Hide it
+        // for those hosts; production users still see the real failure.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || ProcessInfo.processInfo.arguments.contains("ui-testing") {
+            return false
+        }
+        return YrsDatabase.dbInitFailed
     }
 
     var body: some View {
@@ -85,8 +100,10 @@ struct RecipeListView: View {
                 Group {
                 if showsCollectionsRoot {
                     CollectionsRootView(navigationPath: $navigationPath)
-                } else if !syncService.isLocalDataLoaded
-                            || (syncService.connectionState == .connecting && syncService.collectionEntries.isEmpty) {
+                } else if !isUITestingHost && !syncService.isLocalDataLoaded
+                            || (!isUITestingHost
+                                && syncService.connectionState == .connecting
+                                && syncService.collectionEntries.isEmpty) {
                     ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
                         .mobileTimerPanelBottomPadding()
                 } else if !hasAnyRows {

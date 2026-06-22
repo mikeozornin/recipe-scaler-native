@@ -565,13 +565,15 @@ enum XmlFragmentToHTML {
             let inner = match.range(at: 2).location != NSNotFound
                 ? ns.substring(with: match.range(at: 2))
                 : ""
-            if !inner.isEmpty {
-                result += inner
-            } else if let value = parseAttribute(attrs, name: "data-value")
-                ?? parseAttribute(attrs, name: "data-duration") {
-                let unit = parseAttribute(attrs, name: "data-type") ?? "minutes"
-                result += escapeHTML("\(value) \(unit)")
+            var label = inner
+            if label.isEmpty {
+                if let value = parseAttribute(attrs, name: "data-value")
+                    ?? parseAttribute(attrs, name: "data-duration") {
+                    let unit = parseAttribute(attrs, name: "data-type") ?? "minutes"
+                    label = "\(value) \(unit)"
+                }
             }
+            result += #"<span class="timer-reference"\#(attrs)>\#(escapeHTML(label))</span>"#
             cursor = match.range.location + match.range.length
         }
         if cursor < ns.length {

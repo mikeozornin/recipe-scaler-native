@@ -319,8 +319,11 @@ final class RecipeScalerNativeTests: XCTestCase {
             isRunning: true,
             isPaused: false
         )
-        timer.endTime = Date().addingTimeInterval(125)
-        XCTAssertEqual(TimerUtils.remainingSeconds(for: timer), 125)
+        // Anchor endTime on a whole-second boundary so `floor(...)` is deterministic
+        // (test was flaky when endTime = Date() + 125.x due to subsecond flooring).
+        let endTime = Date(timeIntervalSinceReferenceDate: (Date().timeIntervalSinceReferenceDate).rounded() + 125)
+        timer.endTime = endTime
+        XCTAssertEqual(TimerUtils.remainingSeconds(for: timer, now: endTime.addingTimeInterval(-125)), 125)
         XCTAssertEqual(TimerUtils.formatTime(seconds: 125), "02:05")
         XCTAssertEqual(TimerUtils.formatTime(seconds: -5), "-00:05")
     }
@@ -348,10 +351,8 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testPrefetchPreviewsRemovesCacheWhenImageUrlEmpty() async {
         let recipeId = "recipe-no-image"
-        let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        let previewURL = cachesDir
-            .appendingPathComponent("RecipeImages", isDirectory: true)
-            .appendingPathComponent("\(recipeId)_preview.webp")
+        // Disk cache lives under Application Support (migrated away from Caches in spec 003).
+        let previewURL = RecipeImageDiskCache.fileURL(recipeId: recipeId, variant: .preview)
 
         try? FileManager.default.createDirectory(
             at: previewURL.deletingLastPathComponent(),
@@ -414,7 +415,9 @@ final class RecipeScalerNativeTests: XCTestCase {
         let legacyFile = legacyDir.appendingPathComponent("migrate-test_full.webp")
         try Data([0x01]).write(to: legacyFile)
 
-        _ = RecipeImageDiskCache.fileURL(recipeId: "noop", variant: .preview)
+        // Migration is lazy: it only runs when `migrateFromCachesIfNeeded()` is invoked
+        // (called from AppContainer bootstrap in production). Trigger it explicitly here.
+        RecipeImageDiskCache.migrateFromCachesIfNeeded()
 
         XCTAssertNotNil(RecipeImageDiskCache.existingFileURL(recipeId: "migrate-test", variant: .full))
         XCTAssertFalse(FileManager.default.fileExists(atPath: legacyFile.path))
@@ -526,17 +529,16 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testRapidIngredientUpdatesDoNotCrash() async throws {
         let userId = "user-rapid"
-        let recipeId = "recipe-rapid"
         let ingredientId = "ing-rapid"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
         await manager.setUserId(userId)
 
+        let recipeId = try await manager.createRecipe(name: "Rapid")
         let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
         try await doc.testWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return }
             let map = YrsMap(branch: mapBranch)
-            map.insert(key: "version", value: .string("3"), txn: txn)
             map.insert(key: "ingredients", value: .yarray([
                 .map([
                     ("id", .string(ingredientId)),
@@ -563,17 +565,25 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testLocalUpdateEmittedAfterIngredientRename() async throws {
         let userId = "user-local-sync"
-        let recipeId = "recipe-local-sync"
         let ingredientId = "ing-1"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
         await manager.setUserId(userId)
 
+        // Holder captures the latest delivery. `persistAndDeliver` schedules the
+        // handler on a detached Task, so the test must poll for its effect rather
+        // than assume synchronous delivery.
+        let holder = SyncUpdateHolder()
+        await manager.setLocalUpdateHandler { rid, update in
+            holder.record(recipeId: rid, update: update)
+        }
+
+        let recipeId = try await manager.createRecipe(name: "Local sync")
+
         let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
         try await doc.testWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return }
             let map = YrsMap(branch: mapBranch)
-            map.insert(key: "version", value: .string("v3"), txn: txn)
             map.insert(key: "ingredients", value: .yarray([
                 .map([
                     ("id", .string(ingredientId)),
@@ -582,13 +592,6 @@ final class RecipeScalerNativeTests: XCTestCase {
                     ("order", .int(1)),
                 ]),
             ]), txn: txn)
-        }
-
-        var syncedRecipeId: String?
-        var syncedUpdate: Data?
-        await manager.setLocalUpdateHandler { recipeId, update in
-            syncedRecipeId = recipeId
-            syncedUpdate = update
         }
 
         let renamed = IngredientData(
@@ -601,27 +604,70 @@ final class RecipeScalerNativeTests: XCTestCase {
         )
         try await manager.updateIngredient(recipeId: recipeId, ingredient: renamed)
 
-        XCTAssertEqual(syncedRecipeId, recipeId)
-        XCTAssertNotNil(syncedUpdate)
-        XCTAssertFalse(syncedUpdate?.isEmpty ?? true)
+        // Wait for the update-ingredient delivery (creates a update with the new
+        // ingredient name). We poll rather than await a single continuation
+        // because `createRecipe` also schedules a delivery through the same
+        // handler, and resuming the same continuation twice is undefined.
+        let update = try await waitForSyncUpdate(holder: holder, recipeId: recipeId)
+
+        XCTAssertEqual(update.recipeId, recipeId)
+        XCTAssertFalse(update.data.isEmpty)
 
         let readBack = try await manager.readRecipeData(recipeId: recipeId, userId: userId)
         XCTAssertEqual(readBack?.ingredients.first?.name, "Whole wheat flour")
     }
 
+    private func waitForSyncUpdate(
+        holder: SyncUpdateHolder,
+        recipeId: String,
+        timeout: TimeInterval = 5
+    ) async throws -> (recipeId: String, data: Data) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if let snap = holder.snapshot, snap.recipeId == recipeId, !snap.data.isEmpty {
+                return snap
+            }
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+        throw NSError(domain: "TestTimeout", code: -1, userInfo: [
+            NSLocalizedDescriptionKey: "Timed out waiting for sync update for \(recipeId)",
+        ])
+    }
+
+    private final class SyncUpdateHolder: @unchecked Sendable {
+        private let lock = NSLock()
+        private var storedRecipeId: String?
+        private var storedData: Data?
+
+        func record(recipeId: String, update: Data) {
+            lock.lock()
+            storedRecipeId = recipeId
+            storedData = update
+            lock.unlock()
+        }
+
+        var snapshot: (recipeId: String, data: Data)? {
+            lock.lock()
+            defer { lock.unlock() }
+            if let storedRecipeId, let storedData {
+                return (storedRecipeId, storedData)
+            }
+            return nil
+        }
+    }
+
     func testUpdateIngredientRenameDoesNotCrash() async throws {
         let userId = "user-ingredient-rename"
-        let recipeId = "recipe-ingredient-rename"
         let ingredientId = "ing-1"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
         await manager.setUserId(userId)
 
+        let recipeId = try await manager.createRecipe(name: "Rename test")
         let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
         try await doc.testWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return }
             let map = YrsMap(branch: mapBranch)
-            map.insert(key: "version", value: .string("3"), txn: txn)
             map.insert(key: "ingredients", value: .yarray([
                 .map([
                     ("id", .string(ingredientId)),
@@ -648,32 +694,15 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testUpdateRecipeColorThenSortCollectionDoesNotCrash() async throws {
         let userId = "user-color-sort"
-        let recipeId = "recipe-color-sort"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
         await manager.setUserId(userId)
 
-        let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
-        try await collectionDoc.testWriteTransaction { _, txn in
-            guard let arrayBranch = ytype_get(txn, "recipes") else { return }
-            let array = YrsArray(branch: arrayBranch)
-            array.insert(
-                value: .map([
-                    ("id", .string(recipeId)),
-                    ("name", .string("🍕 Pizza")),
-                    ("color", .string("oklch(0.65 0.25 270)")),
-                    ("updatedAt", .string("2026-06-01T10:00:00Z")),
-                ]),
-                at: 0,
-                txn: txn
-            )
-        }
-
+        let recipeId = try await manager.createRecipe(name: "🍕 Pizza")
         let recipeDoc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
         try await recipeDoc.testWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return }
             let map = YrsMap(branch: mapBranch)
-            map.insert(key: "version", value: .string("3"), txn: txn)
             map.insert(key: "color", value: .string("oklch(0.65 0.25 270)"), txn: txn)
         }
 
@@ -687,18 +716,11 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testUpdateRecipeColorDoesNotCrash() async throws {
         let userId = "user-color"
-        let recipeId = "recipe-color"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
         await manager.setUserId(userId)
 
-        let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
-        try await doc.testWriteTransaction { _, txn in
-            guard let mapBranch = ytype_get(txn, "recipe") else { return }
-            let map = YrsMap(branch: mapBranch)
-            map.insert(key: "version", value: .string("3"), txn: txn)
-            map.insert(key: "color", value: .string("oklch(0.65 0.25 270)"), txn: txn)
-        }
+        let recipeId = try await manager.createRecipe(name: "Color test")
 
         try await manager.updateRecipeColor(recipeId: recipeId, color: "#AABBCC")
 
@@ -708,21 +730,11 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testUpdateNutritionDoesNotCrash() async throws {
         let userId = "user-nutrition"
-        let recipeId = "recipe-nutrition"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
         await manager.setUserId(userId)
 
-        let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
-        try await doc.testWriteTransaction { _, txn in
-            guard let mapBranch = ytype_get(txn, "recipe") else { return }
-            let map = YrsMap(branch: mapBranch)
-            map.insert(key: "version", value: .string("3"), txn: txn)
-            map.insert(key: "nutrition", value: .map([
-                ("calories", .double(100)),
-                ("protein", .double(10)),
-            ]), txn: txn)
-        }
+        let recipeId = try await manager.createRecipe(name: "Nutrition test")
 
         try await manager.updateNutrition(
             recipeId: recipeId,
@@ -751,7 +763,7 @@ final class RecipeScalerNativeTests: XCTestCase {
         try await doc.testWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return }
             let map = YrsMap(branch: mapBranch)
-            map.insert(key: "version", value: .string("3"), txn: txn)
+            map.insert(key: "version", value: .string("v3"), txn: txn)
             map.insert(key: "ingredients", value: .yarray([]), txn: txn)
         }
 
@@ -795,7 +807,7 @@ final class RecipeScalerNativeTests: XCTestCase {
             try await doc.testWriteTransaction { _, txn in
                 guard let mapBranch = ytype_get(txn, "recipe") else { return }
                 let map = YrsMap(branch: mapBranch)
-                map.insert(key: "version", value: .string("3"), txn: txn)
+                map.insert(key: "version", value: .string("v3"), txn: txn)
                 map.insert(key: "ingredients", value: .yarray([]), txn: txn)
             }
         }
@@ -955,22 +967,20 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertEqual(absolute.carbs, 200)
     }
 
-    // MARK: - Pre-existing libyrs test-host incompatibility (perf-fix scope guard)
+    // MARK: - Collection pin & tombstone (was: libyrs test-host deadlock)
     //
-    // `testCollectionPinAndTombstone` (and the sibling `testDeleteFolderSoftDeletesAndStripsMembership`,
-    // `testUpdateRecipeFolderFolderIdsAddsToExisting`, `testRecipeFolderColorStored` and
-    // `testRecipeFolderColorUpdates`) all hang indefinitely inside `yarray(rawDoc, "recipes")`
-    // when invoked from the test host app. Confirmed on clean master (pre-perf-fix baseline):
-    // the hang reproduces without any of this branch's changes.
-    //
-    // Root cause is in the YrsC framework (`yarray(YDoc*, const char*)` get-or-create on a
-    // fresh doc opened via `YrsDocument(state: Data)`), not in any code touched by the
-    // performance review. Re-enabled in a separate Yrs/libyrs upgrade task (see review notes).
+    // History: this test and the _DISABLED_ sibling were `XCTSkip`'d because the
+    // original body called `yarray(rawDoc, "recipes")` inside an active write
+    // transaction. `yarray(YDoc*, const char*)` get-or-creates its own internal
+    // write transaction in yrs C FFI, so calling it from inside another active
+    // transaction on the same `YDoc` deadlocks on `event_listener::Listener::wait`
+    // (`_pthread_cond_wait`) forever. Production code was fixed in commit 4c2516e
+    // (MIK-155) by pre-creating the roots in `DocumentManager.getOrCreateDoc` →
+    // `YrsDocument.ensureCollectionRoots()` and using `ytype_get(txn, ...)` instead.
+    // The test body below mirrors that pattern: `getOrCreateDoc(key: ":collection")`
+    // pre-creates the `recipes` array, then we read it inside the write txn via
+    // `ytype_get`. No deadlock, no skip.
     func testCollectionPinAndTombstone() async throws {
-        throw XCTSkip("libyrs yarray() hangs in test-host; pre-existing on master, tracked separately")
-    }
-
-    func testCollectionPinAndTombstone_DISABLED_preservesOriginalBody() async throws {
         let userId = "user-col-mut"
         let recipeId = "recipe-col-mut"
         let store = try YDocStore.inMemory()
@@ -978,8 +988,11 @@ final class RecipeScalerNativeTests: XCTestCase {
         await manager.setUserId(userId)
 
         let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
-        try await collectionDoc.testWriteTransaction { rawDoc, txn in
-            guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
+        try await collectionDoc.testWriteTransaction { _, txn in
+            guard let arrayBranch = ytype_get(txn, RecipeFolderConstants.recipesArrayKey) else {
+                XCTFail("recipes array root was not pre-created by ensureCollectionRoots()")
+                return
+            }
             let array = YrsArray(branch: arrayBranch)
             array.insert(
                 value: .map([
@@ -1049,8 +1062,8 @@ final class RecipeScalerNativeTests: XCTestCase {
 
         let recipeId = try await manager.createRecipe(name: "Legacy")
         let doc = try await manager.getOrCreateDoc(key: "\(userId):recipe:\(recipeId)")
-        try await doc.testWriteTransaction { rawDoc, txn in
-            guard let mapBranch = ymap(rawDoc, "recipe") else {
+        try await doc.testWriteTransaction { _, txn in
+            guard let mapBranch = ytype_get(txn, "recipe") else {
                 XCTFail("missing recipe map")
                 return
             }
@@ -1272,13 +1285,12 @@ final class RecipeScalerNativeTests: XCTestCase {
     /// T066 [US8]: spec 027 import folder resolution — case-insensitive reuse,
     /// otherwise create.
     ///
-    /// Skipped at runtime: the iOS test host app performs full Yjs sync on launch
-    /// (Spotlight reindex of pre-existing local snapshots) which stalls the test
-    /// bundle for many minutes regardless of `-DisableDebugAutoLogin=1`. The code
-    /// path itself is covered by `testCreateFolderWritesV3DocAndCollectionEntry`
-    /// family of tests when run under a CI host with a clean simulator.
+    /// History: was `XCTSkipIf(true)`'d because the test host used to perform live
+    /// Yjs sync on launch (debug auto-login + Spotlight reindex), stalling the
+    /// bundle. The launch-time sync is now gated by `XCTestConfigurationFilePath`
+    /// in `AppContainer.bootstrap` (and `AuthService.init`), so the skip is no
+    /// longer needed. The test itself is pure in-memory — no live network.
     func testResolveOrCreateFolderReusesCaseInsensitive() async throws {
-        try XCTSkipIf(true, "Test host stalls on Yjs sync; needs CI host without local snapshots")
         let userId = "user-folder-resolve-reuse"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
@@ -1295,7 +1307,6 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     /// T066 [US8]: when no folder matches, a new one is created.
     func testResolveOrCreateFolderCreatesWhenMissing() async throws {
-        try XCTSkipIf(true, "Test host stalls on Yjs sync; needs CI host without local snapshots")
         let userId = "user-folder-resolve-create"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
@@ -1328,29 +1339,11 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testDeleteFolderSoftDeletesAndStripsMembership() async throws {
         let userId = "user-folder-delete"
-        let recipeId = "recipe-folder-delete"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
         await manager.setUserId(userId)
 
-        // Seed collection entry.
-        let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
-        try await collectionDoc.testWriteTransaction { rawDoc, txn in
-            guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
-            let array = YrsArray(branch: arrayBranch)
-            array.insert(
-                value: .map([
-                    ("id", .string(recipeId)),
-                    ("name", .string("Pie")),
-                    ("color", .string("#3b82f6")),
-                    ("updatedAt", .string("2026-06-01T10:00:00Z")),
-                    ("deleted", .bool(false)),
-                    ("isPinned", .bool(false)),
-                ]),
-                at: 0,
-                txn: txn
-            )
-        }
+        let recipeId = try await manager.createRecipe(name: "Pie")
 
         let folderId = try await manager.createFolder(name: "ToDelete")
 
@@ -1373,29 +1366,11 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testSetRecipeFoldersValidatesAgainstActiveFolders() async throws {
         let userId = "user-folder-validate"
-        let recipeId = "recipe-folder-validate"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
         await manager.setUserId(userId)
 
-        // Seed recipe entry.
-        let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
-        try await collectionDoc.testWriteTransaction { rawDoc, txn in
-            guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
-            let array = YrsArray(branch: arrayBranch)
-            array.insert(
-                value: .map([
-                    ("id", .string(recipeId)),
-                    ("name", .string("Soup")),
-                    ("color", .string("#3b82f6")),
-                    ("updatedAt", .string("2026-06-01T10:00:00Z")),
-                    ("deleted", .bool(false)),
-                    ("isPinned", .bool(false)),
-                ]),
-                at: 0,
-                txn: txn
-            )
-        }
+        let recipeId = try await manager.createRecipe(name: "Soup")
 
         let activeId = try await manager.createFolder(name: "Active")
         let deletedId = try await manager.createFolder(name: "SoonDeleted")
@@ -1412,30 +1387,12 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testSetRecipeFoldersRemovesKeyWhenEmpty() async throws {
         let userId = "user-folder-empty"
-        let recipeId = "recipe-folder-empty"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
         await manager.setUserId(userId)
 
         let folderId = try await manager.createFolder(name: "F")
-
-        let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
-        try await collectionDoc.testWriteTransaction { rawDoc, txn in
-            guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
-            let array = YrsArray(branch: arrayBranch)
-            array.insert(
-                value: .map([
-                    ("id", .string(recipeId)),
-                    ("name", .string("Cake")),
-                    ("color", .string("#3b82f6")),
-                    ("updatedAt", .string("2026-06-01T10:00:00Z")),
-                    ("deleted", .bool(false)),
-                    ("isPinned", .bool(false)),
-                ]),
-                at: 0,
-                txn: txn
-            )
-        }
+        let recipeId = try await manager.createRecipe(name: "Cake")
 
         try await manager.setRecipeFolders(recipeId: recipeId, folderIds: [folderId])
         // After clearing, the Y.Map should no longer carry a `folderIds` key.
@@ -1447,30 +1404,12 @@ final class RecipeScalerNativeTests: XCTestCase {
 
     func testPinAndTombstoneDoNotStripFolderIds() async throws {
         let userId = "user-folder-preserve"
-        let recipeId = "recipe-folder-preserve"
         let store = try YDocStore.inMemory()
         let manager = DocumentManager(store: store)
         await manager.setUserId(userId)
 
         let folderId = try await manager.createFolder(name: "F")
-
-        let collectionDoc = try await manager.getOrCreateDoc(key: "\(userId):collection")
-        try await collectionDoc.testWriteTransaction { rawDoc, txn in
-            guard let arrayBranch = yarray(rawDoc, "recipes") else { return }
-            let array = YrsArray(branch: arrayBranch)
-            array.insert(
-                value: .map([
-                    ("id", .string(recipeId)),
-                    ("name", .string("Tart")),
-                    ("color", .string("#3b82f6")),
-                    ("updatedAt", .string("2026-06-01T10:00:00Z")),
-                    ("deleted", .bool(false)),
-                    ("isPinned", .bool(false)),
-                ]),
-                at: 0,
-                txn: txn
-            )
-        }
+        let recipeId = try await manager.createRecipe(name: "Tart")
 
         try await manager.setRecipeFolders(recipeId: recipeId, folderIds: [folderId])
 

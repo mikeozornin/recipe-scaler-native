@@ -43,6 +43,20 @@ xcodebuild test-without-building -scheme RecipeScalerNative \
 
 Паттерн build-for-testing + test-without-building — в `scripts/verify-third-party-import.sh`.
 
+**Быстрый gate для PR / агента** — один build + все unit-тесты (без UI), с лимитом 30 с на кейс:
+
+```bash
+bash scripts/test-fast.sh
+```
+
+Полный simulator parity-прогон (14 verify-скриптов, один shared build):
+
+```bash
+bash scripts/verify-all.sh
+```
+
+Перед `verify-all` можно отдельно прогнать только сборку: `bash scripts/build-for-verify.sh`.
+
 ## Проверка фич
 
 - Feature verification scripts: `scripts/verify-<feature>.sh` и `scripts/verify-all.sh`.

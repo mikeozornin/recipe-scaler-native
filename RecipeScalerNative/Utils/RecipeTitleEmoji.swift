@@ -8,8 +8,10 @@ enum RecipeTitleEmoji {
         "([\\p{Regional_Indicator}]{2}|[0-9#*][\\x{FE0F}]?\\x{20E3}|[\\p{Extended_Pictographic}](?:[\\x{FE0F}\\x{FE0E}])?(?:[\\x{1F3FB}-\\x{1F3FF}])?(?:\\x{200D}[\\p{Extended_Pictographic}](?:[\\x{FE0F}\\x{FE0E}])?(?:[\\x{1F3FB}-\\x{1F3FF}])?)*)"
 
     /// Simpler BMP/supplementary ranges — compiles reliably on Apple ICU.
+    /// Includes ZWJ-joined sequences (family emoji like 👨‍👩‍👧) so the whole
+    /// grapheme cluster is captured instead of just the first emoji.
     private static let leadingEmojiPatternFallback =
-        "([\\x{1F1E6}-\\x{1F1FF}]{2}|[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}][\\x{FE0F}\\x{FE0E}]?(?:[\\x{1F3FB}-\\x{1F3FF}])?)"
+        "([\\x{1F1E6}-\\x{1F1FF}]{2}|[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}][\\x{FE0F}\\x{FE0E}]?(?:[\\x{1F3FB}-\\x{1F3FF}])?(?:\\x{200D}[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}][\\x{FE0F}\\x{FE0E}]?(?:[\\x{1F3FB}-\\x{1F3FF}])?)*)"
 
     private static let compiled: (leading: NSRegularExpression?, prefix: NSRegularExpression?) = compileRegexes()
 
