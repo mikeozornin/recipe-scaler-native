@@ -64,6 +64,18 @@ struct AppShellView: View {
     @State private var mobileTimerPanelCollapsed = true
     @State private var spotlightOpenRecipeId: String?
     @State private var tabBarTopOffsetFromLayoutBottom: CGFloat = 0
+    @Namespace private var mobileTimerPanelChevronNamespace
+
+    private var mobileTimerPanelCollapsedBinding: Binding<Bool> {
+        Binding(
+            get: { mobileTimerPanelCollapsed },
+            set: { newValue in
+                withAnimation(MobileTimerPanelLayout.toggleAnimation) {
+                    mobileTimerPanelCollapsed = newValue
+                }
+            }
+        )
+    }
 
     private static let assistantFabMargin: CGFloat = 16
     private static let assistantFabIconPadding: CGFloat = 14
@@ -210,6 +222,9 @@ struct AppShellView: View {
         #if DEBUG
         .onAppear {
             openDebugTabIfNeeded()
+            if DebugLaunchOptions.mobileTimerPanelExpanded {
+                mobileTimerPanelCollapsed = false
+            }
             if DebugLaunchOptions.showAssistant {
                 assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
                 assistantRecipeContext.isAssistantSheetOpen = true
@@ -233,12 +248,40 @@ struct AppShellView: View {
     }
 
     private var mobileTimerPanel: some View {
-        MobileTimerPanel(isCollapsed: $mobileTimerPanelCollapsed)
+        MobileTimerPanel(isCollapsed: mobileTimerPanelCollapsedBinding, presentation: .legacy)
             .environment(timerManager)
     }
 
+    private var mobileTimerPanelAccessory: some View {
+        MobileTimerPanel(isCollapsed: mobileTimerPanelCollapsedBinding, presentation: .accessoryCollapsed)
+            .environment(timerManager)
+            .environment(\.mobileTimerPanelChevronNamespace, mobileTimerPanelChevronNamespace)
+    }
+
+    private var mobileTimerPanelExpandedInset: some View {
+        MobileTimerPanel(isCollapsed: mobileTimerPanelCollapsedBinding, presentation: .insetExpanded)
+            .environment(timerManager)
+            .environment(\.mobileTimerPanelChevronNamespace, mobileTimerPanelChevronNamespace)
+    }
+
+    private var showsMobileTimerPanelAccessory: Bool {
+        !timerManager.suppressPanelSafeAreaInset
+            && !timerManager.activeTimers.isEmpty
+            && mobileTimerPanelCollapsed
+    }
+
+    private var showsMobileTimerPanelExpandedInset: Bool {
+        if #available(iOS 26.2, *) {
+            return !timerManager.suppressPanelSafeAreaInset
+                && !timerManager.activeTimers.isEmpty
+                && !mobileTimerPanelCollapsed
+        }
+        return false
+    }
+
+    @ViewBuilder
     private var tabView: some View {
-        TabView(selection: tabSelection) {
+        let tabs = TabView(selection: tabSelection) {
             tabRoot(DiscoverRootView(path: $discoverPath)) { AppTabBarLabel(tab: .discover) }
                 .tag(AppTab.discover)
                 .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
@@ -265,21 +308,56 @@ struct AppShellView: View {
             .tag(AppTab.profile)
             .accessibilityIdentifier(AccessibilityIdentifiers.tabProfile)
         }
+        if #available(iOS 26.2, *) {
+            tabs
+                .animation(MobileTimerPanelLayout.toggleAnimation, value: mobileTimerPanelCollapsed)
+                .tabViewBottomAccessory(isEnabled: showsMobileTimerPanelAccessory) {
+                    mobileTimerPanelAccessory
+                }
+        } else {
+            tabs
+        }
     }
 
     /// Timer panel between tab content and tab bar (must be on tab root, not on `TabView` — otherwise tab bar is hidden).
+    /// On iOS < 26.2 — manual `safeAreaInset(.bottom)` with opaque `systemBackground`.
+    /// On iOS 26.2+ — collapsed mini player via `.tabViewBottomAccessory` on `TabView`;
+    /// expanded list via `safeAreaBar` on each tab root (accessory slot is single-row only).
+    ///
+    /// Stable hierarchy rule: the bottom bar is always applied on iOS 26.2+ (content is empty when collapsed).
+    /// Switching `if/else` between inset and plain content recreates the `List` subtree
+    /// and resets scroll position when toggling collapsed↔expanded.
+    ///
+    /// iOS 26 `safeAreaBar` (vs `safeAreaInset`) drives the system scroll-edge fade and,
+    /// crucially, propagates the bottom inset into nested `List`/`ScrollView` inside
+    /// `NavigationStack` so the last rows stay visible above the expanded panel.
+    @ViewBuilder
     private func tabRoot<Content: View, Label: View>(
         _ content: Content,
         @ViewBuilder tabItem: () -> Label
     ) -> some View {
-        content
+        let rooted = content
             .environment(\.mobileTimerPanelIsCollapsed, mobileTimerPanelCollapsed)
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if !timerManager.suppressPanelSafeAreaInset {
+
+        if #available(iOS 26.2, *) {
+            rooted
+                .safeAreaBar(edge: .bottom, spacing: 0) {
+                    if showsMobileTimerPanelExpandedInset {
+                        mobileTimerPanelExpandedInset
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .tabItem { tabItem() }
+        } else if !timerManager.suppressPanelSafeAreaInset {
+            rooted
+                .safeAreaInset(edge: .bottom, spacing: 0) {
                     mobileTimerPanel
                 }
-            }
-            .tabItem { tabItem() }
+                .tabItem { tabItem() }
+        } else {
+            rooted
+                .tabItem { tabItem() }
+        }
     }
 
     private var tabSelection: Binding<AppTab> {

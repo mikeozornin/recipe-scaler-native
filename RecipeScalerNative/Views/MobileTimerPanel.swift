@@ -5,85 +5,193 @@
 
 import SwiftUI
 
-/// Active timers above tab bar (local + cross-device sync). Compact mobile layout.
+/// On iOS 26.2+ collapsed state uses `tabViewBottomAccessory` (Liquid Glass capsule);
+/// expanded state uses `safeAreaInset` on tab roots because the accessory slot is
+/// single-row only. On earlier iOS the legacy path uses opaque `systemBackground`.
+enum MobileTimerPanelPresentation {
+    case legacy
+    /// Single-row mini player inside `.tabViewBottomAccessory`.
+    case accessoryCollapsed
+    /// Full timer list in tab-root `safeAreaInset` while expanded on iOS 26.2+.
+    case insetExpanded
+}
+
+private enum MobileTimerPanelChevronNamespaceKey: EnvironmentKey {
+    static let defaultValue: Namespace.ID? = nil
+}
+
+extension EnvironmentValues {
+    /// When set, the panel chevron uses `matchedGeometryEffect` across accessory ↔ inset.
+    var mobileTimerPanelChevronNamespace: Namespace.ID? {
+        get { self[MobileTimerPanelChevronNamespaceKey.self] }
+        set { self[MobileTimerPanelChevronNamespaceKey.self] = newValue }
+    }
+}
+
 struct MobileTimerPanel: View {
     @Environment(TimerManager.self) private var timerManager
+    @Environment(\.mobileTimerPanelChevronNamespace) private var chevronNamespace
     @Binding var isCollapsed: Bool
+    var presentation: MobileTimerPanelPresentation = .legacy
 
     private var expandedListMaxHeight: CGFloat {
         let rowCount = CGFloat(timerManager.activeTimers.count)
         return min(rowCount, CGFloat(MobileTimerPanelLayout.maxVisibleRows)) * MobileTimerPanelLayout.barHeight
     }
 
+    /// Total intrinsic height of the expanded panel: header + divider + visible timer rows.
+    /// Used as an explicit `frame(height:)` inside `safeAreaBar` — otherwise the `VStack`
+    /// collapses to 0 because `ScrollView` with `.frame(maxHeight:)` has no intrinsic size.
+    private var expandedPanelHeight: CGFloat {
+        MobileTimerPanelLayout.barHeight + expandedListMaxHeight
+    }
+
     var body: some View {
         if timerManager.activeTimers.isEmpty {
             EmptyView()
         } else {
-            VStack(spacing: 0) {
-                panelHeader
-                if !isCollapsed {
-                    Divider()
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            ForEach(timerManager.activeTimers, id: \.id) { timer in
-                                MobileTimerRow(timer: timer)
-                                if timer.id != timerManager.activeTimers.last?.id {
-                                    Divider().padding(.leading, MobileTimerPanelLayout.barHeight)
-                                }
+            switch presentation {
+            case .legacy:
+                legacyBody
+            case .accessoryCollapsed:
+                if #available(iOS 26.2, *) {
+                    accessoryCollapsedBody
+                } else {
+                    legacyBody
+                }
+            case .insetExpanded:
+                if #available(iOS 26.2, *) {
+                    insetExpandedBody
+                } else {
+                    legacyBody
+                }
+            }
+        }
+    }
+
+    @available(iOS 26.2, *)
+    @ViewBuilder
+    private var accessoryCollapsedBody: some View {
+        Button {
+            isCollapsed = false
+        } label: {
+            panelHeaderRowContent(collapsed: isCollapsed)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerPanelHeader)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerPanel)
+    }
+
+    @available(iOS 26.2, *)
+    @ViewBuilder
+    private var insetExpandedBody: some View {
+        VStack(spacing: 0) {
+            panelHeader
+            Divider()
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(timerManager.activeTimers, id: \.id) { timer in
+                        MobileTimerRow(timer: timer)
+                        if timer.id != timerManager.activeTimers.last?.id {
+                            Divider().padding(.leading, MobileTimerPanelLayout.barHeight)
+                        }
+                    }
+                }
+            }
+            .frame(height: expandedListMaxHeight)
+        }
+        .frame(height: expandedPanelHeight)
+        .background(.regularMaterial)
+        .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerPanel)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    @ViewBuilder
+    private var legacyBody: some View {
+        VStack(spacing: 0) {
+            panelHeader
+            if !isCollapsed {
+                Divider()
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(timerManager.activeTimers, id: \.id) { timer in
+                            MobileTimerRow(timer: timer)
+                            if timer.id != timerManager.activeTimers.last?.id {
+                                Divider().padding(.leading, MobileTimerPanelLayout.barHeight)
                             }
                         }
                     }
-                    .frame(maxHeight: expandedListMaxHeight)
                 }
+                .frame(maxHeight: expandedListMaxHeight)
             }
-            .frame(height: isCollapsed ? MobileTimerPanelLayout.barHeight : nil, alignment: .top)
-            .clipped()
-            .background(Color(.systemBackground))
-            .overlay(alignment: .top) { Divider() }
-            .overlay(alignment: .bottom) { Divider() }
-            .shadow(color: .black.opacity(0.06), radius: 4, y: -1)
-            .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerPanel)
         }
+        .frame(height: isCollapsed ? MobileTimerPanelLayout.barHeight : nil, alignment: .top)
+        .clipped()
+        .background(Color(.systemBackground))
+        .overlay(alignment: .top) { Divider() }
+        .overlay(alignment: .bottom) { Divider() }
+        .shadow(color: .black.opacity(0.06), radius: 4, y: -1)
+        .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerPanel)
     }
 
     private var panelHeader: some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isCollapsed.toggle()
-            }
+            isCollapsed.toggle()
         } label: {
-            HStack(spacing: 6) {
-                if isCollapsed {
-                    collapsedSummary
-                } else {
-                    HStack(spacing: 4) {
-                        Text("mobile-timer.panel.title")
-                            .font(AppTypography.bodySemibold)
-                        Text("·")
-                            .font(AppTypography.body)
-                            .foregroundStyle(.secondary)
-                        HStack(spacing: MobileTimerPanelLayout.runningIndicatorLeadingInset) {
-                            Text("\(timerManager.activeTimers.count)")
-                                .font(AppTypography.bodySemibold)
-                            if timerManager.activeTimers.contains(where: \.isRunning) {
-                                TimerPanelPulsingIndicator(
-                                    color: .red,
-                                    size: MobileTimerPanelLayout.runningIndicatorSize
-                                )
-                            }
-                        }
-                    }
-                }
-                Spacer(minLength: 0)
-                TimerPanelIcon.chevron(isCollapsed ? .up : .down)
-            }
-            .padding(.horizontal, MobileTimerPanelLayout.horizontalInset)
-            .frame(height: MobileTimerPanelLayout.barHeight, alignment: .center)
-            .clipped()
-            .contentShape(Rectangle())
+            panelHeaderRowContent(collapsed: isCollapsed)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerPanelHeader)
+    }
+
+    @ViewBuilder
+    private func panelHeaderRowContent(collapsed: Bool) -> some View {
+        HStack(spacing: 6) {
+            if collapsed {
+                collapsedSummary
+            } else {
+                expandedTitleRow
+            }
+            Spacer(minLength: 0)
+            panelChevron(collapsed: collapsed)
+        }
+        .padding(.horizontal, MobileTimerPanelLayout.horizontalInset)
+        .frame(height: MobileTimerPanelLayout.barHeight, alignment: .center)
+        .contentShape(Rectangle())
+        .animation(MobileTimerPanelLayout.toggleAnimation, value: collapsed)
+    }
+
+    @ViewBuilder
+    private var expandedTitleRow: some View {
+        HStack(spacing: 4) {
+            Text("mobile-timer.panel.title")
+                .font(AppTypography.bodySemibold)
+            Text("·")
+                .font(AppTypography.body)
+                .foregroundStyle(.secondary)
+            HStack(spacing: MobileTimerPanelLayout.runningIndicatorLeadingInset) {
+                Text("\(timerManager.activeTimers.count)")
+                    .font(AppTypography.bodySemibold)
+                if timerManager.activeTimers.contains(where: \.isRunning) {
+                    TimerPanelPulsingIndicator(
+                        color: .red,
+                        size: MobileTimerPanelLayout.runningIndicatorSize
+                    )
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func panelChevron(collapsed: Bool) -> some View {
+        let chevron = TimerPanelIcon.toggleChevron(isCollapsed: collapsed)
+            .frame(width: MobileTimerPanelLayout.barHeight, height: MobileTimerPanelLayout.barHeight)
+        if let chevronNamespace {
+            chevron.matchedGeometryEffect(id: "mobile_timer_panel_chevron", in: chevronNamespace)
+        } else {
+            chevron
+        }
     }
 
     @ViewBuilder
@@ -112,6 +220,7 @@ struct MobileTimerPanel: View {
             .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             .frame(height: MobileTimerPanelLayout.barHeight)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .modifier(CollapsedTimerSummaryTrailingFadeMask())
         }
     }
 
@@ -119,6 +228,25 @@ struct MobileTimerPanel: View {
         if remaining < 0 { return .red }
         if duration > 0, remaining < duration / 10 { return .yellow }
         return .primary
+    }
+}
+
+/// Trailing alpha fade for collapsed timer chips (glass accessory and legacy bar).
+private struct CollapsedTimerSummaryTrailingFadeMask: ViewModifier {
+    private var fadeWidth: CGFloat { MobileTimerPanelLayout.summaryTrailingFadeWidth }
+
+    func body(content: Content) -> some View {
+        content.mask {
+            HStack(spacing: 0) {
+                Rectangle().fill(Color.black)
+                LinearGradient(
+                    colors: [.black, .clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(width: fadeWidth)
+            }
+        }
     }
 }
 
@@ -132,6 +260,9 @@ enum MobileTimerPanelLayout {
     static let titleToProgressSpacing: CGFloat = 6
     static let runningIndicatorSize: CGFloat = 8
     static let runningIndicatorLeadingInset: CGFloat = 8
+    static let toggleAnimation: Animation = .easeInOut(duration: 0.25)
+    /// Soft fade before the chevron when collapsed timer chips overflow horizontally.
+    static let summaryTrailingFadeWidth: CGFloat = 20
 
     /// Matches visible panel height (web `--mobile-timer-panel-h`).
     static func height(timerCount: Int, isExpanded: Bool) -> CGFloat {
@@ -139,6 +270,45 @@ enum MobileTimerPanelLayout {
         if !isExpanded { return barHeight }
         let rows = min(timerCount, maxVisibleRows)
         return barHeight + CGFloat(rows) * barHeight
+    }
+
+    /// Bottom inset for `List` spacer rows. Zero on iOS 26.2+ while collapsed — `tabViewBottomAccessory` handles it.
+    static func listSpacerHeight(
+        timerCount: Int,
+        isExpanded: Bool,
+        suppressPanel: Bool
+    ) -> CGFloat {
+        guard timerCount > 0, !suppressPanel else { return 0 }
+        if #available(iOS 26.2, *) {
+            if !isExpanded { return 0 }
+        }
+        return height(timerCount: timerCount, isExpanded: isExpanded)
+    }
+
+    /// When `false`, do not add `MobileTimerPanelListSpacerRow` to a `List` — an empty row still costs height with `defaultMinListRowHeight`.
+    static func needsListSpacerRow(
+        timerCount: Int,
+        isExpanded: Bool,
+        suppressPanel: Bool
+    ) -> Bool {
+        listSpacerHeight(timerCount: timerCount, isExpanded: isExpanded, suppressPanel: suppressPanel) > 0
+    }
+
+    /// Bottom padding for non-list layouts (ScrollView on detail screens, empty states).
+    /// On iOS < 26.2 — always returns panel height (manual `safeAreaInset` on tab root).
+    /// On iOS 26.2+ — returns 0 when collapsed (`tabViewBottomAccessory` handles inset on tab roots),
+    /// but returns full panel height when expanded because pushed screens inside `NavigationStack`
+    /// do NOT inherit the tab root's `safeAreaBar` — their ScrollView needs manual bottom padding.
+    static func manualBottomPaddingHeight(
+        timerCount: Int,
+        isExpanded: Bool,
+        suppressPanel: Bool
+    ) -> CGFloat {
+        guard timerCount > 0, !suppressPanel else { return 0 }
+        if #available(iOS 26.2, *) {
+            return isExpanded ? height(timerCount: timerCount, isExpanded: isExpanded) : 0
+        }
+        return height(timerCount: timerCount, isExpanded: isExpanded)
     }
 }
 
@@ -174,6 +344,14 @@ private enum TimerPanelIcon {
     static func chevron(_ direction: Chevron) -> some View {
         AppSymbol.compactControlImage(direction == .up ? "chevron.up" : "chevron.down")
             .foregroundStyle(.secondary)
+    }
+
+    /// Single chevron that rotates instead of swapping up/down SF Symbols.
+    @ViewBuilder
+    static func toggleChevron(isCollapsed: Bool) -> some View {
+        AppSymbol.compactControlImage("chevron.up")
+            .foregroundStyle(.secondary)
+            .rotationEffect(.degrees(isCollapsed ? 0 : 180))
     }
 
     @ViewBuilder
@@ -311,9 +489,10 @@ struct MobileTimerPanelBottomPaddingModifier: ViewModifier {
 
     private var height: CGFloat {
         guard !suppress else { return 0 }
-        return MobileTimerPanelLayout.height(
+        return MobileTimerPanelLayout.manualBottomPaddingHeight(
             timerCount: timerManager.activeTimers.count,
-            isExpanded: !isCollapsed
+            isExpanded: !isCollapsed,
+            suppressPanel: timerManager.suppressPanelSafeAreaInset
         )
     }
 
@@ -329,25 +508,37 @@ extension View {
 }
 
 /// Bottom list row so the last cells stay above the shared timer panel (UITableView-safe).
+/// Insert only when `MobileTimerPanelLayout.needsListSpacerRow` is true — otherwise `List`
+/// still allocates a row (see `defaultMinListRowHeight`).
 struct MobileTimerPanelListSpacerRow: View {
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var isCollapsed
 
     private var height: CGFloat {
-        MobileTimerPanelLayout.height(
+        MobileTimerPanelLayout.listSpacerHeight(
             timerCount: timerManager.activeTimers.count,
-            isExpanded: !isCollapsed
+            isExpanded: !isCollapsed,
+            suppressPanel: timerManager.suppressPanelSafeAreaInset
         )
     }
 
     var body: some View {
-        if height > 0 {
-            Color.clear
-                .frame(height: height)
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
-                .accessibilityHidden(true)
-        }
+        Color.clear
+            .frame(height: height)
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+            .accessibilityHidden(true)
+    }
+}
+
+enum MobileTimerPanelListChrome {
+    @MainActor
+    static func needsSpacer(timerManager: TimerManager, isCollapsed: Bool) -> Bool {
+        MobileTimerPanelLayout.needsListSpacerRow(
+            timerCount: timerManager.activeTimers.count,
+            isExpanded: !isCollapsed,
+            suppressPanel: timerManager.suppressPanelSafeAreaInset
+        )
     }
 }

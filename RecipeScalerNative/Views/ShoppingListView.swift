@@ -17,6 +17,8 @@ private enum ShoppingPurchaseTiming {
 
 struct ShoppingListView: View {
     @Environment(YjsSyncService.self) private var syncService
+    @Environment(TimerManager.self) private var timerManager
+    @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var path: NavigationPath
     @State private var bottomDraft = ""
     @State private var inlineEditItemId: String?
@@ -137,7 +139,12 @@ struct ShoppingListView: View {
                 }
             }
 
-            MobileTimerPanelListSpacerRow()
+            if MobileTimerPanelListChrome.needsSpacer(
+                timerManager: timerManager,
+                isCollapsed: mobileTimerPanelIsCollapsed
+            ) {
+                MobileTimerPanelListSpacerRow()
+            }
         }
         .listStyle(.plain)
         .listSectionSpacing(0)

@@ -3,6 +3,8 @@ import UIKit
 
 struct RecipeListView: View {
     @Environment(YjsSyncService.self) private var syncService
+    @Environment(TimerManager.self) private var timerManager
+    @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
     @State private var searchText = ""
     @State private var showingError = false
@@ -126,7 +128,12 @@ struct RecipeListView: View {
                             recipeRows(unpinnedRowItems)
                         }
 
-                        MobileTimerPanelListSpacerRow()
+                        if MobileTimerPanelListChrome.needsSpacer(
+                            timerManager: timerManager,
+                            isCollapsed: mobileTimerPanelIsCollapsed
+                        ) {
+                            MobileTimerPanelListSpacerRow()
+                        }
                     }
                     .listStyle(.plain)
                     .listSectionSpacing(0)

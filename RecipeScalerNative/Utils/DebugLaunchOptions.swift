@@ -47,6 +47,14 @@ enum DebugLaunchOptions {
         return false
     }
 
+    /// `-MobileTimerPanelExpanded=1` — timer panel starts expanded (verify scripts).
+    static var mobileTimerPanelExpanded: Bool {
+        for arg in ProcessInfo.processInfo.arguments {
+            if arg == "-MobileTimerPanelExpanded=1" || arg == "-MobileTimerPanelExpanded" { return true }
+        }
+        return false
+    }
+
     /// `-ScrollToNewIngredient=1` — scroll edit grid to the «+» row (verify scripts).
     static var scrollToNewIngredient: Bool {
         for arg in ProcessInfo.processInfo.arguments {

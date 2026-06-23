@@ -16,6 +16,8 @@ struct AccountView: View {
     @Environment(YjsSyncService.self) private var syncService
     @Environment(RemindersSyncService.self) private var remindersService
     @Environment(AuthService.self) private var authService
+    @Environment(TimerManager.self) private var timerManager
+    @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Environment(\.locale) private var locale
     @State private var viewModel = AccountSettingsViewModel()
 
@@ -64,7 +66,12 @@ struct AccountView: View {
 
                 footerSection
 
-                MobileTimerPanelListSpacerRow()
+                if MobileTimerPanelListChrome.needsSpacer(
+                    timerManager: timerManager,
+                    isCollapsed: mobileTimerPanelIsCollapsed
+                ) {
+                    MobileTimerPanelListSpacerRow()
+                }
             }
             .localizedNavigationTitle("account.title")
             .listSectionSpacing(12)

@@ -8,6 +8,8 @@ struct CollectionFolderView: View {
     let folderId: String
 
     @Environment(YjsSyncService.self) private var syncService
+    @Environment(TimerManager.self) private var timerManager
+    @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
 
     @State private var isEditingName = false
@@ -125,7 +127,12 @@ struct CollectionFolderView: View {
                         recipeRows(unpinnedRowItems)
                     }
 
-                    MobileTimerPanelListSpacerRow()
+                    if MobileTimerPanelListChrome.needsSpacer(
+                        timerManager: timerManager,
+                        isCollapsed: mobileTimerPanelIsCollapsed
+                    ) {
+                        MobileTimerPanelListSpacerRow()
+                    }
                 }
                 .listStyle(.plain)
                 .listSectionSpacing(0)

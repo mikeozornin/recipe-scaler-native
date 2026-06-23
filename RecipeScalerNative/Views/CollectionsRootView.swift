@@ -7,6 +7,8 @@ import SwiftUI
 /// Supports two layouts: plain list and folder grid (configurable in Profile).
 struct CollectionsRootView: View {
     @Environment(YjsSyncService.self) private var syncService
+    @Environment(TimerManager.self) private var timerManager
+    @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
 
     @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)
@@ -83,7 +85,12 @@ struct CollectionsRootView: View {
 
             newCollectionRow
 
-            MobileTimerPanelListSpacerRow()
+            if MobileTimerPanelListChrome.needsSpacer(
+                timerManager: timerManager,
+                isCollapsed: mobileTimerPanelIsCollapsed
+            ) {
+                MobileTimerPanelListSpacerRow()
+            }
         }
         .listStyle(.plain)
         .listSectionSpacing(0)
@@ -148,7 +155,12 @@ struct CollectionsRootView: View {
             .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
             .padding(.top, 16)
 
-            MobileTimerPanelListSpacerRow()
+            if MobileTimerPanelListChrome.needsSpacer(
+                timerManager: timerManager,
+                isCollapsed: mobileTimerPanelIsCollapsed
+            ) {
+                MobileTimerPanelListSpacerRow()
+            }
         }
         .toolbar {
             if isCreatingNew && isNewFieldFocused {
