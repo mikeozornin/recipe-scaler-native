@@ -77,7 +77,8 @@ AppChromeAppearance.systemActionColor     // Color   — .label на iOS 26+, ac
 ```
 
 - **Не используй** `Color.accentColor` напрямую для navbar/toolbar-кнопок (back, edit, share, done, cancel) — вместо этого `AppChromeAppearance.systemActionColor`.
-- **Брендовые элементы** (assistant FAB, `.borderedProminent` primary actions) остаются на `Color.accentColor` — это не системный chrome.
+- **Брендовые элементы** (`.borderedProminent` primary actions) остаются на `Color.accentColor` — это не системный chrome.
+- **Assistant FAB** — на iOS 26+ `.buttonStyle(.glassProminent)` (accent-tinted Liquid Glass, см. `AssistantFabStyle.swift`); на iOS < 26 сплошной `Color.accentColor` с тенью.
 - **Никаких других `#available(iOS 26.0, *)`** для цвета кнопок в коде быть не должно — только в `AppChromeAppearance`.
 
 ### Keyboard toolbar

@@ -77,10 +77,6 @@ struct AppShellView: View {
         )
     }
 
-    private static let assistantFabMargin: CGFloat = 16
-    private static let assistantFabIconPadding: CGFloat = 14
-    private static let assistantFabDiameter: CGFloat = AppTypography.title2Size + assistantFabIconPadding * 2
-
     private var assistantFabBottomPadding: CGFloat {
         let timerHeight = MobileTimerPanelLayout.height(
             timerCount: timerManager.timers.count,
@@ -89,7 +85,7 @@ struct AppShellView: View {
         let tabBarOffset = tabBarTopOffsetFromLayoutBottom > 0
             ? tabBarTopOffsetFromLayoutBottom
             : Self.fallbackTabBarTopOffsetFromLayoutBottom
-        return tabBarOffset + timerHeight + Self.assistantFabMargin
+        return tabBarOffset + timerHeight + AssistantFabStyle.margin
     }
 
     /// Tab bar height fallback until UIKit layout publishes a measured value.
@@ -141,25 +137,12 @@ struct AppShellView: View {
         }
         .overlay(alignment: .bottomTrailing) {
             if !showAssistant {
-                Button {
+                AssistantFabButton {
                     assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
                     assistantRecipeContext.isAssistantSheetOpen = true
                     showAssistant = true
-                } label: {
-                    AppSymbol.image("sparkles")
-                        .font(AppTypography.iconSize(AppTypography.title2Size))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background {
-                            Circle()
-                                .fill(Color.accentColor)
-                                .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: 5)
-                                .shadow(color: .black.opacity(0.24), radius: 24, x: 0, y: 12)
-                        }
-                        .frame(width: Self.assistantFabDiameter, height: Self.assistantFabDiameter)
                 }
-                .buttonStyle(.plain)
-                .padding(.trailing, Self.assistantFabMargin)
+                .padding(.trailing, AssistantFabStyle.margin)
                 .padding(.bottom, assistantFabBottomPadding)
                 .accessibilityIdentifier(AccessibilityIdentifiers.assistantFab)
                 .accessibilityLabel(Text("assistant.title"))

@@ -324,6 +324,7 @@
 		E5F60718293A4B70A1B2C3E5 /* RecipeImageUploadPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */; };
 		E5F60718293A4B70A1SEG001 /* AppSegmentedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A1SEG002 /* AppSegmentedControl.swift */; };
 		E5F60718293A4B70A1TBR001 /* AppToolbarStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A1TBR002 /* AppToolbarStyle.swift */; };
+		E5F60718293A4B70AFAB0001 /* AssistantFabStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70AFAB0002 /* AssistantFabStyle.swift */; };
 		E5F60718293A4B70AAV01234 /* AuthAvatarImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70AAV00001 /* AuthAvatarImage.swift */; };
 		E5F60718293A4B70ACE05678 /* AccountProfileEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70ACE01234 /* AccountProfileEditView.swift */; };
 		E5F60718293A4B70B3900847 /* RecipeDetailActionsMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B709EBF9E6E /* RecipeDetailActionsMenu.swift */; };
@@ -799,6 +800,7 @@
 		E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeImageUploadPreprocessor.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A1SEG002 /* AppSegmentedControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSegmentedControl.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A1TBR002 /* AppToolbarStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppToolbarStyle.swift; sourceTree = "<group>"; };
+		E5F60718293A4B70AFAB0002 /* AssistantFabStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantFabStyle.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A32A1501 /* ShoppingListData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListData.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A5EF6DCE /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A8935C5F /* DiscoverRecipePreviewImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverRecipePreviewImage.swift; sourceTree = "<group>"; };
@@ -1063,6 +1065,7 @@
 				E5F60718293A4B7060097EA7 /* ImportRecipeSheet.swift */,
 				E5F60718293A4B70A1SEG002 /* AppSegmentedControl.swift */,
 				E5F60718293A4B70A1TBR002 /* AppToolbarStyle.swift */,
+				E5F60718293A4B70AFAB0002 /* AssistantFabStyle.swift */,
 				E5F60718293A4B7017DF9B12 /* DiscoverRootView.swift */,
 				E5F60718293A4B701A1B2001 /* Discover */,
 				E5F60718293A4B70344FA5B3 /* AccountView.swift */,
@@ -2125,6 +2128,7 @@
 				E5F60718293A4B70CD074276 /* ImportRecipeSheet.swift in Sources */,
 				E5F60718293A4B70A1SEG001 /* AppSegmentedControl.swift in Sources */,
 				E5F60718293A4B70A1TBR001 /* AppToolbarStyle.swift in Sources */,
+				E5F60718293A4B70AFAB0001 /* AssistantFabStyle.swift in Sources */,
 				E5F60718293A4B7076429294 /* DiscoverRootView.swift in Sources */,
 				E5F60718293A4B70F9B21071 /* DiscoverSearch.swift in Sources */,
 				E5F60718293A4B703E9C5471 /* DiscoverCollectionView.swift in Sources */,
