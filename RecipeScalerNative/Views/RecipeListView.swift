@@ -7,12 +7,9 @@ struct RecipeListView: View {
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
     @State private var searchText = ""
-    @State private var showingError = false
-    @State private var errorMessage = ""
-    @State private var recipePendingDelete: RecipeRowData?
+    @State private var presentedSheet: RecipeListSheet?
+    @State private var presentedAlert: RecipeListAlert?
     @State private var isCreatingRecipe = false
-    @State private var assignSheetRecipeId: String?
-    @State private var assignSheetRecipeName: String?
     /// Lazy recipe loader + highlight cache for full-text search.
     @State private var searchStore = RecipeListSearchStore()
     /// Owns pinned/unpinned row snapshots and the filtered entries feed.
@@ -204,42 +201,36 @@ struct RecipeListView: View {
                     .accessibilityIdentifier(AccessibilityIdentifiers.recipeListAdd)
                 }
             }
-            .sheet(item: Binding<RecipeListAssignSheetItem?>(
-                get: {
-                    guard let id = assignSheetRecipeId, let name = assignSheetRecipeName else { return nil }
-                    return RecipeListAssignSheetItem(recipeId: id, recipeName: name)
-                },
-                set: { if $0 == nil { assignSheetRecipeId = nil; assignSheetRecipeName = nil } }
-            )) { item in
-                CollectionAssignSheet(recipeId: item.recipeId, recipeName: item.recipeName)
-            }
-            .alert("Error", isPresented: $showingError) {
-                Button("common.ok", role: .cancel) { }
-            } message: {
-                Text(errorMessage)
-            }
-            .alert(
-                String(localized: "recipe.list.delete.confirm.title"),
-                isPresented: Binding(
-                    get: { recipePendingDelete != nil },
-                    set: { if !$0 { recipePendingDelete = nil } }
-                ),
-                presenting: recipePendingDelete
-            ) { item in
-                Button(String(localized: "recipe.list.delete.confirm.action"), role: .destructive) {
-                    Task { await confirmDeleteRecipe(item) }
+            .sheet(item: $presentedSheet) { sheet in
+                switch sheet {
+                case .assign(let recipeId, let recipeName):
+                    CollectionAssignSheet(recipeId: recipeId, recipeName: recipeName)
                 }
-                Button(String(localized: "recipe.list.delete.confirm.cancel"), role: .cancel) {
-                    recipePendingDelete = nil
-                }
-            } message: { item in
-                Text(
-                    String(
-                        format: String(localized: "recipe.list.delete.confirm.message"),
-                        locale: .current,
-                        item.displayName
+            }
+            .alert(item: $presentedAlert) { alert in
+                switch alert {
+                case .error(let message):
+                    Alert(
+                        title: Text("Error"),
+                        message: Text(message),
+                        dismissButton: .cancel(Text("common.ok"))
                     )
-                )
+                case .deleteRecipe(let item):
+                    Alert(
+                        title: Text(String(localized: "recipe.list.delete.confirm.title")),
+                        message: Text(
+                            String(
+                                format: String(localized: "recipe.list.delete.confirm.message"),
+                                locale: .current,
+                                item.displayName
+                            )
+                        ),
+                        primaryButton: .destructive(Text(String(localized: "recipe.list.delete.confirm.action"))) {
+                            Task { await confirmDeleteRecipe(item) }
+                        },
+                        secondaryButton: .cancel(Text(String(localized: "recipe.list.delete.confirm.cancel")))
+                    )
+                }
             }
 
         }
@@ -297,8 +288,7 @@ struct RecipeListView: View {
         do {
             try await syncService.setRecipePinned(recipeId: item.id, isPinned: !item.isPinned)
         } catch {
-            errorMessage = UserFacingAPIError.message(for: error)
-            showingError = true
+            presentedAlert = .error(UserFacingAPIError.message(for: error))
         }
     }
 
@@ -316,15 +306,13 @@ struct RecipeListView: View {
     }
 
     private func confirmDeleteRecipe(_ item: RecipeRowData) async {
-        recipePendingDelete = nil
         do {
             try await syncService.deleteRecipeFromCollection(recipeId: item.id)
             if !navigationPath.isEmpty {
                 navigationPath = NavigationPath()
             }
         } catch {
-            errorMessage = UserFacingAPIError.message(for: error)
-            showingError = true
+            presentedAlert = .error(UserFacingAPIError.message(for: error))
         }
     }
 
@@ -343,8 +331,7 @@ struct RecipeListView: View {
                 do {
                     try await syncService.setRecipeFolders(recipeId: recipeId, folderIds: [folderId])
                 } catch {
-                    errorMessage = UserFacingAPIError.message(for: error)
-                    showingError = true
+                    presentedAlert = .error(UserFacingAPIError.message(for: error))
                 }
             }
 
@@ -356,8 +343,7 @@ struct RecipeListView: View {
                 )
             )
         } catch {
-            errorMessage = UserFacingAPIError.message(for: error)
-            showingError = true
+            presentedAlert = .error(UserFacingAPIError.message(for: error))
         }
     }
 
@@ -404,8 +390,7 @@ struct RecipeListView: View {
                 .tint(.green)
 
                 Button {
-                    assignSheetRecipeId = item.id
-                    assignSheetRecipeName = item.displayName
+                    presentedSheet = .assign(recipeId: item.id, recipeName: item.displayName)
                 } label: {
                     Label(
                         String(localized: "collections.assign-tooltip"),
@@ -431,7 +416,7 @@ struct RecipeListView: View {
             }
             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                 Button {
-                    recipePendingDelete = item
+                    presentedAlert = .deleteRecipe(item)
                 } label: {
                     AppLabel.make(String(localized: "recipe.list.delete"), symbol: "trash")
                 }
@@ -462,12 +447,31 @@ struct RecipeListView: View {
     #endif
 }
 
-// MARK: - Assign sheet item (for .sheet(item:))
+// MARK: - Modal presentation state
 
-private struct RecipeListAssignSheetItem: Identifiable {
-    let recipeId: String
-    let recipeName: String
-    var id: String { recipeId }
+private enum RecipeListSheet: Identifiable {
+    case assign(recipeId: String, recipeName: String)
+
+    var id: String {
+        switch self {
+        case .assign(let recipeId, _):
+            "assign-\(recipeId)"
+        }
+    }
+}
+
+private enum RecipeListAlert: Identifiable {
+    case deleteRecipe(RecipeRowData)
+    case error(String)
+
+    var id: String {
+        switch self {
+        case .deleteRecipe(let row):
+            "delete-\(row.id)"
+        case .error(let message):
+            "error-\(message.hashValue)"
+        }
+    }
 }
 
 private enum RecipeListMetrics {
