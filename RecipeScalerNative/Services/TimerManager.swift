@@ -716,6 +716,23 @@ final class TimerManager: NSObject {
 
     // MARK: - Live Activity
 
+    /// Coalesces parallel `sync(timer:)` calls for the same `timerId`.
+    /// `syncLiveActivity(for:)` is invoked from ~10 sites (start, pause,
+    /// resume, +1/+5, sync-event, 3s progress tick, 5s overdue tick, bg task),
+    /// each spawning a fresh `Task`. Without dedup, two concurrent syncs for
+    /// the same timer race past the "is activity already in cache?" check and
+    /// both call `Activity.request`, producing duplicate activities.
+    private var inFlightSyncTasks: [String: Task<Void, Never>] = [:]
+
+    /// Serializes `reconcileLiveActivities()` calls. On cold start, three
+    /// independent triggers fire near-simultaneously: `installLiveActivitySupport`
+    /// (init), `replaceTimersFromServer` (sync), and
+    /// `ContentView.onChange(of: collectionEntries)`. Without serialization,
+    /// each reconcile iterates the entire timer array and races into
+    /// `Activity.request`.
+    private var reconcileTask: Task<Void, Never>?
+    private var pendingReconcile = false
+
     private func installLiveActivitySupport() {
         TimerLiveActivityActionQueue.installHandler { [weak self] action, timerId in
             Task { @MainActor in
@@ -734,12 +751,37 @@ final class TimerManager: NSObject {
     }
 
     private func syncLiveActivity(for timer: RecipeTimer) {
-        Task {
-            await TimerLiveActivityCoordinator.shared.sync(timer: timer)
+        // Cancel any in-flight sync for this timerId and replace it. The last
+        // caller wins — its snapshot of state is freshest. Cancelling (rather
+        // than awaiting) keeps the API fire-and-forget from each call site.
+        inFlightSyncTasks[timer.id]?.cancel()
+        let timerId = timer.id
+        let task: Task<Void, Never> = Task { [weak self] in
+            guard let self else { return }
+            await self.runSyncLiveActivity(timerId: timerId)
+        }
+        inFlightSyncTasks[timerId] = task
+    }
+
+    private func runSyncLiveActivity(timerId: String) async {
+        // Re-resolve the timer from `timers` at execution time so the
+        // coordinator sees the freshest state (rather than capturing a stale
+        // `RecipeTimer` struct at the call site).
+        guard let timer = timers.first(where: { $0.id == timerId }) else {
+            inFlightSyncTasks.removeValue(forKey: timerId)
+            return
+        }
+        await TimerLiveActivityCoordinator.shared.sync(timer: timer)
+        // Only clear if we're still the active task — a newer caller may have
+        // already replaced us and put their own Task here.
+        if inFlightSyncTasks[timerId]?.isCancelled == false {
+            inFlightSyncTasks.removeValue(forKey: timerId)
         }
     }
 
     private func endLiveActivity(timerId: String) {
+        inFlightSyncTasks[timerId]?.cancel()
+        inFlightSyncTasks.removeValue(forKey: timerId)
         Task {
             await TimerLiveActivityCoordinator.shared.end(timerId: timerId)
         }
@@ -751,8 +793,34 @@ final class TimerManager: NSObject {
     }
 
     private func reconcileLiveActivities() {
-        Task {
-            await TimerLiveActivityCoordinator.shared.reconcile(with: timers)
+        // If a reconcile is already running, mark a pending follow-up: when
+        // the current one finishes, a single new reconcile will be scheduled
+        // with the latest `timers` snapshot. This collapses 3 simultaneous
+        // cold-start triggers into at most 2 sequential reconciles.
+        if reconcileTask != nil {
+            pendingReconcile = true
+            return
+        }
+        scheduleReconcile()
+    }
+
+    private func scheduleReconcile() {
+        // Snapshot `timers` synchronously at dispatch time so the Task's body
+        // has a stable array even if `timers` mutates during the await.
+        let snapshot = timers
+        let task: Task<Void, Never> = Task { [weak self] in
+            await TimerLiveActivityCoordinator.shared.reconcile(with: snapshot)
+            self?.finishReconcilePass()
+        }
+        reconcileTask = task
+    }
+
+    private func finishReconcilePass() {
+        // Drain any coalesced follow-up request with a fresh snapshot.
+        reconcileTask = nil
+        if pendingReconcile {
+            pendingReconcile = false
+            scheduleReconcile()
         }
     }
 
@@ -767,6 +835,12 @@ final class TimerManager: NSObject {
     nonisolated deinit {
         Task { @MainActor in
             stopUpdateTimer()
+            for task in inFlightSyncTasks.values {
+                task.cancel()
+            }
+            inFlightSyncTasks.removeAll()
+            reconcileTask?.cancel()
+            reconcileTask = nil
         }
     }
 }
