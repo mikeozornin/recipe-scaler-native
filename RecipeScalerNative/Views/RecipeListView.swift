@@ -162,6 +162,7 @@ struct RecipeListView: View {
                 viewModel.refresh()
             }
             .localizedNavigationTitle("Recipes")
+            .navigationBarTitleDisplayMode(.inline)
             .appListBodyTypography()
             .navigationDestination(for: RecipesRoute.self) { route in
                 switch route {
@@ -186,8 +187,8 @@ struct RecipeListView: View {
             }
             #endif
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    viewModeToggle
+                ToolbarItem(placement: .principal) {
+                    viewModeMenu
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -244,32 +245,49 @@ struct RecipeListView: View {
         }
     }
 
-    // MARK: - View mode toggle
+    // MARK: - View mode menu (Files-style principal dropdown)
 
-    @ViewBuilder
-    private var viewModeToggle: some View {
-        Picker(selection: Binding(
+    private var viewModeSelection: Binding<RecipeFolderRoutes.ViewMode> {
+        Binding(
             get: { viewMode },
             set: { viewModeRaw = $0.rawValue }
-        )) {
-            Label {
-                Text("collections.view-flat")
-            } icon: {
-                AppSymbol.image("list.bullet")
-            }
-            .tag(RecipeFolderRoutes.ViewMode.flat)
+        )
+    }
 
-            Label {
-                Text("collections.view-collections")
-            } icon: {
-                AppSymbol.image("folder")
+    private var viewModeMenuTitleKey: LocalizedStringKey {
+        viewMode == .flat ? "collections.view-flat" : "collections.view-collections"
+    }
+
+    @ViewBuilder
+    private var viewModeMenu: some View {
+        Menu {
+            Picker("collections.title", selection: viewModeSelection) {
+                Label {
+                    Text("collections.view-flat")
+                } icon: {
+                    AppSymbol.image("list.bullet")
+                }
+                .tag(RecipeFolderRoutes.ViewMode.flat)
+
+                Label {
+                    Text("collections.view-collections")
+                } icon: {
+                    AppSymbol.image("folder")
+                }
+                .tag(RecipeFolderRoutes.ViewMode.collections)
             }
-            .tag(RecipeFolderRoutes.ViewMode.collections)
         } label: {
-            EmptyView()
+            HStack(spacing: 6) {
+                Text(viewModeMenuTitleKey)
+                    .font(AppTypography.body)
+                    .foregroundStyle(Color.primary)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20, height: 20)
+                    .background(Color(.tertiarySystemFill), in: Circle())
+            }
         }
-        .pickerStyle(.segmented)
-        .fixedSize()
         .accessibilityLabel(Text("collections.title"))
     }
 
