@@ -57,6 +57,14 @@ bash scripts/verify-all.sh
 
 Перед `verify-all` можно отдельно прогнать только сборку: `bash scripts/build-for-verify.sh`.
 
+**Два симулятора сразу** (iPhone 16 iOS 18 + iPhone 17 iOS 26):
+
+```bash
+bash scripts/run-dual-simulators.sh
+bash scripts/run-dual-simulators.sh -SkipSplash=1
+SKIP_BUILD=1 bash scripts/run-dual-simulators.sh   # без пересборки
+```
+
 ## Проверка фич
 
 - Feature verification scripts: `scripts/verify-<feature>.sh` и `scripts/verify-all.sh`.
