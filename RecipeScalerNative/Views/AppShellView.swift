@@ -101,6 +101,7 @@ struct AppShellView: View {
             .overlay(alignment: .bottom) {
                 if let transientStatusMessage {
                     TransientStatusBanner(message: transientStatusMessage)
+                        .frame(maxWidth: .infinity)
                         .padding(.bottom, 72)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
