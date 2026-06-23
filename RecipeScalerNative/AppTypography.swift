@@ -124,7 +124,8 @@ extension Text {
     }
 }
 
-/// List/Form section title (iOS Settings style: footnote, caps, tracking).
+/// List/Form section title. iOS < 26 uses iOS Settings legacy (footnote, ALL CAPS, tracking 0.8);
+/// iOS 26+ matches Apple Settings/Notes (title case, no tracking).
 struct AppSectionHeader: View {
     let title: LocalizedStringKey
 
@@ -136,12 +137,20 @@ struct AppSectionHeader: View {
         Text(title)
             .font(AppTypography.footnote)
             .foregroundStyle(Color(.secondaryLabel))
-            .tracking(AppSectionHeader.letterSpacing)
-            .textCase(.uppercase)
+            .tracking(Self.usesUpperCase ? AppSectionHeader.letterSpacing : 0)
+            .textCase(Self.usesUpperCase ? .uppercase : nil)
     }
 
-    /// ~0.06 em at 13 pt (web section label rhythm).
+    /// ~0.06 em at 13 pt (web section label rhythm, legacy ALL CAPS only).
     static let letterSpacing: CGFloat = 0.8
+
+    /// iOS 26+ renders section headers in title case (Apple Settings/Notes style).
+    /// iOS < 26 keeps legacy ALL CAPS + tracking 0.8. Single `#available` source of truth
+    /// for section header casing — view-файлы используют этот token, а не свой `#available`.
+    static var usesUpperCase: Bool {
+        if #available(iOS 26.0, *) { return false }
+        return true
+    }
 }
 
 extension View {
@@ -156,8 +165,8 @@ struct AppSectionHeaderSpacer: View {
     var body: some View {
         Text(verbatim: " ")
             .font(AppTypography.footnote)
-            .tracking(AppSectionHeader.letterSpacing)
-            .textCase(.uppercase)
+            .tracking(AppSectionHeader.usesUpperCase ? AppSectionHeader.letterSpacing : 0)
+            .textCase(AppSectionHeader.usesUpperCase ? .uppercase : nil)
             .accessibilityHidden(true)
             .opacity(0)
     }

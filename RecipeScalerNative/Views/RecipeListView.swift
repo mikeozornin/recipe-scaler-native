@@ -477,8 +477,8 @@ struct RecipeListSectionHeader: View {
         }
         .font(AppTypography.footnote)
         .foregroundStyle(.secondary)
-        .tracking(AppSectionHeader.letterSpacing)
-        .textCase(.uppercase)
+        .tracking(AppSectionHeader.usesUpperCase ? AppSectionHeader.letterSpacing : 0)
+        .textCase(AppSectionHeader.usesUpperCase ? .uppercase : nil)
     }
 }
 
