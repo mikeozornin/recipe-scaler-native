@@ -174,6 +174,22 @@ enum AppChromeAppearance {
         configureAlerts()
     }
 
+    /// UIKit action tint for system chrome (navbar back/edit/share/done, standalone UIBarButtonItem titles).
+    /// iOS < 26 → app accent (legacy blue). iOS 26+ → nil, so system chrome renders neutral
+    /// (matching iOS 26 Calendar). Single `#available` source of truth for UIKit chrome.
+    static var systemActionUIColor: UIColor? {
+        if #available(iOS 26.0, *) { return nil }
+        return UIColor(Color.accentColor)
+    }
+
+    /// SwiftUI action tint. Same policy as `systemActionUIColor`; on iOS 26+ resolves to
+    /// `.label` (adaptive black/white) instead of accent. Single `#available` source of truth
+    /// for SwiftUI toolbar buttons.
+    static var systemActionColor: Color {
+        if #available(iOS 26.0, *) { return Color(UIColor.label) }
+        return Color.accentColor
+    }
+
     private static func configureNavigationBar() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithDefaultBackground()
@@ -186,16 +202,20 @@ enum AppChromeAppearance {
             .foregroundColor: UIColor.label,
         ]
 
-        let actionButtonAttributes: [NSAttributedString.Key: Any] = [
+        var actionButtonAttributes: [NSAttributedString.Key: Any] = [
             .font: AppTypography.bodyUIFont,
-            .foregroundColor: UIColor(Color.accentColor),
         ]
+        if let tint = systemActionUIColor {
+            actionButtonAttributes[.foregroundColor] = tint
+        }
         appearance.backButtonAppearance.normal.titleTextAttributes = actionButtonAttributes
         appearance.buttonAppearance.normal.titleTextAttributes = actionButtonAttributes
         appearance.doneButtonAppearance.normal.titleTextAttributes = actionButtonAttributes
 
         let navBar = UINavigationBar.appearance()
-        navBar.tintColor = UIColor(Color.accentColor)
+        if let tint = systemActionUIColor {
+            navBar.tintColor = tint
+        }
         navBar.standardAppearance = appearance
         navBar.scrollEdgeAppearance = appearance
         navBar.compactAppearance = appearance
@@ -206,10 +226,12 @@ enum AppChromeAppearance {
     }
 
     private static func configureBarButtonItems() {
-        let attributes: [NSAttributedString.Key: Any] = [
+        var attributes: [NSAttributedString.Key: Any] = [
             .font: AppTypography.bodyUIFont,
-            .foregroundColor: UIColor(Color.accentColor),
         ]
+        if let tint = systemActionUIColor {
+            attributes[.foregroundColor] = tint
+        }
         UIBarButtonItem.appearance().setTitleTextAttributes(attributes, for: .normal)
         UIBarButtonItem.appearance().setTitleTextAttributes(attributes, for: .highlighted)
     }

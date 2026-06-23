@@ -65,6 +65,21 @@ AppSectionHeaderSpacer()      // невидимый placeholder для отст�
 
 Глобально настраивает шрифты для NavigationBar, BarButtonItems, TabBar, UITextField, UISegmentedControl через `appearance()`. Вызывается один раз при старте приложения.
 
+#### Системные кнопки navbar (back/edit/share/done)
+
+На iOS 26+ системный chrome в нативных приложениях Apple (Calendar, Mail, Notes) рисует navbar-кнопки **нейтрально** (`UIColor.label`), без акцентного цвета. На iOS < 26 те же кнопки — акцентного цвета (по умолчанию синего).
+
+Чтобы следовать этому поведению без размазывания `#available` по view-файлам, единая точка правды — два хелпера в `AppChromeAppearance` (`AppTypography.swift`):
+
+```swift
+AppChromeAppearance.systemActionUIColor   // UIColor? — nil на iOS 26+, accent на < 26
+AppChromeAppearance.systemActionColor     // Color   — .label на iOS 26+, accent на < 26
+```
+
+- **Не используй** `Color.accentColor` напрямую для navbar/toolbar-кнопок (back, edit, share, done, cancel) — вместо этого `AppChromeAppearance.systemActionColor`.
+- **Брендовые элементы** (assistant FAB, `.borderedProminent` primary actions) остаются на `Color.accentColor` — это не системный chrome.
+- **Никаких других `#available(iOS 26.0, *)`** для цвета кнопок в коде быть не должно — только в `AppChromeAppearance`.
+
 ### Keyboard toolbar
 
 Кастомная панель над клавиатурой — `ToolbarItemGroup(placement: .keyboard)`. Стили кнопок — `AppToolbarStyle` + `.appToolbarIconButton()` / `.appToolbarTextButton()`.

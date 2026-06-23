@@ -25,14 +25,14 @@ enum AppToolbarStyle {
             .resizable()
             .scaledToFit()
             .frame(width: iconSide, height: iconSide)
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(AppChromeAppearance.systemActionColor)
     }
 
     @ViewBuilder
     static func actionText(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(AppTypography.body)
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(AppChromeAppearance.systemActionColor)
             .lineLimit(1)
     }
 
@@ -70,7 +70,7 @@ extension View {
     /// Text bar button (Cancel, Done, Import, …).
     func appToolbarTextButton() -> some View {
         font(AppTypography.body)
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(AppChromeAppearance.systemActionColor)
     }
 
     /// Alias for `appToolbarTextButton()` (confirmation actions).
