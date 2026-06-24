@@ -3,13 +3,15 @@ import XCTest
 @testable import RecipeScalerCore
 @testable import RecipeScalerNative
 
-/// Verifies that the seven ObservableObject types listed in review #28 now use the
+/// Verifies that the ObservableObject types listed in review #28 now use the
 /// `@Observable` macro (or have had vestigial `ObservableObject` conformance removed).
+/// `RecipeListViewModel` was removed entirely (its caching role was redundant once
+/// `RecipeListView` started reading `syncService.collectionEntries` directly).
 @MainActor
 final class ObservableMigrationTests: XCTestCase {
 
-    /// All seven types must now conform to `Observable` (or, for `APIClient`, neither
-    /// `Observable` nor `ObservableObject` — its conformance was vestigial).
+    /// All migrated types must now conform to `Observable` (or, for `APIClient`,
+    /// neither `Observable` nor `ObservableObject` — its conformance was vestigial).
     func test_migratedTypes_conformToObservable() {
         let stubStore = makeStubStore()
         let sync = YjsSyncService(store: stubStore)
@@ -22,10 +24,6 @@ final class ObservableMigrationTests: XCTestCase {
         XCTAssertTrue(
             isObservable(SpotlightIndexer(syncService: sync)),
             "SpotlightIndexer must be @Observable"
-        )
-        XCTAssertTrue(
-            isObservable(RecipeListViewModel(syncService: sync)),
-            "RecipeListViewModel must be @Observable"
         )
         XCTAssertTrue(
             isObservable(DescriptionEditorBridge(recipeId: "test", syncService: sync)),

@@ -12,8 +12,6 @@ struct RecipeListView: View {
     @State private var isCreatingRecipe = false
     /// Lazy recipe loader + highlight cache for full-text search.
     @State private var searchStore = RecipeListSearchStore()
-    /// Owns pinned/unpinned row snapshots and the filtered entries feed.
-    @State private var viewModel = RecipeListViewModel()
     /// Tokens derived from `searchText` once per change, not per render.
     @State private var searchTokens: [String] = []
     /// Namespace for the iOS 26+ recipe list → detail zoom-morph transition.
@@ -49,15 +47,24 @@ struct RecipeListView: View {
         !searchTokens.isEmpty
     }
 
-    /// Entries to render: precomputed filtered snapshot when searching, the full
-    /// sorted list otherwise. Reads the store's single published snapshot —
-    /// never re-filters or re-sorts in the render path.
+    /// Entries to render: precomputed filtered snapshot when searching, the
+    /// full sorted list otherwise. Reads the live `@Observable` snapshot from
+    /// `syncService.collectionEntries` directly so any field-level change
+    /// (name/color/image/pin/folder) invalidates `body` — no manual cache.
     private var filteredEntries: [CollectionEntry] {
-        viewModel.filteredEntries
+        if isSearching {
+            return searchStore.filteredSnapshot
+        }
+        return RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
     }
 
-    private var pinnedRowItems: [RecipeRowData] { viewModel.pinnedRows }
-    private var unpinnedRowItems: [RecipeRowData] { viewModel.unpinnedRows }
+    private var pinnedRowItems: [RecipeRowData] {
+        filteredEntries.filter(\.isPinned).map(RecipeRowData.init(entry:))
+    }
+
+    private var unpinnedRowItems: [RecipeRowData] {
+        filteredEntries.filter { !$0.isPinned }.map(RecipeRowData.init(entry:))
+    }
 
     private var hasAnyRows: Bool {
         !pinnedRowItems.isEmpty || !unpinnedRowItems.isEmpty
@@ -147,21 +154,12 @@ struct RecipeListView: View {
             .searchable(text: $searchText, prompt: Text("search.recipes"))
             .onAppear {
                 searchStore.bind(syncService: syncService)
-                viewModel.bind(syncService: syncService, searchStore: searchStore)
-            }
-            .onChange(of: syncService.collectionEntries.map(\.id), initial: true) { _, _ in
-                if isSearching {
-                    let sorted = RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
-                    searchStore.refresh(entries: sorted, query: searchText)
-                }
-                viewModel.refresh()
             }
             .onChange(of: searchText) { _, query in
                 // Tokens computed once per change (was: 16–26× per render).
                 searchTokens = RecipeSearchUtils.tokenizeQuery(query)
                 let sorted = RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
                 searchStore.refresh(entries: sorted, query: query)
-                viewModel.refresh()
             }
             .localizedNavigationTitle("Recipes")
             .navigationBarTitleDisplayMode(.inline)
