@@ -79,6 +79,9 @@ struct ShoppingListView: View {
         .accessibilityIdentifier(AccessibilityIdentifiers.shoppingList)
         #if DEBUG
         .onAppear {
+            if DebugLaunchOptions.simulateErrorAlert {
+                errorMessage = Bundle.currentLocalizedString("auth.error.network")
+            }
             if DebugLaunchOptions.openShoppingShare || DebugLaunchOptions.shoppingShareAutoCopyText {
                 showShareSheet = true
             }
@@ -88,14 +91,7 @@ struct ShoppingListView: View {
             ShoppingListShareSheet(isOnline: isOnline)
                 .environment(syncService)
         }
-        .alert("Error", isPresented: Binding(
-            get: { errorMessage != nil },
-            set: { if !$0 { errorMessage = nil } }
-        )) {
-            Button("common.ok", role: .cancel) { errorMessage = nil }
-        } message: {
-            Text(errorMessage ?? "")
-        }
+        .errorAlert(message: $errorMessage)
         .task {
             shoppingModel.recompute(snapshot: snapshot, purchasePhases: purchasePhases)
         }

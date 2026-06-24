@@ -407,28 +407,8 @@ struct YDocRecipeDetailView: View {
         ) { _ in
             keyboardOverlapHeight = 0
         }
-        .alert(
-            Bundle.currentLocalizedString("edit.error.title"),
-            isPresented: Binding(
-                get: { editErrorMessage != nil },
-                set: { if !$0 { editErrorMessage = nil } }
-            )
-        ) {
-            Button(Bundle.currentLocalizedString("edit.error.ok"), role: .cancel) {}
-        } message: {
-            Text(editErrorMessage ?? "")
-        }
-        .alert(
-            Bundle.currentLocalizedString("llm.parse-recipe"),
-            isPresented: Binding(
-                get: { descriptionParseError != nil },
-                set: { if !$0 { descriptionParseError = nil } }
-            )
-        ) {
-            Button("common.ok", role: .cancel) {}
-        } message: {
-            Text(descriptionParseError ?? "")
-        }
+        .errorAlert(title: "edit.error.title", message: $editErrorMessage)
+        .errorAlert(title: "llm.parse-recipe", message: $descriptionParseError)
 
         .onChange(of: syncService.syncErrorMessage) { _, message in
             if let message { editErrorMessage = message }

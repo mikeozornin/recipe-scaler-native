@@ -63,19 +63,7 @@ struct AssistantComposer: View {
             .onDisappear {
                 voiceRecorder.cancel()
             }
-            .alert(
-                "assistant.error-unavailable",
-                isPresented: Binding(
-                    get: { voiceErrorMessage != nil },
-                    set: { if !$0 { voiceErrorMessage = nil } }
-                )
-            ) {
-                Button("common.ok", role: .cancel) { voiceErrorMessage = nil }
-            } message: {
-                if let voiceErrorMessage {
-                    Text(verbatim: voiceErrorMessage)
-                }
-            }
+            .errorAlert(title: "assistant.error-unavailable", message: $voiceErrorMessage)
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()

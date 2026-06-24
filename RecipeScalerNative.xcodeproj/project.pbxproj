@@ -336,6 +336,7 @@
 		E5F60718293A4B70CC88F2B7 /* ScreenAwakeToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7065B733F2 /* ScreenAwakeToggle.swift */; };
 		E5F60718293A4B70CD074276 /* ImportRecipeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7060097EA7 /* ImportRecipeSheet.swift */; };
 		E5F60718293A4B70CD094881 /* LocalizedNavigationTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */; };
+		EA1E0A1A293A4B70EA100001 /* ErrorAlertModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA1E0A1A293A4B70EA100002 /* ErrorAlertModifier.swift */; };
 		E5F60718293A4B70CD094891 /* UserFacingAPIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */; };
 		B3DOTKEYLOC001 /* DotKeyLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DOTKEYLOC002 /* DotKeyLocalizer.swift */; };
 		B3APIERRLOC001 /* APIError+Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APIELOC002 /* APIError+Localization.swift */; };
@@ -813,6 +814,7 @@
 		E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguagePreference.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094871 /* Bundle+Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Language.swift"; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedNavigationTitle.swift; sourceTree = "<group>"; };
+		EA1E0A1A293A4B70EA100002 /* ErrorAlertModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorAlertModifier.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserFacingAPIError.swift; sourceTree = "<group>"; };
 		B3DOTKEYLOC002 /* DotKeyLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DotKeyLocalizer.swift; sourceTree = "<group>"; };
 		B3APIELOC002 /* APIError+Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIError+Localization.swift"; sourceTree = "<group>"; };
@@ -1453,6 +1455,7 @@
 				E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */,
 				E5F60718293A4B70CD094871 /* Bundle+Language.swift */,
 				E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */,
+				EA1E0A1A293A4B70EA100002 /* ErrorAlertModifier.swift */,
 				AB1234567890ABCDEF123450 /* InAppSafariView.swift */,
 				E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */,
 				B3DOTKEYLOC002 /* DotKeyLocalizer.swift */,
@@ -2171,6 +2174,7 @@
 				E5F60718293A4B70E6687EC7 /* AppLanguagePreference.swift in Sources */,
 				E5F60718293A4B70E6687EC8 /* Bundle+Language.swift in Sources */,
 				E5F60718293A4B70CD094881 /* LocalizedNavigationTitle.swift in Sources */,
+				EA1E0A1A293A4B70EA100001 /* ErrorAlertModifier.swift in Sources */,
 				AB1234567890ABCDEF123451 /* InAppSafariView.swift in Sources */,
 				E5F60718293A4B70CD094891 /* UserFacingAPIError.swift in Sources */,
 				B3DOTKEYLOC001 /* DotKeyLocalizer.swift in Sources */,

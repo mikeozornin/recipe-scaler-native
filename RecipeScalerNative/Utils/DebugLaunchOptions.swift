@@ -21,6 +21,7 @@ enum DebugLaunchOptions {
             || showAssistant
             || openShoppingShare
             || shoppingShareAutoCopyText
+            || simulateErrorAlert
     }
 
     /// `-OpenShoppingShare=1` — opens shopping share sheet (verify scripts).
@@ -126,6 +127,14 @@ enum DebugLaunchOptions {
             return value.isEmpty ? nil : value
         }
         return nil
+    }
+
+    /// `-SimulateErrorAlert=1` — presents `errorAlert` on shopping list (verify scripts).
+    static var simulateErrorAlert: Bool {
+        for arg in ProcessInfo.processInfo.arguments {
+            if arg == "-SimulateErrorAlert=1" || arg == "-SimulateErrorAlert" { return true }
+        }
+        return false
     }
 
     /// `-OpenTab=shopping|discover|recipes|profile|import`

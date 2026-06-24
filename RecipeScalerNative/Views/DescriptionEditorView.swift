@@ -72,17 +72,7 @@ struct DescriptionEditorView: View {
                     syncChip
                 }
             }
-            .alert(
-                "description.editor.syncInFlight.title",
-                isPresented: Binding(
-                    get: { dismissBlockedMessage != nil },
-                    set: { if !$0 { dismissBlockedMessage = nil } }
-                )
-            ) {
-                Button("edit.error.ok", role: .cancel) {}
-            } message: {
-                Text(dismissBlockedMessage ?? "")
-            }
+            .errorAlert(title: "description.editor.syncInFlight.title", message: $dismissBlockedMessage)
         }
         .tint(accentColor)
         .task {

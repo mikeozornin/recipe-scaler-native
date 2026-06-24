@@ -109,19 +109,7 @@ struct AssistantSheet: View {
                 )
                 .presentationDetents([.medium, .large])
             }
-            .alert(
-                "assistant.error-unavailable",
-                isPresented: Binding(
-                    get: { loadError != nil },
-                    set: { if !$0 { loadError = nil } }
-                )
-            ) {
-                Button("common.ok", role: .cancel) { loadError = nil }
-            } message: {
-                if let loadError {
-                    Text(verbatim: loadError)
-                }
-            }
+            .errorAlert(title: "assistant.error-unavailable", message: $loadError)
             .task { await initialize() }
             .onChange(of: showHistorySheet) { _, isOpen in
                 if isOpen {

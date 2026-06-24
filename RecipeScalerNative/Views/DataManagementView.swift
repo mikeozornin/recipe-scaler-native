@@ -14,7 +14,7 @@ struct DataManagementView: View {
     @State private var isExporting = false
     @State private var exportProgress: (completed: Int, total: Int)?
     @State private var exportedFileURL: URL?
-    @State private var exportError: String?
+    @State private var exportAlert: ExportAlertState?
 
     @State private var isImporting = false
     @State private var importProgress: (completed: Int, total: Int)?
@@ -31,6 +31,21 @@ struct DataManagementView: View {
 
     private var showsImportStatus: Bool {
         isImporting || importOutcome != nil
+    }
+
+    /// Discriminates the two export outcomes: an informational "nothing to export"
+    /// state vs a real failure with a user-facing message. Replaces the prior
+    /// `exportError == "empty"` sentinel string (MIK-197).
+    private enum ExportAlertState: Identifiable {
+        case empty
+        case failed(String)
+
+        var id: String {
+            switch self {
+            case .empty: return "empty"
+            case .failed(let message): return "failed-\(message)"
+            }
+        }
     }
 
     var body: some View {
@@ -63,26 +78,22 @@ struct DataManagementView: View {
             importStopRequested = true
             importTask?.cancel()
         }
-        .alert(
-            "account.data.export.nothing",
-            isPresented: Binding(
-                get: { exportError == "empty" },
-                set: { if !$0 { exportError = nil } }
-            )
-        ) {
-            Button("common.ok", role: .cancel) {}
+        .alert(item: $exportAlert) { state in
+            switch state {
+            case .empty:
+                Alert(
+                    title: Text(verbatim: Bundle.currentLocalizedString("account.data.export.nothing")),
+                    dismissButton: .cancel(Text(verbatim: Bundle.currentLocalizedString("common.ok")))
+                )
+            case .failed(let message):
+                Alert(
+                    title: Text(verbatim: Bundle.currentLocalizedString("common.error")),
+                    message: Text(message),
+                    dismissButton: .cancel(Text(verbatim: Bundle.currentLocalizedString("common.ok")))
+                )
+            }
         }
-        .alert(
-            "account.data.import.error.title",
-            isPresented: Binding(
-                get: { importError != nil },
-                set: { if !$0 { importError = nil } }
-            )
-        ) {
-            Button("common.ok", role: .cancel) {}
-        } message: {
-            Text(importError ?? "")
-        }
+        .errorAlert(title: "account.data.import.error.title", message: $importError)
     }
 
     // MARK: - Rows
@@ -246,7 +257,7 @@ struct DataManagementView: View {
     private func exportRecipes() {
         isExporting = true
         exportedFileURL = nil
-        exportError = nil
+        exportAlert = nil
         exportProgress = nil
 
         let service = NativeExportImportService(syncService: syncService)
@@ -258,9 +269,9 @@ struct DataManagementView: View {
                 }
                 exportedFileURL = url
             } catch NativeImportError.emptyArchive {
-                exportError = "empty"
+                exportAlert = .empty
             } catch {
-                exportError = UserFacingAPIError.message(for: error)
+                exportAlert = .failed(UserFacingAPIError.message(for: error))
             }
             isExporting = false
             exportProgress = nil
