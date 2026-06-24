@@ -51,7 +51,8 @@ echo "PASS: recipe-scaler URL scheme declared in main Info.plist"
 # DeepLinkRouter source + onOpenURL wiring.
 rg -q 'class DeepLinkRouter' RecipeScalerNative/Routing/DeepLinkRouter.swift
 rg -q '\.onOpenURL' RecipeScalerNative/RecipeScalerNativeApp.swift
-rg -q 'consumePendingRecipeId|openRecipeRequested' RecipeScalerNative/Views/AppShellView.swift
+rg -q 'openRecipeRequested' RecipeScalerNative/Views/AppShellView.swift
+rg -q 'consumePendingRecipeId' RecipeScalerNative/Routing/AppShellCoordinator.swift
 echo "PASS: DeepLinkRouter + onOpenURL + AppShell wiring present"
 
 # SharedAuthStore (App Group referenced, either directly or via AppGroup.id).

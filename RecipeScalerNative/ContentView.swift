@@ -167,8 +167,10 @@ struct ContentView: View {
 
     @ViewBuilder
     private func appShell(container: AppContainer) -> some View {
-        let syncService = container.sync
-        AppShellView()
+        AppShellView(
+            syncService: container.sync,
+            deepLinkRouter: container.deepLinkRouter
+        )
             .task(id: effectiveUserId) {
                 #if DEBUG
                 if ShoppingSmokeTest.shouldRun { return }
@@ -193,7 +195,7 @@ struct ContentView: View {
                     await container.spotlight.clearAll()
                 }
             }
-            .onChange(of: syncService.collectionEntries) { _, entries in
+            .onChange(of: container.sync.collectionEntries) { _, entries in
                 ShortcutItemsUpdater.update(from: entries)
                 RecipeSnapshotStore.save(entries)
                 TimerLiveActivityMetadataProvider.recipeNameLookup = { recipeId in

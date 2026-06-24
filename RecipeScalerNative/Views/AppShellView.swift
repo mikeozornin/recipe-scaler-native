@@ -47,24 +47,27 @@ private struct AppTabBarLabel: View {
 }
 
 struct AppShellView: View {
+    @Bindable private var coordinator: AppShellCoordinator
     @Environment(YjsSyncService.self) private var syncService
     @Environment(TimerManager.self) private var timerManager
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
-    @State private var selectedTab: AppTab = .recipes
-    @State private var previousTab: AppTab = .recipes
-    @State private var showImportSheet = false
     @State private var showAssistant = false
     @State private var assistantContextRecipeId: String?
-    @State private var recipesPath = NavigationPath()
-    @State private var discoverPath = NavigationPath()
-    @State private var shoppingPath = NavigationPath()
     @State private var transientStatusMessage: String?
     @State private var transientStatusDismissTask: Task<Void, Never>?
     @State private var mobileTimerPanelCollapsed = true
-    @State private var spotlightOpenRecipeId: String?
     @State private var tabBarTopOffsetFromLayoutBottom: CGFloat = 0
     @Namespace private var mobileTimerPanelChevronNamespace
+
+    init(syncService: YjsSyncService, deepLinkRouter: DeepLinkRouter) {
+        _coordinator = Bindable(
+            wrappedValue: AppShellCoordinator(
+                syncService: syncService,
+                deepLinkRouter: deepLinkRouter
+            )
+        )
+    }
 
     private var mobileTimerPanelCollapsedBinding: Binding<Bool> {
         Binding(
@@ -107,18 +110,9 @@ struct AppShellView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.25), value: transientStatusMessage != nil)
-            .sheet(isPresented: $showImportSheet) {
+            .sheet(item: $coordinator.importPresentation) { _ in
                 ImportRecipeSheet { result in
-                    showImportSheet = false
-                    selectedTab = .recipes
-                    if let id = result.primaryRecipeId {
-                        recipesPath.append(RecipesRoute.recipe(recipeId: id, folderContext: nil))
-                    }
-                    if result.importedCount > 0 {
-                        let message = Bundle.appPluralizedString(
-                            key: "import.success",
-                            count: result.importedCount
-                        )
+                    if let message = coordinator.completeImport(result) {
                         postTransientStatus(message)
                     }
                 }
@@ -134,7 +128,6 @@ struct AppShellView: View {
             AssistantSheet(
                 contextRecipeId: assistantContextRecipeId ?? assistantRecipeContext.visibleRecipeId
             )
-                .environment(syncService)
         }
         .overlay(alignment: .bottomTrailing) {
             if !showAssistant {
@@ -149,17 +142,6 @@ struct AppShellView: View {
                 .accessibilityLabel(Text("assistant.title"))
             }
         }
-        .onChange(of: selectedTab) { old, new in
-            if new == .importTab {
-                showImportSheet = true
-                selectedTab = old
-                return
-            }
-            if new == old {
-                resetNestedNavigation(for: new)
-            }
-            previousTab = old
-        }
         .onReceive(NotificationCenter.default.publisher(for: .shoppingStatusMessage)) { notification in
             guard let message = notification.object as? String, !message.isEmpty else { return }
             transientStatusDismissTask?.cancel()
@@ -171,7 +153,6 @@ struct AppShellView: View {
                 do {
                     try await Task.sleep(nanoseconds: 3_000_000_000)
                 } catch {
-                    // Cancelled by a newer toast — do not clear the banner here.
                     return
                 }
                 guard !Task.isCancelled else { return }
@@ -183,29 +164,21 @@ struct AppShellView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .openRecipeRequested)) { _ in
-            consumePendingDeepLinkIfNeeded()
+            coordinator.consumePendingRecipeIdIfNeeded()
         }
         .onChange(of: deepLinkRouter.pending) { _, link in
             guard let link else { return }
-            handleDeepLink(link)
+            coordinator.handleDeepLink(link)
         }
         .onChange(of: syncService.collectionEntries) { _, entries in
-            // If a Spotlight open is pending and the recipe just landed in the
-            // collection, navigate now. Covers both first-sync after cold start
-            // and offline → online transitions.
-            guard let pendingId = spotlightOpenRecipeId else { return }
-            if entries.contains(where: { $0.id == pendingId && !$0.deleted }) {
-                spotlightOpenRecipeId = nil
-                selectedTab = .recipes
-                recipesPath.append(RecipesRoute.recipe(recipeId: pendingId, folderContext: nil))
-            }
+            coordinator.resolvePendingSpotlightRecipe(in: entries)
         }
         .onAppear {
             RecipeImageDiskCache.migrateFromCachesIfNeeded()
         }
         #if DEBUG
         .onAppear {
-            openDebugTabIfNeeded()
+            coordinator.openDebugTabIfNeeded(DebugLaunchOptions.openTab)
             if DebugLaunchOptions.mobileTimerPanelExpanded {
                 mobileTimerPanelCollapsed = false
             }
@@ -214,21 +187,13 @@ struct AppShellView: View {
                 assistantRecipeContext.isAssistantSheetOpen = true
                 showAssistant = true
             }
-            consumePendingDeepLinkIfNeeded()
+            coordinator.consumePendingRecipeIdIfNeeded()
         }
         #else
         .onAppear {
-            consumePendingDeepLinkIfNeeded()
+            coordinator.consumePendingRecipeIdIfNeeded()
         }
         #endif
-    }
-
-    /// Open the recipe requested via `recipe-scaler://recipe/{id}` deep link,
-    /// if any. Called on appear (cold start) and on `.openRecipeRequested` (warm start).
-    private func consumePendingDeepLinkIfNeeded() {
-        guard let id = DeepLinkRouter.consumePendingRecipeId() else { return }
-        selectedTab = .recipes
-        recipesPath.append(RecipesRoute.recipe(recipeId: id, folderContext: nil))
     }
 
     private var mobileTimerPanel: some View {
@@ -266,7 +231,7 @@ struct AppShellView: View {
     @ViewBuilder
     private var tabView: some View {
         let tabs = TabView(selection: tabSelection) {
-            tabRoot(DiscoverRootView(path: $discoverPath)) { AppTabBarLabel(tab: .discover) }
+            tabRoot(DiscoverRootView(path: $coordinator.discoverPath)) { AppTabBarLabel(tab: .discover) }
                 .tag(AppTab.discover)
                 .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
 
@@ -274,13 +239,13 @@ struct AppShellView: View {
                 .tag(AppTab.importTab)
                 .accessibilityIdentifier(AccessibilityIdentifiers.tabImport)
 
-            tabRoot(RecipeListView(navigationPath: $recipesPath)) {
+            tabRoot(RecipeListView(navigationPath: $coordinator.recipesPath)) {
                 AppTabBarLabel(tab: .recipes)
             }
             .tag(AppTab.recipes)
             .accessibilityIdentifier(AccessibilityIdentifiers.tabRecipes)
 
-            tabRoot(ShoppingListView(path: $shoppingPath)) {
+            tabRoot(ShoppingListView(path: $coordinator.shoppingPath)) {
                 AppTabBarLabel(tab: .shopping)
             }
             .tag(AppTab.shopping)
@@ -346,88 +311,14 @@ struct AppShellView: View {
 
     private var tabSelection: Binding<AppTab> {
         Binding(
-            get: { selectedTab },
-            set: { newValue in
-                if newValue == .importTab {
-                    showImportSheet = true
-                } else if newValue == selectedTab {
-                    resetNestedNavigation(for: newValue)
-                } else {
-                    selectedTab = newValue
-                }
-            }
+            get: { coordinator.selectedTab },
+            set: { coordinator.handleTabSelection($0) }
         )
-    }
-
-    private func resetNestedNavigation(for tab: AppTab) {
-        switch tab {
-        case .discover:
-            if !discoverPath.isEmpty { discoverPath = NavigationPath() }
-        case .recipes:
-            if !recipesPath.isEmpty { recipesPath = NavigationPath() }
-        case .shopping:
-            if !shoppingPath.isEmpty { shoppingPath = NavigationPath() }
-        default:
-            break
-        }
     }
 
     private func postTransientStatus(_ message: String) {
         NotificationCenter.default.post(name: .shoppingStatusMessage, object: message)
     }
-
-    // MARK: - Deep linking (Spotlight, future URL scheme / Universal Links)
-
-    private func handleDeepLink(_ link: DeepLink) {
-        switch link {
-        case .openRecipe(let recipeId):
-            selectedTab = .recipes
-            if syncService.collectionEntries.contains(where: { $0.id == recipeId && !$0.deleted }) {
-                spotlightOpenRecipeId = nil
-                recipesPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
-            } else {
-                // Recipe not yet in the loaded collection (cold start / offline
-                // → online). Stash the id; `onChange(collectionEntries)` will
-                // append it once it lands.
-                spotlightOpenRecipeId = recipeId
-            }
-            deepLinkRouter.clear()
-        case .addToShopping(let recipeId):
-            Task { @MainActor in
-                do {
-                    let added = try await syncService.addWholeRecipeToShoppingList(recipeId: recipeId)
-                    if added > 0 {
-                        ShoppingFeedback.postStatus(ShoppingAddFeedback.message(for: added))
-                    } else {
-                        ShoppingFeedback.postStatus(String(localized: "shopping.no-items-to-add"))
-                    }
-                } catch {
-                    ShoppingFeedback.postStatus(UserFacingAPIError.message(for: error))
-                }
-            }
-            deepLinkRouter.clear()
-        case .openShoppingList:
-            selectedTab = .shopping
-            deepLinkRouter.clear()
-        case .openHome:
-            // No dedicated timers tab in the app — open the default tab.
-            selectedTab = .recipes
-            deepLinkRouter.clear()
-        }
-    }
-
-    #if DEBUG
-    private func openDebugTabIfNeeded() {
-        guard let tab = DebugLaunchOptions.openTab else { return }
-        if tab == .importTab {
-            selectedTab = .recipes
-            showImportSheet = true
-        } else {
-            selectedTab = tab
-        }
-    }
-
-    #endif
 }
 
 private struct TabBarTopOffsetReader: UIViewControllerRepresentable {
@@ -526,9 +417,3 @@ private final class TabBarTopOffsetReaderViewController: UIViewController {
         onOffsetChange?(offsetFromLayoutBottom)
     }
 }
-
-#if DEBUG
-#Preview {
-    AppShellView()
-}
-#endif

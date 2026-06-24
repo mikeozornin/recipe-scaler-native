@@ -5,7 +5,7 @@
 // Central deep-link dispatcher for Spotlight taps, URL scheme links,
 // and future sources (Universal Links, notifications).
 //
-// The active `AppShellView` observes `pending` and consumes the link once.
+// `AppShellCoordinator` (via `AppShellView`) observes `pending` and consumes the link once.
 //
 
 import Foundation
@@ -26,7 +26,7 @@ enum DeepLink: Equatable, Sendable {
 /// Central deep-link dispatcher for Spotlight taps, URL scheme links,
 /// and future sources (Universal Links, notifications).
 ///
-/// The active `AppShellView` observes `pending` and consumes the link once.
+/// `AppShellCoordinator` (via `AppShellView`) observes `pending` and consumes the link once.
 ///
 @MainActor
 @Observable
