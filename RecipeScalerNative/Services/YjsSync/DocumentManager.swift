@@ -413,28 +413,26 @@ actor DocumentManager {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         let touchedAt = Self.isoTimestamp()
-        try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { map, txn in
-            map.insert(key: "name", value: .string(trimmed), txn: txn)
+        try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { writer in
+            writer.setName(trimmed)
         }
-        try await updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
-            entryMap.insert(key: "name", value: .string(trimmed), txn: txn)
-            entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
+        try await updateCollectionEntry(recipeId: recipeId, touchedAt: touchedAt) { writer in
+            writer.setName(trimmed)
         }
     }
 
     func updateRecipeServings(recipeId: String, servings: Int) async throws {
         let capped = max(1, min(999, servings))
-        // Web Yjs stores servings as JS number (float). Yrs `Y_JSON_INT` is not read by `normalizeServingsValue`.
-        try await mutateRecipe(recipeId: recipeId) { map, txn in
-            map.insert(key: "servings", value: .double(Double(capped)), txn: txn)
+        try await mutateRecipe(recipeId: recipeId) { writer in
+            writer.setServings(Double(capped))
         }
     }
 
     func updateRecipeIsPublic(recipeId: String, isPublic: Bool) async throws {
         // isPublic is recipe metadata (sharing), not a content edit.
         // It must be writable on v1/v2 too — web parity: web writes `recipeMap.set('isPublic', bool)` without a version gate.
-        try await mutateRecipeMetadata(recipeId: recipeId) { map, txn in
-            map.insert(key: "isPublic", value: .bool(isPublic), txn: txn)
+        try await mutateRecipeMetadata(recipeId: recipeId) { writer in
+            writer.setIsPublic(isPublic)
         }
     }
 
@@ -442,51 +440,44 @@ actor DocumentManager {
         let trimmed = imageUrl.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         let touchedAt = Self.isoTimestamp()
-        try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { map, txn in
-            map.insert(key: "imageUrl", value: .string(trimmed), txn: txn)
+        try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { writer in
+            writer.setImageUrl(trimmed)
             if let aspectRatio {
-                map.insert(key: "imageAspectRatio", value: .double(aspectRatio), txn: txn)
+                writer.setImageAspectRatio(aspectRatio)
             }
         }
-        try await updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
-            entryMap.insert(key: "imageUrl", value: .string(trimmed), txn: txn)
-            entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
+        try await updateCollectionEntry(recipeId: recipeId, touchedAt: touchedAt) { writer in
+            writer.setImageUrl(trimmed)
         }
     }
 
     func clearRecipeImage(recipeId: String) async throws {
         let touchedAt = Self.isoTimestamp()
-        try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { map, txn in
-            _ = map.remove(key: "imageUrl", txn: txn)
-            _ = map.remove(key: "imageAspectRatio", txn: txn)
+        try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { writer in
+            writer.clearImageUrl()
         }
-        try await updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
-            _ = entryMap.remove(key: "imageUrl", txn: txn)
-            entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
+        try await updateCollectionEntry(recipeId: recipeId, touchedAt: touchedAt) { writer in
+            writer.clearImageUrl()
         }
     }
 
     func updateRecipeColor(recipeId: String, color: String) async throws {
         let normalized = RecipeAccentColor.normalizedStored(color)
         let touchedAt = Self.isoTimestamp()
-        try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { map, txn in
-            map.insert(key: "color", value: .string(normalized), txn: txn)
+        try await mutateRecipe(recipeId: recipeId, touchedAt: touchedAt) { writer in
+            writer.setColor(normalized)
         }
         if !currentCollectionKey.isEmpty {
-            try await updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
-                entryMap.insert(key: "color", value: .string(normalized), txn: txn)
-                entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
+            try await updateCollectionEntry(recipeId: recipeId, touchedAt: touchedAt) { writer in
+                writer.setColor(normalized)
             }
         }
     }
 
     func addIngredient(recipeId: String, ingredient: IngredientData) async throws {
-        try await mutateRecipe(recipeId: recipeId) { map, txn in
-            try Self.withIngredientsArray(in: map, txn: txn) { array in
-                try Self.appendIngredient(ingredient, to: array, txn: txn)
-                Self.renumberIngredientOrders(in: array, txn: txn)
-            }
-            map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
+        try await mutateRecipe(recipeId: recipeId) { writer in
+            try writer.appendIngredient(ingredient)
+            writer.setNutritionOutdated(true)
         }
     }
 
@@ -496,78 +487,38 @@ actor DocumentManager {
     /// Final merged Y.Doc state is identical to calling `addIngredient` per item.
     func addIngredients(recipeId: String, ingredients: [IngredientData]) async throws {
         guard !ingredients.isEmpty else { return }
-        try await mutateRecipe(recipeId: recipeId) { map, txn in
-            try Self.withIngredientsArray(in: map, txn: txn) { array in
-                for ingredient in ingredients {
-                    try Self.appendIngredient(ingredient, to: array, txn: txn)
-                }
-                Self.renumberIngredientOrders(in: array, txn: txn)
-            }
-            map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
+        try await mutateRecipe(recipeId: recipeId) { writer in
+            try writer.appendIngredients(ingredients)
+            writer.setNutritionOutdated(true)
         }
     }
 
     func updateIngredient(recipeId: String, ingredient: IngredientData, markNutritionOutdated: Bool = true) async throws {
-        try await mutateRecipe(recipeId: recipeId) { map, txn in
-            try Self.withIngredientsArray(in: map, txn: txn) { array in
-                let len = array.length(txn: txn)
-                for index in 0..<len {
-                    array.withMap(at: index, txn: txn) { ingMap in
-                        if ingMap.scalarString(key: "id", txn: txn) == ingredient.id {
-                            Self.writeIngredient(ingMap, ingredient: ingredient, txn: txn)
-                        }
-                    }
-                }
-            }
-            if markNutritionOutdated {
-                map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
-            }
+        try await mutateRecipe(recipeId: recipeId) { writer in
+            try writer.updateIngredient(ingredient, markNutritionOutdated: markNutritionOutdated)
         }
     }
 
     func removeIngredient(recipeId: String, ingredientId: String) async throws {
-        try await mutateRecipe(recipeId: recipeId) { map, txn in
-            try Self.withIngredientsArray(in: map, txn: txn) { array in
-                let len = array.length(txn: txn)
-                for index in 0..<len {
-                    if let id = array.withMap(at: index, txn: txn, { $0.scalarString(key: "id", txn: txn) }),
-                       id == ingredientId {
-                        array.remove(at: index, len: 1, txn: txn)
-                        Self.renumberIngredientOrders(in: array, txn: txn)
-                        break
-                    }
-                }
-            }
-            map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
+        try await mutateRecipe(recipeId: recipeId) { writer in
+            try writer.removeIngredient(id: ingredientId)
         }
     }
 
     func moveIngredient(recipeId: String, fromIndex: Int, toIndex: Int) async throws {
         guard fromIndex != toIndex else { return }
-        try await mutateRecipe(recipeId: recipeId) { map, txn in
-            try Self.withIngredientsArray(in: map, txn: txn) { array in
-                let len = Int(array.length(txn: txn))
-                guard fromIndex >= 0, toIndex >= 0, fromIndex < len, toIndex < len else { return }
-
-                var moved: IngredientData?
-                array.withMap(at: UInt32(fromIndex), txn: txn) { ingMap in
-                    moved = RecipeYjsCodec.parseIngredientMap(ingMap, txn: txn, fallbackOrder: fromIndex + 1)
-                }
-                guard let moved else { return }
-
-                array.remove(at: UInt32(fromIndex), len: 1, txn: txn)
-                let insertAt = toIndex > fromIndex ? toIndex - 1 : toIndex
-                try Self.insertIngredient(moved, into: array, at: UInt32(insertAt), txn: txn)
-                Self.renumberIngredientOrders(in: array, txn: txn)
-            }
+        try await mutateRecipe(recipeId: recipeId) { writer in
+            try writer.moveIngredient(from: fromIndex, to: toIndex)
         }
     }
 
     func updateCollectionEntry(
         recipeId: String,
-        _ body: (YrsMap, OpaquePointer) throws -> Void
+        touchedAt: String? = nil,
+        _ body: (inout CollectionEntryWriter) throws -> Void
     ) async throws {
         guard !currentCollectionKey.isEmpty else { return }
+        let now = touchedAt ?? Self.isoTimestamp()
         let doc = try await getOrCreateDoc(key: currentCollectionKey)
         try await doc.withWriteTransaction { _, txn in
             guard let arrayBranch = ytype_get(txn, "recipes") else { return }
@@ -579,7 +530,9 @@ actor DocumentManager {
                 } ?? false
                 if matches {
                     try array.withMap(at: index, txn: txn) { map in
-                        try body(map, txn)
+                        var writer = CollectionEntryWriter(map: map, txn: txn)
+                        try body(&writer)
+                        map.insert(key: "updatedAt", value: .string(now), txn: txn)
                     }
                     break
                 }
@@ -668,18 +621,14 @@ actor DocumentManager {
     private static let defaultNewRecipeColor = "oklch(0.65 0.25 270)"
 
     func setCollectionEntryPinned(recipeId: String, isPinned: Bool) async throws {
-        let touchedAt = Self.isoTimestamp()
-        try await updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
-            entryMap.insert(key: "isPinned", value: .bool(isPinned), txn: txn)
-            entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
+        try await updateCollectionEntry(recipeId: recipeId) { writer in
+            writer.setIsPinned(isPinned)
         }
     }
 
     func tombstoneCollectionEntry(recipeId: String) async throws {
-        let touchedAt = Self.isoTimestamp()
-        try await updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
-            entryMap.insert(key: "deleted", value: .bool(true), txn: txn)
-            entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
+        try await updateCollectionEntry(recipeId: recipeId) { writer in
+            writer.tombstone()
         }
     }
 
@@ -779,20 +728,20 @@ actor DocumentManager {
 
     /// Rename a folder (and bump `updatedAt`).
     func renameFolder(id: String, name: String) async throws {
-        try await mutateFolderEntry(id: id) { map, txn in
+        try await mutateFolderEntry(id: id) { writer in
             let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
             let stored = trimmed.isEmpty
                 ? RecipeFolderConstants.untitledFolderNameSentinel
                 : trimmed
-            map.insert(key: "name", value: .string(stored), txn: txn)
+            writer.setName(stored)
         }
     }
 
     /// Update a folder accent color (and bump `updatedAt`). Web `setFolderColor` parity.
     func updateFolderColor(id: String, color: String) async throws {
         let normalized = RecipeAccentColor.normalizedStored(color)
-        try await mutateFolderEntry(id: id) { map, txn in
-            map.insert(key: "color", value: .string(normalized), txn: txn)
+        try await mutateFolderEntry(id: id) { writer in
+            writer.setColor(normalized)
         }
     }
 
@@ -835,7 +784,7 @@ actor DocumentManager {
                     let ids = map.stringArray(key: RecipeFolderConstants.folderIdsKey, txn: txn)
                     guard ids.contains(id) else { return }
                     let remaining = ids.filter { $0 != id }
-                    Self.writeRecipeFolderIds(map: map, folderIds: remaining, txn: txn)
+                    RecipeYjsWriter.writeRecipeFolderIds(map: map, folderIds: remaining, txn: txn)
                     map.insert(key: "updatedAt", value: .string(now), txn: txn)
                 }
             }
@@ -863,7 +812,7 @@ actor DocumentManager {
                 } ?? false
                 guard matches else { continue }
                 array.withMap(at: index, txn: txn) { map in
-                    Self.writeRecipeFolderIds(map: map, folderIds: validIds, txn: txn)
+                    RecipeYjsWriter.writeRecipeFolderIds(map: map, folderIds: validIds, txn: txn)
                     map.insert(key: "updatedAt", value: .string(now), txn: txn)
                 }
                 break
@@ -894,7 +843,7 @@ actor DocumentManager {
     }
 
     /// Find a folder Y.Map by id (including soft-deleted) and run `body` on it.
-    private func mutateFolderEntry(id: String, _ body: (YrsMap, OpaquePointer) throws -> Void) async throws {
+    private func mutateFolderEntry(id: String, _ body: (inout FolderEntryWriter) throws -> Void) async throws {
         guard !currentCollectionKey.isEmpty else { throw RecipeEditError.documentNotLoaded }
         let now = Self.isoTimestamp()
         let doc = try await getOrCreateDoc(key: currentCollectionKey)
@@ -908,7 +857,8 @@ actor DocumentManager {
                 } ?? false
                 guard matches else { continue }
                 try array.withMap(at: index, txn: txn) { map in
-                    try body(map, txn)
+                    var writer = FolderEntryWriter(map: map, txn: txn)
+                    try body(&writer)
                     map.insert(key: "updatedAt", value: .string(now), txn: txn)
                 }
                 break
@@ -937,21 +887,7 @@ actor DocumentManager {
     }
 
     /// Write the `folderIds` JSON-array value on a recipe entry map.
-    /// Removes the key when the normalized list is empty (web `setRecipeFolderIds`).
-    /// Important: this is a *replacement* of the whole array (last-write-wins per recipe).
-    private static func writeRecipeFolderIds(map: YrsMap, folderIds: [String], txn: OpaquePointer) {
-        if folderIds.isEmpty {
-            if map.hasJSONArray(key: RecipeFolderConstants.folderIdsKey, txn: txn) {
-                _ = map.remove(key: RecipeFolderConstants.folderIdsKey, txn: txn)
-            }
-            return
-        }
-        map.insert(
-            key: RecipeFolderConstants.folderIdsKey,
-            value: .jsonStringArray(folderIds),
-            txn: txn
-        )
-    }
+    /// → Moved to `RecipeYjsWriter.writeRecipeFolderIds`.
 
     /// Creates a v3 recipe document and collection entry (web `createRecipe` parity).
     func createRecipe(
@@ -1008,64 +944,44 @@ actor DocumentManager {
         let recipeId = try await createRecipe(name: displayName, color: color)
 
         // Write rich fields
-        try await mutateRecipe(recipeId: recipeId) { map, txn in
+        try await mutateRecipe(recipeId: recipeId) { writer in
             if let servings = draft.servings, servings > 0 {
-                map.insert(key: "servings", value: .double(servings), txn: txn)
+                writer.setServings(servings)
             }
             if let desc = draft.description, !desc.isEmpty {
-                map.insert(key: "description", value: .string(desc), txn: txn)
-                map.insert(key: "hasSteps", value: .bool(true), txn: txn)
+                writer.setDescription(desc)
+                writer.setHasSteps(true)
             }
             if let link = draft.originalRecipeLink?.trimmingCharacters(in: .whitespacesAndNewlines),
                !link.isEmpty {
-                map.insert(key: "originalRecipeLink", value: .string(link), txn: txn)
+                writer.setOriginalRecipeLink(link)
             }
             if let source = draft.originalRecipe?.trimmingCharacters(in: .whitespacesAndNewlines),
                !source.isEmpty {
-                map.insert(key: "originalRecipe", value: .string(source), txn: txn)
+                writer.setOriginalRecipe(source)
             }
             if let createdAt = draft.createdAt, !createdAt.isEmpty {
-                map.insert(key: "createdAt", value: .string(createdAt), txn: txn)
+                writer.setCreatedAt(createdAt)
             }
             if let updatedAt = draft.updatedAt, !updatedAt.isEmpty {
-                map.insert(key: "updatedAt", value: .string(updatedAt), txn: txn)
+                writer.setUpdatedAt(updatedAt)
             }
 
             // Nutrition — write as nested Y.Map so readNutrition (which expects
             // a nested map at key "nutrition") round-trips correctly, including
             // optional `totalWeight`. Same pattern as updateNutrition below.
             if let nutrition = draft.nutrition {
-                var fields: [(String, YrsInput)] = []
-                if let cal = nutrition.calories {
-                    fields.append(("calories", .double(cal)))
-                }
-                if let p = nutrition.protein {
-                    fields.append(("protein", .double(p)))
-                }
-                if let f = nutrition.fat {
-                    fields.append(("fat", .double(f)))
-                }
-                if let c = nutrition.carbs {
-                    fields.append(("carbs", .double(c)))
-                }
-                if let tw = nutrition.totalWeight {
-                    fields.append(("totalWeight", .double(tw)))
-                }
-                let outdated = nutrition.nutritionOutdated ?? true
-                fields.append(("nutritionOutdated", .bool(outdated)))
-
-                if map.isNullOrMissing(key: "nutrition", txn: txn) {
-                    map.insert(key: "nutrition", value: .map(fields), txn: txn)
-                } else {
-                    try map.withNestedMap(key: "nutrition", txn: txn) { nMap in
-                        for (key, value) in fields {
-                            nMap.insert(key: key, value: value, txn: txn)
-                        }
-                    }
-                }
+                writer.writeNutritionMap(
+                    calories: nutrition.calories,
+                    protein: nutrition.protein,
+                    fat: nutrition.fat,
+                    carbs: nutrition.carbs,
+                    totalWeight: nutrition.totalWeight,
+                    nutritionOutdated: nutrition.nutritionOutdated ?? true
+                )
                 // Root-level flag is read by readNutrition as `rootOutdated`
                 // (parity with server edit API).
-                map.insert(key: "nutritionOutdated", value: .bool(outdated), txn: txn)
+                writer.setNutritionOutdated(nutrition.nutritionOutdated ?? true)
             }
         }
 
@@ -1151,18 +1067,18 @@ actor DocumentManager {
 
         let recipeId = try await createRecipe(name: displayName)
 
-        try await mutateRecipe(recipeId: recipeId) { map, txn in
-            map.insert(key: "servings", value: .double(Double(draft.servings)), txn: txn)
+        try await mutateRecipe(recipeId: recipeId) { writer in
+            writer.setServings(Double(draft.servings))
             if let source = draft.originalRecipe?.trimmingCharacters(in: .whitespacesAndNewlines),
                !source.isEmpty {
-                map.insert(key: "originalRecipe", value: .string(source), txn: txn)
+                writer.setOriginalRecipe(source)
             }
             if let link = draft.originalRecipeLink?.trimmingCharacters(in: .whitespacesAndNewlines),
                !link.isEmpty {
-                map.insert(key: "originalRecipeLink", value: .string(link), txn: txn)
+                writer.setOriginalRecipeLink(link)
             }
             if !localizedDescriptionBlocks.isEmpty {
-                map.insert(key: "hasSteps", value: .bool(true), txn: txn)
+                writer.setHasSteps(true)
             }
         }
 
@@ -1261,31 +1177,20 @@ actor DocumentManager {
         fat: Double?,
         carbs: Double?
     ) async throws {
-        try await mutateRecipe(recipeId: recipeId) { map, txn in
-            var fields: [(String, YrsInput)] = []
-            if let calories { fields.append(("calories", .double(calories))) }
-            if let protein { fields.append(("protein", .double(protein))) }
-            if let fat { fields.append(("fat", .double(fat))) }
-            if let carbs { fields.append(("carbs", .double(carbs))) }
-            guard !fields.isEmpty else { return }
-
-            if map.isNullOrMissing(key: "nutrition", txn: txn) {
-                map.insert(key: "nutrition", value: .map(fields), txn: txn)
-            } else {
-                try map.withNestedMap(key: "nutrition", txn: txn) { nMap in
-                    if let calories { nMap.insert(key: "calories", value: .double(calories), txn: txn) }
-                    if let protein { nMap.insert(key: "protein", value: .double(protein), txn: txn) }
-                    if let fat { nMap.insert(key: "fat", value: .double(fat), txn: txn) }
-                    if let carbs { nMap.insert(key: "carbs", value: .double(carbs), txn: txn) }
-                }
-            }
+        try await mutateRecipe(recipeId: recipeId) { writer in
+            writer.writeNutritionMap(
+                calories: calories,
+                protein: protein,
+                fat: fat,
+                carbs: carbs
+            )
         }
     }
 
     private func mutateRecipe(
         recipeId: String,
         touchedAt: String? = nil,
-        _ body: (YrsMap, OpaquePointer) throws -> Void
+        _ body: (inout RecipeMapWriter) throws -> Void
     ) async throws {
         guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
         let key = "\(userId):recipe:\(recipeId)"
@@ -1307,9 +1212,9 @@ actor DocumentManager {
             guard let mapBranch = ytype_get(txn, "recipe") else {
                 throw RecipeEditError.documentNotLoaded
             }
-            let map = YrsMap(branch: mapBranch)
-            try body(map, txn)
-            map.insert(key: "updatedAt", value: .string(now), txn: txn)
+            var writer = RecipeMapWriter(map: YrsMap(branch: mapBranch), txn: txn)
+            try body(&writer)
+            writer.map.insert(key: "updatedAt", value: .string(now), txn: txn)
         }
 
         await persistAndDeliver(recipeId: recipeId, docKey: key)
@@ -1320,7 +1225,7 @@ actor DocumentManager {
     private func mutateRecipeMetadata(
         recipeId: String,
         touchedAt: String? = nil,
-        _ body: (YrsMap, OpaquePointer) throws -> Void
+        _ body: (inout RecipeMapWriter) throws -> Void
     ) async throws {
         guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
         let key = "\(userId):recipe:\(recipeId)"
@@ -1334,9 +1239,9 @@ actor DocumentManager {
             guard let mapBranch = ytype_get(txn, "recipe") else {
                 throw RecipeEditError.documentNotLoaded
             }
-            let map = YrsMap(branch: mapBranch)
-            try body(map, txn)
-            map.insert(key: "updatedAt", value: .string(now), txn: txn)
+            var writer = RecipeMapWriter(map: YrsMap(branch: mapBranch), txn: txn)
+            try body(&writer)
+            writer.map.insert(key: "updatedAt", value: .string(now), txn: txn)
         }
 
         await persistAndDeliver(recipeId: recipeId, docKey: key)
@@ -1513,92 +1418,8 @@ actor DocumentManager {
         ISO8601DateFormatter().string(from: Date())
     }
 
-    /// Mutate `ingredients` while the parent `YOutput` from `ymap_get` stays alive (see `withNestedArray`).
-    private static func withIngredientsArray<T>(
-        in recipeMap: YrsMap,
-        txn: OpaquePointer,
-        _ body: (YrsArray) throws -> T
-    ) throws -> T {
-        if recipeMap.isNullOrMissing(key: "ingredients", txn: txn) {
-            recipeMap.insert(key: "ingredients", value: .yarray([]), txn: txn)
-        }
-        guard let result = try recipeMap.withNestedArray(key: "ingredients", txn: txn, body) else {
-            throw RecipeEditError.documentNotLoaded
-        }
-        return result
-    }
-
-    /// Inserts a new ingredient map via scalar `ymap_insert` calls (avoids nested `yinput_ymap` UTF-8 panic in yffi).
-    private static func appendIngredient(
-        _ ingredient: IngredientData,
-        to array: YrsArray,
-        txn: OpaquePointer
-    ) throws {
-        let index = array.length(txn: txn)
-        try insertIngredient(ingredient, into: array, at: index, txn: txn)
-    }
-
-    private static func insertIngredient(
-        _ ingredient: IngredientData,
-        into array: YrsArray,
-        at index: UInt32,
-        txn: OpaquePointer
-    ) throws {
-        array.insert(value: .map([]), at: index, txn: txn)
-        let wrote = array.withMap(at: index, txn: txn) { ingMap -> Bool in
-            writeIngredient(ingMap, ingredient: ingredient, txn: txn)
-            return true
-        }
-        guard wrote == true else {
-            throw RecipeEditError.documentNotLoaded
-        }
-    }
-
-    private static func renumberIngredientOrders(in array: YrsArray, txn: OpaquePointer) {
-        let len = array.length(txn: txn)
-        for index in 0..<len {
-            array.withMap(at: index, txn: txn) { ingMap in
-                ingMap.insert(key: "order", value: .int(Int64(index + 1)), txn: txn)
-            }
-        }
-    }
-
-    private static func writeIngredient(_ ingMap: YrsMap, ingredient: IngredientData, txn: OpaquePointer) {
-        ingMap.insert(key: "id", value: .string(ingredient.id), txn: txn)
-        ingMap.insert(key: "name", value: .string(ingredient.name), txn: txn)
-        ingMap.insert(key: "order", value: .int(Int64(ingredient.order)), txn: txn)
-        ingMap.insert(key: "isSeparator", value: .bool(ingredient.isSeparator), txn: txn)
-        ingMap.insert(key: "unit", value: .string(ingredient.unit), txn: txn)
-
-        if ingredient.hasQuantity, let numeric = Double(ingredient.originalAmount.replacingOccurrences(of: ",", with: ".")) {
-            ingMap.insert(key: "originalAmount", value: .double(numeric), txn: txn)
-            ingMap.insert(key: "amount", value: .double(numeric), txn: txn)
-        } else if ingredient.hasQuantity {
-            ingMap.insert(key: "originalAmount", value: .string(ingredient.originalAmount), txn: txn)
-            ingMap.insert(key: "amount", value: .string(ingredient.amount.isEmpty ? ingredient.originalAmount : ingredient.amount), txn: txn)
-        } else {
-            ingMap.remove(key: "originalAmount", txn: txn)
-            ingMap.insert(key: "amount", value: .string(""), txn: txn)
-        }
-
-        Self.writeNutrition(ingMap, ingredient: ingredient, txn: txn)
-    }
-
-    private static func writeNutrition(_ ingMap: YrsMap, ingredient: IngredientData, txn: OpaquePointer) {
-        writeOptionalDouble(ingMap, key: "calories", value: ingredient.calories, txn: txn)
-        writeOptionalDouble(ingMap, key: "protein", value: ingredient.protein, txn: txn)
-        writeOptionalDouble(ingMap, key: "fat", value: ingredient.fat, txn: txn)
-        writeOptionalDouble(ingMap, key: "carbs", value: ingredient.carbs, txn: txn)
-        writeOptionalDouble(ingMap, key: "weight", value: ingredient.weight, txn: txn)
-    }
-
-    private static func writeOptionalDouble(_ map: YrsMap, key: String, value: Double?, txn: OpaquePointer) {
-        if let value {
-            map.insert(key: key, value: .double(value), txn: txn)
-        } else if !map.isNullOrMissing(key: key, txn: txn) {
-            map.remove(key: key, txn: txn)
-        }
-    }
-
     // parseJSONIngredients / parseJSONNutrition → moved to RecipeYjsCodec.
+    // withIngredientsArray / appendIngredient / insertIngredient /
+    // renumberIngredientOrders / writeIngredient / writeNutrition /
+    // writeOptionalDouble / writeRecipeFolderIds → moved to RecipeYjsWriter.
 }

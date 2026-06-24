@@ -2539,9 +2539,8 @@ final class YjsSyncService {
               !imageUrl.isEmpty else { return }
 
         let touchedAt = ISO8601DateFormatter().string(from: Date())
-        try? await documentManager.updateCollectionEntry(recipeId: recipeId) { entryMap, txn in
-            entryMap.insert(key: "imageUrl", value: .string(imageUrl), txn: txn)
-            entryMap.insert(key: "updatedAt", value: .string(touchedAt), txn: txn)
+        try? await documentManager.updateCollectionEntry(recipeId: recipeId, touchedAt: touchedAt) { writer in
+            writer.setImageUrl(imageUrl)
         }
     }
 
