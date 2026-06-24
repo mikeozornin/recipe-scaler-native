@@ -8,10 +8,13 @@ import RecipeScalerCore
 
 /// Loads an avatar URL with the app's auth header (x-user-id / Bearer).
 /// AsyncImage uses bare URLSession and won't pass auth — use this instead.
+/// Network/caching lives in `AvatarImageService` (composition root); the view
+/// never touches `APIClient.shared` directly.
 @MainActor
 struct AuthAvatarImage: View {
     let url: URL
 
+    @Environment(\.appContainer) private var appContainer
     @State private var uiImage: UIImage?
 
     var body: some View {
@@ -24,17 +27,9 @@ struct AuthAvatarImage: View {
                     .foregroundStyle(Color(.tertiaryLabel))
             }
         }
-        .task(id: url) { await load() }
-    }
-
-    private func load() async {
-        let req = APIClient.shared.recipeImageDownloadRequest(
-            remoteURL: url,
-            etag: nil,
-            lastModified: nil
-        )
-        guard let (data, _) = try? await AppURLSession.shared.data(for: req),
-              let img = UIImage(data: data) else { return }
-        uiImage = img
+        .task(id: url) {
+            guard let service = appContainer?.avatar else { return }
+            uiImage = await service.image(for: url)
+        }
     }
 }

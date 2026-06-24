@@ -50,6 +50,7 @@ final class AppContainer {
     let timerSync: TimerSyncService
     let timer: TimerManager
     let recipeImage: RecipeImageService
+    let avatar: AvatarImageService
 
     /// Typed handle to the shared HTTP client. Exposed so view models and feature
     /// services can call the API without reaching for the `APIClient.shared`
@@ -119,6 +120,7 @@ final class AppContainer {
             imageCache: imageCache,
             publicImageCache: publicImageCache
         )
+        self.avatar = AvatarImageService(api: APIClient.shared)
 
         // Sync subsystem
         let sync = YjsSyncService(

@@ -254,6 +254,7 @@
 		E5F60718293A4B700000000C /* AgentSyncDebugLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700000000D /* AgentSyncDebugLog.swift */; };
 		E5F60718293A4B700000000E /* RecipeNutritionDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700000000F /* RecipeNutritionDisplay.swift */; };
 		E5F60718293A4B7000000010 /* RecipeImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000011 /* RecipeImageService.swift */; };
+		MIK195BV1B100100100100100A001 /* AvatarImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = MIK195BV1B100100100100100A002 /* AvatarImageService.swift */; };
 		E5F60718293A4B7000000012 /* RecipeCachedImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000013 /* RecipeCachedImageView.swift */; };
 		E5F60718293A4B7000000014 /* RecipeScaleStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000015 /* RecipeScaleStorage.swift */; };
 		E5F60718293A4B7000000021 /* RecipeImageCacheStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000020 /* RecipeImageCacheStatus.swift */; };
@@ -728,6 +729,7 @@
 		E5F60718293A4B700000000D /* AgentSyncDebugLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSyncDebugLog.swift; sourceTree = "<group>"; };
 		E5F60718293A4B700000000F /* RecipeNutritionDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeNutritionDisplay.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000011 /* RecipeImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeImageService.swift; sourceTree = "<group>"; };
+		MIK195BV1B100100100100100A002 /* AvatarImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarImageService.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000013 /* RecipeCachedImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeCachedImageView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000015 /* RecipeScaleStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeScaleStorage.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000020 /* RecipeImageCacheStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeImageCacheStatus.swift; sourceTree = "<group>"; };
@@ -1568,6 +1570,7 @@
 				APURL0001000200030004000A2 /* AppURLSession.swift */,
 				BDFDC56713A0842CA6B33517 /* ImageCacheService.swift */,
 				E5F60718293A4B7000000011 /* RecipeImageService.swift */,
+				MIK195BV1B100100100100100A002 /* AvatarImageService.swift */,
 				E5F60718293A4B7000000020 /* RecipeImageCacheStatus.swift */,
 				E5F60718293A4B7000000028 /* RecipeDocumentCacheStatus.swift */,
 				E5F60718293A4B7000000024 /* RecipeImageDiskCache.swift */,
@@ -1998,6 +2001,7 @@
 				39CBF56DFACE248C54B1D988 /* ImageCacheService.swift in Sources */,
 				APURL0001000200030004000A3 /* AppURLSession.swift in Sources */,
 				E5F60718293A4B7000000010 /* RecipeImageService.swift in Sources */,
+				MIK195BV1B100100100100100A001 /* AvatarImageService.swift in Sources */,
 				E5F60718293A4B7000000021 /* RecipeImageCacheStatus.swift in Sources */,
 				E5F60718293A4B7000000029 /* RecipeDocumentCacheStatus.swift in Sources */,
 				E5F60718293A4B7000000025 /* RecipeImageDiskCache.swift in Sources */,
