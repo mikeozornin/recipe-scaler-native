@@ -30,10 +30,19 @@ struct PublicCachedImageView: View {
         .task(id: loadTaskKey) {
             await reloadImage()
         }
+        .onChange(of: allowsNetworkRefresh) { wasAllowed, isAllowed in
+            guard !wasAllowed, isAllowed else { return }
+            Task { await reloadImage() }
+        }
     }
 
     private var loadTaskKey: String {
-        "\(url?.absoluteString ?? "")|\(allowsNetworkRefresh)|\(maxPixelSize)|\(fullWidthHero)"
+        Self.loadTaskIdentity(url: url, maxPixelSize: maxPixelSize, fullWidthHero: fullWidthHero)
+    }
+
+    /// Stable `.task(id:)` identity — excludes `allowsNetworkRefresh` so connection flaps do not restart loads.
+    static func loadTaskIdentity(url: URL?, maxPixelSize: Int, fullWidthHero: Bool) -> String {
+        "\(url?.absoluteString ?? "")|\(maxPixelSize)|\(fullWidthHero)"
     }
 
     @ViewBuilder

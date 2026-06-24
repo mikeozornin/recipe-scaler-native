@@ -377,6 +377,58 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertNil(cached)
     }
 
+    func testRecipeCachedImageLoadTaskIdentityExcludesNetworkFlag() {
+        let offlineKey = RecipeCachedImageView.loadTaskIdentity(
+            recipeId: "r1",
+            imageUrl: "https://example.com/v1",
+            variant: .preview
+        )
+        let onlineKey = RecipeCachedImageView.loadTaskIdentity(
+            recipeId: "r1",
+            imageUrl: "https://example.com/v1",
+            variant: .preview
+        )
+        XCTAssertEqual(offlineKey, onlineKey)
+        XCTAssertEqual(offlineKey, "r1|https://example.com/v1|preview")
+
+        let otherVariant = RecipeCachedImageView.loadTaskIdentity(
+            recipeId: "r1",
+            imageUrl: "https://example.com/v1",
+            variant: .full
+        )
+        XCTAssertNotEqual(offlineKey, otherVariant)
+
+        let otherUrl = RecipeCachedImageView.loadTaskIdentity(
+            recipeId: "r1",
+            imageUrl: "https://example.com/v2",
+            variant: .preview
+        )
+        XCTAssertNotEqual(offlineKey, otherUrl)
+    }
+
+    func testPublicCachedImageLoadTaskIdentityExcludesNetworkFlag() {
+        let url = URL(string: "https://example.com/photo.jpg")!
+        let offlineKey = PublicCachedImageView.loadTaskIdentity(
+            url: url,
+            maxPixelSize: 800,
+            fullWidthHero: false
+        )
+        let onlineKey = PublicCachedImageView.loadTaskIdentity(
+            url: url,
+            maxPixelSize: 800,
+            fullWidthHero: false
+        )
+        XCTAssertEqual(offlineKey, onlineKey)
+        XCTAssertEqual(offlineKey, "https://example.com/photo.jpg|800|false")
+
+        let heroKey = PublicCachedImageView.loadTaskIdentity(
+            url: url,
+            maxPixelSize: 800,
+            fullWidthHero: true
+        )
+        XCTAssertNotEqual(offlineKey, heroKey)
+    }
+
     func testRecipeImageDiskCacheDetectsExistingFile() throws {
         let recipeId = "verify-disk-cache"
         let fileURL = RecipeImageDiskCache.fileURL(recipeId: recipeId, variant: .full)

@@ -90,6 +90,15 @@ struct YDocRecipeDetailView: View {
         syncService.connectionState == .connected
     }
 
+    private func prefetchHeaderImage() async {
+        guard let imageUrl = headerImageUrl else { return }
+        await appContainer?.recipeImage.prefetchFull(
+            recipeId: recipeId,
+            imageUrl: imageUrl,
+            allowNetwork: allowsImageNetworkRefresh
+        )
+    }
+
     /// Cancels duplicate keyboard scroll inset while `safeAreaInset` formatting bar is active.
     private var descriptionEditorKeyboardCompensation: CGFloat {
         guard isEditing, descriptionChrome.isFocused, keyboardOverlapHeight > 0 else { return 0 }
@@ -470,13 +479,12 @@ struct YDocRecipeDetailView: View {
             #if DEBUG
             #endif
         }
-        .task(id: "\(recipeId)-\(headerImageUrl ?? "")-\(allowsImageNetworkRefresh)") {
-            guard let imageUrl = headerImageUrl else { return }
-            await appContainer?.recipeImage.prefetchFull(
-                recipeId: recipeId,
-                imageUrl: imageUrl,
-                allowNetwork: allowsImageNetworkRefresh
-            )
+        .task(id: "\(recipeId)-\(headerImageUrl ?? "")") {
+            await prefetchHeaderImage()
+        }
+        .onChange(of: allowsImageNetworkRefresh) { wasAllowed, isAllowed in
+            guard !wasAllowed, isAllowed, headerImageUrl != nil else { return }
+            Task { await prefetchHeaderImage() }
         }
         .onChange(of: recipe?.version) { _, _ in
             if isLegacyReadOnly, isEditing {

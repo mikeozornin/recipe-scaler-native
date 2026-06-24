@@ -49,6 +49,10 @@ struct RecipeCachedImageView: View {
         .task(id: loadTaskKey) {
             await reloadImage()
         }
+        .onChange(of: allowsNetworkRefresh) { wasAllowed, isAllowed in
+            guard !wasAllowed, isAllowed else { return }
+            Task { await reloadImage() }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .recipeImageDidCache)) { notification in
             guard let cachedId = notification.userInfo?["recipeId"] as? String,
                   cachedId == recipeId,
@@ -61,7 +65,12 @@ struct RecipeCachedImageView: View {
     }
 
     private var loadTaskKey: String {
-        "\(recipeId)|\(imageUrl ?? "")|\(variant.rawValue)|\(allowsNetworkRefresh)"
+        Self.loadTaskIdentity(recipeId: recipeId, imageUrl: imageUrl, variant: variant)
+    }
+
+    /// Stable `.task(id:)` identity — excludes `allowsNetworkRefresh` so connection flaps do not restart loads.
+    static func loadTaskIdentity(recipeId: String, imageUrl: String?, variant: CachedImageVariant) -> String {
+        "\(recipeId)|\(imageUrl ?? "")|\(variant.rawValue)"
     }
 
     private func effectiveAspectRatio(for image: UIImage) -> CGFloat {
