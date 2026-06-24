@@ -199,6 +199,14 @@ enum AppChromeAppearance {
         return Color.accentColor
     }
 
+    /// `UIBarButtonItem.Style` for the "Done" button of accessory keyboard toolbars.
+    /// iOS 26+ uses `.prominent` (the deprecated `.done` replacement); earlier OS keeps `.done`.
+    /// Single `#available` source of truth for keyboard toolbar done button style.
+    static var doneBarButtonItemStyle: UIBarButtonItem.Style {
+        if #available(iOS 26.0, *) { return .prominent }
+        return .done
+    }
+
     private static func configureNavigationBar() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithDefaultBackground()
@@ -219,7 +227,21 @@ enum AppChromeAppearance {
         }
         appearance.backButtonAppearance.normal.titleTextAttributes = actionButtonAttributes
         appearance.buttonAppearance.normal.titleTextAttributes = actionButtonAttributes
-        appearance.doneButtonAppearance.normal.titleTextAttributes = actionButtonAttributes
+
+        // iOS 26+: `doneButtonAppearance` is deprecated in favor of `prominentButtonAppearance`.
+        // The prominent button is automatically separated from other navbar buttons and, on
+        // iOS 26+, tinted with the app's accent color — so we pass the accent explicitly even
+        // when `systemActionUIColor` is nil (neutral chrome). This keeps the prominent button
+        // visually distinguishable from the rest of the toolbar.
+        var prominentAttributes: [NSAttributedString.Key: Any] = [
+            .font: AppTypography.bodyUIFont,
+        ]
+        prominentAttributes[.foregroundColor] = systemActionUIColor ?? UIColor(Color.accentColor)
+        if #available(iOS 26.0, *) {
+            appearance.prominentButtonAppearance.normal.titleTextAttributes = prominentAttributes
+        } else {
+            appearance.doneButtonAppearance.normal.titleTextAttributes = prominentAttributes
+        }
 
         let navBar = UINavigationBar.appearance()
         if let tint = systemActionUIColor {

@@ -206,7 +206,7 @@ struct RecipeTitleTextField: UIViewRepresentable {
             let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
             let done = UIBarButtonItem(
                 title: String(localized: "edit.done"),
-                style: .done,
+                style: AppChromeAppearance.doneBarButtonItemStyle,
                 target: self,
                 action: #selector(keyboardDoneTapped)
             )
