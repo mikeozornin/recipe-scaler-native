@@ -43,6 +43,10 @@ struct YDocRecipeDetailView: View {
     @State private var isParsingDescription = false
     @State private var descriptionParseError: String?
     @State private var keyboardOverlapHeight: CGFloat = 0
+    /// Backs the «nutrition may be outdated → recalculate» flow. Constructed in
+    /// `.task(id: recipeId)` from `appContainer` so the view never touches
+    /// `APIClient.shared` directly.
+    @State private var nutritionRecalculation: RecipeNutritionRecalculationModel?
 
 
     private var recipe: RecipeData? {
@@ -458,6 +462,9 @@ struct YDocRecipeDetailView: View {
             isLoading = true
             defer { isLoading = false }
             scaleFactor = RecipeScaleStorage.loadScaleFactor(recipeId: recipeId)
+            if nutritionRecalculation == nil, let container = appContainer {
+                nutritionRecalculation = RecipeNutritionRecalculationModel(api: container.api)
+            }
             syncService.acknowledgeRecipeRemoved()
             await syncService.loadRecipe(recipeId: recipeId)
             #if DEBUG
@@ -528,13 +535,9 @@ struct YDocRecipeDetailView: View {
             scaleFactor: scaleFactor,
             accentColor: accentColor,
             isOnline: syncService.connectionState.isConnected,
-            onRecalculate: outdated ? {
-                do {
-                    try await APIClient.shared.calculateNutrition(recipeId: recipeId)
-                    await syncService.refreshCurrentRecipe(recipeId: recipeId)
-                } catch {
-                    // Banner stays until next successful recalculation
-                }
+            onRecalculate: outdated ? { [weak nutritionRecalculation] in
+                guard let model = nutritionRecalculation else { return }
+                await model.recalculate(recipeId: recipeId, syncService: syncService)
             } : nil,
             viewMode: $nutritionViewMode
         )

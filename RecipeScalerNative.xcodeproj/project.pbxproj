@@ -218,6 +218,7 @@
 		C6A1DD88D1724B5C9CE18505 /* YrsInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD3DE42F47CA47F4BC49DCBC /* YrsInput.swift */; };
 		C7880733D37729C2239DFD52 /* MartianGrotesk-StdLt.otf in Resources */ = {isa = PBXBuildFile; fileRef = 598814DB4C71176A7CC76A6A /* MartianGrotesk-StdLt.otf */; };
 		C7D3ECB704B645D8926FB811 /* RecipeEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5D272EB4ED4555A30CD3B2 /* RecipeEditViewModel.swift */; };
+		MIK1950A100100100100100A001 /* RecipeNutritionRecalculationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = MIK1950A100100100100100A002 /* RecipeNutritionRecalculationModel.swift */; };
 		CC0002AA0002BB0002CC0002 /* PushRegistrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0001AA0001BB0001CC0001 /* PushRegistrationService.swift */; };
 		CC0004AA0004BB0004CC0004 /* PushScheduleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0003AA0003BB0003CC0003 /* PushScheduleService.swift */; };
 		CC1101AABB000100000001 /* SyncEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1101AABB000200000001 /* SyncEventHandler.swift */; };
@@ -536,6 +537,7 @@
 		450283E26C9249C5858DFCEF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		480DCDACDCA0402582631501 /* RecipeLegacyBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeLegacyBanner.swift; sourceTree = "<group>"; };
 		4B5D272EB4ED4555A30CD3B2 /* RecipeEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEditViewModel.swift; sourceTree = "<group>"; };
+		MIK1950A100100100100100A002 /* RecipeNutritionRecalculationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeNutritionRecalculationModel.swift; sourceTree = "<group>"; };
 		4DE9AF6E91804571BD26336B /* TimerLiveActivityActionQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityActionQueue.swift; sourceTree = "<group>"; };
 		4EA2CE2F227482882F3F3C07 /* NutritionData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionData.swift; sourceTree = "<group>"; };
 		4F90F40E8688492B815EB510 /* TimerLiveActivityFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityFormatting.swift; sourceTree = "<group>"; };
@@ -1422,6 +1424,7 @@
 				E5F60718293A4B7000000096 /* RecipeListViewModel.swift */,
 				DD2201AABB000200000002 /* RecipeDetailViewModel.swift */,
 				4B5D272EB4ED4555A30CD3B2 /* RecipeEditViewModel.swift */,
+				MIK1950A100100100100100A002 /* RecipeNutritionRecalculationModel.swift */,
 				D8A2FBA494D4B821D6044FD7 /* ShoppingViewModel.swift */,
 			);
 			path = ViewModels;
@@ -2059,6 +2062,7 @@
 				F1A2B3C4D5E60718293A4C03 /* DisplayIngredient.swift in Sources */,
 				E5F60718293A4B700000101 /* RecipeSearchIndex.swift in Sources */,
 				C7D3ECB704B645D8926FB811 /* RecipeEditViewModel.swift in Sources */,
+				MIK1950A100100100100100A001 /* RecipeNutritionRecalculationModel.swift in Sources */,
 				B2C3D4E5F60718293A4B64 /* YDocIngredientsSection.swift in Sources */,
 				E5F60718293A4B7000000001 /* IngredientNutritionDisplay.swift in Sources */,
 				E5F60718293A4B700000000E /* RecipeNutritionDisplay.swift in Sources */,

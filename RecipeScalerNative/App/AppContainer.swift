@@ -51,6 +51,11 @@ final class AppContainer {
     let timer: TimerManager
     let recipeImage: RecipeImageService
 
+    /// Typed handle to the shared HTTP client. Exposed so view models and feature
+    /// services can call the API without reaching for the `APIClient.shared`
+    /// singleton (which is reserved for AppIntents / extensions / pre-bootstrap).
+    let api: APIClient = .shared
+
     // MARK: - Sync subsystem (depend on the services above)
 
     let sync: YjsSyncService
