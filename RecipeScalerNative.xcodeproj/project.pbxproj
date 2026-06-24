@@ -181,6 +181,7 @@
 		B3KCA02B293A4B701000001 /* AuthServiceMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */; };
 		B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */; };
 		B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */; };
+		B3TBDISC01B293A4B70100001 /* TabBarDiscoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TBDISC01A293A4B70100001 /* TabBarDiscoveryTests.swift */; };
 		B3TIMENOTIF01B293A4B70100001 /* TimerNotificationActionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */; };
 		B3TIMEWIDGET01B293A4B70100001 /* TimerWidgetTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */; };
 		B3APPTEST02B293A4B70100001 /* ObservableMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */; };
@@ -662,6 +663,7 @@
 		B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthServiceMigrationTests.swift; sourceTree = "<group>"; };
 		B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainerTests.swift; sourceTree = "<group>"; };
 		B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPanelRefreshTests.swift; sourceTree = "<group>"; };
+		B3TBDISC01A293A4B70100001 /* TabBarDiscoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarDiscoveryTests.swift; sourceTree = "<group>"; };
 		B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerNotificationActionsTests.swift; sourceTree = "<group>"; };
 		B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerWidgetTimelineTests.swift; sourceTree = "<group>"; };
 		B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableMigrationTests.swift; sourceTree = "<group>"; };
@@ -1285,6 +1287,7 @@
 				B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */,
 				B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */,
 				B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */,
+				B3TBDISC01A293A4B70100001 /* TabBarDiscoveryTests.swift */,
 				B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */,
 				B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */,
 				B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */,
@@ -2268,6 +2271,7 @@
 				B3KCA02B293A4B701000001 /* AuthServiceMigrationTests.swift in Sources */,
 				B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */,
 				B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */,
+				B3TBDISC01B293A4B70100001 /* TabBarDiscoveryTests.swift in Sources */,
 				B3TIMENOTIF01B293A4B70100001 /* TimerNotificationActionsTests.swift in Sources */,
 				B3TIMEWIDGET01B293A4B70100001 /* TimerWidgetTimelineTests.swift in Sources */,
 				B3APPTEST02B293A4B70100001 /* ObservableMigrationTests.swift in Sources */,
