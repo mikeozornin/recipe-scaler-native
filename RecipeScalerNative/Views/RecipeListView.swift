@@ -217,9 +217,9 @@ struct RecipeListView: View {
                 switch alert {
                 case .error(let message):
                     Alert(
-                        title: Text("Error"),
+                        title: Text(verbatim: Bundle.currentLocalizedString("common.error")),
                         message: Text(message),
-                        dismissButton: .cancel(Text("common.ok"))
+                        dismissButton: .cancel(Text(verbatim: Bundle.currentLocalizedString("common.ok")))
                     )
                 case .deleteRecipe(let item):
                     Alert(
