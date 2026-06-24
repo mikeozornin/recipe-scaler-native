@@ -77,6 +77,20 @@ struct CollectionFolderView: View {
         filteredEntries.filter { !$0.isPinned }.map(RecipeRowData.init(entry:))
     }
 
+    /// Stable signature of the PIN STATE only (which entries are pinned,
+    /// ignoring all other fields like `updatedAt`).
+    ///
+    /// Used as the `.id()` of the `List` so SwiftUI rebuilds the list's view
+    /// tree exactly when pin membership changes, bypassing iOS 26's built-in
+    /// List structural-change animation (which cannot be disabled via
+    /// `.animation(nil, value:)` or `.transaction { $0.animation = nil }`
+    /// and produces the "jump over header / teleport / blink" artifacts).
+    /// Server echoes that only bump `updatedAt` do not change this signature,
+    /// so they no longer trigger a rebuild.
+    private var pinStateSignature: String {
+        pinnedRowItems.map(\.id).joined(separator: ",")
+    }
+
     private var hasAnyRows: Bool {
         !pinnedRowItems.isEmpty || !unpinnedRowItems.isEmpty
     }
@@ -106,21 +120,9 @@ struct CollectionFolderView: View {
                 .mobileTimerPanelBottomPadding()
             } else {
                 List {
-                    if !pinnedRowItems.isEmpty {
-                        RecipeListSectionHeader(isPinnedSection: true)
-                            .recipeListSectionHeaderRow()
-
-                        recipeRows(pinnedRowItems)
-                    }
-
-                    if !unpinnedRowItems.isEmpty {
-                        if !pinnedRowItems.isEmpty {
-                            RecipeListSectionHeader(isPinnedSection: false)
-                                .recipeListSectionHeaderRow()
-                        }
-
-                        recipeRows(unpinnedRowItems)
-                    }
+                    // Single ForEach across both pinned and unpinned rows so
+                    // SwiftUI preserves row identity during pin/unpin.
+                    recipeRowsWithHeaders
 
                     if MobileTimerPanelListChrome.needsSpacer(
                         timerManager: timerManager,
@@ -132,6 +134,16 @@ struct CollectionFolderView: View {
                 .listStyle(.plain)
                 .listSectionSpacing(0)
                 .environment(\.defaultMinListRowHeight, 1)
+                // Force SwiftUI to rebuild the List's view tree whenever the
+                // pin-state signature changes. iOS 26's List has a built-in
+                // structural-change animation that cannot be disabled via
+                // `.animation(nil, value:)` or `.transaction { $0.animation = nil }`
+                // (both were tried and confirmed ineffective). Rebuilding
+                // the tree via `.id()` skips the broken animation entirely,
+                // giving an instant transition. This sacrifices SwiftUI's
+                // move animation entirely, which is the goal: a clean
+                // instant transition is preferable to a broken animated one.
+                .id(pinStateSignature)
             }
         }
         .searchable(text: $searchText, prompt: Text("search.recipes"))
@@ -389,88 +401,136 @@ struct CollectionFolderView: View {
 
     // MARK: - Recipe rows (same pattern as RecipeListView)
 
+    /// Unified list item for the single-ForEach layout: either a section
+    /// header (Pinned / All recipes) or a recipe row. Sharing one identity
+    /// domain lets SwiftUI animate pin/unpin as a move within one collection
+    /// rather than a delete+insert between two ForEachs. Section headers
+    /// have their own stable ids and are part of the same ForEach.
+    private enum ListItem: Identifiable, Equatable {
+        case pinnedHeader
+        case unpinnedHeader
+        case recipe(RecipeRowData)
+
+        var id: String {
+            switch self {
+            case .pinnedHeader: return "__section_pinned"
+            case .unpinnedHeader: return "__section_unpinned"
+            case .recipe(let row): return row.id
+            }
+        }
+    }
+
+    private var listItems: [ListItem] {
+        var items: [ListItem] = []
+        if !pinnedRowItems.isEmpty {
+            items.append(.pinnedHeader)
+            items.append(contentsOf: pinnedRowItems.map(ListItem.recipe))
+        }
+        if !unpinnedRowItems.isEmpty {
+            if !pinnedRowItems.isEmpty {
+                items.append(.unpinnedHeader)
+            }
+            items.append(contentsOf: unpinnedRowItems.map(ListItem.recipe))
+        }
+        return items
+    }
+
     @ViewBuilder
-    private func recipeRows(_ items: [RecipeRowData]) -> some View {
-        ForEach(items) { item in
-            ZStack(alignment: .leading) {
-                RecipeRow(
-                    data: item,
-                    highlight: isSearching ? searchStore.highlights[item.id] : nil,
-                    allowsNetworkRefresh: allowsImageNetworkRefresh
+    private var recipeRowsWithHeaders: some View {
+        ForEach(listItems) { listItem in
+            switch listItem {
+            case .pinnedHeader:
+                RecipeListSectionHeader(isPinnedSection: true)
+                    .recipeListSectionHeaderRow()
+            case .unpinnedHeader:
+                RecipeListSectionHeader(isPinnedSection: false)
+                    .recipeListSectionHeaderRow()
+            case .recipe(let item):
+                recipeRowView(for: item)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func recipeRowView(for item: RecipeRowData) -> some View {
+        let route = RecipesRoute.recipe(
+            recipeId: item.id,
+            folderContext: RecipeFolderRoutes.shouldUseFolderRecipePath(
+                activeFolderId: folderId,
+                viewMode: .collections,
+                recipeFolderIds: syncService.collectionEntries
+                    .first { $0.id == item.id }?.folderIds
+            ) ? folderId : nil
+        )
+        ZStack(alignment: .leading) {
+            RecipeRow(
+                data: item,
+                highlight: isSearching ? searchStore.highlights[item.id] : nil,
+                allowsNetworkRefresh: allowsImageNetworkRefresh
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            NavigationLink(value: route) {
+                Color.clear
+            }
+            .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
+            .opacity(0.01)
+        }
+        .buttonStyle(.plain)
+        .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
+        .accessibilityIdentifier(AccessibilityIdentifiers.recipeRow(id: item.id))
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            Button {
+                Task { await addRecipeToShopping(item) }
+            } label: {
+                Label(
+                    String(localized: "shopping.detail-add-all"),
+                    systemImage: "cart.badge.plus"
                 )
-                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .tint(.green)
 
-                let route = RecipesRoute.recipe(
-                    recipeId: item.id,
-                    folderContext: RecipeFolderRoutes.shouldUseFolderRecipePath(
-                        activeFolderId: folderId,
-                        viewMode: .collections,
-                        recipeFolderIds: syncService.collectionEntries
-                            .first { $0.id == item.id }?.folderIds
-                    ) ? folderId : nil
+            Button {
+                presentedSheet = .assign(recipeId: item.id, recipeName: item.displayName)
+            } label: {
+                Label(
+                    String(localized: "collections.assign-tooltip"),
+                    systemImage: "folder.badge.plus"
                 )
-                NavigationLink(value: route) {
-                    Color.clear
-                }
-                .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
-                .opacity(0.01)
             }
-            .buttonStyle(.plain)
-            .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
-            .accessibilityIdentifier(AccessibilityIdentifiers.recipeRow(id: item.id))
-            .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                Button {
-                    Task { await addRecipeToShopping(item) }
-                } label: {
-                    Label(
-                        String(localized: "shopping.detail-add-all"),
-                        systemImage: "cart.badge.plus"
-                    )
-                }
-                .tint(.green)
+            .tint(.orange)
 
-                Button {
-                    presentedSheet = .assign(recipeId: item.id, recipeName: item.displayName)
-                } label: {
-                    Label(
-                        String(localized: "collections.assign-tooltip"),
-                        systemImage: "folder.badge.plus"
+            Button {
+                Task { await togglePin(for: item) }
+            } label: {
+                Label {
+                    Text(
+                        item.isPinned
+                            ? String(localized: "recipe.list.unpin")
+                            : String(localized: "recipe.list.pin")
                     )
+                } icon: {
+                    AppSymbol.image(item.isPinned ? "pin.slash" : "pin")
                 }
-                .tint(.orange)
-
-                Button {
-                    Task { await togglePin(for: item) }
-                } label: {
-                    Label {
-                        Text(
-                            item.isPinned
-                                ? String(localized: "recipe.list.unpin")
-                                : String(localized: "recipe.list.pin")
-                        )
-                    } icon: {
-                        AppSymbol.image(item.isPinned ? "pin.slash" : "pin")
-                    }
-                }
-                .tint(.blue)
             }
-            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                Button {
-                    presentedAlert = .deleteRecipe(item)
-                } label: {
-                    AppLabel.make(String(localized: "recipe.list.delete"), symbol: "trash")
-                }
-                .tint(.red)
+            .tint(.blue)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button {
+                presentedAlert = .deleteRecipe(item)
+            } label: {
+                AppLabel.make(String(localized: "recipe.list.delete"), symbol: "trash")
             }
-            .task(id: item.id) {
-                guard item.hasThumbnail,
-                      let fileURL = RecipeImageDiskCache.existingFileURL(recipeId: item.id, variant: .full) else {
-                    return
-                }
-                await Task.detached(priority: .utility) {
-                    _ = RecipeImageDisplayCache.image(fileURL: fileURL, variant: .full)
-                }.value
+            .tint(.red)
+        }
+        .task(id: item.id) {
+            guard item.hasThumbnail,
+                  let fileURL = RecipeImageDiskCache.existingFileURL(recipeId: item.id, variant: .full) else {
+                return
             }
+            await Task.detached(priority: .utility) {
+                _ = RecipeImageDisplayCache.image(fileURL: fileURL, variant: .full)
+            }.value
         }
     }
 

@@ -2316,7 +2316,14 @@ final class YjsSyncService {
                 activeRecipeId = nil
                 activeRecipeWasRemoved = true
             }
-            collectionEntries = filtered
+            // Idempotent: skip reassignment when the value is unchanged so we
+            // don't trigger an extra render pass on every observer / echo.
+            // This collapses the three refresh paths (setRecipePinned,
+            // debounced observer, server echo) into one visual update when
+            // they all produce the same entries.
+            if collectionEntries != filtered {
+                collectionEntries = filtered
+            }
             // Rebuild the derived collections index and refresh folders so the
             // collections view stays in sync after any recipes change.
             collectionIndex = CollectionRecipesIndexBuilder.build(from: filtered)
