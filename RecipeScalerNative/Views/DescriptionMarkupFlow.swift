@@ -156,6 +156,7 @@ struct DescriptionTimerTypeSheet: View {
                     }
                 }
             }
+            .appOpaqueGroupedListSurface()
             .localizedNavigationTitle("editor.mark-as-timer")
             .navigationBarTitleDisplayMode(.inline)
             .appListBodyTypography()
@@ -166,7 +167,7 @@ struct DescriptionTimerTypeSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .appOpaqueSheetPresentation(detents: [.medium])
     }
 }
 
@@ -199,6 +200,7 @@ struct DescriptionIngredientMarkupSheet: View {
                     }
                 }
             }
+            .appOpaqueGroupedListSurface()
             .localizedNavigationTitle("editor.mark-as-ingredient")
             .navigationBarTitleDisplayMode(.inline)
             .appListBodyTypography()
@@ -221,7 +223,7 @@ struct DescriptionIngredientMarkupSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .appOpaqueSheetPresentation(detents: [.medium, .large])
     }
 
     private func ingredientRow(_ ingredient: IngredientData) -> some View {
@@ -371,6 +373,7 @@ struct DescriptionTimerNodeFlowSheet: View {
                         .appBody()
                 }
             }
+            .appOpaqueGroupedListSurface()
             .localizedNavigationTitle("editor.mark-as-timer")
             .navigationBarTitleDisplayMode(.inline)
             .appListBodyTypography()
@@ -389,7 +392,7 @@ struct DescriptionTimerNodeFlowSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .appOpaqueSheetPresentation(detents: [.medium])
     }
 }
 
@@ -425,6 +428,7 @@ struct DescriptionIngredientNodeFlowSheet: View {
                     }
                 }
             }
+            .appOpaqueGroupedListSurface()
             .localizedNavigationTitle("editor.mark-as-ingredient")
             .navigationBarTitleDisplayMode(.inline)
             .appListBodyTypography()
@@ -446,7 +450,7 @@ struct DescriptionIngredientNodeFlowSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .appOpaqueSheetPresentation(detents: [.medium])
     }
 }
 

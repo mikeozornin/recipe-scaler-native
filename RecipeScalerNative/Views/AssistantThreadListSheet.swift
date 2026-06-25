@@ -35,6 +35,7 @@ struct AssistantThreadListSheet: View {
                 )
                 .accessibilityIdentifier(AccessibilityIdentifiers.assistantThreadPanel)
         }
+        .appOpaqueSheetPresentation(detents: [.medium, .large])
     }
 
     @ViewBuilder
@@ -45,6 +46,7 @@ struct AssistantThreadListSheet: View {
             }
         }
         .listStyle(.plain)
+        .appOpaqueListSurface()
         .listSectionSpacing(0)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {

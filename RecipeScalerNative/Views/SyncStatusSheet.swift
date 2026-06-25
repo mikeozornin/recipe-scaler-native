@@ -172,6 +172,7 @@ struct SyncStatusContent: View {
             }
         }
         .appListBodyTypography()
+        .appOpaqueGroupedListSurface()
     }
 
     @ViewBuilder
@@ -310,7 +311,6 @@ struct SyncStatusSheet: View {
             .localizedNavigationTitle("sync.status.title")
             .navigationBarTitleDisplayMode(.inline)
         }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
+        .appOpaqueSheetPresentation(detents: [.medium, .large])
     }
 }

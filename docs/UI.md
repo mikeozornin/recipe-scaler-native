@@ -80,6 +80,7 @@ AppChromeAppearance.systemActionColor     // Color   — .label на iOS 26+, ac
 - **Брендовые элементы** (`.borderedProminent` primary actions) остаются на `Color.accentColor` — это не системный chrome.
 - **Assistant FAB** — на iOS 26+ `.buttonStyle(.glassProminent)` (accent-tinted Liquid Glass, см. `AssistantFabStyle.swift`); на iOS < 26 сплошной `Color.accentColor` с тенью.
 - **Transient toast** (`TransientStatusBanner`) — на iOS 26+ `.glassEffect(.regular.tint(.green), in: .capsule)` (centered pill); на iOS < 26 flat green bar с тенью.
+- **Sheet chrome** — все `.sheet` в приложении **непрозрачные** через `AppSheetChrome` (`RecipeScalerNative/Utils/AppSheetChrome.swift`): `.appOpaqueSheetPresentation()` для grouped utility-sheet (шаринг, sync, коллекции, markup), `.appOpaqueSheetPresentationPlain()` для full-bleed (Assistant, Import, seed phrase, Safari), `.appOpaqueGroupedListSurface()` / `.appOpaqueListSurface()` для List/Form внутри. Намеренный Liquid Glass остаётся только у FAB и toast (см. выше).
 - **Никаких других `#available(iOS 26.0, *)`** для цвета кнопок в коде быть не должно — только в `AppChromeAppearance`.
 
 ### Keyboard toolbar

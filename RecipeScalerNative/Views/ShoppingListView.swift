@@ -509,13 +509,9 @@ private struct ShoppingListShareSheet: View {
                     .accessibilityIdentifier(AccessibilityIdentifiers.shoppingCopyAsTextButton)
                 }
             }
+            .appOpaqueGroupedListSurface()
             .localizedNavigationTitle("shopping.share-button")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "common.done")) { dismiss() }
-                }
-            }
             .task {
                 await loadSettings()
                 #if DEBUG
@@ -531,7 +527,7 @@ private struct ShoppingListShareSheet: View {
                 #endif
             }
         }
-        .presentationDetents([.medium, .large])
+        .appOpaqueSheetPresentation(detents: [.medium, .large])
     }
 
     private var shareToggleBinding: Binding<Bool> {

@@ -83,9 +83,11 @@ struct AccountView: View {
                 case .about:
                     InAppSafariView(url: PublicURLBuilder.aboutURL)
                         .ignoresSafeArea()
+                        .appOpaqueSheetPresentationPlain()
                 case .privacy:
                     InAppSafariView(url: PublicURLBuilder.privacyURL)
                         .ignoresSafeArea()
+                        .appOpaqueSheetPresentationPlain()
                 }
             }
             .confirmationDialog(
@@ -544,6 +546,7 @@ private struct AccountSeedPhraseSheet: View {
                     .font(AppTypography.body)
                 }
             }
+            .background(Color(.systemBackground))
             .localizedNavigationTitle("account.secret-phrase")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -557,6 +560,7 @@ private struct AccountSeedPhraseSheet: View {
                 await authenticate()
             }
         }
+        .appOpaqueSheetPresentationPlain()
     }
 
     @MainActor

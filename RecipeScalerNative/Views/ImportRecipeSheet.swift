@@ -97,6 +97,7 @@ struct ImportRecipeSheet: View {
             .accessibilityIdentifier(AccessibilityIdentifiers.importSheet)
             .localizedNavigationTitle("import.title")
             .appListBodyTypography()
+            .appOpaqueGroupedListSurface()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     if isProcessing, mode == .file {
@@ -143,6 +144,7 @@ struct ImportRecipeSheet: View {
                 importTask?.cancel()
             }
         }
+        .appOpaqueSheetPresentationPlain(detents: [.large])
     }
 
     // MARK: - Text mode

@@ -116,7 +116,6 @@ struct AppShellView: View {
                         postTransientStatus(message)
                     }
                 }
-                .presentationDetents([.large])
             }
         .onChange(of: showAssistant) { _, isOpen in
             assistantRecipeContext.isAssistantSheetOpen = isOpen

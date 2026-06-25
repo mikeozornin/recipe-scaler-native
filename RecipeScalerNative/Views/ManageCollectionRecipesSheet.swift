@@ -93,6 +93,7 @@ struct ManageCollectionRecipesSheet: View {
                 }
             }
             .listStyle(.plain)
+            .appOpaqueListSurface()
             .environment(\.defaultMinListRowHeight, 1)
             .searchable(text: $searchText, prompt: Text("search.recipes"))
             .navigationTitle(Text(verbatim: folderDisplayName))
@@ -124,6 +125,7 @@ struct ManageCollectionRecipesSheet: View {
                 }
             }
         }
+        .appOpaqueSheetPresentation()
     }
 
     // MARK: - Actions

@@ -133,15 +133,11 @@ private struct RecipeShareSheet: View {
                     }
                 }
             }
+            .appOpaqueGroupedListSurface()
             .localizedNavigationTitle("recipe.share")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("common.done") { dismiss() }
-                }
-            }
         }
-        .presentationDetents([.medium, .large])
+        .appOpaqueSheetPresentation(detents: [.medium, .large])
         .task { await loadSettings() }
     }
 

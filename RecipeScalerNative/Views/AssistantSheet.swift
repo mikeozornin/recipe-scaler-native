@@ -64,6 +64,7 @@ struct AssistantSheet: View {
                         .accessibilityIdentifier(AccessibilityIdentifiers.assistantOfflineFootnote)
                 }
             }
+            .background(Color(.systemBackground))
             .localizedNavigationTitle("assistant.title")
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
@@ -107,7 +108,6 @@ struct AssistantSheet: View {
                         Task { await deleteThread(deletedId) }
                     }
                 )
-                .presentationDetents([.medium, .large])
             }
             .errorAlert(title: "assistant.error-unavailable", message: $loadError)
             .task { await initialize() }
@@ -132,6 +132,7 @@ struct AssistantSheet: View {
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.assistantSheet)
         }
+        .appOpaqueSheetPresentationPlain()
     }
 
     // MARK: - Message list

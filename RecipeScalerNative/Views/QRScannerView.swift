@@ -60,6 +60,7 @@ struct QRScannerView: View {
                 }
             }
         }
+        .appOpaqueSheetPresentation(background: .black)
         .onAppear {
             setupError = nil
         }

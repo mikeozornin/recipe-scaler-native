@@ -57,11 +57,10 @@ struct EditIngredientNutritionSheet: View {
                     }
                 }
                 .appListBodyTypography()
-                .scrollContentBackground(.hidden)
+                .appOpaqueGroupedListSurface()
                 .contentMargins(.top, 0, for: .scrollContent)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(Color(.systemGroupedBackground))
             .localizedNavigationTitle("nutrition.ingredient.edit.title")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -95,8 +94,7 @@ struct EditIngredientNutritionSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
+        .appOpaqueSheetPresentation(detents: [.medium])
     }
 
     private var canFocusPrevious: Bool {

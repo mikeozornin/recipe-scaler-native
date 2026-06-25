@@ -50,7 +50,6 @@ struct AssistantComposer: View {
                     attachments: $attachments,
                     availableEntries: availableEntries
                 )
-                .presentationDetents([.medium, .large])
             }
             .onAppear {
                 voiceRecorder.onLimitReached = {
@@ -532,6 +531,7 @@ struct AssistantRecipePicker: View {
                         .accessibilityIdentifier("assistant_recipe_picker_row_\(entry.id)")
                     }
                     .listStyle(.plain)
+                    .appOpaqueListSurface()
                     .environment(\.defaultMinListRowHeight, 1)
                 }
             }
@@ -540,7 +540,9 @@ struct AssistantRecipePicker: View {
                 placement: .navigationBarDrawer(displayMode: .always),
                 prompt: Text("assistant.recipe-search-placeholder")
             )
+            .background(AppSheetChrome.groupedBackground)
         }
+        .appOpaqueSheetPresentation(detents: [.medium, .large])
     }
 
     private var attachRecipesIntro: some View {
