@@ -4,16 +4,16 @@ import SwiftUI
 ///
 /// Presented from swipe actions (collections) or the recipe detail menu.
 /// Shows all active collections with checkmarks for current membership;
-/// "Done" writes the full `folderIds` set in one transaction.
+/// membership is persisted when the sheet is dismissed (swipe or programmatic).
 struct CollectionAssignSheet: View {
     let recipeId: String
     let recipeName: String
 
     @Environment(YjsSyncService.self) private var syncService
-    @Environment(\.dismiss) private var dismiss
 
-    /// Local working copy of selected folder ids (committed on Done).
+    /// Local working copy of selected folder ids (committed on dismiss).
     @State private var selectedFolderIds: Set<String> = []
+    @State private var initialFolderIds: Set<String> = []
     @State private var isSaving = false
     @State private var showingError = false
     @State private var errorMessage = ""
@@ -27,49 +27,48 @@ struct CollectionAssignSheet: View {
         NavigationStack {
             Group {
                 let sortedFolders = RecipeFolder.sortedActive(syncService.folders)
-                if sortedFolders.isEmpty && !isCreatingNew {
-                    ContentUnavailableView {
-                        AppEmptyState.label("collections.assign-empty", symbol: "folder.badge.plus")
-                    }
-                } else {
-                    List {
-                        ForEach(sortedFolders, id: \.id) { folder in
-                            Button {
-                                toggleFolder(folder.id)
-                            } label: {
-                                HStack {
-                                    Text(FolderDisplayName.displayName(forStoredName: folder.name))
-                                        .appBody()
-                                        .foregroundColor(.primary)
-                                        .lineLimit(1)
-
-                                    Spacer()
-
-                                    if selectedFolderIds.contains(folder.id) {
-                                        AppSymbol.image("checkmark")
-                                            .foregroundColor(.accentColor)
-                                            .font(.system(size: 16, weight: .semibold))
-                                    }
-                                }
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
+                List {
+                    if sortedFolders.isEmpty && !isCreatingNew {
+                        ContentUnavailableView {
+                            AppEmptyState.label("collections.assign-empty", symbol: "folder.badge.plus")
                         }
-
-                        newCollectionRow
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
-                    .listStyle(.plain)
+
+                    ForEach(sortedFolders, id: \.id) { folder in
+                        Button {
+                            toggleFolder(folder.id)
+                        } label: {
+                            HStack {
+                                Text(FolderDisplayName.displayName(forStoredName: folder.name))
+                                    .appBody()
+                                    .foregroundColor(.primary)
+                                    .lineLimit(1)
+
+                                Spacer()
+
+                                if selectedFolderIds.contains(folder.id) {
+                                    AppSymbol.image("checkmark")
+                                        .foregroundColor(.accentColor)
+                                        .font(.system(size: 16, weight: .semibold))
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    newCollectionRow
                 }
+                .listStyle(.plain)
+                .appOpaqueListSurface()
             }
+            .background(AppSheetChrome.groupedBackground)
             .navigationTitle(Text(verbatim: Bundle.currentLocalizedString("collections.assign-title")))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "collections.done")) {
-                        Task { await saveAndDismiss() }
-                    }
-                    .disabled(isSaving)
-                }
                 if isCreatingNew && isNewFieldFocused {
                     ToolbarItemGroup(placement: .keyboard) {
                         Spacer()
@@ -91,7 +90,11 @@ struct CollectionAssignSheet: View {
             .onAppear {
                 loadCurrentMembership()
             }
+            .onDisappear {
+                Task { await persistMembershipIfNeeded() }
+            }
         }
+        .appOpaqueSheetPresentation()
     }
 
     // MARK: - New collection row
@@ -156,7 +159,9 @@ struct CollectionAssignSheet: View {
 
     private func loadCurrentMembership() {
         if let entry = syncService.collectionEntries.first(where: { $0.id == recipeId }) {
-            selectedFolderIds = Set(entry.folderIds)
+            let ids = Set(entry.folderIds)
+            selectedFolderIds = ids
+            initialFolderIds = ids
         }
     }
 
@@ -171,20 +176,18 @@ struct CollectionAssignSheet: View {
         #endif
     }
 
-    private func saveAndDismiss() async {
+    private func persistMembershipIfNeeded() async {
         guard !isSaving else { return }
+        guard selectedFolderIds != initialFolderIds else { return }
         isSaving = true
-
+        defer { isSaving = false }
         do {
             try await syncService.setRecipeFolders(
                 recipeId: recipeId,
                 folderIds: Array(selectedFolderIds)
             )
-            dismiss()
         } catch {
-            errorMessage = UserFacingAPIError.message(for: error)
-            showingError = true
-            isSaving = false
+            ShoppingFeedback.postStatus(UserFacingAPIError.message(for: error))
         }
     }
 
