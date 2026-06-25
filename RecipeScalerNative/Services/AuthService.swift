@@ -271,6 +271,10 @@ class AuthService {
         // Configure API client with user id
         apiClient.configure(userId: data.user.id)
 
+        if let featureAdoption = AppContainer.shared?.featureAdoption {
+            markFeatureInstalled(featureAdoptionStore: featureAdoption)
+        }
+
         return (userId: data.user.id, seedPhrase: data.seedPhrase, token: "")
     }
 
@@ -317,6 +321,10 @@ class AuthService {
         // Configure API client with user id
         apiClient.configure(userId: data.user.id)
 
+        if let featureAdoption = AppContainer.shared?.featureAdoption {
+            markFeatureInstalled(featureAdoptionStore: featureAdoption)
+        }
+
         return (userId: data.user.id, token: "")
     }
 
@@ -347,5 +355,32 @@ class AuthService {
     /// Retrieve the stored seed phrase from Keychain
     func getSeedPhrase() throws -> String {
         return try retrieveSeedPhraseFromKeychain()
+    }
+
+    // MARK: - Feature adoption (spec 038)
+
+    /// Records `installed_native_app` on first successful native-app auth on this
+    /// device. Idempotent via the `feature-adoption.installed-reported` UserDefaults
+    /// flag: once the POST succeeds, the flag is set and subsequent logins skip the
+    /// call entirely. On failure the flag stays unset and the next cold start retries.
+    ///
+    /// Called only from `registerAuto()` and `loginWithSeed(_:)` (first native login).
+    /// Deliberately NOT called from `restoreAuthenticationState()` — that is a same-device
+    /// session restore, not a new native-app sign-in.
+    func markFeatureInstalled(featureAdoptionStore: FeatureAdoptionStore) {
+        let reportedKey = "feature-adoption.installed-reported"
+        guard !UserDefaults.standard.bool(forKey: reportedKey) else { return }
+
+        featureAdoptionStore.markInstalledLocally()
+
+        Task { @MainActor [weak self] in
+            guard self != nil else { return }
+            do {
+                try await AccountAPI.markFeatureAdoption(FeatureAdoptionItem.installedNativeApp.rawValue)
+                UserDefaults.standard.set(true, forKey: reportedKey)
+            } catch {
+                // Leave the flag unset; retry on next launch / login.
+            }
+        }
     }
 }

@@ -16,6 +16,7 @@ struct AccountView: View {
     @Environment(YjsSyncService.self) private var syncService
     @Environment(RemindersSyncService.self) private var remindersService
     @Environment(AuthService.self) private var authService
+    @Environment(FeatureAdoptionStore.self) private var featureAdoptionStore
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Environment(\.locale) private var locale
@@ -101,7 +102,12 @@ struct AccountView: View {
                 Button(Bundle.currentLocalizedString("common.cancel"), role: .cancel) { }
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.accountRoot)
+            .refreshable {
+                await featureAdoptionStore.refresh()
+            }
             .task {
+                featureAdoptionStore.loadFromCache()
+                await featureAdoptionStore.refresh()
                 await viewModel.refresh(syncService: syncService)
                 appLanguage = .current
             }
@@ -109,6 +115,10 @@ struct AccountView: View {
                 Task { @MainActor in
                     viewModel.bind(syncService: syncService)
                 }
+            }
+            .onChange(of: isTelegramConnected) { wasConnected, isConnected in
+                guard !wasConnected, isConnected else { return }
+                Task { await featureAdoptionStore.refresh() }
             }
         }
     }
@@ -139,6 +149,19 @@ struct AccountView: View {
                 presentedSheet = .seed
             } label: {
                 Text("auth.login-with-another").appBody()
+            }
+
+            NavigationLink {
+                FeatureAdoptionDetailView()
+            } label: {
+                HStack {
+                    Text("account.feature-adoption.title")
+                        .appBody()
+                    Spacer()
+                    Text("\(featureAdoptionDoneCount) / \(FeatureAdoptionItem.allCases.count)")
+                        .appFootnote()
+                        .foregroundStyle(.secondary)
+                }
             }
         } header: {
             AppSectionHeader("account.section.account")
@@ -378,6 +401,13 @@ struct AccountView: View {
         }
         .appListSectionHeaderStyle()
     }
+
+    private var featureAdoptionDoneCount: Int {
+        FeatureAdoptionItem.allCases
+            .filter { featureAdoptionStore.value(for: $0) }
+            .count
+    }
+
 
     @ViewBuilder
     private var logExportSection: some View {

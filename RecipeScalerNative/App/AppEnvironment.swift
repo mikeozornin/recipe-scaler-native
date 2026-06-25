@@ -33,5 +33,6 @@ extension View {
             .environment(container.sync)
             .environment(container.reminders)
             .environment(container.spotlight)
+            .environment(container.featureAdoption)
     }
 }

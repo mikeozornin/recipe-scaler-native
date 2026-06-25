@@ -36,6 +36,44 @@ struct UserSettingsDTO: Decodable, Sendable {
     let nutritionEnabled: Bool?
 }
 
+/// Feature-adoption report (spec 038). All 8 keys are always present in the
+/// server payload; each is modeled as `Bool?` and treated as `false` when nil
+/// via `value(for:)`. Snake_case JSON keys map to camelCase Swift properties.
+struct FeatureAdoptionReportDTO: Decodable, Sendable {
+    let installedNativeApp: Bool?
+    let importedRecipe: Bool?
+    let createdRecipe: Bool?
+    let createdCollection: Bool?
+    let sharedRecipe: Bool?
+    let connectedTelegram: Bool?
+    let connectedMcpAssistant: Bool?
+    let sentAssistantMessage: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case installedNativeApp = "installed_native_app"
+        case importedRecipe = "imported_recipe"
+        case createdRecipe = "created_recipe"
+        case createdCollection = "created_collection"
+        case sharedRecipe = "shared_recipe"
+        case connectedTelegram = "connected_telegram"
+        case connectedMcpAssistant = "connected_mcp_assistant"
+        case sentAssistantMessage = "sent_assistant_message"
+    }
+
+    func value(for item: FeatureAdoptionItem) -> Bool {
+        switch item {
+        case .installedNativeApp: return installedNativeApp ?? false
+        case .importedRecipe: return importedRecipe ?? false
+        case .createdRecipe: return createdRecipe ?? false
+        case .createdCollection: return createdCollection ?? false
+        case .sharedRecipe: return sharedRecipe ?? false
+        case .connectedTelegram: return connectedTelegram ?? false
+        case .connectedMcpAssistant: return connectedMcpAssistant ?? false
+        case .sentAssistantMessage: return sentAssistantMessage ?? false
+        }
+    }
+}
+
 enum PublicShareMode: String, CaseIterable, Identifiable, Hashable, Sendable {
     case all
     case with_images_and_steps
@@ -163,6 +201,26 @@ enum AccountAPI {
             path: "/api/auth/logout",
             method: "POST",
             body: Body(user_id: userId, device_id: deviceId)
+        )
+    }
+
+    // MARK: - Feature adoption (spec 038)
+
+    static func fetchFeatureAdoption() async throws -> FeatureAdoptionReportDTO {
+        let response: APIResponse<FeatureAdoptionReportDTO> = try await APIClient.shared.requestJSON(
+            path: "/api/users/me/feature-adoption"
+        )
+        return try APIClient.unwrapResponse(response, fallback: .accountProfileLoadFailed)
+    }
+
+    /// Idempotent: server applies `INSERT ... ON CONFLICT DO NOTHING`.
+    static func markFeatureAdoption(_ feature: String) async throws {
+        struct Body: Encodable { let feature: String }
+        struct MarkResponse: Decodable { let recorded: Bool? }
+        let _: APIResponse<MarkResponse> = try await APIClient.shared.requestJSON(
+            path: "/api/users/me/feature-adoption",
+            method: "POST",
+            body: Body(feature: feature)
         )
     }
 }

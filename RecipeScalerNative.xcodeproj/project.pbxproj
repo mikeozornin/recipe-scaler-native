@@ -10,6 +10,9 @@
 		0089FE21D37A4D84BF4355E3 /* ShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B8E4D1A7552D487F80885A2F /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		031287A80FDB41308E31AE3E /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7585E91075F045FF9D2C26D1 /* ShareViewController.swift */; };
 		0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C45A57EDAC270C757266F8FA /* AuthService.swift */; };
+		0C742EE9B3563B691A69ED1C /* FeatureAdoptionItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0593B743DA50B2CB0DFF7 /* FeatureAdoptionItem.swift */; };
+		67A6550B36933C92D59DB2B9 /* FeatureAdoptionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAA4DF54D6AD9C9C26DC444 /* FeatureAdoptionStore.swift */; };
+		95DD7E548A202A1047110394 /* FeatureAdoptionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DDA10FB70EB04235CF1A47E /* FeatureAdoptionDetailView.swift */; };
 		082B9A25B01040469E077B58 /* SharedAuthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F696F3421504AD3A7836B0C /* SharedAuthStore.swift */; };
 		0952E30F55AC49E7BCCDEE93 /* TimerLockScreenLiveActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B83AB2645384EAFBD1AD4A3 /* TimerLockScreenLiveActivityView.swift */; };
 		A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */; };
@@ -624,6 +627,9 @@
 		A029031000190 /* RecipeDescriptionXmlFragmentWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDescriptionXmlFragmentWriter.swift; sourceTree = "<group>"; };
 		A029031000201 /* NativeExportImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeExportImportService.swift; sourceTree = "<group>"; };
 		A029031000202 /* DataManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManagementView.swift; sourceTree = "<group>"; };
+		6DDA10FB70EB04235CF1A47E /* FeatureAdoptionDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionDetailView.swift; sourceTree = "<group>"; };
+		D5C0593B743DA50B2CB0DFF7 /* FeatureAdoptionItem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionItem.swift; sourceTree = "<group>"; };
+		FAAA4DF54D6AD9C9C26DC444 /* FeatureAdoptionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionStore.swift; sourceTree = "<group>"; };
 		A029031000203 /* FractionProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FractionProgressView.swift; sourceTree = "<group>"; };
 		A029031000301 /* NativeFormatVersionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatVersionTests.swift; sourceTree = "<group>"; };
 		A029031000302 /* NativeFormatValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatValidatorTests.swift; sourceTree = "<group>"; };
@@ -1088,6 +1094,7 @@
 				E5F60718293A4B7017DF9B12 /* DiscoverRootView.swift */,
 				E5F60718293A4B701A1B2001 /* Discover */,
 				E5F60718293A4B70344FA5B3 /* AccountView.swift */,
+				6DDA10FB70EB04235CF1A47E /* FeatureAdoptionDetailView.swift */,
 				A029031000202 /* DataManagementView.swift */,
 				A029031000203 /* FractionProgressView.swift */,
 				E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */,
@@ -1141,6 +1148,7 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F60718293A4B5C /* UserIdFormatter.swift */,
+				D5C0593B743DA50B2CB0DFF7 /* FeatureAdoptionItem.swift */,
 				11665252A14BBEBAF0D694C4 /* RecipeTimer.swift */,
 				C011ECB500000005 /* RecipesRoute.swift */,
 				63C3E85E6495DB975241B781 /* YDoc */,
@@ -1581,6 +1589,7 @@
 				E5F60718293A4B7097235780 /* RecipeImageUploadAPI.swift */,
 				E5F60718293A4B7035E279C2 /* SharingAPI.swift */,
 				E5F60718293A4B70093D4CC7 /* AccountAPI.swift */,
+				FAAA4DF54D6AD9C9C26DC444 /* FeatureAdoptionStore.swift */,
 				E5F60718293A4B70A0E4855E /* AssistantAPI.swift */,
 				E5LLMPARSE293A4B70100001 /* RecipeLLMParseAPI.swift */,
 				A5VOC02293A4B7010000002 /* AssistantVoiceRecorder.swift */,
@@ -2016,6 +2025,8 @@
 				A1TYPOG1A2B3C4D5E6F7080902 /* AppTypography.swift in Sources */,
 				E5F60718293A4B70000A003 /* AppSymbol.swift in Sources */,
 				0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */,
+				0C742EE9B3563B691A69ED1C /* FeatureAdoptionItem.swift in Sources */,
+				67A6550B36933C92D59DB2B9 /* FeatureAdoptionStore.swift in Sources */,
 				4CE1EBBF8B610A4B091090FF /* AuthView.swift in Sources */,
 				72BCE454FF7ECB782A54D4ED /* ContentView.swift in Sources */,
 				39CBF56DFACE248C54B1D988 /* ImageCacheService.swift in Sources */,
@@ -2178,6 +2189,7 @@
 				E5F60718293A4B708BB3E294 /* DiscoverRecipeCard.swift in Sources */,
 				E5F60718293A4B70A1B2C3D /* RecipeReader.swift in Sources */,
 				E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */,
+				95DD7E548A202A1047110394 /* FeatureAdoptionDetailView.swift in Sources */,
 				E5F60718293A4B7061726B18 /* TelegramConnectionView.swift in Sources */,
 				E5F60718293A4B7010A27A52 /* AssistantSheet.swift in Sources */,
 				A5TH018293A4B7010000001 /* AssistantThreadListSheet.swift in Sources */,

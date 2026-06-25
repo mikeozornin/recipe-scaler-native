@@ -224,7 +224,20 @@ final class LocalizationConsistencyTests: XCTestCase {
             "telegram.failed-to-disconnect",
             "assistant.message.empty",
             "assistant.message.too-long",
-            "assistant.stream.http-error"
+            "assistant.stream.http-error",
+            // MARK: Spec 038 — feature adoption section
+            "account.feature-adoption.title",
+            "account.feature-adoption.progress %d %d",
+            "account.feature-adoption.item.installed_native_app",
+            "account.feature-adoption.item.imported_recipe",
+            "account.feature-adoption.item.created_recipe",
+            "account.feature-adoption.item.created_collection",
+            "account.feature-adoption.item.shared_recipe",
+            "account.feature-adoption.item.connected_telegram",
+            "account.feature-adoption.item.connected_mcp_assistant",
+            "account.feature-adoption.item.sent_assistant_message",
+            "account.feature-adoption.state.done",
+            "account.feature-adoption.state.pending"
         ]
 
         for lang in ["en", "ru"] {

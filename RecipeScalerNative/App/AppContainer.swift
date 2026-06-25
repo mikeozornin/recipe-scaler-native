@@ -63,6 +63,10 @@ final class AppContainer {
     let reminders: RemindersSyncService
     let spotlight: SpotlightIndexer
 
+    // MARK: - Feature adoption (spec 038)
+
+    let featureAdoption: FeatureAdoptionStore
+
     /// Holds the cyclic `TimerSyncService.sendTimerEvent ↔ YjsSyncService.emitTimerEvent`
     /// callback so neither service retains the other directly.
     private let timerEventBridge: TimerEventBridge
@@ -134,6 +138,10 @@ final class AppContainer {
         self.reminders = RemindersSyncService(mapStore: mapStore)
         self.spotlight = SpotlightIndexer(syncService: sync)
 
+        // Feature adoption store (spec 038). Cache is loaded lazily in
+        // `bootstrap(userId:)` so the section renders instantly on first appear.
+        self.featureAdoption = FeatureAdoptionStore()
+
         // Bridge the cyclic callback
         let bridge = TimerEventBridge()
         bridge.install(sync: sync, timerSync: timerSync)
@@ -178,6 +186,10 @@ final class AppContainer {
 
         let isSameUser = bootstrappedUserId == userId
         bootstrappedUserId = userId
+
+        // 0. Feature-adoption cache (spec 038). Synchronous read so the section
+        //    renders from cache before any network resolves on this session.
+        featureAdoption.loadFromCache()
 
         // 1. Configure APIClient (formerly `ContentView.init:45` + `YjsSyncService.start:867`).
         APIClient.shared.configure(userId: userId)

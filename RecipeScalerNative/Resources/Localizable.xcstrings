@@ -664,6 +664,210 @@
         }
       }
     },
+    "account.feature-adoption.item.created_collection": {
+      "extractionState": "translated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created a collection"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Создана коллекция"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.item.created_recipe": {
+      "extractionState": "translated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created a recipe"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Создан рецепт"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.item.connected_mcp_assistant": {
+      "extractionState": "translated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected external assistant (MCP)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключён внешний ассистент (MCP)"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.item.connected_telegram": {
+      "extractionState": "translated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected Telegram"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключён Telegram"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.item.imported_recipe": {
+      "extractionState": "translated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported a recipe"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Импортирован рецепт"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.item.installed_native_app": {
+      "extractionState": "translated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed the app"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установлено приложение"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.item.sent_assistant_message": {
+      "extractionState": "translated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messaged the assistant"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Написано ассистенту"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.item.shared_recipe": {
+      "extractionState": "translated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shared a recipe"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пошарен рецепт"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.progress %d %d": {
+      "extractionState": "translated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d of %2$d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d из %2$d"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.state.done": {
+      "extractionState": "translated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выполнено"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.state.pending": {
+      "extractionState": "translated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не выполнено"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.title": {
+      "extractionState": "translated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How you use Recipe Scaler"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Насколько вы используете Recipe Scaler"
+          }
+        }
+      }
+    },
     "account.language.en": {
       "extractionState": "stale",
       "localizations": {
