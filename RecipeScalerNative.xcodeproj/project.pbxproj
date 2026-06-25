@@ -311,6 +311,7 @@
 		E5F60718293A4B704B61748D /* DiscoverAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7011DA2DE4 /* DiscoverAPI.swift */; };
 		E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */; };
 		E5F60718293A4B7055FFBBCC /* DocumentManager+ShoppingList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */; };
+		E5F60718293A4B70443E17D7 /* ShoppingListReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B702F0A2841 /* ShoppingListReader.swift */; };
 		RYJC0DE1001001001001001A001 /* RecipeYjsCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = RYJC0DE1001001001001001A002 /* RecipeYjsCodec.swift */; };
 		RYJW0DE1001001001001001A001 /* RecipeYjsWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = RYJW0DE1001001001001001A002 /* RecipeYjsWriter.swift */; };
 		E5F60718293A4B705777B4EE /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A5EF6DCE /* AppShellView.swift */; };
@@ -775,6 +776,7 @@
 		E5F60718293A4B7001851F51 /* AssistantSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSheet.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7004E397E0 /* DescriptionTimerStartPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionTimerStartPopover.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DocumentManager+ShoppingList.swift"; sourceTree = "<group>"; };
+		E5F60718293A4B702F0A2841 /* ShoppingListReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListReader.swift; sourceTree = "<group>"; };
 		RYJC0DE1001001001001001A002 /* RecipeYjsCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeYjsCodec.swift; sourceTree = "<group>"; };
 		RYJW0DE1001001001001001A002 /* RecipeYjsWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeYjsWriter.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70093D4CC7 /* AccountAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountAPI.swift; sourceTree = "<group>"; };
@@ -1442,6 +1444,7 @@
 				3D966868028D4B6CFD6DE498 /* DocumentManager.swift */,
 				RYJC0DE1001001001001001A002 /* RecipeYjsCodec.swift */,
 				RYJW0DE1001001001001001A002 /* RecipeYjsWriter.swift */,
+				E5F60718293A4B70D2E25300 /* Readers */,
 				E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */,
 				7485486C3DAE972B94C9AE9B /* ConnectionState.swift */,
 				CC1101AABB000200000001 /* SyncEventHandler.swift */,
@@ -1458,6 +1461,14 @@
 				F1A2B3C4D5E60718293A4B03 /* YjsMergeHelper.swift */,
 			);
 			path = YjsSync;
+			sourceTree = "<group>";
+		};
+		E5F60718293A4B70D2E25300 /* Readers */ = {
+			isa = PBXGroup;
+			children = (
+				E5F60718293A4B702F0A2841 /* ShoppingListReader.swift */,
+			);
+			path = Readers;
 			sourceTree = "<group>";
 		};
 		E5F60718293A4B7000000005 /* Utils */ = {
@@ -2136,6 +2147,7 @@
 				E5F60718293A4B70F4B04DF3 /* PublicURLBuilder.swift in Sources */,
 				E5F60718293A4B70267CA7BD /* ShoppingListData.swift in Sources */,
 				E5F60718293A4B7055FFBBCC /* DocumentManager+ShoppingList.swift in Sources */,
+				E5F60718293A4B70443E17D7 /* ShoppingListReader.swift in Sources */,
 				RYJC0DE1001001001001001A001 /* RecipeYjsCodec.swift in Sources */,
 				RYJW0DE1001001001001001A001 /* RecipeYjsWriter.swift in Sources */,
 				E5F60718293A4B704B61748D /* DiscoverAPI.swift in Sources */,
