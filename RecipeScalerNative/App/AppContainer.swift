@@ -191,6 +191,18 @@ final class AppContainer {
         //    renders from cache before any network resolves on this session.
         featureAdoption.loadFromCache()
 
+        // 0a. Keep AuthService in sync with the active session. On simulator
+        //     DEBUG builds, `ContentView.effectiveUserId` returns a hardcoded
+        //     `debugUserId` and feeds it directly to `bootstrap(userId:)`,
+        //     bypassing the Keychain-backed `AuthService` path. Without this
+        //     reconciliation, `AuthService.shared.userId` stays `nil` and any
+        //     code that reads it (e.g. `AccountSettingsViewModel.refresh`)
+        //     early-returns, so the Account screen never loads sharing/profile.
+        if auth.userId == nil {
+            auth.userId = userId
+            auth.isAuthenticated = true
+        }
+
         // 1. Configure APIClient (formerly `ContentView.init:45` + `YjsSyncService.start:867`).
         APIClient.shared.configure(userId: userId)
 
