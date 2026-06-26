@@ -1360,19 +1360,6 @@ final class YjsSyncService {
             }
         }
 
-        client.on("sync_error") { [weak self] data, _ in
-            Task { @MainActor in
-                guard let self, self.isCurrentSocketSession(sessionId) else { return }
-                let payload = data.first as? [String: Any]
-                let message = payload?["error"] as? String ?? "Unknown sync error"
-                let recipeId = payload?["recipeId"] as? String
-                self.logger.error("sync_error: \(message), recipeId: \(recipeId ?? "none")")
-                if recipeId == nil || recipeId == "collection" {
-                    self.hasRequestedCollectionLoad = false
-                }
-            }
-        }
-
         client.on(clientEvent: .error) { [weak self] data, _ in
             Task { @MainActor in
                 guard let self, self.isCurrentSocketSession(sessionId) else { return }
