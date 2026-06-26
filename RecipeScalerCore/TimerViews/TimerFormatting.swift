@@ -1,18 +1,19 @@
 //
-//  WidgetTimerFormatting.swift
-//  HomeWidgetExtension
+//  TimerFormatting.swift
+//  RecipeScalerCore
 //
-//  Spec 030 — countdown label formatting for rings and linear rows.
+//  Spec 039 — countdown label formatting shared between watch and other
+//  non-widget surfaces. Platform-agnostic copy of `WidgetTimerFormatting`
+//  (which remains in `HomeWidgetExtension` for the widget only).
 //
 
 import Foundation
 import CoreGraphics
-import RecipeScalerCore
 
-enum WidgetTimerFormatting {
+public enum TimerFormatting {
     /// Compact label: `4m`, `45m`, `35s`, `9h` — lowercase unit suffix, no spaces.
-    /// Hours floor to whole hours (`9h45m` → `9h`) so labels fit in rings.
-    static func compactRemaining(seconds: Int) -> String {
+    /// Hours floor to whole hours (`9h45m` → `9h`) so labels fit in rings/rows.
+    public static func compactRemaining(seconds: Int) -> String {
         let negative = seconds < 0
         let absSeconds = Swift.abs(seconds)
         let hours = absSeconds / 3600
@@ -31,7 +32,7 @@ enum WidgetTimerFormatting {
     }
 
     /// Paused (and linear-row static) clock: `4:05`, `1:02:03`.
-    static func shortClock(_ seconds: Int) -> String {
+    public static func shortClock(_ seconds: Int) -> String {
         let absSeconds = Swift.abs(seconds)
         let hours = absSeconds / 3600
         let minutes = (absSeconds % 3600) / 60
@@ -44,14 +45,15 @@ enum WidgetTimerFormatting {
     }
 
     /// Seconds left before switching from minute labels (`Nm`) to second labels (`Ns`).
-    static let liveCountdownThresholdSeconds = 60
+    public static let liveCountdownThresholdSeconds = 60
 }
 
 extension TimerSnapshot {
-    /// Elapsed / total, clamped to `[0, 1]`.
-    ///
-    /// Spec 030 originally defined this here; spec 039 moved it to
-    /// `RecipeScalerCore/TimerViews/TimerFormatting.swift` so the watch app
-    /// can share it. This widget-side stub has been removed — callers use the
-    /// Core extension via `import RecipeScalerCore`.
+    /// Elapsed / total, clamped to `[0, 1]`. Used to drive progress bars and arcs.
+    public func progressFraction(now: Date) -> CGFloat {
+        guard totalDurationSeconds > 0 else { return 0 }
+        let remaining = TimeInterval(remainingSeconds(now: now))
+        let elapsed = totalDurationSeconds - remaining
+        return CGFloat(min(max(elapsed / totalDurationSeconds, 0), 1))
+    }
 }

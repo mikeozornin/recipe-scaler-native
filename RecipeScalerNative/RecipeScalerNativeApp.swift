@@ -24,6 +24,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         AppLog.error(.push, "apns_register_failed", data: ["error": error.localizedDescription])
     }
 
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // Spec 039 — activate WCSession so AuthService can publish userId to
+        // a paired Apple Watch. No-op when WCSession is unsupported (iPad,
+        // Simulator without watch).
+        WatchCredentialsBridge.shared.activate()
+        return true
+    }
+
     // MARK: - Home Screen Quick Actions
 
     func application(

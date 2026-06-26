@@ -1,3 +1,4 @@
+#if !os(watchOS)
 import Foundation
 import ZIPFoundation
 
@@ -51,3 +52,4 @@ public enum NativeFormatDetector {
         return data
     }
 }
+#endif

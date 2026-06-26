@@ -28,6 +28,32 @@
 		179F96A874E4A191DFC84958 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 0A5A136ADBF870BFBD1C3902 /* Localizable.xcstrings */; };
 		1A53619D3D6AF4AF6CD2CDE8 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 397972E3080EA1238A19CE9C /* KeychainAccess */; };
 		1A94422F09EA4C03BD017D23 /* APIClient+Requests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41F1A2877817482DAC0FE2DC /* APIClient+Requests.swift */; };
+		BEEE9D690F324305880057C6 /* ServerActiveTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72C0961D8B504667B05C4AB4 /* ServerActiveTimer.swift */; };
+		ED9FFFFC0B754AD688770558 /* RecipeScalerNativeWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B27909779534A788A97A54D /* RecipeScalerNativeWatchApp.swift */; };
+		9BD6EC5F84CE4ED8B03516B8 /* WatchCredentialsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DCF8C86EAE34546B5F18B38 /* WatchCredentialsStore.swift */; };
+		14A5C50E38B64318A3F88B55 /* WatchCredentialsBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46BF5AD0548A4829A7C387F9 /* WatchCredentialsBridge.swift */; };
+		2E78895F06BE488B972621DF /* WatchTimerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEF0BA379A0541E7A602633D /* WatchTimerService.swift */; };
+		11F36940A7114E969A0F066F /* WatchTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C8EF72AC8C4D5B906502B7 /* WatchTimer.swift */; };
+		4E83476823C74D84AEB17BEA /* WatchHaptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F80D392681406AA341801C /* WatchHaptics.swift */; };
+		8066F637AAB1476EBAB96224 /* WatchTimerLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 321225950E8643E9A02C4CA6 /* WatchTimerLayout.swift */; };
+		7794A6B8D8F443B5B98FC046 /* TimerListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E839A2DA9F0412BB2AD9538 /* TimerListViewModel.swift */; };
+		126EE49222CD4A93BE7F127C /* TimerListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDD0E475D09241E9BE80A18E /* TimerListView.swift */; };
+		C0B5C7F0D6AE48A4AFA52C5A /* TimerRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E905C3C326440BBA62742C /* TimerRow.swift */; };
+		960FBC69B3B84454A444F025 /* SettingsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB815A7AAADF4189BC529973 /* SettingsRow.swift */; };
+		4FBE77ED005346C1B55E4485 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE37FE421F74BCDAC651EE4 /* EmptyStateView.swift */; };
+		E677325CF8FA4370A2B7EB6D /* ErrorStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6D843ADE13401381B6AFA4 /* ErrorStateView.swift */; };
+		707D54FE171149CA97F0B654 /* NotAuthorizedStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F07333AE4345FD8D008AA4 /* NotAuthorizedStateView.swift */; };
+		3C55EF45B74C4F359BB7ED21 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B4344307EF74BA0948DA3DD /* Assets.xcassets */; };
+		9F90E078686C4EFF84167581 /* MartianGrotesk-NrLt.otf in Resources */ = {isa = PBXBuildFile; fileRef = EB452B44E6C61233D3482133 /* MartianGrotesk-NrLt.otf */; };
+		711E81C4539A491DB7D14D4A /* MartianGrotesk-NrMd.otf in Resources */ = {isa = PBXBuildFile; fileRef = FEA658D7E63AC1DAEBDA6361 /* MartianGrotesk-NrMd.otf */; };
+		34DCAA1DDD7D475C87F33F4F /* MartianMono-NrLt.otf in Resources */ = {isa = PBXBuildFile; fileRef = DE1ABB28709A39ED21AF2C28 /* MartianMono-NrLt.otf */; };
+		1D624A656C3A4FAF9496BDB0 /* RecipeScalerNativeWatch.app in Embed Watch App */ = {isa = PBXBuildFile; fileRef = 8F19F53FEC2043319894598C /* RecipeScalerNativeWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersCopy,); }; };
+		99AF3DDD4E7F480FB1B3833B /* RecipeScalerCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E05920822F344D9691E82401 /* RecipeScalerCore.framework */; };
+		896F51C011674A728B2F1433 /* WatchCredentialsBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A052C8D8B8477FA14D812A /* WatchCredentialsBridge.swift */; };
+		8787C480EC0449AAB2726A30 /* TimerPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26FFE4B96B1A4F1BA8AD1B65 /* TimerPalette.swift */; };
+		B9C279C5F9FD448CBA00CAE1 /* TimerFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C61457EA0644D19B8FF2A8A /* TimerFormatting.swift */; };
+		BF935BE1E76D49118FA3FB7E /* TimerFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C081AD2E6914BC595AE2E3A /* TimerFonts.swift */; };
+		0B14CB3FC8C14335BD2D7365 /* TimerLinearRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 887BA57C2D824ACEB1B2F6AB /* TimerLinearRow.swift */; };
 		1BAEE2C386A5454CB68D9C8B /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 922F28300880430B97A0348C /* APIClient.swift */; };
 		2104E1D88FB54554B80BD761 /* TimerLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 535668B361594581A4C5E026 /* TimerLiveActivityBundle.swift */; };
 		2D50E94419BB114AE83F8C41 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3297FDC9814D7043F3A05E04 /* Database.swift */; };
@@ -436,6 +462,20 @@
 			remoteGlobalIDString = C04EC12C7971431D922B6085;
 			remoteInfo = RecipeScalerCore;
 		};
+		BC92559AB7234CD1A7538293 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5EE18DEE47E00A9648AA02B9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C04EC12C7971431D922B6085;
+			remoteInfo = RecipeScalerCore;
+		};
+		7AE4CDFA8986424BACC7E3ED /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5EE18DEE47E00A9648AA02B9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 866BA601812C4838B9F36F4A;
+			remoteInfo = RecipeScalerNativeWatch;
+		};
 		9300E82E04EF43A2A1261099 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 5EE18DEE47E00A9648AA02B9 /* Project object */;
@@ -498,6 +538,17 @@
 				71CAB2BC8DEAA67F922BBE3C /* HomeWidgetExtension.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		63B9A08D5525466B9A9458A0 /* Embed Watch App */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				1D624A656C3A4FAF9496BDB0 /* RecipeScalerNativeWatch.app in Embed Watch App */,
+			);
+			name = "Embed Watch App";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -583,6 +634,30 @@
 		90975ECC1E95466C9201BFC9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		918F51E10FCE4C23134D68CE /* YrsDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YrsDocument.swift; sourceTree = "<group>"; };
 		922F28300880430B97A0348C /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/APIClient.swift; sourceTree = "<group>"; };
+		72C0961D8B504667B05C4AB4 /* ServerActiveTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/ServerActiveTimer.swift; sourceTree = "<group>"; };
+		26FFE4B96B1A4F1BA8AD1B65 /* TimerPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPalette.swift; sourceTree = "<group>"; };
+		8C61457EA0644D19B8FF2A8A /* TimerFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerFormatting.swift; sourceTree = "<group>"; };
+		7C081AD2E6914BC595AE2E3A /* TimerFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerFonts.swift; sourceTree = "<group>"; };
+		887BA57C2D824ACEB1B2F6AB /* TimerLinearRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLinearRow.swift; sourceTree = "<group>"; };
+		8B27909779534A788A97A54D /* RecipeScalerNativeWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "App/RecipeScalerNativeWatchApp.swift"; sourceTree = "<group>"; };
+		1DCF8C86EAE34546B5F18B38 /* WatchCredentialsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/WatchCredentialsStore.swift"; sourceTree = "<group>"; };
+		46BF5AD0548A4829A7C387F9 /* WatchCredentialsBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/WatchCredentialsBridge.swift"; sourceTree = "<group>"; };
+		AEF0BA379A0541E7A602633D /* WatchTimerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/WatchTimerService.swift"; sourceTree = "<group>"; };
+		C9C8EF72AC8C4D5B906502B7 /* WatchTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/WatchTimer.swift"; sourceTree = "<group>"; };
+		14F80D392681406AA341801C /* WatchHaptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Haptics/WatchHaptics.swift"; sourceTree = "<group>"; };
+		321225950E8643E9A02C4CA6 /* WatchTimerLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/WatchTimerLayout.swift"; sourceTree = "<group>"; };
+		5E839A2DA9F0412BB2AD9538 /* TimerListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/TimerListViewModel.swift"; sourceTree = "<group>"; };
+		DDD0E475D09241E9BE80A18E /* TimerListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/TimerListView.swift"; sourceTree = "<group>"; };
+		A3E905C3C326440BBA62742C /* TimerRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/TimerRow.swift"; sourceTree = "<group>"; };
+		FB815A7AAADF4189BC529973 /* SettingsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/SettingsRow.swift"; sourceTree = "<group>"; };
+		0DE37FE421F74BCDAC651EE4 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/EmptyStateView.swift"; sourceTree = "<group>"; };
+		BE6D843ADE13401381B6AFA4 /* ErrorStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/ErrorStateView.swift"; sourceTree = "<group>"; };
+		48F07333AE4345FD8D008AA4 /* NotAuthorizedStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/NotAuthorizedStateView.swift"; sourceTree = "<group>"; };
+		7B4344307EF74BA0948DA3DD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
+		29C851CBAB4D499DA084A16E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
+		C59FBE94D53A4693B33702FD /* RecipeScalerNativeWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "RecipeScalerNativeWatch.entitlements"; sourceTree = "<group>"; };
+		8F19F53FEC2043319894598C /* RecipeScalerNativeWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RecipeScalerNativeWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A0A052C8D8B8477FA14D812A /* WatchCredentialsBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCredentialsBridge.swift; sourceTree = "<group>"; };
 		94F6EEB0522CF5E6241A73B1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		95C3A04549F6100B5EE76690 /* AppGroup.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
 		96ECDC1C61704BD8AF111FBD /* SpotlightIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexer.swift; sourceTree = "<group>"; };
@@ -1040,6 +1115,42 @@
 			path = Snapshots;
 			sourceTree = "<group>";
 		};
+		C8F000A9193A47F3955634E8 /* TimerViews */ = {
+			isa = PBXGroup;
+			children = (
+				26FFE4B96B1A4F1BA8AD1B65 /* TimerPalette.swift */,
+				8C61457EA0644D19B8FF2A8A /* TimerFormatting.swift */,
+				7C081AD2E6914BC595AE2E3A /* TimerFonts.swift */,
+				887BA57C2D824ACEB1B2F6AB /* TimerLinearRow.swift */,
+			);
+			name = TimerViews;
+			path = TimerViews;
+			sourceTree = "<group>";
+		};
+		E245E5A3884B427285CDAB7E /* RecipeScalerNativeWatch */ = {
+			isa = PBXGroup;
+			children = (
+				8B27909779534A788A97A54D /* RecipeScalerNativeWatchApp.swift */,
+				1DCF8C86EAE34546B5F18B38 /* WatchCredentialsStore.swift */,
+				46BF5AD0548A4829A7C387F9 /* WatchCredentialsBridge.swift */,
+				AEF0BA379A0541E7A602633D /* WatchTimerService.swift */,
+				C9C8EF72AC8C4D5B906502B7 /* WatchTimer.swift */,
+				14F80D392681406AA341801C /* WatchHaptics.swift */,
+				321225950E8643E9A02C4CA6 /* WatchTimerLayout.swift */,
+				5E839A2DA9F0412BB2AD9538 /* TimerListViewModel.swift */,
+				DDD0E475D09241E9BE80A18E /* TimerListView.swift */,
+				A3E905C3C326440BBA62742C /* TimerRow.swift */,
+				FB815A7AAADF4189BC529973 /* SettingsRow.swift */,
+				0DE37FE421F74BCDAC651EE4 /* EmptyStateView.swift */,
+				BE6D843ADE13401381B6AFA4 /* ErrorStateView.swift */,
+				48F07333AE4345FD8D008AA4 /* NotAuthorizedStateView.swift */,
+				7B4344307EF74BA0948DA3DD /* Assets.xcassets */,
+				29C851CBAB4D499DA084A16E /* Info.plist */,
+				C59FBE94D53A4693B33702FD /* RecipeScalerNativeWatch.entitlements */,
+			);
+			path = RecipeScalerNativeWatch;
+			sourceTree = "<group>";
+		};
 		297DDB7C260341539E77D9EE /* TimerLiveActivityExtension */ = {
 			isa = PBXGroup;
 			children = (
@@ -1141,6 +1252,7 @@
 				EK00010001BB000100EK0001 /* EventKit.framework */,
 				E66FBCE10CA16B369DFE2AB4 /* Frameworks */,
 				766D6AA5A3693383A480D8EB /* HomeWidgetExtension */,
+				E245E5A3884B427285CDAB7E /* RecipeScalerNativeWatch */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1246,6 +1358,7 @@
 				D9E468FAE2F74B2390CE683C /* TimerLiveActivityExtension.appex */,
 				FBED86F57850D8012BF9D4BD /* RecipeScalerNativeTests.xctest */,
 				AB5158806FFCC3EBE0204F87 /* HomeWidgetExtension.appex */,
+				8F19F53FEC2043319894598C /* RecipeScalerNativeWatch.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1258,6 +1371,7 @@
 				E3CBCE9817864C1C8B333764 /* Config.swift */,
 				922F28300880430B97A0348C /* APIClient.swift */,
 				41F1A2877817482DAC0FE2DC /* APIClient+Requests.swift */,
+				72C0961D8B504667B05C4AB4 /* ServerActiveTimer.swift */,
 				69F9BFE990A641C6A64D4CFC /* ServerErrorCode.swift */,
 				DA95C7943B584B11A547EB85 /* RecipeImportAPI.swift */,
 				D24E09F4CE9D4C34852A98AF /* ImportContentClassifier.swift */,
@@ -1274,6 +1388,7 @@
 				6A46C39B025B41C69FD12A6A /* ImportErrorLocalizer.swift */,
 				B723ECE01A3D4E2F85D856AC /* Shared.xcstrings */,
 				2957EAE3186567297DECD2F3 /* Snapshots */,
+				C8F000A9193A47F3955634E8 /* TimerViews */,
 				95C3A04549F6100B5EE76690 /* AppGroup.swift */,
 			);
 			path = RecipeScalerCore;
@@ -1596,6 +1711,7 @@
 				E5F60718293A4B70ED0922D8 /* AssistantModels.swift */,
 				E5F60718293A4B705F98774E /* TelegramAPI.swift */,
 				C45A57EDAC270C757266F8FA /* AuthService.swift */,
+				A0A052C8D8B8477FA14D812A /* WatchCredentialsBridge.swift */,
 				APURL0001000200030004000A2 /* AppURLSession.swift */,
 				BDFDC56713A0842CA6B33517 /* ImageCacheService.swift */,
 				E5F60718293A4B7000000011 /* RecipeImageService.swift */,
@@ -1828,6 +1944,24 @@
 			productReference = C72EF414B1E9D2F706A7CE30 /* RecipeScalerNative.app */;
 			productType = "com.apple.product-type.application";
 		};
+		866BA601812C4838B9F36F4A /* RecipeScalerNativeWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 61E54769FBC341C49447925E /* Build configuration list for PBXNativeTarget "RecipeScalerNativeWatch" */;
+			buildPhases = (
+				A23BBE31762D4611BB03B6DA /* Sources */,
+				86CD4AF12D7346718544789F /* Frameworks */,
+				1C7B3582D9FD432AA79998B8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				267D41EA1D8E43739B630CBC /* PBXTargetDependency */,
+			);
+			name = RecipeScalerNativeWatch;
+			productName = RecipeScalerNativeWatch;
+			productReference = 8F19F53FEC2043319894598C /* RecipeScalerNativeWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1868,6 +2002,7 @@
 				695F475A36604E0F9469767B /* TimerLiveActivityExtension */,
 				68F78791FDCF7C81D2E64394 /* RecipeScalerNativeTests */,
 				3B473A960C22798BD57B5308 /* HomeWidgetExtension */,
+				866BA601812C4838B9F36F4A /* RecipeScalerNativeWatch */,
 			);
 		};
 /* End PBXProject section */
@@ -1972,6 +2107,11 @@
 				D963C6002ACA43AE8B000E1D /* Config.swift in Sources */,
 				1BAEE2C386A5454CB68D9C8B /* APIClient.swift in Sources */,
 				1A94422F09EA4C03BD017D23 /* APIClient+Requests.swift in Sources */,
+				BEEE9D690F324305880057C6 /* ServerActiveTimer.swift in Sources */,
+				8787C480EC0449AAB2726A30 /* TimerPalette.swift in Sources */,
+				B9C279C5F9FD448CBA00CAE1 /* TimerFormatting.swift in Sources */,
+				BF935BE1E76D49118FA3FB7E /* TimerFonts.swift in Sources */,
+				0B14CB3FC8C14335BD2D7365 /* TimerLinearRow.swift in Sources */,
 				5A3A3288082F455BA73D41F3 /* ServerErrorCode.swift in Sources */,
 				9F1626D0C1684DB3AC78F8C0 /* RecipeImportAPI.swift in Sources */,
 				857BCD5170F747838D6F5D7B /* ImportContentClassifier.swift in Sources */,
@@ -2025,6 +2165,7 @@
 				A1TYPOG1A2B3C4D5E6F7080902 /* AppTypography.swift in Sources */,
 				E5F60718293A4B70000A003 /* AppSymbol.swift in Sources */,
 				0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */,
+				896F51C011674A728B2F1433 /* WatchCredentialsBridge.swift in Sources */,
 				0C742EE9B3563B691A69ED1C /* FeatureAdoptionItem.swift in Sources */,
 				67A6550B36933C92D59DB2B9 /* FeatureAdoptionStore.swift in Sources */,
 				4CE1EBBF8B610A4B091090FF /* AuthView.swift in Sources */,
@@ -2288,6 +2429,46 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A23BBE31762D4611BB03B6DA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ED9FFFFC0B754AD688770558 /* RecipeScalerNativeWatchApp.swift in Sources */,
+				9BD6EC5F84CE4ED8B03516B8 /* WatchCredentialsStore.swift in Sources */,
+				14A5C50E38B64318A3F88B55 /* WatchCredentialsBridge.swift in Sources */,
+				2E78895F06BE488B972621DF /* WatchTimerService.swift in Sources */,
+				11F36940A7114E969A0F066F /* WatchTimer.swift in Sources */,
+				4E83476823C74D84AEB17BEA /* WatchHaptics.swift in Sources */,
+				8066F637AAB1476EBAB96224 /* WatchTimerLayout.swift in Sources */,
+				7794A6B8D8F443B5B98FC046 /* TimerListViewModel.swift in Sources */,
+				126EE49222CD4A93BE7F127C /* TimerListView.swift in Sources */,
+				C0B5C7F0D6AE48A4AFA52C5A /* TimerRow.swift in Sources */,
+				960FBC69B3B84454A444F025 /* SettingsRow.swift in Sources */,
+				4FBE77ED005346C1B55E4485 /* EmptyStateView.swift in Sources */,
+				E677325CF8FA4370A2B7EB6D /* ErrorStateView.swift in Sources */,
+				707D54FE171149CA97F0B654 /* NotAuthorizedStateView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1C7B3582D9FD432AA79998B8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3C55EF45B74C4F359BB7ED21 /* Assets.xcassets in Resources */,
+				9F90E078686C4EFF84167581 /* MartianGrotesk-NrLt.otf in Resources */,
+				711E81C4539A491DB7D14D4A /* MartianGrotesk-NrMd.otf in Resources */,
+				34DCAA1DDD7D475C87F33F4F /* MartianMono-NrLt.otf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		86CD4AF12D7346718544789F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				99AF3DDD4E7F480FB1B3833B /* RecipeScalerCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F12B3BF43A4F4D04B43F2F69 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -2415,6 +2596,18 @@
 			name = RecipeScalerNative;
 			target = D48135388848E9FFF6A87142 /* RecipeScalerNative */;
 			targetProxy = 58CBD440277C95353C7E3F0A /* PBXContainerItemProxy */;
+		};
+		267D41EA1D8E43739B630CBC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = RecipeScalerCore;
+			target = C04EC12C7971431D922B6085 /* RecipeScalerCore */;
+			targetProxy = BC92559AB7234CD1A7538293 /* PBXContainerItemProxy */;
+		};
+		E960E851EE1145C19554DB81 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = RecipeScalerNativeWatch;
+			target = 866BA601812C4838B9F36F4A /* RecipeScalerNativeWatch */;
+			targetProxy = 7AE4CDFA8986424BACC7E3ED /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -2551,8 +2744,10 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator watchos watchsimulator";
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,4";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
 			};
 			name = Release;
 		};
@@ -2828,8 +3023,10 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator watchos watchsimulator";
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,4";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
 			};
 			name = Debug;
 		};
@@ -2939,6 +3136,71 @@
 			};
 			name = Debug;
 		};
+		BF48DF757C734DD2B0B00C1F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = RecipeScalerNativeWatch/RecipeScalerNativeWatch.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2L5JDYE2L7;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RecipeScalerNativeWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScalerNative.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = NO;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "4";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WK_APPLICATION = YES;
+				WK_COMPANIONAppBundleIdentifier = ru.recipescaler.RecipeScalerNative;
+				WK_WATCH_ONLY = NO;
+			};
+			name = Debug;
+		};
+		267046CACDC945398AAB0834 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = RecipeScalerNativeWatch/RecipeScalerNativeWatch.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2L5JDYE2L7;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RecipeScalerNativeWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScalerNative.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = NO;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "4";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WK_APPLICATION = YES;
+				WK_COMPANIONAppBundleIdentifier = ru.recipescaler.RecipeScalerNative;
+				WK_WATCH_ONLY = NO;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -3019,6 +3281,15 @@
 			buildConfigurations = (
 				F1A2B3C4D5E60718293A4B70 /* Debug */,
 				F1A2B3C4D5E60718293A4B71 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		61E54769FBC341C49447925E /* Build configuration list for PBXNativeTarget "RecipeScalerNativeWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BF48DF757C734DD2B0B00C1F /* Debug */,
+				267046CACDC945398AAB0834 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

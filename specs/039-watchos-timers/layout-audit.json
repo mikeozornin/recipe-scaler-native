@@ -1,0 +1,316 @@
+{
+  "feature": "039-watchos-timers",
+  "layout_doc": "layout.md",
+  "figma": {
+    "file_key": "rVzFwMDS5SECfIq4HRLHya",
+    "frames": [
+      { "id": "132:40", "name": "List Light", "role": "list light" },
+      { "id": "132:636", "name": "List Dark", "role": "list dark" },
+      { "id": "132:686", "name": "List Light variant", "role": "list light variant" },
+      { "id": "132:758", "name": "Empty Light", "role": "empty light" },
+      { "id": "132:918", "name": "Empty Light variant", "role": "empty light variant" },
+      { "id": "132:922", "name": "Error Light", "role": "error light" },
+      { "id": "132:928", "name": "Error Light variant", "role": "error light variant" },
+      { "id": "132:934", "name": "Error Light variant 2", "role": "error light variant 2" }
+    ]
+  },
+  "required_files": [
+    "RecipeScalerNativeWatch/Views/WatchTimerLayout.swift",
+    "RecipeScalerNativeWatch/Views/TimerListView.swift",
+    "RecipeScalerNativeWatch/Views/EmptyStateView.swift",
+    "RecipeScalerNativeWatch/Views/ErrorStateView.swift",
+    "RecipeScalerNativeWatch/Views/NotAuthorizedStateView.swift",
+    "RecipeScalerNativeWatch/Views/SettingsRow.swift",
+    "RecipeScalerNativeWatch/Haptics/WatchHaptics.swift",
+    "RecipeScalerCore/TimerViews/TimerPalette.swift",
+    "RecipeScalerCore/TimerViews/TimerFormatting.swift",
+    "RecipeScalerCore/TimerViews/TimerFonts.swift",
+    "RecipeScalerCore/TimerViews/TimerLinearRow.swift"
+  ],
+  "must_contain": [
+    {
+      "id": "row-min-height-44",
+      "description": "Row minHeight 44pt (HIG tap target)",
+      "pattern": "minHeight: 44",
+      "paths": [
+        "RecipeScalerNativeWatch/Views/TimerListView.swift",
+        "RecipeScalerCore/TimerViews/TimerLinearRow.swift"
+      ]
+    },
+    {
+      "id": "row-frame-max-width-infinity",
+      "description": "Progress bar uses maxWidth .infinity (not fixed 70pt)",
+      "pattern": "maxWidth: \\.infinity",
+      "paths": [
+        "RecipeScalerNativeWatch/Views/TimerListView.swift",
+        "RecipeScalerCore/TimerViews/TimerLinearRow.swift"
+      ]
+    },
+    {
+      "id": "action-icon-shows-action",
+      "description": "Action icon is pause.fill on running, play.fill on paused",
+      "pattern": "(pause\\.fill|play\\.fill)",
+      "paths": [
+        "RecipeScalerNativeWatch/Views/TimerListView.swift",
+        "RecipeScalerNativeWatch/Views/TimerRow.swift",
+        "RecipeScalerNativeWatch/Services/WatchTimer.swift",
+        "RecipeScalerCore/TimerViews/TimerLinearRow.swift"
+      ]
+    },
+    {
+      "id": "time-text-timer-interval",
+      "description": "Live countdown via Text(timerInterval:) for running timers",
+      "pattern": "Text\\(timerInterval:",
+      "paths": ["RecipeScalerNativeWatch/Views/TimerListView.swift"]
+    },
+    {
+      "id": "swipe-leading-pause-resume-blue",
+      "description": "Leading swipe action tint blue",
+      "pattern": "swipeActions\\(edge: \\.leading",
+      "paths": ["RecipeScalerNativeWatch/Views/TimerListView.swift"]
+    },
+    {
+      "id": "swipe-trailing-destructive",
+      "description": "Trailing swipe action destructive (system red)",
+      "pattern": "role: \\.destructive",
+      "paths": ["RecipeScalerNativeWatch/Views/TimerListView.swift"]
+    },
+    {
+      "id": "square-state-frame",
+      "description": "Empty/Error/NotAuthorized use GeometryReader-based square frame",
+      "pattern": "GeometryReader",
+      "paths": [
+        "RecipeScalerNativeWatch/Views/EmptyStateView.swift",
+        "RecipeScalerNativeWatch/Views/ErrorStateView.swift",
+        "RecipeScalerNativeWatch/Views/NotAuthorizedStateView.swift"
+      ]
+    },
+    {
+      "id": "state-icon-48pt",
+      "description": "State icon SF Symbol 48pt (literal or via WatchTimerLayout.stateIconSize token)",
+      "pattern": "(size: 48|WatchTimerLayout\\.stateIconSize)",
+      "paths": [
+        "RecipeScalerNativeWatch/Views/EmptyStateView.swift",
+        "RecipeScalerNativeWatch/ErrorStateView.swift",
+        "RecipeScalerNativeWatch/Views/ErrorStateView.swift",
+        "RecipeScalerNativeWatch/Views/NotAuthorizedStateView.swift",
+        "RecipeScalerNativeWatch/Views/WatchTimerLayout.swift"
+      ]
+    },
+    {
+      "id": "settings-noop-haptic",
+      "description": "Settings tap triggers WatchHaptics.click()",
+      "pattern": "WatchHaptics\\.click",
+      "paths": ["RecipeScalerNativeWatch/Views/SettingsRow.swift"]
+    },
+    {
+      "id": "haptics-click",
+      "description": "WatchHaptics exposes click()",
+      "pattern": "static func click",
+      "paths": ["RecipeScalerNativeWatch/Haptics/WatchHaptics.swift"]
+    },
+    {
+      "id": "haptics-success",
+      "description": "WatchHaptics exposes success()",
+      "pattern": "static func success",
+      "paths": ["RecipeScalerNativeWatch/Haptics/WatchHaptics.swift"]
+    },
+    {
+      "id": "haptics-notification",
+      "description": "WatchHaptics exposes notification()",
+      "pattern": "static func notification",
+      "paths": ["RecipeScalerNativeWatch/Haptics/WatchHaptics.swift"]
+    },
+    {
+      "id": "haptics-timer-expired",
+      "description": "WatchHaptics exposes timerExpired() pattern (3x notification 0.5s)",
+      "pattern": "static func timerExpired",
+      "paths": ["RecipeScalerNativeWatch/Haptics/WatchHaptics.swift"]
+    },
+    {
+      "id": "palette-no-widgetkit",
+      "description": "Core TimerPalette does NOT import WidgetKit",
+      "pattern": "import SwiftUI",
+      "paths": ["RecipeScalerCore/TimerViews/TimerPalette.swift"]
+    },
+    {
+      "id": "palette-orange-color",
+      "description": "Soon color is #ff8d28 (light) — Color(red:1.0, green:0.553, blue:0.157)",
+      "pattern": "red: 1\\.0",
+      "paths": ["RecipeScalerCore/TimerViews/TimerPalette.swift"]
+    },
+    {
+      "id": "palette-red-color",
+      "description": "Exceeded color is #fa2730 — Color(red:0.98, green:0.153, blue:0.188)",
+      "pattern": "red: 0\\.98",
+      "paths": ["RecipeScalerCore/TimerViews/TimerPalette.swift"]
+    },
+    {
+      "id": "martian-mono-font",
+      "description": "Time uses Martian Mono custom font",
+      "pattern": "Martian Mono",
+      "paths": [
+        "RecipeScalerCore/TimerViews/TimerFonts.swift",
+        "RecipeScalerNativeWatch/Views/WatchTimerLayout.swift"
+      ]
+    },
+    {
+      "id": "martian-grotesk-font",
+      "description": "Recipe name uses Martian Grotesk custom font",
+      "pattern": "Martian Grotesk",
+      "paths": [
+        "RecipeScalerCore/TimerViews/TimerFonts.swift",
+        "RecipeScalerNativeWatch/Views/WatchTimerLayout.swift"
+      ]
+    },
+    {
+      "id": "tracking-minus-0-1",
+      "description": "Timer digit tracking -0.1",
+      "pattern": "(-0\\.1|tracking)",
+      "paths": ["RecipeScalerCore/TimerViews/TimerFonts.swift"]
+    },
+    {
+      "id": "i18n-empty-title",
+      "description": "watch.timer.empty.title localized string key used",
+      "pattern": "watch\\.timer\\.empty\\.title",
+      "paths": ["RecipeScalerNativeWatch/Views/EmptyStateView.swift"]
+    },
+    {
+      "id": "i18n-error-title",
+      "description": "watch.timer.error.title localized string key used",
+      "pattern": "watch\\.timer\\.error\\.title",
+      "paths": ["RecipeScalerNativeWatch/Views/ErrorStateView.swift"]
+    },
+    {
+      "id": "i18n-not-authorized-title",
+      "description": "watch.timer.not-authorized.title localized string key used",
+      "pattern": "watch\\.timer\\.not-authorized\\.title",
+      "paths": ["RecipeScalerNativeWatch/Views/NotAuthorizedStateView.swift"]
+    },
+    {
+      "id": "i18n-settings-label",
+      "description": "watch.timer.settings.label localized string key used",
+      "pattern": "watch\\.timer\\.settings\\.label",
+      "paths": ["RecipeScalerNativeWatch/Views/SettingsRow.swift"]
+    },
+    {
+      "id": "i18n-action-pause",
+      "description": "watch.timer.action.pause localized string key used",
+      "pattern": "watch\\.timer\\.action\\.pause",
+      "paths": ["RecipeScalerNativeWatch/Views/TimerListView.swift"]
+    },
+    {
+      "id": "i18n-action-delete",
+      "description": "watch.timer.action.delete localized string key used",
+      "pattern": "watch\\.timer\\.action\\.delete",
+      "paths": ["RecipeScalerNativeWatch/Views/TimerListView.swift"]
+    }
+  ],
+  "must_not_contain": [
+    {
+      "id": "no-timer-publish",
+      "description": "Live countdown must use Text(timerInterval:), not Timer.publish",
+      "pattern": "Timer\\.publish",
+      "paths": ["RecipeScalerNativeWatch/Views"]
+    },
+    {
+      "id": "no-fixed-frame-137",
+      "description": "No fixed 137pt width frame in watchOS rows (was in widget, breaks adaptivity)",
+      "pattern": "width: 137",
+      "paths": ["RecipeScalerNativeWatch"]
+    },
+    {
+      "id": "no-fixed-frame-70",
+      "description": "No fixed 70pt width for progress (must be maxWidth .infinity)",
+      "pattern": "width: 70",
+      "paths": ["RecipeScalerNativeWatch"]
+    },
+    {
+      "id": "no-uikit-in-watch-views",
+      "description": "watchOS views must not import UIKit (use SwiftUI only)",
+      "pattern": "import UIKit",
+      "paths": ["RecipeScalerNativeWatch"]
+    },
+    {
+      "id": "no-widgetkit-in-core-palette",
+      "description": "Core TimerPalette must not depend on WidgetKit",
+      "pattern": "import WidgetKit",
+      "paths": ["RecipeScalerCore/TimerViews"]
+    },
+    {
+      "id": "no-system-font-in-watch-text",
+      "description": "No .font(.system(size:)) on Text views in watch — use Martian via TimerFonts (SF Symbols OK for Image)",
+      "pattern": "Text\\([^)]*\\)[\\s\\S]{0,200}?\\.font\\(\\.system\\(size:",
+      "paths": ["RecipeScalerNativeWatch/Views"]
+    },
+    {
+      "id": "no-row-minheight-lt-44",
+      "description": "Row height must not be set below 44pt",
+      "pattern": "height: 4[0-3](\\b|\\D)",
+      "paths": ["RecipeScalerNativeWatch/Views/TimerListView.swift"]
+    }
+  ],
+  "previews": [
+    {
+      "id": "list-preview",
+      "description": "TimerListView preview with mix of timers",
+      "pattern": "#Preview",
+      "paths": ["RecipeScalerNativeWatch/Views/TimerListView.swift"]
+    },
+    {
+      "id": "empty-preview",
+      "description": "EmptyStateView preview",
+      "pattern": "#Preview",
+      "paths": ["RecipeScalerNativeWatch/Views/EmptyStateView.swift"]
+    },
+    {
+      "id": "error-preview",
+      "description": "ErrorStateView preview",
+      "pattern": "#Preview",
+      "paths": ["RecipeScalerNativeWatch/Views/ErrorStateView.swift"]
+    },
+    {
+      "id": "not-authorized-preview",
+      "description": "NotAuthorizedStateView preview",
+      "pattern": "#Preview",
+      "paths": ["RecipeScalerNativeWatch/Views/NotAuthorizedStateView.swift"]
+    }
+  ],
+  "acceptance_claims": [
+    {
+      "id": "row-min-height-44-claim",
+      "description": "Каждая строка таймера имеет высоту ≥ 44pt на минимальном экране (40mm SE 3)",
+      "manual": true
+    },
+    {
+      "id": "progress-flex-claim",
+      "description": "Progress bar шире на 49mm (179pt контент) чем на 42mm (155pt контент)",
+      "manual": true
+    },
+    {
+      "id": "square-state-claim",
+      "description": "Empty/Error/NotAuthorized: квадратная область = contentWidth × contentWidth, не высота экрана",
+      "manual": true
+    },
+    {
+      "id": "action-icon-action-claim",
+      "description": "Action icon показывает действие: pause.fill на running, play.fill на paused",
+      "manual": true
+    },
+    {
+      "id": "swipe-tint-claim",
+      "description": "Swipe leading = blue (pause/resume), trailing = system red (delete)",
+      "manual": true
+    },
+    {
+      "id": "settings-noop-claim",
+      "description": "Тап по Settings = no-op + лёгкий haptic, не открывает экран",
+      "manual": true
+    },
+    {
+      "id": "martian-everywhere-claim",
+      "description": "Весь текст в watch UI использует Martian (кроме SF Symbol для иконок)",
+      "manual": true
+    }
+  ]
+}

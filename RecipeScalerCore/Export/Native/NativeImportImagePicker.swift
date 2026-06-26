@@ -1,3 +1,4 @@
+#if !os(watchOS)
 import Foundation
 
 /// Chooses image bytes from native export ZIP entries for upload.
@@ -21,3 +22,4 @@ public enum NativeImportImagePicker {
         return .ready(data)
     }
 }
+#endif

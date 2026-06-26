@@ -33,37 +33,10 @@ struct TimerSyncPersistedState: Codable {
     var pendingEvents: [TimerSyncQueuedEvent]
 }
 
-struct ActiveTimersResponse: Decodable {
-    struct Payload: Decodable {
-        let timers: [ServerActiveTimer]
-    }
-
-    let success: Bool
-    let data: Payload?
-}
-
-struct ServerActiveTimer: Decodable {
-    let timerId: String
-    let name: String
-    let duration: Int
-    let endTime: Int64?
-    let isPaused: Bool
-    let pausedDuration: Int?
-    let createdAt: Int64
-    let lastUpdated: Int64
-    let startedAt: Int64?
-    let pausedAt: Int64?
-    let recipeId: String?
-}
-
-struct TimerSyncHTTPResponse: Decodable {
-    struct Payload: Decodable {
-        let syncedEvents: [String]?
-    }
-
-    let success: Bool
-    let data: Payload?
-}
+// `ActiveTimersResponse`, `ServerActiveTimer`, `TimerSyncHTTPResponse` —
+// moved to `RecipeScalerCore/Networking/ServerActiveTimer.swift` so the
+// watchOS companion app can decode timer responses without importing the
+// main app target (spec 039 — watchOS Timers).
 
 // MARK: - Service
 

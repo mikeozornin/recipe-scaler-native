@@ -1,3 +1,4 @@
+#if !os(watchOS)
 import Foundation
 import ZIPFoundation
 
@@ -511,3 +512,4 @@ public struct ExportFolder: Sendable {
         self.updatedAt = updatedAt
     }
 }
+#endif

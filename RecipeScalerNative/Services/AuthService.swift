@@ -263,6 +263,9 @@ class AuthService {
         // the keychain-access-groups entitlement).
         SharedAuthStore.userId = data.user.id
 
+        // Spec 039: forward credentials to the paired Apple Watch.
+        WatchCredentialsBridge.shared.publish(userId: data.user.id)
+
         // Update published properties
         self.userId = data.user.id
         self.token = nil
@@ -313,6 +316,9 @@ class AuthService {
         // the keychain-access-groups entitlement).
         SharedAuthStore.userId = data.user.id
 
+        // Spec 039: forward credentials to the paired Apple Watch.
+        WatchCredentialsBridge.shared.publish(userId: data.user.id)
+
         // Update published properties
         self.userId = data.user.id
         self.token = nil
@@ -336,6 +342,9 @@ class AuthService {
         // Remove the shared userId from the Keychain so extensions can no
         // longer authenticate on behalf of this user.
         SharedAuthStore.clear()
+
+        // Spec 039: tell the paired Apple Watch to purge its local creds.
+        WatchCredentialsBridge.shared.purge()
 
         // Reset published properties
         self.userId = nil

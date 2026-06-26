@@ -3,6 +3,7 @@
 //  RecipeScalerCore
 //
 
+#if !os(watchOS)
 import Foundation
 import ZIPFoundation
 
@@ -309,3 +310,4 @@ public enum ThirdPartyFormatDetector {
         return object["uuid"] is String && object["ingredients"] is [[String: Any]]
     }
 }
+#endif
