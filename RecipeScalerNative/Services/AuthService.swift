@@ -144,6 +144,7 @@ class AuthService {
             self.token = nil
 
             apiClient.configure(userId: restoredUserId)
+            WatchCredentialsBridge.shared.publish(userId: restoredUserId)
         }
     }
 

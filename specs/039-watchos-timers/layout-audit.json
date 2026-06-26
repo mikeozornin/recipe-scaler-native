@@ -48,20 +48,18 @@
     },
     {
       "id": "action-icon-shows-action",
-      "description": "Action icon is pause.fill on running, play.fill on paused",
-      "pattern": "(pause\\.fill|play\\.fill)",
+      "description": "Pause/resume via swipe only — action icons in swipeActions, not in row",
+      "pattern": "swipeActions\\(edge: \\.leading",
       "paths": [
         "RecipeScalerNativeWatch/Views/TimerListView.swift",
-        "RecipeScalerNativeWatch/Views/TimerRow.swift",
-        "RecipeScalerNativeWatch/Services/WatchTimer.swift",
-        "RecipeScalerCore/TimerViews/TimerLinearRow.swift"
+        "RecipeScalerNativeWatch/Services/WatchTimer.swift"
       ]
     },
     {
-      "id": "time-text-timer-interval",
-      "description": "Live countdown via Text(timerInterval:) for running timers",
-      "pattern": "Text\\(timerInterval:",
-      "paths": ["RecipeScalerNativeWatch/Views/TimerListView.swift"]
+      "id": "time-compact-remaining",
+      "description": "Running timer label uses compactRemaining (Figma: 45m, 15m)",
+      "pattern": "TimerFormatting\\.compactRemaining",
+      "paths": ["RecipeScalerNativeWatch/Views/TimerRow.swift"]
     },
     {
       "id": "swipe-leading-pause-resume-blue",
@@ -299,7 +297,7 @@
     },
     {
       "id": "square-state-claim",
-      "description": "Empty/Error/NotAuthorized: квадратная область = contentWidth × contentWidth, не высота экрана",
+      "description": "Empty/Error/NotAuthorized: icon+text centered in area above Settings (WatchStateScreenLayout)",
       "manual": true
     },
     {

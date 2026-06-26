@@ -20,6 +20,20 @@
                ReferencedContainer = "container:RecipeScalerNative.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "C04EC12C7971431D922B6085"
+               BuildableName = "RecipeScalerCore.framework"
+               BlueprintName = "RecipeScalerCore"
+               ReferencedContainer = "container:RecipeScalerNative.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

@@ -2,9 +2,8 @@
 //  EmptyStateView.swift
 //  RecipeScalerNativeWatch Watch App
 //
-//  Spec 039 — empty state (no active timers). Square icon+text block whose
-//  side equals the available content width, centered vertically; Settings
-//  button is a sibling below the square — never overlaps it.
+//  Spec 039 — empty state (no active timers). Icon+text centered above
+//  Settings; Settings is a sibling pinned to the bottom.
 //
 //  Figma node 132:758 / 132:918.
 //
@@ -13,21 +12,7 @@ import SwiftUI
 
 struct EmptyStateView: View {
     var body: some View {
-        GeometryReader { geo in
-            VStack(spacing: WatchTimerLayout.stateToSettingsSpacing) {
-                Spacer(minLength: 0)
-                stateSquare(width: geo.size.width)
-                Spacer(minLength: 0)
-                SettingsRow()
-            }
-            .frame(width: geo.size.width)
-        }
-    }
-
-    /// Square icon+text block — side equals the content width.
-    @ViewBuilder
-    private func stateSquare(width: CGFloat) -> some View {
-        VStack(spacing: WatchTimerLayout.stateStackSpacing) {
+        WatchStateScreenLayout {
             Image(systemName: "timer")
                 .font(.system(size: WatchTimerLayout.stateIconSize, weight: .medium))
                 .foregroundStyle(.secondary)
@@ -35,7 +20,6 @@ struct EmptyStateView: View {
                 .timerSans(WatchTimerLayout.stateTitleFontSize)
                 .multilineTextAlignment(.center)
         }
-        .frame(width: width, height: width)
     }
 }
 

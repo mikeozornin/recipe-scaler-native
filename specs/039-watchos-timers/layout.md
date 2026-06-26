@@ -43,7 +43,7 @@ watchOS 10+ покрывает прямоугольные дисплеи aspect 
 | `progressTrackOpacity` | 0.4 | opacity для track (fill — акцентом) |
 | `nameLineHeight` | 18 pt | line height для recipe name |
 | `nameFontSize` | 15 pt | Martian Grotesk |
-| `nameMaxLines` | 2 | lineLimit, после — ellipsis |
+| `nameMaxLines` | 5 | lineLimit, после — ellipsis |
 | `nameTracking` | −0.1 | kern |
 | `stateIconSize` | 48 pt | SF Symbol для Empty/Error/NotAuthorized |
 | `stateSquareMinSide` | `contentWidth` | сторона квадрата icon+text |
@@ -85,15 +85,14 @@ Dark mode: система адаптирует `Color.primary`. Для `soon`/`e
 
 | Элемент | W×H | Примечание |
 |---------|-----|------------|
-| Row (2 строки имени) | full × 60 pt (24 + 36) | пример с `до золотой корочки` |
+| Row (до 5 строк имени) | full × 24 + до 90 pt | пример с `до золотой корочки` |
 | Row (1 строка имени) | full × 42 pt (24 + 18) | пример с `выпекайте` |
 | Row **minHeight** | full × **44 pt** | HIG override — если контент 42, добиваем до 44 |
-| top | full × 24 pt | icon + spacer + progress + time |
-| action icon | 19 × 24 pt | SF Symbol 20pt medium |
-| spacer | 8 × 24 pt | фиксированный gap |
+| top | full × 24 pt | progress + time |
+| progress gap | 8 × 24 pt | фиксированный gap перед time |
 | progress | **flex-1** × 2 pt | track + fill, **не** fixed 70pt |
-| time | 40 × 16 pt | Martian Mono 15pt trailing |
-| recipe name | full × 18-36 pt | 1-2 строки, ellipsis |
+| time | min 40 × 16 pt | Martian Mono 15pt trailing, `45m` / `15m` |
+| recipe name | full × 18-90 pt | до 5 строк, ellipsis |
 | Settings button | full × 44 pt | внизу списка |
 
 ### Дерево (DOM)
@@ -105,22 +104,18 @@ List (full content area, .listStyle(.plain) или системный)
 │       TimerRow (full × min(top+name, 44))
 │       ├── top (full × 24)
 │       │   ├── HStack(spacing: 8)
-│       │   │   ├── Image(systemName: timer.isPaused ? "play.fill" : "pause.fill")
-│       │   │   │   .frame(width: 19, height: 24)
-│       │   │   │   .font(.system(size: 20, weight: .medium))
-│       │   │   │   .foregroundStyle(palette.color(for: timer))
 │       │   │   ├── ProgressView(value: timer.progress)
 │       │   │   │   .frame(maxWidth: .infinity)  // FLEX
 │       │   │   │   .tint(palette.color(for: timer))
-│       │   │   └── Text(timer.remaining)  // или Text(timerInterval:) для живого
-│       │   │       .frame(width: 40, alignment: .trailing)
+│       │   │   └── Text(compactRemaining)  // Figma: `45m`, `15m`
+│       │   │       .frame(minWidth: 40, alignment: .trailing)
 │       │   │       .font(.custom("Martian Mono Nr Lt", size: 15))
 │       │   │       .monospacedDigit()
 │       │   │       .foregroundStyle(palette.color(for: timer))
 │       │   └── .frame(height: 24)
 │       ├── Text(timer.name)
 │       │   .font(.custom("Martian Grotesk Nr Lt", size: 15))
-│       │   .lineLimit(2)
+│       │   .lineLimit(5)
 │       │   .truncationMode(.tail)
 │       │   .frame(maxWidth: .infinity, alignment: .leading)
 │       │   .foregroundStyle(palette.color(for: timer))
@@ -136,23 +131,26 @@ List (full content area, .listStyle(.plain) или системный)
 
 ### Живой countdown
 
-Для running таймеров используем `Text(timerInterval:)`:
+Для running таймеров — **compact label** как в Figma (`45m`, `15m`, `35s`), через `TimerFormatting.compactRemaining` + `TimelineView(.periodic(by: 1))`:
 
 ```swift
-if let endDate = timer.endDate, !timer.isPaused {
-    Text(timerInterval: Date()...endDate, countsDown: true)
-        .monospacedDigit()
-        .frame(width: 40, alignment: .trailing)
+TimelineView(.periodic(from: .now, by: 1)) { timeline in
+    Text(TimerFormatting.compactRemaining(
+        seconds: timer.remainingSeconds(now: timeline.date)
+    ))
+    .frame(minWidth: 40, alignment: .trailing)
 }
 ```
 
-Для paused — статичная строка `WidgetTimerFormatting.shortClock(remaining)`.
+Для paused — статичная строка `TimerFormatting.shortClock(remaining)`.
+
+Pause/resume/delete — **только swipe actions**, без leading icon в строке.
 
 ### SwiftUI / platform notes
 
 - `List` на watchOS автоматически даёт Digital Crown scroll и swipe-to-delete/pause.
 - `.listRowInsets(.init())` для full-bleed строк (если хочется как в макете).
-- **Запрещено**: `Timer.publish(every: 1)` для обновления UI — батарея. Только `Text(timerInterval:)`.
+- **Запрещено**: `Timer.publish(every: 1)` для обновления UI — батарея. Для compact labels — `TimelineView(.periodic(by: 1))`.
 - **Запрещено**: fixed frame на progress (`width: 70` из макета) — должно быть `maxWidth: .infinity`.
 - **Запрещено**: row высотой < 44pt.
 - Swipe action tint: `.tint(.blue)` для leading, `role: .destructive` для trailing.
@@ -165,7 +163,7 @@ if let endDate = timer.endDate, !timer.isPaused {
 
 | Элемент | W×H | Примечание |
 |---------|-----|------------|
-| Квадрат icon+text | `contentWidth × contentWidth` | например 155×155 на 42mm, 179×179 на 49mm |
+| Квадрат icon+text | `contentWidth × (height − Settings − 16)` | icon+text по центру области над Settings |
 | Icon | full × 48 pt | SF Symbol, weight `.medium` (Figma: SF Pro Medium, weight 510) |
 | Title | full × 18 pt | 1 строка centered («Таймеров нет») |
 | Settings button | full × min 44 pt | sibling ниже квадрата, НЕ overlay |

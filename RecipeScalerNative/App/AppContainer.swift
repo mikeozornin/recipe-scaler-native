@@ -206,6 +206,12 @@ final class AppContainer {
         // 1. Configure APIClient (formerly `ContentView.init:45` + `YjsSyncService.start:867`).
         APIClient.shared.configure(userId: userId)
 
+        // 1a. Mirror session to shared stores + paired watch. DEBUG simulator
+        //     feeds a hardcoded `debugUserId` here without going through
+        //     `AuthService.loginWithSeed`, so this is the only publish point.
+        SharedAuthStore.userId = userId
+        WatchCredentialsBridge.shared.publish(userId: userId)
+
         // 2. Configure TimerSync (formerly `YjsSyncService.start:868-872`). The
         //    `sendTimerEvent` callback is already wired by `TimerEventBridge`
         //    at construction time; no per-bootstrap assignment needed.

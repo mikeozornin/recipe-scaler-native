@@ -57,13 +57,24 @@ bash scripts/verify-all.sh
 
 Перед `verify-all` можно отдельно прогнать только сборку: `bash scripts/build-for-verify.sh`.
 
-**Два симулятора сразу** (iPhone 16 iOS 18 + iPhone 17 iOS 26):
+**Парный iPhone + Apple Watch** (WatchConnectivity / companion):
 
 ```bash
 bash scripts/run-dual-simulators.sh
 bash scripts/run-dual-simulators.sh -SkipSplash=1
 SKIP_BUILD=1 bash scripts/run-dual-simulators.sh   # без пересборки
+PHONE_SIM_NAME="iPhone 17 + Watch" bash scripts/run-dual-simulators.sh
 ```
+
+Если линковка watch падает с `missing required architecture x86_64` / `RecipeScalerCore.tbd`:
+
+```bash
+bash scripts/xcode-clean-watch-tbd.sh
+# или полная пересборка через run-dual-simulators (очистка встроена в sim_ensure_built)
+bash scripts/run-dual-simulators.sh
+```
+
+Скрипт ищет пару через `simctl list pairs`, собирает `RecipeScalerNative` (watch embedded в `Watch/`), ставит iPhone `.app` и companion `Watch/RecipeScalerNativeWatch.app`, запускает сначала телефон, затем часы.
 
 ## Проверка фич
 

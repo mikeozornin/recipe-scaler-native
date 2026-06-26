@@ -12,6 +12,7 @@
 
 import Foundation
 import WatchConnectivity
+import RecipeScalerCore
 
 final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
     static let shared = WatchCredentialsBridge()
@@ -54,7 +55,24 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
             "paired": "\(session.isPaired)",
             "watchAppInstalled": "\(session.isWatchAppInstalled)",
         ])
-        session.transferUserInfo(["userId": userId])
+        let payload: [String: Any] = ["userId": userId]
+        session.transferUserInfo(payload)
+        publishApplicationContext(payload, session: session)
+    }
+
+    /// Tell the watch to refresh its timer list (new/pause/delete on iPhone or web).
+    func publishTimersChanged() {
+        guard WCSession.isSupported() else { return }
+        let session = WCSession.default
+        guard session.activationState == .activated else { return }
+        var payload: [String: Any] = [
+            "timersChangedAt": Int64(Date().timeIntervalSince1970 * 1000),
+        ]
+        if let userId = SharedAuthStore.userId {
+            payload["userId"] = userId
+        }
+        session.transferUserInfo(payload)
+        publishApplicationContext(payload, session: session)
     }
 
     /// Tell the watch to purge stored credentials (logout).
@@ -64,7 +82,19 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
         guard session.activationState == .activated else { return }
         AppLog.info(.sync, "watch_bridge_purge")
         // `NSNull()` serializes as JSON null — watch decodes it as `nil`.
-        session.transferUserInfo(["userId": NSNull()])
+        let payload: [String: Any] = ["userId": NSNull()]
+        session.transferUserInfo(payload)
+        publishApplicationContext(payload, session: session)
+    }
+
+    private func publishApplicationContext(_ payload: [String: Any], session: WCSession) {
+        do {
+            try session.updateApplicationContext(payload)
+        } catch {
+            AppLog.info(.sync, "watch_bridge_context_failed", data: [
+                "error": error.localizedDescription,
+            ])
+        }
     }
 
     // MARK: - WCSessionDelegate
@@ -80,9 +110,24 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
             "paired": "\(session.isPaired)",
             "watchAppInstalled": "\(session.isWatchAppInstalled)",
         ])
+        #if os(iOS)
+        // Re-publish stored userId when the watch becomes reachable — covers
+        // login-before-watch-installed and queued transferUserInfo delivery.
+        if activationState == .activated {
+            republishStoredUserIdIfReady(session)
+        }
+        #endif
     }
 
     #if os(iOS)
+    private func republishStoredUserIdIfReady(_ session: WCSession) {
+        guard session.activationState == .activated,
+              session.isPaired,
+              session.isWatchAppInstalled,
+              let userId = SharedAuthStore.userId else { return }
+        publish(userId: userId)
+    }
+
     func sessionDidBecomeInactive(_ session: WCSession) {
         // System-managed — no action needed.
     }
@@ -90,6 +135,14 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
     func sessionDidDeactivate(_ session: WCSession) {
         // Re-activate for the next paired watch session.
         session.activate()
+    }
+
+    func sessionWatchStateDidChange(_ session: WCSession) {
+        republishStoredUserIdIfReady(session)
+    }
+
+    func sessionReachabilityDidChange(_ session: WCSession) {
+        republishStoredUserIdIfReady(session)
     }
     #endif
 }

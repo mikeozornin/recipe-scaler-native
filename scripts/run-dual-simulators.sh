@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build RecipeScalerNative once and launch on two simulators side by side:
-#   iPhone 16 (iOS 18) + iPhone 17 (iOS 26) by default.
+# Build RecipeScalerNative (embedded watch app) and launch on a paired
+# iPhone + Apple Watch simulator set.
 #
 # Usage:
 #   bash scripts/run-dual-simulators.sh
@@ -8,30 +8,33 @@
 #   SKIP_BUILD=1 bash scripts/run-dual-simulators.sh
 #
 # Env overrides:
-#   SIM_A_NAME, SIM_A_IOS_MAJOR   — first device (default: iPhone 16, 18)
-#   SIM_B_NAME, SIM_B_IOS_MAJOR   — second device (default: iPhone 17, 26)
-#   SIM_A_ID, SIM_B_ID            — skip auto-discovery when set
-#   SKIP_BUILD=1                  — reuse existing Debug .app bundle
-#   LAUNCH_ARGS                   — extra simctl launch args (space-separated)
+#   PHONE_SIM_ID, WATCH_SIM_ID  — skip auto-discovery when both set
+#   PHONE_SIM_NAME              — pick pair by iPhone name (default: first active pair)
+#   PAIR_ID                     — specific simctl pair UUID
+#   SKIP_BUILD=1                — reuse existing Debug .app bundle
+#   LAUNCH_ARGS                 — extra simctl launch args for iPhone (space-separated)
+#   WATCH_LAUNCH_DELAY_SEC      — seconds to wait after iPhone launch (default: 2)
+#
+# Legacy aliases: SIM_A_ID → phone, SIM_B_ID → watch
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 source "$ROOT/scripts/sim-verify-lib.sh"
 
-SIM_A_NAME="${SIM_A_NAME:-iPhone 16}"
-SIM_A_IOS_MAJOR="${SIM_A_IOS_MAJOR:-18}"
-SIM_B_NAME="${SIM_B_NAME:-iPhone 17}"
-SIM_B_IOS_MAJOR="${SIM_B_IOS_MAJOR:-26}"
+BUNDLE_ID_PHONE="$BUNDLE_ID"
+BUNDLE_ID_WATCH="ru.recipescaler.RecipeScalerNative.watchkitapp"
+WATCH_LAUNCH_DELAY_SEC="${WATCH_LAUNCH_DELAY_SEC:-4}"
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [launch-arg ...]
+Usage: $(basename "$0") [iphone-launch-arg ...]
 
-Build Debug and run on two simulators:
-  $SIM_A_NAME (iOS $SIM_A_IOS_MAJOR) + $SIM_B_NAME (iOS $SIM_B_IOS_MAJOR)
+Build Debug and run on a paired iPhone + Apple Watch simulator set.
 
-Options via env: SKIP_BUILD=1, SIM_A_ID, SIM_B_ID, LAUNCH_ARGS
+Discovery: \`simctl list pairs\` (override with PHONE_SIM_ID + WATCH_SIM_ID).
+
+Options via env: SKIP_BUILD=1, PHONE_SIM_NAME, PAIR_ID, LAUNCH_ARGS
 EOF
 }
 
@@ -40,36 +43,51 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   exit 0
 fi
 
-sim_resolve_udid() {
-  local name="$1"
-  local ios_major="$2"
-  python3 - "$name" "$ios_major" <<'PY'
-import json, subprocess, sys
+sim_resolve_pair() {
+  python3 - <<'PY'
+import json, os, subprocess, sys
 
-name, ios_major = sys.argv[1], sys.argv[2]
-raw = subprocess.check_output(
-    ["xcrun", "simctl", "list", "devices", "available", "-j"],
-    text=True,
-)
-data = json.loads(raw)
-needle = f"iOS-{ios_major}"
-matches = []
-for runtime, devices in data["devices"].items():
-    if needle not in runtime.replace(".", "-"):
-        continue
-    for device in devices:
-        if device.get("isAvailable") and device.get("name") == name:
-            matches.append((runtime, device["udid"]))
-if not matches:
-    sys.exit(f"No available simulator: {name!r} on iOS {ios_major}.x", 1)
-# Prefer the newest patch runtime within the major (lexicographic on runtime id works).
-matches.sort(key=lambda item: item[0], reverse=True)
-print(matches[0][1])
+phone_name = os.environ.get("PHONE_SIM_NAME", "")
+pair_id = os.environ.get("PAIR_ID", "")
+phone_id = os.environ.get("PHONE_SIM_ID") or os.environ.get("SIM_A_ID", "")
+watch_id = os.environ.get("WATCH_SIM_ID") or os.environ.get("SIM_B_ID", "")
+
+if phone_id and watch_id:
+    print(phone_id, watch_id)
+    sys.exit(0)
+
+raw = subprocess.check_output(["xcrun", "simctl", "list", "pairs", "-j"], text=True)
+pairs = json.loads(raw).get("pairs", {})
+if not pairs:
+    sys.exit("No paired iPhone/Watch simulators found. Create one in Xcode → Window → Devices and Simulators.", 1)
+
+if pair_id:
+    pair = pairs.get(pair_id)
+    if pair is None:
+        sys.exit(f"Pair not found: {pair_id}", 1)
+    print(pair["phone"]["udid"], pair["watch"]["udid"])
+    sys.exit(0)
+
+candidates = list(pairs.values())
+if phone_name:
+    filtered = [p for p in candidates if p["phone"]["name"] == phone_name]
+    if not filtered:
+        names = ", ".join(sorted({p["phone"]["name"] for p in candidates}))
+        sys.exit(f"No pair with phone {phone_name!r}. Available phones: {names}", 1)
+    candidates = filtered
+
+def sort_key(pair):
+    state = pair.get("state", "")
+    active = 1 if "active" in state else 0
+    return (active, pair["phone"]["name"])
+
+candidates.sort(key=sort_key, reverse=True)
+pair = candidates[0]
+print(pair["phone"]["udid"], pair["watch"]["udid"])
 PY
 }
 
-SIM_A_ID="${SIM_A_ID:-$(sim_resolve_udid "$SIM_A_NAME" "$SIM_A_IOS_MAJOR")}"
-SIM_B_ID="${SIM_B_ID:-$(sim_resolve_udid "$SIM_B_NAME" "$SIM_B_IOS_MAJOR")}"
+read -r PHONE_SIM_ID WATCH_SIM_ID <<< "$(sim_resolve_pair)"
 
 launch_args=()
 if [[ -n "${LAUNCH_ARGS:-}" ]]; then
@@ -80,51 +98,89 @@ if (($# > 0)); then
   launch_args+=("$@")
 fi
 
-echo "== Dual simulator launch =="
-echo "  A: $SIM_A_NAME (iOS $SIM_A_IOS_MAJOR) → $SIM_A_ID"
-echo "  B: $SIM_B_NAME (iOS $SIM_B_IOS_MAJOR) → $SIM_B_ID"
+echo "== Paired simulator launch =="
+echo "  iPhone: $PHONE_SIM_ID"
+echo "  Watch:  $WATCH_SIM_ID"
 if ((${#launch_args[@]} > 0)); then
-  echo "  Launch args: ${launch_args[*]}"
+  echo "  iPhone launch args: ${launch_args[*]}"
 fi
 
 if [[ "${SKIP_BUILD:-0}" != "1" ]]; then
-  SIM_ID="$SIM_A_ID" VERIFY_SKIP_BUILD=0 sim_ensure_built
+  SIM_ID="$PHONE_SIM_ID" VERIFY_SKIP_BUILD=0 sim_ensure_built
 else
   echo "== Build Debug (skipped — SKIP_BUILD=1) =="
 fi
 
-SIM_ID="$SIM_A_ID" sim_resolve_app || exit 1
-echo "App: $APP"
+SIM_ID="$PHONE_SIM_ID" sim_resolve_app || exit 1
+WATCH_APP="$APP/Watch/RecipeScalerNativeWatch.app"
+if [[ ! -d "$WATCH_APP" ]]; then
+  echo "Embedded watch app not found at: $WATCH_APP" >&2
+  echo "Ensure RecipeScalerNative target has Embed Watch App build phase." >&2
+  exit 1
+fi
+if [[ ! -d "$WATCH_APP/Frameworks/RecipeScalerCore.framework" ]]; then
+  echo "RecipeScalerCore.framework missing from watch app bundle." >&2
+  echo "Ensure RecipeScalerNativeWatch target embeds RecipeScalerCore.framework." >&2
+  exit 1
+fi
+echo "iPhone app: $APP"
+echo "Watch app:  $WATCH_APP"
 
-sim_boot_install_launch() {
-  local sim_id="$1"
-  local label="$2"
-  echo "== [$label] boot =="
-  xcrun simctl boot "$sim_id" 2>/dev/null || true
-  xcrun simctl privacy "$sim_id" grant notifications "$BUNDLE_ID" 2>/dev/null || true
-  echo "== [$label] install =="
-  xcrun simctl install "$sim_id" "$APP"
-  echo "== [$label] launch =="
-  xcrun simctl terminate "$sim_id" "$BUNDLE_ID" 2>/dev/null || true
-  xcrun simctl launch "$sim_id" "$BUNDLE_ID" "${launch_args[@]}"
+sim_boot_phone() {
+  echo "== [iPhone] boot =="
+  xcrun simctl boot "$PHONE_SIM_ID" 2>/dev/null || true
+  xcrun simctl privacy "$PHONE_SIM_ID" grant notifications "$BUNDLE_ID_PHONE" 2>/dev/null || true
+}
+
+sim_boot_watch() {
+  echo "== [Watch] boot =="
+  xcrun simctl boot "$WATCH_SIM_ID" 2>/dev/null || true
+}
+
+sim_install_phone() {
+  echo "== [iPhone] install =="
+  xcrun simctl install "$PHONE_SIM_ID" "$APP"
+}
+
+sim_install_watch() {
+  echo "== [Watch] install (from iPhone bundle) =="
+  xcrun simctl install "$WATCH_SIM_ID" "$WATCH_APP"
+}
+
+sim_launch_phone() {
+  echo "== [iPhone] launch =="
+  xcrun simctl terminate "$PHONE_SIM_ID" "$BUNDLE_ID_PHONE" 2>/dev/null || true
+  if ((${#launch_args[@]} > 0)); then
+    xcrun simctl launch "$PHONE_SIM_ID" "$BUNDLE_ID_PHONE" "${launch_args[@]}"
+  else
+    xcrun simctl launch "$PHONE_SIM_ID" "$BUNDLE_ID_PHONE"
+  fi
+}
+
+sim_launch_watch() {
+  echo "== [Watch] launch =="
+  xcrun simctl terminate "$WATCH_SIM_ID" "$BUNDLE_ID_WATCH" 2>/dev/null || true
+  xcrun simctl launch "$WATCH_SIM_ID" "$BUNDLE_ID_WATCH"
 }
 
 open -a Simulator 2>/dev/null || true
 
-sim_boot_install_launch "$SIM_A_ID" "$SIM_A_NAME" &
-pid_a=$!
-sim_boot_install_launch "$SIM_B_ID" "$SIM_B_NAME" &
-pid_b=$!
+sim_boot_phone &
+pid_boot_phone=$!
+sim_boot_watch &
+pid_boot_watch=$!
+wait "$pid_boot_phone" "$pid_boot_watch"
 
-status=0
-wait "$pid_a" || status=1
-wait "$pid_b" || status=1
+sim_install_phone &
+pid_install_phone=$!
+sim_install_watch &
+pid_install_watch=$!
+wait "$pid_install_phone" "$pid_install_watch"
 
-if (( status != 0 )); then
-  echo "One or more simulators failed to launch." >&2
-  exit "$status"
-fi
+sim_launch_phone
+sleep "$WATCH_LAUNCH_DELAY_SEC"
+sim_launch_watch
 
 echo "== Done =="
-echo "  $SIM_A_NAME: $SIM_A_ID"
-echo "  $SIM_B_NAME: $SIM_B_ID"
+echo "  iPhone: $PHONE_SIM_ID ($BUNDLE_ID_PHONE)"
+echo "  Watch:  $WATCH_SIM_ID ($BUNDLE_ID_WATCH)"

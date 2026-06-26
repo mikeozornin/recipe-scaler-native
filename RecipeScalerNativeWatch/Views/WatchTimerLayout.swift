@@ -15,10 +15,9 @@ enum WatchTimerLayout {
     /// HIG minimum tap target for any interactive row.
     static let rowMinHeight: CGFloat = 44
 
-    /// Top row (action icon + progress + time).
+    /// Top row (progress + time).
     static let topRowHeight: CGFloat = 24
-    static let actionIconSize: CGFloat = 20
-    static let actionToProgressSpacing: CGFloat = 8
+    static let progressToTimeSpacing: CGFloat = 8
 
     static let progressTrackHeight: CGFloat = 2
     static let progressFillHeight: CGFloat = 2
@@ -29,7 +28,7 @@ enum WatchTimerLayout {
 
     static let nameFontSize: CGFloat = 15
     static let nameLineHeight: CGFloat = 18
-    static let nameMaxLines: Int = 2
+    static let nameMaxLines: Int = 5
 
     /// SF Symbol size for Empty / Error / NotAuthorized icons.
     static let stateIconSize: CGFloat = 48

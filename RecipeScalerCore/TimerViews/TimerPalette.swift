@@ -48,7 +48,7 @@ public struct TimerPalette: Sendable {
 }
 
 extension TimerPalette {
-    public enum Accent: Sendable {
+    public enum Accent: Sendable, Equatable {
         case normal
         case soon
         case exceeded
@@ -81,10 +81,10 @@ extension TimerPalette {
                 return .exceeded
             case .paused, .running:
                 if remainingSeconds < 0 { return .exceeded }
-                guard totalDuration.isFinite, totalDuration < Double(Int.max) else { return .normal }
-                if totalDuration > 0, remainingSeconds < Int(totalDuration) / 10 {
-                    return .soon
-                }
+                guard totalDuration.isFinite, totalDuration > 0,
+                      totalDuration < Double(Int.max) else { return .normal }
+                let soonThreshold = max(1, Int(totalDuration / 10.0))
+                if remainingSeconds <= soonThreshold { return .soon }
                 return .normal
             }
         }

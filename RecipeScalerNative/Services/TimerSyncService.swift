@@ -121,6 +121,7 @@ final class TimerSyncService {
 
         let data = payload["data"] as? [String: Any] ?? [:]
         applyRemoteEvent(type: eventType, timerId: timerId, timestamp: timestamp, data: data)
+        WatchCredentialsBridge.shared.publishTimersChanged()
     }
 
     // MARK: - Outbound queue
@@ -143,6 +144,7 @@ final class TimerSyncService {
             if let sendTimerEvent, await sendTimerEvent(type, timerId, payload) {
                 state.pendingEvents.removeAll { $0.id == queued.id }
                 saveState()
+                WatchCredentialsBridge.shared.publishTimersChanged()
                 return
             }
             await syncPendingEvents()
@@ -273,6 +275,7 @@ final class TimerSyncService {
                 }
                 state.lastSyncAt = Int64(Date().timeIntervalSince1970 * 1000)
                 saveState()
+                WatchCredentialsBridge.shared.publishTimersChanged()
             }
         } catch {
             AppLog.notice(.timer, "Timer sync HTTP failed: \(error.localizedDescription)")
@@ -388,8 +391,8 @@ final class TimerSyncService {
             pausedAt: server.pausedAt.map { dateFromMillis($0) },
             hasCompleted: false
         )
-        if server.isPaused, let end = timer.endTime {
-            timer.remainingTime = max(0, end.timeIntervalSince(Date()))
+        if server.isPaused {
+            timer.remainingTime = TimeInterval(server.remainingSeconds())
         }
         return timer
     }

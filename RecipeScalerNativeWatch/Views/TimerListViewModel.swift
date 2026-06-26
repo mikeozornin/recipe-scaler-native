@@ -15,6 +15,8 @@ final class TimerListViewModel: ObservableObject {
     @Published private(set) var state: WatchTimerService.LoadState = .idle
 
     private let service = WatchTimerService()
+    /// Foreground poll interval — watch has no WebSocket in v1.
+    private static let refreshIntervalSeconds: UInt64 = 15
     /// Previously seen "expired" set; used so we fire the haptic only once
     /// per timer that crosses the boundary while the app is foreground.
     private var firedExpirations: Set<String> = []
@@ -28,6 +30,12 @@ final class TimerListViewModel: ObservableObject {
                     self?.state = .notAuthorized
                     return
                 }
+                await self?.refresh()
+            }
+        }
+        WatchCredentialsBridge.shared.onTimersChanged = { [weak self] in
+            Task { @MainActor in
+                guard WatchCredentialsStore.userId != nil else { return }
                 await self?.refresh()
             }
         }
@@ -52,6 +60,26 @@ final class TimerListViewModel: ObservableObject {
         }
         state = service.state
         checkForExpirations()
+    }
+
+    /// Poll `GET /active` while the list is on screen so iPhone/web timer
+    /// changes reach the watch without WebSocket (v1).
+    func foregroundRefreshLoop() async {
+        while !Task.isCancelled {
+            try? await Task.sleep(nanoseconds: Self.refreshIntervalSeconds * 1_000_000_000)
+            guard WatchCredentialsStore.userId != nil else { continue }
+            guard shouldPollForRemoteChanges else { continue }
+            await refresh()
+        }
+    }
+
+    private var shouldPollForRemoteChanges: Bool {
+        switch state {
+        case .loaded, .empty, .error:
+            return true
+        case .idle, .loading, .notAuthorized:
+            return false
+        }
     }
 
     func togglePause(_ timer: WatchTimer) async {

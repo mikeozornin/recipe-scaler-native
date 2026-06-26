@@ -44,7 +44,7 @@ x-user-id: <userId>
 ### Типы
 
 - `endTime: Int64?` — Unix epoch ms, `null` если paused.
-- `pausedDuration: Int?` — remaining seconds at pause time, `null` если running.
+- `pausedDuration: Int?` — **на сервере**: накопленное время на паузе (секунды), не remaining. Remaining на клиенте: `endTime - (pausedAt ?? lastUpdated)` пока `isPaused`.
 - `duration: Int` — total duration seconds.
 - `lastUpdated: Int64` — Unix epoch ms, для LWW conflict resolution.
 
@@ -73,7 +73,7 @@ public struct ServerActiveTimer: Decodable, Sendable {
 | Состояние | Признаки |
 |---|---|
 | Running | `isPaused == false && endTime != nil` |
-| Paused | `isPaused == true && pausedDuration != nil && endTime == nil` |
+| Paused | `isPaused == true`; remaining = `endTime - (pausedAt ?? lastUpdated)` (сек); `pausedDuration` — не remaining |
 | Exceeded | вычисляется на клиенте: running && `endTime < now` |
 
 ## POST /api/v1/timers/sync
@@ -87,11 +87,12 @@ public struct ServerActiveTimer: Decodable, Sendable {
   "deviceId": "watch-uuid",
   "events": [
     {
-      "id": "evt_<uuid>",
       "timestamp": 1719406800000,
       "type": "timer_paused",
       "timerId": "timer_xxx",
-      "payload": {
+      "data": {
+        "type": "timer_paused",
+        "timerId": "timer_xxx",
         "remaining": 1234
       }
     }
@@ -104,11 +105,11 @@ public struct ServerActiveTimer: Decodable, Sendable {
 
 | Type | Payload | Когда |
 |------|---------|-------|
-| `timer_paused` | `{remaining: Int}` (seconds) | swipe pause на часах |
-| `timer_resumed` | `{}` | swipe resume на часах |
-| `timer_deleted` | `{}` | swipe delete на часах |
+| `timer_paused` | `{type, timerId, remaining: Int}` (seconds) | swipe pause на часах |
+| `timer_resumed` | `{type, timerId}` | swipe resume на часах |
+| `timer_deleted` | `{type, timerId}` | swipe delete на часах |
 
-**Критично**: `timer_paused` payload должен включать `remaining` (parity с `TimerSyncService`, иначе ломается web). Remaining = текущее `endTime - now` на момент pause.
+**Критично**: поле называется `data`, не `payload` (parity с `TimerSyncService.syncPendingEvents` и Zod-схемой сервера). `timer_paused` должен включать `remaining` — iPhone читает `data.remaining` из WebSocket. Remaining = текущее `endTime - now` на момент pause.
 
 ### Response
 

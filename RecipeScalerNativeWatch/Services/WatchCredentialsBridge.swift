@@ -10,27 +10,49 @@
 
 import Foundation
 import WatchConnectivity
-import os
 import RecipeScalerCore
 
 final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
     static let shared = WatchCredentialsBridge()
 
-    private let log = OSLog(subsystem: "ru.recipescaler.RecipeScalerNative.watchkitapp", category: "WatchCredentialsBridge")
-
     /// Called when new userId (or NSNull for purge) arrives.
     var onUserIdChange: ((String?) -> Void)?
+    /// Called when iPhone signals timer list changed (start/pause/delete on another device).
+    var onTimersChanged: (() -> Void)?
 
     func activate() {
-        guard WCSession.isSupported() else {
-            os_log("WCSession not supported on this device", log: log, type: .info)
-            return
-        }
+        guard WCSession.isSupported() else { return }
         let session = WCSession.default
         session.delegate = self
-        os_log("activate: state=%d", log: log, type: .info, session.activationState.rawValue)
         if session.activationState != .activated {
             session.activate()
+        } else {
+            applyPayload(session.receivedApplicationContext)
+        }
+    }
+
+    // MARK: - Payload handling
+
+    private func userId(from payload: [String: Any]) -> String? {
+        let raw = payload["userId"]
+        if let raw, !(raw is NSNull) {
+            return raw as? String
+        }
+        return nil
+    }
+
+    private func applyPayload(_ payload: [String: Any]) {
+        guard !payload.isEmpty else { return }
+
+        if payload.keys.contains("userId") {
+            let userId = userId(from: payload)
+            WatchCredentialsStore.set(userId)
+            APIClient.shared.configure(userId: userId)
+            onUserIdChange?(userId)
+        }
+
+        if payload["timersChangedAt"] != nil {
+            onTimersChanged?()
         }
     }
 
@@ -41,36 +63,26 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
         activationDidCompleteWith activationState: WCSessionActivationState,
         error: Error?
     ) {
-        os_log("activationDidCompleteWith: state=%d, error=%{public}@",
-               log: log, type: .info,
-               activationState.rawValue,
-               error.map { $0.localizedDescription } ?? "nil")
+        guard activationState == .activated else { return }
+        applyPayload(session.receivedApplicationContext)
+    }
+
+    func session(
+        _ session: WCSession,
+        didReceiveApplicationContext applicationContext: [String: Any]
+    ) {
+        applyPayload(applicationContext)
     }
 
     func session(
         _ session: WCSession,
         didReceiveUserInfo userInfo: [String: Any] = [:]
     ) {
-        let raw = userInfo["userId"]
-        let userId: String?
-        if let raw, !(raw is NSNull) {
-            userId = raw as? String
-        } else {
-            userId = nil
-        }
+        applyPayload(userInfo)
+    }
 
-        os_log("didReceiveUserInfo: userId=%{public}@",
-               log: log, type: .info,
-               userId ?? "<nil>")
-
-        WatchCredentialsStore.set(userId)
-
-        // Pass the userId through unconditionally — `nil` is the whole point
-        // of the optional signature, and clears the stale `x-user-id` header
-        // so any in-flight background fetch can no longer leak the previous
-        // user's identity (review M4).
-        APIClient.shared.configure(userId: userId)
-
-        onUserIdChange?(userId)
+    func sessionReachabilityDidChange(_ session: WCSession) {
+        guard session.isReachable else { return }
+        applyPayload(session.receivedApplicationContext)
     }
 }

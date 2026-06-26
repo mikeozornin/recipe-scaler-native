@@ -42,7 +42,7 @@ final class WatchTimerService: ObservableObject {
                 state = .error
                 return
             }
-            let mapped = timers.map(WatchTimer.init(server:))
+            let mapped = Self.sorted(timers.map(WatchTimer.init(server:)))
             state = mapped.isEmpty ? .empty : .loaded(mapped)
         } catch {
             state = .error
@@ -50,35 +50,51 @@ final class WatchTimerService: ObservableObject {
     }
 
     func pause(timerId: String, remaining: Int) async {
-        await postEvent(type: "timer_paused", timerId: timerId, payload: ["remaining": remaining])
+        await postEvent(
+            type: "timer_paused",
+            timerId: timerId,
+            data: ["type": "timer_paused", "timerId": timerId, "remaining": remaining]
+        )
     }
 
     func resume(timerId: String) async {
-        await postEvent(type: "timer_resumed", timerId: timerId, payload: [:])
+        await postEvent(
+            type: "timer_resumed",
+            timerId: timerId,
+            data: ["type": "timer_resumed", "timerId": timerId]
+        )
     }
 
     func delete(timerId: String) async {
-        await postEvent(type: "timer_deleted", timerId: timerId, payload: [:])
+        await postEvent(
+            type: "timer_deleted",
+            timerId: timerId,
+            data: ["type": "timer_deleted", "timerId": timerId]
+        )
     }
 
     /// Optimistic update: flip the matching timer in `state.loaded` before
     /// the POST lands. Caller invokes this immediately, then awaits `pause`.
-    func optimisticToggle(timerId: String) {
+    func optimisticToggle(timerId: String, now: Date = Date()) {
         guard case var .loaded(timers) = state else { return }
         guard let idx = timers.firstIndex(where: { $0.id == timerId }) else { return }
         var t = timers[idx]
-        t.isPaused.toggle()
-        // Clearing `endTime` on pause matches the server contract; on resume
-        // we leave it nil — the next `refresh()` will populate the new end.
-        if t.isPaused { t.endDate = nil }
+        if t.isPaused {
+            t.isPaused = false
+            t.pausedRemainingSeconds = nil
+        } else {
+            t.pausedRemainingSeconds = t.remainingSeconds(now: now)
+            t.isPaused = true
+            t.endDate = nil
+        }
         timers[idx] = t
-        state = .loaded(timers)
+        state = .loaded(Self.sorted(timers))
     }
 
     func optimisticRemove(timerId: String) {
         guard case var .loaded(timers) = state else { return }
         timers.removeAll { $0.id == timerId }
-        state = timers.isEmpty ? .empty : .loaded(timers)
+        state = timers.isEmpty ? .empty : .loaded(Self.sorted(timers))
     }
 
     /// Clear local state (logout). UI flips to `.notAuthorized`.
@@ -88,20 +104,30 @@ final class WatchTimerService: ObservableObject {
 
     // MARK: - Internals
 
+    private static func sorted(_ timers: [WatchTimer], now: Date = Date()) -> [WatchTimer] {
+        TimerOrdering.sortActive(
+            timers,
+            now: now,
+            isPaused: { $0.isPaused },
+            remainingSeconds: { $0.remainingSeconds(now: $1) }
+        )
+    }
+
     private func postEvent(
         type: String,
         timerId: String,
-        payload: [String: Any]
+        data: [String: Any]
     ) async {
         guard WatchCredentialsStore.userId != nil else { return }
 
         let timestamp = Int64(Date().timeIntervalSince1970 * 1000)
+        // Body parity with `TimerSyncService.syncPendingEvents` — server expects
+        // `data`, not `payload`; iPhone reads `data.remaining` from WebSocket.
         let event: [String: Any] = [
-            "id": "evt_\(timestamp)_\(UUID().uuidString.prefix(8))",
             "timestamp": timestamp,
             "type": type,
             "timerId": timerId,
-            "payload": payload,
+            "data": data,
         ]
         let body: [String: Any] = [
             "deviceId": Self.storedDeviceId(),

@@ -2,9 +2,12 @@
 //  TimerRow.swift
 //  RecipeScalerNativeWatch Watch App
 //
-//  Spec 039 — single timer row in the watch List. Reuses Core primitives
-//  where possible; the watch row additionally shows an action icon that
-//  reflects the *action* (pause / resume), not the status.
+//  Spec 039 — single timer row in the watch List. Pause/resume/delete via
+//  swipe actions only (no leading action icon in the row).
+//
+//  `now` is supplied by the parent `TimelineView` in `TimerListView` so the
+//  progress bar and countdown tick inside `List` on watchOS (TimelineView
+//  inside a row does not reliably schedule updates).
 //
 
 import SwiftUI
@@ -12,43 +15,51 @@ import RecipeScalerCore
 
 struct TimerRow: View {
     let timer: WatchTimer
+    let now: Date
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            topRow
-            nameLabel
+        rowContent(now: now)
+            .frame(maxWidth: .infinity, minHeight: WatchTimerLayout.rowMinHeight, alignment: .topLeading)
+    }
+
+    private func rowContent(now: Date) -> some View {
+        let palette = timer.palette(at: now)
+        let accentColor = palette.color
+        let fraction = timer.progressFraction(now: now)
+        let remaining = timer.remainingSeconds(now: now)
+
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: WatchTimerLayout.progressToTimeSpacing) {
+                progressBar(fraction: fraction, color: accentColor, tick: remaining)
+                timeLabel(seconds: remaining, color: accentColor)
+                    .frame(minWidth: WatchTimerLayout.timeColumnWidth, alignment: .trailing)
+            }
+            .frame(height: WatchTimerLayout.topRowHeight)
+
+            nameLabel(color: accentColor)
         }
-        .frame(maxWidth: .infinity, minHeight: WatchTimerLayout.rowMinHeight, alignment: .topLeading)
+        .foregroundStyle(accentColor)
     }
 
-    private var topRow: some View {
-        HStack(spacing: WatchTimerLayout.actionToProgressSpacing) {
-            actionIcon
-            progressBar
-            timeLabel
-                .frame(width: WatchTimerLayout.timeColumnWidth, alignment: .trailing)
-        }
-        .frame(height: WatchTimerLayout.topRowHeight)
+    private func timeLabel(seconds: Int, color: Color) -> some View {
+        Text(TimerFormatting.compactRemaining(seconds: seconds))
+            .font(TimerFonts.monoFont(size: WatchTimerLayout.timeFontSize))
+            .tracking(TimerFonts.timerTracking)
+            .foregroundStyle(color)
+            .lineLimit(1)
+            .monospacedDigit()
     }
 
-    private var actionIcon: some View {
-        Image(systemName: timer.actionIcon)
-            .font(.system(size: WatchTimerLayout.actionIconSize, weight: .medium))
-            .foregroundStyle(paletteColor)
-            .frame(width: WatchTimerLayout.actionIconSize, height: WatchTimerLayout.topRowHeight)
-            .accessibilityHidden(true)
-    }
-
-    private var progressBar: some View {
+    private func progressBar(fraction: Double, color: Color, tick: Int) -> some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 Rectangle()
-                    .fill(paletteColor.opacity(TimerPalette.trackOpacity))
+                    .fill(color.opacity(TimerPalette.trackOpacity))
                     .frame(width: geo.size.width, height: WatchTimerLayout.progressTrackHeight)
                 Rectangle()
-                    .fill(paletteColor)
+                    .fill(color)
                     .frame(
-                        width: geo.size.width * timer.progressFraction,
+                        width: geo.size.width * fraction,
                         height: WatchTimerLayout.progressFillHeight
                     )
             }
@@ -57,50 +68,19 @@ struct TimerRow: View {
         .frame(height: WatchTimerLayout.progressTrackHeight)
         .frame(maxWidth: .infinity)
         .accessibilityHidden(true)
+        // Tie layout to the countdown second so List rows redraw the fill width.
+        .id(tick)
     }
 
-    @ViewBuilder
-    private var timeLabel: some View {
-        if timer.isPaused, let remaining = timer.pausedRemainingSeconds {
-            Text(TimerFormatting.shortClock(remaining))
-                .timerMono(WatchTimerLayout.timeFontSize)
-                .timerDigitTracking()
-                .foregroundStyle(paletteColor)
-                .lineLimit(1)
-        } else if let endDate = timer.endDate {
-            // Live countdown — system-driven via `Text(timerInterval:)`.
-            Text(timerInterval: Date()...endDate, countsDown: true)
-                .timerMono(WatchTimerLayout.timeFontSize)
-                .timerDigitTracking()
-                .foregroundStyle(paletteColor)
-                .lineLimit(1)
-                .monospacedDigit()
-        } else {
-            Text(TimerFormatting.compactRemaining(seconds: timer.remainingSeconds(now: Date())))
-                .timerMono(WatchTimerLayout.timeFontSize)
-                .timerDigitTracking()
-                .foregroundStyle(paletteColor)
-                .lineLimit(1)
-        }
-    }
-
-    private var nameLabel: some View {
+    private func nameLabel(color: Color) -> some View {
         Text(timer.name)
-            .timerSans(WatchTimerLayout.nameFontSize)
-            .foregroundStyle(paletteColor)
+            .font(TimerFonts.sansFont(size: WatchTimerLayout.nameFontSize))
+            .foregroundStyle(color)
             .lineLimit(WatchTimerLayout.nameMaxLines)
             .multilineTextAlignment(.leading)
             .truncationMode(.tail)
             .frame(maxWidth: .infinity, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private var paletteColor: Color {
-        TimerPalette.resolve(
-            phase: timer.isPaused ? .paused : .running,
-            remainingSeconds: timer.remainingSeconds(now: Date()),
-            totalDuration: TimeInterval(timer.duration)
-        ).color
     }
 }
 
@@ -120,7 +100,52 @@ struct TimerRow: View {
                 pausedAt: nil,
                 recipeId: nil
             )
-        )
+        ),
+        now: Date()
+    )
+    .frame(width: 179)
+}
+
+#Preview("TimerRow — exceeded") {
+    TimerRow(
+        timer: WatchTimer(
+            server: .init(
+                timerId: "t2",
+                name: "10 секунд",
+                duration: 10,
+                endTime: Int64((Date().addingTimeInterval(-480)).timeIntervalSince1970 * 1000),
+                isPaused: false,
+                pausedDuration: nil,
+                createdAt: 0,
+                lastUpdated: 0,
+                startedAt: 0,
+                pausedAt: nil,
+                recipeId: nil
+            )
+        ),
+        now: Date()
+    )
+    .frame(width: 179)
+}
+
+#Preview("TimerRow — soon") {
+    TimerRow(
+        timer: WatchTimer(
+            server: .init(
+                timerId: "t3",
+                name: "10 секунд",
+                duration: 10,
+                endTime: Int64((Date().addingTimeInterval(1)).timeIntervalSince1970 * 1000),
+                isPaused: false,
+                pausedDuration: nil,
+                createdAt: 0,
+                lastUpdated: 0,
+                startedAt: 0,
+                pausedAt: nil,
+                recipeId: nil
+            )
+        ),
+        now: Date()
     )
     .frame(width: 179)
 }

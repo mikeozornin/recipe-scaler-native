@@ -8,6 +8,20 @@ ROOT="${ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 BUNDLE_ID="ru.recipescaler.RecipeScalerNative"
 VERIFY_BUILD_STAMP="${VERIFY_BUILD_STAMP:-$ROOT/.verify-build-stamp}"
 
+# Stale EagerLinking TBD stubs for watchsimulator omit x86_64 (or arm64) and break
+# RecipeScalerNativeWatch link when building the iPhone scheme. Safe to delete — Xcode
+# regenerates on the next build. See verify-watch-timers.sh / AGENT-WORKFLOW.md.
+xcode_clean_watch_tbd_stubs() {
+  local count=0
+  while IFS= read -r -d '' stub_dir; do
+    rm -rf "$stub_dir"
+    count=$((count + 1))
+  done < <(find "$HOME/Library/Developer/Xcode/DerivedData" -path '*/EagerLinkingTBDs/Debug-watchsimulator' -type d -print0 2>/dev/null || true)
+  if (( count > 0 )); then
+    echo "== Cleared stale watchsimulator EagerLinking TBD stubs ($count) =="
+  fi
+}
+
 sim_build() {
   sim_ensure_built "$@"
 }
@@ -24,7 +38,7 @@ sim_ensure_built() {
   fi
 
   local newest_source
-  newest_source="$(find "$ROOT/RecipeScalerNative" "$ROOT/RecipeScalerCore" \
+  newest_source="$(find "$ROOT/RecipeScalerNative" "$ROOT/RecipeScalerCore" "$ROOT/RecipeScalerNativeWatch" \
     -name '*.swift' -print0 2>/dev/null \
     | xargs -0 stat -f '%m %N' 2>/dev/null \
     | sort -rn | head -1 | cut -d' ' -f1 || echo 0)"
@@ -40,6 +54,7 @@ sim_ensure_built() {
   fi
 
   echo "== Build Debug =="
+  xcode_clean_watch_tbd_stubs
   xcodebuild -scheme RecipeScalerNative \
     -destination "platform=iOS Simulator,id=$SIM_ID" \
     -configuration Debug \

@@ -57,6 +57,43 @@ public struct ServerActiveTimer: Decodable, Sendable {
     }
 }
 
+extension ServerActiveTimer {
+    /// Remaining seconds for UI and sync.
+    ///
+    /// Server `pausedDuration` is **accumulated time spent on pause**, not remaining.
+    /// While paused, `endTime` usually stays set; freeze remaining at `pausedAt`
+    /// (or `lastUpdated` when the server omits `pausedAt`).
+    public func remainingSeconds(at now: Date = Date()) -> Int {
+        if isPaused {
+            return Self.remainingWhenPaused(
+                endTimeMs: endTime,
+                pauseAnchorMs: pausedAt ?? lastUpdated,
+                duration: duration,
+                startedAtMs: startedAt
+            )
+        }
+        guard let endMs = endTime else { return duration }
+        let nowMs = Int64(now.timeIntervalSince1970 * 1000)
+        return Int((endMs - nowMs) / 1000)
+    }
+
+    private static func remainingWhenPaused(
+        endTimeMs: Int64?,
+        pauseAnchorMs: Int64,
+        duration: Int,
+        startedAtMs: Int64?
+    ) -> Int {
+        if let endMs = endTimeMs {
+            return max(0, Int((endMs - pauseAnchorMs) / 1000))
+        }
+        if let startedMs = startedAtMs {
+            let activeSeconds = Int((pauseAnchorMs - startedMs) / 1000)
+            return max(0, duration - activeSeconds)
+        }
+        return duration
+    }
+}
+
 /// `GET /api/v1/timers/active` envelope: `{ "success": Bool, "data": { "timers": [...] } }`.
 public struct ActiveTimersResponse: Decodable, Sendable {
     public struct Payload: Decodable, Sendable {

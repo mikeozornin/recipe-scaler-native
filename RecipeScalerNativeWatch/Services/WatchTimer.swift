@@ -25,26 +25,28 @@ struct WatchTimer: Identifiable, Equatable {
         self.duration = server.duration
         self.endDate = server.endTime.map { Date(timeIntervalSince1970: TimeInterval($0) / 1000) }
         self.isPaused = server.isPaused
-        self.pausedRemainingSeconds = server.pausedDuration
+        self.pausedRemainingSeconds = server.isPaused ? server.remainingSeconds() : nil
         self.lastUpdated = server.lastUpdated
+    }
+
+    var presentationState: ActiveTimerState {
+        ActiveTimerState(
+            duration: duration,
+            endDate: endDate,
+            isPaused: isPaused,
+            pausedRemainingSeconds: pausedRemainingSeconds
+        )
     }
 }
 
 extension WatchTimer {
     /// Remaining seconds at the given time. Negative when exceeded.
     func remainingSeconds(now: Date) -> Int {
-        if isPaused, let r = pausedRemainingSeconds { return r }
-        guard let endDate else { return 0 }
-        return Int(endDate.timeIntervalSince(now))
+        ActiveTimerPresentation.remainingSeconds(presentationState, now: now)
     }
 
-    var progressFraction: Double {
-        guard duration > 0 else { return 0 }
-        // Use a synthetic now for snapshot; the view layer passes a real date.
-        let now = Date()
-        let remaining = Double(remainingSeconds(now: now))
-        let elapsed = Double(duration) - remaining
-        return min(max(elapsed / Double(duration), 0), 1)
+    func progressFraction(now: Date) -> Double {
+        ActiveTimerPresentation.progressFraction(presentationState, now: now)
     }
 
     /// SF Symbol name for the action the user can take (not the status).
@@ -52,5 +54,13 @@ extension WatchTimer {
     /// - Paused timer  → user can resume → `play.fill`.
     var actionIcon: String {
         isPaused ? "play.fill" : "pause.fill"
+    }
+
+    func snapshotPhase(now: Date) -> TimerSnapshotPhase {
+        ActiveTimerPresentation.snapshotPhase(presentationState, now: now)
+    }
+
+    func palette(at now: Date) -> TimerPalette {
+        ActiveTimerPresentation.palette(presentationState, now: now)
     }
 }

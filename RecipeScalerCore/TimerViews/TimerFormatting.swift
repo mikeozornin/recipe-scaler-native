@@ -53,6 +53,7 @@ extension TimerSnapshot {
     public func progressFraction(now: Date) -> CGFloat {
         guard totalDurationSeconds > 0 else { return 0 }
         let remaining = TimeInterval(remainingSeconds(now: now))
+        if phase != .paused, remaining <= 0 { return 1 }
         let elapsed = totalDurationSeconds - remaining
         return CGFloat(min(max(elapsed / totalDurationSeconds, 0), 1))
     }
