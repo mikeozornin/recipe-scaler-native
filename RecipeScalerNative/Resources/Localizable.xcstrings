@@ -10822,34 +10822,18 @@
         }
       }
     },
-    "watch.timer.not-authorized.subtitle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "on iPhone to see timers"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "на iPhone, чтобы видеть таймеры"
-          }
-        }
-      }
-    },
     "watch.timer.not-authorized.title" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sign in to Recipe Scaler"
+            "value" : "Sign in to Recipe Scaler on iPhone to see timers"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Войдите в Recipe Scaler"
+            "value" : "Войдите в Recipe Scaler на iPhone, чтобы видеть таймеры"
           }
         }
       }

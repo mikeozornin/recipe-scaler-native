@@ -34,9 +34,8 @@ enum WatchTimerLayout {
     /// SF Symbol size for Empty / Error / NotAuthorized icons.
     static let stateIconSize: CGFloat = 48
 
-    /// Spacing between the icon and the title/subtitle stack.
+    /// Spacing between the icon and the title text.
     static let stateStackSpacing: CGFloat = 8
-    static let stateSubtitleSpacing: CGFloat = 4
 
     /// Gap between the state square (icon+text) and the Settings button.
     static let stateToSettingsSpacing: CGFloat = 16

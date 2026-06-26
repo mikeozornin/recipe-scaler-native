@@ -29,14 +29,9 @@ struct NotAuthorizedStateView: View {
             Image(systemName: "iphone.gen2.slash")
                 .font(.system(size: WatchTimerLayout.stateIconSize, weight: .medium))
                 .foregroundStyle(.secondary)
-            VStack(spacing: WatchTimerLayout.stateSubtitleSpacing) {
-                Text(LocalizedStringKey("watch.timer.not-authorized.title"))
-                    .timerSans(WatchTimerLayout.stateTitleFontSize)
-                Text(LocalizedStringKey("watch.timer.not-authorized.subtitle"))
-                    .timerSans(WatchTimerLayout.stateTitleFontSize)
-                    .foregroundStyle(.secondary)
-            }
-            .multilineTextAlignment(.center)
+            Text(LocalizedStringKey("watch.timer.not-authorized.title"))
+                .timerSans(WatchTimerLayout.stateTitleFontSize)
+                .multilineTextAlignment(.center)
         }
         .frame(width: width, height: width)
     }

@@ -80,7 +80,6 @@
   - [ ] `watch.timer.error.title`
   - [ ] `watch.timer.error.subtitle`
   - [ ] `watch.timer.not-authorized.title`
-  - [ ] `watch.timer.not-authorized.subtitle`
   - [ ] `watch.timer.action.pause`
   - [ ] `watch.timer.action.resume`
   - [ ] `watch.timer.action.delete`

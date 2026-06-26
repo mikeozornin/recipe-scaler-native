@@ -239,7 +239,7 @@ GeometryReader { geo in
 
 ## State: Not-authorized (не нарисован в Figma)
 
-Строится по образцу Empty/Error (Figma-иконка `iphone.gen2.slash` — для пользователя NotAuthorized и Error семантически одно и то же: «часы не могут получить данные с телефона»). 2 строки текста.
+Строится по образцу Empty/Error (Figma-иконка `iphone.gen2.slash` — для пользователя NotAuthorized и Error семантически одно и то же: «часы не могут получить данные с телефона»). Один абзац текста (перенос по ширине экрана).
 
 ### Размеры блоков
 
@@ -247,14 +247,12 @@ GeometryReader { geo in
 |---------|-----|------------|
 | Квадрат icon+text | `contentWidth × contentWidth` | как Empty |
 | Icon | full × 48 pt | SF Symbol `iphone.gen2.slash`, weight `.medium` |
-| Title | full × 18 pt | 1 строка |
-| Subtitle | full × 36 pt | 2 строки |
+| Text | full × auto | до 3 строк, один абзац |
 | Settings button | full × min 44 pt | sibling ниже квадрата |
 
 ### Тексты
 
-- `watch.timer.not-authorized.title` — «Войдите в Recipe Scaler»
-- `watch.timer.not-authorized.subtitle` — «на iPhone, чтобы видеть таймеры»
+- `watch.timer.not-authorized.title` — «Войдите в Recipe Scaler на iPhone, чтобы видеть таймеры»
 
 ---
 
