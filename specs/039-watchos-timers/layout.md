@@ -239,14 +239,14 @@ GeometryReader { geo in
 
 ## State: Not-authorized (не нарисован в Figma)
 
-Строится по образцу Empty/Error. Иконка — `person.crop.circle.badge.exclamationmark` (system Symbol), 2 строки текста.
+Строится по образцу Empty/Error (Figma-иконка `iphone.gen2.slash` — для пользователя NotAuthorized и Error семантически одно и то же: «часы не могут получить данные с телефона»). 2 строки текста.
 
 ### Размеры блоков
 
 | Элемент | W×H | Примечание |
 |---------|-----|------------|
 | Квадрат icon+text | `contentWidth × contentWidth` | как Empty |
-| Icon | full × 48 pt | SF Symbol, weight `.medium` |
+| Icon | full × 48 pt | SF Symbol `iphone.gen2.slash`, weight `.medium` |
 | Title | full × 18 pt | 1 строка |
 | Subtitle | full × 36 pt | 2 строки |
 | Settings button | full × min 44 pt | sibling ниже квадрата |

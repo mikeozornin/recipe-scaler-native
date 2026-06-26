@@ -10,18 +10,25 @@
 
 import Foundation
 import WatchConnectivity
+import os
 import RecipeScalerCore
 
 final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
     static let shared = WatchCredentialsBridge()
 
+    private let log = OSLog(subsystem: "ru.recipescaler.RecipeScalerNative.watchkitapp", category: "WatchCredentialsBridge")
+
     /// Called when new userId (or NSNull for purge) arrives.
     var onUserIdChange: ((String?) -> Void)?
 
     func activate() {
-        guard WCSession.isSupported() else { return }
+        guard WCSession.isSupported() else {
+            os_log("WCSession not supported on this device", log: log, type: .info)
+            return
+        }
         let session = WCSession.default
         session.delegate = self
+        os_log("activate: state=%d", log: log, type: .info, session.activationState.rawValue)
         if session.activationState != .activated {
             session.activate()
         }
@@ -34,9 +41,10 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
         activationDidCompleteWith activationState: WCSessionActivationState,
         error: Error?
     ) {
-        // No-op: we just need to receive `didReceiveUserInfo`. If the user
-        // is already authenticated and `transferUserInfo` was queued while
-        // the watch was off, the system will replay it here.
+        os_log("activationDidCompleteWith: state=%d, error=%{public}@",
+               log: log, type: .info,
+               activationState.rawValue,
+               error.map { $0.localizedDescription } ?? "nil")
     }
 
     func session(
@@ -50,6 +58,10 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
         } else {
             userId = nil
         }
+
+        os_log("didReceiveUserInfo: userId=%{public}@",
+               log: log, type: .info,
+               userId ?? "<nil>")
 
         WatchCredentialsStore.set(userId)
 

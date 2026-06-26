@@ -26,7 +26,7 @@ struct NotAuthorizedStateView: View {
     @ViewBuilder
     private func stateSquare(width: CGFloat) -> some View {
         VStack(spacing: WatchTimerLayout.stateStackSpacing) {
-            Image(systemName: "person.crop.circle.badge.exclamationmark")
+            Image(systemName: "iphone.gen2.slash")
                 .font(.system(size: WatchTimerLayout.stateIconSize, weight: .medium))
                 .foregroundStyle(.secondary)
             VStack(spacing: WatchTimerLayout.stateSubtitleSpacing) {
