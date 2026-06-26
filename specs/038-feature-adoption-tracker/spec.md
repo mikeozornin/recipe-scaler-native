@@ -8,15 +8,15 @@
 
 ## Контекст
 
-В приложении есть много фич, которые пользователь не сразу обнаруживает: импорт рецепта, ассистент, коллекции, Telegram, MCP. Раздел «Насколько вы используете Recipe Scaler» в секции аккаунта показывает галочки по сделанным действиям и мягко подсвечивает, что ещё осталось попробовать.
+В приложении есть много фич, которые пользователь не сразу обнаруживает: импорт рецепта, ассистент, коллекции, Telegram, MCP, список покупок. Раздел «Насколько вы освоили Recipe Scaler» в секции аккаунта показывает галочки по сделанным действиям и мягко подсвечивает, что ещё осталось попробовать.
 
-Список действий зафиксирован продуктом (8 пунктов). Расширение списка — через добавление новых feature-ключей, без миграций (только данные).
+Список действий зафиксирован продуктом (9 пунктов). Расширение списка — через добавление новых feature-ключей, без миграций (только данные).
 
 ### Архитектурное решение (после аудита БД)
 
 Аудит `recipe-scaler-web/server/src/database/migrations.sql` показал: в SQL-таблице `recipes` колонки `source_url`, `original_recipe_link`, `is_public` **отсутствуют** — эти данные живут только в Yjs doc (`originalRecipeLink`, `isPublic` в `Y.Map('recipe')`, `folders` в collection doc). Дроп колонок выполнен в `migrations.sql:111–126`.
 
-Поэтому read-pass «посчитать флаг на лету из SQL» невозможен для 4 из 8 флагов (`imported_recipe`, `created_recipe` partial, `shared_recipe`, `created_collection`). Архитектура — **single source of truth = таблица `user_feature_adoption`**:
+Поэтому read-pass «посчитать флаг на лету из SQL» невозможен для 5 из 9 флагов (`imported_recipe`, `created_recipe` partial, `shared_recipe`, `created_collection`, `used_shopping_list`). Архитектура — **single source of truth = таблица `user_feature_adoption`**:
 
 - **Backfill скрипт** один раз проходит по всем пользователям и заполняет таблицу (для SQL-deriveable флагов — одним пакетом; для Yjs-derived — через `yjsService` итеративно).
 - **Live events** — при каждом новом действии сервер (или Yjs listener) пишет в таблицу через `INSERT ... ON CONFLICT DO NOTHING`.
@@ -28,26 +28,27 @@
 
 ## Цель
 
-Раздел вверху Profile с 8 чек-поинтами. Состояние синхронизируется между устройствами (не CRDT — простой read на холодном старте + pull-to-refresh). Сервер — единый источник правды через `user_feature_adoption` таблицу.
+Раздел вверху Profile с 9 чек-поинтами. Состояние синхронизируется между устройствами (не CRDT — простой read на холодном старте + pull-to-refresh). Сервер — единый источник правды через `user_feature_adoption` таблицу.
 
 ## Пользовательские сценарии
 
-### Список отслеживаемых действий (8 пунктов)
+### Список отслеживаемых действий (9 пунктов)
 
 | Feature key | Заголовок (i18n) | Когда засчитывается | Кто пишет в таблицу |
 |-------------|------------------|---------------------|---------------------|
 | `installed_native_app` | «Установлено приложение» | Успешная авторизация в native app (seed-фраза ИЛИ register-auto для нового юзера) | Native клиент через POST |
+| `created_recipe` | «Записан рецепт» | Создан рецепт (через импорт, вручную POST `/api/recipes`, через распознавание текста, через Telegram-бота) | Server event в recipe-service create path |
+| `used_shopping_list` | «Записали что купить» | Появился хотя бы один item в shopping-list doc пользователя (`items.length > 0`) | Server-side Yjs listener на shopping-list doc |
 | `imported_recipe` | «Импортирован рецепт» | Успешный import URL/text/photo (endpoint `/api/v2/recipes/:id/parse` или аналог) | Server event в import handler |
-| `created_recipe` | «Создан рецепт» | Создан рецепт (через импорт, вручную POST `/api/recipes`, через распознавание текста, через Telegram-бота) | Server event в recipe-service create path |
 | `created_collection` | «Создана коллекция» | Появилась хотя бы одна папка в collection doc пользователя (`folders.length > 0`) | Server-side Yjs listener на collection doc |
+| `sent_assistant_message` | «Пообщались с ассистентом» | Хотя бы одно `assistant_messages` с `role='user'` | Server event в assistant respond handler |
+| `connected_telegram` | «Подключен Телеграм» | `telegram_connections` запись существует | Server event в telegram connect handler |
+| `connected_mcp_assistant` | «Подключен внешний ассистент» | Хотя бы один `oauth_access_tokens` для пользователя (любой, включая истекшие — TTL 1 час, иначе флаг не засчитывался бы через час после подключения) | Server event в mcp-auth-service при issueToken |
 | `shared_recipe` | «Пошарен рецепт» | Хотя бы один рецепт с `isPublic=true` в Y.Map | Server-side Yjs listener на recipe doc |
-| `connected_telegram` | «Подключён Telegram» | `telegram_connections` запись существует | Server event в telegram connect handler |
-| `connected_mcp_assistant` | «Подключён внешний ассистент (MCP)» | Хотя бы один `oauth_access_tokens` для пользователя (любой, включая истекшие — TTL 1 час, иначе флаг не засчитывался бы через час после подключения) | Server event в mcp-auth-service при issueToken |
-| `sent_assistant_message` | «Написано ассистенту» | Хотя бы одно `assistant_messages` с `role='user'` | Server event в assistant respond handler |
 
 ### US1 — Просмотр раздела (P1)
 
-**Когда** пользователь открывает вкладку Profile, **тогда** в секции «Аккаунт» (между данными аккаунта и публичными профилями) видна строка-ссылка с заголовком `account.feature-adoption.title` и счётчиком `N / 8`. На экране детализации — многострочный заголовок в контенте (без обрезки в navigation bar), кольцевой прогресс `N из M` и список строк со статусными галочками (`checkmark` primary при выполнено, `circle` secondary при невыполнено).
+**Когда** пользователь открывает вкладку Profile, **тогда** в секции «Аккаунт» (между данными аккаунта и публичными профилями) видна строка-ссылка с заголовком `account.feature-adoption.title` и счётчиком `N / 9`. На экране детализации — многострочный заголовок в контенте (без обрезки в navigation bar), кольцевой прогресс `N из M` и список строк со статусными галочками (`checkmark` primary при выполнено, `circle` secondary при невыполнено). Под каждой строкой — onboarding-подпись footnote (`.appFootnote()`, secondary color) для контекста.
 
 ### US2 — Синхронизация между устройствами (P1)
 
@@ -73,7 +74,7 @@
 
 **Когда** бэкенд разворачивает спеку, **тогда** backfill скрипт проходит по всем существующим пользователям и заполняет `user_feature_adoption` на основе:
 - SQL-deriveable флагов (`created_recipe`, `connected_telegram`, `connected_mcp_assistant`, `sent_assistant_message`) — одним пакетом через `INSERT ... SELECT`.
-- Yjs-derived флагов (`imported_recipe`, `created_collection`, `shared_recipe`) — итеративно через `yjsService` по каждому пользователю (медленно, но разово).
+- Yjs-derived флагов (`imported_recipe`, `created_collection`, `shared_recipe`, `used_shopping_list`) — итеративно через `yjsService` по каждому пользователю (медленно, но разово).
 - `installed_native_app` — **не backfill'ится** (для существующих веб-юзеров флаг станет true только когда они впервые залогинятся в нативке).
 
 ## Требования
@@ -112,7 +113,7 @@
 
 #### FR-038-N5 — i18n
 
-Все 8 заголовков — в `Localizable.xcstrings` (RU/EN). Префикс ключей: `account.feature-adoption.item.*`. Плюс заголовок раздела `account.feature-adoption.title`. Без хардкода в SwiftUI.
+Все 9 заголовков + onboarding footnote — в `Localizable.xcstrings` (RU/EN). Префикс ключей: `account.feature-adoption.item.*` (заголовки) и `account.feature-adoption.item.*.footnote` (подписи). Плюс заголовок раздела `account.feature-adoption.title`. Без хардкода в SwiftUI.
 
 ### Server
 
@@ -153,7 +154,7 @@ CREATE INDEX IF NOT EXISTS idx_user_feature_adoption_user
 }
 ```
 
-Все 8 ключей присутствуют всегда. Логика — один `SELECT feature FROM user_feature_adoption WHERE user_id=$1`, маппинг в 8 булей. Никаких JOIN, никаких read-pass на лету.
+Все 9 ключей присутствуют всегда. Логика — один `SELECT feature FROM user_feature_adoption WHERE user_id=$1`, маппинг в 9 булей. Никаких JOIN, никаких read-pass на лету.
 
 **Headers**: `Cache-Control: private, max-age=60`.
 
@@ -267,12 +268,12 @@ for (const user of allUserIds) {
 
 - **Веб-UI**: раздел только в native iOS приложении. Backend готов обслуживать любые клиенты, но в `recipe-scaler-web` UI не добавляется.
 - Аналитика событий (количество, временные ряды) — только булевы флаги.
-- Расширение списка за пределы 8 пунктов — следующая итерация.
+- Расширение списка за пределы 9 пунктов — следующая итерация.
 - Push-уведомления о новых доступных действиях.
 - Gamification (уровни, награды, проценты).
 - Client-side optimistic update после локального действия (например, после импорта рецепта в этой же сессии галочка становится активной без pull-to-refresh) — следующий spec, если UX потребует. Сейчас единственный optimistic update — `installed_native_app` (FR-038-N4).
 - Live update через Socket.IO (событие `feature_adoption_updated`) — overkill для v1.
-- UI для скрытия/сворачивания раздела — пользователь всегда видит 8 пунктов.
+- UI для скрытия/сворачивания раздела — пользователь всегда видит 9 пунктов.
 
 ## Критерии успеха
 

@@ -11,7 +11,7 @@
 
 2. **`feature-adoption-service.ts`** — в `server/src/services/`.
    - `mark(userId: string, feature: FeatureKey): Promise<void>` — `INSERT ... ON CONFLICT DO NOTHING`, логирует warning при ошибке.
-   - `getReport(userId: string): Promise<FeatureAdoptionReport>` — один SELECT, маппинг в 8 булей (missing → false).
+   - `getReport(userId: string): Promise<FeatureAdoptionReport>` — один SELECT, маппинг в 9 булей (missing → false).
    - `FEATURE_KEYS` const + `FeatureKey` type.
 
 3. **`POST /api/users/me/feature-adoption`** — в `routes/users.ts`. Body schema: `{ feature: z.enum(FEATURE_KEYS) }`. Idempotent insert.

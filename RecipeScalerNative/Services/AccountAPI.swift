@@ -36,7 +36,7 @@ struct UserSettingsDTO: Decodable, Sendable {
     let nutritionEnabled: Bool?
 }
 
-/// Feature-adoption report (spec 038). All 8 keys are always present in the
+/// Feature-adoption report (spec 038). All 9 keys are always present in the
 /// server payload; each is modeled as `Bool?` and treated as `false` when nil
 /// via `value(for:)`. Snake_case JSON keys map to camelCase Swift properties.
 struct FeatureAdoptionReportDTO: Decodable, Sendable {
@@ -48,6 +48,7 @@ struct FeatureAdoptionReportDTO: Decodable, Sendable {
     let connectedTelegram: Bool?
     let connectedMcpAssistant: Bool?
     let sentAssistantMessage: Bool?
+    let usedShoppingList: Bool?
 
     enum CodingKeys: String, CodingKey {
         case installedNativeApp = "installed_native_app"
@@ -58,6 +59,7 @@ struct FeatureAdoptionReportDTO: Decodable, Sendable {
         case connectedTelegram = "connected_telegram"
         case connectedMcpAssistant = "connected_mcp_assistant"
         case sentAssistantMessage = "sent_assistant_message"
+        case usedShoppingList = "used_shopping_list"
     }
 
     func value(for item: FeatureAdoptionItem) -> Bool {
@@ -70,6 +72,7 @@ struct FeatureAdoptionReportDTO: Decodable, Sendable {
         case .connectedTelegram: return connectedTelegram ?? false
         case .connectedMcpAssistant: return connectedMcpAssistant ?? false
         case .sentAssistantMessage: return sentAssistantMessage ?? false
+        case .usedShoppingList: return usedShoppingList ?? false
         }
     }
 }

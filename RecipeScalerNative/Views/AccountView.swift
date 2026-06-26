@@ -159,7 +159,7 @@ struct AccountView: View {
                         .appBody()
                     Spacer()
                     Text("\(featureAdoptionDoneCount) / \(FeatureAdoptionItem.allCases.count)")
-                        .appFootnote()
+                        .appBody()
                         .foregroundStyle(.secondary)
                 }
             }

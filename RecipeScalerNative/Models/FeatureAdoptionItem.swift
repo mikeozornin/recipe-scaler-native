@@ -12,13 +12,14 @@ import SwiftUI
 /// spec table order and drives the rendering order of `FeatureAdoptionDetailView`.
 enum FeatureAdoptionItem: String, CaseIterable, Sendable {
     case installedNativeApp = "installed_native_app"
-    case importedRecipe = "imported_recipe"
     case createdRecipe = "created_recipe"
+    case usedShoppingList = "used_shopping_list"
+    case importedRecipe = "imported_recipe"
     case createdCollection = "created_collection"
-    case sharedRecipe = "shared_recipe"
+    case sentAssistantMessage = "sent_assistant_message"
     case connectedTelegram = "connected_telegram"
     case connectedMcpAssistant = "connected_mcp_assistant"
-    case sentAssistantMessage = "sent_assistant_message"
+    case sharedRecipe = "shared_recipe"
 
     /// Literal `LocalizedStringKey` for this item.
     ///
@@ -28,13 +29,29 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
     var titleKey: LocalizedStringKey {
         switch self {
         case .installedNativeApp: return "account.feature-adoption.item.installed_native_app"
-        case .importedRecipe: return "account.feature-adoption.item.imported_recipe"
         case .createdRecipe: return "account.feature-adoption.item.created_recipe"
+        case .usedShoppingList: return "account.feature-adoption.item.used_shopping_list"
+        case .importedRecipe: return "account.feature-adoption.item.imported_recipe"
         case .createdCollection: return "account.feature-adoption.item.created_collection"
-        case .sharedRecipe: return "account.feature-adoption.item.shared_recipe"
+        case .sentAssistantMessage: return "account.feature-adoption.item.sent_assistant_message"
         case .connectedTelegram: return "account.feature-adoption.item.connected_telegram"
         case .connectedMcpAssistant: return "account.feature-adoption.item.connected_mcp_assistant"
-        case .sentAssistantMessage: return "account.feature-adoption.item.sent_assistant_message"
+        case .sharedRecipe: return "account.feature-adoption.item.shared_recipe"
+        }
+    }
+
+    /// Optional onboarding footnote shown under the title in `FeatureAdoptionRow`.
+    var footnoteKey: LocalizedStringKey? {
+        switch self {
+        case .installedNativeApp: return "account.feature-adoption.item.installed_native_app.footnote"
+        case .createdRecipe: return "account.feature-adoption.item.created_recipe.footnote"
+        case .usedShoppingList: return "account.feature-adoption.item.used_shopping_list.footnote"
+        case .importedRecipe: return "account.feature-adoption.item.imported_recipe.footnote"
+        case .createdCollection: return "account.feature-adoption.item.created_collection.footnote"
+        case .sentAssistantMessage: return "account.feature-adoption.item.sent_assistant_message.footnote"
+        case .connectedTelegram: return "account.feature-adoption.item.connected_telegram.footnote"
+        case .connectedMcpAssistant: return "account.feature-adoption.item.connected_mcp_assistant.footnote"
+        case .sharedRecipe: return "account.feature-adoption.item.shared_recipe.footnote"
         }
     }
 }

@@ -6,11 +6,11 @@
 
 ### `GET /api/users/me/feature-adoption`
 
-Возвращает отчёт по 8 флагам для текущего пользователя.
+Возвращает отчёт по 9 флагам для текущего пользователя.
 
 **Auth**: `requireUserId` (owner-only).
 
-**Реализация**: один `SELECT feature FROM user_feature_adoption WHERE user_id=$1`, маппинг в 8 булей. Никаких JOIN с другими таблицами, никаких live-вычислений.
+**Реализация**: один `SELECT feature FROM user_feature_adoption WHERE user_id=$1`, маппинг в 9 булей. Никаких JOIN с другими таблицами, никаких live-вычислений.
 
 **Response 200:**
 
@@ -155,6 +155,21 @@ for (const user of allUserIds) {
   }
   if (imported) await mark(user, 'imported_recipe');
   if (shared)   await mark(user, 'shared_recipe');
+
+  // Shopping-list doc — check items array
+  const shoppingState = await supabase
+    .from('shopping_lists')
+    .select('yjs_state')
+    .eq('user_id', user)
+    .maybeSingle();
+  if (shoppingState.data?.yjs_state) {
+    const doc = new Y.Doc();
+    Y.applyUpdate(doc, shoppingState.data.yjs_state);
+    const items = doc.getMap('shopping').get('items') as Y.Array<unknown> | undefined;
+    if (items && items.length > 0) {
+      await mark(user, 'used_shopping_list');
+    }
+  }
 }
 ```
 
@@ -188,6 +203,7 @@ export const FEATURE_KEYS = [
   'connected_telegram',
   'connected_mcp_assistant',
   'sent_assistant_message',
+  'used_shopping_list',
 ] as const;
 
 export type FeatureKey = typeof FEATURE_KEYS[number];

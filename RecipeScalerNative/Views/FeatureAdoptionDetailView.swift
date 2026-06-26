@@ -119,13 +119,25 @@ private struct FeatureAdoptionRow: View {
     let isDone: Bool
 
     var body: some View {
-        HStack {
+        HStack(alignment: .top, spacing: 12) {
             Image(systemName: isDone ? "checkmark" : "circle")
                 .font(isDone ? .body.weight(.semibold) : .body)
                 .foregroundStyle(isDone ? Color.primary : Color.secondary)
                 .frame(width: 22, alignment: .center)
-            Text(item.titleKey)
-                .appBody()
+                .padding(.top, 2)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.titleKey)
+                    .appBody()
+
+                if let footnoteKey = item.footnoteKey {
+                    Text(footnoteKey)
+                        .appFootnote()
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
             Spacer(minLength: 8)
         }
         .accessibilityElement(children: .combine)
@@ -149,7 +161,8 @@ private struct FeatureAdoptionRow: View {
         sharedRecipe: true,
         connectedTelegram: true,
         connectedMcpAssistant: true,
-        sentAssistantMessage: true
+        sentAssistantMessage: true,
+        usedShoppingList: true
     )
     return NavigationStack {
         FeatureAdoptionDetailView()
@@ -167,7 +180,8 @@ private struct FeatureAdoptionRow: View {
         sharedRecipe: false,
         connectedTelegram: false,
         connectedMcpAssistant: false,
-        sentAssistantMessage: true
+        sentAssistantMessage: true,
+        usedShoppingList: false
     )
     return NavigationStack {
         FeatureAdoptionDetailView()

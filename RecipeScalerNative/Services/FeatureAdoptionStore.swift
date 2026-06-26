@@ -5,7 +5,7 @@
 
 import Foundation
 
-/// Value-type snapshot of the 8 feature-adoption flags (spec 038).
+/// Value-type snapshot of the 9 feature-adoption flags (spec 038).
 /// Persisted as a JSON blob under the `feature-adoption-cache` UserDefaults key
 /// so the section renders instantly from cache before the network resolves.
 struct FeatureAdoptionReport: Codable, Sendable, Equatable {
@@ -17,6 +17,7 @@ struct FeatureAdoptionReport: Codable, Sendable, Equatable {
     var connectedTelegram: Bool = false
     var connectedMcpAssistant: Bool = false
     var sentAssistantMessage: Bool = false
+    var usedShoppingList: Bool = false
 
     static let empty = FeatureAdoptionReport()
 }
@@ -46,6 +47,7 @@ final class FeatureAdoptionStore {
         case .connectedTelegram: return report.connectedTelegram
         case .connectedMcpAssistant: return report.connectedMcpAssistant
         case .sentAssistantMessage: return report.sentAssistantMessage
+        case .usedShoppingList: return report.usedShoppingList
         }
     }
 
@@ -70,7 +72,8 @@ final class FeatureAdoptionStore {
                 sharedRecipe: dto.sharedRecipe ?? false,
                 connectedTelegram: dto.connectedTelegram ?? false,
                 connectedMcpAssistant: dto.connectedMcpAssistant ?? false,
-                sentAssistantMessage: dto.sentAssistantMessage ?? false
+                sentAssistantMessage: dto.sentAssistantMessage ?? false,
+                usedShoppingList: dto.usedShoppingList ?? false
             )
             persist()
         } catch {
