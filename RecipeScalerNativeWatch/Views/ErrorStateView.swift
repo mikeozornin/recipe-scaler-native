@@ -2,43 +2,40 @@
 //  ErrorStateView.swift
 //  RecipeScalerNativeWatch Watch App
 //
-//  Spec 039 — error state (fetch / sync failure). Square icon+text area,
-//  two lines of text below the icon, Settings row at the bottom.
+//  Spec 039 — error state (not connected to phone). Square icon+text block,
+//  single-line title below the icon, Settings button as a sibling below
+//  the square.
+//
+//  Figma node 132:922 / 132:934.
 //
 
 import SwiftUI
 
 struct ErrorStateView: View {
     var body: some View {
-        List {
-            Section {
-                GeometryReader { geo in
-                    VStack(spacing: 0) {
-                        Spacer(minLength: 0)
-                        VStack(spacing: WatchTimerLayout.stateStackSpacing) {
-                            Image(systemName: "exclamationmark.triangle")
-                                .font(.system(size: WatchTimerLayout.stateIconSize))
-                                .foregroundStyle(.secondary)
-                            VStack(spacing: WatchTimerLayout.stateSubtitleSpacing) {
-                                Text(LocalizedStringKey("watch.timer.error.title"))
-                                    .timerSans(WatchTimerLayout.nameFontSize)
-                                Text(LocalizedStringKey("watch.timer.error.subtitle"))
-                                    .timerSans(WatchTimerLayout.nameFontSize)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .multilineTextAlignment(.center)
-                        }
-                        .frame(width: geo.size.width, height: geo.size.width)
-                        Spacer(minLength: 0)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-            Section {
+        GeometryReader { geo in
+            VStack(spacing: WatchTimerLayout.stateToSettingsSpacing) {
+                Spacer(minLength: 0)
+                stateSquare(width: geo.size.width)
+                Spacer(minLength: 0)
                 SettingsRow()
             }
+            .frame(width: geo.size.width)
         }
-        .listStyle(.plain)
+    }
+
+    /// Square icon+text block — side equals the content width.
+    @ViewBuilder
+    private func stateSquare(width: CGFloat) -> some View {
+        VStack(spacing: WatchTimerLayout.stateStackSpacing) {
+            Image(systemName: "iphone.gen2.slash")
+                .font(.system(size: WatchTimerLayout.stateIconSize, weight: .medium))
+                .foregroundStyle(.secondary)
+            Text(LocalizedStringKey("watch.timer.error.title"))
+                .timerSans(WatchTimerLayout.stateTitleFontSize)
+                .multilineTextAlignment(.center)
+        }
+        .frame(width: width, height: width)
     }
 }
 

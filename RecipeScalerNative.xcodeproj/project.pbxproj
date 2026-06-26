@@ -50,6 +50,7 @@
 		1D624A656C3A4FAF9496BDB0 /* RecipeScalerNativeWatch.app in Embed Watch App */ = {isa = PBXBuildFile; fileRef = 8F19F53FEC2043319894598C /* RecipeScalerNativeWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersCopy,); }; };
 		99AF3DDD4E7F480FB1B3833B /* RecipeScalerCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E05920822F344D9691E82401 /* RecipeScalerCore.framework */; };
 		896F51C011674A728B2F1433 /* WatchCredentialsBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A052C8D8B8477FA14D812A /* WatchCredentialsBridge.swift */; };
+		FB47945F9C6342719A745D7B /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 0A5A136ADBF870BFBD1C3902 /* Localizable.xcstrings */; };
 		8787C480EC0449AAB2726A30 /* TimerPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26FFE4B96B1A4F1BA8AD1B65 /* TimerPalette.swift */; };
 		B9C279C5F9FD448CBA00CAE1 /* TimerFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C61457EA0644D19B8FF2A8A /* TimerFormatting.swift */; };
 		BF935BE1E76D49118FA3FB7E /* TimerFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C081AD2E6914BC595AE2E3A /* TimerFonts.swift */; };
@@ -2455,6 +2456,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3C55EF45B74C4F359BB7ED21 /* Assets.xcassets in Resources */,
+				FB47945F9C6342719A745D7B /* Localizable.xcstrings in Resources */,
 				9F90E078686C4EFF84167581 /* MartianGrotesk-NrLt.otf in Resources */,
 				711E81C4539A491DB7D14D4A /* MartianGrotesk-NrMd.otf in Resources */,
 				34DCAA1DDD7D475C87F33F4F /* MartianMono-NrLt.otf in Resources */,

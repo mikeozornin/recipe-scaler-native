@@ -55,14 +55,15 @@ watchOS 10+ покрывает прямоугольные дисплеи aspect 
 
 Переиспользуем проектные Martian (user preference: всегда Martian, не системный). На watchOS требуется bundle Martian ttf в watch target.
 
-| Где | Шрифт | Size |
-|-----|-------|------|
-| Action icon | SF Symbol medium | 20 pt |
-| Time | Martian Mono Nr Lt | 15 pt |
-| Recipe name | Martian Grotesk Nr Lt | 15 pt |
-| Empty/Error/NotAuth title | Martian Grotesk Nr Lt | 15 pt, centered |
-| Empty/Error/NotAuth icon | SF Symbol | 48 pt |
-| Settings label | Martian Grotesk (системный label) | по умолчанию |
+| Где | Шрифт | Size | Weight |
+|-----|-------|------|--------|
+| Action icon (List row) | SF Symbol medium | 20 pt | medium |
+| State icon (Empty/Error/NotAuth) | SF Symbol | 48 pt | **medium** (Figma: SF Pro Medium 510) |
+| Time | Martian Mono Nr Lt | 15 pt | light |
+| Recipe name | Martian Grotesk Nr Lt | 15 pt | light |
+| Empty/Error/NotAuth title | Martian Grotesk Nr Lt | 15 pt, centered | light |
+| NotAuth subtitle | Martian Grotesk Nr Lt | 15 pt, centered | light |
+| Settings label | Martian Grotesk (системный label) | по умолчанию | — |
 
 ### Цвета палитры
 
@@ -165,39 +166,33 @@ if let endDate = timer.endDate, !timer.isPaused {
 | Элемент | W×H | Примечание |
 |---------|-----|------------|
 | Квадрат icon+text | `contentWidth × contentWidth` | например 155×155 на 42mm, 179×179 на 49mm |
-| Icon | full × 48 pt | SF Symbol, centered в верхней половине квадрата |
-| Title | full × 18 pt | 1 строка centered |
-| Settings button | full × 44 pt | внизу, scrolls |
+| Icon | full × 48 pt | SF Symbol, weight `.medium` (Figma: SF Pro Medium, weight 510) |
+| Title | full × 18 pt | 1 строка centered («Таймеров нет») |
+| Settings button | full × min 44 pt | sibling ниже квадрата, НЕ overlay |
 
 ### Дерево (DOM)
 
 ```text
-List (full content area)
-├── GeometryReader { geo in
-│       VStack(spacing: 0) {
-│           Spacer(minLength: 0)
-│           VStack(spacing: 8) {
-│               Image(systemName: "timer")
-│                   .font(.system(size: 48))
-│                   .foregroundStyle(.secondary)
-│               Text(LocalizedStringKey("watch.timer.empty.title"))
-│                   .font(.custom("Martian Grotesk Nr Lt", size: 15))
-│                   .multilineTextAlignment(.center)
-│           }
-│           .frame(width: geo.size.width, height: geo.size.width)  // КВАДРАТ
-│           Spacer(minLength: 0)
-│       }
-│   }
-└── SettingsRow (full × 44)
+GeometryReader { geo in
+    VStack(spacing: 16) {
+        Spacer(minLength: 0)
+        VStack(spacing: 8) {                          // КВАДРАТ contentWidth × contentWidth
+            Image(systemName: "timer")
+                .font(.system(size: 48, weight: .medium))
+                .foregroundStyle(.secondary)
+            Text("watch.timer.empty.title")           // «Таймеров нет»
+                .font(.custom("Martian Grotesk Nr Lt", size: 15))
+                .multilineTextAlignment(.center)
+        }
+        .frame(width: geo.size.width, height: geo.size.width)
+        Spacer(minLength: 0)
+        SettingsRow()
+    }
+    .frame(width: geo.size.width)
+}
 ```
 
-**Критично**: квадрат = `geo.size.width × geo.size.width`, **не** `min(W,H)`. Ширина всегда меньше высоты на watchOS, поэтому `contentWidth` определяет сторону.
-
-### SwiftUI notes
-
-- `GeometryReader` для вычисления квадрата от contentWidth.
-- Spacer'ы центрируют квадрат вертикально в доступном пространстве.
-- Settings — отдельный row, скроллится вместе с List (но в Empty state нет скролла, т.к. контент маленький).
+**Критично**: квадрат = `geo.size.width × geo.size.width`, **не** `min(W,H)`. Ширина всегда меньше высоты на watchOS, поэтому `contentWidth` определяет сторону. Settings button — sibling в родительском VStack, не отдельный `Section` поверх квадрата.
 
 ---
 
@@ -208,38 +203,32 @@ List (full content area)
 | Элемент | W×H | Примечание |
 |---------|-----|------------|
 | Квадрат icon+text | `contentWidth × contentWidth` | как Empty |
-| Icon | full × 48 pt | SF Symbol (например `exclamationmark.triangle`) |
-| Title | full × 18 pt | 1 строка centered |
-| Subtitle | full × 36 pt | 2 строки centered |
-| Settings button | full × 44 pt | внизу |
+| Icon | full × 48 pt | SF Symbol `iphone.gen2.slash`, weight `.medium` |
+| Title | full × 18 pt | 1 строка centered («Не подключено к телефону») |
+| Settings button | full × min 44 pt | sibling ниже квадрата |
 
 ### Дерево (DOM)
 
-Аналогично Empty, но title + subtitle:
+Аналогично Empty, но title без subtitle (одна строка):
 
 ```text
-List (full content area)
-├── GeometryReader { geo in
-│       VStack(spacing: 0) {
-│           Spacer(minLength: 0)
-│           VStack(spacing: 8) {
-│               Image(systemName: "exclamationmark.triangle")
-│                   .font(.system(size: 48))
-│                   .foregroundStyle(.secondary)
-│               VStack(spacing: 4) {
-│                   Text(LocalizedStringKey("watch.timer.error.title"))
-│                       .font(.custom("Martian Grotesk Nr Lt", size: 15))
-│                   Text(LocalizedStringKey("watch.timer.error.subtitle"))
-│                       .font(.custom("Martian Grotesk Nr Lt", size: 15))
-│                       .foregroundStyle(.secondary)
-│               }
-│               .multilineTextAlignment(.center)
-│           }
-│           .frame(width: geo.size.width, height: geo.size.width)  // КВАДРАТ
-│           Spacer(minLength: 0)
-│       }
-│   }
-└── SettingsRow (full × 44)
+GeometryReader { geo in
+    VStack(spacing: 16) {
+        Spacer(minLength: 0)
+        VStack(spacing: 8) {                          // КВАДРАТ
+            Image(systemName: "iphone.gen2.slash")
+                .font(.system(size: 48, weight: .medium))
+                .foregroundStyle(.secondary)
+            Text("watch.timer.error.title")           // «Не подключено к телефону»
+                .font(.custom("Martian Grotesk Nr Lt", size: 15))
+                .multilineTextAlignment(.center)
+        }
+        .frame(width: geo.size.width, height: geo.size.width)
+        Spacer(minLength: 0)
+        SettingsRow()
+    }
+    .frame(width: geo.size.width)
+}
 ```
 
 ### Retry behavior
@@ -257,10 +246,10 @@ List (full content area)
 | Элемент | W×H | Примечание |
 |---------|-----|------------|
 | Квадрат icon+text | `contentWidth × contentWidth` | как Empty |
-| Icon | full × 48 pt | SF Symbol `person.crop.circle.badge.exclamationmark` |
+| Icon | full × 48 pt | SF Symbol, weight `.medium` |
 | Title | full × 18 pt | 1 строка |
 | Subtitle | full × 36 pt | 2 строки |
-| Settings button | full × 44 pt | внизу |
+| Settings button | full × min 44 pt | sibling ниже квадрата |
 
 ### Тексты
 

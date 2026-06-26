@@ -10726,7 +10726,6 @@
       }
     },
     "watch.timer.action.delete" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10743,7 +10742,6 @@
       }
     },
     "watch.timer.action.pause" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10760,7 +10758,6 @@
       }
     },
     "watch.timer.action.resume" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10777,18 +10774,17 @@
       }
     },
     "watch.timer.empty.title" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No active timers"
+            "value" : "No timers"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Активных таймеров нет"
+            "value" : "Таймеров нет"
           }
         }
       }
@@ -10811,24 +10807,22 @@
       }
     },
     "watch.timer.error.title" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't load"
+            "value" : "Not connected to phone"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось загрузить"
+            "value" : "Не подключено к телефону"
           }
         }
       }
     },
     "watch.timer.not-authorized.subtitle" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10845,7 +10839,6 @@
       }
     },
     "watch.timer.not-authorized.title" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10862,7 +10855,6 @@
       }
     },
     "watch.timer.settings.hint" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10879,7 +10871,6 @@
       }
     },
     "watch.timer.settings.label" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

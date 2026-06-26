@@ -2,39 +2,40 @@
 //  EmptyStateView.swift
 //  RecipeScalerNativeWatch Watch App
 //
-//  Spec 039 — empty state (no active timers). Square icon+text area whose
-//  side equals the available content width, centered vertically within the
-//  rectangular watch screen.
+//  Spec 039 — empty state (no active timers). Square icon+text block whose
+//  side equals the available content width, centered vertically; Settings
+//  button is a sibling below the square — never overlaps it.
+//
+//  Figma node 132:758 / 132:918.
 //
 
 import SwiftUI
 
 struct EmptyStateView: View {
     var body: some View {
-        List {
-            Section {
-                GeometryReader { geo in
-                    VStack(spacing: 0) {
-                        Spacer(minLength: 0)
-                        VStack(spacing: WatchTimerLayout.stateStackSpacing) {
-                            Image(systemName: "timer")
-                                .font(.system(size: WatchTimerLayout.stateIconSize))
-                                .foregroundStyle(.secondary)
-                            Text(LocalizedStringKey("watch.timer.empty.title"))
-                                .timerSans(WatchTimerLayout.nameFontSize)
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(width: geo.size.width, height: geo.size.width)
-                        Spacer(minLength: 0)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-            Section {
+        GeometryReader { geo in
+            VStack(spacing: WatchTimerLayout.stateToSettingsSpacing) {
+                Spacer(minLength: 0)
+                stateSquare(width: geo.size.width)
+                Spacer(minLength: 0)
                 SettingsRow()
             }
+            .frame(width: geo.size.width)
         }
-        .listStyle(.plain)
+    }
+
+    /// Square icon+text block — side equals the content width.
+    @ViewBuilder
+    private func stateSquare(width: CGFloat) -> some View {
+        VStack(spacing: WatchTimerLayout.stateStackSpacing) {
+            Image(systemName: "timer")
+                .font(.system(size: WatchTimerLayout.stateIconSize, weight: .medium))
+                .foregroundStyle(.secondary)
+            Text(LocalizedStringKey("watch.timer.empty.title"))
+                .timerSans(WatchTimerLayout.stateTitleFontSize)
+                .multilineTextAlignment(.center)
+        }
+        .frame(width: width, height: width)
     }
 }
 

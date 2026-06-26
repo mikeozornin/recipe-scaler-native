@@ -87,15 +87,19 @@
     },
     {
       "id": "state-icon-48pt",
-      "description": "State icon SF Symbol 48pt (literal or via WatchTimerLayout.stateIconSize token)",
-      "pattern": "(size: 48|WatchTimerLayout\\.stateIconSize)",
+      "description": "State icon SF Symbol 48pt weight medium (literal or via WatchTimerLayout.stateIconSize token)",
+      "pattern": "(size: 48, weight: \\.medium|stateIconSize, weight: \\.medium)",
       "paths": [
         "RecipeScalerNativeWatch/Views/EmptyStateView.swift",
-        "RecipeScalerNativeWatch/ErrorStateView.swift",
         "RecipeScalerNativeWatch/Views/ErrorStateView.swift",
-        "RecipeScalerNativeWatch/Views/NotAuthorizedStateView.swift",
-        "RecipeScalerNativeWatch/Views/WatchTimerLayout.swift"
+        "RecipeScalerNativeWatch/Views/NotAuthorizedStateView.swift"
       ]
+    },
+    {
+      "id": "error-icon-iphone-slash",
+      "description": "Error state uses iphone.gen2.slash (Figma 132:922)",
+      "pattern": "iphone\\.gen2\\.slash",
+      "paths": ["RecipeScalerNativeWatch/Views/ErrorStateView.swift"]
     },
     {
       "id": "settings-noop-haptic",
@@ -204,6 +208,12 @@
       "description": "watch.timer.action.delete localized string key used",
       "pattern": "watch\\.timer\\.action\\.delete",
       "paths": ["RecipeScalerNativeWatch/Views/TimerListView.swift"]
+    },
+    {
+      "id": "i18n-bundled-in-watch-target",
+      "description": "Localizable.xcstrings linked into watch target Resources phase",
+      "pattern": "Localizable\\.xcstrings in Resources",
+      "paths": ["RecipeScalerNative.xcodeproj/project.pbxproj"]
     }
   ],
   "must_not_contain": [

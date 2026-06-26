@@ -38,6 +38,12 @@ enum WatchTimerLayout {
     static let stateStackSpacing: CGFloat = 8
     static let stateSubtitleSpacing: CGFloat = 4
 
+    /// Gap between the state square (icon+text) and the Settings button.
+    static let stateToSettingsSpacing: CGFloat = 16
+
+    /// Font size for Empty / Error / NotAuthorized titles (Martian Grotesk).
+    static let stateTitleFontSize: CGFloat = 15
+
     /// Settings row sizing.
     static let settingsHeight: CGFloat = 44
 }
