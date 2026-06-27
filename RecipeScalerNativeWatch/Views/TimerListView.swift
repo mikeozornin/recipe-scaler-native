@@ -91,6 +91,7 @@ struct TimerListView: View {
 
                 Section {
                     SettingsRow()
+                        .listRowBackground(Color.clear)
                 }
             }
             .listStyle(.plain)
