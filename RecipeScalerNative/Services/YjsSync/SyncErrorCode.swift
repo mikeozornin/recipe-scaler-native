@@ -58,7 +58,7 @@ public enum SyncErrorCode: String, Sendable, Equatable, CaseIterable {
             if legacyMessage.contains("Ownership validation failed") { return .ownershipFailed }
             if legacyMessage.contains("Recipe is deleted")          { return .recipeDeleted }
             if legacyMessage.contains("Invalid update")             { return .invalidUpdate }
-            if legacyMessage.contains("Empty")                      { return .emptyUpdate }
+            if legacyMessage.contains("Empty update")             { return .emptyUpdate }
         }
         return fallback
     }

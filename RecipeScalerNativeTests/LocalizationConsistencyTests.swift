@@ -225,6 +225,12 @@ final class LocalizationConsistencyTests: XCTestCase {
             "assistant.message.empty",
             "assistant.message.too-long",
             "assistant.stream.http-error",
+            // MARK: Spec 031 — Socket.IO sync_error (SyncErrorCode)
+            "sync.error.ownership",
+            "sync.error.recipe-deleted",
+            "sync.error.empty-update",
+            "sync.error.invalid-update",
+            "sync.error.generic",
             // MARK: Spec 038 — feature adoption section
             "account.feature-adoption.title",
             "account.feature-adoption.progress %d %d",

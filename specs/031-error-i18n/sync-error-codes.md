@@ -32,7 +32,7 @@
 |------------------|---------------------------------------|----------------------|----------------------|
 | `sync.error.ownership` | `"Ownership validation failed"` | `setConnectionState(.error)`, не ретраить | `sync.error.ownership` |
 | `sync.error.recipe-deleted` | `"Recipe is deleted"` | Удалить рецепт из локального списка, очистить offline-очередь, закрыть UI | `sync.error.recipe-deleted` |
-| `sync.error.empty-update` | `"Empty"` | Запросить полную перезагрузку документа | `sync.error.empty-update` |
+| `sync.error.empty-update` | `"Empty update"` | Запросить полную перезагрузку документа | `sync.error.empty-update` |
 | `sync.error.invalid-update` | `"Invalid update"` | Запросить полную перезагрузку документа | `sync.error.invalid-update` |
 | `sync.error.generic` | (любая другая строка) | Sleep 5s, затем перезагрузка документа | `sync.error.generic` |
 

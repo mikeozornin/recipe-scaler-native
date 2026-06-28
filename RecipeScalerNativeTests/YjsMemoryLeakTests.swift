@@ -5,13 +5,13 @@ import GRDB
 @MainActor
 final class YjsMemoryLeakTests: XCTestCase {
     
-    private func makeStubStore() -> YDocStore {
-        let db = (try? YrsDatabase.makeInMemoryFallback())!
+    private func makeStubStore() throws -> YDocStore {
+        let db = try YrsDatabase.makeInMemoryFallback()
         return YDocStore(dbQueue: db.dbQueue)
     }
 
     func testFastReopenDoesNotDropNewerSession() async throws {
-        let store = makeStubStore()
+        let store = try makeStubStore()
         let sync = YjsSyncService(store: store)
 
         var oldBridge: DescriptionEditorBridge? = DescriptionEditorBridge(recipeId: "recipe-1", syncService: sync)
@@ -24,7 +24,7 @@ final class YjsMemoryLeakTests: XCTestCase {
         XCTAssertTrue(sync.test_descriptionEditorSessionBridge(for: "recipe-1") === newBridge)
 
         oldBridge = nil
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(for: .milliseconds(100))
 
         sync.test_pruneSessions()
         XCTAssertEqual(sync.test_descriptionEditorSessionsCount, 1)
@@ -32,7 +32,7 @@ final class YjsMemoryLeakTests: XCTestCase {
     }
 
     func testDescriptionEditorSessionLeaksClearedOnDeinit() async throws {
-        let store = makeStubStore()
+        let store = try makeStubStore()
         let sync = YjsSyncService(store: store)
 
         // 1. Initially 0 sessions
@@ -48,7 +48,7 @@ final class YjsMemoryLeakTests: XCTestCase {
         
         // 3. The bridge has gone out of scope and is deallocated.
         // Wait for deinit's MainActor task to run
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(for: .milliseconds(100))
         
         // 4. Assert that the session was pruned or removed
         sync.test_pruneSessions()
@@ -56,12 +56,12 @@ final class YjsMemoryLeakTests: XCTestCase {
     }
     
     func testTeardownClearsWireSnapshotTasksAndDocumentLoadTasks() async throws {
-        let store = makeStubStore()
+        let store = try makeStubStore()
         let sync = YjsSyncService(store: store)
         
         // 1. Simulate adding a wire snapshot refresh task
         let dummyTask = Task {
-            _ = try? await Task.sleep(nanoseconds: 1_000_000_000)
+            _ = try? await Task.sleep(for: .seconds(1))
         }
         sync.test_simulateWireSnapshotRefreshTask(recipeId: "recipe-1", task: dummyTask)
         XCTAssertEqual(sync.test_wireSnapshotRefreshTasksCount, 1)
@@ -77,7 +77,7 @@ final class YjsMemoryLeakTests: XCTestCase {
         }
         
         // Let the Task register the continuation
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(for: .milliseconds(100))
         XCTAssertEqual(sync.test_documentLoadContinuationsCount, 1)
         
         // 3. Call stop() which runs teardownSocket()
@@ -102,14 +102,20 @@ final class YjsMemoryLeakTests: XCTestCase {
     /// refresh tasks, and description-editor sessions leak until stop().
     @MainActor
     func testCancelPendingWorkForRecipeClearsAllFourEntries() async throws {
-        let store = makeStubStore()
+        let store = try makeStubStore()
         let sync = YjsSyncService(store: store)
 
         // Arrange: populate all four per-recipe dicts for two recipeIds.
-        let wireTaskA = Task { _ = try? await Task.sleep(nanoseconds: 1_000_000_000) }
-        let wireTaskB = Task { _ = try? await Task.sleep(nanoseconds: 1_000_000_000) }
-        let loadTaskA = Task<Bool, Never> { _ = try? await Task.sleep(nanoseconds: 1_000_000_000); return false }
-        let loadTaskB = Task<Bool, Never> { _ = try? await Task.sleep(nanoseconds: 1_000_000_000); return false }
+        let wireTaskA = Task { _ = try? await Task.sleep(for: .seconds(1)) }
+        let wireTaskB = Task { _ = try? await Task.sleep(for: .seconds(1)) }
+        let loadTaskA = Task<Bool, Never> {
+            try? await Task.sleep(for: .seconds(1))
+            return false
+        }
+        let loadTaskB = Task<Bool, Never> {
+            try? await Task.sleep(for: .seconds(1))
+            return false
+        }
         sync.test_simulateWireSnapshotRefreshTask(recipeId: "recipe-a", task: wireTaskA)
         sync.test_simulateWireSnapshotRefreshTask(recipeId: "recipe-b", task: wireTaskB)
         sync.test_simulateLoadTask(recipeId: "recipe-a", task: loadTaskA)
@@ -126,7 +132,7 @@ final class YjsMemoryLeakTests: XCTestCase {
             contExpectation.fulfill()
         }
         // Let the Task register the continuation
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(for: .milliseconds(100))
 
         XCTAssertEqual(sync.test_wireSnapshotRefreshTasksCount, 2)
         XCTAssertEqual(sync.test_documentLoadTasksCount, 2)

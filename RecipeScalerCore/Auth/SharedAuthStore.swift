@@ -34,13 +34,9 @@ public enum SharedAuthStore {
 
     /// Legacy App Group UserDefaults key retained only to purge leftover
     /// plaintext copies from older app versions during migration. The
-    /// `userId` itself is never written here anymore.
+    /// `userId` itself is never written here anymore. Purge reads/writes use
+    /// `AppGroup.id` for the shared `UserDefaults` suite.
     public static let legacyAppGroupUserIdKey = "shared.userId"
-
-    /// App Group identifier used historically to mirror `userId` as plaintext
-    /// in a shared `UserDefaults` suite. Retained for the one-shot legacy
-    /// purge on app launch — new code MUST NOT write here.
-    public static let appGroupID = AppGroup.id
 
     /// Shared keychain access group. Resolves to `nil` on simulator / dev
     /// builds (no provisioning profile) so the keychain query stays valid

@@ -213,3 +213,26 @@ func testErrorDescriptionLocalized() {
 - `ErrorLocalizationTests` расширены: `ServerErrorCode.from(...)` принимает dot-key,
   rejects legacy English, rejects unknown dot-key; rawValue каждого case удовлетворяет
   regex; `userFacingMessage()` не возвращает raw dot-key.
+
+## Этап 9 (post-MIK-129) — Типизация Socket.IO `sync_error`
+
+**Статус**: ✅ Реализовано (Linear MIK-129)
+
+Проблема: `YjsSyncService.handleSyncError` / удалённый `localizedSyncError` матчили
+raw English server strings через `message.contains(...)` и могли утекать английский
+в UI через финальный `return message` fallback.
+
+Решение: `SyncErrorCode` enum + `SyncErrorCode.from(code:legacyMessage:fallback:)`.
+
+- `RecipeScalerNative/Services/YjsSync/SyncErrorCode.swift` — 5 кейсов (`sync.error.*`).
+- `SyncEventHandler` парсит `payload["code"]` и `payload["error"]`, роутит через enum.
+- `YjsSyncService.handleSyncError(code:message:recipeId:)` — switch по `SyncErrorCode`.
+- 5 ключей `sync.error.*` в `Localizable.xcstrings` (en + ru).
+- `RecipeScalerNativeTests/SyncErrorCodeTests.swift` — dot-key, legacy, localization.
+- Контракт: `specs/031-error-i18n/sync-error-codes.md` + `sync-error-codes.schema.json`.
+
+Follow-ups (cleanups):
+
+- **MIK-172**: legacy substring `"Empty"` → `"Empty update"` (избежать ложных срабатываний).
+- **MIK-169**: 5 `sync.error.*` ключей в `LocalizationConsistencyTests`.
+- **MIK-170**: удалить orphaned `edit.error.*` ключи, заменённые на `sync.error.*`.

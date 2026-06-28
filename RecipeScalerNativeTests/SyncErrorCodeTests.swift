@@ -83,6 +83,11 @@ final class SyncErrorCodeTests: XCTestCase {
         XCTAssertEqual(code, .emptyUpdate)
     }
 
+    func testFrom_legacyMessage_emptyPantryDoesNotMatchEmptyUpdate() {
+        let code = SyncErrorCode.from(code: nil, legacyMessage: "Empty pantry")
+        XCTAssertEqual(code, .generic)
+    }
+
     // MARK: - Fallbacks
 
     func testFrom_unknownLegacyMessageReturnsDefaultFallback() {
@@ -157,7 +162,7 @@ final class SyncErrorCodeTests: XCTestCase {
             "Ownership validation failed",
             "Recipe is deleted",
             "Invalid update",
-            "Empty",
+            "Empty update",
             "Unknown sync error"
         ]
         for code in SyncErrorCode.allCases {

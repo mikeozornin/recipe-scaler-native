@@ -5270,23 +5270,6 @@
         }
       }
     },
-    "edit.error.deleted" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This recipe was deleted."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Этот рецепт удалён."
-          }
-        }
-      }
-    },
     "edit.error.documentNotLoaded" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5338,23 +5321,6 @@
         }
       }
     },
-    "edit.error.invalidUpdate" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sync failed. The recipe will be reloaded."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сбой синхронизации. Рецепт будет перезагружен."
-          }
-        }
-      }
-    },
     "edit.error.legacyReadOnly" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5368,40 +5334,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Этот формат рецепта нельзя редактировать на iOS."
-          }
-        }
-      }
-    },
-    "edit.error.ok" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
-          }
-        }
-      }
-    },
-    "edit.error.ownership" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You do not have permission to edit this recipe."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нет прав на редактирование этого рецепта."
           }
         }
       }

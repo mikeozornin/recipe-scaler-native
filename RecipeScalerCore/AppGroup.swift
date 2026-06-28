@@ -5,10 +5,6 @@
 //  Canonical App Group identifier shared between the main app, extensions,
 //  and frameworks. Use `AppGroup.id` instead of hardcoding the literal string.
 //
-//  Existing `SharedAuthStore.appGroupID` and other wrappers are expected to
-//  migrate to this constant over time; both are kept in sync via the same
-//  literal value to avoid breaking changes during the rollout.
-//
 
 import Foundation
 
