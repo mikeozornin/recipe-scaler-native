@@ -5,11 +5,12 @@
 
 import Foundation
 
-/// Value-type snapshot of the 9 feature-adoption flags (spec 038).
+/// Value-type snapshot of the 10 feature-adoption flags (spec 038).
 /// Persisted as a JSON blob under the `feature-adoption-cache` UserDefaults key
 /// so the section renders instantly from cache before the network resolves.
 struct FeatureAdoptionReport: Codable, Sendable, Equatable {
     var installedNativeApp: Bool = false
+    var installedWatchApp: Bool = false
     var importedRecipe: Bool = false
     var createdRecipe: Bool = false
     var createdCollection: Bool = false
@@ -40,6 +41,7 @@ final class FeatureAdoptionStore {
     func value(for item: FeatureAdoptionItem) -> Bool {
         switch item {
         case .installedNativeApp: return report.installedNativeApp
+        case .installedWatchApp: return report.installedWatchApp
         case .importedRecipe: return report.importedRecipe
         case .createdRecipe: return report.createdRecipe
         case .createdCollection: return report.createdCollection
@@ -66,6 +68,7 @@ final class FeatureAdoptionStore {
             let dto = try await AccountAPI.fetchFeatureAdoption()
             report = FeatureAdoptionReport(
                 installedNativeApp: dto.installedNativeApp ?? false,
+                installedWatchApp: dto.installedWatchApp ?? false,
                 importedRecipe: dto.importedRecipe ?? false,
                 createdRecipe: dto.createdRecipe ?? false,
                 createdCollection: dto.createdCollection ?? false,

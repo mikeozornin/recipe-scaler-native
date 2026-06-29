@@ -36,11 +36,12 @@ struct UserSettingsDTO: Decodable, Sendable {
     let nutritionEnabled: Bool?
 }
 
-/// Feature-adoption report (spec 038). All 9 keys are always present in the
+/// Feature-adoption report (spec 038). All 10 keys are always present in the
 /// server payload; each is modeled as `Bool?` and treated as `false` when nil
 /// via `value(for:)`. Snake_case JSON keys map to camelCase Swift properties.
 struct FeatureAdoptionReportDTO: Decodable, Sendable {
     let installedNativeApp: Bool?
+    let installedWatchApp: Bool?
     let importedRecipe: Bool?
     let createdRecipe: Bool?
     let createdCollection: Bool?
@@ -52,6 +53,7 @@ struct FeatureAdoptionReportDTO: Decodable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case installedNativeApp = "installed_native_app"
+        case installedWatchApp = "installed_watch_app"
         case importedRecipe = "imported_recipe"
         case createdRecipe = "created_recipe"
         case createdCollection = "created_collection"
@@ -65,6 +67,7 @@ struct FeatureAdoptionReportDTO: Decodable, Sendable {
     func value(for item: FeatureAdoptionItem) -> Bool {
         switch item {
         case .installedNativeApp: return installedNativeApp ?? false
+        case .installedWatchApp: return installedWatchApp ?? false
         case .importedRecipe: return importedRecipe ?? false
         case .createdRecipe: return createdRecipe ?? false
         case .createdCollection: return createdCollection ?? false
@@ -218,12 +221,6 @@ enum AccountAPI {
 
     /// Idempotent: server applies `INSERT ... ON CONFLICT DO NOTHING`.
     static func markFeatureAdoption(_ feature: String) async throws {
-        struct Body: Encodable { let feature: String }
-        struct MarkResponse: Decodable { let recorded: Bool? }
-        let _: APIResponse<MarkResponse> = try await APIClient.shared.requestJSON(
-            path: "/api/users/me/feature-adoption",
-            method: "POST",
-            body: Body(feature: feature)
-        )
+        try await FeatureAdoptionAPI.markFeatureAdoption(feature)
     }
 }

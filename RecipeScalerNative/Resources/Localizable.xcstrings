@@ -898,6 +898,40 @@
         }
       }
     },
+    "account.feature-adoption.item.installed_watch_app" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opened the watch app"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установлено приложение на часах"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.item.installed_watch_app.footnote" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No need to reach for your phone with messy hands just to check a timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не нужно тянуться грязными руками к телефону, чтобы посмотреть таймер"
+          }
+        }
+      }
+    },
     "account.feature-adoption.item.sent_assistant_message" : {
       "extractionState" : "translated",
       "localizations" : {

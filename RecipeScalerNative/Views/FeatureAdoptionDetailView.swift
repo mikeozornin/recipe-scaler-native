@@ -73,6 +73,28 @@ private struct FeatureAdoptionProgressRing: View {
 
     private let diameter: CGFloat = 152
     private let strokeWidth: CGFloat = 12
+    private let labelHorizontalInset: CGFloat = 12
+    private let baseLabelFontSize: CGFloat = 40
+    private let minimumLabelFontSize: CGFloat = 20
+
+    private var labelMaxWidth: CGFloat {
+        let innerDiameter = diameter - 2 * strokeWidth
+        return innerDiameter - 2 * labelHorizontalInset
+    }
+
+    /// Largest label for the current `total` — same width whether completed is 1 or total.
+    private var worstCaseProgressLabel: String {
+        formattedProgressLabel(completed: total, total: total)
+    }
+
+    private var labelFontSize: CGFloat {
+        Self.fittingLabelFontSize(
+            for: worstCaseProgressLabel,
+            maxWidth: labelMaxWidth,
+            baseSize: baseLabelFontSize,
+            minimumSize: minimumLabelFontSize
+        )
+    }
 
     private var progressFraction: CGFloat {
         guard total > 0 else { return 0 }
@@ -93,17 +115,22 @@ private struct FeatureAdoptionProgressRing: View {
                 .rotationEffect(.degrees(-90))
 
             Text(verbatim: progressLabel)
-                .font(AppTypography.sansMedium(40))
+                .font(AppTypography.sansMedium(labelFontSize))
                 .foregroundStyle(.primary)
-                .minimumScaleFactor(0.6)
                 .lineLimit(1)
                 .monospacedDigit()
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: labelMaxWidth)
         }
         .frame(width: diameter, height: diameter)
         .accessibilityLabel(Text(verbatim: progressLabel))
     }
 
     private var progressLabel: String {
+        formattedProgressLabel(completed: completed, total: total)
+    }
+
+    private func formattedProgressLabel(completed: Int, total: Int) -> String {
         _ = locale
         return String(
             format: Bundle.currentLocalizedString("account.feature-adoption.progress %d %d"),
@@ -111,6 +138,24 @@ private struct FeatureAdoptionProgressRing: View {
             completed,
             total
         )
+    }
+
+    private static func fittingLabelFontSize(
+        for text: String,
+        maxWidth: CGFloat,
+        baseSize: CGFloat,
+        minimumSize: CGFloat
+    ) -> CGFloat {
+        var size = baseSize
+        while size > minimumSize {
+            let font = AppTypography.uiFont(AppFonts.sansMedium, size: size, fallbackFamily: AppFonts.sansMedium)
+            let width = (text as NSString).size(withAttributes: [.font: font]).width
+            if width <= maxWidth {
+                return size
+            }
+            size -= 1
+        }
+        return minimumSize
     }
 }
 
@@ -155,6 +200,7 @@ private struct FeatureAdoptionRow: View {
     let store = FeatureAdoptionStore()
     store.report = FeatureAdoptionReport(
         installedNativeApp: true,
+        installedWatchApp: true,
         importedRecipe: true,
         createdRecipe: true,
         createdCollection: true,
@@ -195,4 +241,13 @@ private struct FeatureAdoptionRow: View {
         FeatureAdoptionDetailView()
             .environment(store)
     }
+}
+
+#Preview("Wide digits") {
+    VStack(spacing: 24) {
+        FeatureAdoptionProgressRing(completed: 9, total: 10)
+        FeatureAdoptionProgressRing(completed: 10, total: 10)
+        FeatureAdoptionProgressRing(completed: 99, total: 99)
+    }
+    .padding()
 }

@@ -30,6 +30,7 @@ final class TimerListViewModel: ObservableObject {
                     self?.state = .notAuthorized
                     return
                 }
+                WatchFeatureAdoptionReporter.reportFirstOpenIfNeeded()
                 await self?.refresh()
             }
         }
@@ -47,6 +48,7 @@ final class TimerListViewModel: ObservableObject {
             state = .notAuthorized
             return
         }
+        WatchFeatureAdoptionReporter.reportFirstOpenIfNeeded()
         await refresh()
     }
 

@@ -1,7 +1,7 @@
 # План реализации: feature adoption tracker
 
 **Spec**: [spec.md](./spec.md)
-**Дата**: 2026-06-24 (rev. 2026-06-25)
+**Дата**: 2026-06-24 (rev. 2026-06-29)
 
 ## Декомпозиция
 
@@ -11,7 +11,7 @@
 
 2. **`feature-adoption-service.ts`** — в `server/src/services/`.
    - `mark(userId: string, feature: FeatureKey): Promise<void>` — `INSERT ... ON CONFLICT DO NOTHING`, логирует warning при ошибке.
-   - `getReport(userId: string): Promise<FeatureAdoptionReport>` — один SELECT, маппинг в 9 булей (missing → false).
+   - `getReport(userId: string): Promise<FeatureAdoptionReport>` — один SELECT, маппинг в 10 булей (missing → false).
    - `FEATURE_KEYS` const + `FeatureKey` type.
 
 3. **`POST /api/users/me/feature-adoption`** — в `routes/users.ts`. Body schema: `{ feature: z.enum(FEATURE_KEYS) }`. Idempotent insert.
@@ -32,40 +32,42 @@
 
 7. **Backfill скрипт** — `server/scripts/backfill-feature-adoption.ts`. Two-phase. Параметры `--apply`, `--only-sql`, `--limit N`. Логирует прогресс каждые 100 пользователей.
 
-8. **Unit-тесты** для `feature-adoption-service.ts`: мокаем `supabase`, проверяем `mark` (idempotent), `getReport` (8 ключей, missing → false). Интеграционный тест для endpoints (401 без auth, 200 с auth, 400 на невалидный feature).
+8. **Unit-тесты** для `feature-adoption-service.ts`: мокаем `supabase`, проверяем `mark` (idempotent), `getReport` (10 ключей, missing → false). Интеграционный тест для endpoints (401 без auth, 200 с auth, 400 на невалидный feature).
 
 ### Фаза B — Native UI
 
-9. **`FeatureAdoptionItem` enum** — `RecipeScalerNative/Models/FeatureAdoptionItem.swift`. CaseIterable, 8 кейсов, каждый знает свой i18n-ключ и raw value (feature key string).
+9. **`FeatureAdoptionItem` enum** — `RecipeScalerNative/Models/FeatureAdoptionItem.swift`. CaseIterable, 10 кейсов, каждый знает свой i18n-ключ и raw value (feature key string).
 
-10. **`AccountAPI.fetchFeatureAdoption()`** + DTO `FeatureAdoptionReportDTO` — расширение `AccountAPI.swift`. Возвращает `FeatureAdoptionReportDTO` с 8 optional Bool полями; геттер `value(for:)` возвращает `false` если nil.
+10. **`AccountAPI.fetchFeatureAdoption()`** + DTO `FeatureAdoptionReportDTO` — расширение `AccountAPI.swift`. Возвращает `FeatureAdoptionReportDTO` с 10 optional Bool полями; геттер `value(for:)` возвращает `false` если nil.
 
-11. **`AccountAPI.markFeatureAdoption(_ feature: String)`** — для `installed_native_app`.
+11. **`FeatureAdoptionAPI.markFeatureAdoption(_:)`** в `RecipeScalerCore` + обёртка в `AccountAPI` — для `installed_native_app` (iPhone) и `installed_watch_app` (watch).
 
-12. **`FeatureAdoptionStore`** — `@Observable`, в `AppContainer`.
+12. **`WatchFeatureAdoptionReporter`** — watch target; per-user UserDefaults, POST через `FeatureAdoptionAPI`.
+
+13. **`FeatureAdoptionStore`** — `@Observable`, в `AppContainer`.
     - `@Published var report: FeatureAdoptionReport = .empty` (все false).
     - `loadFromCache()` — sync read из UserDefaults.
     - `refresh() async` — network fetch + update cache.
     - `markInstalledLocally()` — instant cache update для `installed_native_app`.
 
-13. **`AuthService.markFeatureInstalled()`** — метод-обёртка:
+14. **`AuthService.markFeatureInstalled()`** — метод-обёртка:
     - Проверяет `UserDefaults.standard.bool(forKey: "feature-adoption.installed-reported")`.
     - Если не выставлен: обновляет локальный кэш `FeatureAdoptionStore` (instant UI), fire-and-forget `AccountAPI.markFeatureAdoption("installed_native_app")`.
     - При успехе — выставляет `feature-adoption.installed-reported = true`.
     - При ошибке — оставляет флаг не выставленным, повторит при следующем запуске.
     - Вызывается из `registerAuto()` и `loginWithSeed(_:)` после успешной авторизации. **Не** вызывается из `restoreAuthenticationState()`.
 
-14. **`FeatureAdoptionSection` + `FeatureAdoptionRow`** — SwiftUI views. Размещается вверху `AccountView` выше блока профиля.
+15. **`FeatureAdoptionSection` + `FeatureAdoptionRow`** — SwiftUI views. Размещается вверху `AccountView` выше блока профиля.
     - Row: иконка `checkmark.circle.fill` accent (done) или `circle` secondary (pending), текст из i18n.
     - Список из `FeatureAdoptionItem.allCases`.
 
-15. **Pull-to-refresh** — добавить к `AccountView` `.refreshable { await store.refresh() }` (если ещё нет).
+16. **Pull-to-refresh** — добавить к `AccountView` `.refreshable { await store.refresh() }` (если ещё нет).
 
 ### Фаза C — i18n и тесты
 
-16. **`Localizable.xcstrings`** — 8 ключей `account.feature-adoption.item.*` + `account.feature-adoption.title` (RU/EN).
+17. **`Localizable.xcstrings`** — 10 ключей `account.feature-adoption.item.*` + `account.feature-adoption.title` (RU/EN).
 
-17. **`LocalizationConsistencyTests`** — добавить новые ключи в проверку en+ru.
+18. **`LocalizationConsistencyTests`** — добавить новые ключи в проверку en+ru.
 
 18. **Preview для `FeatureAdoptionSection`** — два стейта: all-done, all-pending.
 

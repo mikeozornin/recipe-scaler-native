@@ -1,7 +1,7 @@
 # Спецификация: раздел «Сделанные вещи» в настройках (feature adoption tracker)
 
 **Ветка**: `038-feature-adoption-tracker`
-**Дата**: 2026-06-24 (rev. 2026-06-25)
+**Дата**: 2026-06-24 (rev. 2026-06-29)
 **Статус**: 🟡 На стадии plan
 **Зависимости**: `013-account-settings` (Profile, `AccountAPI`, `AuthService`), backend auth/`requireUserId`, `recipe-service`, `assistant` routes, `telegram-service`, `mcp-auth-service`, `yjs-service`
 **Эталон**: новый раздел вверху Profile (native iOS), серверная таблица + endpoint отчёта + backfill скрипт + live events
@@ -10,7 +10,7 @@
 
 В приложении есть много фич, которые пользователь не сразу обнаруживает: импорт рецепта, ассистент, коллекции, Telegram, MCP, список покупок. Раздел «Насколько вы освоили Recipe Scaler» в секции аккаунта показывает галочки по сделанным действиям и мягко подсвечивает, что ещё осталось попробовать.
 
-Список действий зафиксирован продуктом (9 пунктов). Расширение списка — через добавление новых feature-ключей, без миграций (только данные).
+Список действий зафиксирован продуктом (10 пунктов). Расширение списка — через добавление новых feature-ключей, без миграций (только данные).
 
 ### Архитектурное решение (после аудита БД)
 
@@ -28,15 +28,16 @@
 
 ## Цель
 
-Раздел вверху Profile с 9 чек-поинтами. Состояние синхронизируется между устройствами (не CRDT — простой read на холодном старте + pull-to-refresh). Сервер — единый источник правды через `user_feature_adoption` таблицу.
+Раздел вверху Profile с 10 чек-поинтами. Состояние синхронизируется между устройствами (не CRDT — простой read на холодном старте + pull-to-refresh). Сервер — единый источник правды через `user_feature_adoption` таблицу.
 
 ## Пользовательские сценарии
 
-### Список отслеживаемых действий (9 пунктов)
+### Список отслеживаемых действий (10 пунктов)
 
 | Feature key | Заголовок (i18n) | Когда засчитывается | Кто пишет в таблицу |
 |-------------|------------------|---------------------|---------------------|
-| `installed_native_app` | «Установлено приложение» | Успешная авторизация в native app (seed-фраза ИЛИ register-auto для нового юзера) | Native клиент через POST |
+| `installed_native_app` | «Установлено приложение» | Успешная авторизация в native app (seed-фраза ИЛИ register-auto для нового юзера) | iPhone native клиент через POST |
+| `installed_watch_app` | «Установлено приложение на часах» | Первое открытие watch app с активной сессией (`userId` на часах) | watchOS клиент через POST |
 | `created_recipe` | «Записан рецепт» | Создан рецепт (через импорт, вручную POST `/api/recipes`, через распознавание текста, через Telegram-бота) | Server event в recipe-service create path |
 | `used_shopping_list` | «Записали что купить» | Появился хотя бы один item в shopping-list doc пользователя (`items.length > 0`) | Server-side Yjs listener на shopping-list doc |
 | `imported_recipe` | «Импортирован рецепт» | Успешный import URL/text/photo (endpoint `/api/v2/recipes/:id/parse` или аналог) | Server event в import handler |
@@ -48,7 +49,7 @@
 
 ### US1 — Просмотр раздела (P1)
 
-**Когда** пользователь открывает вкладку Profile, **тогда** в секции «Аккаунт» (между данными аккаунта и публичными профилями) видна строка-ссылка с заголовком `account.feature-adoption.title` и счётчиком `N / 9`. На экране детализации — многострочный заголовок в контенте (без обрезки в navigation bar), кольцевой прогресс `N из M` и список строк со статусными галочками (`checkmark` primary при выполнено, `circle` secondary при невыполнено). Под каждой строкой — onboarding-подпись footnote (`.appFootnote()`, secondary color) для контекста.
+**Когда** пользователь открывает вкладку Profile, **тогда** в секции «Аккаунт» (между данными аккаунта и публичными профилями) видна строка-ссылка с заголовком `account.feature-adoption.title` и счётчиком `N / 10`. На экране детализации — многострочный заголовок в контенте (без обрезки в navigation bar), кольцевой прогресс `N из M` и список строк со статусными галочками (`checkmark` primary при выполнено, `circle` secondary при невыполнено). Под каждой строкой — onboarding-подпись footnote (`.appFootnote()`, secondary color) для контекста.
 
 ### US2 — Синхронизация между устройствами (P1)
 
@@ -75,7 +76,7 @@
 **Когда** бэкенд разворачивает спеку, **тогда** backfill скрипт проходит по всем существующим пользователям и заполняет `user_feature_adoption` на основе:
 - SQL-deriveable флагов (`created_recipe`, `connected_telegram`, `connected_mcp_assistant`, `sent_assistant_message`) — одним пакетом через `INSERT ... SELECT`.
 - Yjs-derived флагов (`imported_recipe`, `created_collection`, `shared_recipe`, `used_shopping_list`) — итеративно через `yjsService` по каждому пользователю (медленно, но разово).
-- `installed_native_app` — **не backfill'ится** (для существующих веб-юзеров флаг станет true только когда они впервые залогинятся в нативке).
+- `installed_native_app` и `installed_watch_app` — **не backfill'ятся** (client-only; флаги появляются при первом входе в нативку / первом открытии watch app с сессией).
 
 ## Требования
 
@@ -83,7 +84,7 @@
 
 #### FR-038-N1 — Размещение в Profile
 
-Строка-ссылка в `AccountView` внутри секции аккаунта (под seed phrase, над публичными профилями), ведёт в `FeatureAdoptionDetailView` со списком `FeatureAdoptionRow` (8 штук), генерируемых из `FeatureAdoptionItem` enum (CaseIterable). На экране детализации — только navigation title, без дублирующего заголовка секции и без footer-счётчика.
+Строка-ссылка в `AccountView` внутри секции аккаунта (под seed phrase, над публичными профилями), ведёт в `FeatureAdoptionDetailView` со списком `FeatureAdoptionRow`, генерируемых из `FeatureAdoptionItem` enum (CaseIterable, 10 кейсов). На экране детализации — только navigation title, без дублирующего заголовка секции и без footer-счётчика.
 
 #### FR-038-N2 — Cache
 
@@ -113,7 +114,18 @@
 
 #### FR-038-N5 — i18n
 
-Все 9 заголовков + onboarding footnote — в `Localizable.xcstrings` (RU/EN). Префикс ключей: `account.feature-adoption.item.*` (заголовки) и `account.feature-adoption.item.*.footnote` (подписи). Плюс заголовок раздела `account.feature-adoption.title`. Без хардкода в SwiftUI.
+Все 10 заголовков + onboarding footnote — в `Localizable.xcstrings` (RU/EN). Префикс ключей: `account.feature-adoption.item.*` (заголовки) и `account.feature-adoption.item.*.footnote` (подписи). Плюс заголовок раздела `account.feature-adoption.title`. Без хардкода в SwiftUI.
+
+#### FR-038-N6 — `installed_watch_app` trigger (watchOS)
+
+В `WatchFeatureAdoptionReporter` (watch target):
+
+- Первое открытие watch app с `WatchCredentialsStore.userId != nil` — fire-and-forget `FeatureAdoptionAPI.markFeatureAdoption("installed_watch_app")`.
+- Идемпотентность на устройстве: `UserDefaults` ключ `feature-adoption.watch-app-opened-reported.<userId>` (per-user, не глобальный).
+- `userId` захватывается до `Task`; POST и запись флага только если сессия не сменилась.
+- При purge creds с iPhone (`userId: null` в WCSession) — локальный reported-флаг для предыдущего `userId` сбрасывается.
+- POST делегируется в `RecipeScalerCore.FeatureAdoptionAPI` (общий с iPhone `AccountAPI.markFeatureAdoption`).
+- При ошибке сети — флаг не выставляется; повтор при следующем открытии с сессией.
 
 ### Server
 
@@ -307,6 +319,11 @@ for (const user of allUserIds) {
 | MCP OAuth (`llm/API.md` § MCP) | Триггер `connected_mcp_assistant` (server-side event) |
 
 ## Changelog
+
+### 2026-06-29 — `installed_watch_app`
+
+- 10-й пункт: watchOS client-reported флаг при первом открытии с сессией.
+- `FeatureAdoptionAPI` в `RecipeScalerCore`; `WatchFeatureAdoptionReporter` с per-user UserDefaults.
 
 ### 2026-06-25 — refactored after DB audit
 

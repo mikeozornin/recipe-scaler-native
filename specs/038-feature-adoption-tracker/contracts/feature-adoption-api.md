@@ -6,11 +6,11 @@
 
 ### `GET /api/users/me/feature-adoption`
 
-Возвращает отчёт по 9 флагам для текущего пользователя.
+Возвращает отчёт по 10 флагам для текущего пользователя.
 
 **Auth**: `requireUserId` (owner-only).
 
-**Реализация**: один `SELECT feature FROM user_feature_adoption WHERE user_id=$1`, маппинг в 9 булей. Никаких JOIN с другими таблицами, никаких live-вычислений.
+**Реализация**: один `SELECT feature FROM user_feature_adoption WHERE user_id=$1`, маппинг в 10 булей. Никаких JOIN с другими таблицами, никаких live-вычислений.
 
 **Response 200:**
 
@@ -19,13 +19,15 @@
   "success": true,
   "data": {
     "installed_native_app": true,
+    "installed_watch_app": false,
     "imported_recipe": true,
     "created_recipe": true,
     "created_collection": false,
     "shared_recipe": false,
     "connected_telegram": true,
     "connected_mcp_assistant": false,
-    "sent_assistant_message": false
+    "sent_assistant_message": false,
+    "used_shopping_list": false
   }
 }
 ```
@@ -34,7 +36,7 @@
 - `Cache-Control: private, max-age=60`
 
 **Гарантии**:
-- Все 8 ключей всегда присутствуют в `data`.
+- Все 10 ключей всегда присутствуют в `data`.
 - Значения — только `boolean`, никаких timestamp/counters.
 - Сервер никогда не раскрывает `userId` в ответе.
 
@@ -52,7 +54,7 @@
 }
 ```
 
-Schema (zod): `{ feature: z.enum(FEATURE_KEYS) }` — любой из 8 канонических ключей. В v1 клиент шлёт только `installed_native_app`; остальные проставляются серверными live events. Endpoint generic — для будущих client-reported флагов.
+Schema (zod): `{ feature: z.enum(FEATURE_KEYS) }` — любой из 10 канонических ключей. Клиенты шлют только client-reported флаги: `installed_native_app` (iPhone) и `installed_watch_app` (watchOS); остальные проставляются серверными live events.
 
 **Response 200:**
 
@@ -76,7 +78,8 @@ Schema (zod): `{ feature: z.enum(FEATURE_KEYS) }` — любой из 8 кано
 
 | Feature | Кто пишет в таблицу | Когда |
 |---------|---------------------|-------|
-| `installed_native_app` | Native клиент через `POST /feature-adoption` | После успешного `registerAuto` или `loginWithSeed` |
+| `installed_native_app` | iPhone native клиент через `POST /feature-adoption` | После успешного `registerAuto` или `loginWithSeed` |
+| `installed_watch_app` | watchOS клиент через `POST /feature-adoption` (`FeatureAdoptionAPI`) | Первое открытие watch app с `userId` на часах |
 | `imported_recipe` | Server event: `recipe-service.createRecipeFromUrl`/`createRecipeFromText` | После создания recipe doc при импорте |
 | `created_recipe` | Server event: `recipe-service.createRecipeInDatabase` | После `INSERT INTO recipes` |
 | `created_collection` | Yjs listener в `yjs-service` на collection doc | При первом `folders.length > 0` |
@@ -196,6 +199,7 @@ CREATE INDEX IF NOT EXISTS idx_user_feature_adoption_user
 ```typescript
 export const FEATURE_KEYS = [
   'installed_native_app',
+  'installed_watch_app',
   'imported_recipe',
   'created_recipe',
   'created_collection',
@@ -231,13 +235,13 @@ sequenceDiagram
     User->>Cache: read feature-adoption-cache (sync)
     User->>User: render section from cache
     User->>API: GET /feature-adoption (.task)
-    API-->>User: { 8 booleans }
+    API-->>User: { 10 booleans }
     User->>Cache: write cache
     User->>User: re-render section
 
     Note over User: Pull-to-refresh
     User->>API: GET /feature-adoption
-    API-->>User: { 8 booleans }
+    API-->>User: { 10 booleans }
     User->>Cache: write cache
 ```
 

@@ -45,7 +45,11 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
         guard !payload.isEmpty else { return }
 
         if payload.keys.contains("userId") {
+            let previousUserId = WatchCredentialsStore.userId
             let userId = userId(from: payload)
+            if userId == nil, let previousUserId {
+                WatchFeatureAdoptionReporter.clearLocalReport(for: previousUserId)
+            }
             WatchCredentialsStore.set(userId)
             APIClient.shared.configure(userId: userId)
             onUserIdChange?(userId)

@@ -28,11 +28,13 @@
 		179F96A874E4A191DFC84958 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 0A5A136ADBF870BFBD1C3902 /* Localizable.xcstrings */; };
 		1A53619D3D6AF4AF6CD2CDE8 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 397972E3080EA1238A19CE9C /* KeychainAccess */; };
 		1A94422F09EA4C03BD017D23 /* APIClient+Requests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41F1A2877817482DAC0FE2DC /* APIClient+Requests.swift */; };
+		FADAPI02B293A4B701000001 /* FeatureAdoptionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADAPI01A293A4B701000001 /* FeatureAdoptionAPI.swift */; };
 		BEEE9D690F324305880057C6 /* ServerActiveTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72C0961D8B504667B05C4AB4 /* ServerActiveTimer.swift */; };
 		ED9FFFFC0B754AD688770558 /* RecipeScalerNativeWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B27909779534A788A97A54D /* RecipeScalerNativeWatchApp.swift */; };
 		9BD6EC5F84CE4ED8B03516B8 /* WatchCredentialsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DCF8C86EAE34546B5F18B38 /* WatchCredentialsStore.swift */; };
 		14A5C50E38B64318A3F88B55 /* WatchCredentialsBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46BF5AD0548A4829A7C387F9 /* WatchCredentialsBridge.swift */; };
 		2E78895F06BE488B972621DF /* WatchTimerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEF0BA379A0541E7A602633D /* WatchTimerService.swift */; };
+		WATCHFAD02B293A4B70100001 /* WatchFeatureAdoptionReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = WATCHFAD01A293A4B70100001 /* WatchFeatureAdoptionReporter.swift */; };
 		11F36940A7114E969A0F066F /* WatchTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C8EF72AC8C4D5B906502B7 /* WatchTimer.swift */; };
 		4E83476823C74D84AEB17BEA /* WatchHaptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F80D392681406AA341801C /* WatchHaptics.swift */; };
 		8066F637AAB1476EBAB96224 /* WatchTimerLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 321225950E8643E9A02C4CA6 /* WatchTimerLayout.swift */; };
@@ -615,6 +617,7 @@
 		3D966868028D4B6CFD6DE498 /* DocumentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentManager.swift; sourceTree = "<group>"; };
 		3F8900665BEBF9F38AAA0747 /* AppFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFonts.swift; sourceTree = "<group>"; };
 		41F1A2877817482DAC0FE2DC /* APIClient+Requests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Networking/APIClient+Requests.swift"; sourceTree = "<group>"; };
+		FADAPI01A293A4B701000001 /* FeatureAdoptionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Networking/FeatureAdoptionAPI.swift"; sourceTree = "<group>"; };
 		450283E26C9249C5858DFCEF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		480DCDACDCA0402582631501 /* RecipeLegacyBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeLegacyBanner.swift; sourceTree = "<group>"; };
 		4B5D272EB4ED4555A30CD3B2 /* RecipeEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEditViewModel.swift; sourceTree = "<group>"; };
@@ -663,6 +666,7 @@
 		1DCF8C86EAE34546B5F18B38 /* WatchCredentialsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/WatchCredentialsStore.swift"; sourceTree = "<group>"; };
 		46BF5AD0548A4829A7C387F9 /* WatchCredentialsBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/WatchCredentialsBridge.swift"; sourceTree = "<group>"; };
 		AEF0BA379A0541E7A602633D /* WatchTimerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/WatchTimerService.swift"; sourceTree = "<group>"; };
+		WATCHFAD01A293A4B70100001 /* WatchFeatureAdoptionReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/WatchFeatureAdoptionReporter.swift"; sourceTree = "<group>"; };
 		C9C8EF72AC8C4D5B906502B7 /* WatchTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/WatchTimer.swift"; sourceTree = "<group>"; };
 		14F80D392681406AA341801C /* WatchHaptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Haptics/WatchHaptics.swift"; sourceTree = "<group>"; };
 		321225950E8643E9A02C4CA6 /* WatchTimerLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/WatchTimerLayout.swift"; sourceTree = "<group>"; };
@@ -1163,6 +1167,7 @@
 				1DCF8C86EAE34546B5F18B38 /* WatchCredentialsStore.swift */,
 				46BF5AD0548A4829A7C387F9 /* WatchCredentialsBridge.swift */,
 				AEF0BA379A0541E7A602633D /* WatchTimerService.swift */,
+				WATCHFAD01A293A4B70100001 /* WatchFeatureAdoptionReporter.swift */,
 				C9C8EF72AC8C4D5B906502B7 /* WatchTimer.swift */,
 				14F80D392681406AA341801C /* WatchHaptics.swift */,
 				321225950E8643E9A02C4CA6 /* WatchTimerLayout.swift */,
@@ -1401,6 +1406,7 @@
 				E3CBCE9817864C1C8B333764 /* Config.swift */,
 				922F28300880430B97A0348C /* APIClient.swift */,
 				41F1A2877817482DAC0FE2DC /* APIClient+Requests.swift */,
+				FADAPI01A293A4B701000001 /* FeatureAdoptionAPI.swift */,
 				72C0961D8B504667B05C4AB4 /* ServerActiveTimer.swift */,
 				69F9BFE990A641C6A64D4CFC /* ServerErrorCode.swift */,
 				DA95C7943B584B11A547EB85 /* RecipeImportAPI.swift */,
@@ -2144,6 +2150,7 @@
 				D963C6002ACA43AE8B000E1D /* Config.swift in Sources */,
 				1BAEE2C386A5454CB68D9C8B /* APIClient.swift in Sources */,
 				1A94422F09EA4C03BD017D23 /* APIClient+Requests.swift in Sources */,
+				FADAPI02B293A4B701000001 /* FeatureAdoptionAPI.swift in Sources */,
 				BEEE9D690F324305880057C6 /* ServerActiveTimer.swift in Sources */,
 				8787C480EC0449AAB2726A30 /* TimerPalette.swift in Sources */,
 				B3TORD01B293A4B701000002 /* TimerOrdering.swift in Sources */,
@@ -2476,6 +2483,7 @@
 				9BD6EC5F84CE4ED8B03516B8 /* WatchCredentialsStore.swift in Sources */,
 				14A5C50E38B64318A3F88B55 /* WatchCredentialsBridge.swift in Sources */,
 				2E78895F06BE488B972621DF /* WatchTimerService.swift in Sources */,
+				WATCHFAD02B293A4B70100001 /* WatchFeatureAdoptionReporter.swift in Sources */,
 				11F36940A7114E969A0F066F /* WatchTimer.swift in Sources */,
 				4E83476823C74D84AEB17BEA /* WatchHaptics.swift in Sources */,
 				8066F637AAB1476EBAB96224 /* WatchTimerLayout.swift in Sources */,

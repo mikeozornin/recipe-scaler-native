@@ -12,6 +12,7 @@ import SwiftUI
 /// spec table order and drives the rendering order of `FeatureAdoptionDetailView`.
 enum FeatureAdoptionItem: String, CaseIterable, Sendable {
     case installedNativeApp = "installed_native_app"
+    case installedWatchApp = "installed_watch_app"
     case createdRecipe = "created_recipe"
     case usedShoppingList = "used_shopping_list"
     case importedRecipe = "imported_recipe"
@@ -29,6 +30,7 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
     var titleKey: LocalizedStringKey {
         switch self {
         case .installedNativeApp: return "account.feature-adoption.item.installed_native_app"
+        case .installedWatchApp: return "account.feature-adoption.item.installed_watch_app"
         case .createdRecipe: return "account.feature-adoption.item.created_recipe"
         case .usedShoppingList: return "account.feature-adoption.item.used_shopping_list"
         case .importedRecipe: return "account.feature-adoption.item.imported_recipe"
@@ -44,6 +46,7 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
     var footnoteKey: LocalizedStringKey? {
         switch self {
         case .installedNativeApp: return "account.feature-adoption.item.installed_native_app.footnote"
+        case .installedWatchApp: return "account.feature-adoption.item.installed_watch_app.footnote"
         case .createdRecipe: return "account.feature-adoption.item.created_recipe.footnote"
         case .usedShoppingList: return "account.feature-adoption.item.used_shopping_list.footnote"
         case .importedRecipe: return "account.feature-adoption.item.imported_recipe.footnote"

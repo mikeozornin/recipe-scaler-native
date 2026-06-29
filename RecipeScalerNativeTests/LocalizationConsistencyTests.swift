@@ -236,6 +236,8 @@ final class LocalizationConsistencyTests: XCTestCase {
             "account.feature-adoption.progress %d %d",
             "account.feature-adoption.item.installed_native_app",
             "account.feature-adoption.item.installed_native_app.footnote",
+            "account.feature-adoption.item.installed_watch_app",
+            "account.feature-adoption.item.installed_watch_app.footnote",
             "account.feature-adoption.item.created_recipe",
             "account.feature-adoption.item.created_recipe.footnote",
             "account.feature-adoption.item.used_shopping_list",
