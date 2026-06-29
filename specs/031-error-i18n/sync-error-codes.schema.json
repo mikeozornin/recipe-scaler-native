@@ -30,7 +30,7 @@
     },
     "payloadShape": {
       "type": "object",
-      "description": "Expected fields in the sync_error payload.",
+      "description": "Expected fields in the sync_error payload. New format requires code; legacy servers may send only error (no code). recipeId is optional.",
       "properties": {
         "code": {
           "type": "string",
@@ -45,8 +45,7 @@
           "type": ["string", "null"],
           "description": "Related recipe id, omitted/null for collection documents."
         }
-      },
-      "required": ["code", "error"]
+      }
     },
     "codes": {
       "type": "array",

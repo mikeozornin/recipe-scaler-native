@@ -1,0 +1,46 @@
+{
+  "version": "1.0",
+  "transport": "socket.io",
+  "event": "sync_error",
+  "dotKeyPattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*){1,}$",
+  "codes": [
+    {
+      "code": "sync.error.ownership",
+      "legacyPattern": "Ownership validation failed",
+      "clientAction": "setConnectionState(.error), do not retry",
+      "localizationKey": "sync.error.ownership"
+    },
+    {
+      "code": "sync.error.recipe-deleted",
+      "legacyPattern": "Recipe is deleted",
+      "clientAction": "Remove recipe from local list, clear offline queue, close UI",
+      "localizationKey": "sync.error.recipe-deleted"
+    },
+    {
+      "code": "sync.error.empty-update",
+      "legacyPattern": "Empty update",
+      "clientAction": "Request full document reload",
+      "localizationKey": "sync.error.empty-update"
+    },
+    {
+      "code": "sync.error.invalid-update",
+      "legacyPattern": "Invalid update",
+      "clientAction": "Request full document reload",
+      "localizationKey": "sync.error.invalid-update"
+    },
+    {
+      "code": "sync.error.generic",
+      "legacyPattern": "(any other string)",
+      "clientAction": "Sleep 5s, then request document reload",
+      "localizationKey": "sync.error.generic"
+    }
+  ],
+  "localization": {
+    "requiredLocales": ["en", "ru"],
+    "catalog": "RecipeScalerNative/Resources/Localizable.xcstrings"
+  },
+  "compatibility": {
+    "legacyFormatAllowed": true,
+    "fallbackCode": "sync.error.generic"
+  }
+}

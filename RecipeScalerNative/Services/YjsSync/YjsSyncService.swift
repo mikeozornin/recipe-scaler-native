@@ -482,7 +482,9 @@ final class YjsSyncService {
                 return res
             }
             self.documentLoadTasks.removeValue(forKey: recipeId)
-            self.completePendingDocumentLoad(recipeId: recipeId, merged: false)
+            if !result {
+                self.completePendingDocumentLoad(recipeId: recipeId, merged: false)
+            }
             return result
         }
         documentLoadTasks[recipeId] = task

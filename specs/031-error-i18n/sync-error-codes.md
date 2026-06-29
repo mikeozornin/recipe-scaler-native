@@ -1,5 +1,7 @@
 # Контракт: коды ошибок Socket.IO `sync_error`
 
+Instance для валидации: [`sync-error-codes.json`](sync-error-codes.json) (против [`sync-error-codes.schema.json`](sync-error-codes.schema.json)).
+
 **Дата**: 2026-06-20
 **Версия**: 1.0
 **Аудитория**: backend-команда recipe-scaler-web/server; iOS-клиент
