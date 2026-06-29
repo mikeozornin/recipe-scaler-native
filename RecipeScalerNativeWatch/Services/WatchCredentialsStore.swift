@@ -38,9 +38,14 @@ enum WatchCredentialsStore {
 
     /// Persist userId for subsequent launches. Empty / nil clears it.
     static func set(_ userId: String?) {
+        let previousUserId = Self.userId
         if let userId, !userId.isEmpty {
             save(userId)
+            WatchFeatureAdoptionReporter.reportFirstOpenIfNeeded()
         } else {
+            if let previousUserId {
+                WatchFeatureAdoptionReporter.clearLocalReport(for: previousUserId)
+            }
             clear()
         }
     }

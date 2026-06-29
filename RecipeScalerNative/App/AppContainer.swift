@@ -256,5 +256,6 @@ final class AppContainer {
         sync.stop()
         spotlight.stop()
         await spotlight.clearAll()
+        featureAdoption.clearForLogout()
     }
 }

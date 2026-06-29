@@ -29,6 +29,9 @@
 		1A53619D3D6AF4AF6CD2CDE8 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 397972E3080EA1238A19CE9C /* KeychainAccess */; };
 		1A94422F09EA4C03BD017D23 /* APIClient+Requests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41F1A2877817482DAC0FE2DC /* APIClient+Requests.swift */; };
 		FADAPI02B293A4B701000001 /* FeatureAdoptionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADAPI01A293A4B701000001 /* FeatureAdoptionAPI.swift */; };
+		FADKEY02B293A4B701000001 /* FeatureAdoptionClientFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADKEY01A293A4B701000001 /* FeatureAdoptionClientFeature.swift */; };
+		FADLAY02B293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADLAY01A293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift */; };
+		FADLAY04D293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */; };
 		BEEE9D690F324305880057C6 /* ServerActiveTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72C0961D8B504667B05C4AB4 /* ServerActiveTimer.swift */; };
 		ED9FFFFC0B754AD688770558 /* RecipeScalerNativeWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B27909779534A788A97A54D /* RecipeScalerNativeWatchApp.swift */; };
 		9BD6EC5F84CE4ED8B03516B8 /* WatchCredentialsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DCF8C86EAE34546B5F18B38 /* WatchCredentialsStore.swift */; };
@@ -618,6 +621,9 @@
 		3F8900665BEBF9F38AAA0747 /* AppFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFonts.swift; sourceTree = "<group>"; };
 		41F1A2877817482DAC0FE2DC /* APIClient+Requests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Networking/APIClient+Requests.swift"; sourceTree = "<group>"; };
 		FADAPI01A293A4B701000001 /* FeatureAdoptionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Networking/FeatureAdoptionAPI.swift"; sourceTree = "<group>"; };
+		FADKEY01A293A4B701000001 /* FeatureAdoptionClientFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Networking/FeatureAdoptionClientFeature.swift"; sourceTree = "<group>"; };
+		FADLAY01A293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionRingLabelLayout.swift; sourceTree = "<group>"; };
+		FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionRingLabelLayoutTests.swift; sourceTree = "<group>"; };
 		450283E26C9249C5858DFCEF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		480DCDACDCA0402582631501 /* RecipeLegacyBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeLegacyBanner.swift; sourceTree = "<group>"; };
 		4B5D272EB4ED4555A30CD3B2 /* RecipeEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEditViewModel.swift; sourceTree = "<group>"; };
@@ -1407,6 +1413,7 @@
 				922F28300880430B97A0348C /* APIClient.swift */,
 				41F1A2877817482DAC0FE2DC /* APIClient+Requests.swift */,
 				FADAPI01A293A4B701000001 /* FeatureAdoptionAPI.swift */,
+				FADKEY01A293A4B701000001 /* FeatureAdoptionClientFeature.swift */,
 				72C0961D8B504667B05C4AB4 /* ServerActiveTimer.swift */,
 				69F9BFE990A641C6A64D4CFC /* ServerErrorCode.swift */,
 				DA95C7943B584B11A547EB85 /* RecipeImportAPI.swift */,
@@ -1447,6 +1454,7 @@
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
 				A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */,
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
+				FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */,
 				B3TESTERR0020 /* ErrorLocalizationTests.swift */,
 				B3SYNCERR0020 /* SyncErrorCodeTests.swift */,
 				B3AUTHERR0020 /* AuthErrorLocalizationTests.swift */,
@@ -1671,6 +1679,7 @@
 				E5F60718293A4B7000000053 /* RecipeDescriptionParser.swift */,
 				E5F60718293A4B7000000059 /* RecipeDescriptionStyle.swift */,
 				B3APPLOG01A293A4B70100001 /* AppLog.swift */,
+				FADLAY01A293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift */,
 
 				E5F60718293A4B700000000D /* AgentSyncDebugLog.swift */,
 				E5F60719293A4B7000000092 /* AgentDebugLogging.swift */,
@@ -2151,6 +2160,7 @@
 				1BAEE2C386A5454CB68D9C8B /* APIClient.swift in Sources */,
 				1A94422F09EA4C03BD017D23 /* APIClient+Requests.swift in Sources */,
 				FADAPI02B293A4B701000001 /* FeatureAdoptionAPI.swift in Sources */,
+				FADKEY02B293A4B701000001 /* FeatureAdoptionClientFeature.swift in Sources */,
 				BEEE9D690F324305880057C6 /* ServerActiveTimer.swift in Sources */,
 				8787C480EC0449AAB2726A30 /* TimerPalette.swift in Sources */,
 				B3TORD01B293A4B701000002 /* TimerOrdering.swift in Sources */,
@@ -2321,6 +2331,7 @@
 				E5F60718293A4B7000000058 /* RecipeDescriptionStyle.swift in Sources */,
 				E5F60718293A4B700000005A /* RecipeDescriptionInlineTextView.swift in Sources */,
 				B3APPLOG01B293A4B70100002 /* AppLog.swift in Sources */,
+				FADLAY02B293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift in Sources */,
 
 				APP0000000000000000000091 /* AppContainer.swift in Sources */,
 				APP0000000000000000000092 /* AppEnvironment.swift in Sources */,
@@ -2533,6 +2544,7 @@
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
 				A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */,
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
+				FADLAY04D293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift in Sources */,
 				B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */,
 				B3SYNCERR0010 /* SyncErrorCodeTests.swift in Sources */,
 				B3AUTHERR0010 /* AuthErrorLocalizationTests.swift in Sources */,

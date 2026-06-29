@@ -7,11 +7,13 @@
 //
 
 import Foundation
+import os
 import RecipeScalerCore
 
 enum WatchFeatureAdoptionReporter {
-    private static let featureKey = "installed_watch_app"
+    private static let feature: FeatureAdoptionClientFeature = .installedWatchApp
     private static let reportedKeyPrefix = "feature-adoption.watch-app-opened-reported."
+    private static let logger = Logger(subsystem: "com.recipescaler.watch", category: "FeatureAdoption")
 
     private static let lock = NSLock()
     private static var inFlightUserIds = Set<String>()
@@ -31,7 +33,7 @@ enum WatchFeatureAdoptionReporter {
         inFlightUserIds.insert(reportingUserId)
         lock.unlock()
 
-        Task {
+        Task(priority: .utility) {
             defer {
                 lock.lock()
                 inFlightUserIds.remove(reportingUserId)
@@ -41,11 +43,16 @@ enum WatchFeatureAdoptionReporter {
             guard WatchCredentialsStore.userId == reportingUserId else { return }
 
             do {
-                try await FeatureAdoptionAPI.markFeatureAdoption(featureKey)
+                try await FeatureAdoptionAPI.markFeatureAdoption(
+                    feature,
+                    userId: reportingUserId
+                )
                 guard WatchCredentialsStore.userId == reportingUserId else { return }
                 UserDefaults.standard.set(true, forKey: reportedKey)
             } catch {
-                // Leave reportedKey unset; retry on next bootstrap / userId delivery.
+                logger.error(
+                    "installed_watch_app POST failed: \(error.localizedDescription, privacy: .public)"
+                )
             }
         }
     }

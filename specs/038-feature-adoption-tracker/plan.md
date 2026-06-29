@@ -69,9 +69,9 @@
 
 18. **`LocalizationConsistencyTests`** — добавить новые ключи в проверку en+ru.
 
-18. **Preview для `FeatureAdoptionSection`** — два стейта: all-done, all-pending.
+19. **Preview для `FeatureAdoptionSection`** — два стейта: all-done, all-pending; wide-digits для кольца прогресса (EN + RU locale).
 
-19. **Verify-скрипт** `scripts/verify-feature-adoption.sh`: grep на новые файлы/строки + `xcodebuild build`.
+20. **Verify-скрипт** `scripts/verify-feature-adoption.sh`: grep на новые файлы/строки + `xcodebuild build`.
 
 ## Deployment — dev-first стратегия
 
@@ -82,7 +82,7 @@
 3. **Dev: backfill dry-run.** `NODE_ENV=development bun server/scripts/backfill-feature-adoption.ts --env .env.dev` (без `--apply`) — смотрим отчёт, какие флаги и скольким юзерам проставились бы.
 4. **Dev: backfill apply Phase 1 (SQL).** `--only-sql --apply`. Проверяем метрики: `SELECT feature, COUNT(*) FROM user_feature_adoption GROUP BY feature;`
 5. **Dev: backfill apply Phase 2 (Yjs).** Полный `--apply`. Метрики те же.
-6. **Dev: API smoke.** Через curl/postman: `GET /api/users/me/feature-adoption` (нужен валидный dev userId в header), проверяем что 8 ключей возвращаются. `POST /feature-adoption { installed_native_app }` дважды — убеждаемся что `ON CONFLICT DO NOTHING` отрабатывает (1 запись).
+6. **Dev: API smoke.** Через curl/postman: `GET /api/users/me/feature-adoption` (нужен валидный dev userId в header), проверяем что 10 ключей возвращаются. `POST /feature-adoption { installed_native_app }` дважды — убеждаемся что `ON CONFLICT DO NOTHING` отрабатывает (1 запись). Watch: первое открытие с сессией → `installed_watch_app`.
 7. **Dev: live event smoke.** Создаём рецепт через `POST /api/recipes` → проверяем что `created_recipe` появился. Импортируем по URL → `imported_recipe`. Подключаем Telegram → `connected_telegram`. Пишем в ассистент → `sent_assistant_message`. Создаём коллекцию через Yjs → ждём listener → `created_collection`. Делаем рецепт публичным через Yjs → ждём listener → `shared_recipe`.
 8. **Dev: native UI smoke.** Билдим native против dev-сервера, проходим flow авторизации (register-auto или login-with-seed) → `installed_native_app` загорается.
 9. **Production deploy** — только после зелёного smoke на dev. Тот же порядок: миграция → backend → backfill (dry-run → Phase 1 → Phase 2) → native build в TestFlight/App Store.
@@ -93,7 +93,7 @@
 - **Миграция** — `DROP TABLE IF EXISTS user_feature_adoption;` (без каскадных эффектов, отдельная таблица).
 - **Backend events** —.fire-and-forget, не блокируют бизнес-операции. Если событие падает, бизнес всё равно работает. Для отката достаточно убрать `featureAdoptionService.mark()` вызовы.
 - **Yjs listeners** — могут быть отключены через env flag `FEATURE_ADOPTION_YJS_LISTENERS=false` (по умолчанию true).
-- **Native UI** — раздел можно скрыть через `UserDefaults` feature flag (или через возвращаемый набор ключей с сервера — если ключей меньше 8, раздел не показывается).
+- **Native UI** — раздел можно скрыть через `UserDefaults` feature flag (или через возвращаемый набор ключей с сервера — если ключей меньше ожидаемого, раздел не показывается).
 
 ## Риски
 
@@ -123,18 +123,25 @@
 
 ### Native (новые)
 
+- `recipe-scaler-native/RecipeScalerCore/Networking/FeatureAdoptionAPI.swift`
+- `recipe-scaler-native/RecipeScalerCore/Networking/FeatureAdoptionClientFeature.swift`
 - `recipe-scaler-native/RecipeScalerNative/Models/FeatureAdoptionItem.swift`
 - `recipe-scaler-native/RecipeScalerNative/Services/FeatureAdoptionStore.swift`
-- `recipe-scaler-native/RecipeScalerNative/Views/FeatureAdoptionSection.swift`
+- `recipe-scaler-native/RecipeScalerNative/Utils/FeatureAdoptionRingLabelLayout.swift`
+- `recipe-scaler-native/RecipeScalerNative/Views/FeatureAdoptionDetailView.swift`
+- `recipe-scaler-native/RecipeScalerNativeWatch/Services/WatchFeatureAdoptionReporter.swift`
+- `recipe-scaler-native/RecipeScalerNativeTests/FeatureAdoptionRingLabelLayoutTests.swift`
 
 ### Native (правки)
 
-- `recipe-scaler-native/RecipeScalerNative/Services/AccountAPI.swift` — `fetchFeatureAdoption` + `markFeatureAdoption`
-- `recipe-scaler-native/RecipeScalerNative/Services/AuthService.swift` — `markFeatureInstalled()`, вызовы в `registerAuto`/`loginWithSeed`
-- `recipe-scaler-native/RecipeScalerNative/Views/AccountView.swift` — разместить `FeatureAdoptionSection`, добавить `.refreshable`
-- `recipe-scaler-native/RecipeScalerNative/App/AppContainer.swift` — завести `FeatureAdoptionStore`
-- `recipe-scaler-native/RecipeScalerNative/Resources/Localizable.xcstrings` — 9 ключей (8 items + title)
+- `recipe-scaler-native/RecipeScalerNative/Services/AccountAPI.swift` — `fetchFeatureAdoption` + `markFeatureAdoption` (делегат в Core)
+- `recipe-scaler-native/RecipeScalerNative/Services/AuthService.swift` — `markFeatureInstalled()`, `clearForLogout` для adoption cache
+- `recipe-scaler-native/RecipeScalerNative/Views/AccountView.swift` — ссылка на `FeatureAdoptionDetailView`, `.refreshable`
+- `recipe-scaler-native/RecipeScalerNative/App/AppContainer.swift` — `FeatureAdoptionStore`, `stopForLogout`
+- `recipe-scaler-native/RecipeScalerNativeWatch/Services/WatchCredentialsStore.swift` — adoption trigger / purge на `set(_:)`
+- `recipe-scaler-native/RecipeScalerNative/Resources/Localizable.xcstrings` — 10 items + footnotes + title
 - `recipe-scaler-native/RecipeScalerNativeTests/LocalizationConsistencyTests.swift` — расширить
+- `recipe-scaler-native/scripts/verify-feature-adoption.sh` — grep watch + 10-й ключ
 
 ### Documentation
 

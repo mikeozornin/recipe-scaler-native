@@ -71,16 +71,7 @@ private struct FeatureAdoptionProgressRing: View {
 
     @Environment(\.locale) private var locale
 
-    private let diameter: CGFloat = 152
-    private let strokeWidth: CGFloat = 12
-    private let labelHorizontalInset: CGFloat = 12
-    private let baseLabelFontSize: CGFloat = 40
-    private let minimumLabelFontSize: CGFloat = 20
-
-    private var labelMaxWidth: CGFloat {
-        let innerDiameter = diameter - 2 * strokeWidth
-        return innerDiameter - 2 * labelHorizontalInset
-    }
+    private var labelMaxWidth: CGFloat { FeatureAdoptionRingLabelLayout.labelMaxWidth }
 
     /// Largest label for the current `total` — same width whether completed is 1 or total.
     private var worstCaseProgressLabel: String {
@@ -88,11 +79,10 @@ private struct FeatureAdoptionProgressRing: View {
     }
 
     private var labelFontSize: CGFloat {
-        Self.fittingLabelFontSize(
+        _ = locale
+        return FeatureAdoptionRingLabelLayout.cachedFontSize(
             for: worstCaseProgressLabel,
-            maxWidth: labelMaxWidth,
-            baseSize: baseLabelFontSize,
-            minimumSize: minimumLabelFontSize
+            localeIdentifier: AppLanguagePreference.current.locale.identifier
         )
     }
 
@@ -104,13 +94,16 @@ private struct FeatureAdoptionProgressRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color(uiColor: .systemFill), lineWidth: strokeWidth)
+                .stroke(Color(uiColor: .systemFill), lineWidth: FeatureAdoptionRingLabelLayout.strokeWidth)
 
             Circle()
                 .trim(from: 0, to: progressFraction)
                 .stroke(
                     Color.primary,
-                    style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
+                    style: StrokeStyle(
+                        lineWidth: FeatureAdoptionRingLabelLayout.strokeWidth,
+                        lineCap: .round
+                    )
                 )
                 .rotationEffect(.degrees(-90))
 
@@ -118,11 +111,15 @@ private struct FeatureAdoptionProgressRing: View {
                 .font(AppTypography.sansMedium(labelFontSize))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
+                .minimumScaleFactor(0.85)
                 .monospacedDigit()
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: labelMaxWidth)
         }
-        .frame(width: diameter, height: diameter)
+        .frame(
+            width: FeatureAdoptionRingLabelLayout.diameter,
+            height: FeatureAdoptionRingLabelLayout.diameter
+        )
         .accessibilityLabel(Text(verbatim: progressLabel))
     }
 
@@ -138,24 +135,6 @@ private struct FeatureAdoptionProgressRing: View {
             completed,
             total
         )
-    }
-
-    private static func fittingLabelFontSize(
-        for text: String,
-        maxWidth: CGFloat,
-        baseSize: CGFloat,
-        minimumSize: CGFloat
-    ) -> CGFloat {
-        var size = baseSize
-        while size > minimumSize {
-            let font = AppTypography.uiFont(AppFonts.sansMedium, size: size, fallbackFamily: AppFonts.sansMedium)
-            let width = (text as NSString).size(withAttributes: [.font: font]).width
-            if width <= maxWidth {
-                return size
-            }
-            size -= 1
-        }
-        return minimumSize
     }
 }
 
@@ -250,4 +229,13 @@ private struct FeatureAdoptionRow: View {
         FeatureAdoptionProgressRing(completed: 99, total: 99)
     }
     .padding()
+}
+
+#Preview("Wide digits RU") {
+    VStack(spacing: 24) {
+        FeatureAdoptionProgressRing(completed: 9, total: 10)
+        FeatureAdoptionProgressRing(completed: 10, total: 10)
+    }
+    .padding()
+    .environment(\.locale, Locale(identifier: "ru"))
 }

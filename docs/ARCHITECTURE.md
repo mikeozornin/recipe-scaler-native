@@ -447,6 +447,19 @@ flowchart TB
 - The cyclic callback `TimerSyncService.sendTimerEvent ↔ YjsSyncService.emitTimerEvent`
   is wired by `TimerEventBridge` (owned by `AppContainer`) using weak references on both sides.
 
+### watchOS (intentional divergence)
+
+The watch target does **not** use `AppContainer`. It relies on small enum/singleton
+coordinators (`WatchCredentialsBridge`, `WatchCredentialsStore`, `WatchFeatureAdoptionReporter`,
+`WatchTimerService`) wired from `RecipeScalerNativeWatchApp` and `TimerListViewModel`.
+
+- **Credentials lifecycle** — `WatchCredentialsStore.set(_:)` owns purge side effects
+  (clear per-user adoption idempotency, trigger `reportFirstOpenIfNeeded` on sign-in).
+- **Shared Core API** — client-reported adoption POSTs use `RecipeScalerCore.FeatureAdoptionAPI`
+  with typed `FeatureAdoptionClientFeature` keys.
+- **Auth** — watch uses `x-user-id` via `APIClient.shared`; POST pins `userId` in headers
+  to avoid session races during async calls.
+
 ## Observation framework
 
 All app-level state-holder classes use the Swift `@Observable` macro (no `ObservableObject`).

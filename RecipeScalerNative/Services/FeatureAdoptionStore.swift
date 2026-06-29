@@ -92,6 +92,12 @@ final class FeatureAdoptionStore {
         persist()
     }
 
+    /// Wipe in-memory report and persisted cache (logout / account switch).
+    func clearForLogout() {
+        report = .empty
+        UserDefaults.standard.removeObject(forKey: Self.cacheKey)
+    }
+
     private func persist() {
         do {
             let data = try JSONEncoder().encode(report)

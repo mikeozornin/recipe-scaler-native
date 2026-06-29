@@ -355,6 +355,8 @@ class AuthService {
         // Reset API client
         apiClient.configure(authToken: nil)
         apiClient.configure(userId: nil)
+
+        AppContainer.shared?.featureAdoption.clearForLogout()
     }
 
     /// Get the current authentication status
@@ -386,7 +388,7 @@ class AuthService {
         Task { @MainActor [weak self] in
             guard self != nil else { return }
             do {
-                try await AccountAPI.markFeatureAdoption(FeatureAdoptionItem.installedNativeApp.rawValue)
+                try await AccountAPI.markFeatureAdoption(.installedNativeApp)
                 UserDefaults.standard.set(true, forKey: reportedKey)
             } catch {
                 // Leave the flag unset; retry on next launch / login.

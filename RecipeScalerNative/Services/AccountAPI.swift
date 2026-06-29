@@ -220,7 +220,7 @@ enum AccountAPI {
     }
 
     /// Idempotent: server applies `INSERT ... ON CONFLICT DO NOTHING`.
-    static func markFeatureAdoption(_ feature: String) async throws {
+    static func markFeatureAdoption(_ feature: FeatureAdoptionClientFeature) async throws {
         try await FeatureAdoptionAPI.markFeatureAdoption(feature)
     }
 }
