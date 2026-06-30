@@ -56,18 +56,25 @@ final class YjsSyncService {
     /// Guards socket handlers: stale clients must not overwrite `connectionState` after reconnect.
     private enum ConnectionStep: Equatable, Sendable {
         case disconnected
-        case connecting(sessionId: UUID, attempt: Int)
+        case connecting(sessionId: UUID)
         case authenticating(sessionId: UUID)
         case authenticated(sessionId: UUID)
     }
 
     private var connectionStep: ConnectionStep = .disconnected
-    private var connectionTimerTask: Task<Void, Never>?
+    /// FSM watchdog: engine-connect timeout (8s) или auth-ack timeout (2s).
+    /// Единственный владелец — `transition(to:)`. Не использовать вне переходов
+    /// FSM-step — иначе network-debounce отменяет watchdog при сетевом мерцании
+    /// (регрессия, описанная в MIK-161).
+    private var connectionStepTimer: Task<Void, Never>?
+    /// Debounce network-regain (400ms) перед `reconnectAfterNetworkRegained`.
+    /// Не зависит от `connectionStep`: сеть может вернуться в любом FSM-состоянии.
+    private var networkReconnectDebounceTask: Task<Void, Never>?
     private var socketSessionId: UUID? {
         switch connectionStep {
         case .disconnected:
             return nil
-        case .connecting(let id, _), .authenticating(let id), .authenticated(let id):
+        case .connecting(let id), .authenticating(let id), .authenticated(let id):
             return id
         }
     }
@@ -520,16 +527,22 @@ final class YjsSyncService {
                 if self.isNetworkReachable != reachable {
                     self.isNetworkReachable = reachable
                     if !reachable {
-                        self.connectionTimerTask?.cancel()
-                        self.connectionTimerTask = nil
+                        // Сеть ушла — engine/auth watchdog уже не сработает осмысленно
+                        // (teardownSocket всё равно разорвёт сессию). Отменяем явно,
+                        // чтобы watchdog не поджёг reconnect уже после teardown.
+                        self.connectionStepTimer?.cancel()
+                        self.connectionStepTimer = nil
+                        // На случай, если сеть моргнула дважды — не оставляем висящий debounce.
+                        self.networkReconnectDebounceTask?.cancel()
+                        self.networkReconnectDebounceTask = nil
                         self.reconcileStuckSyncingStates()
                         Task { await self.flushPendingUpdates(for: self.pendingEditRecipeIds()) }
                         Task { await self.flushPendingEdits() }
                         self.teardownSocket()
                         self.setConnectionState(.disconnected, reason: "network_lost")
                     } else {
-                        self.connectionTimerTask?.cancel()
-                        self.connectionTimerTask = Task { @MainActor [weak self] in
+                        self.networkReconnectDebounceTask?.cancel()
+                        self.networkReconnectDebounceTask = Task { @MainActor [weak self] in
                             try? await Task.sleep(nanoseconds: 400_000_000)
                             guard let self, !Task.isCancelled, self.isNetworkReachable else { return }
                             self.reconnectAfterNetworkRegained()
@@ -560,8 +573,10 @@ final class YjsSyncService {
     }
 
     private func stopNetworkMonitor() {
-        connectionTimerTask?.cancel()
-        connectionTimerTask = nil
+        connectionStepTimer?.cancel()
+        connectionStepTimer = nil
+        networkReconnectDebounceTask?.cancel()
+        networkReconnectDebounceTask = nil
         networkPathMonitor?.cancel()
         networkPathMonitor = nil
         isNetworkReachable = true
@@ -1381,21 +1396,21 @@ final class YjsSyncService {
         eventHandler.registerHandlers(on: client)
         client.connect()
         setConnectionState(.connecting, reason: "connect_socket_called")
-        transition(to: .connecting(sessionId: sessionId, attempt: 1))
+        transition(to: .connecting(sessionId: sessionId))
     }
 
     private func isCurrentSocketSession(_ sessionId: UUID) -> Bool {
         switch connectionStep {
         case .disconnected:
             return false
-        case .connecting(let id, _), .authenticating(let id), .authenticated(let id):
+        case .connecting(let id), .authenticating(let id), .authenticated(let id):
             return id == sessionId
         }
     }
 
     private func transition(to step: ConnectionStep) {
-        connectionTimerTask?.cancel()
-        connectionTimerTask = nil
+        connectionStepTimer?.cancel()
+        connectionStepTimer = nil
 
         connectionStep = step
 
@@ -1403,8 +1418,8 @@ final class YjsSyncService {
         case .disconnected:
             break
 
-        case .connecting(let sessionId, _):
-            connectionTimerTask = Task { [weak self] in
+        case .connecting(let sessionId):
+            connectionStepTimer = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: 8_000_000_000)
                 await MainActor.run {
                     guard let self else { return }
@@ -1413,7 +1428,7 @@ final class YjsSyncService {
             }
 
         case .authenticating(let sessionId):
-            connectionTimerTask = Task { [weak self] in
+            connectionStepTimer = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 await MainActor.run {
                     guard let self else { return }

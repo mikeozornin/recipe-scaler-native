@@ -29,6 +29,29 @@ Socket.IO события, используемые в Phase 2 (read-only). Фо�
 - Socket.IO client configured with: `reconnects: true`, `reconnectAttempts: -1` (infinite), `reconnectWait: 1000ms`
 - On reconnect: re-emit `auth`, then reload stale documents (those with `lastSyncedAt` older than reconnect time)
 
+### Client FSM (`ConnectionStep`)
+
+iOS-клиент, помимо public `ConnectionState` (привязанного к UI), ведёт приватный FSM
+`ConnectionStep` для отслеживания тонких фаз handshake-а. Контракт состояний и таймаутов:
+
+| Состояние         | Переход туда                                                    | Watchdog (`connectionStepTimer`) |
+|-------------------|-----------------------------------------------------------------|----------------------------------|
+| `disconnected`    | старт, `teardownSocket()`, network lost                         | —                                |
+| `connecting`      | `connectSocket()`                                               | 8s → `handleStuckEngineConnect` (fallback на polling или reconnect) |
+| `authenticating`  | socket `.connect` / `handleStuckEngineConnect`                  | 2s → если auth ack не пришёл, `markAuthenticatedAndLoadCollection` |
+| `authenticated`   | auth ack                                                        | —                                |
+
+Инварианты:
+
+- **`connectionStepTimer`** — единственный владелец `transition(to:)`. Не переиспользовать
+  под network-debounce (регрессия MIK-161: при сетевом мерцании watchdog отменялся
+  debounce-задачей и `connecting`/`authenticating` зависали без таймаута).
+- **`networkReconnectDebounceTask`** — независимый 400ms debounce перед
+  `reconnectAfterNetworkRegained()`. Не зависит от текущего `connectionStep`.
+- `socketSessionId` (UUID) закреплён за одной попыткой подключения; все callback-и
+  socket-а должны фильтроваться через `isCurrentSocketSession(_:)`, чтобы stale-сессия
+  не перезатёрла состояние свежей.
+
 ## Document Loading
 
 ### Load Single Document
