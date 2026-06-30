@@ -14,34 +14,26 @@ import SwiftUI
 struct DiscoverPublicProfileView: View {
     let username: String
 
-    @State private var response: PublicProfileResponseDTO?
-    @State private var errorMessage: String?
-    @State private var isLoading = true
+    @State private var model = DiscoverPublicProfileModel(api: .shared)
     @State private var searchText = ""
     @State private var searchStore = DiscoverSearchStore<PublicRecipePreviewDTO>()
     @State private var searchTokens: [String] = []
 
     var body: some View {
         Group {
-            if let response {
-                content(for: response)
-            } else if isLoading {
+            switch model.state {
+            case .idle, .loading:
                 ProgressView(Bundle.currentLocalizedString("discover.loading"))
                     .mobileTimerPanelBottomPadding()
-            } else if let errorMessage {
+            case .failed(let errorMessage):
                 ContentUnavailableView {
                     AppEmptyState.label("discover.profile.not-found", symbol: "person.crop.circle.badge.exclamationmark")
                 } description: {
                     Text(errorMessage).appBody()
                 }
                 .mobileTimerPanelBottomPadding()
-            } else {
-                ContentUnavailableView {
-                    AppEmptyState.label("discover.profile.not-found", symbol: "person.crop.circle.badge.exclamationmark")
-                } description: {
-                    Text("discover.profile.not-found-description").appBody()
-                }
-                .mobileTimerPanelBottomPadding()
+            case .loaded(let response):
+                content(for: response)
             }
         }
         .searchable(
@@ -49,7 +41,12 @@ struct DiscoverPublicProfileView: View {
             placement: .navigationBarDrawer(displayMode: .automatic),
             prompt: Text("search.recipes")
         )
-        .task { await load() }
+        .task {
+            await model.load(username: username)
+            if case .loaded(let response) = model.state {
+                searchStore.setItems(DiscoverSearch.sortedByRecipeName(response.recipes) { $0.name })
+            }
+        }
         .onChange(of: searchText) { _, query in
             searchTokens = DiscoverSearch.tokenize(query)
             searchStore.setQuery(query)
@@ -101,7 +98,7 @@ struct DiscoverPublicProfileView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .center, spacing: 12) {
                 DiscoverAvatar(
-                    avatarURL: DiscoverAPI.avatarURL(fromPublicProfile: profile.avatarUrl),
+                    avatarURL: DiscoverImageURLs.avatar(fromPublicProfile: profile.avatarUrl),
                     size: 64
                 )
                 VStack(alignment: .leading, spacing: 2) {
@@ -134,19 +131,6 @@ struct DiscoverPublicProfileView: View {
 
     private func recipeCountText(count: Int) -> String {
         Bundle.appPluralizedString(key: "discover.profile.recipe-count", count: count)
-    }
-
-    private func load() async {
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            let loaded = try await DiscoverAPI.fetchPublicProfile(username: username)
-            response = loaded
-            searchStore.setItems(DiscoverSearch.sortedByRecipeName(loaded.recipes) { $0.name })
-            errorMessage = nil
-        } catch {
-            errorMessage = UserFacingAPIError.message(for: error)
-        }
     }
 }
 

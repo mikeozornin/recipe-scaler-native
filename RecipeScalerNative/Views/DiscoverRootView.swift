@@ -8,24 +8,23 @@ import SwiftUI
 
 struct DiscoverRootView: View {
     @Binding var path: NavigationPath
-    @State private var data: DiscoveryDataDTO?
-    @State private var isLoading = true
-    @State private var errorMessage: String?
+    @State private var model = DiscoverRootModel(api: .shared)
 
     var body: some View {
         NavigationStack(path: $path) {
             Group {
-                if isLoading, data == nil {
+                switch model.state {
+                case .idle, .loading:
                     ProgressView()
                         .mobileTimerPanelBottomPadding()
-                } else if let errorMessage, data == nil {
+                case .failed(let message):
                     ContentUnavailableView {
                         AppEmptyState.label("discover.error", symbol: "wifi.exclamationmark")
                     } description: {
-                        Text(errorMessage).appBody()
+                        Text(message).appBody()
                     }
                     .mobileTimerPanelBottomPadding()
-                } else if let data, !data.collections.isEmpty || !data.profiles.isEmpty {
+                case .loaded(let data) where !data.collections.isEmpty || !data.profiles.isEmpty:
                     ScrollView {
                         VStack(alignment: .leading, spacing: 24) {
                             if !data.collections.isEmpty {
@@ -65,7 +64,7 @@ struct DiscoverRootView: View {
                         .padding(.vertical, 20)
                         .mobileTimerPanelBottomPadding()
                     }
-                } else {
+                case .loaded:
                     ContentUnavailableView {
                         AppEmptyState.label("discover.empty", symbol: "sparkles")
                     } description: {
@@ -89,8 +88,8 @@ struct DiscoverRootView: View {
                     DiscoverPublicProfileView(username: username)
                 }
             }
-            .task { await load() }
-            .refreshable { await load() }
+            .task { await model.load() }
+            .refreshable { await model.load() }
             .accessibilityIdentifier(AccessibilityIdentifiers.discoverRoot)
         }
     }
@@ -112,16 +111,6 @@ struct DiscoverRootView: View {
         }
     }
 
-    private func load() async {
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            data = try await DiscoverAPI.fetchDiscovery()
-            errorMessage = nil
-        } catch {
-            errorMessage = UserFacingAPIError.message(for: error)
-        }
-    }
 }
 
 enum DiscoverRoute: Hashable {
@@ -139,7 +128,7 @@ struct DiscoverCollectionCard: View {
     let collection: DiscoveryCollectionDTO
 
     private var coverURL: URL? {
-        DiscoverAPI.collectionCoverURL(from: collection.coverImageURL)
+        DiscoverImageURLs.collectionCover(from: collection.coverImageURL)
     }
 
     var body: some View {
@@ -172,7 +161,7 @@ struct DiscoverProfileCard: View {
             badgeText: recipeCountText
         ) {
             DiscoverPreviewThumbnail(
-                url: DiscoverAPI.avatarURL(username: profile.username),
+                url: DiscoverImageURLs.avatar(username: profile.username),
                 fallbackColor: .accentColor,
                 placeholderSymbol: "person.fill"
             )

@@ -50,11 +50,8 @@ private struct RecipeShareSheet: View {
     let hasImage: Bool
     let hasSteps: Bool
 
+    @State private var model = RecipeShareModel(api: .shared)
     @State private var isPublic: Bool
-    @State private var publicProfileEnabled: Bool
-    @State private var shareMode: PublicShareMode
-    @State private var username: String
-    @State private var isOnline = false
     @State private var isUpdating = false
 
     init(recipeId: String, initialIsPublic: Bool, hasImage: Bool, hasSteps: Bool) {
@@ -63,23 +60,19 @@ private struct RecipeShareSheet: View {
         self.hasImage = hasImage
         self.hasSteps = hasSteps
         _isPublic = State(initialValue: initialIsPublic)
-        // Seed from cache so the link is correct even before the network responds
-        _publicProfileEnabled = State(initialValue: SharingSettingsCache.publicProfileEnabled)
-        _shareMode = State(initialValue: SharingSettingsCache.shareMode)
-        _username = State(initialValue: SharingSettingsCache.username)
     }
 
     // MARK: Computed
 
     /// Whether to show the public/private toggle (vs. a read-only mode description).
     private var showToggle: Bool {
-        !publicProfileEnabled || shareMode == .one_by_one
+        !model.publicProfileEnabled || model.shareMode == .one_by_one
     }
 
     /// Whether this recipe is effectively accessible via its public link.
     private var isEffectivelyPublic: Bool {
-        if !publicProfileEnabled { return isPublic }
-        switch shareMode {
+        if !model.publicProfileEnabled { return isPublic }
+        switch model.shareMode {
         case .all:                  return true
         case .with_images_and_steps: return hasImage && hasSteps
         case .one_by_one:            return isPublic
@@ -87,8 +80,8 @@ private struct RecipeShareSheet: View {
     }
 
     private var shareURL: URL? {
-        if publicProfileEnabled, !username.isEmpty {
-            return PublicURLBuilder.profileRecipeURL(username: username, recipeId: recipeId)
+        if model.publicProfileEnabled, !model.username.isEmpty {
+            return PublicURLBuilder.profileRecipeURL(username: model.username, recipeId: recipeId)
         }
         return PublicURLBuilder.recipeShareURL(recipeId: recipeId)
     }
@@ -98,7 +91,7 @@ private struct RecipeShareSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                if !isOnline && showToggle {
+                if !model.isOnline && showToggle {
                     Section {
                         Text("recipe.share.offline-message")
                             .appBody()
@@ -112,7 +105,7 @@ private struct RecipeShareSheet: View {
                             Text("recipe.detail.public")
                                 .appBody()
                         }
-                        .disabled(!isOnline || isUpdating)
+                        .disabled(!model.isOnline || isUpdating)
                     } else {
                         shareModeDescription
                     }
@@ -138,14 +131,14 @@ private struct RecipeShareSheet: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .appOpaqueSheetPresentation(detents: [.medium, .large])
-        .task { await loadSettings() }
+        .task { await model.loadSettings(syncService: syncService) }
     }
 
     // MARK: Mode description (shown when toggle is hidden)
 
     @ViewBuilder
     private var shareModeDescription: some View {
-        let key: LocalizedStringKey = switch shareMode {
+        let key: LocalizedStringKey = switch model.shareMode {
         case .all:
             "recipe.share.all-mode"
         case .with_images_and_steps:
@@ -174,27 +167,8 @@ private struct RecipeShareSheet: View {
 
     // MARK: Actions
 
-    private func loadSettings() async {
-        isOnline = syncService.connectionState == .connected
-        guard isOnline else { return }
-        if let data = try? await AccountAPI.fetchSharingSettings() {
-            let ppe = data.publicProfileEnabled ?? false
-            let mode = PublicShareMode(apiValue: data.shareMode) ?? .one_by_one
-            let uname = data.username ?? ""
-            publicProfileEnabled = ppe
-            shareMode = mode
-            username = uname
-            // Also update the local cache so next open is instant
-            SharingSettingsCache.save(
-                publicProfileEnabled: ppe,
-                shareMode: mode,
-                username: uname
-            )
-        }
-    }
-
     private func setPublic(_ enabled: Bool) async {
-        guard isOnline else { return }
+        guard model.isOnline else { return }
         let previous = isPublic
         isPublic = enabled
         isUpdating = true

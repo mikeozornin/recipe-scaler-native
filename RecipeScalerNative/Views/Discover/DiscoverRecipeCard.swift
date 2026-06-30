@@ -68,7 +68,7 @@ struct DiscoverRecipeCard: View {
 extension DiscoverRecipeCard {
     init(recipe: CuratedRecipeMetadataDTO, searchTokens: [String] = []) {
         self.init(
-            imageURL: DiscoverAPI.collectionRecipeCardImageURL(recipe: recipe),
+            imageURL: DiscoverImageURLs.collectionRecipeCard(recipe: recipe),
             name: recipe.name,
             accentColor: RecipeAccentColor.color(from: recipe.color),
             searchTokens: searchTokens
@@ -77,7 +77,7 @@ extension DiscoverRecipeCard {
 
     init(recipe: PublicRecipePreviewDTO, searchTokens: [String] = []) {
         self.init(
-            imageURL: DiscoverAPI.publicRecipeCardImageURL(recipe: recipe),
+            imageURL: DiscoverImageURLs.publicRecipeCard(recipe: recipe),
             name: recipe.name,
             accentColor: recipe.color.map(RecipeAccentColor.color(from:)) ?? .accentColor,
             searchTokens: searchTokens

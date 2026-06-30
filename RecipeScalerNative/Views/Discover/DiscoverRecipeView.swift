@@ -20,30 +20,27 @@ struct DiscoverRecipeView: View {
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Environment(TimerManager.self) private var timerManager
     @AppStorage(NutritionSettings.globalEnabledKey) private var showNutritionGlobal = true
-    @State private var recipe: RecipeData?
-    @State private var isLoading = true
-    @State private var loadError: String?
+    @State private var model = DiscoverRecipeModel(api: .shared)
     @State private var scaleFactor: Double = 1
     @State private var nutritionViewMode: IngredientNutritionViewMode = NutritionViewModeStorage.load()
     @State private var descriptionTimerPopover: DescriptionTimerPopoverState?
-    @State private var cloneState: CloneState = .idle
-
-    @MainActor
-    private enum CloneState: Equatable {
-        case idle
-        case copying
-        case done(newRecipeId: String)
-        case failed(String)
-    }
 
     private var accentColor: Color {
-        RecipeAccentColor.color(from: recipe?.color ?? "")
+        if case .loaded(let recipe) = model.state {
+            return RecipeAccentColor.color(from: recipe.color)
+        }
+        return RecipeAccentColor.color(from: "")
+    }
+
+    private var loadedRecipe: RecipeData? {
+        if case .loaded(let recipe) = model.state { return recipe }
+        return nil
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                if let recipe {
+                if let recipe = loadedRecipe {
                     hero(for: recipe)
 
                     VStack(alignment: .leading, spacing: 16) {
@@ -89,11 +86,11 @@ struct DiscoverRecipeView: View {
                         }
                     }
                     .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
-                } else if isLoading {
+                } else if case .loading = model.state {
                     ProgressView(Bundle.currentLocalizedString("discover.recipe.loading"))
                         .frame(maxWidth: .infinity)
                         .padding(.top, 60)
-                } else if let loadError {
+                } else if case .failed(let loadError) = model.state {
                     ContentUnavailableView {
                         AppEmptyState.label("discover.recipe.failed", symbol: "exclamationmark.triangle")
                     } description: {
@@ -106,7 +103,7 @@ struct DiscoverRecipeView: View {
         }
         .contentMargins(.horizontal, 0, for: .scrollContent)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationTitle(recipe?.name.isEmpty == false ? (recipe?.name ?? "") : "")
+        .navigationTitle(loadedRecipe?.name.isEmpty == false ? (loadedRecipe?.name ?? "") : "")
         .overlay {
             DescriptionTimerPopoverOverlay(
                 state: descriptionTimerPopover,
@@ -119,13 +116,13 @@ struct DiscoverRecipeView: View {
                 onDismiss: { descriptionTimerPopover = nil }
             )
         }
-        .task { await load() }
+        .task { await model.load(recipeId: recipeId) }
     }
 
     @ViewBuilder
     private func hero(for recipe: RecipeData) -> some View {
         if recipe.imageUrl?.isEmpty == false,
-           let imageURL = DiscoverAPI.detailImageURL(recipeId: recipe.id, imageSource: imageSource) {
+           let imageURL = model.detailImageURL(recipeId: recipe.id, imageSource: imageSource) {
             PublicCachedImageView(
                 url: imageURL,
                 allowsNetworkRefresh: true,
@@ -161,7 +158,7 @@ struct DiscoverRecipeView: View {
 
     @ViewBuilder
     private var cloneButton: some View {
-        if case .failed(let message) = cloneState {
+        if case .failed(let message) = model.cloneState {
             VStack(alignment: .leading, spacing: 4) {
                 cloneActionButton
                 Text(message)
@@ -175,9 +172,15 @@ struct DiscoverRecipeView: View {
 
     private var cloneActionButton: some View {
         Button {
-            switch cloneState {
+            switch model.cloneState {
             case .idle, .failed:
-                Task { await clone() }
+                Task {
+                    await model.clone(
+                        recipeId: recipeId,
+                        fallbackImageUrl: loadedRecipe?.imageUrl,
+                        syncService: syncService
+                    )
+                }
             case .done(let newRecipeId):
                 deepLinkRouter.handle(.openRecipe(recipeId: newRecipeId))
             case .copying:
@@ -186,7 +189,7 @@ struct DiscoverRecipeView: View {
         } label: {
             HStack(spacing: 6) {
                 Group {
-                    if case .copying = cloneState {
+                    if case .copying = model.cloneState {
                         ProgressView()
                             .controlSize(.small)
                     } else {
@@ -200,12 +203,12 @@ struct DiscoverRecipeView: View {
             .frame(minHeight: 22)
         }
         .buttonStyle(.bordered)
-        .disabled(cloneState == .copying)
+        .disabled(model.cloneState == .copying)
         .accessibilityIdentifier(AccessibilityIdentifiers.discoverRecipeCloneButton)
     }
 
     private var cloneButtonIconName: String {
-        switch cloneState {
+        switch model.cloneState {
         case .done:
             return "checkmark"
         case .idle, .copying, .failed:
@@ -214,7 +217,7 @@ struct DiscoverRecipeView: View {
     }
 
     private var cloneButtonTitleKey: LocalizedStringKey {
-        switch cloneState {
+        switch model.cloneState {
         case .idle, .failed:
             return "discover.recipe.copy-to-me"
         case .copying:
@@ -258,82 +261,7 @@ struct DiscoverRecipeView: View {
             duration: TimeInterval(reference.durationSeconds),
             type: reference.type,
             recipeId: recipeId,
-            recipeDisplayName: recipe?.name
+            recipeDisplayName: loadedRecipe?.name
         )
-    }
-
-    private func load() async {
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            let state = try await DiscoverAPI.fetchPublicRecipeState(id: recipeId)
-            if let bytes = state.yjsState, !bytes.isEmpty {
-                let data = YjsPayloadBytes.data(from: bytes) ?? Data(bytes.map { UInt8(truncatingIfNeeded: $0) })
-                if var parsed = await RecipeReader.parse(state: data, recipeId: recipeId) {
-                    if (parsed.imageUrl ?? "").isEmpty,
-                       let imageUrl = state.imageUrl,
-                       !imageUrl.isEmpty {
-                        parsed = RecipeData(
-                            id: parsed.id,
-                            name: parsed.name,
-                            servings: parsed.servings,
-                            color: parsed.color,
-                            version: parsed.version,
-                            description: parsed.description,
-                            ingredients: parsed.ingredients,
-                            nutrition: parsed.nutrition,
-                            isPublic: parsed.isPublic,
-                            hasSteps: parsed.hasSteps,
-                            createdAt: parsed.createdAt,
-                            updatedAt: parsed.updatedAt,
-                            imageUrl: imageUrl,
-                            imageAspectRatio: parsed.imageAspectRatio,
-                            originalRecipeLink: parsed.originalRecipeLink,
-                            originalRecipe: parsed.originalRecipe
-                        )
-                    }
-                    recipe = parsed
-                    return
-                }
-            }
-            recipe = RecipeData(
-                id: state.id,
-                name: state.name ?? "",
-                servings: 0,
-                color: state.color ?? "#3b82f6",
-                version: "v1",
-                description: nil,
-                ingredients: [],
-                nutrition: nil,
-                isPublic: false,
-                hasSteps: false,
-                createdAt: "",
-                updatedAt: "",
-                imageUrl: state.imageUrl,
-                imageAspectRatio: nil,
-                originalRecipeLink: nil,
-                originalRecipe: nil
-            )
-        } catch {
-            loadError = UserFacingAPIError.message(for: error)
-        }
-    }
-
-    @MainActor
-    private func clone() async {
-        cloneState = .copying
-        do {
-            let newId = try await DiscoverAPI.copyRecipe(id: recipeId)
-            await syncService.integrateCopiedRecipe(
-                recipeId: newId,
-                fallbackImageUrl: recipe?.imageUrl
-            )
-            cloneState = .done(newRecipeId: newId)
-            ShoppingFeedback.postStatus(
-                Bundle.currentLocalizedString("discover.recipe.copied")
-            )
-        } catch {
-            cloneState = .failed(UserFacingAPIError.message(for: error))
-        }
     }
 }

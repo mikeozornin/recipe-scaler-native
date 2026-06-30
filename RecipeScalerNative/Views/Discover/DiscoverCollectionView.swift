@@ -9,25 +9,25 @@ import SwiftUI
 /// tokenized search, adaptive grid of recipe preview cards.
 struct DiscoverCollectionView: View {
     let slug: String
-    @State private var collection: CollectionWithRecipesDTO?
-    @State private var errorMessage: String?
+    @State private var model = DiscoverCollectionModel(api: .shared)
     @State private var searchText = ""
     @State private var searchStore = DiscoverSearchStore<CuratedRecipeMetadataDTO>()
     @State private var searchTokens: [String] = []
 
     var body: some View {
         Group {
-            if let collection {
-                content(for: collection)
-            } else if let errorMessage {
+            switch model.state {
+            case .idle, .loading:
+                ProgressView(Bundle.currentLocalizedString("discover.collection.loading"))
+            case .failed(let errorMessage):
                 ContentUnavailableView {
                     AppEmptyState.label("discover.collection.not-found", symbol: "exclamationmark.triangle")
                 } description: {
                     Text(errorMessage).appBody()
                 }
                 .mobileTimerPanelBottomPadding()
-            } else {
-                ProgressView(Bundle.currentLocalizedString("discover.collection.loading"))
+            case .loaded(let collection):
+                content(for: collection)
             }
         }
         .searchable(
@@ -35,7 +35,12 @@ struct DiscoverCollectionView: View {
             placement: .navigationBarDrawer(displayMode: .automatic),
             prompt: Text("search.recipes")
         )
-        .task { await load() }
+        .task {
+            await model.load(slug: slug)
+            if case .loaded(let collection) = model.state {
+                searchStore.setItems(DiscoverSearch.sortedByRecipeName(collection.recipes) { $0.name })
+            }
+        }
         .onChange(of: searchText) { _, query in
             searchTokens = DiscoverSearch.tokenize(query)
             searchStore.setQuery(query)
@@ -109,17 +114,6 @@ struct DiscoverCollectionView: View {
                     .appBody()
                     .foregroundStyle(.secondary)
             }
-        }
-    }
-
-    private func load() async {
-        do {
-            let loaded = try await DiscoverAPI.fetchCollection(slug: slug)
-            collection = loaded
-            searchStore.setItems(DiscoverSearch.sortedByRecipeName(loaded.recipes) { $0.name })
-            errorMessage = nil
-        } catch {
-            errorMessage = UserFacingAPIError.message(for: error)
         }
     }
 }
