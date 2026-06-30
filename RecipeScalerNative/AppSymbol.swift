@@ -26,6 +26,18 @@ enum AppSymbol {
         Image(systemName: systemName)
     }
 
+    /// Placeholder / decorative symbol at an explicit point size (UIImage-backed, scales reliably).
+    static func sizedImage(
+        _ systemName: String,
+        pointSize: CGFloat,
+        weight: UIImage.SymbolWeight = .regular
+    ) -> Image {
+        symbolImage(
+            systemName,
+            configuration: UIImage.SymbolConfiguration(pointSize: pointSize, weight: weight)
+        )
+    }
+
     private static func symbolImage(_ systemName: String, configuration: UIImage.SymbolConfiguration) -> Image {
         guard let uiImage = UIImage(systemName: systemName, withConfiguration: configuration)?
             .withRenderingMode(.alwaysTemplate) else {

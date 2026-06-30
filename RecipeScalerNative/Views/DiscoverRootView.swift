@@ -163,7 +163,9 @@ struct DiscoverProfileCard: View {
             DiscoverPreviewThumbnail(
                 url: DiscoverImageURLs.avatar(username: profile.username),
                 fallbackColor: .accentColor,
-                placeholderSymbol: "person.fill"
+                placeholderSymbol: "person.fill",
+                placeholderIconSize: 40,
+                neutralPlaceholder: true
             )
         }
     }
@@ -217,6 +219,8 @@ private struct DiscoverPreviewThumbnail: View {
     let url: URL?
     let fallbackColor: Color
     let placeholderSymbol: String
+    var placeholderIconSize: CGFloat = 28
+    var neutralPlaceholder: Bool = false
 
     var body: some View {
         Group {
@@ -244,13 +248,14 @@ private struct DiscoverPreviewThumbnail: View {
     }
 
     private var placeholder: some View {
-        AppSymbol.image(placeholderSymbol)
-            .font(.system(size: 28, weight: .regular))
+        AppSymbol.sizedImage(placeholderSymbol, pointSize: placeholderIconSize)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(fallbackColor.opacity(0.12))
+                    .fill(neutralPlaceholder
+                          ? Color(.tertiarySystemFill)
+                          : fallbackColor.opacity(0.12))
             )
     }
 }
@@ -299,8 +304,7 @@ struct DiscoverAvatar: View {
     }
 
     private var placeholder: some View {
-        AppSymbol.image("person.fill")
-            .font(.system(size: size * 0.5, weight: .regular))
+        AppSymbol.sizedImage("person.fill", pointSize: max(size * 0.5, 40))
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
