@@ -51,6 +51,7 @@ struct AccountView: View {
                 }
 
                 accountSection
+                featureAdoptionSection
                 publicRecipesSection
                 telegramSection
                 preferencesSection
@@ -150,7 +151,15 @@ struct AccountView: View {
             } label: {
                 Text("auth.login-with-another").appBody()
             }
+        } header: {
+            AppSectionHeader("account.section.account")
+        }
+        .appListSectionHeaderStyle()
+    }
 
+    @ViewBuilder
+    private var featureAdoptionSection: some View {
+        Section {
             NavigationLink {
                 FeatureAdoptionDetailView()
             } label: {
@@ -164,7 +173,7 @@ struct AccountView: View {
                 }
             }
         } header: {
-            AppSectionHeader("account.section.account")
+            AppSectionHeaderSpacer()
         }
         .appListSectionHeaderStyle()
     }
