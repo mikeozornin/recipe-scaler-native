@@ -1085,6 +1085,873 @@
         }
       }
     },
+    "account.feature-adoption.guide.created_recipe.why" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This checkmark lights up as soon as you have your first own recipe — any: imported, written from scratch, or sent by the bot. Recipe Scaler can build recipes from almost anything, so you can grow your library every day."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот пункт засчитывается, как только у вас появляется первый собственный рецепт — любой: импортированный, написанный с нуля, присланный ботом. Recipe Scaler умеет собирать рецепты из чего угодно, так что пополнять библиотеку можно каждый день."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.imported_recipe.why" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import a recipe from anything: a website link, a chunk of text, or a photo (for example, a page from a cookbook). Recipe Scaler pulls the title, ingredients, and steps automatically — no manual retyping."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортируйте рецепт из чего угодно: ссылки на сайт, куска текста или фотографии (например, страницы из кулинарной книги). Recipe Scaler сам разберёт название, ингредиенты и шаги — переписывать руками не нужно."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.imported_recipe.how.1" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipes tab → «+» → Import."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладка «Рецепты» → «+» → Импорт."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.imported_recipe.how.2" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste a link — Recipe Scaler will fetch the recipe from the site."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вставьте ссылку — Recipe Scaler заберёт рецепт с сайта."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.imported_recipe.how.3" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or paste text — the assistant will parse ingredients and steps."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Или вставьте текст — ассистент разберёт ингредиенты и шаги."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.imported_recipe.how.4" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or snap a photo of a cookbook page — text recognition does the rest."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Или сфотографируйте страницу книги — распознавание текста сделает остальное."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.imported_recipe.cta" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import a recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировать рецепт"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.imported_recipe.cta-done" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import another recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировать ещё один рецепт"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_telegram.why" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect the Telegram bot to send recipes from any chat: forward a message with a recipe, share a link, or send a photo — and it lands in your library. Convenient when you cook from a friend's message or a channel."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключите Telegram-бота, чтобы присылать рецепты из любого чата: перешлите сообщение с рецептом, скиньте ссылку или фото — и всё попадёт в библиотеку. Удобно, когда готовите по сообщению от друга или из канала."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_telegram.how.1" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile → Telegram → Connect."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Профиль → Telegram → Подключить."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_telegram.how.2" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the bot in Telegram and press Start — the bot is linked to your account."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откройте бота в Telegram и нажмите Start — бот привяжется к вашему аккаунту."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_telegram.how.3" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forward any message with a recipe, link, or photo to the bot."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перешлите боту любое сообщение с рецептом, ссылкой или фото."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_telegram.how.4" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The recipe appears in your library within a few seconds."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Через пару секунд рецепт появится в вашей библиотеке."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_telegram.cta" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect Telegram"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключить Telegram"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_telegram.cta-done" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Telegram settings"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть настройки Telegram"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.created_recipe.how.1" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Import** — link, text, or photo (see «Imported a recipe»)."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Импорт** — ссылка, текст или фото (см. гайд «Импортирован рецепт»)."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.created_recipe.how.2" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Assistant** — ask it to write a recipe and save it to your library."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Ассистент** — попросите написать рецепт и сохранить в коллекцию."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.created_recipe.how.3" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Telegram** — forward a recipe to the bot."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Telegram** — перешлите рецепт боту."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.created_recipe.how.4" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Discover** — «Copy to my recipes» on a recipe you like."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Discover** — «Скопировать в мои рецепты» на понравившемся рецепте."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.used_shopping_list.why" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The shopping list gathers ingredients from recipes in one place. Optionally, sync it with Apple Reminders — and check items off in the store without switching apps. You can also share the list: get a public link and send it to your partner so they take it with them to the store."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Список покупок собирает ингредиенты из рецептов в одном месте. При желании можно синхронизировать его с приложением «Напоминания» — и отмечать покупки прямо в магазине, не переключаясь между приложениями. А ещё список можно пошарить: получите публичную ссылку и отправьте её мужу, жене или партнёру, чтобы они взяли с собой в магазин."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.used_shopping_list.how.1" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open a recipe → swipe an ingredient or use the menu → «Add to list». You can add all ingredients at once."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откройте рецепт → свайпните ингредиент влево или откройте меню → «Добавить в список». Можно добавить все ингредиенты сразу."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.used_shopping_list.how.2" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If you prefer, turn on Reminders sync in settings — the list appears there and stays up to date automatically."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если удобнее — включите синхронизацию с «Напоминаниями» в настройках; список появится там и будет обновляться автоматически."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.used_shopping_list.how.3" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To share the list — tap Share on the Shopping tab and send the link to whoever is going to the store."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы поделиться списком — нажмите «Поделиться» на вкладке «Покупки» и отправьте ссылку тому, кто пойдёт в магазин."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.created_collection.why" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When your library grows, it helps to spread recipes across folders: by dish type (breakfasts, desserts, soups), by status («want to try», «favourites»), or by favourite chefs. Your Claude or Grok can also organize recipes into collections for you — just ask via MCP."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда рецептов становится много, их удобно раскидать по папкам: по типам блюд (завтраки, десерты, супы), по статусу («хочу приготовить», «любимое») или по любимым поварам. Кстати, разложить рецепты по коллекциям может ваш Claude или Grok — просто попросите внешнего ассистента через MCP."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.created_collection.how.1" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipes tab → Collections → «+» → enter a name (e.g. «Want to try» or «Desserts»)."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладка «Рецепты» → «Коллекции» → «+» → введите название (например, «Хочу приготовить» или «Десерты»)."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.created_collection.how.2" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add recipes from the collection list or recipe menu → «Add to collection»."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавьте рецепты из списка коллекции или через меню рецепта → «В коллекцию»."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.created_collection.how.3" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask Claude or Grok to organize for you: «Build a breakfast collection from my recipes.»"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попросите Claude или Grok разложить рецепты за вас: «Собери подборку завтраков из моих рецептов»."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.shared_recipe.why" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share your favourite recipes with friends — one at a time or as a whole collection. If you're a food blogger or a chef, keep your recipe base here and show off your masterpieces: the public profile works as a showcase at recipe-scaler.ru/@your_username."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы можете делиться любимыми рецептами с друзьями — по одному или целой подборкой. Если вы кулинарный блогер или повар, сохраняйте сюда свою базу рецептов и хвастайтесь шедеврами: публичный профиль работает как витрина с адресом recipe-scaler.ru/@ваш_username."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.shared_recipe.how.1" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open a recipe → Share → enable public access → copy the link."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откройте рецепт → «Поделиться» → включите публичный доступ → скопируйте ссылку."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.shared_recipe.how.2" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile → Public recipes: set username and mode — one by one, all at once, or only with photo and steps."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Профиль → «Публичные рецепты»: задайте username и режим — по одному, все сразу или только с фото и шагами."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.shared_recipe.how.3" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send the link to friends or add it to your bio — the recipe opens in the browser."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправьте ссылку друзьям или добавьте в био — рецепт откроется в браузере."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.shared_recipe.cta" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set up public profile"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настроить публичный профиль"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.shared_recipe.cta-done" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open public profile settings"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть настройки публичного профиля"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.sent_assistant_message.why" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The assistant understands your recipes and can answer questions, substitute ingredients, scale portions, or even write a new recipe and save it to your library."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ассистент умеет работать с вашими рецептами: отвечает на вопросы, заменяет ингредиенты, пересчитывает порции, а может просто написать рецепт за вас и сохранить в коллекцию."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.sent_assistant_message.how.1" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the floating ✦ button on any screen."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите плавающую кнопку ✦ на любом экране."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.sent_assistant_message.how.2" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask in plain language: «Will this dough rise enough in 2 hours?», «Swap buttermilk for kefir», «Write a pumpkin soup recipe and save it.»"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спросите обычным языком: «Достаточно ли поднимется это тесто за 2 часа?», «Замени пахту на кефир», «Напиши рецепт тыквенного супа и сохрани его»."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.sent_assistant_message.how.3" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To save the result as a recipe, ask the assistant directly — it will fill in title, ingredients, and steps."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы результат стал рецептом, попросите ассистента сохранить — он сам заполнит название, ингредиенты и шаги."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.sent_assistant_message.carousel-hint" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Example questions you can ask the assistant."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Примеры вопросов, которые можно задать ассистенту."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.sent_assistant_message.cta" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask the assistant"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спросить ассистента"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.sent_assistant_message.cta-done" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open assistant"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть ассистента"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.sent_assistant_message.example.1.accessibility-label" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Example: «Will this dough rise enough in 2 hours?»"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пример: «Достаточно ли поднимется это тесто за 2 часа?»"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.sent_assistant_message.example.2.accessibility-label" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Example: «Swap buttermilk for kefir.»"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пример: «Замени пахту на кефир»."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.sent_assistant_message.example.3.accessibility-label" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Example: «Write a pumpkin soup recipe and save it.»"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пример: «Напиши рецепт тыквенного супа и сохрани его»."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_mcp_assistant.why" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect Recipe Scaler to your AI assistant (Claude, Cursor, ChatGPT, Grok) via Model Context Protocol. Once connected, the assistant can search your recipes, build collections, plan menus, and add ingredients to the shopping list — without you switching apps."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключите Recipe Scaler к вашему ИИ-ассистенту (Claude, Cursor, ChatGPT, Grok) через Model Context Protocol. После подключения ассистент сможет искать рецепты, собирать подборки, планировать меню и добавлять продукты в список покупок — без переключения между приложениями."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_mcp_assistant.how.1" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy the link below — it's your personal MCP endpoint."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопируйте ссылку ниже — это ваш персональный MCP-адрес."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_mcp_assistant.how.2" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open your assistant's settings — usually under «Connectors», «Integrations», or «Tools» — and add a new connector with this URL."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откройте настройки ассистента — обычно раздел «Connectors», «Integrations» или «Tools» — и добавьте новый коннектор с этим адресом."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_mcp_assistant.how.3" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done — try asking «What's in my breakfast collection?» or «Add ingredients for tomorrow's dinner to the shopping list.»"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово — попробуйте спросить «Что у меня в подборке завтраков?» или «Добавь продукты для завтрашнего ужина в список покупок»."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_mcp_assistant.carousel-hint" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where the connector URL lives in popular assistants."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Где находится адрес коннектора в популярных ассистентах."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_mcp_assistant.cta" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open MCP setup guide"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть инструкцию по подключению MCP"
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_mcp_assistant.example.1.accessibility-label" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Example: Connectors section in Claude Desktop."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пример: раздел Connectors в Claude Desktop."
+          }
+        }
+      }
+    },
+    "account.feature-adoption.guide.connected_mcp_assistant.example.2.accessibility-label" : {
+      "extractionState" : "translated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Example: adding a connector in Cursor."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пример: добавление коннектора в Cursor."
+          }
+        }
+      }
+    },
     "account.feature-adoption.title" : {
       "extractionState" : "translated",
       "localizations" : {

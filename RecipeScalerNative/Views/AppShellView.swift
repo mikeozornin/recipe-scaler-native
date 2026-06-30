@@ -96,8 +96,40 @@ struct AppShellView: View {
         49
     }
 
+    /// Spec 040 — handlers for CTA taps in `FeatureAdoptionGuideView`.
+    /// Spec 040 — handlers for CTA taps in `FeatureAdoptionGuideView`.
+    /// These are the app-level actions (tab switch, sheet, external Safari).
+    /// The in-Profile scroll actions live in `AccountView` under a separate
+    /// environment key (`featureAdoptionProfileScrollCta`) so the two never
+    /// override each other.
+    private func makeFeatureAdoptionAppCtaHandler() -> FeatureAdoptionAppCtaHandler {
+        FeatureAdoptionAppCtaHandler(
+            openAssistant: {
+                Task { @MainActor in
+                    showAssistant = true
+                    assistantRecipeContext.isAssistantSheetOpen = true
+                }
+            },
+            openImport: {
+                Task { @MainActor in
+                    coordinator.selectedTab = .importTab
+                    coordinator.presentImport()
+                }
+            },
+            openSafari: { url in
+                Task { @MainActor in
+                    UIApplication.shared.open(url)
+                }
+            }
+        )
+    }
+
     var body: some View {
         tabView
+            .environment(
+                \.featureAdoptionAppCta,
+                makeFeatureAdoptionAppCtaHandler()
+            )
             .background {
                 TabBarTopOffsetReader(offsetFromLayoutBottom: $tabBarTopOffsetFromLayoutBottom)
             }

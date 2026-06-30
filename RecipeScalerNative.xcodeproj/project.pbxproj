@@ -11,6 +11,14 @@
 		031287A80FDB41308E31AE3E /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7585E91075F045FF9D2C26D1 /* ShareViewController.swift */; };
 		0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C45A57EDAC270C757266F8FA /* AuthService.swift */; };
 		0C742EE9B3563B691A69ED1C /* FeatureAdoptionItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0593B743DA50B2CB0DFF7 /* FeatureAdoptionItem.swift */; };
+		A14000010000000000000001 /* FeatureAdoptionGuideContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14000020000000000000002 /* FeatureAdoptionGuideContent.swift */; };
+		A14000030000000000000003 /* FeatureAdoptionGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14000040000000000000004 /* FeatureAdoptionGuideView.swift */; };
+		A14000050000000000000005 /* GuideAssetPlaceholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14000060000000000000006 /* GuideAssetPlaceholder.swift */; };
+		A14000070000000000000007 /* FeatureAdoptionGuideCta.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14000080000000000000008 /* FeatureAdoptionGuideCta.swift */; };
+		A14000090000000000000009 /* GuideAssetResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A140000A0000000000000000A /* GuideAssetResolver.swift */; };
+		A140000B0000000000000000B /* GuideExampleCarousel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A140000C0000000000000000C /* GuideExampleCarousel.swift */; };
+		A140000D0000000000000000D /* GuideVideoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A140000E0000000000000000E /* GuideVideoPlayer.swift */; };
+		A140011000000000000000011 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = A140012000000000000000012 /* FeatureFlags.swift */; };
 		67A6550B36933C92D59DB2B9 /* FeatureAdoptionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAA4DF54D6AD9C9C26DC444 /* FeatureAdoptionStore.swift */; };
 		95DD7E548A202A1047110394 /* FeatureAdoptionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DDA10FB70EB04235CF1A47E /* FeatureAdoptionDetailView.swift */; };
 		082B9A25B01040469E077B58 /* SharedAuthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F696F3421504AD3A7836B0C /* SharedAuthStore.swift */; };
@@ -749,6 +757,14 @@
 		A029031000202 /* DataManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManagementView.swift; sourceTree = "<group>"; };
 		6DDA10FB70EB04235CF1A47E /* FeatureAdoptionDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionDetailView.swift; sourceTree = "<group>"; };
 		D5C0593B743DA50B2CB0DFF7 /* FeatureAdoptionItem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionItem.swift; sourceTree = "<group>"; };
+		A14000020000000000000002 /* FeatureAdoptionGuideContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionGuideContent.swift; sourceTree = "<group>"; };
+		A14000040000000000000004 /* FeatureAdoptionGuideView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionGuideView.swift; sourceTree = "<group>"; };
+		A14000060000000000000006 /* GuideAssetPlaceholder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GuideAssetPlaceholder.swift; sourceTree = "<group>"; };
+		A14000080000000000000008 /* FeatureAdoptionGuideCta.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionGuideCta.swift; sourceTree = "<group>"; };
+		A140000A0000000000000000A /* GuideAssetResolver.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GuideAssetResolver.swift; sourceTree = "<group>"; };
+		A140000C0000000000000000C /* GuideExampleCarousel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GuideExampleCarousel.swift; sourceTree = "<group>"; };
+		A140000E0000000000000000E /* GuideVideoPlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GuideVideoPlayer.swift; sourceTree = "<group>"; };
+		A140012000000000000000012 /* FeatureFlags.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		FAAA4DF54D6AD9C9C26DC444 /* FeatureAdoptionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionStore.swift; sourceTree = "<group>"; };
 		A029031000203 /* FractionProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FractionProgressView.swift; sourceTree = "<group>"; };
 		A029031000301 /* NativeFormatVersionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatVersionTests.swift; sourceTree = "<group>"; };
@@ -1261,6 +1277,10 @@
 				E5F60718293A4B701A1B2001 /* Discover */,
 				E5F60718293A4B70344FA5B3 /* AccountView.swift */,
 				6DDA10FB70EB04235CF1A47E /* FeatureAdoptionDetailView.swift */,
+				A14000040000000000000004 /* FeatureAdoptionGuideView.swift */,
+				A14000060000000000000006 /* GuideAssetPlaceholder.swift */,
+				A140000C0000000000000000C /* GuideExampleCarousel.swift */,
+				A140000E0000000000000000E /* GuideVideoPlayer.swift */,
 				A029031000202 /* DataManagementView.swift */,
 				A029031000203 /* FractionProgressView.swift */,
 				E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */,
@@ -1316,6 +1336,7 @@
 			children = (
 				A1B2C3D4E5F60718293A4B5C /* UserIdFormatter.swift */,
 				D5C0593B743DA50B2CB0DFF7 /* FeatureAdoptionItem.swift */,
+				A14000020000000000000002 /* FeatureAdoptionGuideContent.swift */,
 				11665252A14BBEBAF0D694C4 /* RecipeTimer.swift */,
 				C011ECB500000005 /* RecipesRoute.swift */,
 				63C3E85E6495DB975241B781 /* YDoc */,
@@ -1678,6 +1699,8 @@
 				E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */,
 				E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */,
 				E5F60718293A4B70CD094871 /* Bundle+Language.swift */,
+				A14000080000000000000008 /* FeatureAdoptionGuideCta.swift */,
+				A140000A0000000000000000A /* GuideAssetResolver.swift */,
 				E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */,
 				EA1E0A1A293A4B70EA100002 /* ErrorAlertModifier.swift */,
 				EA1E0A1A293A4B70EA100004 /* AppSheetChrome.swift */,
@@ -1731,6 +1754,7 @@
 				E5F60718293A4B7019BAC15E /* DiscoverSearch.swift */,
 				MIK200001002 /* LoadState.swift */,
 				MIK200002002 /* DiscoverImageURLs.swift */,
+				A140012000000000000000012 /* FeatureFlags.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -2252,6 +2276,14 @@
 				0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */,
 				896F51C011674A728B2F1433 /* WatchCredentialsBridge.swift in Sources */,
 				0C742EE9B3563B691A69ED1C /* FeatureAdoptionItem.swift in Sources */,
+				A14000010000000000000001 /* FeatureAdoptionGuideContent.swift in Sources */,
+				A14000030000000000000003 /* FeatureAdoptionGuideView.swift in Sources */,
+				A14000050000000000000005 /* GuideAssetPlaceholder.swift in Sources */,
+				A14000070000000000000007 /* FeatureAdoptionGuideCta.swift in Sources */,
+				A14000090000000000000009 /* GuideAssetResolver.swift in Sources */,
+				A140000B0000000000000000B /* GuideExampleCarousel.swift in Sources */,
+				A140000D0000000000000000D /* GuideVideoPlayer.swift in Sources */,
+				A140011000000000000000011 /* FeatureFlags.swift in Sources */,
 				67A6550B36933C92D59DB2B9 /* FeatureAdoptionStore.swift in Sources */,
 				4CE1EBBF8B610A4B091090FF /* AuthView.swift in Sources */,
 				72BCE454FF7ECB782A54D4ED /* ContentView.swift in Sources */,

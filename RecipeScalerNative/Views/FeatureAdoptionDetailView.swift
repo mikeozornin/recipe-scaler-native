@@ -143,6 +143,20 @@ private struct FeatureAdoptionRow: View {
     let isDone: Bool
 
     var body: some View {
+        Group {
+            if item.isGuideAvailable && FeatureFlags.featureAdoptionGuidesEnabled {
+                NavigationLink {
+                    FeatureAdoptionGuideView(item: item)
+                } label: {
+                    rowContent
+                }
+            } else {
+                rowContent
+            }
+        }
+    }
+
+    private var rowContent: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: isDone ? "checkmark" : "circle")
                 .font(isDone ? .body.weight(.semibold) : .body)
@@ -153,6 +167,7 @@ private struct FeatureAdoptionRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.titleKey)
                     .appBody()
+                    .foregroundStyle(.primary)
 
                 if let footnoteKey = item.footnoteKey {
                     Text(footnoteKey)
@@ -162,7 +177,7 @@ private struct FeatureAdoptionRow: View {
                 }
             }
 
-            Spacer(minLength: 8)
+            Spacer(minLength: 0)
         }
         .accessibilityElement(children: .combine)
         .accessibilityValue(Text(verbatim: Bundle.currentLocalizedString(

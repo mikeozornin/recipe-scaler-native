@@ -57,4 +57,123 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
         case .sharedRecipe: return "account.feature-adoption.item.shared_recipe.footnote"
         }
     }
+
+    /// Spec 040 — whether tapping this row opens a guide screen.
+    /// Both `installed*` flags are completed by definition and have no guide.
+    var isGuideAvailable: Bool {
+        switch self {
+        case .installedNativeApp, .installedWatchApp:
+            return false
+        default:
+            return true
+        }
+    }
+
+    /// Spec 040 — static content for the per-item guide screen.
+    ///
+    /// - Precondition: `isGuideAvailable == true`. The `installed*` items have
+    ///   no guide and must never reach this code path; callers gate on
+    ///   `isGuideAvailable` first. Misuse is a programmer error, not a
+    ///   runtime fallback, so it traps loudly instead of silently rendering
+    ///   an empty screen.
+    var guideContent: FeatureAdoptionGuideContent {
+        switch self {
+        case .installedNativeApp, .installedWatchApp:
+            fatalError("FeatureAdoptionItem.guideContent called for \(rawValue); isGuideAvailable is false")
+        case .createdRecipe:
+            return FeatureAdoptionGuideContent(
+                item: self,
+                videoResourceName: nil,
+                screenshotAssetNames: [],
+                exampleImages: nil,
+                carouselHintKey: nil,
+                primaryCTA: nil
+            )
+        case .usedShoppingList:
+            return FeatureAdoptionGuideContent(
+                item: self,
+                videoResourceName: nil,
+                screenshotAssetNames: [],
+                exampleImages: nil,
+                carouselHintKey: nil,
+                primaryCTA: nil
+            )
+        case .importedRecipe:
+            return FeatureAdoptionGuideContent(
+                item: self,
+                videoResourceName: "guide_imported_recipe_video",
+                screenshotAssetNames: [],
+                exampleImages: nil,
+                carouselHintKey: nil,
+                primaryCTA: .openImportTab
+            )
+        case .createdCollection:
+            return FeatureAdoptionGuideContent(
+                item: self,
+                videoResourceName: nil,
+                screenshotAssetNames: [],
+                exampleImages: nil,
+                carouselHintKey: nil,
+                primaryCTA: nil
+            )
+        case .sentAssistantMessage:
+            return FeatureAdoptionGuideContent(
+                item: self,
+                videoResourceName: nil,
+                screenshotAssetNames: [],
+                exampleImages: [
+                    GuideExampleImage(
+                        assetName: "guide_sent_assistant_message_ex_01",
+                        accessibilityLabelKey: "account.feature-adoption.guide.sent_assistant_message.example.1.accessibility-label"
+                    ),
+                    GuideExampleImage(
+                        assetName: "guide_sent_assistant_message_ex_02",
+                        accessibilityLabelKey: "account.feature-adoption.guide.sent_assistant_message.example.2.accessibility-label"
+                    ),
+                    GuideExampleImage(
+                        assetName: "guide_sent_assistant_message_ex_03",
+                        accessibilityLabelKey: "account.feature-adoption.guide.sent_assistant_message.example.3.accessibility-label"
+                    )
+                ],
+                carouselHintKey: "account.feature-adoption.guide.sent_assistant_message.carousel-hint",
+                primaryCTA: .openAssistant
+            )
+        case .connectedTelegram:
+            return FeatureAdoptionGuideContent(
+                item: self,
+                videoResourceName: "guide_connected_telegram_video",
+                screenshotAssetNames: [],
+                exampleImages: nil,
+                carouselHintKey: nil,
+                primaryCTA: .openProfileTelegram
+            )
+        case .connectedMcpAssistant:
+            return FeatureAdoptionGuideContent(
+                item: self,
+                videoResourceName: nil,
+                screenshotAssetNames: [],
+                exampleImages: [
+                    GuideExampleImage(
+                        assetName: "guide_connected_mcp_assistant_ex_01",
+                        accessibilityLabelKey: "account.feature-adoption.guide.connected_mcp_assistant.example.1.accessibility-label"
+                    ),
+                    GuideExampleImage(
+                        assetName: "guide_connected_mcp_assistant_ex_02",
+                        accessibilityLabelKey: "account.feature-adoption.guide.connected_mcp_assistant.example.2.accessibility-label"
+                    )
+                ],
+                carouselHintKey: "account.feature-adoption.guide.connected_mcp_assistant.carousel-hint",
+                primaryCTA: .openSafari(URL(string: "https://recipe-scaler.ru/mcp")!)
+            )
+        case .sharedRecipe:
+            return FeatureAdoptionGuideContent(
+                item: self,
+                videoResourceName: nil,
+                screenshotAssetNames: [],
+                exampleImages: nil,
+                carouselHintKey: nil,
+                primaryCTA: .openProfilePublicSettings
+            )
+        }
+    }
 }

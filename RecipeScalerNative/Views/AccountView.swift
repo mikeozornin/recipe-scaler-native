@@ -33,93 +33,125 @@ struct AccountView: View {
         RecipeFolderRoutes.CollectionsRootLayout(rawValue: collectionsLayoutRaw) ?? .list
     }
 
+    /// Spec 040 — anchor ids for sections reachable from guide CTAs.
+    enum AccountViewSection {
+        case publicRecipes
+        case telegram
+
+        var id: String {
+            switch self {
+            case .publicRecipes: return "account.section.public-recipes"
+            case .telegram: return "account.section.telegram"
+            }
+        }
+    }
+
+    private func makeProfileScrollCtaHandler(proxy: ScrollViewProxy) -> FeatureAdoptionProfileScrollCtaHandler {
+        FeatureAdoptionProfileScrollCtaHandler(
+            openTelegramSection: {
+                withAnimation { proxy.scrollTo(AccountViewSection.telegram.id, anchor: .top) }
+            },
+            openPublicProfileSection: {
+                withAnimation { proxy.scrollTo(AccountViewSection.publicRecipes.id, anchor: .top) }
+            }
+        )
+    }
+
     var body: some View {
         NavigationStack {
-            List {
-                if !viewModel.isOnline {
-                    Section {
-                        Label {
-                            Text("account.offline.alert")
-                                .appBody()
-                                .foregroundStyle(.secondary)
-                        } icon: {
-                            AppSymbol.image("wifi.slash")
+            ScrollViewReader { proxy in
+                List {
+                    if !viewModel.isOnline {
+                        Section {
+                            Label {
+                                Text("account.offline.alert")
+                                    .appBody()
+                                    .foregroundStyle(.secondary)
+                            } icon: {
+                                AppSymbol.image("wifi.slash")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.top, 8)
+                        }
+                    }
+
+                    accountSection
+                    featureAdoptionSection
+                    publicRecipesSection
+                        .id(AccountViewSection.publicRecipes.id)
+                    telegramSection
+                        .id(AccountViewSection.telegram.id)
+                    preferencesSection
+                    dataSection
+                    logExportSection
+
+                    if let statusMessage = viewModel.statusMessage {
+                        Section {
+                            Text(statusMessage)
+                                .appFootnote()
                                 .foregroundStyle(.secondary)
                         }
-                        .padding(.top, 8)
+                    }
+
+                    footerSection
+
+                    if MobileTimerPanelListChrome.needsSpacer(
+                        timerManager: timerManager,
+                        isCollapsed: mobileTimerPanelIsCollapsed
+                    ) {
+                        MobileTimerPanelListSpacerRow()
                     }
                 }
-
-                accountSection
-                featureAdoptionSection
-                publicRecipesSection
-                telegramSection
-                preferencesSection
-                dataSection
-                logExportSection
-
-                if let statusMessage = viewModel.statusMessage {
-                    Section {
-                        Text(statusMessage)
-                            .appFootnote()
-                            .foregroundStyle(.secondary)
+                .localizedNavigationTitle("account.title")
+                .listSectionSpacing(12)
+                .appListBodyTypography()
+                .environment(
+                    \.featureAdoptionProfileScrollCta,
+                    makeProfileScrollCtaHandler(proxy: proxy)
+                )
+                .sheet(item: $presentedSheet) { destination in
+                    switch destination {
+                    case .seed:
+                        AccountSeedPhraseSheet()
+                    case .about:
+                        InAppSafariView(url: PublicURLBuilder.aboutURL)
+                            .ignoresSafeArea()
+                            .appOpaqueSheetPresentationPlain()
+                    case .privacy:
+                        InAppSafariView(url: PublicURLBuilder.privacyURL)
+                            .ignoresSafeArea()
+                            .appOpaqueSheetPresentationPlain()
                     }
                 }
-
-                footerSection
-
-                if MobileTimerPanelListChrome.needsSpacer(
-                    timerManager: timerManager,
-                    isCollapsed: mobileTimerPanelIsCollapsed
+                .confirmationDialog(
+                    Bundle.currentLocalizedString("account.logout.confirm"),
+                    isPresented: $showingLogoutConfirmation,
+                    titleVisibility: .visible
                 ) {
-                    MobileTimerPanelListSpacerRow()
+                    Button(Bundle.currentLocalizedString("account.logout"), role: .destructive) {
+                        Task { @MainActor in await viewModel.logout(syncService: syncService) }
+                    }
+                    Button(Bundle.currentLocalizedString("common.cancel"), role: .cancel) { }
                 }
-            }
-            .localizedNavigationTitle("account.title")
-            .listSectionSpacing(12)
-            .appListBodyTypography()
-            .sheet(item: $presentedSheet) { destination in
-                switch destination {
-                case .seed:
-                    AccountSeedPhraseSheet()
-                case .about:
-                    InAppSafariView(url: PublicURLBuilder.aboutURL)
-                        .ignoresSafeArea()
-                        .appOpaqueSheetPresentationPlain()
-                case .privacy:
-                    InAppSafariView(url: PublicURLBuilder.privacyURL)
-                        .ignoresSafeArea()
-                        .appOpaqueSheetPresentationPlain()
+                .accessibilityIdentifier(AccessibilityIdentifiers.accountRoot)
+                .refreshable {
+                    await featureAdoptionStore.refresh()
                 }
-            }
-            .confirmationDialog(
-                Bundle.currentLocalizedString("account.logout.confirm"),
-                isPresented: $showingLogoutConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button(Bundle.currentLocalizedString("account.logout"), role: .destructive) {
-                    Task { @MainActor in await viewModel.logout(syncService: syncService) }
+                .task {
+                    featureAdoptionStore.loadFromCache()
+                    await featureAdoptionStore.refresh()
+                    await viewModel.refresh(syncService: syncService)
+                    appLanguage = .current
                 }
-                Button(Bundle.currentLocalizedString("common.cancel"), role: .cancel) { }
-            }
-            .accessibilityIdentifier(AccessibilityIdentifiers.accountRoot)
-            .refreshable {
-                await featureAdoptionStore.refresh()
-            }
-            .task {
-                featureAdoptionStore.loadFromCache()
-                await featureAdoptionStore.refresh()
-                await viewModel.refresh(syncService: syncService)
-                appLanguage = .current
-            }
-            .onChange(of: syncService.connectionState) { _, _ in
-                Task { @MainActor in
-                    viewModel.bind(syncService: syncService)
+                .onChange(of: syncService.connectionState) { _, _ in
+                    Task { @MainActor in
+                        viewModel.bind(syncService: syncService)
+                    }
                 }
-            }
-            .onChange(of: isTelegramConnected) { wasConnected, isConnected in
-                guard !wasConnected, isConnected else { return }
-                Task { await featureAdoptionStore.refresh() }
+                .onChange(of: isTelegramConnected) { wasConnected, isConnected in
+                    guard !wasConnected, isConnected else { return }
+                    Task { await featureAdoptionStore.refresh() }
+                }
             }
         }
     }
