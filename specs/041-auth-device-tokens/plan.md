@@ -80,9 +80,135 @@
 - [ ] Обновить контракт `specs/039-watchos-timers/contracts/watchconnectivity-creds.md` — теперь передаётся и `token`.
 - [ ] Ручное тестирование: paired simulator, login на iPhone → timers на watch ходят под Bearer.
 
-### Фаза 6 — Финал
+### Фаза 5.5 — Pre-prod dev-validation (gate перед Фазой 6)
 
-## Фаза 6 — Финал и приёмка
+**Цель**: на dev-окружении (`dev.*` schema в Supabase, см. `server/scripts/create-dev-tables.sql`) прогнать полный lifecycle и матрицу состояний до того, как код пойдёт в staging/prod. Эта фаза — явный checkpoint: пока она не закрыта, Фаза 6 не стартует.
+
+#### 5.5.1 — Миграции: roundtrip
+
+- [ ] Применить все новые миграции на чистом clone dev-схемы → проверить `psql -c "\d dev.devices"` и `\d dev.users`: присутствуют `device_token_hash`, `device_token_expires_at`, `legacy_auth_cutoff_at`, `auth_audit_log` существует.
+- [ ] Индексы построены: `\di dev.*device_token_hash*`, `\di dev.*legacy_auth_cutoff*`.
+- [ ] **Down-migration** (rollback): написать `DOWN` для каждой миграции, прогнать → схема возвращается к предыдущему состоянию без orphan-колонок/индексов.
+- [ ] Повторный up после down → идемпотентен.
+- [ ] Backfill check: для существующих `dev.devices` записей `device_token_hash IS NULL`, `legacy_auth_cutoff_at IS NULL`.
+
+#### 5.5.2 — Token lifecycle smoke (на dev-сервере)
+
+Через `curl` против локально поднятого server с `SUPABASE_SCHEMA=dev`:
+
+- [ ] `POST /api/auth/register-auto` → 201, response содержит `data.device_token` (~43 символа base64url), `data.seed_phrase`, `data.user.id` (legacy shim), `data.user.data_version`. **Не содержит** `data.seed_hash` (внутреннее поле).
+- [ ] `psql -c "SELECT device_token_hash FROM dev.devices WHERE user_id = ..."` → hash = `sha256(device_token)`, **не равен** plaintext.
+- [ ] `POST /api/auth/login-with-seed` с правильным seed → 200 + `device_token`.
+- [ ] `POST /api/auth/login-with-seed` с неверным seed → 401.
+- [ ] Запрос с `Authorization: Bearer <device_token>` → 200, `req.user_id` установлен (проверить через debug-endpoint или лог).
+- [ ] Запрос с `Authorization: Bearer <random-32-bytes>` → 401.
+- [ ] `POST /api/auth/exchange-seed-for-token` с правильным seed → 200 + новый `device_token`.
+- [ ] `POST /api/auth/exchange-seed-for-token` > 5 раз за 15 min с одного IP → 429 (verify `authRateLimiter`).
+- [ ] `POST /api/auth/logout` → 200, `devices.device_token_hash = NULL` (row остаётся).
+- [ ] После logout: запрос с тем же `Authorization: Bearer ...` → 401.
+
+#### 5.5.3 — Audit log verification
+
+После 5.5.2 проверить, что в `dev.auth_audit_log` появились записи со всеми типами событий:
+
+- [ ] `token_issued` — после register/login/exchange.
+- [ ] `token_revoked` — после logout.
+- [ ] `cutoff_set` — после первого login/exchange этого user'a.
+- [ ] `legacy_rejected` — после 401 на legacy `x-user-id` с истёкшим cutoff (см. 5.5.4 R-4).
+- [ ] Ни одна запись не содержит подстроки `device_token` plaintext или `seed_phrase` (grep-test по `ts::text || ip || user_agent`).
+
+#### 5.5.4 — Grace-period матрица (комбинаторный тест)
+
+Для тестового user'a U создать 3 устройства D1/D2/D3 и прогнать все состояния cutoff:
+
+| # | `legacy_auth_cutoff_at` | `device_token_hash` D1 | D2 | D3 | Запрос с D1 (Bearer) | Запрос с D2 (x-user-id) | Запрос с D3 (x-user-id) | Ожидание |
+|---|---|---|---|---|---|---|---|---|
+| M1 | `NULL` | NULL | NULL | NULL | — | 200 (legacy accept) | 200 (legacy accept) | Pre-migration, всё на legacy |
+| M2 | `NOW()+7d` | hash | NULL | NULL | 200 (Bearer) | 200 (grace) | 200 (grace) | Первый user мигрировал, grace активен |
+| M3 | `NOW()+7d` | hash | hash | NULL | 200 | 200 (D2 теперь Bearer) | 200 (grace) | Частичная миграция |
+| M4 | `NOW()+7d` | hash | hash | hash | 200 | 200 | 200 | Все мигрировали, grace ещё идёт |
+| M5 | `NOW()-1s` | hash | hash | NULL | 200 (Bearer) | 200 (D2 Bearer) | **401 `legacy_rejected`** | Cutoff истёк, legacy отвалился, Bearer работает |
+| M6 | `NOW()-1s` | NULL (logout) | hash | hash | **401** | 200 | 200 | Logout на D1 = device_token отозван, остальные работают |
+
+- [ ] Все 6 строк матрицы проходят на dev.
+- [ ] `auth_audit_log.legacy_rejected` пишется в M5 (D3) и M6 (D1).
+- [ ] `allDevicesMigratedForUser(U)`:
+  - M1 → false (ничего не мигрировано)
+  - M2 → false (D2/D3 без hash)
+  - M3 → false (D3 без hash)
+  - M4 → true
+  - M5 → **false** (D3 без hash) — но D3 orphan если `last_seen > 90d` → true. Verify оба случая.
+  - M6 → false (D1 без hash) — но если D1 active → false; если D1 orphan → true.
+
+#### 5.5.5 — Socket.IO combined path (transitional)
+
+Использовать in-memory Socket.IO test client (`socket.io-client` в test-скрипте):
+
+| # | Handshake | post-connect | cutoff | Ожидание |
+|---|---|---|---|---|
+| S1 | `auth: {token: validToken}` | — | любой | `connected`, `socket.userId` установлен |
+| S2 | `auth: {token: invalid}` | — | любой | `connect_error 'unauthorized'` |
+| S3 | без auth | `emit('auth', {userId: U, deviceId: D})` | `NULL` или future | `socket.emit('connected')`, `socket.join('user:U')` |
+| S4 | без auth | `emit('auth', {userId: U, deviceId: D})` | past (cutoff истёк) | `socket.emit('auth_error')` + disconnect |
+| S5 | без auth | ничего 10 сек | любой | disconnect по timeout |
+| S6 | `?token=validToken` в query | — | любой | **игнорируется** сервером — connection anonymous, нужен emit('auth') |
+
+- [ ] Все 6 Socket.IO сценариев проходят.
+- [ ] `io.use()` middleware пишет `auth_audit_log.legacy_rejected` только в S4.
+- [ ] WS spoof-attack: S4 с `userId = someone-else's-uuid` где cutoff истёк → disconnect. Это закрывает текущую уязвимость анонимного WS-join'а.
+
+#### 5.5.6 — Cleanup cron dry-run
+
+- [ ] Создать orphan records: `INSERT INTO dev.devices (user_id, device_id, device_token_hash, last_seen) VALUES (U, 'old-1', NULL, NOW() - INTERVAL '100 days')`.
+- [ ] Запустить `cleanupOrphanDevices()` вручную → orphan deleted.
+- [ ] Active orphan (`last_seen = NOW() - INTERVAL '10 days'`, `device_token_hash = NULL`) → не удалён.
+- [ ] `cleanupAuditLog()`: вставить запись `ts = NOW() - INTERVAL '100 days'` → удалена; свежие остаются.
+
+#### 5.5.7 — End-to-end sequence на свежей dev-схеме
+
+Один сквозной сценарий, прогоняемый скриптом (добавить в `recipe-scaler/tests/e2e/device-tokens.dev.playwright.ts` или `server/scripts/dev-validation.sh`):
+
+1. Дропнуть и пересоздать `dev` схему из `create-dev-tables.sql`.
+2. Применить все новые миграции.
+3. `POST /register-auto` → user U1, device D1, token T1.
+4. Проверить `legacy_auth_cutoff_at` U1 установлен = `NOW()+7d`.
+5. Все REST-запросы от D1 с `Authorization: Bearer T1` → 200.
+6. Login U1 на D2 с тем же seed → token T2. `devices` имеет 2 row, оба с hash.
+7. Logout на D1 → `device_token_hash` D1 = NULL.
+8. Запрос от D1 с T1 → 401. Запрос от D2 с T2 → 200.
+9. Имитировать cutoff истёкшим: `UPDATE dev.users SET legacy_auth_cutoff_at = NOW() - INTERVAL '1 second' WHERE id = U1`.
+10. Login U1 на D3 через `/login-with-seed` с legacy-клиентом (только `x-user-id` в header) → отклонён (401) — cutoff истёк.
+11. Socket.IO от D2 с `auth.token = T2` → connected. От D3 с `emit('auth', {userId: U1})` → `auth_error` + disconnect (cutoff истёк).
+12. Cleanup cron → D1 orphan создаётся (NULL hash, last_seen старый) → удаляется.
+
+- [ ] Скрипт проходит без ошибок.
+- [ ] Лог аудита содержит все 5 типов событий в правильном порядке.
+
+#### 5.5.8 — Web-client validation на dev
+
+После деплоя PR2 на dev-стенд (`dev.recipe-scaler.ru` или localhost):
+
+- [ ] `localStorage.getItem('userId')` после codemod → только non-auth usage. `rg "localStorage\.getItem\(['\"]userId['\"]\)" recipe-scaler/src` → каждый hit — это analytics/debug/non-auth-context, задокументирован.
+- [ ] Новый user: register → `localStorage.device_token` сохранён, `localStorage.seed_phrase` НЕ удаляется (только для register-auto). Все fetch-запросы содержат `Authorization: Bearer`.
+- [ ] Существующий user (имитация pre-migration): в localStorage есть `userId` + `seed_phrase`, `device_token` отсутствует → открываем app → `/exchange-seed-for-token` тихо → `device_token` сохранён → `seed_phrase` удалён.
+- [ ] Grace banner: при `legacy_auth_cutoff_at` в будущем и `!all_migrated` → показывается. После `all_migrated=true` → скрыт.
+- [ ] Socket.IO handshake: DevTools → Network → WS → frames содержат `auth: {token: ...}` в handshake payload, **не** query-string.
+
+#### 5.5.9 — Native validation на dev build
+
+- [ ] Dev build регистрирует нового user → `SharedAuthStore.token` сохранён в Keychain (verify через `security find-generic-password -s "com.recipescaler" -a "token"`).
+- [ ] `kSecAttrSynchronizable = false`: проверить атрибуты item через `security dump-keychain`.
+- [ ] Все HTTP-запросы содержат `Authorization: Bearer` (Charles Proxy / Proxyman).
+- [ ] Logout → `SharedAuthStore.token = nil`, Keychain item удалён.
+- [ ] Migration на старте: pre-migration state (только `userId`, без token, seed в Keychain) → после запуска → exchange тихо → token сохранён.
+
+#### 5.5.10 — Sign-off
+
+- [ ] Все 10 подсекций выше закрыты.
+- [ ] Логи dev-прогона сохранены в `specs/041-auth-device-tokens/dev-validation-log.md` (вывод `curl`, `psql`, скриншоты Charles).
+- [ ] **Gate**: только после sign-off этой фазы — Фаза 6 (staging + production rollout checklist).
+
+### Фаза 6 — Финал и приёмка
 
 ### Тестовая пирамида
 
