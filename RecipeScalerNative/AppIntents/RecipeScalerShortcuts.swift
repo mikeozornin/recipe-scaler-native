@@ -2,8 +2,9 @@
 //  RecipeScalerShortcuts.swift
 //  RecipeScalerNative
 //
-//  Russian translations for Siri phrases should be added to AppShortcuts.xcstrings
-//  after the first build (Xcode generates the base file from this provider).
+//  Spotlight Top Hit: parameterless shortcuts only (open screen or fixed preset).
+//  Other AppIntent types remain in Shortcuts / Siri via the action library.
+//  Russian translations for Siri phrases — AppShortcuts.xcstrings.
 //
 
 import AppIntents
@@ -14,30 +15,26 @@ struct RecipeScalerShortcuts: AppShortcutsProvider {
     @AppShortcutsBuilder
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
-            intent: StartTimerIntent(),
+            intent: OpenShoppingListIntent(),
             phrases: [
-                "Start a \(.applicationName) cooking timer",
-                "Set a \(.applicationName) timer",
+                "Open my \(.applicationName) shopping list",
+                "Show my \(.applicationName) shopping list",
             ],
-            shortTitle: "Start timer",
+            shortTitle: "Shopping list",
+            systemImageName: "cart"
+        )
+        AppShortcut(
+            intent: {
+                var intent = StartTimerIntent()
+                intent.minutes = 10
+                return intent
+            }(),
+            phrases: [
+                "Start a 10 minute \(.applicationName) timer",
+                "Set a 10 minute \(.applicationName) timer",
+            ],
+            shortTitle: "10 min timer",
             systemImageName: "timer"
-        )
-        AppShortcut(
-            intent: AddToShoppingListIntent(),
-            phrases: [
-                "Add to my \(.applicationName) shopping list",
-            ],
-            shortTitle: "Add to shopping list",
-            systemImageName: "cart.badge.plus"
-        )
-        AppShortcut(
-            intent: OpenRecipeIntent(),
-            phrases: [
-                "Open \(\.$recipe) in \(.applicationName)",
-                "Show \(\.$recipe) in \(.applicationName)",
-            ],
-            shortTitle: "Open recipe",
-            systemImageName: "book.fill"
         )
     }
 }

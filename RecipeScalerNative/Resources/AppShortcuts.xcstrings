@@ -188,6 +188,70 @@
         }
       }
     },
+    "10 min timer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 min timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 мин"
+          }
+        }
+      }
+    },
+    "Set a 10 minute ${applicationName} timer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set a 10 minute ${applicationName} timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поставь таймер на 10 минут в ${applicationName}"
+          }
+        }
+      }
+    },
+    "Shopping list" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shopping list"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Список покупок"
+          }
+        }
+      }
+    },
+    "Start a 10 minute ${applicationName} timer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start a 10 minute ${applicationName} timer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поставь таймер на 10 минут в ${applicationName}"
+          }
+        }
+      }
+    },
     "Set a ${applicationName} timer" : {
       "extractionState" : "stale",
       "localizations" : {

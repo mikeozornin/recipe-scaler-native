@@ -260,6 +260,7 @@
 		BB0000000000000000000005 /* AddToShoppingListIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000005 /* AddToShoppingListIntent.swift */; };
 		BB0000000000000000000006 /* OpenRecipeIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000006 /* OpenRecipeIntent.swift */; };
 		BB0000000000000000000007 /* RecipeScalerShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000007 /* RecipeScalerShortcuts.swift */; };
+		BB0000000000000000000008 /* OpenShoppingListIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000009 /* OpenShoppingListIntent.swift */; };
 		BFBD67F13972B46AF2DCF378 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 209008F3F2C5E8241023341F /* SocketIO */; };
 		BFE2BA65F094481E919A269A /* UpdateDebouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADB6B67450DB498D8B3BD5B3 /* UpdateDebouncer.swift */; };
 		C1C11128BFB54B4F83A1EBD5 /* ImportErrorLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A46C39B025B41C69FD12A6A /* ImportErrorLocalizer.swift */; };
@@ -798,6 +799,7 @@
 		AA0000000000000000000005 /* AddToShoppingListIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToShoppingListIntent.swift; sourceTree = "<group>"; };
 		AA0000000000000000000006 /* OpenRecipeIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenRecipeIntent.swift; sourceTree = "<group>"; };
 		AA0000000000000000000007 /* RecipeScalerShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeScalerShortcuts.swift; sourceTree = "<group>"; };
+		AA0000000000000000000009 /* OpenShoppingListIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenShoppingListIntent.swift; sourceTree = "<group>"; };
 		AB0C0806AD671B22E4803F11 /* YrsArray.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YrsArray.swift; sourceTree = "<group>"; };
 		AB1234567890ABCDEF123450 /* InAppSafariView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InAppSafariView.swift; sourceTree = "<group>"; };
 		AB5158806FFCC3EBE0204F87 /* HomeWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = HomeWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1585,6 +1587,7 @@
 				AA0000000000000000000004 /* ShoppingIntentActionQueue.swift */,
 				AA0000000000000000000005 /* AddToShoppingListIntent.swift */,
 				AA0000000000000000000006 /* OpenRecipeIntent.swift */,
+				AA0000000000000000000009 /* OpenShoppingListIntent.swift */,
 				AA0000000000000000000007 /* RecipeScalerShortcuts.swift */,
 			);
 			path = AppIntents;
@@ -2526,6 +2529,7 @@
 				BB0000000000000000000004 /* ShoppingIntentActionQueue.swift in Sources */,
 				BB0000000000000000000005 /* AddToShoppingListIntent.swift in Sources */,
 				BB0000000000000000000006 /* OpenRecipeIntent.swift in Sources */,
+				BB0000000000000000000008 /* OpenShoppingListIntent.swift in Sources */,
 				BB0000000000000000000007 /* RecipeScalerShortcuts.swift in Sources */,
 				A5FCB870243125B620B8D992 /* TimerSnapshot+RecipeTimer.swift in Sources */,
 			);
