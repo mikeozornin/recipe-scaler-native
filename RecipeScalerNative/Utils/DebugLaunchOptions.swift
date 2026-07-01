@@ -30,6 +30,21 @@ enum DebugLaunchOptions {
             || screenshotTimerSeconds != nil
             || screenshotShoppingSeed != nil
             || openGuideMediaScene != nil
+            || forceLayout != nil
+    }
+
+    /// `-ForceLayout=compact|wide` — deterministic shell selection for layout tests.
+    static var forceLayout: LayoutMode? {
+        for arg in ProcessInfo.processInfo.arguments {
+            guard arg.hasPrefix("-ForceLayout=") else { continue }
+            let raw = String(arg.dropFirst("-ForceLayout=".count)).lowercased()
+            switch raw {
+            case "compact": return .compact
+            case "wide", "regular": return .regular
+            default: return nil
+            }
+        }
+        return nil
     }
 
     /// `-ScreenshotCapture=1` — store screenshot mode (hide system banner chrome).

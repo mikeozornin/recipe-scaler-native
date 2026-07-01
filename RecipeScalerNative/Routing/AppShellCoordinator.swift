@@ -12,6 +12,12 @@ struct ImportPresentation: Identifiable {
     let id = UUID()
 }
 
+struct WideRecipesState: Equatable {
+    var selectedRecipeId: String?
+    var activeFolderId: String?
+    var listScrollOffset: CGFloat = 0
+}
+
 @MainActor
 @Observable
 final class AppShellCoordinator {
@@ -34,6 +40,9 @@ final class AppShellCoordinator {
     var recipesPath = NavigationPath()
     var discoverPath = NavigationPath()
     var shoppingPath = NavigationPath()
+    var wideRecipesState = WideRecipesState()
+    /// Set by `AdaptiveAppShell` when regular layout is active (recipe split selection).
+    var usesRegularRecipeSplit = false
     private(set) var pendingSpotlightRecipeId: String?
     /// When true, Profile (`AccountView`) should scroll to Reminders, enable sync, and open list picker.
     private(set) var pendingRemindersSetup = false
@@ -67,6 +76,10 @@ final class AppShellCoordinator {
         }
     }
 
+    func handleSidebarSelection(_ newTab: AppTab) {
+        handleTabSelection(newTab)
+    }
+
     func presentImport() {
         importPresentation = ImportPresentation()
     }
@@ -91,7 +104,7 @@ final class AppShellCoordinator {
         importPresentation = nil
         selectedTab = .recipes
         if let id = result.primaryRecipeId {
-            recipesPath.append(RecipesRoute.recipe(recipeId: id, folderContext: nil))
+            openRecipeDetail(recipeId: id)
         }
         guard result.importedCount > 0 else { return nil }
         return Bundle.appPluralizedString(key: "import.success", count: result.importedCount)
@@ -102,7 +115,33 @@ final class AppShellCoordinator {
     func consumePendingRecipeIdIfNeeded() {
         guard let id = DeepLinkRouter.consumePendingRecipeId() else { return }
         selectedTab = .recipes
-        recipesPath.append(RecipesRoute.recipe(recipeId: id, folderContext: nil))
+        openRecipeDetail(recipeId: id)
+    }
+
+    // MARK: - Wide recipe split (043)
+
+    func selectRecipeInWideSplit(_ recipeId: String?) {
+        wideRecipesState.selectedRecipeId = recipeId
+    }
+
+    func openFolderInWideSplit(_ folderId: String?) {
+        wideRecipesState.activeFolderId = folderId
+    }
+
+    func autoSelectFirstRecipeInWideSplitIfNeeded(entries: [CollectionEntry]) {
+        guard usesRegularRecipeSplit, selectedTab == .recipes else { return }
+        guard wideRecipesState.selectedRecipeId == nil else { return }
+        let sorted = RecipeTitleEmoji.sortCollectionEntries(entries).filter { !$0.deleted }
+        guard let first = sorted.first else { return }
+        wideRecipesState.selectedRecipeId = first.id
+    }
+
+    func openRecipeDetail(recipeId: String) {
+        if usesRegularRecipeSplit {
+            wideRecipesState.selectedRecipeId = recipeId
+        } else {
+            recipesPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
+        }
     }
 
     // MARK: - Deep linking (Spotlight, URL scheme, Universal Links)
@@ -114,7 +153,7 @@ final class AppShellCoordinator {
             recipesPath = NavigationPath()
             if syncService.collectionEntries.contains(where: { $0.id == recipeId && !$0.deleted }) {
                 pendingSpotlightRecipeId = nil
-                recipesPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
+                openRecipeDetail(recipeId: recipeId)
             } else {
                 pendingSpotlightRecipeId = recipeId
             }
@@ -211,7 +250,7 @@ final class AppShellCoordinator {
         guard entries.contains(where: { $0.id == pendingId && !$0.deleted }) else { return }
         pendingSpotlightRecipeId = nil
         selectedTab = .recipes
-        recipesPath.append(RecipesRoute.recipe(recipeId: pendingId, folderContext: nil))
+        openRecipeDetail(recipeId: pendingId)
     }
 
     // MARK: - DEBUG
@@ -265,7 +304,11 @@ final class AppShellCoordinator {
                 discoverListState?.clearAll()
             }
         case .recipes:
-            if !recipesPath.isEmpty { recipesPath = NavigationPath() }
+            if !recipesPath.isEmpty {
+                recipesPath = NavigationPath()
+            } else if usesRegularRecipeSplit, wideRecipesState.selectedRecipeId != nil {
+                wideRecipesState.selectedRecipeId = nil
+            }
         case .shopping:
             if !shoppingPath.isEmpty { shoppingPath = NavigationPath() }
         default:

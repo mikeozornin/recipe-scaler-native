@@ -52,7 +52,7 @@ enum AppTab: String, CaseIterable, Hashable {
     }
 }
 
-private struct AppTabBarLabel: View {
+struct AppTabBarLabel: View {
     let tab: AppTab
 
     var body: some View {
@@ -69,6 +69,7 @@ struct AppShellView: View {
     @Environment(TimerManager.self) private var timerManager
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showAssistant = false
     @State private var assistantContextRecipeId: String?
     @State private var transientStatusMessage: String?
@@ -108,6 +109,37 @@ struct AppShellView: View {
         49
     }
 
+    private var layoutMode: LayoutMode {
+        #if DEBUG
+        if let forced = DebugLaunchOptions.forceLayout {
+            return forced
+        }
+        #endif
+        return LayoutModeResolver.resolve(
+            horizontalSizeClass: horizontalSizeClass,
+            forceLayout: nil
+        )
+    }
+
+    @ViewBuilder
+    private var shellContent: some View {
+        switch layoutMode {
+        case .compact:
+            CompactAppShell(
+                coordinator: coordinator,
+                showAssistant: $showAssistant,
+                mobileTimerPanelCollapsed: $mobileTimerPanelCollapsed,
+                tabBarTopOffsetFromLayoutBottom: $tabBarTopOffsetFromLayoutBottom
+            )
+        case .regular:
+            RegularAppShell(
+                coordinator: coordinator,
+                showAssistant: $showAssistant,
+                assistantContextRecipeId: $assistantContextRecipeId
+            )
+        }
+    }
+
     /// Spec 040 — handlers for CTA taps in `FeatureAdoptionGuideView`.
     /// Spec 040 — handlers for CTA taps in `FeatureAdoptionGuideView`.
     /// These are the app-level actions (tab switch, sheet, external Safari).
@@ -137,8 +169,9 @@ struct AppShellView: View {
     }
 
     var body: some View {
-        tabView
+        shellContent
             .environment(coordinator)
+            .environment(\.interactionProfile, InteractionProfile.current)
             .environment(
                 \.featureAdoptionAppCta,
                 makeFeatureAdoptionAppCtaHandler()
@@ -179,7 +212,7 @@ struct AppShellView: View {
             )
         }
         .overlay(alignment: .bottomTrailing) {
-            if !showAssistant {
+            if layoutMode == .compact, !showAssistant {
                 AssistantFabButton {
                     assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
                     assistantRecipeContext.isAssistantSheetOpen = true
@@ -229,6 +262,10 @@ struct AppShellView: View {
             if let link = deepLinkRouter.pending {
                 coordinator.handleDeepLink(link)
             }
+            coordinator.usesRegularRecipeSplit = layoutMode == .regular
+        }
+        .onChange(of: layoutMode) { _, mode in
+            coordinator.usesRegularRecipeSplit = mode == .regular
         }
         #if DEBUG
         .onAppear {
@@ -373,102 +410,5 @@ struct AppShellView: View {
     }
     private func postTransientStatus(_ message: String) {
         NotificationCenter.default.post(name: .shoppingStatusMessage, object: message)
-    }
-}
-
-private struct TabBarTopOffsetReader: UIViewControllerRepresentable {
-    @Binding var offsetFromLayoutBottom: CGFloat
-
-    func makeUIViewController(context: Context) -> TabBarTopOffsetReaderViewController {
-        let controller = TabBarTopOffsetReaderViewController()
-        controller.onOffsetChange = { newValue in
-            guard offsetFromLayoutBottom != newValue else { return }
-            offsetFromLayoutBottom = newValue
-        }
-        return controller
-    }
-
-    func updateUIViewController(_ uiViewController: TabBarTopOffsetReaderViewController, context: Context) {
-        uiViewController.onOffsetChange = { newValue in
-            guard offsetFromLayoutBottom != newValue else { return }
-            offsetFromLayoutBottom = newValue
-        }
-        uiViewController.view.setNeedsLayout()
-    }
-}
-
-/// Resolves the `UITabBarController` hosting a window's root view-controller
-/// hierarchy. Caches the resolved controller and only re-runs the recursive
-/// search when the cached reference is missing (controller deallocated) or its
-/// `parent` has changed (modal presentation / reparenting), so a stable layout
-/// does not walk the view-controller hierarchy on every `viewDidLayoutSubviews`.
-///
-/// `search` is injectable so tests can count traversals without polluting
-/// production code with test hooks.
-final class TabBarDiscovery {
-    private weak var cached: UITabBarController?
-    private var cachedParent: UIViewController?
-    private let search: (UIViewController?) -> UITabBarController?
-
-    init(search: @escaping (UIViewController?) -> UITabBarController? = TabBarDiscovery.find) {
-        self.search = search
-    }
-
-    func resolve(root: UIViewController?) -> UITabBarController? {
-        if let cached, cached.parent === cachedParent {
-            return cached
-        }
-        let resolved = search(root)
-        cached = resolved
-        cachedParent = resolved?.parent
-        return resolved
-    }
-
-    static func find(in viewController: UIViewController?) -> UITabBarController? {
-        guard let viewController else { return nil }
-        if let tabBarController = viewController as? UITabBarController {
-            return tabBarController
-        }
-        for child in viewController.children {
-            if let tabBarController = find(in: child) {
-                return tabBarController
-            }
-        }
-        if let presented = viewController.presentedViewController,
-           let tabBarController = find(in: presented) {
-            return tabBarController
-        }
-        return nil
-    }
-}
-
-private final class TabBarTopOffsetReaderViewController: UIViewController {
-    var onOffsetChange: ((CGFloat) -> Void)?
-    private let tabBarDiscovery = TabBarDiscovery()
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.isUserInteractionEnabled = false
-        view.backgroundColor = .clear
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        publishOffsetIfNeeded()
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        publishOffsetIfNeeded()
-    }
-
-    private func publishOffsetIfNeeded() {
-        guard let window = view.window,
-              let tabBar = tabBarDiscovery.resolve(root: window.rootViewController)?.tabBar else { return }
-        let tabBarFrame = tabBar.convert(tabBar.bounds, to: window)
-        let offsetFromWindowBottom = window.bounds.height - tabBarFrame.minY
-        let offsetFromLayoutBottom = offsetFromWindowBottom - window.safeAreaInsets.bottom
-        guard offsetFromLayoutBottom > 0 else { return }
-        onOffsetChange?(offsetFromLayoutBottom)
     }
 }

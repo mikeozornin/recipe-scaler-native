@@ -6,6 +6,9 @@ struct RecipeListView: View {
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
+    /// Non-nil in a regular-width shell, where selection drives the detail column
+    /// instead of pushing a navigation destination.
+    var wideSelectedRecipeId: Binding<String?>?
     @State private var searchText = ""
     @State private var presentedSheet: RecipeListSheet?
     @State private var presentedAlert: RecipeListAlert?
@@ -23,8 +26,16 @@ struct RecipeListView: View {
         RecipeFolderRoutes.ViewMode(rawValue: viewModeRaw) ?? .collections
     }
 
-    init(navigationPath: Binding<NavigationPath> = .constant(NavigationPath())) {
+    init(
+        navigationPath: Binding<NavigationPath> = .constant(NavigationPath()),
+        wideSelectedRecipeId: Binding<String?>? = nil
+    ) {
         _navigationPath = navigationPath
+        self.wideSelectedRecipeId = wideSelectedRecipeId
+    }
+
+    private var usesWideRecipeSelection: Bool {
+        wideSelectedRecipeId != nil
     }
     #if DEBUG
     @State private var didOpenDebugRecipe = false
@@ -379,13 +390,17 @@ struct RecipeListView: View {
                 }
             }
 
-            navigationPath.append(
-                RecipesRoute.recipe(
-                    recipeId: recipeId,
-                    folderContext: folderId,
-                    openInEditMode: true
+            if let wideSelectedRecipeId {
+                wideSelectedRecipeId.wrappedValue = recipeId
+            } else {
+                navigationPath.append(
+                    RecipesRoute.recipe(
+                        recipeId: recipeId,
+                        folderContext: folderId,
+                        openInEditMode: true
+                    )
                 )
-            )
+            }
         } catch {
             presentedAlert = .error(UserFacingAPIError.message(for: error))
         }
@@ -403,22 +418,44 @@ struct RecipeListView: View {
     @ViewBuilder
     private func recipeRows(_ items: [RecipeRowData]) -> some View {
         ForEach(items) { item in
-            ZStack(alignment: .leading) {
-                EquatableView(
-                    content: RecipeRowEquatable(
-                        data: item,
-                        highlight: isSearching ? searchStore.highlights[item.id] : nil,
-                        allowsNetworkRefresh: allowsImageNetworkRefresh
+            Group {
+                if usesWideRecipeSelection, let wideSelectedRecipeId {
+                    EquatableView(
+                        content: RecipeRowEquatable(
+                            data: item,
+                            highlight: isSearching ? searchStore.highlights[item.id] : nil,
+                            allowsNetworkRefresh: allowsImageNetworkRefresh
+                        )
                     )
-                )
-                .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        wideSelectedRecipeId.wrappedValue = item.id
+                    }
+                } else {
+                    ZStack(alignment: .leading) {
+                        EquatableView(
+                            content: RecipeRowEquatable(
+                                data: item,
+                                highlight: isSearching ? searchStore.highlights[item.id] : nil,
+                                allowsNetworkRefresh: allowsImageNetworkRefresh
+                            )
+                        )
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                NavigationLink(value: RecipesRoute.recipe(recipeId: item.id, folderContext: nil)) {
-                    Color.clear
+                        NavigationLink(value: RecipesRoute.recipe(recipeId: item.id, folderContext: nil)) {
+                            Color.clear
+                        }
+                        .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
+                        .opacity(0.01)
+                    }
                 }
-                .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
-                .opacity(0.01)
             }
+            .listRowBackground(
+                usesWideRecipeSelection && wideSelectedRecipeId?.wrappedValue == item.id
+                    ? Color.accentColor.opacity(0.12)
+                    : Color.clear
+            )
             .buttonStyle(.plain)
             .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
             .accessibilityIdentifier(AccessibilityIdentifiers.recipeRow(id: item.id))
@@ -495,7 +532,11 @@ struct RecipeListView: View {
         }
         guard let recipeId else { return }
         didOpenDebugRecipe = true
-        navigationPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
+        if let wideSelectedRecipeId {
+            wideSelectedRecipeId.wrappedValue = recipeId
+        } else {
+            navigationPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
+        }
     }
     #endif
 }

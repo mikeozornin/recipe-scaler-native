@@ -11,6 +11,18 @@
 		031287A80FDB41308E31AE3E /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7585E91075F045FF9D2C26D1 /* ShareViewController.swift */; };
 		0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C45A57EDAC270C757266F8FA /* AuthService.swift */; };
 		082B9A25B01040469E077B58 /* Auth/SharedAuthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F696F3421504AD3A7836B0C /* Auth/SharedAuthStore.swift */; };
+		B43ADAPT00000000000021 /* LayoutMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43ADAPT00000000000011 /* LayoutMode.swift */; };
+		B43ADAPT00000000000022 /* InteractionProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43ADAPT00000000000012 /* InteractionProfile.swift */; };
+		B43ADAPT00000000000023 /* LayoutPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43ADAPT00000000000013 /* LayoutPreferencesStore.swift */; };
+		B43ADAPT00000000000024 /* AdaptiveAppShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43ADAPT00000000000002 /* AdaptiveAppShell.swift */; };
+		B43ADAPT00000000000025 /* CompactAppShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43ADAPT00000000000003 /* CompactAppShell.swift */; };
+		B43ADAPT00000000000026 /* RegularAppShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43ADAPT00000000000004 /* RegularAppShell.swift */; };
+		B43ADAPT00000000000027 /* AppSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43ADAPT00000000000005 /* AppSidebarView.swift */; };
+		B43ADAPT00000000000028 /* RecipesSplitColumns.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43ADAPT00000000000006 /* RecipesSplitColumns.swift */; };
+		B43ADAPT00000000000029 /* TimerInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43ADAPT00000000000007 /* TimerInspector.swift */; };
+		B43ADAPT0000000000002A /* AppShellChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43ADAPT00000000000008 /* AppShellChrome.swift */; };
+		B43ADAPT0000000000002B /* TabBarTopOffsetReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43ADAPT00000000000009 /* TabBarTopOffsetReader.swift */; };
+		B43ADAPT0000000000002C /* AdaptiveLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43ADAPT00000000000014 /* AdaptiveLayoutTests.swift */; };
 		0952E30F55AC49E7BCCDEE93 /* TimerLockScreenLiveActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B83AB2645384EAFBD1AD4A3 /* TimerLockScreenLiveActivityView.swift */; };
 		0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */; };
 		0AD461511B9166BD9EF50932 /* WidgetTimerAccent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 707268FFBE33ABC1D5A95D82 /* WidgetTimerAccent.swift */; };
@@ -771,6 +783,18 @@
 		46BF5AD0548A4829A7C387F9 /* Services/WatchCredentialsBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchCredentialsBridge.swift; sourceTree = "<group>"; };
 		47BE92D4F7D7D370A1E12BF5 /* Networking/WidgetPushTokenClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/WidgetPushTokenClient.swift; sourceTree = "<group>"; };
 		480DCDACDCA0402582631501 /* RecipeLegacyBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeLegacyBanner.swift; sourceTree = "<group>"; };
+		B43ADAPT00000000000002 /* AdaptiveAppShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveAppShell.swift; sourceTree = "<group>"; };
+		B43ADAPT00000000000003 /* CompactAppShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompactAppShell.swift; sourceTree = "<group>"; };
+		B43ADAPT00000000000004 /* RegularAppShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegularAppShell.swift; sourceTree = "<group>"; };
+		B43ADAPT00000000000005 /* AppSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSidebarView.swift; sourceTree = "<group>"; };
+		B43ADAPT00000000000006 /* RecipesSplitColumns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipesSplitColumns.swift; sourceTree = "<group>"; };
+		B43ADAPT00000000000007 /* TimerInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerInspector.swift; sourceTree = "<group>"; };
+		B43ADAPT00000000000008 /* AppShellChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellChrome.swift; sourceTree = "<group>"; };
+		B43ADAPT00000000000009 /* TabBarTopOffsetReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarTopOffsetReader.swift; sourceTree = "<group>"; };
+		B43ADAPT00000000000011 /* LayoutMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutMode.swift; sourceTree = "<group>"; };
+		B43ADAPT00000000000012 /* InteractionProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractionProfile.swift; sourceTree = "<group>"; };
+		B43ADAPT00000000000013 /* LayoutPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutPreferencesStore.swift; sourceTree = "<group>"; };
+		B43ADAPT00000000000014 /* AdaptiveLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveLayoutTests.swift; sourceTree = "<group>"; };
 		48F07333AE4345FD8D008AA4 /* Views/NotAuthorizedStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/NotAuthorizedStateView.swift; sourceTree = "<group>"; };
 		4B5D272EB4ED4555A30CD3B2 /* RecipeEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEditViewModel.swift; sourceTree = "<group>"; };
 		4DE9AF6E91804571BD26336B /* TimerLiveActivityActionQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityActionQueue.swift; sourceTree = "<group>"; };
@@ -1500,6 +1524,7 @@
 				75EE8CD517E8068E7ECBF4A2 /* SplashView.swift */,
 				F4E0F52196856ADAA6F5C473 /* TimerExampleView.swift */,
 				E5F60718293A4B70A5EF6DCE /* AppShellView.swift */,
+				B43ADAPT00000000000010 /* AdaptiveAppShell */,
 				E5F60718293A4B700A5738C7 /* ShoppingListView.swift */,
 				E5F60718293A4B7060097EA7 /* ImportRecipeSheet.swift */,
 				E5F60718293A4B70A1SEG002 /* AppSegmentedControl.swift */,
@@ -1729,6 +1754,7 @@
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
 				A14001A00000000000000001A /* FeatureAdoptionGuideContentTests.swift */,
 				A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */,
+				B43ADAPT00000000000014 /* AdaptiveLayoutTests.swift */,
 				A05700000201 /* UTTypeRecipeScalerTests.swift */,
 				A05700000202 /* NativeFormatDetectorTests.swift */,
 				A05700000203 /* RecipeFileImportCoordinatorTests.swift */,
@@ -1910,6 +1936,21 @@
 			path = Yrs;
 			sourceTree = "<group>";
 		};
+		B43ADAPT00000000000010 /* AdaptiveAppShell */ = {
+			isa = PBXGroup;
+			children = (
+				B43ADAPT00000000000002 /* AdaptiveAppShell.swift */,
+				B43ADAPT00000000000003 /* CompactAppShell.swift */,
+				B43ADAPT00000000000004 /* RegularAppShell.swift */,
+				B43ADAPT00000000000005 /* AppSidebarView.swift */,
+				B43ADAPT00000000000006 /* RecipesSplitColumns.swift */,
+				B43ADAPT00000000000007 /* TimerInspector.swift */,
+				B43ADAPT00000000000008 /* AppShellChrome.swift */,
+				B43ADAPT00000000000009 /* TabBarTopOffsetReader.swift */,
+			);
+			path = AdaptiveAppShell;
+			sourceTree = "<group>";
+		};
 		D60774181BE9BA4A89FEDEAD /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -1920,6 +1961,9 @@
 				4B5D272EB4ED4555A30CD3B2 /* RecipeEditViewModel.swift */,
 				MIK1950A100100100100100A002 /* RecipeNutritionRecalculationModel.swift */,
 				D8A2FBA494D4B821D6044FD7 /* ShoppingViewModel.swift */,
+				B43ADAPT00000000000011 /* LayoutMode.swift */,
+				B43ADAPT00000000000012 /* InteractionProfile.swift */,
+				B43ADAPT00000000000013 /* LayoutPreferencesStore.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -2960,6 +3004,17 @@
 				E5F60718293A4B70D7CEFCAD /* AssistantModels.swift in Sources */,
 				E5F60718293A4B70811A7C4D /* TelegramAPI.swift in Sources */,
 				E5F60718293A4B705777B4EE /* AppShellView.swift in Sources */,
+				B43ADAPT00000000000021 /* LayoutMode.swift in Sources */,
+				B43ADAPT00000000000022 /* InteractionProfile.swift in Sources */,
+				B43ADAPT00000000000023 /* LayoutPreferencesStore.swift in Sources */,
+				B43ADAPT00000000000024 /* AdaptiveAppShell.swift in Sources */,
+				B43ADAPT00000000000025 /* CompactAppShell.swift in Sources */,
+				B43ADAPT00000000000026 /* RegularAppShell.swift in Sources */,
+				B43ADAPT00000000000027 /* AppSidebarView.swift in Sources */,
+				B43ADAPT00000000000028 /* RecipesSplitColumns.swift in Sources */,
+				B43ADAPT00000000000029 /* TimerInspector.swift in Sources */,
+				B43ADAPT0000000000002A /* AppShellChrome.swift in Sources */,
+				B43ADAPT0000000000002B /* TabBarTopOffsetReader.swift in Sources */,
 				E5F60718293A4B7078685F7E /* ShoppingListView.swift in Sources */,
 				E5F60718293A4B70CD074276 /* ImportRecipeSheet.swift in Sources */,
 				E5F60718293A4B70A1SEG001 /* AppSegmentedControl.swift in Sources */,
@@ -3130,6 +3185,7 @@
 			files = (
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
 				A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */,
+				B43ADAPT0000000000002C /* AdaptiveLayoutTests.swift in Sources */,
 				A05700000200 /* UTTypeRecipeScalerTests.swift in Sources */,
 				A05700000210 /* NativeFormatDetectorTests.swift in Sources */,
 				A05700000220 /* RecipeFileImportCoordinatorTests.swift in Sources */,

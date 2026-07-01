@@ -39,6 +39,17 @@ struct StartTimerIntent: AppIntent {
     var name: String
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        let dialog = try await CookingTimerIntentRunner.run(
+            hours: hours,
+            minutes: minutes,
+            name: name
+        )
+        return .result(dialog: dialog)
+    }
+}
+
+enum CookingTimerIntentRunner {
+    static func run(hours: Int, minutes: Int, name: String) async throws -> IntentDialog {
         let totalSeconds = hours * 3600 + minutes * 60
         guard totalSeconds > 0 else {
             throw TimerIntentError.zeroDuration
@@ -64,11 +75,10 @@ struct StartTimerIntent: AppIntent {
             type: timerType
         )
 
-        let dialog = buildDialog(hours: hours, minutes: minutes)
-        return .result(dialog: IntentDialog(stringLiteral: dialog))
+        return IntentDialog(stringLiteral: buildDialog(hours: hours, minutes: minutes))
     }
 
-    private func buildDialog(hours: Int, minutes: Int) -> String {
+    private static func buildDialog(hours: Int, minutes: Int) -> String {
         switch (hours, minutes) {
         case (let h, 0) where h > 0:
             return String(

@@ -22,6 +22,13 @@ enum AccessibilityIdentifiers {
     static let tabRecipes = "tab_recipes"
     static let tabShopping = "tab_shopping"
     static let tabProfile = "tab_profile"
+    static let sidebarDiscover = "sidebar_discover"
+    static let sidebarImport = "sidebar_import"
+    static let sidebarRecipes = "sidebar_recipes"
+    static let sidebarShopping = "sidebar_shopping"
+    static let sidebarProfile = "sidebar_profile"
+    static let assistantToolbarButton = "assistant_toolbar_button"
+    static let timerInspectorToggle = "timer_inspector_toggle"
     static let discoverRoot = "discover_root"
 
     // MARK: - Discover (017)

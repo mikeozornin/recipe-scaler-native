@@ -34,6 +34,18 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.selectedTab, .recipes)
     }
 
+    func test_wideSplit_openRecipeDetail_setsSelectedIdWithoutPath() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.usesRegularRecipeSplit = true
+        let recipeId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+
+        coordinator.openRecipeDetail(recipeId: recipeId)
+
+        XCTAssertEqual(coordinator.wideRecipesState.selectedRecipeId, recipeId)
+        XCTAssertTrue(coordinator.recipesPath.isEmpty)
+        XCTAssertEqual(coordinator.selectedTab, .recipes)
+    }
+
     func test_doubleImportTap_refreshesPresentationId() throws {
         let (coordinator, _, _) = try makeCoordinator()
 
