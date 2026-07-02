@@ -76,6 +76,7 @@ struct AccountView: View {
                     }
 
                     accountSection
+                    legacyAuthBannerSection
                     featureAdoptionSection
                     publicRecipesSection
                         .id(AccountViewSection.publicRecipes.id)
@@ -157,6 +158,15 @@ struct AccountView: View {
     }
 
     // MARK: - Sections
+
+    @ViewBuilder
+    private var legacyAuthBannerSection: some View {
+        if let userId = authService.userId {
+            Section {
+                LegacyAuthBannerView(userId: userId)
+            }
+        }
+    }
 
     @ViewBuilder
     private var accountSection: some View {

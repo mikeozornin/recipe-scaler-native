@@ -106,7 +106,7 @@ public struct ShareView: View {
             return
         }
 
-        guard SharedAuthStore.userId != nil else {
+        guard SharedAuthStore.token != nil else {
             phase = .notSignedIn
             return
         }
@@ -129,11 +129,14 @@ public struct ShareView: View {
     }
 
     private func submit() async {
-        guard let userId = SharedAuthStore.userId else {
+        guard let token = SharedAuthStore.token else {
             phase = .notSignedIn
             return
         }
-        APIClient.shared.configure(userId: userId)
+        APIClient.shared.configure(authToken: token)
+        if let userId = SharedAuthStore.userId {
+            APIClient.shared.configure(userId: userId)
+        }
 
         phase = .importing
 

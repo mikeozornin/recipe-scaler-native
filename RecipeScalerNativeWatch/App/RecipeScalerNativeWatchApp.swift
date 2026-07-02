@@ -16,8 +16,10 @@ struct RecipeScalerNativeWatchApp: App {
     @StateObject private var viewModel = TimerListViewModel()
 
     init() {
-        // Configure APIClient from stored credentials if present.
         if let userId = WatchCredentialsStore.userId {
+            if let token = WatchCredentialsStore.token, !token.isEmpty {
+                APIClient.shared.configure(authToken: token)
+            }
             APIClient.shared.configure(userId: userId)
         }
         // Activate WCSession to receive userId updates from iPhone.

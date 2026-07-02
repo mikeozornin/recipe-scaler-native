@@ -9,35 +9,65 @@ import KeychainAccess
 import RecipeScalerCore
 
 // MARK: - Auth Models
-struct AuthResponse: Decodable {
+struct AuthTokenPayload: Decodable {
     struct AuthUser: Decodable {
         let id: String
+        let dataVersion: String?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case dataVersion = "data_version"
+        }
     }
 
     let user: AuthUser
-}
-
-struct RegisterAutoResponse: Decodable {
-    struct AuthUser: Decodable {
-        let id: String
-    }
-
-    let user: AuthUser
-    let seedPhrase: String
-    let seedHash: String?
+    let deviceToken: String?
+    let seedPhrase: String?
 
     enum CodingKeys: String, CodingKey {
         case user
+        case deviceToken = "device_token"
         case seedPhrase = "seed_phrase"
-        case seedHash = "seed_hash"
     }
 }
 
 struct LoginRequest: Encodable {
     let seedPhrase: String
+    let deviceId: String
+    let platform: String
+    let appVersion: String?
 
     enum CodingKeys: String, CodingKey {
         case seedPhrase = "seed_phrase"
+        case deviceId = "device_id"
+        case platform
+        case appVersion = "app_version"
+    }
+}
+
+struct RegisterAutoRequest: Encodable {
+    let deviceId: String
+    let platform: String
+    let appVersion: String?
+
+    enum CodingKeys: String, CodingKey {
+        case deviceId = "device_id"
+        case platform
+        case appVersion = "app_version"
+    }
+}
+
+struct ExchangeSeedForTokenRequest: Encodable {
+    let seedPhrase: String
+    let deviceId: String
+    let platform: String
+    let appVersion: String?
+
+    enum CodingKeys: String, CodingKey {
+        case seedPhrase = "seed_phrase"
+        case deviceId = "device_id"
+        case platform
+        case appVersion = "app_version"
     }
 }
 
@@ -134,18 +164,110 @@ class AuthService {
 
     // MARK: - Private Methods
     private func restoreAuthenticationState() {
-        // Restore userId from the shared Keychain store.
-        if let restoredUserId = SharedAuthStore.userId {
-            self.userId = restoredUserId
-            self.isAuthenticated = true
+        guard let restoredUserId = SharedAuthStore.userId else { return }
 
-            // Current auth model trusts userId alone (review finding #1); legacy
-            // bearer tokens are not used and never read back.
-            self.token = nil
+        let restoredToken = SharedAuthStore.token
+        applySession(userId: restoredUserId, deviceToken: restoredToken)
 
-            apiClient.configure(userId: restoredUserId)
-            WatchCredentialsBridge.shared.publish(userId: restoredUserId)
+        if restoredToken == nil {
+            Task { await ensureDeviceTokenMigratedIfNeeded() }
         }
+    }
+
+    /// Spec 041: silent `/exchange-seed-for-token` when there is a `userId` but no
+    /// `SharedAuthStore.token` and the seed phrase is in app-local Keychain.
+    ///
+    /// Called from cold-start restore and from `AppContainer.bootstrap` so DEBUG
+    /// simulator auto-login (hardcoded `debugUserId` without `loginWithSeed`) still
+    /// migrates to Bearer before sync/socket start when a seed is available.
+    func ensureDeviceTokenMigratedIfNeeded() async {
+        await migrateDeviceTokenIfNeeded()
+    }
+
+    private func applySession(userId: String, deviceToken: String?) {
+        SharedAuthStore.userId = userId
+        if let deviceToken, !deviceToken.isEmpty {
+            SharedAuthStore.token = deviceToken
+        }
+
+        self.userId = userId
+        self.token = deviceToken
+        self.isAuthenticated = true
+
+        configureAPIClient(userId: userId, deviceToken: deviceToken)
+        WatchCredentialsBridge.shared.publish(
+            userId: userId,
+            token: SharedAuthStore.token
+        )
+    }
+
+    private func configureAPIClient(userId: String, deviceToken: String?) {
+        if let deviceToken, !deviceToken.isEmpty {
+            apiClient.configure(authToken: deviceToken)
+            apiClient.configure(userId: userId)
+        } else {
+            apiClient.configure(authToken: nil)
+            apiClient.configure(userId: userId)
+        }
+    }
+
+    /// Silent migration for sessions restored from Keychain without a device token (spec 041).
+    ///
+    /// Deliberately does NOT delete the seed phrase from Keychain after a successful
+    /// exchange. The seed is the user's recovery/root credential and must stay
+    /// available so they can view it in Account → Secret Phrase and sign in on
+    /// another device. The seed is wiped only by `logout()`.
+    private func migrateDeviceTokenIfNeeded() async {
+        guard SharedAuthStore.token == nil else { return }
+        guard SharedAuthStore.userId != nil else { return }
+
+        let seed: String
+        do {
+            seed = try retrieveSeedPhraseFromKeychain()
+        } catch {
+            return
+        }
+
+        do {
+            let token = try await exchangeSeedForToken(seedPhrase: seed)
+            guard let userId = SharedAuthStore.userId else { return }
+            applySession(userId: userId, deviceToken: token)
+            AppLog.info(.app, "device_token_migrated_on_launch")
+        } catch {
+            AppLog.info(.app, "device_token_migration_skipped", data: [
+                "reason": String(describing: type(of: error)),
+            ])
+        }
+    }
+
+    func exchangeSeedForToken(seedPhrase: String) async throws -> String {
+        let body = ExchangeSeedForTokenRequest(
+            seedPhrase: seedPhrase,
+            deviceId: TimerSyncService.storedDeviceId(),
+            platform: AuthClientMetadata.nativePlatform,
+            appVersion: AuthClientMetadata.appVersion()
+        )
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(body)
+
+        let response: APIResponse<AuthTokenPayload> = try await performAuthRequest(
+            path: "/api/auth/exchange-seed-for-token",
+            method: "POST",
+            body: data
+        )
+
+        guard response.success,
+              let payload = response.data,
+              let token = payload.deviceToken,
+              !token.isEmpty
+        else {
+            throw AuthError.apiError(
+                statusCode: 400,
+                message: response.error ?? "auth.error.api-generic"
+            )
+        }
+
+        return token
     }
 
     /// Wipe plaintext credentials that older versions wrote to UserDefaults.
@@ -245,9 +367,17 @@ class AuthService {
     /// Register a new user with automatic seed phrase generation
     /// - Returns: A tuple containing userId, seedPhrase, and authToken
     func registerAuto() async throws -> (userId: String, seedPhrase: String, token: String) {
-        let response: APIResponse<RegisterAutoResponse> = try await performAuthRequest(
+        let body = RegisterAutoRequest(
+            deviceId: TimerSyncService.storedDeviceId(),
+            platform: AuthClientMetadata.nativePlatform,
+            appVersion: AuthClientMetadata.appVersion()
+        )
+        let encoded = try JSONEncoder().encode(body)
+
+        let response: APIResponse<AuthTokenPayload> = try await performAuthRequest(
             path: "/api/auth/register-auto",
-            method: "POST"
+            method: "POST",
+            body: encoded
         )
 
         guard response.success, let data = response.data else {
@@ -257,29 +387,20 @@ class AuthService {
             )
         }
 
-        // Save seed phrase to Keychain
-        try saveSeedPhraseToKeychain(data.seedPhrase)
+        guard let seedPhrase = data.seedPhrase else {
+            throw AuthError.invalidResponse
+        }
 
-        // Persist userId to the shared Keychain (readable by extensions via
-        // the keychain-access-groups entitlement).
-        SharedAuthStore.userId = data.user.id
+        try saveSeedPhraseToKeychain(seedPhrase)
 
-        // Spec 039: forward credentials to the paired Apple Watch.
-        WatchCredentialsBridge.shared.publish(userId: data.user.id)
-
-        // Update published properties
-        self.userId = data.user.id
-        self.token = nil
-        self.isAuthenticated = true
-
-        // Configure API client with user id
-        apiClient.configure(userId: data.user.id)
+        let deviceToken = data.deviceToken ?? ""
+        applySession(userId: data.user.id, deviceToken: deviceToken.isEmpty ? nil : deviceToken)
 
         if let featureAdoption = AppContainer.shared?.featureAdoption {
             markFeatureInstalled(featureAdoptionStore: featureAdoption)
         }
 
-        return (userId: data.user.id, seedPhrase: data.seedPhrase, token: "")
+        return (userId: data.user.id, seedPhrase: seedPhrase, token: deviceToken)
     }
 
     /// Login with a seed phrase
@@ -292,12 +413,15 @@ class AuthService {
             throw AuthError.invalidSeedPhrase
         }
 
-        // Create login request
-        let loginRequest = LoginRequest(seedPhrase: seedPhrase)
-        let encoder = JSONEncoder()
-        let body = try encoder.encode(loginRequest)
+        let loginRequest = LoginRequest(
+            seedPhrase: seedPhrase,
+            deviceId: TimerSyncService.storedDeviceId(),
+            platform: AuthClientMetadata.nativePlatform,
+            appVersion: AuthClientMetadata.appVersion()
+        )
+        let body = try JSONEncoder().encode(loginRequest)
 
-        let response: APIResponse<AuthResponse> = try await performAuthRequest(
+        let response: APIResponse<AuthTokenPayload> = try await performAuthRequest(
             path: "/api/auth/login-with-seed",
             method: "POST",
             body: body
@@ -310,34 +434,24 @@ class AuthService {
             )
         }
 
-        // Save seed phrase to Keychain
         try saveSeedPhraseToKeychain(seedPhrase)
 
-        // Persist userId to the shared Keychain (readable by extensions via
-        // the keychain-access-groups entitlement).
-        SharedAuthStore.userId = data.user.id
-
-        // Spec 039: forward credentials to the paired Apple Watch.
-        WatchCredentialsBridge.shared.publish(userId: data.user.id)
-
-        // Update published properties
-        self.userId = data.user.id
-        self.token = nil
-        self.isAuthenticated = true
-
-        // Configure API client with user id
-        apiClient.configure(userId: data.user.id)
+        let deviceToken = data.deviceToken ?? ""
+        applySession(userId: data.user.id, deviceToken: deviceToken.isEmpty ? nil : deviceToken)
 
         if let featureAdoption = AppContainer.shared?.featureAdoption {
             markFeatureInstalled(featureAdoptionStore: featureAdoption)
         }
 
-        return (userId: data.user.id, token: "")
+        return (userId: data.user.id, token: deviceToken)
     }
 
     /// Logout the current user
     func logout() throws {
-        // Delete seed phrase from Keychain
+        // The seed phrase is the recovery credential; wipe it ONLY on explicit
+        // logout. Migration (`migrateDeviceTokenIfNeeded`) deliberately keeps it
+        // so the user can still view it in Account → Secret Phrase and sign in
+        // on another device.
         try deleteSeedPhraseFromKeychain()
 
         // Remove the shared userId from the Keychain so extensions can no
@@ -352,7 +466,6 @@ class AuthService {
         self.token = nil
         self.isAuthenticated = false
 
-        // Reset API client
         apiClient.configure(authToken: nil)
         apiClient.configure(userId: nil)
 

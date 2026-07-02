@@ -2,10 +2,7 @@
 //  WatchCredentialsBridge.swift
 //  RecipeScalerNativeWatch Watch App
 //
-//  Spec 039 — WCSessionDelegate on the watch side. Receives `userId`
-//  updates published by `RecipeScalerNative/Services/WatchCredentialsBridge`
-//  via `transferUserInfo`. Updates `WatchCredentialsStore`, reconfigures
-//  APIClient, and triggers a `TimerListView` refresh.
+//  Receives `userId` and optional `device_token` from iPhone (spec 039 / 041).
 //
 
 import Foundation
@@ -15,9 +12,7 @@ import RecipeScalerCore
 final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
     static let shared = WatchCredentialsBridge()
 
-    /// Called when new userId (or NSNull for purge) arrives.
     var onUserIdChange: ((String?) -> Void)?
-    /// Called when iPhone signals timer list changed (start/pause/delete on another device).
     var onTimersChanged: (() -> Void)?
 
     func activate() {
@@ -31,10 +26,8 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
         }
     }
 
-    // MARK: - Payload handling
-
-    private func userId(from payload: [String: Any]) -> String? {
-        let raw = payload["userId"]
+    private func optionalString(from payload: [String: Any], key: String) -> String? {
+        let raw = payload[key]
         if let raw, !(raw is NSNull) {
             return raw as? String
         }
@@ -45,9 +38,15 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
         guard !payload.isEmpty else { return }
 
         if payload.keys.contains("userId") {
-            let userId = userId(from: payload)
-            WatchCredentialsStore.set(userId)
-            APIClient.shared.configure(userId: userId)
+            let userId = optionalString(from: payload, key: "userId")
+            let token = optionalString(from: payload, key: "token")
+            if let userId, !userId.isEmpty {
+                WatchCredentialsStore.set(userId, token: token)
+                configureAPIClient(userId: userId, token: token)
+            } else {
+                WatchCredentialsStore.clear()
+                deconfigureAPIClient()
+            }
             onUserIdChange?(userId)
         }
 
@@ -56,7 +55,20 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
         }
     }
 
-    // MARK: - WCSessionDelegate
+    private func configureAPIClient(userId: String, token: String?) {
+        if let token, !token.isEmpty {
+            APIClient.shared.configure(authToken: token)
+            APIClient.shared.configure(userId: userId)
+        } else {
+            APIClient.shared.configure(authToken: nil)
+            APIClient.shared.configure(userId: userId)
+        }
+    }
+
+    private func deconfigureAPIClient() {
+        APIClient.shared.configure(authToken: nil)
+        APIClient.shared.configure(userId: nil)
+    }
 
     func session(
         _ session: WCSession,

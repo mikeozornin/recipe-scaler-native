@@ -4,9 +4,9 @@
 //
 //  Encrypted credential storage for the main app and extensions.
 //
-//  Stores the currently authenticated `userId` in the iOS Keychain
+//  Stores the authenticated `userId` and per-device `device_token` in the iOS Keychain
 //  (`kSecClassGenericPassword`) so that forensic extraction of on-disk
-//  plists (UserDefaults) cannot reveal it. Sharing across the main app
+//  plists (UserDefaults) cannot reveal them. Sharing across the main app
 //  and Share/Action/Home/Timer extensions is achieved via a shared
 //  keychain access group declared in every target's entitlements.
 //
@@ -32,6 +32,9 @@ public enum SharedAuthStore {
     /// Keychain account name for the authenticated user identifier.
     public static let userIdAccount = "userId"
 
+    /// Keychain account name for the device bearer token (spec 041).
+    public static let tokenAccount = "token"
+
     /// Legacy App Group UserDefaults key retained only to purge leftover
     /// plaintext copies from older app versions during migration. The
     /// `userId` itself is never written here anymore. Purge reads/writes use
@@ -43,9 +46,6 @@ public enum SharedAuthStore {
     /// without an access-group attribute. On signed builds the value is
     /// `$(AppIdentifierPrefix)ru.recipescaler.RecipeScalerNative`.
     public static var keychainAccessGroup: String? {
-        // Explicitly opt-in: only set when the host target declares the
-        // entitlement via the Info.plist marker. This avoids errSecMissingEntitlement
-        // on simulator runs (which are unsigned and have no Team prefix).
         if hasKeychainAccessGroupEntitlement {
             return "$(AppIdentifierPrefix)ru.recipescaler.RecipeScalerNative"
         }
@@ -53,34 +53,43 @@ public enum SharedAuthStore {
     }
 
     /// Currently authenticated user identifier, or `nil` when signed out.
-    ///
-    /// Reads/writes go directly to the Keychain via the Security framework.
-    /// Writes are atomic from the API consumer's perspective: setting `nil`
-    /// removes the item, overwriting an existing value replaces it in place.
     public static var userId: String? {
-        get { readUserId() }
+        get { readString(account: userIdAccount) }
         set {
             if let newValue {
-                writeUserId(newValue)
+                writeString(newValue, account: userIdAccount)
             } else {
                 clear()
             }
         }
     }
 
-    /// Remove the stored user identifier. Idempotent — calling on an empty
-    /// store is a no-op and never throws.
+    /// Per-device bearer token issued by the API (spec 041). `nil` when signed out.
+    public static var token: String? {
+        get { readString(account: tokenAccount) }
+        set {
+            let trimmed = newValue?.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let trimmed, !trimmed.isEmpty {
+                writeString(trimmed, account: tokenAccount)
+            } else {
+                deleteItem(account: tokenAccount)
+            }
+        }
+    }
+
+    /// Remove stored credentials. Idempotent — calling on an empty store is a no-op.
     public static func clear() {
-        SecItemDelete(baseQuery() as CFDictionary)
+        deleteItem(account: userIdAccount)
+        deleteItem(account: tokenAccount)
     }
 
     // MARK: - Keychain primitives
 
-    private static func baseQuery() -> [String: Any] {
+    private static func baseQuery(account: String) -> [String: Any] {
         var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: userIdAccount,
+            kSecAttrAccount as String: account,
         ]
         if let group = keychainAccessGroup {
             query[kSecAttrAccessGroup as String] = group
@@ -88,8 +97,8 @@ public enum SharedAuthStore {
         return query
     }
 
-    private static func readUserId() -> String? {
-        var query = baseQuery()
+    private static func readString(account: String) -> String? {
+        var query = baseQuery(account: account)
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
 
@@ -101,33 +110,41 @@ public enum SharedAuthStore {
         return String(data: data, encoding: .utf8)
     }
 
-    private static func writeUserId(_ userId: String) {
-        let data = Data(userId.utf8)
-        var query = baseQuery()
+    private static func writeString(_ value: String, account: String) {
+        let data = Data(value.utf8)
+        var query = baseQuery(account: account)
         query[kSecValueData as String] = data
         query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        query[kSecAttrSynchronizable as String] = kCFBooleanFalse
 
-        // Try to add first. If the item already exists, update its value in place.
         let addStatus = SecItemAdd(query as CFDictionary, nil)
         if addStatus == errSecDuplicateItem {
-            var updateQuery = baseQuery()
+            var updateQuery = baseQuery(account: account)
             let attributes: [String: Any] = [
                 kSecValueData as String: data,
                 kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+                kSecAttrSynchronizable as String: kCFBooleanFalse,
             ]
             SecItemUpdate(updateQuery as CFDictionary, attributes as CFDictionary)
         }
     }
 
+    private static func deleteItem(account: String) {
+        SecItemDelete(baseQuery(account: account) as CFDictionary)
+    }
+
     // MARK: - Entitlement probe
 
-    /// Detects whether the host target declares a shared keychain access group.
-    ///
-    /// The entitlement key (`keychain-access-groups`) is only embedded into the
-    /// binary by Xcode when the corresponding `.entitlements` file lists one. On
-    /// unsigned simulator builds it is absent, so we must omit the access-group
-    /// attribute from the query to avoid `errSecMissingEntitlement` (-34018).
     private static var hasKeychainAccessGroupEntitlement: Bool {
         Bundle.main.object(forInfoDictionaryKey: "keychain-access-groups") != nil
+    }
+}
+
+public enum AuthClientMetadata {
+    public static let nativePlatform = "ios-native"
+    public static let watchPlatform = "ios-watch"
+
+    public static func appVersion() -> String? {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
     }
 }

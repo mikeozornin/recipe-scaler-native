@@ -3,11 +3,8 @@
 //  RecipeScalerNative
 //
 //  Spec 039 — watchOS Timers: iPhone-side WCSessionDelegate that publishes
-//  `userId` to paired Apple Watch(es) via `transferUserInfo`. One-way
-//  outbound only — watch receives via its own delegate.
-//
-//  `transferUserInfo` is queued and guaranteed to be delivered when the
-//  watch is next reachable. We don't need reachability-based messaging.
+//  `userId` and `device_token` to paired Apple Watch(es) via `transferUserInfo`.
+//  Spec 041 — payload version 2 includes bearer token for watch API calls.
 //
 
 import Foundation
@@ -17,8 +14,8 @@ import RecipeScalerCore
 final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
     static let shared = WatchCredentialsBridge()
 
-    /// Activate the session. Safe to call from `AppDelegate.didFinishLaunching`;
-    /// no-op on iPads / Simulators without watch support (`WCSession.isSupported()`).
+    private static let payloadVersion = 2
+
     func activate() {
         guard WCSession.isSupported() else {
             AppLog.info(.sync, "watch_bridge_activate_unsupported")
@@ -36,8 +33,17 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
         }
     }
 
-    /// Publish `userId` to the watch after a successful login / register.
+    /// Publish credentials after login / register / session restore.
+    func publish(userId: String, token: String?) {
+        publishPayload(userId: userId, token: token)
+    }
+
+    /// Backward-compatible entry when only userId is known (legacy callers).
     func publish(userId: String) {
+        publish(userId: userId, token: SharedAuthStore.token)
+    }
+
+    private func publishPayload(userId: String, token: String?) {
         guard WCSession.isSupported() else {
             AppLog.info(.sync, "watch_bridge_publish_unsupported", data: ["userId": userId])
             return
@@ -52,10 +58,11 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
         }
         AppLog.info(.sync, "watch_bridge_publish", data: [
             "userId": userId,
+            "hasToken": "\(token != nil)",
             "paired": "\(session.isPaired)",
             "watchAppInstalled": "\(session.isWatchAppInstalled)",
         ])
-        let payload: [String: Any] = ["userId": userId]
+        let payload = credentialsPayload(userId: userId, token: token)
         session.transferUserInfo(payload)
         publishApplicationContext(payload, session: session)
     }
@@ -67,9 +74,13 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
         guard session.activationState == .activated else { return }
         var payload: [String: Any] = [
             "timersChangedAt": Int64(Date().timeIntervalSince1970 * 1000),
+            "version": Self.payloadVersion,
         ]
         if let userId = SharedAuthStore.userId {
             payload["userId"] = userId
+        }
+        if let token = SharedAuthStore.token {
+            payload["token"] = token
         }
         session.transferUserInfo(payload)
         publishApplicationContext(payload, session: session)
@@ -81,10 +92,24 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
         let session = WCSession.default
         guard session.activationState == .activated else { return }
         AppLog.info(.sync, "watch_bridge_purge")
-        // `NSNull()` serializes as JSON null — watch decodes it as `nil`.
-        let payload: [String: Any] = ["userId": NSNull()]
+        let payload: [String: Any] = [
+            "userId": NSNull(),
+            "token": NSNull(),
+            "version": Self.payloadVersion,
+        ]
         session.transferUserInfo(payload)
         publishApplicationContext(payload, session: session)
+    }
+
+    private func credentialsPayload(userId: String, token: String?) -> [String: Any] {
+        var payload: [String: Any] = [
+            "userId": userId,
+            "version": Self.payloadVersion,
+        ]
+        if let token, !token.isEmpty {
+            payload["token"] = token
+        }
+        return payload
     }
 
     private func publishApplicationContext(_ payload: [String: Any], session: WCSession) {
@@ -111,38 +136,33 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
             "watchAppInstalled": "\(session.isWatchAppInstalled)",
         ])
         #if os(iOS)
-        // Re-publish stored userId when the watch becomes reachable — covers
-        // login-before-watch-installed and queued transferUserInfo delivery.
         if activationState == .activated {
-            republishStoredUserIdIfReady(session)
+            republishStoredCredentialsIfReady(session)
         }
         #endif
     }
 
     #if os(iOS)
-    private func republishStoredUserIdIfReady(_ session: WCSession) {
+    private func republishStoredCredentialsIfReady(_ session: WCSession) {
         guard session.activationState == .activated,
               session.isPaired,
               session.isWatchAppInstalled,
               let userId = SharedAuthStore.userId else { return }
-        publish(userId: userId)
+        publish(userId: userId, token: SharedAuthStore.token)
     }
 
-    func sessionDidBecomeInactive(_ session: WCSession) {
-        // System-managed — no action needed.
-    }
+    func sessionDidBecomeInactive(_ session: WCSession) {}
 
     func sessionDidDeactivate(_ session: WCSession) {
-        // Re-activate for the next paired watch session.
         session.activate()
     }
 
     func sessionWatchStateDidChange(_ session: WCSession) {
-        republishStoredUserIdIfReady(session)
+        republishStoredCredentialsIfReady(session)
     }
 
     func sessionReachabilityDidChange(_ session: WCSession) {
-        republishStoredUserIdIfReady(session)
+        republishStoredCredentialsIfReady(session)
     }
     #endif
 }

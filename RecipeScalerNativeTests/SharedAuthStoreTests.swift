@@ -5,7 +5,6 @@ final class SharedAuthStoreTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        // Ensure each test starts with a clean keychain entry for userId.
         SharedAuthStore.clear()
     }
 
@@ -62,5 +61,27 @@ final class SharedAuthStoreTests: XCTestCase {
         SharedAuthStore.userId = ""
 
         XCTAssertEqual(SharedAuthStore.userId, "")
+    }
+
+    func testTokenRoundTrip() {
+        XCTAssertNil(SharedAuthStore.token)
+        SharedAuthStore.token = "device-token-abc"
+        XCTAssertEqual(SharedAuthStore.token, "device-token-abc")
+    }
+
+    func testClearRemovesToken() {
+        SharedAuthStore.userId = "user-1"
+        SharedAuthStore.token = "tok"
+        SharedAuthStore.clear()
+        XCTAssertNil(SharedAuthStore.userId)
+        XCTAssertNil(SharedAuthStore.token)
+    }
+
+    func testSettingNilTokenRemovesTokenOnly() {
+        SharedAuthStore.userId = "user-keep"
+        SharedAuthStore.token = "tok"
+        SharedAuthStore.token = nil
+        XCTAssertEqual(SharedAuthStore.userId, "user-keep")
+        XCTAssertNil(SharedAuthStore.token)
     }
 }

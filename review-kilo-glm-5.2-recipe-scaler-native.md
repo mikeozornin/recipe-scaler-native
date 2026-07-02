@@ -129,11 +129,11 @@
 
 ### Critical
 
-#### 1. **[Security]** Аутентификация построена только на публичном `userId`, без секрета
-- **Area**: `RecipeScalerCore/Networking/APIClient.swift:95-97,122-127`; `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift:1115,1287-1290`; `RecipeScalerNative/Services/AuthService.swift:122,305`
-- **Description**: После логина auth-токен явно отбрасывается (`token = nil`). Каждый последующий HTTP и Socket.IO запрос аутентифицируется **только** строкой `userId` — в заголовке `x-user-id` (APIClient), в Socket.IO `connectParams` (`["userId": userId, "deviceId": deviceId]`) и в `auth`-эмите. Сид-фраза (настоящий секрет) используется ровно один раз при логине. `userId` — публичный идентификатор, не bearer-секрет.
-- **Impact**: Любой, кто узнает `userId`, может полностью выдать себя за жертву — чтение/запись всех рецептов, списков покупок, профиля, push-состояния. Нет второго фактора и нет отзываемого сервером креденшала на клиенте. Корневая причина находок №2, №3, №8 (Critical/High), №12 (Low).
-- **Recommendation**: Выпускать и отправлять настоящий короткоживущий bearer-токен (или подписывать запросы device-ключом); перестать доверять «голому» `userId`. Это изменение бэкенда+клиента.
+#### 1. ~~**[Security]** Аутентификация построена только на публичном `userId`, без секрета~~ ✅ Remediated (spec [`041-auth-device-tokens`](specs/041-auth-device-tokens/spec.md), 2026-07)
+- **Area**: `SharedAuthStore.token`, `AuthService`, `APIClient`, `YjsSyncService`, backend `device_token` Bearer.
+- **Description**: ~~После логина auth-токен явно отбрасывается (`token = nil`). Каждый последующий HTTP и Socket.IO запрос аутентифицируется **только** строкой `userId`.~~ Клиент сохраняет per-device `device_token` в Keychain, шлёт `Authorization: Bearer` на REST и Socket.IO handshake `auth: { token }`. Тихая миграция `/exchange-seed-for-token` на cold start. Seed остаётся в Keychain для Account → Secret Phrase и входа на другом устройстве (spec N4.1). Transitional `x-user-id` + `emit("auth")` только без token до per-user cutoff.
+- **Impact**: ~~Любой, кто узнает `userId`, может полностью выдать себя за жертву.~~ Смягчено: компрометация требует утечки device token или seed; logout/revoke инвалидирует token на сервере.
+- **Recommendation**: ~~Выпускать bearer-токен.~~ Выполнено (backend + web + native). Post-cutoff cleanup — фаза 7 спеки 041.
 
 #### 2. **[Security]** Захардкоженный production UUID пользователя закоммичен в репо
 - **Area**: `RecipeScalerNative/ContentView.swift:19` — `private let debugUserId = "cfcd839f-56f2-4411-9632-7795b75f96d1"`
@@ -348,10 +348,10 @@
 - ~~**Impact**: Патологический JSON (большой/глубокий) потребляет много CPU/памяти — локальный DoS.~~ Закрыто.
 - **Recommendation**: Валидировать `Data.count` против разумного ceiling'а перед парсингом; предпочитать `JSONDecoder` для attacker-input.
 
-#### 33. **[Security]** Расширения аутентифицируются только plaintext, не-секретным `userId`
-- **Area**: `RecipeScalerNative/RecipeScalerNative.entitlements:5-8` (App Group, без keychain access group); `RecipeScalerCore/Auth/SharedAuthStore.swift`; `RecipeScalerNative/ContentView.swift:44-46`
-- **Description**: Не объявлен keychain access group → Share/Action/Widget extensions не могут читать сид-фразу и полагаются только на `SharedAuthStore.userId` (App Group UserDefaults) для `x-user-id`.
-- **Recommendation**: Расшарить short-lived токен через keychain access group; не давать extensions аутентифицироваться userId alone.
+#### 33. ~~**[Security]** Расширения аутентифицируются только plaintext, не-секретным `userId`~~ ✅ Remediated (spec 041, 2026-07)
+- **Area**: `SharedAuthStore.token` (Keychain + App Group access group); `ShareExtensionUI/ShareView.swift`; `WatchCredentialsBridge` v2.
+- **Description**: ~~Share/Action extensions полагаются только на `SharedAuthStore.userId` для `x-user-id`.~~ Share extension gate и импорт по `SharedAuthStore.token` + `APIClient.configure(authToken:)`. Watch получает тот же token через WC payload v2. Seed по-прежнему не в extensions (by design).
+- **Recommendation**: ~~Расшарить bearer token через keychain access group.~~ Выполнено для Share/Action; watch — WC bridge.
 
 #### 34. **[Security]** Недоверенное CRDT-состояние публичных рецептов применяется без валидации размера
 - **Area**: `RecipeScalerNative/Services/DiscoverAPI.swift:215-248` (`fetchPublicRecipeState`); `YrsDocument.swift:97-102,115-130`; `SyncEventHandler.swift:83-107`

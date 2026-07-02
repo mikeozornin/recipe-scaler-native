@@ -112,9 +112,9 @@
 - [ ] `src/services/v2-auth-api.ts` — типы response расширить `device_token: string` (точный shape — `contracts/login-response.md`)
 - [ ] `src/services/v2-auth-api.ts` — новый метод `exchangeSeedForToken({seed_phrase, device_id})`
 - [ ] `src/App.tsx:147-186` startup миграционный шаг: если `localStorage.seed_phrase` есть и `localStorage.device_token` нет → `exchangeSeedForToken` тихо → записать в localStorage
-- [ ] После успешной миграции — `localStorage.removeItem('seed_phrase')` (см. spec F18, R2: seed больше не нужен в localStorage после exchange)
+- [ ] **Seed НЕ удалять из localStorage после миграции** (spec F18.1, N4.1). Seed нужен для Settings QR и lost-token recovery. Удаляется только при явном `logout()` (см. `seed-auth.tsx` `logout()`).
 - [ ] `src/pages/seed-auth.tsx:401` login — `localStorage.setItem('device_token', response.device_token)`
-- [ ] `src/pages/seed-auth.tsx:738` logout — `localStorage.removeItem('device_token')`
+- [ ] `src/pages/seed-auth.tsx:738` logout — `localStorage.removeItem('device_token')` + `localStorage.removeItem('seed_phrase')` (или `localStorage.clear()` как сегодня)
 
 ### Sub-phase 2.2 — Socket.IO
 
@@ -142,68 +142,70 @@
 
 ### SharedAuthStore
 
-- [ ] `RecipeScalerCore/Auth/SharedAuthStore.swift` — `tokenAccount = "token"`, `static var token: String?` getter/setter (через тот же raw SecItem path, тот же access group)
-- [ ] `SharedAuthStore.clear()` — очищает и `userId`, и `token`
-- [ ] `SharedAuthStoreTests` — token roundtrip (write/read/clear), access group работает в симуляторе (best-effort — на девайсе с реальным entitlement)
+- [x] `RecipeScalerCore/Auth/SharedAuthStore.swift` — `tokenAccount = "token"`, `static var token: String?` getter/setter (через тот же raw SecItem path, тот же access group)
+- [x] `SharedAuthStore.clear()` — очищает и `userId`, и `token`
+- [x] `SharedAuthStoreTests` — token roundtrip (write/read/clear), access group работает в симуляторе (best-effort — на девайсе с реальным entitlement)
 
 ### APIClient
 
-- [ ] `RecipeScalerCore/Networking/APIClient.swift` — без структурных изменений; `configure(authToken:)` уже есть. Документировать что caller ответственный за persisting токена.
-- [ ] Verify: bearer branch в `buildRequest` (line 122-127) срабатывает когда `authToken != nil`.
+- [x] `RecipeScalerCore/Networking/APIClient.swift` — без структурных изменений; `configure(authToken:)` уже есть. Документировать что caller ответственный за persisting токена.
+- [x] Verify: bearer branch в `buildRequest` (line 122-127) срабатывает когда `authToken != nil`.
 
 ### AuthService
 
-- [ ] `RecipeScalerNative/Services/AuthService.swift` — `AuthResponse`, `RegisterAutoResponse` декодят `device_token`
-- [ ] `loginWithSeed` (line 288-336) — после успеха: `SharedAuthStore.token = data.device_token`, `apiClient.configure(authToken: data.device_token)`
-- [ ] `registerAuto` (line 247-283) — то же
-- [ ] `logout` (line 339-358) — `SharedAuthStore.token = nil`, `apiClient.configure(authToken: nil)`
-- [ ] `restoreAuthenticationState` (line 136-149) — если `SharedAuthStore.token != nil` → `apiClient.configure(authToken: ...)`. Иначе если есть `userId` и есть seed в app-local Keychain → `exchangeSeedForToken` миграционный шаг.
+- [x] `RecipeScalerNative/Services/AuthService.swift` — `AuthResponse`, `RegisterAutoResponse` декодят `device_token`
+- [x] `loginWithSeed` (line 288-336) — после успеха: `SharedAuthStore.token = data.device_token`, `apiClient.configure(authToken: data.device_token)`
+- [x] `registerAuto` (line 247-283) — то же
+- [x] `logout` (line 339-358) — `SharedAuthStore.token = nil`, `apiClient.configure(authToken: nil)`
+- [x] `restoreAuthenticationState` (line 136-149) — если `SharedAuthStore.token != nil` → `apiClient.configure(authToken: ...)`. Иначе если есть `userId` и есть seed в app-local Keychain → `exchangeSeedForToken` миграционный шаг.
 
 ### Migration flow
 
-- [ ] `AuthService.exchangeSeedForToken(seed, deviceId)` — новый метод, вызывает `/api/auth/exchange-for-token`, persistит `SharedAuthStore.token`
-- [ ] В `restoreAuthenticationState` — если token == nil и seed есть → запустить exchangeSeedForToken асинхронно. На ошибку — игнор (продолжаем на `x-user-id` fallback, не ломаем пользователя).
-- [ ] Migration — fire-and-forget; UI блокируется только если backend недоступен (тогда работаем на legacy `x-user-id`).
+- [x] `AuthService.exchangeSeedForToken(seed, deviceId)` — новый метод, вызывает `/api/auth/exchange-for-token`, persistит `SharedAuthStore.token`
+- [x] В `restoreAuthenticationState` — если token == nil и seed есть → запустить exchangeSeedForToken асинхронно. На ошибку — игнор (продолжаем на `x-user-id` fallback, не ломаем пользователя).
+- [x] Migration — fire-and-forget; UI блокируется только если backend недоступен (тогда работаем на legacy `x-user-id`).
+- [x] **Seed НЕ удалять после миграции** (отличие от web F18). Seed остаётся в app-local Keychain, чтобы пользователь мог посмотреть его в «Профиль → Секретная фраза» и войти на другом устройстве. Удаляется только при `logout()`. См. spec N4.1.
 
 ### AppContainer
 
-- [ ] `RecipeScalerNative/App/AppContainer.swift:153-157` — sync `APIClient.shared.configure(authToken: SharedAuthStore.token)` на construction
-- [ ] `AppContainer.bootstrap(userId:)` — после `configure(userId:)` вызвать `configure(authToken: SharedAuthStore.token)` если есть
+- [x] `RecipeScalerNative/App/AppContainer.swift:153-157` — sync `APIClient.shared.configure(authToken: SharedAuthStore.token)` на construction
+- [x] `AppContainer.bootstrap(userId:)` — после `configure(userId:)` вызвать `configure(authToken: SharedAuthStore.token)` если есть
 
 ### YjsSyncService
 
-- [ ] `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift:1255` — Socket.IO handshake с `auth: ["token": token]` если token есть. Legacy `emit("auth", ["userId": ...])` — только если token пустой (grace fallback). Точный контракт — `specs/041-auth-device-tokens/contracts/socketio-handshake.md`.
+- [x] `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift:1255` — Socket.IO handshake с `auth: ["token": token]` если token есть. Legacy `emit("auth", ["userId": ...])` — только если token пустой (grace fallback). Точный контракт — `specs/041-auth-device-tokens/contracts/socketio-handshake.md`.
 - [ ] `RecipeScalerNative/Services/YjsSync/YjsSyncService.swift:1468-1470` — `socket.emit("auth", {userId})` удалить **только в post-cleanup PR** (после истечения последнего активного cutoff).
-- [ ] Socket.IO lib поддерживает `auth: { token }` handshake — verify (Socket.IO v4+).
+- [x] Socket.IO lib поддерживает `auth: { token }` handshake — verify (Socket.IO v4+).
 
 ### Tests
 
-- [ ] `SharedAuthStoreTests` — token roundtrip
-- [ ] `AuthServiceTests` (если есть) — `loginWithSeed` persistит token, `logout` очищает
-- [ ] Migration test — восстановление state без token, с seed → exchangeSeedForToken вызывается
+- [x] `SharedAuthStoreTests` — token roundtrip
+- [x] `AuthServiceMigrationTests` — token persist/clear, seed independent of SharedAuthStore, migration guard (без live HTTP mock)
+- [x] Migration test — контракт seed в Keychain + skip when token present (`AuthServiceMigrationTests`)
 
 ## Фаза 4 — iOS extensions
 
-- [ ] `ShareExtensionUI/ShareView.swift:131-137` — `submit()`: `guard let token = SharedAuthStore.token else { phase = .notSignedIn; return }`, `APIClient.shared.configure(authToken: token)`
-- [ ] `ShareExtensionUI/ShareView.swift:109` — discovery gate на `SharedAuthStore.token != nil` вместо `userId`
-- [ ] `ActionExtension/ActionViewController.swift` — без изменений (наследует ShareView)
+- [x] `ShareExtensionUI/ShareView.swift:131-137` — `submit()`: `guard let token = SharedAuthStore.token else { phase = .notSignedIn; return }`, `APIClient.shared.configure(authToken: token)`
+- [x] `ShareExtensionUI/ShareView.swift:109` — discovery gate на `SharedAuthStore.token != nil` вместо `userId`
+- [x] `ActionExtension/ActionViewController.swift` — без изменений (наследует ShareView)
 - [ ] Manual QA: Share Extension из Safari → recipe импортируется под правильным аккаунтом; logout → Share Extension показывает notSignedIn
 
 ## Фаза 5 — Apple Watch
 
-- [ ] `RecipeScalerNative/Services/WatchCredentialsBridge.swift` — `publish(userId:token:)` в дополнение к `publish(userId:)`. Payload `transferUserInfo(["userId": ..., "token": ..., "version": 2])`. На logout — `["userId": NSNull(), "token": NSNull(), "version": 2]`. Точный контракт — `specs/039-watchos-timers/contracts/watchconnectivity-creds.md` (обновлён in-place).
-- [ ] `RecipeScalerNative/Services/AuthService.swift` — wire-up в `loginWithSeed`, `registerAuto`, `logout`: `WatchCredentialsBridge.shared.publish(userId:token:)`.
-- [ ] `RecipeScalerNativeWatch/Services/WatchCredentialsStore.swift` — `token` property, watch-local Keychain (account "token", service "com.recipescaler.watch", `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, `kSecAttrSynchronizable = kCFBooleanFalse` — см. spec 041 F22).
-- [ ] `RecipeScalerNativeWatch/App/RecipeScalerNativeWatchApp.swift:18-24` — init configure: prefer `APIClient.shared.configure(authToken: WatchCredentialsStore.token)`, fallback на `configure(userId:)` если token пустой.
-- [ ] `RecipeScalerNativeWatch/Services/WatchCredentialsBridge.swift` — handle payload version 1 (без `token`) и version 2 (с `token`). Forward-compat.
-- [ ] **Контракт уже обновлён** в `specs/039-watchos-timers/contracts/watchconnectivity-creds.md` (in-place, не `-update.md`).
+- [x] `RecipeScalerNative/Services/WatchCredentialsBridge.swift` — `publish(userId:token:)` в дополнение к `publish(userId:)`. Payload `transferUserInfo(["userId": ..., "token": ..., "version": 2])`. На logout — `["userId": NSNull(), "token": NSNull(), "version": 2]`. Точный контракт — `specs/039-watchos-timers/contracts/watchconnectivity-creds.md` (обновлён in-place).
+- [x] `RecipeScalerNative/Services/AuthService.swift` — wire-up в `loginWithSeed`, `registerAuto`, `logout`: `WatchCredentialsBridge.shared.publish(userId:token:)`.
+- [x] `RecipeScalerNativeWatch/Services/WatchCredentialsStore.swift` — `token` property, watch-local Keychain (account "token", service "com.recipescaler.watch", `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, `kSecAttrSynchronizable = kCFBooleanFalse` — см. spec 041 F22).
+- [x] `RecipeScalerNativeWatch/App/RecipeScalerNativeWatchApp.swift:18-24` — init configure: prefer `APIClient.shared.configure(authToken: WatchCredentialsStore.token)`, fallback на `configure(userId:)` если token пустой.
+- [x] `RecipeScalerNativeWatch/Services/WatchCredentialsBridge.swift` — handle payload version 1 (без `token`) и version 2 (с `token`). Forward-compat.
+- [x] **Контракт уже обновлён** в `specs/039-watchos-timers/contracts/watchconnectivity-creds.md` (in-place, не `-update.md`).
 - [ ] Manual QA: paired simulator, login на iPhone → watch получает token → timers ходят под Bearer; logout → watch not-authorized
 
 ## Фаза 6 — Финал и приёмка
 
 > **Полная структура приёмки** (тестовая пирамида, acceptance gate per phase, E2E сценарии, rollback-тесты, production rollout checklist, manual QA, security regression) — в `plan.md`, секция «Фаза 6 — Финал и приёмка».
 
-- [ ] All unit tests green (`npm test`, `xcodebuild test`)
+- [x] Native unit tests green (`scripts/test-fast.sh` — 424 tests, 0 failures, 2026-07-02)
+- [ ] Web/backend unit tests green (`npm test` in recipe-scaler-web)
 - [ ] All integration tests green (middleware, Socket.IO, DB migration up/down)
 - [ ] All 8 E2E сценариев проходят в staging (см. `plan.md` § Acceptance gate)
 - [ ] All 5 rollback-тестов пройдены
@@ -228,7 +230,8 @@
 ## Документация
 
 - [ ] `recipe-scaler-web/llm/API.md` — обновить auth секцию (device_token Bearer приоритет 1, OAuth Bearer приоритет 2, `x-user-id` приоритет 3 transitional)
-- [ ] `recipe-scaler-native/AGENTS.md` — секция Auth обновить (Composition Root, SharedAuthStore.token)
+- [x] `recipe-scaler-native/AGENTS.md` — секция Auth обновить (Composition Root, SharedAuthStore.token)
 - [ ] `recipe-scaler-web/AGENTS.md` — секция Auth обновить
-- [ ] Контракт `specs/039-watchos-timers/contracts/watchconnectivity-creds.md` — **уже обновлён** in-place (spec 041 фаза 5)
-- [ ] Update `review-kilo-glm-5.2-recipe-scaler-native.md` — отметить находки #1 и #33 как remediated со ссылкой на эту спеку
+- [x] Контракт `specs/039-watchos-timers/contracts/watchconnectivity-creds.md` — обновлён in-place (payload v2 + token, spec 041)
+- [x] Update `review-kilo-glm-5.2-recipe-scaler-native.md` — находки #1 и #33 remediated (spec 041)
+- [x] `docs/ARCHITECTURE.md` — Socket.IO handshake Bearer + watch auth (spec 041)

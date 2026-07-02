@@ -187,8 +187,9 @@ if (response.success && response.data?.device_token) {
     // only register-auto case
     localStorage.setItem('seed_phrase', response.data.seed_phrase);
   }
-  // seed из localStorage удаляется после успешной миграции (F18, R2)
-  // если это /exchange-seed-for-token
+  // seed_phrase НЕ удаляем из localStorage после успешной миграции
+  // (spec F18.1, N4.1): нужен для Settings QR и lost-token recovery.
+  // Удаляется только при явном logout().
 }
 ```
 

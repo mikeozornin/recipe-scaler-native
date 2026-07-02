@@ -6375,6 +6375,57 @@
         }
       }
     },
+    "legacyAuth.banner.details" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Recipe Scaler on each device while you have internet during this period — sign-in will update automatically. If you miss a device, sign in once with your seed phrase and you are set."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откройте Recipe Scaler на каждом устройстве, пока есть интернет, в течение этого срока — вход обновится сам, без лишних действий. Если на каком-то устройстве не успеете, один раз войдите по seed-фразе — дальше всё работает как обычно."
+          }
+        }
+      }
+    },
+    "legacyAuth.banner.message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A more secure sign-in is rolling out. Open Recipe Scaler on all your devices within %lld days (by %@)."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включается более защищённый вход. Откройте Recipe Scaler на всех устройствах в течение %lld дн. (до %@)."
+          }
+        }
+      }
+    },
+    "legacyAuth.banner.more" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learn more"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подробнее"
+          }
+        }
+      }
+    },
     "edit.legacy.banner" : {
       "extractionState" : "manual",
       "localizations" : {

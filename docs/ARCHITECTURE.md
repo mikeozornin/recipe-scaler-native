@@ -324,7 +324,11 @@ sequenceDiagram
 
   App->>YSS: start(userId)
   YSS->>DM: load collection snapshot from SQLite
-  YSS->>SIO: connect + auth {userId, deviceId}
+  alt device_token in SharedAuthStore (spec 041)
+    YSS->>SIO: connect handshake auth {token}
+  else grace / no token
+    YSS->>SIO: connect then emit auth {userId, deviceId}
+  end
   SIO-->>YSS: connected (server ack)
   YSS->>SIO: load_document {}
   SIO-->>YSS: document_loaded {yjsState, lastSyncedAt}
@@ -339,7 +343,9 @@ sequenceDiagram
   YSS-->>App: currentRecipe updated
 ```
 
-Reconnection: `reconnectAttempt` → `reconnecting`, then `reconnect` → re-`auth` and reload collection + active recipe.
+Reconnection: `reconnectAttempt` → `reconnecting`, then `reconnect` → handshake `auth.token` (or legacy `emit("auth")` if no token) and reload collection + active recipe.
+
+**HTTP auth (spec 041):** `APIClient` sends `Authorization: Bearer <device_token>` when `SharedAuthStore.token` is set; otherwise transitional `x-user-id`. Seed phrase stays in app-local Keychain after silent migration (Account → Secret Phrase); wiped only on `logout()`.
 
 ## Phase 3 iOS Implementation (done)
 
@@ -457,8 +463,9 @@ coordinators (`WatchCredentialsBridge`, `WatchCredentialsStore`, `WatchFeatureAd
   (clear per-user adoption idempotency, trigger `reportFirstOpenIfNeeded` on sign-in).
 - **Shared Core API** — client-reported adoption POSTs use `RecipeScalerCore.FeatureAdoptionAPI`
   with typed `FeatureAdoptionClientFeature` keys.
-- **Auth** — watch uses `x-user-id` via `APIClient.shared`; POST pins `userId` in headers
-  to avoid session races during async calls.
+- **Auth (spec 041)** — watch prefers `Authorization: Bearer` from `WatchCredentialsStore.token`
+  (received via WC payload v2 from iPhone). Falls back to `x-user-id` when token is absent
+  (transitional grace). POST pins `userId` in headers to avoid session races during async calls.
 
 ## Observation framework
 

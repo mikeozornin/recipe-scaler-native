@@ -401,6 +401,8 @@
 		E5F60718293A4B70CC88F2B7 /* ScreenAwakeToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7065B733F2 /* ScreenAwakeToggle.swift */; };
 		E5F60718293A4B70CD074276 /* ImportRecipeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7060097EA7 /* ImportRecipeSheet.swift */; };
 		E5F60718293A4B70CD094881 /* LocalizedNavigationTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */; };
+		B041LGR001 /* LegacyAuthBannerReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B041LGR002 /* LegacyAuthBannerReminder.swift */; };
+		B041LGB001 /* LegacyAuthBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B041LGB002 /* LegacyAuthBannerView.swift */; };
 		EA1E0A1A293A4B70EA100001 /* ErrorAlertModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA1E0A1A293A4B70EA100002 /* ErrorAlertModifier.swift */; };
 		EA1E0A1A293A4B70EA100003 /* AppSheetChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA1E0A1A293A4B70EA100004 /* AppSheetChrome.swift */; };
 		E5F60718293A4B70CD094891 /* UserFacingAPIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */; };
@@ -977,6 +979,8 @@
 		E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguagePreference.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094871 /* Bundle+Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Language.swift"; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedNavigationTitle.swift; sourceTree = "<group>"; };
+		B041LGR002 /* LegacyAuthBannerReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyAuthBannerReminder.swift; sourceTree = "<group>"; };
+		B041LGB002 /* LegacyAuthBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyAuthBannerView.swift; sourceTree = "<group>"; };
 		EA1E0A1A293A4B70EA100002 /* ErrorAlertModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorAlertModifier.swift; sourceTree = "<group>"; };
 		EA1E0A1A293A4B70EA100004 /* AppSheetChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSheetChrome.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094890 /* UserFacingAPIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserFacingAPIError.swift; sourceTree = "<group>"; };
@@ -1278,6 +1282,7 @@
 				E5F60718293A4B7017DF9B12 /* DiscoverRootView.swift */,
 				E5F60718293A4B701A1B2001 /* Discover */,
 				E5F60718293A4B70344FA5B3 /* AccountView.swift */,
+				B041LGB002 /* LegacyAuthBannerView.swift */,
 				6DDA10FB70EB04235CF1A47E /* FeatureAdoptionDetailView.swift */,
 				A14000040000000000000004 /* FeatureAdoptionGuideView.swift */,
 				A14000060000000000000006 /* GuideAssetPlaceholder.swift */,
@@ -1705,6 +1710,7 @@
 				A14000080000000000000008 /* FeatureAdoptionGuideCta.swift */,
 				A140000A0000000000000000A /* GuideAssetResolver.swift */,
 				E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */,
+				B041LGR002 /* LegacyAuthBannerReminder.swift */,
 				EA1E0A1A293A4B70EA100002 /* ErrorAlertModifier.swift */,
 				EA1E0A1A293A4B70EA100004 /* AppSheetChrome.swift */,
 				AB1234567890ABCDEF123450 /* InAppSafariView.swift */,
@@ -2458,6 +2464,8 @@
 				E5F60718293A4B708BB3E294 /* DiscoverRecipeCard.swift in Sources */,
 				E5F60718293A4B70A1B2C3D /* RecipeReader.swift in Sources */,
 				E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */,
+				B041LGB001 /* LegacyAuthBannerView.swift in Sources */,
+				B041LGR001 /* LegacyAuthBannerReminder.swift in Sources */,
 				95DD7E548A202A1047110394 /* FeatureAdoptionDetailView.swift in Sources */,
 				E5F60718293A4B7061726B18 /* TelegramConnectionView.swift in Sources */,
 				E5F60718293A4B7010A27A52 /* AssistantSheet.swift in Sources */,

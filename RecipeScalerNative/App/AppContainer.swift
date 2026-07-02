@@ -153,6 +153,9 @@ final class AppContainer {
         // Sync APIClient credentials from Keychain so Share/Action extensions
         // configuring the same client see the same identity at launch.
         if let sharedUserId = SharedAuthStore.userId {
+            if let token = SharedAuthStore.token, !token.isEmpty {
+                APIClient.shared.configure(authToken: token)
+            }
             APIClient.shared.configure(userId: sharedUserId)
         }
 
@@ -203,14 +206,25 @@ final class AppContainer {
             auth.isAuthenticated = true
         }
 
+        // 0b. Spec 041: mirror userId before migration. DEBUG simulator passes
+        //     `debugUserId` into bootstrap without `loginWithSeed`; exchange needs
+        //     `SharedAuthStore.userId` + seed in Keychain. Run before sync so Socket.IO
+        //     can handshake with Bearer when migration succeeds.
+        SharedAuthStore.userId = userId
+        await auth.ensureDeviceTokenMigratedIfNeeded()
+
         // 1. Configure APIClient (formerly `ContentView.init:45` + `YjsSyncService.start:867`).
+        if let token = SharedAuthStore.token, !token.isEmpty {
+            APIClient.shared.configure(authToken: token)
+        } else if let authToken = auth.token, !authToken.isEmpty {
+            APIClient.shared.configure(authToken: authToken)
+        } else {
+            APIClient.shared.configure(authToken: nil)
+        }
         APIClient.shared.configure(userId: userId)
 
-        // 1a. Mirror session to shared stores + paired watch. DEBUG simulator
-        //     feeds a hardcoded `debugUserId` here without going through
-        //     `AuthService.loginWithSeed`, so this is the only publish point.
-        SharedAuthStore.userId = userId
-        WatchCredentialsBridge.shared.publish(userId: userId)
+        // 1a. Mirror session to paired watch (token may have been set by migration).
+        WatchCredentialsBridge.shared.publish(userId: userId, token: SharedAuthStore.token)
 
         // 2. Configure TimerSync (formerly `YjsSyncService.start:868-872`). The
         //    `sendTimerEvent` callback is already wired by `TimerEventBridge`

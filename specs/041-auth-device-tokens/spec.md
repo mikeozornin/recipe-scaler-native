@@ -78,7 +78,8 @@
 
 ### Web storage decision (B5)
 
-- **F18.** Web/PWA хранит `device_token` в `localStorage` (как `userId` сегодня). Альтернатива — `__Host-` prefixed cookie + `httpOnly` + `SameSite=Strict` — **отвергнута**: PWA install on iOS Safari + cross-origin API (`recipe-scaler.ru` API против `app.recipe-scaler.ru` фронтенд) создают ITP-проблемы и сложность debug'а, которая перевешивает преимущество httpOnly против XSS. Residual risk: persistent XSS позволяет пере-кражу токена после каждого re-login. Mitigation: (1) seed больше не хранится в localStorage после успешной миграции (`App.tsx` удаляет `localStorage.removeItem('seed_phrase')`); (2) будущий UI «Активные сессии» позволяет revoke устройства; (3) logout инвалидирует токен на сервере. Threat model это отражает.
+- **F18.** Web/PWA хранит `device_token` в `localStorage` (как `userId` сегодня). Альтернатива — `__Host-` prefixed cookie + `httpOnly` + `SameSite=Strict` — **отвергнута**: PWA install on iOS Safari + cross-origin API (`recipe-scaler.ru` API против `app.recipe-scaler.ru` фронтенд) создают ITP-проблемы и сложность debug'а, которая перевешивает преимущество httpOnly против XSS. Residual risk: persistent XSS позволяет пере-кражу токена после каждого re-login. Mitigation: (1) будущий UI «Активные сессии» позволяет revoke устройства; (2) logout инвалидирует токен на сервере. Threat model это отражает.
+- **F18.1.** **Seed сохраняется в localStorage web/PWA после успешной миграции** (product decision, фикс `74e5232`). Seed нужен, чтобы: (а) Settings → Account → «Login on another device» показывал фразу и QR (`seed-auth.tsx:92-94,938-950`); (б) lost-token recovery: при отозванном/устаревшем `device_token` клиент молча делает повторный `/exchange-seed-for-token` (`auth-device-token-migration.ts:16`). Сервер хранит только `sha256(seed)` в `users.seed_hash` и не может вернуть seed клиенту — поэтому единственный источник seed для cross-device login и recovery — клиентский storage. Seed удаляется из localStorage **только** при явном logout (см. F6, `seed-auth.tsx` `logout()`). Это умышленный компромисс: persistent XSS на web = кража seed = полная компрометация (как и до миграции, не регрессия). Усиление защиты от XSS — отдельная задача, не блокер этой спеки.
 
 ### DB NULL-семантика и cleanup (H3, H9)
 
@@ -111,6 +112,17 @@
 - **N2.** Migration прозрачный для большинства: ноль UI, ноль actions, кроме информационного баннера о необходимости открыть app на других устройствах в течение grace.
 - **N3.** Keychain / localStorage — единственное место хранения plaintext токена на клиенте. Не логируется, не попадает в crash dumps, не уходит в analytics. iOS/watch Keychain атрибуты — см. F22.
 - **N4.** Seed phrase остаётся корнем доверия. Утёк seed = та же проблема что сегодня (можно выпустить новые токены от имени пользователя). Это не чинится токенами — это фундаментальное ограничение seed-only auth.
+- **N4.1.** **Storage policy для seed после миграции (web и native одинаковы):** seed **остаётся** в клиентском storage после успешной миграции. Это нужно для двух функций, у которых нет альтернативного источника seed:
+  - **Settings → Account → «Login on another device»** показывает seed и QR (`seed-auth.tsx`, нативный Profile → Секретная фраза). Сервер хранит только `seed_hash` и не может вернуть plaintext.
+  - **Lost-token recovery**: при отозванном/устаревшем `device_token` клиент повторно вызывает `/exchange-seed-for-token` (`auth-device-token-migration.ts`). Без seed в storage — экран входа вместо тихого восстановления.
+  - **Web/PWA**: `localStorage.seed_phrase` удаляется только при явном `logout()` (см. F6). XSS exposure принят как residual risk (F18.1) — не регрессия относительно pre-041 состояния.
+  - **iOS/watchOS native**: seed в app-local Keychain, не попадает в iCloud Keychain (`kSecAttrSynchronizable = false`), требует biometric для показа в UI. Удаляется только при `logout()`.
+- **N4.2.** **Cross-feature impact audit (обязательно для будущих изменений `localStorage.seed_phrase`)** — inventory читателей:
+  - `recipe-scaler/src/pages/seed-auth.tsx` — показ фразы + QR в Settings.
+  - `recipe-scaler/src/services/auth-device-token-migration.ts` — lost-token recovery.
+  - `recipe-scaler/src/services/auth-register-auto.ts` — guard от ghost-регистрации.
+  - `recipe-scaler/src/services/v2-auth-api.ts` — persistence.
+  - Любое изменение storage policy для seed требует проверки всех читателей выше и обновления этой секции.
 - **N5.** Grace period = 7 дней. Configurable через env (`LEGACY_AUTH_GRACE_DAYS`, default 7). Достаточно для большинства multi-device юзеров, минимально терпимое окно уязвимости.
 - **N6.** **Server-side access logging** — `Authorization: Bearer` header **не должен** попадать в текстовые access logs в проде. Express сегодня не пишет HTTP access-log (нет morgan/winston-stream в `app.ts`), точечные логи только для OAuth/MCP/well-known (`app.ts:101,117,136`). Nginx/reverse-proxy в проде (вне репо) — конфигурируется с маскированием `Authorization` (custom log-format, не default `%r`). Если masking невозможен — residual risk принимается явно (см. threat model).
 - **N7.** **Audit log retention** — `auth_audit_log` (F21) хранится 90 дней, после чего партицируется/удаляется. Не превышает 90 дней для минимизации PII exposure.
@@ -224,7 +236,8 @@ flowchart TB
 | Утёк device_token из client storage | N/A | Impersonation до явного revoke. Можно отозвать с любого устройства. Один токен = одно устройство. |
 | Утёк device_token в server-side access logs | N/A | **Mitigation**: N6 (nginx masking) + F21 (audit log без токена). Residual risk: зависит от конфигурации прокси в проде. |
 | Утёк seed phrase | Полная компрометация | Полная компрометация (без изменений — seed остаётся корнем доверия) |
-| XSS на web/PWA | Кража seed из localStorage = полная компрометация | Кража `device_token` = компрометация **этого устройства** до logout. Можно отозвать. **Seed больше не нужен в localStorage после миграции** (см. F18, R2). Persistent XSS = пере-кража после каждого re-login — residual risk принят (см. F18). |
+| XSS на web/PWA | Кража seed из localStorage = полная компрометация | Кража `device_token` = компрометация **этого устройства** до logout. Можно отозвать. Кража `seed_phrase` = полная компрометация аккаунта (seed сохранён в localStorage для cross-device login и recovery, см. F18.1). Persistent XSS = пере-кража после каждого re-login — residual risk принят (см. F18, F18.1). |
+| **Потеря seed на единственном устройстве (logout / browser wipe)** | Аккаунт потерян без recovery | **Та же регрессия**: seed остаётся в localStorage только до logout. Logout = `localStorage.clear()` + серверный revoke `device_token_hash`. Если других активных устройств нет — восстановить аккаунт невозможно. Принято как non-goal (seed = root of trust). Будущая Active Sessions UI не помогает, потому что нет второго канала для recovery. |
 | **Spoof Socket.IO** | **Trivial** — сегодня WS подключается без auth, потом клиент `emit('auth', {userId})` с любым userId. Любой знающий публичный userId слушает timer-ticks/recipe-updates жертвы в реальном времени (`index.ts:138-184`). | **Невозможно** без токена после removal legacy path (см. F7). В transitional period legacy path ещё принимает `userId`, но проверяет `legacy_auth_cutoff_at` — после cutoff anonymous-spoof закрывается для этого user'а. |
 | **Brute force токена** | N/A | 2^256 — физически невозможно. |
 | **Кража watch отдельно от iPhone** | N/A | Полноценный device_token до logout на iPhone. Отозвать **только watch** невозможно — токен тот же (см. non-goals). Mitigation: accept как known residual risk; мониторинг через `devices.last_seen` anomaly (future Active Sessions UI). |
@@ -306,6 +319,8 @@ UI показывает сессии с типами: «Web · Safari 12», «PW
 - [ ] AC21. Cleanup job: cron daily, `DELETE FROM devices WHERE device_token_hash IS NULL AND last_seen < NOW() - INTERVAL '90 days'`. Идемпотентный, мониторится (метрика `auth.cleanup.deleted_per_run`).
 - [ ] AC22. Hash compare: `device_token_hash` сравнивается **только** через SQL `WHERE device_token_hash = $1` на уровне DB-запроса. Application code не выполняет `===`, `.equals()`, `crypto.timingSafeEqual()` и т.п. на hash'ах или токенах. Запрещено: fetch row по `user_id` + JS-compare.
 - [ ] AC23. `legacy_auth_cutoff_at` идемпотентен: повторные login/exchange на тот же `(user_id, device_id)` не двигают cutoff, если уже установлен. Cutoff устанавливается только один раз per user (на первую миграцию).
+- [ ] AC24. После успешной миграции (silent exchange или login) на web/PWA — Settings → Account → «Login on another device» показывает seed-фразу и QR, читаемые из `localStorage.seed_phrase`. Проверка: после миграции открыть Settings, секция открыта — QR генерируется без пустого состояния `account.no-seed`.
+- [ ] AC25. Lost-token recovery: после отзыва `device_token` (server-side revoke или logout на другом устройстве этого же user'а) web-клиент с сохранённым `seed_phrase` повторно вызывает `/exchange-seed-for-token` и восстанавливает доступ без показа экрана входа. Без `seed_phrase` в storage — экран входа (F15).
 
 ## Приложение A. Public read-only endpoints
 
@@ -322,7 +337,7 @@ UI показывает сессии с типами: «Web · Safari 12», «PW
 ## Риски
 
 - **R1.** Race condition при rolling deploy: новый клиент шлёт Bearer, старый сервер его не понимает. **Mitigation**: сервер сначала учится читать токены (deploy 1), потом клиенты начинают слать (deploy 2). Фолбэк на `x-user-id` сохраняется в grace period.
-- **R2.** Утёк device_token из Keychain / localStorage = компрометация устройства до явного revoke. Persistent XSS на web = пере-кража после каждого re-login. **Mitigation**: один токен = одно устройство, UI revoke (отдельная спека), logout инвалидирует токен, seed удаляется из localStorage после миграции.
+- **R2.** Утёк device_token из Keychain / localStorage = компрометация устройства до явного revoke. Persistent XSS на web = пере-кража после каждого re-login, а также кража `seed_phrase` = полная компрометация аккаунта. **Mitigation**: один токен = одно устройство, UI revoke (отдельная спека), logout инвалидирует токен, seed сохраняется в localStorage/Keychain для cross-device login и recovery (F18.1, N4.1).
 - **R3.** Socket.IO breaking change для уже подключённых клиентов. **Mitigation**: transitional — `io.use()` добавлен в PR1, `socket.on('auth')` остаётся как legacy до cutoff; тот же 7-дневный grace, что для REST. См. F7 и cutoff flow diagram.
 - **R4.** Watch без paired iPhone после logout — не сможет переаутентифицироваться. **Mitigation**: watch показывает not-authorized (как сегодня); пользователь открывает iPhone, логинится, токен автоматически прилетает через WC.
 - **R5.** Migration на уже залогиненных устройствах: если seed утерян клиентом (например, юзер очистил localStorage без logout) — `/exchange-seed-for-token` не сработает, придётся полный re-login. **Mitigation**: это уже сегодня так, не регрессия. Баннер напоминает открыть app на всех устройствах в течение grace.

@@ -6,7 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-: "${SIM_ID:=C3ED7448-2C55-4F02-B5DA-721E2853FD0B}"
+: "${SIM_ID:=EFC65E55-4F28-4C21-B489-D9733D2BE6B5}"
 : "${MAX_TEST_SECONDS:=30}"
 DESTINATION="platform=iOS Simulator,id=$SIM_ID"
 RESULT_BUNDLE="${RESULT_BUNDLE:-$ROOT/.test-fast-results.xcresult}"

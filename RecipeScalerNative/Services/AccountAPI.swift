@@ -198,6 +198,25 @@ enum AccountAPI {
         )
     }
 
+    struct LegacyAuthStatusDTO: Decodable, Sendable {
+        let legacyAuthCutoffAt: String?
+        let allMigrated: Bool
+        let hasOtherUnmigratedDevices: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case legacyAuthCutoffAt = "legacy_auth_cutoff_at"
+            case allMigrated = "all_migrated"
+            case hasOtherUnmigratedDevices = "has_other_unmigrated_devices"
+        }
+    }
+
+    static func fetchLegacyAuthStatus() async throws -> LegacyAuthStatusDTO {
+        let response: APIResponse<LegacyAuthStatusDTO> = try await APIClient.shared.requestJSON(
+            path: "/api/auth/legacy-status"
+        )
+        return try APIClient.unwrapResponse(response, fallback: .authErrorApiGeneric)
+    }
+
     static func logoutDevice(userId: String, deviceId: String) async {
         struct Body: Encodable {
             let user_id: String

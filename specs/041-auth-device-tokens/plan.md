@@ -46,7 +46,7 @@
 
 - [ ] **Sub-phase 2.0 — centralized `getAuthToken()` accessor** (`src/services/auth-token.ts`): единый accessor + `applyAuthHeaders()`. Codemod: заменить 30+ точек `localStorage.getItem('userId')` для auth header'ов. Проверка: `rg "localStorage.getItem\(['\"]userId"` возвращает только non-auth usage.
 - [ ] `src/services/v2-auth-api.ts` — декодинг `device_token` из responses; новый метод `exchangeSeedForToken()`; `legacyStatus()` для баннера.
-- [ ] `src/App.tsx` startup — миграционный шаг: если `localStorage.seed_phrase` есть и `localStorage.device_token` нет → `/exchange-seed-for-token` тихо. После успеха — `localStorage.removeItem('seed_phrase')`.
+- [ ] `src/App.tsx` startup — миграционный шаг: если `localStorage.seed_phrase` есть и `localStorage.device_token` нет → `/exchange-seed-for-token` тихо. После успеха — **seed не удаляется** (spec F18.1, N4.1: нужен для Settings QR и lost-token recovery).
 - [ ] `src/services/yjs-client.ts` — Socket.IO handshake с `auth: {token: deviceToken}`. Без `?token=` query. `emit("auth", {userId})` — только legacy fallback если нет token (grace).
 - [ ] Logout cleanup — `localStorage.removeItem('device_token')`.
 - [ ] **Баннер grace period** (`src/components/legacy-auth-banner.tsx`): запрос `legacy-status`, показ если `legacy_auth_cutoff_at` в будущем и `!all_migrated`. Текст i18n, кнопка «Подробнее». Скрывается после миграции всех активных устройств или после cutoff.
@@ -190,7 +190,7 @@
 
 - [ ] `localStorage.getItem('userId')` после codemod → только non-auth usage. `rg "localStorage\.getItem\(['\"]userId['\"]\)" recipe-scaler/src` → каждый hit — это analytics/debug/non-auth-context, задокументирован.
 - [ ] Новый user: register → `localStorage.device_token` сохранён, `localStorage.seed_phrase` НЕ удаляется (только для register-auto). Все fetch-запросы содержат `Authorization: Bearer`.
-- [ ] Существующий user (имитация pre-migration): в localStorage есть `userId` + `seed_phrase`, `device_token` отсутствует → открываем app → `/exchange-seed-for-token` тихо → `device_token` сохранён → `seed_phrase` удалён.
+- [ ] Существующий user (имитация pre-migration): в localStorage есть `userId` + `seed_phrase`, `device_token` отсутствует → открываем app → `/exchange-seed-for-token` тихо → `device_token` сохранён → `seed_phrase` **остаётся** в localStorage (для Settings QR и recovery, F18.1).
 - [ ] Grace banner: при `legacy_auth_cutoff_at` в будущем и `!all_migrated` → показывается. После `all_migrated=true` → скрыт.
 - [ ] Socket.IO handshake: DevTools → Network → WS → frames содержат `auth: {token: ...}` в handshake payload, **не** query-string.
 
@@ -235,7 +235,7 @@
 ### E2E сценарии (gate фазы 6)
 
 - [ ] **E2E-1** (new user, zero state): register на web → `device_token` в localStorage → все запросы с Bearer → login на native с тем же seed → recipe через Share Extension → timer на watch → всё под Bearer.
-- [ ] **E2E-2** (web migration): залогиненный web-user обновляет страницу → `exchangeSeedForToken` тихо → запросы переходят на Bearer → `seed_phrase` удаляется из localStorage.
+- [ ] **E2E-2** (web migration): залогиненный web-user обновляет страницу → `exchangeSeedForToken` тихо → запросы переходят на Bearer → `seed_phrase` **остаётся** в localStorage (F18.1). После миграции открыть Settings → Account → «Login on another device» → QR и фраза показываются (AC24).
 - [ ] **E2E-3** (native migration): залогиненный native-user обновляет app → `restoreAuthenticationState` видит `userId` без token + есть seed → `exchangeSeedForToken` → token сохранён → запросы на Bearer.
 - [ ] **E2E-4** (token revoke / logout): logout на device A → устройство A получает 401 на следующем запросе; device B с тем же `user_id` (если есть) продолжает работать.
 - [ ] **E2E-5** (grace period end): device 1 мигрирует → cutoff установлен → баннер показывается на web + iOS (AC18) → имитируем `cutoff_at = NOW() - 1s` → device 2 с `x-user-id` получает 401 → экран входа.

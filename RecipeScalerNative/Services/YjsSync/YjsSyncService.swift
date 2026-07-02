@@ -1262,6 +1262,7 @@ final class YjsSyncService {
         hasRequestedCollectionLoad = false
         hasRequestedShoppingLoad = false
         let serverURL = URL(string: Config.baseURL)!
+        let deviceToken = SharedAuthStore.token
         var socketConfig: SocketIOClientConfiguration = [
             .log(false),
             .compress,
@@ -1269,7 +1270,6 @@ final class YjsSyncService {
             .reconnectAttempts(-1),
             .reconnectWait(1000),
             .reconnectWaitMax(5000),
-            .connectParams(["userId": userId, "deviceId": deviceId]),
         ]
         if connectionTransport == .websocketOnly {
             socketConfig.insert(.forceWebsockets(true))
@@ -1278,6 +1278,11 @@ final class YjsSyncService {
 
         let client = manager!.defaultSocket
         self.socket = client
+        if let deviceToken, !deviceToken.isEmpty {
+            client.connect(withPayload: ["token": deviceToken])
+        } else {
+            client.connect()
+        }
 
         // Socket lifecycle handlers
         client.on(clientEvent: .connect) { [weak self] _, _ in
@@ -1394,7 +1399,6 @@ final class YjsSyncService {
 
         // Register sync protocol event handlers
         eventHandler.registerHandlers(on: client)
-        client.connect()
         setConnectionState(.connecting, reason: "connect_socket_called")
         transition(to: .connecting(sessionId: sessionId))
     }
@@ -1453,6 +1457,9 @@ final class YjsSyncService {
     }
 
     private func emitAuth() {
+        if let token = SharedAuthStore.token, !token.isEmpty {
+            return
+        }
         guard let userId else { return }
         guard let sessionAtEmit = socketSessionId else { return }
 
