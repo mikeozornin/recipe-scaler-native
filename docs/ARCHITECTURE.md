@@ -180,7 +180,7 @@ sequenceDiagram
   YSS->>YSS: save snapshot to SQLite
 ```
 
-**Ingredient illustrations (spec 043):** Each ingredient row may show a 40pt thumb (bundled 120×120 JPEG in `RecipeScalerNative/Resources/IngredientIllustrations/`). Catalog metadata and NFKD/token search live in **RecipeScalerCore** (`IngredientIllustrations/`, `Resources/ingredient-catalog.json` + `ingredient-catalog.manifest.json`; `catalogVersion` = first 16 hex of SHA256 of canonical catalog JSON). Yjs fields on the ingredient map: `illustrationId` (string), `illustrationPickerCleared` (bool). Picker select sets id and clears the flag; clear removes id and sets `illustrationPickerCleared: true` (web parity). Regenerate assets: `node scripts/sync-ingredient-illustrations.mjs` from `recipe-scaler-web` ingredient thumbs.
+**Ingredient illustrations (spec 043):** Each ingredient row may show a 40pt thumb (bundled 120×120 transparent WebP in `RecipeScalerNative/Resources/IngredientIllustrations/`). Catalog metadata and NFKD/token search live in **RecipeScalerCore** (`IngredientIllustrations/`, `Resources/ingredient-catalog.json` + `ingredient-catalog.manifest.json`; `catalogVersion` = first 16 hex of SHA256 of canonical catalog JSON). Yjs fields on the ingredient map: `illustrationId` (string), `illustrationPickerCleared` (bool). Picker select sets id and clears the flag; clear removes id and sets `illustrationPickerCleared: true` (web parity). Regenerate assets: `node scripts/sync-ingredient-illustrations.mjs` from `recipe-scaler-web` ingredient thumbs.
 
 ### Editing description (WebView)
 
@@ -425,6 +425,7 @@ flowchart TB
     AC --> AUTH[AuthService]
     AC --> TIM[TimerManager]
     AC --> DLR[DeepLinkRouter]
+    AC --> SHC[AppShellCoordinator]
     AC --> ARC[AssistantRecipeContext]
   end
 
@@ -440,6 +441,8 @@ flowchart TB
 **Key points:**
 
 - All app-level services are constructed once in `AppContainer.init` in dependency order.
+- `AppShellCoordinator` (tab selection + per-tab `NavigationPath`) lives on `AppContainer` so
+  light/dark or locale updates on `ContentView` do not reset navigation when `AppShellView` is recreated.
 - `RecipeScalerNativeApp.init` creates the container and provides it to SwiftUI
   via `.appEnvironment(container)` (see `AppEnvironment.swift`).
 - SwiftUI views read services via `@Environment(YjsSyncService.self)` etc. — per-property

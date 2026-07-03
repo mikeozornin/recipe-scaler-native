@@ -18,7 +18,7 @@ enum IngredientIllustrationImageStore {
 
         guard let url = Bundle.main.url(
             forResource: trimmed,
-            withExtension: "jpg",
+            withExtension: "webp",
             subdirectory: subdirectory
         ),
               let data = try? Data(contentsOf: url),

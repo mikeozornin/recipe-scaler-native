@@ -131,7 +131,7 @@
 ### Ассеты и каталог
 
 - **FR-ILL-010** — Sync из `recipe-scaler-web` добавляет:
-  - JPEG thumbs `{id}.jpg` 120×120 → **app target** (`RecipeScalerNative/Resources/...`);
+  - WebP thumbs `{id}.webp` 120×120 (alpha) → **app target** (`RecipeScalerNative/Resources/...`);
   - `ingredient-catalog.json` + **`ingredient-catalog.manifest.json`** → **RecipeScalerCore** bundle resource (runtime + CI).
 - **FR-ILL-011** — Скрипт `scripts/sync-ingredient-illustrations.sh` (или `.mjs`): копирует web thumbs, генерирует JSON/manifest из `registry.json` / `llm-catalog.json`; при несовпадении числа `ready` id и файлов на диске — **exit 1**; детали в `plan.md`.
 - **FR-ILL-014** — **`RecipeScalerCore`**: `IngredientIllustrationCatalog` (load, `contains(id:)`, `label(id:locale:)`, `search(query:locale:)` с NFKD + token AND); без SwiftUI/UIKit.
@@ -229,5 +229,5 @@
 ```
 
 - **`catalogVersion`** меняется при любом изменении каталога (добавление id, aliases, labels) — разработчик перегоняет sync и коммитит JSON + manifest + JPEG в одном changeset.
-- **CI / тест:** `readyEntryCount` == число `.jpg` в app resources; unit-тест загружает manifest и сверяет с `IngredientIllustrationCatalog.entryCount`.
+- **CI / тест:** `readyEntryCount` == число `.webp` в app resources; unit-тест загружает manifest и сверяет с `IngredientIllustrationCatalog.entryCount`.
 - Runtime **не** качает каталог с сети; версия только для ревью диффов и guard в тестах (не для OTA обновления каталога без релиза app).

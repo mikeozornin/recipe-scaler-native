@@ -33,8 +33,6 @@ struct IngredientIllustrationThumb: View {
     @ViewBuilder
     private var thumbContent: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: IngredientIllustrationLayoutMetrics.cornerRadiusPt, style: .continuous)
-                .fill(Color.white)
             if let resolvedId, let uiImage = IngredientIllustrationImageStore.uiImage(for: resolvedId) {
                 Image(uiImage: uiImage)
                     .resizable()

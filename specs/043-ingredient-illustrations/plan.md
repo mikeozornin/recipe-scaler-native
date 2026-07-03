@@ -11,7 +11,7 @@
 flowchart TB
   subgraph web_repo [recipe-scaler-web]
     Reg[registry.json / llm-catalog]
-    WebJPG[ingredients/web/*.jpg 120px]
+    WebWebP[ingredients/web/*.webp 120px]
   end
   subgraph sync [scripts/sync-ingredient-illustrations]
     Script[generate JSON + manifest + copy JPG]
@@ -29,7 +29,7 @@ flowchart TB
     Grid[YDocIngredientsSection]
   end
   Reg --> Script
-  WebJPG --> Script
+  WebWebP --> Script
   Script --> JSON
   Script --> Man
   Script --> Assets
@@ -55,7 +55,7 @@ flowchart TB
 | `RecipeScalerCore/Resources/ingredient-catalog.json` | Runtime каталог (ready entries) |
 | `RecipeScalerCore/Resources/ingredient-catalog.manifest.json` | `catalogVersion`, `readyEntryCount`, … |
 | `RecipeScalerCore/IngredientIllustrations/` | Catalog, search, NFKD helpers |
-| `RecipeScalerNative/Resources/IngredientIllustrations/` | `{id}.jpg` или `.xcassets` группа |
+| `RecipeScalerNative/Resources/IngredientIllustrations/` | `{id}.webp` или `.xcassets` группа |
 | `RecipeScalerNative/Views/IngredientIllustrations/` | Thumb, Picker, Bowl |
 | `RecipeScalerNative/Services/IngredientIllustrationImageStore.swift` | Resolve `UIImage`/`Image` по slug из app bundle |
 | `specs/043-ingredient-illustrations/layout.md` | iPhone-only; **human review** до финальной вёрстки |
@@ -64,7 +64,7 @@ flowchart TB
 **Web paths (inputs sync):**
 
 - `../recipe-scaler-web/recipe-scaler/src/data/ingredient-illustrations/registry.json`
-- `../recipe-scaler-web/recipe-scaler/public/assets/illustrations/ingredients/web/{id}.jpg`
+- `../recipe-scaler-web/recipe-scaler/public/assets/illustrations/ingredients/web/{id}.webp`
 - Fallback metadata: `../recipe-scaler-web/shared/data/ingredient-catalog/llm-catalog.json`
 
 ## Sync script (поведение)
@@ -72,7 +72,7 @@ flowchart TB
 1. Фильтр `registry.entries` где `status == "ready"`.
 2. Генерация `ingredient-catalog.json`: массив `{ id, labelRu, labelEn, aliasesRu, aliasesEn, category }`.
 3. Canonical JSON (sorted keys, stable array order by `id`) → SHA-256 → первые 16 hex → `catalogVersion`.
-4. Копирование каждого `{id}.jpg` в app resources; отсутствующий master → **exit 1**.
+4. Копирование каждого `{id}.webp` в app resources; отсутствующий thumb → **exit 1**.
 5. Запись manifest; `readyEntryCount` = len(ready).
 6. Опциональный флаг `--check` для CI: не копировать, только сверить counts/hash.
 

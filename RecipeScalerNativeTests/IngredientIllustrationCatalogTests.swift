@@ -25,9 +25,9 @@ final class IngredientIllustrationCatalogTests: XCTestCase {
         XCTAssertEqual(Set(withDiacritic.map(\.id)), Set(plain.map(\.id)))
     }
 
-    func testBundledThumbJpegLoadsFromMainAppBundle() {
+    func testBundledThumbWebPLoadsFromMainAppBundle() {
         XCTAssertNotNil(
-            Bundle.main.url(forResource: "beef-steak", withExtension: "jpg", subdirectory: "IngredientIllustrations"),
+            Bundle.main.url(forResource: "beef-steak", withExtension: "webp", subdirectory: "IngredientIllustrations"),
             "IngredientIllustrations must be copied into RecipeScalerNative.app, not only Watch"
         )
         XCTAssertNotNil(IngredientIllustrationImageStore.uiImage(for: "beef-steak"))

@@ -70,24 +70,37 @@ function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
+const THUMB_EXTENSION = 'webp';
+
 function syncThumbs(readyIds) {
   const missing = [];
   for (const id of readyIds) {
-    const src = path.join(WEB_THUMBS_DIR, `${id}.jpg`);
+    const src = path.join(WEB_THUMBS_DIR, `${id}.${THUMB_EXTENSION}`);
     if (!fs.existsSync(src)) {
       missing.push(id);
       continue;
     }
     if (!CHECK_ONLY) {
-      fs.copyFileSync(src, path.join(NATIVE_THUMBS_DIR, `${id}.jpg`));
+      fs.copyFileSync(src, path.join(NATIVE_THUMBS_DIR, `${id}.${THUMB_EXTENSION}`));
     }
   }
   return missing;
 }
 
+function removeLegacyJpgThumbs() {
+  if (!fs.existsSync(NATIVE_THUMBS_DIR)) return 0;
+  let removed = 0;
+  for (const file of fs.readdirSync(NATIVE_THUMBS_DIR)) {
+    if (!file.endsWith('.jpg')) continue;
+    fs.unlinkSync(path.join(NATIVE_THUMBS_DIR, file));
+    removed += 1;
+  }
+  return removed;
+}
+
 function countNativeThumbs() {
   if (!fs.existsSync(NATIVE_THUMBS_DIR)) return 0;
-  return fs.readdirSync(NATIVE_THUMBS_DIR).filter((f) => f.endsWith('.jpg')).length;
+  return fs.readdirSync(NATIVE_THUMBS_DIR).filter((f) => f.endsWith(`.${THUMB_EXTENSION}`)).length;
 }
 
 function main() {
@@ -112,6 +125,12 @@ function main() {
   }
 
   const missing = syncThumbs(readyIds);
+  if (!CHECK_ONLY) {
+    const removedJpg = removeLegacyJpgThumbs();
+    if (removedJpg > 0) {
+      console.log(`Removed ${removedJpg} legacy JPG thumb(s) from ${NATIVE_THUMBS_DIR}`);
+    }
+  }
   if (missing.length > 0) {
     console.error(`Missing web thumbs (${missing.length}): ${missing.slice(0, 5).join(', ')}…`);
     process.exit(1);
@@ -138,8 +157,10 @@ function main() {
       process.exit(1);
     }
     const existingManifest = JSON.parse(fs.readFileSync(MANIFEST_JSON, 'utf8'));
-    const existingCatalog = fs.readFileSync(CATALOG_JSON, 'utf8');
-    const existingVersion = catalogVersion(existingCatalog);
+    const existingCatalog = JSON.parse(fs.readFileSync(CATALOG_JSON, 'utf8'));
+    const existingVersion = catalogVersion(
+      canonicalCatalogJson(existingCatalog.entries ?? []),
+    );
     if (existingManifest.catalogVersion !== version || existingVersion !== version) {
       console.error(
         `catalogVersion drift: manifest=${existingManifest.catalogVersion} computed=${version}`,
