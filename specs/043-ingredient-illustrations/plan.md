@@ -110,40 +110,40 @@ flowchart TB
 - [x] `tasks.md`
 - [x] `contracts/yjs-ingredient-illustration.md`
 - [x] `contracts/ingredient-grid-thumb.md`
-- [ ] `layout.md` + `layout-audit.json` (черновик → ревью)
-- [ ] Ревью `spec.md` / `layout.md` пользователем
+- [~] `layout.md` + `layout-audit.json` — waived (UI принят без Figma-артефактов)
+- [x] Ревью продукта пользователем (2026-07-03)
 
-### Фаза 1 — Данные и инфраструктура (P1)
+### Фаза 1 — Данные и инфраструктура (P1) — done
 
-- Sync script + первый коммит JSON/manifest/JPEG
-- `IngredientIllustrationCatalog` + unit tests (search, NFKD)
-- `IngredientData` + codec/writer + tests
-- `IngredientIllustrationImageStore` + Bowl asset
+- [x] Sync script + JSON/manifest/JPEG
+- [x] `IngredientIllustrationCatalog` + unit tests (search, NFKD)
+- [x] `IngredientData` + codec/writer + tests
+- [x] `IngredientIllustrationImageStore` + Bowl
 
-### Фаза 2 — Отображение в рецепте (P1)
+### Фаза 2 — Отображение в рецепте (P1) — done
 
-- `IngredientIllustrationThumb`
-- Замена маркера в `YDocIngredientsSection` (view + edit rows)
-- `RecipeRowLayoutMetrics` / контракт 002
-- i18n + a11y ids
-- Build + simulator smoke
+- [x] `IngredientIllustrationThumb` (+ отмена верхнего row chrome у thumb)
+- [x] Сетка в `YDocIngredientsSection` (view + edit)
+- [x] `RecipeRowLayoutMetrics.illustrationSlotWidth`
+- [x] i18n + a11y ids
+- [x] `scripts/test-fast.sh`
 
-### Фаза 3 — Picker (P1)
+### Фаза 3 — Picker (P1) — done
 
-- `IngredientIllustrationPicker` (bottom sheet)
-- Wire edit rows → `DocumentManager` illustration binding
-- Localization + tests
+- [x] `IngredientIllustrationPickerSheet`
+- [x] Edit → `DocumentManager` illustration binding
+- [x] `IngredientIllustrationLazyResolve` на detail
 
-### Фаза 4 — Документация и приёмка (P1)
+### Фаза 4 — Документация и приёмка (P1) — done
 
-- `docs/ARCHITECTURE.md`
-- `LocalizationConsistencyTests`
-- layout audit green
+- [x] `docs/ARCHITECTURE.md`
+- [x] `LocalizationConsistencyTests`
+- [~] layout audit — waived
 
-### Фаза 5 — P2 (отдельный срез после P1)
+### Фаза 5 — P2 (отдельный срез, не блокирует закрытие P1)
 
-- Discover read-only thumbs
-- Shopping list item thumb + copy `illustrationId` on add-from-recipe
+- [ ] Discover read-only thumbs
+- [ ] Shopping list item thumb + copy `illustrationId` on add-from-recipe
 
 ## Верификация
 

@@ -1,8 +1,8 @@
 # Спецификация: иллюстрации ингредиентов на iOS (паритет веба)
 
-**Ветка**: `043-ingredient-illustrations` (или работа на `master` для мелких срезов — по AGENTS.md)  
+**Ветка**: `043-ingredient-illustrations` (реализация на `master`, коммит `30552e7`)  
 **Дата**: 2026-07-03  
-**Статус**: Draft — `plan.md` / `tasks.md` готовы; `layout.md` — следующий шаг  
+**Статус**: **P1 Done** (2026-07-03) — экран v3-рецепта view/edit + picker + lazy-resolve. P2 (Discover/Shopping) — отдельный срез. `layout.md` / audit — waived (UI принят вручную).
 **Зависимости**: `002-native-editing` (сетка ингредиентов), `003-recipe-image-offline-cache` (паттерны кэша — только как референс; ассеты bundled), веб-фича ingredient illustrations (фазы 1–2 уже в `recipe-scaler-web`)  
 **Эталон (веб)**:
 
@@ -11,12 +11,12 @@
 - Данные: `illustrationId` в Yjs-ингредиенте, `shared/data/ingredient-catalog/`, `registry.json`
 - Док: `recipe-scaler-web/llm/INGREDIENT-ILLUSTRATIONS.md`
 
-**Нативные точки касания (сегодня)**:
+**Нативная реализация (P1)**:
 
-- Модель: `RecipeScalerNative/Models/YDoc/IngredientData.swift` — поля `illustrationId` **нет**
-- Codec: `RecipeScalerNative/Services/YjsSync/RecipeYjsCodec.swift` / `RecipeYjsWriter.swift` — ключ **не читается и не пишется**
-- UI: `YDocIngredientsSection.swift` — слот маркера `IngredientRowMarkerSlot` (номер строки 1, 2, …), ширина `RecipeRowLayoutMetrics.markerSlotWidth`
-- Контракт сетки: `specs/002-native-editing/contracts/ingredients-grid-ui.md` (маркер 22 pt / номер)
+- Модель: `IngredientData` — `illustrationId`, `illustrationPickerCleared`
+- Codec/writer: `RecipeYjsCodec`, `RecipeYjsWriter`, partial bindings в `DocumentManager` / `YjsSyncService`
+- UI: `IngredientIllustrationThumb`, `IngredientIllustrationPickerSheet`, сетка в `YDocIngredientsSection`; lazy-resolve — `IngredientIllustrationLazyResolve`
+- Контракт сетки: [contracts/ingredient-grid-thumb.md](./contracts/ingredient-grid-thumb.md) (40 pt thumb вместо номера)
 
 ---
 
