@@ -265,8 +265,14 @@ final class AppContainer {
         RecipeSnapshotStore.save(sync.collectionEntries)
     }
 
+    /// Clears bootstrap bookkeeping so the next login runs full `sync.start`, not `resumeSession`.
+    func resetBootstrapAfterLogout() {
+        bootstrappedUserId = nil
+    }
+
     /// Stop sync + clear local state on logout (formerly `ContentView.onChange(of: authService.isAuthenticated)`).
     func stopForLogout() async {
+        resetBootstrapAfterLogout()
         sync.stop()
         spotlight.stop()
         await spotlight.clearAll()

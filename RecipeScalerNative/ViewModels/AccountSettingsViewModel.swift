@@ -328,6 +328,7 @@ final class AccountSettingsViewModel {
             await AccountAPI.logoutDevice(userId: userId, deviceId: deviceId)
         }
         await syncService.clearSessionForLogout()
+        AppContainer.shared?.resetBootstrapAfterLogout()
         do {
             try AuthService.shared.logout()
         } catch {
