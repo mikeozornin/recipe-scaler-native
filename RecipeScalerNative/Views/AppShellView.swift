@@ -60,13 +60,8 @@ struct AppShellView: View {
     @State private var tabBarTopOffsetFromLayoutBottom: CGFloat = 0
     @Namespace private var mobileTimerPanelChevronNamespace
 
-    init(syncService: YjsSyncService, deepLinkRouter: DeepLinkRouter) {
-        _coordinator = Bindable(
-            wrappedValue: AppShellCoordinator(
-                syncService: syncService,
-                deepLinkRouter: deepLinkRouter
-            )
-        )
+    init(coordinator: AppShellCoordinator) {
+        _coordinator = Bindable(wrappedValue: coordinator)
     }
 
     private var mobileTimerPanelCollapsedBinding: Binding<Bool> {
@@ -200,9 +195,6 @@ struct AppShellView: View {
         .onChange(of: deepLinkRouter.pending) { _, link in
             guard let link else { return }
             coordinator.handleDeepLink(link)
-        }
-        .onChange(of: syncService.collectionEntries) { _, entries in
-            coordinator.resolvePendingSpotlightRecipe(in: entries)
         }
         .onAppear {
             RecipeImageDiskCache.migrateFromCachesIfNeeded()

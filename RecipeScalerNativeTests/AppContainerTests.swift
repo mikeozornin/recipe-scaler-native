@@ -71,6 +71,22 @@ final class AppContainerTests: XCTestCase {
         await container.bootstrap(userId: second)
     }
 
+    func test_stopForLogout_resetsShellCoordinator() async throws {
+        let container = try makeContainer()
+        container.shellCoordinator.selectedTab = .shopping
+        container.shellCoordinator.recipesPath.append(
+            RecipesRoute.folder(CollectionVirtualFolders.allRecipesFolderId)
+        )
+        container.deepLinkRouter.handle(.openHome)
+
+        await container.stopForLogout()
+
+        XCTAssertEqual(container.shellCoordinator.selectedTab, .recipes)
+        XCTAssertTrue(container.shellCoordinator.recipesPath.isEmpty)
+        XCTAssertNil(container.deepLinkRouter.pending)
+    }
+
+
     func test_sharedShim_resolvesToContainerInstance() throws {
         let previous = AppContainer.shared
         defer { AppContainer.shared = previous }

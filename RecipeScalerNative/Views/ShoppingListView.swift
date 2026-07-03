@@ -179,15 +179,20 @@ struct ShoppingListView: View {
         Section {
             AppSectionHeader("shopping.section.to-buy")
                 .shoppingSectionLabelRow()
-            Text(
-                purchased.isEmpty
-                    ? "shopping.empty-to-buy"
-                    : "shopping.empty-to-buy-all-done"
-            )
-            .appBody()
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity, minHeight: 176, alignment: .center)
+            VStack(spacing: 12) {
+                AppEmptyStateIllustration(
+                    asset: purchased.isEmpty ? .shoppingBasketEmpty : .shoppingBasketFull
+                )
+                Text(
+                    purchased.isEmpty
+                        ? "shopping.empty-to-buy"
+                        : "shopping.empty-to-buy-all-done"
+                )
+                .appBody()
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity, minHeight: 348, alignment: .center)
             .listRowBackground(Color.clear)
             addItemRow
         }

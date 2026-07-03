@@ -328,7 +328,9 @@ final class AccountSettingsViewModel {
             await AccountAPI.logoutDevice(userId: userId, deviceId: deviceId)
         }
         await syncService.clearSessionForLogout()
-        AppContainer.shared?.resetBootstrapAfterLogout()
+        if let container = AppContainer.shared {
+            await container.stopForLogout()
+        }
         do {
             try AuthService.shared.logout()
         } catch {

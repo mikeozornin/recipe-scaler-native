@@ -131,10 +131,9 @@ struct ContentView: View {
         .onChange(of: authService?.isAuthenticated ?? false) { _, authenticated in
             guard let container else { return }
             if !authenticated {
-                container.sync.stop()
                 Task { @MainActor in
-                    container.spotlight.stop()
-                    await container.spotlight.clearAll()
+                    await container.sync.clearSessionForLogout()
+                    await container.stopForLogout()
                 }
             }
         }
@@ -167,10 +166,7 @@ struct ContentView: View {
 
     @ViewBuilder
     private func appShell(container: AppContainer) -> some View {
-        AppShellView(
-            syncService: container.sync,
-            deepLinkRouter: container.deepLinkRouter
-        )
+        AppShellView(coordinator: container.shellCoordinator)
             .task(id: effectiveUserId) {
                 #if DEBUG
                 if ShoppingSmokeTest.shouldRun { return }
@@ -202,6 +198,7 @@ struct ContentView: View {
                     entries.first(where: { $0.id == recipeId && !$0.deleted })?.name
                 }
                 container.timer.refreshLiveActivities()
+                container.shellCoordinator.resolvePendingSpotlightRecipe(in: entries)
             }
     }
 }

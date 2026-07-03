@@ -40,6 +40,9 @@ final class AppContainer {
     let yjsMergeHelper: YjsMergeHelper
     let assistantRecipeContext: AssistantRecipeContext
     let deepLinkRouter: DeepLinkRouter
+    /// Tab + nested navigation state; lives on the container so theme/locale root updates
+    /// do not recreate paths when `AppShellView` is torn down.
+    let shellCoordinator: AppShellCoordinator
     let timerLiveActivityCoordinator: TimerLiveActivityCoordinator
 
     // MARK: - Networked services
@@ -137,6 +140,10 @@ final class AppContainer {
         self.sync = sync
         self.reminders = RemindersSyncService(mapStore: mapStore)
         self.spotlight = SpotlightIndexer(syncService: sync)
+        self.shellCoordinator = AppShellCoordinator(
+            syncService: sync,
+            deepLinkRouter: deepLinkRouter
+        )
 
         // Feature adoption store (spec 038). Cache is loaded lazily in
         // `bootstrap(userId:)` so the section renders instantly on first appear.
@@ -188,6 +195,9 @@ final class AppContainer {
         }
 
         let isSameUser = bootstrappedUserId == userId
+        if !isSameUser {
+            shellCoordinator.resetShellStateForLogout()
+        }
         bootstrappedUserId = userId
 
         // 0. Feature-adoption cache (spec 038). Synchronous read so the section
@@ -273,6 +283,7 @@ final class AppContainer {
     /// Stop sync + clear local state on logout (formerly `ContentView.onChange(of: authService.isAuthenticated)`).
     func stopForLogout() async {
         resetBootstrapAfterLogout()
+        shellCoordinator.resetShellStateForLogout()
         sync.stop()
         spotlight.stop()
         await spotlight.clearAll()

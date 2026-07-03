@@ -128,6 +128,18 @@ final class AppShellCoordinator {
     }
     #endif
 
+    /// Clears tab stacks, import sheet, and queued deep links after logout or account switch.
+    func resetShellStateForLogout() {
+        importPresentation = nil
+        pendingSpotlightRecipeId = nil
+        selectedTab = .recipes
+        recipesPath = NavigationPath()
+        discoverPath = NavigationPath()
+        shoppingPath = NavigationPath()
+        deepLinkRouter.clear()
+        UserDefaults.standard.removeObject(forKey: DeepLinkRouter.pendingRecipeIdKey)
+    }
+
     // MARK: - Private
 
     private func resetNestedNavigation(for tab: AppTab) {

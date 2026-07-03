@@ -121,4 +121,24 @@ final class AppShellCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(coordinator.recipesPath.isEmpty)
     }
+
+    func test_resetShellStateForLogout_clearsPathsAndImport() throws {
+        let (coordinator, router, _) = try makeCoordinator()
+        coordinator.selectedTab = .shopping
+        coordinator.importPresentation = ImportPresentation()
+        coordinator.recipesPath.append(RecipesRoute.folder(CollectionVirtualFolders.allRecipesFolderId))
+        coordinator.shoppingPath.append("shopping-depth-probe")
+        router.handle(.openRecipe(recipeId: "11111111-2222-3333-4444-555555555555"))
+        UserDefaults.standard.set("legacy-recipe", forKey: DeepLinkRouter.pendingRecipeIdKey)
+
+        coordinator.resetShellStateForLogout()
+
+        XCTAssertEqual(coordinator.selectedTab, .recipes)
+        XCTAssertNil(coordinator.importPresentation)
+        XCTAssertTrue(coordinator.recipesPath.isEmpty)
+        XCTAssertTrue(coordinator.shoppingPath.isEmpty)
+        XCTAssertTrue(coordinator.discoverPath.isEmpty)
+        XCTAssertNil(router.pending)
+        XCTAssertNil(UserDefaults.standard.string(forKey: DeepLinkRouter.pendingRecipeIdKey))
+    }
 }
