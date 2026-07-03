@@ -26,8 +26,11 @@ enum RecipeFolderRoutes {
         var id: String { rawValue }
     }
 
-    /// `UserDefaults` key for the saved collections root layout (default `list`).
+    /// `UserDefaults` key for the saved collections root layout (default `folders`).
     static let collectionsRootLayoutStorageKey = "recipe-collections-root-layout"
+
+    /// Layout used when `recipe-collections-root-layout` is absent or invalid.
+    static let defaultCollectionsRootLayout: CollectionsRootLayout = .folders
 
     /// Whether opening a recipe from the current folder should use the nested
     /// folder route. Flat mode and recipes with no folder membership (except

@@ -26,11 +26,12 @@ struct AccountView: View {
     @State private var presentedSheet: AccountSheet?
     @State private var appLanguage: AppLanguagePreference = .current
     @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)
-    private var collectionsLayoutRaw: String = RecipeFolderRoutes.CollectionsRootLayout.list.rawValue
+    private var collectionsLayoutRaw: String = RecipeFolderRoutes.defaultCollectionsRootLayout.rawValue
     @State private var isTelegramConnected = false
 
     private var collectionsLayout: RecipeFolderRoutes.CollectionsRootLayout {
-        RecipeFolderRoutes.CollectionsRootLayout(rawValue: collectionsLayoutRaw) ?? .list
+        RecipeFolderRoutes.CollectionsRootLayout(rawValue: collectionsLayoutRaw)
+            ?? RecipeFolderRoutes.defaultCollectionsRootLayout
     }
 
     /// Spec 040 — anchor ids for sections reachable from guide CTAs.

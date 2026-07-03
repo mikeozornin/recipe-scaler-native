@@ -74,7 +74,7 @@ Full parity мобильного веба: режимы «По коллекци�
 
 ### US11 — Оформление корня коллекций (P2, native-only)
 
-**Когда** пользователь в режиме «По коллекциям» и поиск пустой, **тогда** корень может отображаться двумя способами: **список** (по умолчанию) или **сетка папок** (иконки `folder.fill` в цвете коллекции, 3 колонки). Настройка — «Профиль → Отображение коллекций». Выбор сохраняется в `UserDefaults` (`recipe-collections-root-layout`), отдельно от `recipe-list-view-mode`. В обоих режимах: «Все рецепты» — полноширинная строка, «Без коллекции» — скрыта при пустом списке, inline create — после контента. При непустом поиске — flat list, независимо от layout. Web не затронут.
+**Когда** пользователь в режиме «По коллекциям» и поиск пустой, **тогда** корень может отображаться двумя способами: **список** или **сетка папок** (иконки `folder.fill` в цвете коллекции, 3 колонки; **по умолчанию**). Настройка — «Профиль → Отображение коллекций». Выбор сохраняется в `UserDefaults` (`recipe-collections-root-layout`), отдельно от `recipe-list-view-mode`. В обоих режимах: «Все рецепты» — полноширинная строка, «Без коллекции» — скрыта при пустом списке, inline create — после контента. При непустом поиске — flat list, независимо от layout. Web не затронут.
 
 ## Функциональные требования
 
@@ -106,7 +106,7 @@ In-memory индекс как `buildCollectionRecipesIndex` (liveRecipes, uncate
 
 ### FR-026-007 — Collections root layout (native-only)
 
-Корень коллекций поддерживает два layout: `list` (по умолчанию) и `folders` (LazyVGrid, 3 колонки). Настройка хранится в `UserDefaults` по ключу `recipe-collections-root-layout` (тип `CollectionsRootLayout` в `RecipeFolderRoutes`). В сетке цвет плитки = `RecipeFolder.color`, отображается через `RecipeAccentColor`. Клавиатурный toolbar inline-create — в обоих layout.
+Корень коллекций поддерживает два layout: `list` и `folders` (LazyVGrid, 3 колонки; по умолчанию). Настройка хранится в `UserDefaults` по ключу `recipe-collections-root-layout` (тип `CollectionsRootLayout` в `RecipeFolderRoutes`). В сетке цвет плитки = `RecipeFolder.color`, отображается через `RecipeAccentColor`. Клавиатурный toolbar inline-create — в обоих layout.
 
 ## Вне scope
 

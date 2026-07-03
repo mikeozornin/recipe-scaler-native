@@ -12,7 +12,7 @@ struct CollectionsRootView: View {
     @Binding var navigationPath: NavigationPath
 
     @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)
-    private var layoutRaw: String = RecipeFolderRoutes.CollectionsRootLayout.list.rawValue
+    private var layoutRaw: String = RecipeFolderRoutes.defaultCollectionsRootLayout.rawValue
 
     @State private var isCreatingNew = false
     @State private var newFolderName = ""
@@ -20,7 +20,8 @@ struct CollectionsRootView: View {
     @FocusState private var isNewFieldFocused: Bool
 
     private var layout: RecipeFolderRoutes.CollectionsRootLayout {
-        RecipeFolderRoutes.CollectionsRootLayout(rawValue: layoutRaw) ?? .list
+        RecipeFolderRoutes.CollectionsRootLayout(rawValue: layoutRaw)
+            ?? RecipeFolderRoutes.defaultCollectionsRootLayout
     }
 
     private var sortedFolders: [RecipeFolder] {
