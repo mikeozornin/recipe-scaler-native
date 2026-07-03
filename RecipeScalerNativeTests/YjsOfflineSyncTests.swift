@@ -233,6 +233,182 @@ final class YjsPayloadBytesTests: XCTestCase {
     }
 }
 
+@MainActor
+final class YjsOfflineOutboxTests: XCTestCase {
+    private func makeSync() throws -> (YjsSyncService, YDocStore) {
+        let store = try YDocStore.inMemory()
+        let sync = YjsSyncService(store: store)
+        return (sync, store)
+    }
+
+    func testDrainPreservesQueueWhenEmitFails() async throws {
+        let (sync, store) = try makeSync()
+        await sync.test_setUserIdForOfflineTests("outbox-user")
+        let recipeId = "recipe-drain-fail"
+        let docKey = sync.test_docKeyFor(recipeId: recipeId)
+        let update = Data([2, 1, 0, 9, 8, 7])
+        try await store.enqueueOfflineUpdate(docKey: docKey, recipeId: recipeId, yjsUpdate: update)
+
+        await sync.test_drainOfflineQueue()
+
+        let remaining = try await sync.test_offlineQueue.fetchAll()
+        XCTAssertEqual(remaining.count, 1)
+        XCTAssertEqual(remaining.first?.yjsUpdate, update)
+        XCTAssertTrue(sync.test_inFlightEntryIds(forDocKey: docKey).isEmpty)
+    }
+
+    func testSyncConfirmedDeletesOnlyInFlightBatch() async throws {
+        let (sync, store) = try makeSync()
+        await sync.test_setUserIdForOfflineTests("outbox-user")
+        let recipeId = "recipe-ack-batch"
+        let docKey = sync.test_docKeyFor(recipeId: recipeId)
+        let updateA = Data([2, 1, 0, 1])
+        let updateB = Data([2, 1, 0, 2])
+        let updateC = Data([2, 1, 0, 3])
+        try await store.enqueueOfflineUpdate(docKey: docKey, recipeId: recipeId, yjsUpdate: updateA)
+        try await store.enqueueOfflineUpdate(docKey: docKey, recipeId: recipeId, yjsUpdate: updateB)
+        let all = try await sync.test_offlineQueue.fetchAll()
+        let idsAB = Set(all.compactMap(\.id))
+        XCTAssertEqual(idsAB.count, 2)
+
+        sync.test_markInFlightForTests(docKey: docKey, entryIds: idsAB)
+        try await store.enqueueOfflineUpdate(docKey: docKey, recipeId: recipeId, yjsUpdate: updateC)
+
+        await sync.test_handleSyncConfirmed(recipeId: recipeId, lastSyncedAt: nil)
+
+        let after = try await sync.test_offlineQueue.fetchAll()
+        XCTAssertEqual(after.count, 1)
+        XCTAssertEqual(after.first?.yjsUpdate, updateC)
+        XCTAssertTrue(sync.test_inFlightEntryIds(forDocKey: docKey).isEmpty)
+        XCTAssertTrue(sync.test_recipeHasQueuedWork(recipeId: recipeId))
+    }
+
+    func testStopClearsInFlightTracking() async throws {
+        let (sync, _) = try makeSync()
+        await sync.test_setUserIdForOfflineTests("outbox-user")
+        let docKey = sync.test_docKeyFor(recipeId: "recipe-stop")
+        sync.test_markInFlightForTests(docKey: docKey, entryIds: [1, 2])
+        XCTAssertFalse(sync.test_inFlightEntryIds(forDocKey: docKey).isEmpty)
+
+        sync.stop()
+
+        XCTAssertTrue(sync.test_inFlightEntryIds(forDocKey: docKey).isEmpty)
+    }
+
+    func testReplaceOfflineQueueForRecipe() async throws {
+        let queue = try DatabaseQueue()
+        try YrsDatabase.migrateForTests(queue)
+        let store = YDocStore(dbQueue: queue)
+        let docKey = "user:recipe:desc"
+        let recipeId = "desc-recipe"
+        try await store.enqueueOfflineUpdate(docKey: docKey, recipeId: recipeId, yjsUpdate: Data([1, 2]))
+        try await store.enqueueOfflineUpdate(docKey: docKey, recipeId: recipeId, yjsUpdate: Data([3, 4]))
+        let canonical = Data([2, 1, 0, 5, 6, 7, 8])
+        try await store.replaceOfflineQueueForRecipe(
+            docKey: docKey,
+            recipeId: recipeId,
+            yjsUpdate: canonical
+        )
+        let rows = try await store.fetchOfflineQueue()
+        XCTAssertEqual(rows.count, 1)
+        XCTAssertEqual(rows.first?.yjsUpdate, canonical)
+        XCTAssertEqual(rows.first?.docKey, docKey)
+    }
+
+    func testSyncConfirmedWithNoInFlightDoesNotWipeQueue() async throws {
+        let (sync, store) = try makeSync()
+        await sync.test_setUserIdForOfflineTests("outbox-user")
+        let recipeId = "recipe-live-confirm"
+        let docKey = sync.test_docKeyFor(recipeId: recipeId)
+        let update = Data([2, 1, 0, 4])
+        try await store.enqueueOfflineUpdate(docKey: docKey, recipeId: recipeId, yjsUpdate: update)
+
+        await sync.test_handleSyncConfirmed(recipeId: recipeId, lastSyncedAt: "2026-01-01T00:00:00Z")
+
+        let remaining = try await sync.test_offlineQueue.fetchAll()
+        XCTAssertEqual(remaining.count, 1)
+        XCTAssertEqual(remaining.first?.yjsUpdate, update)
+    }
+
+    func testSyncConfirmedAcksCollectionOfflineBatch() async throws {
+        let (sync, store) = try makeSync()
+        let userId = "outbox-user"
+        await sync.test_setUserIdForOfflineTests(userId)
+        let recipeId = "collection"
+        let docKey = "\(userId):collection"
+        let update = Data([2, 1, 0, 10, 11])
+        try await store.enqueueOfflineUpdate(docKey: docKey, recipeId: recipeId, yjsUpdate: update)
+        let rowId = try await sync.test_offlineQueue.fetchAll().first?.id
+        XCTAssertNotNil(rowId)
+        sync.test_markInFlightForTests(docKey: docKey, entryIds: Set([rowId!]))
+
+        await sync.test_handleSyncConfirmed(recipeId: recipeId, lastSyncedAt: nil)
+
+        let after = try await sync.test_offlineQueue.fetchAll()
+        XCTAssertTrue(after.isEmpty)
+        XCTAssertTrue(sync.test_inFlightEntryIds(forDocKey: docKey).isEmpty)
+    }
+
+    func testReplaceForRecipeClearsInFlightTracking() async throws {
+        let (sync, store) = try makeSync()
+        await sync.test_setUserIdForOfflineTests("outbox-user")
+        let recipeId = "recipe-replace-inflight"
+        let docKey = sync.test_docKeyFor(recipeId: recipeId)
+        try await store.enqueueOfflineUpdate(docKey: docKey, recipeId: recipeId, yjsUpdate: Data([1, 2]))
+        let id = try await sync.test_offlineQueue.fetchAll().first?.id
+        XCTAssertNotNil(id)
+        sync.test_markInFlightForTests(docKey: docKey, entryIds: Set([id!]))
+
+        let canonical = Data([2, 1, 0, 99])
+        try await sync.test_offlineReplaceQueueAndClearInFlight(
+            docKey: docKey,
+            recipeId: recipeId,
+            canonicalUpdate: canonical
+        )
+
+        XCTAssertTrue(sync.test_inFlightEntryIds(forDocKey: docKey).isEmpty)
+        let rows = try await sync.test_offlineQueue.fetchAll()
+        XCTAssertEqual(rows.count, 1)
+        XCTAssertEqual(rows.first?.yjsUpdate, canonical)
+        await sync.test_drainOfflineQueue()
+        XCTAssertTrue(sync.test_inFlightEntryIds(forDocKey: docKey).isEmpty)
+        let afterDrain = try await sync.test_offlineQueue.fetchAll()
+        XCTAssertEqual(afterDrain.count, 1)
+    }
+
+    func testInFlightTimeoutClearsTrackingForRetry() async throws {
+        let (sync, _) = try makeSync()
+        await sync.test_setUserIdForOfflineTests("outbox-user")
+        let docKey = sync.test_docKeyFor(recipeId: "recipe-ttl")
+        sync.test_markInFlightForTests(docKey: docKey, entryIds: [42])
+        let stale = Date().addingTimeInterval(-31)
+        sync.test_setInFlightStartedAtForTests(docKey: docKey, startedAt: stale)
+        XCTAssertFalse(sync.test_inFlightEntryIds(forDocKey: docKey).isEmpty)
+
+        sync.test_expireInFlightOfflineBatchesIfNeeded()
+
+        XCTAssertTrue(sync.test_inFlightEntryIds(forDocKey: docKey).isEmpty)
+    }
+
+    func testReplaceOfflineQueueForRecipePreservesOtherRecipes() async throws {
+        let queue = try DatabaseQueue()
+        try YrsDatabase.migrateForTests(queue)
+        let store = YDocStore(dbQueue: queue)
+        let docKeyA = "user:recipe:a"
+        let docKeyB = "user:recipe:b"
+        try await store.enqueueOfflineUpdate(docKey: docKeyA, recipeId: "recipe-a", yjsUpdate: Data([1]))
+        try await store.enqueueOfflineUpdate(docKey: docKeyB, recipeId: "recipe-b", yjsUpdate: Data([2]))
+        try await store.replaceOfflineQueueForRecipe(
+            docKey: docKeyA,
+            recipeId: "recipe-a",
+            yjsUpdate: Data([9])
+        )
+        let rows = try await store.fetchOfflineQueue()
+        XCTAssertEqual(rows.count, 2)
+        XCTAssertTrue(rows.contains { $0.recipeId == "recipe-b" && $0.yjsUpdate == Data([2]) })
+    }
+}
+
 private extension YrsDatabase {
     static func migrateForTests(_ dbQueue: DatabaseQueue) throws {
         var migrator = DatabaseMigrator()

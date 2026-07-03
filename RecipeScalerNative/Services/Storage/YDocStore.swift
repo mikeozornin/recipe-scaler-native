@@ -208,6 +208,25 @@ actor YDocStore {
         }
     }
 
+    /// Atomically drop queued rows for a recipe and enqueue one canonical update.
+    func replaceOfflineQueueForRecipe(docKey: String, recipeId: String, yjsUpdate: Data) throws {
+        let now = ISO8601DateFormatter().string(from: Date())
+        try dbQueue.write { db in
+            try OfflineSyncEntry
+                .filter(Column("docKey") == docKey && Column("recipeId") == recipeId)
+                .deleteAll(db)
+            var entry = OfflineSyncEntry(
+                id: nil,
+                docKey: docKey,
+                recipeId: recipeId,
+                yjsUpdate: yjsUpdate,
+                createdAt: now,
+                attemptCount: 0
+            )
+            try entry.insert(db)
+        }
+    }
+
     // MARK: - Yjs wire snapshots (description offline sync)
 
     func saveYjsWireSnapshot(docKey: String, state: Data) throws {

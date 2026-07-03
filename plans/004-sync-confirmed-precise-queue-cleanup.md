@@ -187,5 +187,6 @@ Stop and report if:
 
 ## Maintenance notes
 
-- This in-memory tracking is sufficient because `sync_confirmed` arrives in the same app session as the emitted request. If the app is killed between emit and confirmation, the offline rows were already deleted by `drainOfflineQueue` (plan 003), so no leak occurs.
+- **2026-07:** Implemented as **ack-only outbox**: `drainOfflineQueue` does **not** delete rows on emit; rows are removed only on `sync_confirmed` for the tracked in-flight batch IDs. Supersedes plan 003 delete-after-emit semantics.
+- If the app is killed between emit and confirmation, queue rows remain for retry on next launch (CRDT-safe at-least-once).
 - If a future plan persists request IDs in the queue table, this in-memory map can be removed.

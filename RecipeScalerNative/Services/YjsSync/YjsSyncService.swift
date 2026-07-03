@@ -132,6 +132,14 @@ final class YjsSyncService {
     /// removing the false "local ahead" that wedged a doc into perpetual skip-pull after a merge.
     private var unsyncedRecipeIds: Set<String> = []
 
+    /// docKey → offline queue row IDs included in the last emitted drain batch awaiting `sync_confirmed`.
+    private var inFlightOfflineEntryIdsByDocKey: [String: Set<Int64>] = [:]
+
+    /// When the current in-flight batch for `docKey` was marked (for silent-stall TTL retry).
+    private var inFlightOfflineStartedAtByDocKey: [String: Date] = [:]
+
+    private static let offlineInFlightTimeout: TimeInterval = 30
+
     /// Load unsynced flags from SQLite. Replaces the old plist array
     /// `unsyncedRecipeIds:{userId}` (one shared set was previously scoped per user via the
     /// plist key; now the table is wiped on logout via `store.deleteAll()`).
@@ -623,11 +631,24 @@ final class YjsSyncService {
         }
         await persistYjsWireSnapshot(recipeId: recipeId, state: state)
         if canSendLiveSync() {
+            if let inFlight = inFlightOfflineEntryIdsByDocKey[docKey], !inFlight.isEmpty {
+                guard await replaceOfflineQueueForRecipe(
+                    docKey: docKey,
+                    recipeId: recipeId,
+                    canonicalUpdate: state
+                ) else { return }
+                clearInFlightOfflineTracking(forDocKey: docKey)
+            }
             writeSyncStates[recipeId] = .syncing
             await emitSyncRequest(recipeId: recipeId, update: state, docKey: docKey)
         } else {
             writeSyncStates[recipeId] = .queued
-            try? await offlineQueue.clear(forRecipeId: recipeId)
+            guard await replaceOfflineQueueForRecipe(
+                docKey: docKey,
+                recipeId: recipeId,
+                canonicalUpdate: state
+            ) else { return }
+            clearInFlightOfflineTracking(forDocKey: docKey)
             await documentManager.persistSnapshot(docKey: docKey)
         }
     }
@@ -1241,6 +1262,7 @@ final class YjsSyncService {
     // MARK: - Socket.IO Connection
 
     private func teardownSocket() {
+        clearInFlightOfflineTracking()
         transition(to: .disconnected)
         socket?.disconnect()
         socket = nil
@@ -1809,13 +1831,14 @@ final class YjsSyncService {
         }
     }
 
+    @discardableResult
     private func emitSyncRequest(
         recipeId: String,
         update: Data,
         docKey: String,
         documentKind: String? = nil
-    ) async {
-        guard socket?.status == .connected, isSocketAuthenticated else { return }
+    ) async -> Bool {
+        guard socket?.status == .connected, isSocketAuthenticated else { return false }
         let lastSyncedAt = try? await store.loadSnapshot(docKey: docKey)?.lastSyncedAt
         var payload: [String: Any] = [
             "yjsUpdate": YjsPayloadBytes.array(from: update),
@@ -1839,16 +1862,14 @@ final class YjsSyncService {
             target = recipeId == "collection" ? "collection" : recipeId
         }
         logger.info("Emitted sync_request for \(target) (\(update.count) bytes)")
+        return true
     }
 
     private func handleSyncConfirmed(recipeId: String, lastSyncedAt: String?) async {
         guard recipeId != "unknown" else { return }
-        await markRecipeSynced(recipeId)
-        lastSuccessfulSyncAt = Date()
         let docKey = docKeyFor(recipeId: recipeId)
-        if recipeId != "collection", recipeId != ShoppingListConstants.offlineRecipeId {
-            writeSyncStates[recipeId] = .synced
-        }
+        await acknowledgeOfflineBatch(docKey: docKey)
+        lastSuccessfulSyncAt = Date()
 
         if let doc = await documentManager.getDoc(key: docKey),
            let state = await doc.encodeStateAsUpdate() {
@@ -1859,10 +1880,16 @@ final class YjsSyncService {
             try? await store.deleteYjsWireSnapshot(docKey: docKey)
         }
 
-        guard recipeId != "collection", recipeId != ShoppingListConstants.offlineRecipeId else { return }
-        if let queue = try? await offlineQueue.fetchAll() {
-            let ids = queue.filter { $0.recipeId == recipeId }.compactMap(\.id)
-            try? await offlineQueue.deleteEntries(ids: ids)
+        if isRecipeDocument(recipeId: recipeId) {
+            let stillQueued = (try? await offlineQueue.fetchAll())?
+                .contains { $0.recipeId == recipeId } ?? false
+            if stillQueued {
+                await markRecipeUnsynced(recipeId)
+                writeSyncStates[recipeId] = .queued
+            } else {
+                await markRecipeSynced(recipeId)
+                writeSyncStates[recipeId] = .synced
+            }
         }
     }
 
@@ -1870,12 +1897,21 @@ final class YjsSyncService {
         guard canSendLiveSync() else { return }
         guard let entries = try? await offlineQueue.fetchAll(), !entries.isEmpty else { return }
 
+        expireInFlightOfflineBatchesIfNeeded()
+
         var byDocKey: [String: [OfflineSyncEntry]] = [:]
         for entry in entries {
             byDocKey[entry.docKey, default: []].append(entry)
         }
 
         for (docKey, docEntries) in byDocKey {
+            if let inFlight = inFlightOfflineEntryIdsByDocKey[docKey], !inFlight.isEmpty {
+                AppLog.info(.sync, "offline_drain_skip_in_flight", data: [
+                    "docKey": docKey,
+                    "inFlightCount": String(inFlight.count),
+                ])
+                continue
+            }
             guard let recipeId = docEntries.first?.recipeId else { continue }
             let pushData: Data?
             if isRecipeDocument(recipeId: recipeId) {
@@ -1894,14 +1930,22 @@ final class YjsSyncService {
             if recipeId != ShoppingListConstants.offlineRecipeId {
                 writeSyncStates[recipeId] = .syncing
             }
-            await emitSyncRequest(
+            let emitted = await emitSyncRequest(
                 recipeId: recipeId,
                 update: pushData,
                 docKey: docKey,
                 documentKind: documentKind
             )
-            let ids = docEntries.compactMap(\.id)
-            try? await offlineQueue.deleteEntries(ids: ids)
+            if emitted {
+                let ids = Set(docEntries.compactMap(\.id))
+                inFlightOfflineEntryIdsByDocKey[docKey] = ids
+                inFlightOfflineStartedAtByDocKey[docKey] = Date()
+                AppLog.info(.sync, "offline_drain_in_flight", data: [
+                    "docKey": docKey,
+                    "recipeId": recipeId,
+                    "entryCount": String(ids.count),
+                ])
+            }
         }
         logger.info("Drained offline sync queue (\(entries.count) entries)")
     }
@@ -2541,6 +2585,9 @@ final class YjsSyncService {
         switch code {
         case .ownershipFailed:
             setConnectionState(.error(code.localizedMessage), reason: "sync_error_ownership")
+            if let recipeId {
+                clearInFlightOfflineTracking(forDocKey: docKeyFor(recipeId: recipeId))
+            }
 
         case .recipeDeleted:
             guard let recipeId else { return }
@@ -2550,6 +2597,7 @@ final class YjsSyncService {
                 activeRecipeId = nil
                 activeRecipeWasRemoved = true
             }
+            clearInFlightOfflineTracking(forDocKey: docKeyFor(recipeId: recipeId))
             try? await offlineQueue.clear(forRecipeId: recipeId)
             writeSyncStates.removeValue(forKey: recipeId)
             await markRecipeSynced(recipeId)
@@ -2557,6 +2605,7 @@ final class YjsSyncService {
 
         case .emptyUpdate, .invalidUpdate:
             if let recipeId {
+                clearInFlightOfflineTracking(forDocKey: docKeyFor(recipeId: recipeId))
                 requestDocumentReload(recipeId: recipeId)
             } else {
                 hasRequestedCollectionLoad = false
@@ -2566,6 +2615,7 @@ final class YjsSyncService {
         case .generic:
             try? await Task.sleep(nanoseconds: 5_000_000_000)
             if let recipeId {
+                clearInFlightOfflineTracking(forDocKey: docKeyFor(recipeId: recipeId))
                 requestDocumentReload(recipeId: recipeId)
             }
         }
@@ -2639,6 +2689,86 @@ final class YjsSyncService {
         }
         return "\(userId):recipe:\(recipeId)"
     }
+
+    private func clearInFlightOfflineTracking(forDocKey docKey: String? = nil) {
+        if let docKey {
+            inFlightOfflineEntryIdsByDocKey.removeValue(forKey: docKey)
+            inFlightOfflineStartedAtByDocKey.removeValue(forKey: docKey)
+        } else {
+            inFlightOfflineEntryIdsByDocKey.removeAll()
+            inFlightOfflineStartedAtByDocKey.removeAll()
+        }
+    }
+
+    /// Clears in-flight tracking for batches older than `offlineInFlightTimeout` so drain can retry.
+    private func expireInFlightOfflineBatchesIfNeeded() {
+        let now = Date()
+        for docKey in Array(inFlightOfflineEntryIdsByDocKey.keys) {
+            guard let started = inFlightOfflineStartedAtByDocKey[docKey] else {
+                inFlightOfflineStartedAtByDocKey[docKey] = now
+                continue
+            }
+            guard now.timeIntervalSince(started) >= Self.offlineInFlightTimeout else { continue }
+            let count = inFlightOfflineEntryIdsByDocKey[docKey]?.count ?? 0
+            clearInFlightOfflineTracking(forDocKey: docKey)
+            AppLog.info(.sync, "offline_in_flight_timeout", data: [
+                "docKey": docKey,
+                "inFlightCount": String(count),
+            ])
+        }
+    }
+
+    /// Replaces queued rows for one recipe doc; surfaces persistence failures on recipe write sync state.
+    @discardableResult
+    private func replaceOfflineQueueForRecipe(
+        docKey: String,
+        recipeId: String,
+        canonicalUpdate: Data
+    ) async -> Bool {
+        do {
+            try await offlineQueue.replaceForRecipe(
+                docKey: docKey,
+                recipeId: recipeId,
+                canonicalUpdate: canonicalUpdate
+            )
+            return true
+        } catch {
+            AppLog.info(.sync, "offline_queue_replace_failed", data: [
+                "docKey": docKey,
+                "recipeId": recipeId,
+                "error": String(describing: error),
+            ])
+            if isRecipeDocument(recipeId: recipeId) {
+                writeSyncStates[recipeId] = .error(UserFacingAPIError.message(for: error))
+            }
+            return false
+        }
+    }
+
+    private func acknowledgeOfflineBatch(docKey: String) async {
+        let pending = inFlightOfflineEntryIdsByDocKey.removeValue(forKey: docKey) ?? []
+        guard !pending.isEmpty else {
+            inFlightOfflineStartedAtByDocKey.removeValue(forKey: docKey)
+            return
+        }
+        do {
+            try await offlineQueue.deleteEntries(ids: Array(pending))
+            inFlightOfflineStartedAtByDocKey.removeValue(forKey: docKey)
+            AppLog.info(.sync, "offline_batch_acknowledged", data: [
+                "docKey": docKey,
+                "deletedCount": String(pending.count),
+            ])
+        } catch {
+            inFlightOfflineEntryIdsByDocKey[docKey] = pending
+            if inFlightOfflineStartedAtByDocKey[docKey] == nil {
+                inFlightOfflineStartedAtByDocKey[docKey] = Date()
+            }
+            AppLog.info(.sync, "offline_batch_ack_delete_failed", data: [
+                "docKey": docKey,
+                "error": String(describing: error),
+            ])
+        }
+    }
 }
 
 #if DEBUG
@@ -2674,6 +2804,68 @@ extension YjsSyncService {
 
     func test_descriptionEditorSessionBridge(for recipeId: String) -> DescriptionEditorBridge? {
         descriptionEditorSessions[recipeId]?.bridge
+    }
+
+    func test_drainOfflineQueue() async {
+        await drainOfflineQueue()
+    }
+
+    func test_handleSyncConfirmed(recipeId: String, lastSyncedAt: String?) async {
+        await handleSyncConfirmed(recipeId: recipeId, lastSyncedAt: lastSyncedAt)
+    }
+
+    func test_inFlightEntryIds(forDocKey docKey: String) -> Set<Int64> {
+        inFlightOfflineEntryIdsByDocKey[docKey] ?? []
+    }
+
+    func test_clearInFlightOfflineTracking() {
+        clearInFlightOfflineTracking()
+    }
+
+    func test_docKeyFor(recipeId: String) -> String {
+        docKeyFor(recipeId: recipeId)
+    }
+
+    var test_offlineQueue: OfflineWriteQueue { offlineQueue }
+
+    func test_setUserIdForOfflineTests(_ userId: String) async {
+        self.userId = userId
+        await documentManager.setUserId(userId)
+    }
+
+    func test_markInFlightForTests(docKey: String, entryIds: Set<Int64>) {
+        inFlightOfflineEntryIdsByDocKey[docKey] = entryIds
+        inFlightOfflineStartedAtByDocKey[docKey] = Date()
+    }
+
+    func test_setInFlightStartedAtForTests(docKey: String, startedAt: Date) {
+        inFlightOfflineStartedAtByDocKey[docKey] = startedAt
+    }
+
+    func test_expireInFlightOfflineBatchesIfNeeded() {
+        expireInFlightOfflineBatchesIfNeeded()
+    }
+
+    func test_clearInFlight(forDocKey docKey: String) {
+        clearInFlightOfflineTracking(forDocKey: docKey)
+    }
+
+    func test_recipeHasQueuedWork(recipeId: String) -> Bool {
+        unsyncedRecipeIds.contains(recipeId) || writeSyncStates[recipeId] == .queued
+    }
+
+    /// Mirrors offline tail of `applyDescriptionSyncState` (replace + clear in-flight).
+    func test_offlineReplaceQueueAndClearInFlight(
+        docKey: String,
+        recipeId: String,
+        canonicalUpdate: Data
+    ) async throws {
+        try await offlineQueue.replaceForRecipe(
+            docKey: docKey,
+            recipeId: recipeId,
+            canonicalUpdate: canonicalUpdate
+        )
+        clearInFlightOfflineTracking(forDocKey: docKey)
     }
 }
 #endif

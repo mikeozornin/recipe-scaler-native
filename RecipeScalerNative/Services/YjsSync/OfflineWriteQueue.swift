@@ -35,4 +35,13 @@ actor OfflineWriteQueue {
     func deleteEntries(ids: [Int64]) async throws {
         try await store.deleteOfflineEntries(ids: ids)
     }
+
+    /// Replace all queued rows for a recipe with one canonical update.
+    func replaceForRecipe(docKey: String, recipeId: String, canonicalUpdate: Data) async throws {
+        try await store.replaceOfflineQueueForRecipe(
+            docKey: docKey,
+            recipeId: recipeId,
+            yjsUpdate: canonicalUpdate
+        )
+    }
 }
