@@ -296,6 +296,9 @@ enum RecipeYjsCodec {
         // Web parity: an ingredient "has quantity" when either amount is filled.
         let hasQuantity = !originalAmount.isEmpty || !amount.isEmpty
 
+        let illustrationId = ingMap.scalarString(key: "illustrationId", txn: txn)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedIllustrationId = illustrationId?.isEmpty == false ? illustrationId : nil
+
         return IngredientData(
             id: ingMap.scalarString(key: "id", txn: txn) ?? UUID().uuidString,
             name: ingMap.scalarString(key: "name", txn: txn) ?? "",
@@ -309,7 +312,9 @@ enum RecipeYjsCodec {
             protein: ingMap.double(key: "protein", txn: txn),
             fat: ingMap.double(key: "fat", txn: txn),
             carbs: ingMap.double(key: "carbs", txn: txn),
-            weight: ingMap.double(key: "weight", txn: txn)
+            weight: ingMap.double(key: "weight", txn: txn),
+            illustrationId: resolvedIllustrationId,
+            illustrationPickerCleared: ingMap.bool(key: "illustrationPickerCleared", txn: txn) ?? false
         )
     }
 
@@ -344,6 +349,10 @@ enum RecipeYjsCodec {
 
             let hasQuantity = !originalAmount.isEmpty || !amount.isEmpty
 
+            let rawIllustrationId = dict["illustrationId"] as? String
+            let illustrationId = rawIllustrationId?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let resolvedIllustrationId = illustrationId?.isEmpty == false ? illustrationId : nil
+
             return IngredientData(
                 id: id,
                 name: name,
@@ -357,7 +366,9 @@ enum RecipeYjsCodec {
                 protein: dict["protein"] as? Double ?? (dict["protein"] as? NSNumber)?.doubleValue,
                 fat: dict["fat"] as? Double ?? (dict["fat"] as? NSNumber)?.doubleValue,
                 carbs: dict["carbs"] as? Double ?? (dict["carbs"] as? NSNumber)?.doubleValue,
-                weight: dict["weight"] as? Double ?? (dict["weight"] as? NSNumber)?.doubleValue
+                weight: dict["weight"] as? Double ?? (dict["weight"] as? NSNumber)?.doubleValue,
+                illustrationId: resolvedIllustrationId,
+                illustrationPickerCleared: dict["illustrationPickerCleared"] as? Bool ?? false
             )
         }
     }

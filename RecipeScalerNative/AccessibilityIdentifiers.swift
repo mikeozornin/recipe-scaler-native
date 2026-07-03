@@ -83,6 +83,14 @@ enum AccessibilityIdentifiers {
     static let scalePlusButton = "scale_plus_button"
     static let scaleSlider = "scale_slider"
     static let ingredientsSection = "ingredients_section"
+    static let ingredientIcon = "ingredient_icon"
+    static let ingredientIllustrationPicker = "ingredient_illustration_picker"
+    static let ingredientPickerSearch = "ingredient_picker_search"
+    static let ingredientPickerClear = "ingredient_picker_clear"
+
+    static func ingredientPickerOption(id: String) -> String {
+        "ingredient_picker_option_\(id)"
+    }
     static let ingredientDragHandle = "ingredient_drag_handle"
     static let recipeEditServingsRow = "recipe_edit_servings_row"
     static let recipeEditIngredientReorderToggle = "recipe_edit_ingredient_reorder_toggle"

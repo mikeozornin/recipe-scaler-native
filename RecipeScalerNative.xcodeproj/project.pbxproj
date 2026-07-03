@@ -463,6 +463,21 @@
 		YRSDOC01A293A4B701000001 /* YrsDocument+TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */; };
 		YJSOFF01A293A4B701000001 /* YjsOfflineSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */; };
 		5A3A3288082F455BA73D41F3 /* ServerErrorCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69F9BFE990A641C6A64D4CFC /* ServerErrorCode.swift */; };
+		ILL043C01 /* IngredientIllustrationCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F01 /* IngredientIllustrationCatalog.swift */; };
+		ILL043C02 /* IngredientIllustrationSearchNormalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F02 /* IngredientIllustrationSearchNormalization.swift */; };
+		ILL043C03 /* IngredientIllustrationLayoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F03 /* IngredientIllustrationLayoutMetrics.swift */; };
+		ILL043C13 /* IngredientIllustrationNameMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F13 /* IngredientIllustrationNameMatcher.swift */; };
+		ILL043C14 /* IngredientIllustrationLazyResolve.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F14 /* IngredientIllustrationLazyResolve.swift */; };
+		ILL043C04 /* ingredient-catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = ILL043F04 /* ingredient-catalog.json */; };
+		ILL043C05 /* ingredient-catalog.manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = ILL043F05 /* ingredient-catalog.manifest.json */; };
+		ILL043C06 /* IngredientIllustrationImageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F06 /* IngredientIllustrationImageStore.swift */; };
+		ILL043C07 /* IngredientBowlIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F07 /* IngredientBowlIcon.swift */; };
+		ILL043C08 /* IngredientIllustrationThumb.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F08 /* IngredientIllustrationThumb.swift */; };
+		ILL043C09 /* IngredientIllustrationPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F09 /* IngredientIllustrationPickerSheet.swift */; };
+		ILL043C10 /* IngredientIllustrations in Resources */ = {isa = PBXBuildFile; fileRef = ILL043F10 /* IngredientIllustrations */; };
+		ILL043C11 /* IngredientIllustrationCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F11 /* IngredientIllustrationCatalogTests.swift */; };
+		ILL043C15 /* IngredientIllustrationNameMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F15 /* IngredientIllustrationNameMatcherTests.swift */; };
+		ILL043C16 /* IngredientIllustrationBindingPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F16 /* IngredientIllustrationBindingPersistenceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1034,6 +1049,21 @@
 		YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "YrsDocument+TestSupport.swift"; sourceTree = "<group>"; };
 		YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsOfflineSyncTests.swift; sourceTree = "<group>"; };
 		69F9BFE990A641C6A64D4CFC /* ServerErrorCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/ServerErrorCode.swift; sourceTree = "<group>"; };
+		ILL043F01 /* IngredientIllustrationCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationCatalog.swift; sourceTree = "<group>"; };
+		ILL043F02 /* IngredientIllustrationSearchNormalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationSearchNormalization.swift; sourceTree = "<group>"; };
+		ILL043F03 /* IngredientIllustrationLayoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationLayoutMetrics.swift; sourceTree = "<group>"; };
+		ILL043F13 /* IngredientIllustrationNameMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationNameMatcher.swift; sourceTree = "<group>"; };
+		ILL043F14 /* IngredientIllustrationLazyResolve.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationLazyResolve.swift; sourceTree = "<group>"; };
+		ILL043F04 /* ingredient-catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Resources/ingredient-catalog.json; sourceTree = "<group>"; };
+		ILL043F05 /* ingredient-catalog.manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Resources/ingredient-catalog.manifest.json; sourceTree = "<group>"; };
+		ILL043F06 /* IngredientIllustrationImageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationImageStore.swift; sourceTree = "<group>"; };
+		ILL043F07 /* IngredientBowlIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientBowlIcon.swift; sourceTree = "<group>"; };
+		ILL043F08 /* IngredientIllustrationThumb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationThumb.swift; sourceTree = "<group>"; };
+		ILL043F09 /* IngredientIllustrationPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationPickerSheet.swift; sourceTree = "<group>"; };
+		ILL043F10 /* IngredientIllustrations */ = {isa = PBXFileReference; lastKnownFileType = folder; path = IngredientIllustrations; sourceTree = "<group>"; };
+		ILL043F11 /* IngredientIllustrationCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationCatalogTests.swift; sourceTree = "<group>"; };
+		ILL043F15 /* IngredientIllustrationNameMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationNameMatcherTests.swift; sourceTree = "<group>"; };
+		ILL043F16 /* IngredientIllustrationBindingPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationBindingPersistenceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1144,6 +1174,7 @@
 				0A5A136ADBF870BFBD1C3902 /* Localizable.xcstrings */,
 				D4E5F6A7B8C9D0E1F2A3B4D1 /* InfoPlist.xcstrings */,
 				730272E874E00B45C15ED736 /* Fonts */,
+				ILL043F10 /* IngredientIllustrations */,
 				E5F60718293A4B700000007E /* DescriptionEditor */,
 			);
 			name = Resources;
@@ -1259,6 +1290,7 @@
 				E5F60719293A4B7000000082 /* DescriptionFormattingBar.swift */,
 				E5F60719293A4B7000000084 /* DescriptionEditorChromeState.swift */,
 				E5F60719293A4B7000000086 /* DescriptionMarkupFlow.swift */,
+				ILL043G02 /* IngredientIllustrations */,
 				B2C3D4E5F60718293A4B63 /* YDocIngredientsSection.swift */,
 				E5F60718293A4B7000000004 /* EditIngredientNutritionSheet.swift */,
 				B2C3D4E5F60718293A4B61 /* ServingsStepperView.swift */,
@@ -1471,6 +1503,9 @@
 				A027028000101 /* RecipeImportContentTypes.swift */,
 				A029031000107 /* Export */,
 				6A46C39B025B41C69FD12A6A /* ImportErrorLocalizer.swift */,
+				ILL043G01 /* IngredientIllustrations */,
+				ILL043F04 /* ingredient-catalog.json */,
+				ILL043F05 /* ingredient-catalog.manifest.json */,
 				B723ECE01A3D4E2F85D856AC /* Shared.xcstrings */,
 				2957EAE3186567297DECD2F3 /* Snapshots */,
 				C8F000A9193A47F3955634E8 /* TimerViews */,
@@ -1518,6 +1553,9 @@
 				B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */,
 				B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */,
 				B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */,
+				ILL043F11 /* IngredientIllustrationCatalogTests.swift */,
+				ILL043F15 /* IngredientIllustrationNameMatcherTests.swift */,
+				ILL043F16 /* IngredientIllustrationBindingPersistenceTests.swift */,
 				E5F60718293A4B7000000095 /* RecipeSearchUtilsTests.swift */,
 				D5SS01A293A4B7010000001 /* DiscoverSearchStoreTests.swift */,
 				A5MD058293A4B7010000005 /* AssistantMarkdownRendererTests.swift */,
@@ -1825,6 +1863,8 @@
 				A0A052C8D8B8477FA14D812A /* WatchCredentialsBridge.swift */,
 				APURL0001000200030004000A2 /* AppURLSession.swift */,
 				BDFDC56713A0842CA6B33517 /* ImageCacheService.swift */,
+				ILL043F06 /* IngredientIllustrationImageStore.swift */,
+				ILL043F14 /* IngredientIllustrationLazyResolve.swift */,
 				E5F60718293A4B7000000011 /* RecipeImageService.swift */,
 				MIK195BV1B100100100100100A002 /* AvatarImageService.swift */,
 				E5F60718293A4B7000000020 /* RecipeImageCacheStatus.swift */,
@@ -1887,6 +1927,27 @@
 				REMINDERS0006AA0006BB06 /* RemindersSyncService.swift */,
 			);
 			path = Reminders;
+			sourceTree = "<group>";
+		};
+		ILL043G01 /* IngredientIllustrations */ = {
+			isa = PBXGroup;
+			children = (
+				ILL043F01 /* IngredientIllustrationCatalog.swift */,
+				ILL043F02 /* IngredientIllustrationSearchNormalization.swift */,
+				ILL043F03 /* IngredientIllustrationLayoutMetrics.swift */,
+				ILL043F13 /* IngredientIllustrationNameMatcher.swift */,
+			);
+			path = IngredientIllustrations;
+			sourceTree = "<group>";
+		};
+		ILL043G02 /* IngredientIllustrations */ = {
+			isa = PBXGroup;
+			children = (
+				ILL043F07 /* IngredientBowlIcon.swift */,
+				ILL043F08 /* IngredientIllustrationThumb.swift */,
+				ILL043F09 /* IngredientIllustrationPickerSheet.swift */,
+			);
+			path = IngredientIllustrations;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -2183,6 +2244,7 @@
 				E5F60718293A4B700000007A /* description-editor-bridge.js in Resources */,
 				E5F60718293A4B700000007C /* yjs.bundle.js in Resources */,
 				F1A2B3C4D5E60718293A4B06 /* yjs-merge-helper.html in Resources */,
+				ILL043C10 /* IngredientIllustrations in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2191,6 +2253,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				EB4EDF7C30F646A99BDD3767 /* Shared.xcstrings in Resources */,
+				ILL043C04 /* ingredient-catalog.json in Resources */,
+				ILL043C05 /* ingredient-catalog.manifest.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2217,6 +2281,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				6BEBE4679E324335B1E8C552 /* RecipeScalerCore.swift in Sources */,
+				ILL043C01 /* IngredientIllustrationCatalog.swift in Sources */,
+				ILL043C02 /* IngredientIllustrationSearchNormalization.swift in Sources */,
+				ILL043C03 /* IngredientIllustrationLayoutMetrics.swift in Sources */,
+				ILL043C13 /* IngredientIllustrationNameMatcher.swift in Sources */,
 				082B9A25B01040469E077B58 /* SharedAuthStore.swift in Sources */,
 				D963C6002ACA43AE8B000E1D /* Config.swift in Sources */,
 				1BAEE2C386A5454CB68D9C8B /* APIClient.swift in Sources */,
@@ -2373,6 +2441,11 @@
 				MIK200005001 /* DiscoverCollectionModel.swift in Sources */,
 				MIK200006001 /* DiscoverPublicProfileModel.swift in Sources */,
 				MIK200007001 /* RecipeShareModel.swift in Sources */,
+				ILL043C06 /* IngredientIllustrationImageStore.swift in Sources */,
+				ILL043C14 /* IngredientIllustrationLazyResolve.swift in Sources */,
+				ILL043C07 /* IngredientBowlIcon.swift in Sources */,
+				ILL043C08 /* IngredientIllustrationThumb.swift in Sources */,
+				ILL043C09 /* IngredientIllustrationPickerSheet.swift in Sources */,
 				B2C3D4E5F60718293A4B64 /* YDocIngredientsSection.swift in Sources */,
 				E5F60718293A4B7000000001 /* IngredientNutritionDisplay.swift in Sources */,
 				E5F60718293A4B700000000E /* RecipeNutritionDisplay.swift in Sources */,
@@ -2676,6 +2749,9 @@
 				A029031000316 /* NativeImportImageSelectionTests.swift in Sources */,
 				YRSDOC01A293A4B701000001 /* YrsDocument+TestSupport.swift in Sources */,
 				YJSOFF01A293A4B701000001 /* YjsOfflineSyncTests.swift in Sources */,
+				ILL043C11 /* IngredientIllustrationCatalogTests.swift in Sources */,
+				ILL043C15 /* IngredientIllustrationNameMatcherTests.swift in Sources */,
+				ILL043C16 /* IngredientIllustrationBindingPersistenceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

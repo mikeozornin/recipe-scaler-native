@@ -47,11 +47,42 @@ struct YDocRecipeDetailView: View {
     /// `.task(id: recipeId)` from `appContainer` so the view never touches
     /// `APIClient.shared` directly.
     @State private var nutritionRecalculation: RecipeNutritionRecalculationModel?
-
+    @State private var lazyResolvedIngredients: [IngredientData]?
 
     private var recipe: RecipeData? {
         guard syncService.currentRecipe?.id == recipeId else { return nil }
         return syncService.currentRecipe
+    }
+
+    private var ingredientsForDisplay: [IngredientData] {
+        lazyResolvedIngredients ?? recipe?.ingredients ?? []
+    }
+
+    private var recipeIngredientsLazyResolveKey: String {
+        guard let recipe, recipe.id == recipeId else { return recipeId }
+        let unresolved = recipe.ingredients.filter {
+            ($0.illustrationId?.isEmpty != false) && !$0.illustrationPickerCleared
+        }.count
+        return "\(recipeId)|\(recipe.ingredients.count)|unresolved:\(unresolved)|editing:\(isEditing)"
+    }
+
+    private func runIngredientIllustrationLazyResolve() async {
+        guard let recipe, recipe.id == recipeId, !isLegacyReadOnly else {
+            lazyResolvedIngredients = nil
+            return
+        }
+        let plan = IngredientIllustrationLazyResolve.plan(ingredients: recipe.ingredients)
+        lazyResolvedIngredients = plan.displayIngredients
+        guard !isEditing, !saveInFlight, !plan.pendingWrites.isEmpty else { return }
+        await IngredientIllustrationLazyResolve.applyPendingWrites(
+            writes: plan.pendingWrites,
+            syncService: syncService
+        )
+    }
+
+    private func recipeWithDisplayIngredients(_ base: RecipeData) -> RecipeData {
+        guard let lazyResolvedIngredients else { return base }
+        return base.replacing(ingredients: lazyResolvedIngredients)
     }
 
     private var isLegacyReadOnly: Bool {
@@ -153,7 +184,7 @@ struct YDocRecipeDetailView: View {
 
                         if isEditing, let editViewModel {
                             YDocIngredientsEditSection(
-                                recipe: recipe,
+                                recipe: recipeWithDisplayIngredients(recipe),
                                 draftServings: Binding(
                                     get: { editViewModel.draftServings },
                                     set: { editViewModel.draftServings = max(1, min(99, $0)) }
@@ -185,6 +216,19 @@ struct YDocRecipeDetailView: View {
                                 onReorder: { from, to in
                                     await reorderIngredients(from: from, to: to)
                                 },
+                                onIllustrationPickerSelect: { ingredientId, illustrationId in
+                                    await applyIngredientIllustrationSelection(
+                                        ingredientId: ingredientId,
+                                        illustrationId: illustrationId,
+                                        editViewModel: editViewModel
+                                    )
+                                },
+                                onIllustrationPickerClear: { ingredientId in
+                                    await applyIngredientIllustrationClear(
+                                        ingredientId: ingredientId,
+                                        editViewModel: editViewModel
+                                    )
+                                },
                                 onIngredientFieldFocusChanged: { focused in
                                     ingredientFieldsFocused = focused
                                     syncDescriptionChromeSuppression()
@@ -197,7 +241,7 @@ struct YDocRecipeDetailView: View {
                             )
                         } else {
                             YDocIngredientsSection(
-                                ingredients: recipe.ingredients,
+                                ingredients: ingredientsForDisplay,
                                 baseServings: max(1, recipe.servings),
                                 viewServings: scaledServingsCount(base: max(1, recipe.servings)),
                                 accentColor: accentColor,
@@ -468,6 +512,7 @@ struct YDocRecipeDetailView: View {
         }
         .task(id: recipeId) {
             deactivateScreenAwake()
+            lazyResolvedIngredients = nil
             isLoading = true
             defer { isLoading = false }
             scaleFactor = RecipeScaleStorage.loadScaleFactor(recipeId: recipeId)
@@ -476,8 +521,9 @@ struct YDocRecipeDetailView: View {
             }
             syncService.acknowledgeRecipeRemoved()
             await syncService.loadRecipe(recipeId: recipeId)
-            #if DEBUG
-            #endif
+        }
+        .task(id: recipeIngredientsLazyResolveKey) {
+            await runIngredientIllustrationLazyResolve()
         }
         .task(id: "\(recipeId)-\(headerImageUrl ?? "")") {
             await prefetchHeaderImage()
@@ -1057,6 +1103,38 @@ struct YDocRecipeDetailView: View {
         defer { saveInFlight = false }
         do {
             try await editViewModel.deleteIngredient(id: id)
+        } catch {
+            editErrorMessage = UserFacingAPIError.message(for: error)
+        }
+    }
+
+    private func applyIngredientIllustrationSelection(
+        ingredientId: String,
+        illustrationId: String,
+        editViewModel: RecipeEditViewModel
+    ) async {
+        guard !saveInFlight else { return }
+        saveInFlight = true
+        defer { saveInFlight = false }
+        do {
+            try await editViewModel.applyIngredientIllustrationPickerSelection(
+                ingredientId: ingredientId,
+                illustrationId: illustrationId
+            )
+        } catch {
+            editErrorMessage = UserFacingAPIError.message(for: error)
+        }
+    }
+
+    private func applyIngredientIllustrationClear(
+        ingredientId: String,
+        editViewModel: RecipeEditViewModel
+    ) async {
+        guard !saveInFlight else { return }
+        saveInFlight = true
+        defer { saveInFlight = false }
+        do {
+            try await editViewModel.applyIngredientIllustrationPickerClear(ingredientId: ingredientId)
         } catch {
             editErrorMessage = UserFacingAPIError.message(for: error)
         }

@@ -1,3 +1,4 @@
+import RecipeScalerCore
 import UIKit
 
 /// Recipe detail header: hero image and title spacing (web `px-4` under nav / below image).
@@ -29,6 +30,11 @@ enum RecipeRowLayoutMetrics {
     static let nutritionLineSpacing: CGFloat = 4
     /// Recipe list search snippet directly under the title (web: stacked in one column).
     static let searchSnippetSpacing: CGFloat = 2
+
+    /// Ingredient illustration thumb (web 40px); replaces row number for qty rows.
+    static var illustrationSlotWidth: CGFloat {
+        IngredientIllustrationLayoutMetrics.displaySlotPt
+    }
 
     /// Leading slot: row number / «+» — tight to body digit width.
     static var markerSlotWidth: CGFloat {

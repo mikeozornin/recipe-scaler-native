@@ -88,7 +88,43 @@ enum RecipeYjsWriter {
             ingMap.insert(key: "amount", value: .string(""), txn: txn)
         }
 
+        writeIllustrationBinding(ingMap, ingredient: ingredient, txn: txn)
         writeNutrition(ingMap, ingredient: ingredient, txn: txn)
+    }
+
+    static func writeIllustrationBinding(_ ingMap: YrsMap, ingredient: IngredientData, txn: OpaquePointer) {
+        if let illustrationId = ingredient.illustrationId?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !illustrationId.isEmpty {
+            ingMap.insert(key: "illustrationId", value: .string(illustrationId), txn: txn)
+        } else {
+            ingMap.remove(key: "illustrationId", txn: txn)
+        }
+        if ingredient.illustrationPickerCleared {
+            ingMap.insert(key: "illustrationPickerCleared", value: .bool(true), txn: txn)
+        } else {
+            ingMap.remove(key: "illustrationPickerCleared", txn: txn)
+        }
+    }
+
+    /// Partial update for picker (does not rewrite name/qty/nutrition).
+    static func applyIllustrationPickerBinding(
+        to ingMap: YrsMap,
+        illustrationId: String?,
+        pickerCleared: Bool,
+        txn: OpaquePointer
+    ) {
+        if let illustrationId = illustrationId?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !illustrationId.isEmpty {
+            ingMap.insert(key: "illustrationId", value: .string(illustrationId), txn: txn)
+            ingMap.remove(key: "illustrationPickerCleared", txn: txn)
+        } else {
+            ingMap.remove(key: "illustrationId", txn: txn)
+            if pickerCleared {
+                ingMap.insert(key: "illustrationPickerCleared", value: .bool(true), txn: txn)
+            } else {
+                ingMap.remove(key: "illustrationPickerCleared", txn: txn)
+            }
+        }
     }
 
     static func writeNutrition(_ ingMap: YrsMap, ingredient: IngredientData, txn: OpaquePointer) {
@@ -273,6 +309,47 @@ struct RecipeMapWriter {
         }
         if markNutritionOutdated {
             map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
+        }
+    }
+
+    func updateIngredientIllustrationBinding(
+        ingredientId: String,
+        illustrationId: String?,
+        pickerCleared: Bool
+    ) throws {
+        try updateIngredientIllustrationBindings([
+            (ingredientId: ingredientId, illustrationId: illustrationId, pickerCleared: pickerCleared, expectedName: nil),
+        ])
+    }
+
+    /// Applies illustration bindings in a single write transaction.
+    /// Skips rows whose `name` no longer matches `expectedName` (concurrent rename/delete guard).
+    func updateIngredientIllustrationBindings(
+        _ bindings: [(ingredientId: String, illustrationId: String?, pickerCleared: Bool, expectedName: String?)]
+    ) throws {
+        guard !bindings.isEmpty else { return }
+        let byId = Dictionary(uniqueKeysWithValues: bindings.map { ($0.ingredientId, $0) })
+        try RecipeYjsWriter.withIngredientsArray(in: map, txn: txn) { array in
+            let len = array.length(txn: txn)
+            for index in 0..<len {
+                array.withMap(at: index, txn: txn) { ingMap in
+                    guard let rowId = ingMap.scalarString(key: "id", txn: txn),
+                          let binding = byId[rowId]
+                    else { return }
+                    if let expectedName = binding.expectedName {
+                        let currentName = ingMap.scalarString(key: "name", txn: txn) ?? ""
+                        let expectedTrimmed = expectedName.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let currentTrimmed = currentName.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard expectedTrimmed == currentTrimmed else { return }
+                    }
+                    RecipeYjsWriter.applyIllustrationPickerBinding(
+                        to: ingMap,
+                        illustrationId: binding.illustrationId,
+                        pickerCleared: binding.pickerCleared,
+                        txn: txn
+                    )
+                }
+            }
         }
     }
 

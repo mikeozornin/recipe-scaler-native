@@ -682,6 +682,44 @@ final class YjsSyncService {
         await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
     }
 
+    func updateIngredientIllustrationBinding(
+        ingredientId: String,
+        illustrationId: String?,
+        pickerCleared: Bool
+    ) async throws {
+        try await updateIngredientIllustrationBindings([
+            (ingredientId: ingredientId, illustrationId: illustrationId, pickerCleared: pickerCleared, expectedName: nil),
+        ])
+    }
+
+    func updateIngredientIllustrationBindings(
+        _ bindings: [(ingredientId: String, illustrationId: String?, pickerCleared: Bool, expectedName: String?)]
+    ) async throws {
+        guard let recipeId = activeRecipeId else { throw RecipeEditError.documentNotLoaded }
+        guard !bindings.isEmpty else { return }
+        try await documentManager.updateIngredientIllustrationBindings(
+            recipeId: recipeId,
+            bindings: bindings
+        )
+        if var recipe = currentRecipe, recipe.id == recipeId {
+            var ingredients = recipe.ingredients
+            var changed = false
+            for binding in bindings {
+                guard let index = ingredients.firstIndex(where: { $0.id == binding.ingredientId }) else { continue }
+                ingredients[index] = ingredients[index].withIllustrationBinding(
+                    illustrationId: binding.illustrationId,
+                    pickerCleared: binding.pickerCleared
+                )
+                changed = true
+            }
+            if changed {
+                recipe = recipe.replacing(ingredients: ingredients)
+                currentRecipe = recipe
+            }
+        }
+        await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
+    }
+
     func removeIngredient(id: String) async throws {
         guard let recipeId = activeRecipeId else { throw RecipeEditError.documentNotLoaded }
         try await documentManager.removeIngredient(recipeId: recipeId, ingredientId: id)

@@ -85,7 +85,6 @@ struct YDocIngredientsSection: View {
                         ForEach(Array(numberedRows.enumerated()), id: \.element.ingredient.id) { index, row in
                             YDocIngredientViewRow(
                                 ingredient: row.ingredient,
-                                rowNumber: row.number,
                                 baseServings: baseServings,
                                 viewServings: viewServings,
                                 accentColor: accentColor,
@@ -154,7 +153,6 @@ private func scaledQuantityPreview(amount: String, baseServings: Int, viewServin
 
 private struct YDocIngredientViewRow: View {
     let ingredient: IngredientData
-    let rowNumber: Int?
     let baseServings: Int
     let viewServings: Int
     let accentColor: Color
@@ -222,7 +220,13 @@ private struct YDocIngredientViewRow: View {
     private func ingredientNameAmountRow(nutritionSummary: String?) -> some View {
         IngredientGridRow(
             ingredients: {
-                IngredientGridIngredientsColumn(markerLabel: rowNumber.map(String.init)) {
+                IngredientGridIngredientsColumn(
+                    leadingSlot: .thumb(
+                        illustrationId: ingredient.illustrationId,
+                        isInteractive: false,
+                        onTap: nil
+                    )
+                ) {
                     VStack(alignment: .leading, spacing: RecipeRowLayoutMetrics.nutritionLineSpacing) {
                         Text(ingredient.name)
                             .appBody()
@@ -329,6 +333,8 @@ struct YDocIngredientsEditSection: View {
     let onDelete: (String) async -> Void
     let onAdd: (String, String) async -> Void
     let onReorder: (Int, Int) async -> Void
+    let onIllustrationPickerSelect: (String, String) async -> Void
+    let onIllustrationPickerClear: (String) async -> Void
     var onIngredientFieldFocusChanged: ((Bool) -> Void)? = nil
     var onKeyboardDone: (() -> Void)? = nil
     var clearFocusToken: Int = 0
@@ -341,6 +347,7 @@ struct YDocIngredientsEditSection: View {
     @FocusState private var focusedField: IngredientFieldFocus?
     @State private var measuredRowHeights: [String: CGFloat] = [:]
     @State private var deleteRevealRowId: String?
+    @State private var illustrationPickerTarget: IngredientIllustrationPickerTarget?
 
     private var sorted: [IngredientData] {
         recipe.ingredients.sorted { $0.order < $1.order }
@@ -390,7 +397,7 @@ struct YDocIngredientsEditSection: View {
                 )
                 .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
 
-                IngredientColumnHeaderRow(showsDragHandle: true)
+                IngredientColumnHeaderRow(showsDragHandle: true, compactLayout: false)
                     .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
 
                 ingredientEditList
@@ -428,6 +435,26 @@ struct YDocIngredientsEditSection: View {
             Task {
                 await commitRowLeaving(old.rowKey)
             }
+        }
+        .sheet(item: $illustrationPickerTarget) { target in
+            IngredientIllustrationPickerSheet(
+                ingredientName: target.name,
+                selectedId: target.illustrationId,
+                onSelect: { selectedId in
+                    let ingredientId = target.ingredientId
+                    illustrationPickerTarget = nil
+                    Task {
+                        if let selectedId {
+                            await onIllustrationPickerSelect(ingredientId, selectedId)
+                        } else {
+                            await onIllustrationPickerClear(ingredientId)
+                        }
+                    }
+                },
+                onDismiss: {
+                    illustrationPickerTarget = nil
+                }
+            )
         }
         .sheet(item: $nutritionSheetTarget) { target in
             EditIngredientNutritionSheet(ingredient: target.ingredient) { calories, protein, fat, carbs in
@@ -567,7 +594,6 @@ struct YDocIngredientsEditSection: View {
         let ingredient = row.ingredient
         let draft = drafts[ingredient.id] ?? IngredientDraft(ingredient: ingredient)
         return YDocIngredientEditRow(
-            rowNumber: nil,
             ingredient: ingredient,
             name: bindingName(for: ingredient.id, fallback: draft.name),
             amount: bindingAmount(for: ingredient.id, fallback: draft.amount),
@@ -578,7 +604,14 @@ struct YDocIngredientsEditSection: View {
             nutritionViewMode: nutritionViewMode,
             focusedField: $focusedField,
             appliesRowChrome: false,
-            onNutritionTap: { nutritionSheetTarget = IngredientNutritionTarget(ingredient: ingredient) }
+            onNutritionTap: { nutritionSheetTarget = IngredientNutritionTarget(ingredient: ingredient) },
+            onIllustrationTap: {
+                illustrationPickerTarget = IngredientIllustrationPickerTarget(
+                    ingredientId: ingredient.id,
+                    name: draft.name.isEmpty ? ingredient.name : draft.name,
+                    illustrationId: ingredient.illustrationId
+                )
+            }
         )
     }
 
@@ -681,7 +714,9 @@ struct YDocIngredientsEditSection: View {
             protein: base.protein,
             fat: base.fat,
             carbs: base.carbs,
-            weight: base.weight
+            weight: base.weight,
+            illustrationId: base.illustrationId,
+            illustrationPickerCleared: base.illustrationPickerCleared
         )
         await onCommit(updated)
     }
@@ -724,7 +759,7 @@ private struct IngredientColumnHeaderRow: View {
             } else {
                 IngredientGridRow(
                     ingredients: {
-                        IngredientGridIngredientsColumn(markerLabel: nil) {
+                        IngredientGridIngredientsColumn(leadingSlot: .empty) {
                             Text("recipes.ingredient-header")
                                 .appHeadline()
                                 .foregroundStyle(.primary)
@@ -837,12 +872,14 @@ enum IngredientEditList {
 // MARK: - Ingredient grid columns (marker+name | base qty | scaled)
 
 private struct IngredientGridIngredientsColumn<Content: View>: View {
-    let markerLabel: String?
+    let leadingSlot: IngredientIllustrationSlot.Content?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.ingredientMarkerSpacing) {
-            IngredientRowMarkerSlot(label: markerLabel)
+            if let leadingSlot {
+                IngredientIllustrationSlot(content: leadingSlot)
+            }
             content()
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -892,25 +929,6 @@ private struct IngredientGridRow<Ingredients: View, BaseQty: View, ScaledQty: Vi
 
 // MARK: - Row layout (matches RecipeListView box model)
 
-private struct IngredientRowMarkerSlot: View {
-    let label: String?
-
-    var body: some View {
-        if let label {
-            Text(label)
-                .appBody()
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-                .frame(
-                    minWidth: RecipeRowLayoutMetrics.markerSlotWidth,
-                    alignment: .leading
-                )
-                .frame(height: RecipeRowLayoutMetrics.ingredientBodyLineHeight, alignment: .top)
-        }
-    }
-}
-
 private enum IngredientHeaderLabelStyle {
     static let fontSize = AppTypography.bodySize
     /// 2% of body size (0.02 em).
@@ -924,7 +942,7 @@ private struct IngredientRowHeaderLabel: View {
     var body: some View {
         IngredientGridRow(
             ingredients: {
-                IngredientGridIngredientsColumn(markerLabel: nil) {
+                IngredientGridIngredientsColumn(leadingSlot: .empty) {
                     Text(text)
                         .font(IngredientHeaderLabelStyle.font)
                         .textCase(.uppercase)
@@ -1001,8 +1019,15 @@ private struct ExpandingIngredientNameField: View {
     }
 }
 
+private struct IngredientIllustrationPickerTarget: Identifiable {
+    let ingredientId: String
+    let name: String
+    let illustrationId: String?
+
+    var id: String { ingredientId }
+}
+
 struct YDocIngredientEditRow: View {
-    let rowNumber: Int?
     let ingredient: IngredientData
     @Binding var name: String
     @Binding var amount: String
@@ -1014,6 +1039,7 @@ struct YDocIngredientEditRow: View {
     var focusedField: FocusState<IngredientFieldFocus?>.Binding
     var appliesRowChrome: Bool = true
     let onNutritionTap: () -> Void
+    var onIllustrationTap: (() -> Void)? = nil
 
     private var nutritionSummary: String? {
         guard nutritionEnabled else { return nil }
@@ -1050,7 +1076,13 @@ struct YDocIngredientEditRow: View {
         } else {
             IngredientGridRow(
                 ingredients: {
-                    IngredientGridIngredientsColumn(markerLabel: rowNumber.map(String.init)) {
+                    IngredientGridIngredientsColumn(
+                        leadingSlot: .thumb(
+                            illustrationId: ingredient.illustrationId,
+                            isInteractive: onIllustrationTap != nil,
+                            onTap: onIllustrationTap
+                        )
+                    ) {
                         VStack(alignment: .leading, spacing: RecipeRowLayoutMetrics.nutritionLineSpacing) {
                             ExpandingIngredientNameField(
                                 placeholderKey: "edit.ingredient.name",
@@ -1137,7 +1169,7 @@ private struct YDocNewIngredientRow: View {
 
             IngredientGridRow(
                 ingredients: {
-                    IngredientGridIngredientsColumn(markerLabel: nil) {
+                    IngredientGridIngredientsColumn(leadingSlot: .plusLabel) {
                         ExpandingIngredientNameField(
                             placeholderKey: "edit.ingredient.name",
                             text: $name

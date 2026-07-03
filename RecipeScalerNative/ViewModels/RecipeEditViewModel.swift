@@ -80,6 +80,26 @@ final class RecipeEditViewModel {
         }
     }
 
+    func applyIngredientIllustrationPickerSelection(ingredientId: String, illustrationId: String) async throws {
+        try await withSuspendedRecipeRefresh {
+            try await syncService.updateIngredientIllustrationBinding(
+                ingredientId: ingredientId,
+                illustrationId: illustrationId,
+                pickerCleared: false
+            )
+        }
+    }
+
+    func applyIngredientIllustrationPickerClear(ingredientId: String) async throws {
+        try await withSuspendedRecipeRefresh {
+            try await syncService.updateIngredientIllustrationBinding(
+                ingredientId: ingredientId,
+                illustrationId: nil,
+                pickerCleared: true
+            )
+        }
+    }
+
     private func withSuspendedRecipeRefresh(_ body: () async throws -> Void) async rethrows {
         syncService.suspendRecipeRefresh()
         do {

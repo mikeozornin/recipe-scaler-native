@@ -17,6 +17,10 @@ struct IngredientData: Identifiable, Sendable {
     let fat: Double?
     let carbs: Double?
     let weight: Double?
+    /// Slug from bundled ingredient illustration catalog (web `illustrationId`).
+    let illustrationId: String?
+    /// When true, lazy auto-match on web must not refill this row after user cleared the icon.
+    let illustrationPickerCleared: Bool
 
     init(
         id: String,
@@ -31,7 +35,9 @@ struct IngredientData: Identifiable, Sendable {
         protein: Double? = nil,
         fat: Double? = nil,
         carbs: Double? = nil,
-        weight: Double? = nil
+        weight: Double? = nil,
+        illustrationId: String? = nil,
+        illustrationPickerCleared: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -46,6 +52,8 @@ struct IngredientData: Identifiable, Sendable {
         self.fat = fat
         self.carbs = carbs
         self.weight = weight
+        self.illustrationId = illustrationId
+        self.illustrationPickerCleared = illustrationPickerCleared
     }
 
     /// All four macros present (web `hasNutrition` check).
@@ -83,7 +91,29 @@ struct IngredientData: Identifiable, Sendable {
             protein: protein,
             fat: fat,
             carbs: carbs,
-            weight: weight
+            weight: weight,
+            illustrationId: illustrationId,
+            illustrationPickerCleared: illustrationPickerCleared
+        )
+    }
+
+    func withIllustrationBinding(illustrationId: String?, pickerCleared: Bool) -> IngredientData {
+        IngredientData(
+            id: id,
+            name: name,
+            amount: amount,
+            originalAmount: originalAmount,
+            unit: unit,
+            order: order,
+            isSeparator: isSeparator,
+            hasQuantity: hasQuantity,
+            calories: calories,
+            protein: protein,
+            fat: fat,
+            carbs: carbs,
+            weight: weight,
+            illustrationId: illustrationId,
+            illustrationPickerCleared: pickerCleared
         )
     }
 

@@ -499,6 +499,28 @@ actor DocumentManager {
         }
     }
 
+    func updateIngredientIllustrationBinding(
+        recipeId: String,
+        ingredientId: String,
+        illustrationId: String?,
+        pickerCleared: Bool
+    ) async throws {
+        try await updateIngredientIllustrationBindings(
+            recipeId: recipeId,
+            bindings: [(ingredientId, illustrationId, pickerCleared, nil)]
+        )
+    }
+
+    func updateIngredientIllustrationBindings(
+        recipeId: String,
+        bindings: [(ingredientId: String, illustrationId: String?, pickerCleared: Bool, expectedName: String?)]
+    ) async throws {
+        guard !bindings.isEmpty else { return }
+        try await mutateRecipe(recipeId: recipeId) { writer in
+            try writer.updateIngredientIllustrationBindings(bindings)
+        }
+    }
+
     func removeIngredient(recipeId: String, ingredientId: String) async throws {
         try await mutateRecipe(recipeId: recipeId) { writer in
             try writer.removeIngredient(id: ingredientId)
