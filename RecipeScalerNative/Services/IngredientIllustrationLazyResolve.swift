@@ -8,6 +8,29 @@ enum IngredientIllustrationLazyResolve {
         let pendingWrites: [(ingredientId: String, illustrationId: String, expectedName: String)]
     }
 
+    /// Merges lazy auto-match preview with stored Y.Doc bindings.
+    /// Persisted picker choices and clears always win over preview rows.
+    static func mergeStoredIllustrationBindings(
+        stored: [IngredientData],
+        lazyPreview: [IngredientData]
+    ) -> [IngredientData] {
+        let previewById = Dictionary(uniqueKeysWithValues: lazyPreview.map { ($0.id, $0) })
+        return stored.map { ingredient in
+            if hasPersistedIllustrationBinding(ingredient) {
+                return ingredient
+            }
+            return previewById[ingredient.id] ?? ingredient
+        }
+    }
+
+    private static func hasPersistedIllustrationBinding(_ ingredient: IngredientData) -> Bool {
+        if ingredient.illustrationPickerCleared { return true }
+        guard let illustrationId = ingredient.illustrationId?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !illustrationId.isEmpty
+        else { return false }
+        return true
+    }
+
     static func plan(ingredients: [IngredientData]) -> Plan {
         var pendingWrites: [(String, String, String)] = []
         var displayChanged = false

@@ -45,4 +45,53 @@ final class IngredientIllustrationCatalogTests: XCTestCase {
         }
         XCTAssertEqual(IngredientIllustrationCatalog.shared.entryCount, readyCount)
     }
+
+    func testMergeStoredIllustrationBindingsPrefersPersistedPickerChoice() {
+        let stored = [
+            IngredientData(id: "ing-1", name: "Eggs", illustrationId: "apricot-jam"),
+        ]
+        let preview = [
+            IngredientData(id: "ing-1", name: "Eggs", illustrationId: "egg"),
+        ]
+
+        let merged = IngredientIllustrationLazyResolve.mergeStoredIllustrationBindings(
+            stored: stored,
+            lazyPreview: preview
+        )
+
+        XCTAssertEqual(merged.first?.illustrationId, "apricot-jam")
+    }
+
+    func testMergeStoredIllustrationBindingsUsesLazyPreviewWhenUnbound() {
+        let stored = [
+            IngredientData(id: "ing-1", name: "Eggs"),
+        ]
+        let preview = [
+            IngredientData(id: "ing-1", name: "Eggs", illustrationId: "egg"),
+        ]
+
+        let merged = IngredientIllustrationLazyResolve.mergeStoredIllustrationBindings(
+            stored: stored,
+            lazyPreview: preview
+        )
+
+        XCTAssertEqual(merged.first?.illustrationId, "egg")
+    }
+
+    func testMergeStoredIllustrationBindingsRespectsPickerClear() {
+        let stored = [
+            IngredientData(id: "ing-1", name: "Eggs", illustrationPickerCleared: true),
+        ]
+        let preview = [
+            IngredientData(id: "ing-1", name: "Eggs", illustrationId: "egg"),
+        ]
+
+        let merged = IngredientIllustrationLazyResolve.mergeStoredIllustrationBindings(
+            stored: stored,
+            lazyPreview: preview
+        )
+
+        XCTAssertNil(merged.first?.illustrationId)
+        XCTAssertTrue(merged.first?.illustrationPickerCleared ?? false)
+    }
 }

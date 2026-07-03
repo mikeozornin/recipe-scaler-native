@@ -509,6 +509,7 @@ struct YDocIngredientsEditSection: View {
         List {
             ForEach(Array(numberedRows.enumerated()), id: \.element.ingredient.id) { index, row in
                 editListRow(for: row)
+                    .id(ingredientEditRowIdentity(row.ingredient))
                     .overlay(alignment: .top) {
                         if index > 0 {
                             Divider()
@@ -588,6 +589,10 @@ struct YDocIngredientsEditSection: View {
         }
         .clipped()
         .reportIngredientEditRowHeight(rowId: ingredientId)
+    }
+
+    private func ingredientEditRowIdentity(_ ingredient: IngredientData) -> String {
+        "\(ingredient.id)|\(ingredient.illustrationId ?? "")|\(ingredient.illustrationPickerCleared)"
     }
 
     private func editRow(for row: (number: Int?, ingredient: IngredientData)) -> some View {

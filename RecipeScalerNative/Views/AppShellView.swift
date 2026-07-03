@@ -320,14 +320,16 @@ struct AppShellView: View {
                     }
                 }
                 .tabItem { tabItem() }
-        } else if !timerManager.suppressPanelSafeAreaInset {
+        } else {
+            // Keep `safeAreaInset` always attached on iOS 18.x. Toggling inset on/off when
+            // `suppressPanelSafeAreaInset` changes (recipe edit mode) recreated the tab subtree
+            // and reset `YDocRecipeDetailView` `@State` (`isEditing` back to false).
             rooted
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    mobileTimerPanel
+                    if !timerManager.suppressPanelSafeAreaInset {
+                        mobileTimerPanel
+                    }
                 }
-                .tabItem { tabItem() }
-        } else {
-            rooted
                 .tabItem { tabItem() }
         }
     }

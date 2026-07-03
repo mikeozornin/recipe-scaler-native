@@ -63,7 +63,10 @@ struct YDocRecipeDetailView: View {
         let unresolved = recipe.ingredients.filter {
             ($0.illustrationId?.isEmpty != false) && !$0.illustrationPickerCleared
         }.count
-        return "\(recipeId)|\(recipe.ingredients.count)|unresolved:\(unresolved)|editing:\(isEditing)"
+        let bindingSignature = recipe.ingredients.map {
+            "\($0.id):\($0.illustrationId ?? ""):\($0.illustrationPickerCleared)"
+        }.joined(separator: "|")
+        return "\(recipeId)|\(recipe.ingredients.count)|unresolved:\(unresolved)|bindings:\(bindingSignature)|editing:\(isEditing)"
     }
 
     private func runIngredientIllustrationLazyResolve() async {
@@ -82,7 +85,26 @@ struct YDocRecipeDetailView: View {
 
     private func recipeWithDisplayIngredients(_ base: RecipeData) -> RecipeData {
         guard let lazyResolvedIngredients else { return base }
-        return base.replacing(ingredients: lazyResolvedIngredients)
+        let merged = IngredientIllustrationLazyResolve.mergeStoredIllustrationBindings(
+            stored: base.ingredients,
+            lazyPreview: lazyResolvedIngredients
+        )
+        return base.replacing(ingredients: merged)
+    }
+
+    private func syncLazyResolvedIllustrationBinding(
+        ingredientId: String,
+        illustrationId: String?,
+        pickerCleared: Bool
+    ) {
+        guard var resolved = lazyResolvedIngredients,
+              let index = resolved.firstIndex(where: { $0.id == ingredientId })
+        else { return }
+        resolved[index] = resolved[index].withIllustrationBinding(
+            illustrationId: illustrationId,
+            pickerCleared: pickerCleared
+        )
+        lazyResolvedIngredients = resolved
     }
 
     private var isLegacyReadOnly: Bool {
@@ -425,6 +447,8 @@ struct YDocRecipeDetailView: View {
                                 )
                             }
                             .appToolbarIconButton()
+                            .accessibilityLabel("edit.edit")
+                            .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailEdit)
                         }
                     }
                 }
@@ -1061,8 +1085,6 @@ struct YDocRecipeDetailView: View {
             }
             isEditing = true
             editViewModel?.isEditingTitleField = false
-            #if DEBUG
-            #endif
         }
     }
 
@@ -1121,6 +1143,11 @@ struct YDocRecipeDetailView: View {
                 ingredientId: ingredientId,
                 illustrationId: illustrationId
             )
+            syncLazyResolvedIllustrationBinding(
+                ingredientId: ingredientId,
+                illustrationId: illustrationId,
+                pickerCleared: false
+            )
         } catch {
             editErrorMessage = UserFacingAPIError.message(for: error)
         }
@@ -1135,6 +1162,11 @@ struct YDocRecipeDetailView: View {
         defer { saveInFlight = false }
         do {
             try await editViewModel.applyIngredientIllustrationPickerClear(ingredientId: ingredientId)
+            syncLazyResolvedIllustrationBinding(
+                ingredientId: ingredientId,
+                illustrationId: nil,
+                pickerCleared: true
+            )
         } catch {
             editErrorMessage = UserFacingAPIError.message(for: error)
         }

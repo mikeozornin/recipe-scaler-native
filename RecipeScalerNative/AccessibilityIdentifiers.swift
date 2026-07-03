@@ -99,6 +99,7 @@ enum AccessibilityIdentifiers {
     static let stepsSection = "steps_section"
     static let descriptionEditor = "description_editor"
     static let recipeDetailMenu = "recipe_detail_menu"
+    static let recipeDetailEdit = "recipe_detail_edit"
     static let screenAwakeToggle = "screen_awake_toggle"
     static let screenAwakeBanner = "screen_awake_banner"
     static let transientStatusBanner = "transient_status_banner"
