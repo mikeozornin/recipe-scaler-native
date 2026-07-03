@@ -84,6 +84,20 @@ struct StartTimerIntent: AppIntent {
     }
 }
 
+/// Spotlight / Top Hit preset: fixed 10-minute timer. Must be a named `AppIntent` type —
+/// inline configured `StartTimerIntent()` in `AppShortcut` breaks `AppIntentsSSUTraining`.
+struct StartTenMinuteTimerIntent: AppIntent {
+    static var title: LocalizedStringResource = LocalizedStringResource("timer.siri.preset-10min.title")
+    static var description = IntentDescription(LocalizedStringResource("timer.siri.preset-10min.description"))
+    static var openAppWhenRun: Bool = false
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        var intent = StartTimerIntent()
+        intent.minutes = 10
+        return try await intent.perform()
+    }
+}
+
 private enum TimerIntentError: Error, CustomLocalizedStringResourceConvertible {
     case zeroDuration
     var localizedStringResource: LocalizedStringResource {

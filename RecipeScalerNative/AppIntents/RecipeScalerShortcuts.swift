@@ -24,11 +24,7 @@ struct RecipeScalerShortcuts: AppShortcutsProvider {
             systemImageName: "cart"
         )
         AppShortcut(
-            intent: {
-                var intent = StartTimerIntent()
-                intent.minutes = 10
-                return intent
-            }(),
+            intent: StartTenMinuteTimerIntent(),
             phrases: [
                 "Start a 10 minute \(.applicationName) timer",
                 "Set a 10 minute \(.applicationName) timer",
