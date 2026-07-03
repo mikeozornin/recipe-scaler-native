@@ -111,7 +111,11 @@ struct RecipeListView: View {
                         .mobileTimerPanelBottomPadding()
                     } else {
                         ContentUnavailableView {
-                            AppEmptyState.label("recipe.list.empty.title", symbol: "fork.knife")
+                            VStack(spacing: 12) {
+                                AppEmptyStateIllustration(asset: .recipeNotebookEmpty)
+                                Text("recipe.list.empty.title")
+                                    .appBody()
+                            }
                         } description: {
                             Text("recipe.list.empty.description")
                                 .appBody()

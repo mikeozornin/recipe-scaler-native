@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 enum ToBuyPurchasePhase: Equatable {
     case staging
@@ -27,6 +28,8 @@ struct ShoppingListView: View {
     @State private var errorMessage: String?
     @State private var purchasePhases: [String: ToBuyPurchasePhase] = [:]
     @State private var shoppingModel = ShoppingViewModel()
+    /// Skips blur-commit when Return dismisses focus before `onSubmit` finishes.
+    @State private var suppressAddFieldBlurCommit = false
     @FocusState private var focusedField: Field?
 
     private enum Field: Hashable {
@@ -63,18 +66,33 @@ struct ShoppingListView: View {
         .localizedNavigationTitle("shopping.title")
         .appListBodyTypography()
         .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showShareSheet = true
-                    } label: {
-                        AppToolbarStyle.labeledIcon(
-                            systemName: "square.and.arrow.up",
-                            title: "shopping.share-button"
-                        )
-                    }
-                    .appToolbarIconButton()
-                    .accessibilityIdentifier(AccessibilityIdentifiers.shoppingShareButton)
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showShareSheet = true
+                } label: {
+                    AppToolbarStyle.labeledIcon(
+                        systemName: "square.and.arrow.up",
+                        title: "shopping.share-button"
+                    )
                 }
+                .appToolbarIconButton()
+                .accessibilityIdentifier(AccessibilityIdentifiers.shoppingShareButton)
+            }
+            if focusedField != nil {
+                ToolbarItemGroup(placement: .keyboard) {
+                    if focusedField == .bottom {
+                        Button("shopping.add") {
+                            submitBottomDraftFromKeyboard()
+                        }
+                        .appToolbarTextButton()
+                    }
+                    Spacer()
+                    Button("edit.done") {
+                        dismissShoppingKeyboard()
+                    }
+                    .appToolbarTextButton()
+                }
+            }
         }
         .accessibilityIdentifier(AccessibilityIdentifiers.shoppingList)
         #if DEBUG
@@ -96,7 +114,11 @@ struct ShoppingListView: View {
             shoppingModel.recompute(snapshot: snapshot, purchasePhases: purchasePhases)
         }
         .onChange(of: snapshot) { _, newValue in
-            shoppingModel.recompute(snapshot: newValue, purchasePhases: purchasePhases)
+            var transaction = Transaction()
+            transaction.animation = nil
+            withTransaction(transaction) {
+                shoppingModel.recompute(snapshot: newValue, purchasePhases: purchasePhases)
+            }
         }
         .onChange(of: purchasePhases) { _, newValue in
             shoppingModel.recompute(snapshot: snapshot, purchasePhases: newValue)
@@ -104,24 +126,29 @@ struct ShoppingListView: View {
     }
 
     private var shoppingList: some View {
+        listContent
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                shoppingAddBar
+            }
+    }
+
+    private var listContent: some View {
         List {
             Section {
                 shoppingSortControl
                     .sortControlRow()
             }
 
-            if toBuy.isEmpty {
-                emptyToBuyRow
-            } else {
-                Section {
-                    AppSectionHeader("shopping.section.to-buy")
-                        .shoppingSectionLabelRow()
-                    ForEach(toBuy) { item in
-                        toBuyRow(item)
-                    }
-                    .onDelete(perform: deleteToBuy)
-                    addItemRow
+            Section {
+                AppSectionHeader("shopping.section.to-buy")
+                    .shoppingSectionLabelRow()
+                if toBuy.isEmpty {
+                    emptyToBuyContent
                 }
+                ForEach(toBuy) { item in
+                    toBuyRow(item)
+                }
+                .onDelete(perform: deleteToBuy)
             }
 
             if !purchased.isEmpty {
@@ -175,10 +202,11 @@ struct ShoppingListView: View {
         }
     }
 
-    private var emptyToBuyRow: some View {
-        Section {
-            AppSectionHeader("shopping.section.to-buy")
-                .shoppingSectionLabelRow()
+    private var emptyToBuyContent: some View {
+        VStack(spacing: 12) {
+            AppEmptyStateIllustration(
+                asset: purchased.isEmpty ? .shoppingBasketEmpty : .shoppingBasketFull
+            )
             Text(
                 purchased.isEmpty
                     ? "shopping.empty-to-buy"
@@ -187,10 +215,9 @@ struct ShoppingListView: View {
             .appBody()
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity, minHeight: 176, alignment: .center)
-            .listRowBackground(Color.clear)
-            addItemRow
         }
+        .frame(maxWidth: .infinity, minHeight: 348, alignment: .center)
+        .listRowBackground(Color.clear)
     }
 
     // MARK: - Rows
@@ -235,22 +262,36 @@ struct ShoppingListView: View {
         }
     }
 
-    private var addItemRow: some View {
+    /// Pinned below the list so `TextField` identity survives row inserts and list reloads.
+    private var shoppingAddBar: some View {
         HStack(spacing: 12) {
             AppSymbol.image("plus")
                 .foregroundStyle(.secondary)
                 .frame(width: 24, height: 24)
-            TextField(String(localized: "shopping.add.placeholder"), text: $bottomDraft)
-                .font(AppTypography.body)
-                .focused($focusedField, equals: .bottom)
-                .submitLabel(.done)
-                .onSubmit { commitBottomDraft() }
-                .accessibilityIdentifier(AccessibilityIdentifiers.shoppingAddField)
+            ShoppingListAddTextField(
+                text: $bottomDraft,
+                isFocused: Binding(
+                    get: { focusedField == .bottom },
+                    set: { newValue in
+                        if newValue {
+                            focusedField = .bottom
+                        } else if focusedField == .bottom {
+                            focusedField = nil
+                        }
+                    }
+                ),
+                onAdd: { submitBottomDraftFromKeyboard() }
+            )
         }
+        .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemGroupedBackground))
+        .overlay(alignment: .top) { Divider() }
         .onChange(of: focusedField) { _, newValue in
-            if newValue != .bottom {
-                commitBottomDraft()
-            }
+            guard newValue != .bottom else { return }
+            guard !suppressAddFieldBlurCommit else { return }
+            commitBottomDraft()
         }
     }
 
@@ -347,14 +388,57 @@ struct ShoppingListView: View {
         }
     }
 
+    private func dismissShoppingKeyboard() {
+        switch focusedField {
+        case .bottom:
+            suppressAddFieldBlurCommit = false
+            commitBottomDraft()
+            focusedField = nil
+        case .inline(let id):
+            commitInlineEdit(itemId: id)
+            focusedField = nil
+        case nil:
+            break
+        }
+    }
+
+    private func submitBottomDraftFromKeyboard() {
+        suppressAddFieldBlurCommit = true
+        commitBottomDraft()
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            suppressAddFieldBlurCommit = false
+        }
+    }
+
     private func commitBottomDraft() {
         let text = bottomDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         bottomDraft = ""
         guard !text.isEmpty else { return }
-        Task { await runShoppingMutation { try await syncService.addManualShoppingItem(label: text) } }
+
+        let pending = shoppingModel.appendPendingManual(label: text)
+        var transaction = Transaction()
+        transaction.animation = nil
+        withTransaction(transaction) {
+            shoppingModel.recompute(snapshot: snapshot, purchasePhases: purchasePhases)
+        }
+
+        Task { @MainActor in
+            do {
+                try await syncService.addManualShoppingItem(label: text)
+            } catch {
+                shoppingModel.removePendingManual(id: pending.id)
+                shoppingModel.recompute(snapshot: snapshot, purchasePhases: purchasePhases)
+                if bottomDraft.isEmpty {
+                    bottomDraft = text
+                }
+                errorMessage = UserFacingAPIError.message(for: error)
+            }
+        }
     }
 
     private func commitInlineEdit(itemId: String) {
+        guard inlineEditItemId == itemId else { return }
         let draft = inlineEditDraft
         inlineEditItemId = nil
         inlineEditDraft = ""
@@ -390,6 +474,82 @@ struct ShoppingListView: View {
             }
             Task {
                 await runShoppingMutation { try await syncService.removeShoppingItem(id: id) }
+            }
+        }
+    }
+}
+
+// MARK: - Add field (localized Return title «Добавить», keyboard stays up on Return)
+
+private struct ShoppingListAddTextField: UIViewRepresentable {
+    @Binding var text: String
+    @Binding var isFocused: Bool
+    var onAdd: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    func makeUIView(context: Context) -> UITextField {
+        let field = UITextField()
+        field.borderStyle = .none
+        field.font = AppTypography.bodyUIFont
+        field.autocorrectionType = .default
+        field.returnKeyType = .continue
+        field.enablesReturnKeyAutomatically = true
+        field.placeholder = Bundle.currentLocalizedString("shopping.add.placeholder")
+        field.delegate = context.coordinator
+        field.addTarget(
+            context.coordinator,
+            action: #selector(Coordinator.textChanged),
+            for: .editingChanged
+        )
+        field.accessibilityIdentifier = AccessibilityIdentifiers.shoppingAddField
+        return field
+    }
+
+    func updateUIView(_ uiView: UITextField, context: Context) {
+        context.coordinator.parent = self
+        uiView.placeholder = Bundle.currentLocalizedString("shopping.add.placeholder")
+        if uiView.text != text {
+            uiView.text = text
+        }
+
+        if isFocused, !uiView.isFirstResponder {
+            DispatchQueue.main.async {
+                guard uiView.window != nil else { return }
+                uiView.becomeFirstResponder()
+            }
+        } else if !isFocused, uiView.isFirstResponder {
+            uiView.resignFirstResponder()
+        }
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: ShoppingListAddTextField
+
+        init(parent: ShoppingListAddTextField) {
+            self.parent = parent
+        }
+
+        @objc func textChanged(_ sender: UITextField) {
+            parent.text = sender.text ?? ""
+        }
+
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            parent.onAdd()
+            return false
+        }
+
+        func textFieldDidBeginEditing(_ textField: UITextField) {
+            if !parent.isFocused {
+                parent.isFocused = true
+            }
+        }
+
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            if parent.isFocused {
+                parent.isFocused = false
             }
         }
     }

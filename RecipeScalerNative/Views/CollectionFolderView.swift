@@ -95,20 +95,14 @@ struct CollectionFolderView: View {
         !pinnedRowItems.isEmpty || !unpinnedRowItems.isEmpty
     }
 
-    private var emptyStateFolderIconColor: Color {
-        RecipeAccentColor.folderIconColor(folderId: folderId, folder: activeFolder)
-    }
-
     var body: some View {
         Group {
             if folderRecipes.isEmpty {
                 ContentUnavailableView {
-                    Label {
+                    VStack(spacing: 12) {
+                        AppEmptyStateIllustration(asset: .recipeNotebookEmpty)
                         Text(String(localized: "collections.empty-folder"))
                             .font(AppTypography.body)
-                    } icon: {
-                        AppEmptyState.icon("folder")
-                            .foregroundStyle(emptyStateFolderIconColor)
                     }
                 }
                 .mobileTimerPanelBottomPadding()

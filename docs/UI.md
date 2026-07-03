@@ -139,6 +139,7 @@ ToolbarItemGroup(placement: .keyboard) {
 `ContentUnavailableView` **не наследует** Martian от `.appListBodyTypography()` на родителе — рисует системный SF Pro. Явно задавай типографику в каждом слоте:
 
 - **Title:** `AppEmptyState.label(key, symbol:)` — Martian title + **48 pt** icon (`AppTypography.emptyStateIconSize`, weight `.light` по умолчанию).
+- **Hero illustration:** `AppEmptyStateIllustration(asset:)` — raster art **192 pt** (`AppTypography.emptyStateIllustrationSize`, assets @3x 576 px; sync: `node scripts/sync-empty-state-illustrations.mjs`). Над текстом в `VStack`; image `accessibilityHidden(true)`.
 - **Description:** всегда `Text(...).appBody()` (или `.font(AppTypography.body)`).
 - **Кастомная иконка** (цвет папки и т.п.): `AppEmptyState.icon("folder").foregroundStyle(color)` в `Label { … } icon: { … }`.
 - **Не использовать** convenience-инициализатор `ContentUnavailableView("title", systemImage:)` — SF-текст и нет единого размера иконки.
@@ -149,7 +150,11 @@ ToolbarItemGroup(placement: .keyboard) {
 
 ```swift
 ContentUnavailableView {
-    AppEmptyState.label("recipe.list.empty.title", symbol: "fork.knife")
+    VStack(spacing: 12) {
+        AppEmptyStateIllustration(asset: .recipeNotebookEmpty)
+        Text("recipe.list.empty.title")
+            .appBody()
+    }
 } description: {
     Text("recipe.list.empty.description")
         .appBody()

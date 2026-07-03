@@ -20,11 +20,29 @@ import SwiftUI
 final class ShoppingViewModel {
     private(set) var sortedToBuy: [ShoppingListItem] = []
     private(set) var sortedPurchased: [ShoppingListItem] = []
+    /// Rows shown immediately on Return; dropped when the same manual label appears in Y.Doc snapshot.
+    private(set) var pendingManualToBuy: [ShoppingListItem] = []
+
+    func appendPendingManual(label: String) -> ShoppingListItem {
+        let item = ShoppingListItem(
+            id: "pending-\(UUID().uuidString)",
+            label: label,
+            createdAt: Int64(Date().timeIntervalSince1970 * 1000)
+        )
+        pendingManualToBuy.append(item)
+        return item
+    }
+
+    func removePendingManual(id: String) {
+        pendingManualToBuy.removeAll { $0.id == id }
+    }
 
     func recompute(snapshot: ShoppingListSnapshot, purchasePhases: [String: ToBuyPurchasePhase]) {
+        prunePendingManual(against: snapshot.items)
+
         var toBuy: [ShoppingListItem] = []
         var purchased: [ShoppingListItem] = []
-        toBuy.reserveCapacity(snapshot.items.count)
+        toBuy.reserveCapacity(snapshot.items.count + pendingManualToBuy.count)
         purchased.reserveCapacity(snapshot.items.count)
 
         for item in snapshot.items {
@@ -39,8 +57,26 @@ final class ShoppingViewModel {
             }
         }
 
+        for pending in pendingManualToBuy where !toBuy.contains(where: { $0.id == pending.id }) {
+            toBuy.append(pending)
+        }
+
         self.sortedToBuy = sort(toBuy, mode: snapshot.meta.sortMode)
         self.sortedPurchased = sort(purchased, mode: snapshot.meta.sortMode)
+    }
+
+    private func prunePendingManual(against snapshotItems: [ShoppingListItem]) {
+        var manualLabelCounts: [String: Int] = [:]
+        for item in snapshotItems where item.recipeId == nil && item.ingredientId == nil && !item.purchased {
+            manualLabelCounts[item.label, default: 0] += 1
+        }
+        var slots = manualLabelCounts
+        pendingManualToBuy.removeAll { pending in
+            let available = slots[pending.label, default: 0]
+            guard available > 0 else { return false }
+            slots[pending.label] = available - 1
+            return true
+        }
     }
 
     private func sort(_ items: [ShoppingListItem], mode: ShoppingSortMode) -> [ShoppingListItem] {

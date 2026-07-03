@@ -1,0 +1,22 @@
+{
+  "pixelSize": 576,
+  "displayPt": 192,
+  "source": "recipe-scaler-web/recipe-scaler/public/assets/illustrations/empty-states",
+  "entries": [
+    {
+      "webId": "recipe-notebook-empty",
+      "assetName": "empty-state-recipe-notebook",
+      "sha256": "d92eb873d5c9199df3637ab510c0fd9e3205da1c1ea04542e0103535a8204453"
+    },
+    {
+      "webId": "shopping-basket-empty",
+      "assetName": "empty-state-shopping-basket-empty",
+      "sha256": "7154358125977010ace6474b37a5ce0df1b2a7a3b2889bcb76db346928d9358e"
+    },
+    {
+      "webId": "shopping-basket-full",
+      "assetName": "empty-state-shopping-basket-full",
+      "sha256": "678b1ccc853aad94ef706c6001b7a5495bb2c1b2dd8bef06252aa0c26e11e604"
+    }
+  ]
+}

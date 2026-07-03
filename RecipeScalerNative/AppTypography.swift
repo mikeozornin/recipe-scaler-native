@@ -21,6 +21,8 @@ enum AppTypography {
     static let tabBarSize: CGFloat = 10
     /// Decorative SF Symbol in `ContentUnavailableView` and other empty states.
     static let emptyStateIconSize: CGFloat = 48
+    /// Raster empty-state illustrations (synced from web); 192 pt with @3x 576 px assets.
+    static let emptyStateIllustrationSize: CGFloat = 192
 
     static let bodyLineSpacing: CGFloat = 4
     static let footnoteLineSpacing: CGFloat = 2

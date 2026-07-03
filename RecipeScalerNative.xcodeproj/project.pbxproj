@@ -353,6 +353,7 @@
 		E5F60718293A4B70000A001 /* RecipeServings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70000A002 /* RecipeServings.swift */; };
 		TP14SAFE01A293A4B70100001 /* SafeIntCasts.swift in Sources */ = {isa = PBXBuildFile; fileRef = TP14SAFE01A293A4B70100002 /* SafeIntCasts.swift */; };
 		E5F60718293A4B70000A003 /* AppSymbol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70000A004 /* AppSymbol.swift */; };
+		ESEI0001A293A4B70100001 /* AppEmptyStateIllustration.swift in Sources */ = {isa = PBXBuildFile; fileRef = ESEI0001A293A4B70100002 /* AppEmptyStateIllustration.swift */; };
 		E5F60718293A4B7002D26536 /* RecipeDescriptionTimerReference.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B707F339DC6 /* RecipeDescriptionTimerReference.swift */; };
 		E5F60718293A4B7005B62F9C /* TransientStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B707F3A30E0 /* TransientStatusBanner.swift */; };
 		E5F60718293A4B7010A27A52 /* AssistantSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7001851F51 /* AssistantSheet.swift */; };
@@ -941,6 +942,7 @@
 		E5F60718293A4B70000A002 /* RecipeServings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeServings.swift; sourceTree = "<group>"; };
 		TP14SAFE01A293A4B70100002 /* SafeIntCasts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeIntCasts.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70000A004 /* AppSymbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSymbol.swift; sourceTree = "<group>"; };
+		ESEI0001A293A4B70100002 /* AppEmptyStateIllustration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEmptyStateIllustration.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7001851F51 /* AssistantSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSheet.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7004E397E0 /* DescriptionTimerStartPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionTimerStartPopover.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DocumentManager+ShoppingList.swift"; sourceTree = "<group>"; };
@@ -1150,6 +1152,7 @@
 				3F8900665BEBF9F38AAA0747 /* AppFonts.swift */,
 				A1TYPOG1A2B3C4D5E6F7080901 /* AppTypography.swift */,
 				E5F60718293A4B70000A004 /* AppSymbol.swift */,
+				ESEI0001A293A4B70100002 /* AppEmptyStateIllustration.swift */,
 				B2C3D4E5F60718293A4B5F /* RecipeAccentColor.swift */,
 				0913FBEDF877DA9B6F52F552 /* Assets.xcassets */,
 			EA4BEBE2780DE29A70E2D8AC /* ContentView.swift */,
@@ -2350,6 +2353,7 @@
 				E24F486705A0B9C40D05595B /* AppFonts.swift in Sources */,
 				A1TYPOG1A2B3C4D5E6F7080902 /* AppTypography.swift in Sources */,
 				E5F60718293A4B70000A003 /* AppSymbol.swift in Sources */,
+				ESEI0001A293A4B70100001 /* AppEmptyStateIllustration.swift in Sources */,
 				0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */,
 				896F51C011674A728B2F1433 /* WatchCredentialsBridge.swift in Sources */,
 				0C742EE9B3563B691A69ED1C /* FeatureAdoptionItem.swift in Sources */,
