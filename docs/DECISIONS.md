@@ -345,3 +345,51 @@ Chronological log of substantive choices (newest last).
 **Rationale:** Each `Uint8Array` byte was packed as a 32-bit integer in JSON, inflating binary CRDT payloads by ~4× (MIK-100 / review #17). The user explicitly required that sync not break — the fix is isolated to the transport encoding layer, keeping the Yjs protocol unchanged.
 
 ---
+
+### 2026-07-02 — Keep seed phrase after device-token migration
+
+**Decision:** After migrating to device bearer tokens (spec 041), retain the user's seed phrase in secure storage; do not clear it as part of migration completion.
+
+**Rationale:** The seed phrase is still required to show the user how to sign in on another device. Deleting it after token issuance would block that recovery path.
+
+---
+
+### 2026-07-03 — Default collections view is folder grid
+
+**Decision:** New sessions default the collections screen to folder grid display instead of list mode. Users can still switch modes; only the initial/default preference changes.
+
+**Rationale:** User explicitly asked to change the default from list to folders (“папочки”) for a more visual home screen.
+
+---
+
+### 2026-07-03 — Defer Mac/iPad layout (spec 043) on a branch
+
+**Decision:** Pause spec 043 Mac/iPad layout work on a dedicated branch until iPad simulator navigation and hit-testing issues are resolved; do not ship partial iPad layout on `master` yet.
+
+**Rationale:** iPad simulator showed a white screen and non-clickable UI; user chose to defer polish rather than block `master` with unfinished adaptive shell work.
+
+---
+
+### 2026-07-03 — Ingredient illustrations: no iPad in initial native scope
+
+**Decision:** Ingredient illustration parity with web ships for iPhone first; iPad-specific layout for the picker/catalog is out of scope for the initial implementation (“ipad не делаем”).
+
+**Rationale:** User narrowed scope to match web behavior on phone; iPad adaptive UI deferred with spec 043.
+
+---
+
+### 2026-07-03 — Illustration assets: WebP from transparent PNG
+
+**Decision:** Bundle ingredient and empty-state illustrations as WebP derived from transparent PNG sources; do not ship JPEGs with opaque white backgrounds.
+
+**Rationale:** User required dark-mode-safe artwork; white-filled JPEG backgrounds looked wrong in dark UI. WebP from transparent PNG preserves alpha and reduces bundle size vs raw PNG.
+
+---
+
+### 2026-07-04 — Offline outbox: dequeue only on `sync_confirmed`
+
+**Decision:** `offline_sync_queue` rows are removed only after the server acknowledges with `sync_confirmed`, not immediately after a successful Socket.IO emit. Legacy README plans 003/004 that implied post-emit deletion are superseded for runtime behavior.
+
+**Rationale:** Code review flagged data loss if the app crashes between emit and ack. User chose the reliable variant (“корректный и надёжный”) over faster dequeue, aligning with durable offline-first sync.
+
+---
