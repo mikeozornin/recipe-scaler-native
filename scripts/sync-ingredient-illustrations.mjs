@@ -30,6 +30,8 @@ const WEB_THUMBS_DIR = path.join(
 
 const CORE_RESOURCES = path.join(NATIVE_ROOT, 'RecipeScalerCore/Resources');
 const CATALOG_JSON = path.join(CORE_RESOURCES, 'ingredient-catalog.json');
+const CATALOG_RU_JSON = path.join(CORE_RESOURCES, 'ingredient-catalog.ru.json');
+const CATALOG_EN_JSON = path.join(CORE_RESOURCES, 'ingredient-catalog.en.json');
 const MANIFEST_JSON = path.join(CORE_RESOURCES, 'ingredient-catalog.manifest.json');
 const NATIVE_THUMBS_DIR = path.join(
   NATIVE_ROOT,
@@ -56,6 +58,22 @@ function buildCatalogEntries(ready) {
     aliasesRu: e.aliasesRu ?? [],
     aliasesEn: e.aliasesEn ?? [],
   }));
+}
+
+/**
+ * Picker display order, computed once at build time so the runtime search path
+ * stays filter-only (parity with web commit 3e6cce9).
+ *
+ * @param {Array<NonNullable<ReturnType<typeof buildCatalogEntries>[number]>>} rows
+ * @param {'ru' | 'en'} locale
+ */
+function sortEntriesForPicker(rows, locale) {
+  const labelKey = locale === 'ru' ? 'labelRu' : 'labelEn';
+  return [...rows].sort((a, b) => {
+    const cmp = a[labelKey].localeCompare(b[labelKey], locale, { sensitivity: 'base' });
+    if (cmp !== 0) return cmp;
+    return a.id.localeCompare(b.id);
+  });
 }
 
 function canonicalCatalogJson(entries) {
@@ -156,10 +174,15 @@ function main() {
       console.error('Catalog or manifest missing in Core Resources');
       process.exit(1);
     }
+    if (!fs.existsSync(CATALOG_RU_JSON) || !fs.existsSync(CATALOG_EN_JSON)) {
+      console.error('Pre-sorted picker catalog (ru/en) missing in Core Resources');
+      process.exit(1);
+    }
     const existingManifest = JSON.parse(fs.readFileSync(MANIFEST_JSON, 'utf8'));
     const existingCatalog = JSON.parse(fs.readFileSync(CATALOG_JSON, 'utf8'));
+    const existingCatalogEntries = existingCatalog.entries ?? [];
     const existingVersion = catalogVersion(
-      canonicalCatalogJson(existingCatalog.entries ?? []),
+      canonicalCatalogJson(existingCatalogEntries),
     );
     if (existingManifest.catalogVersion !== version || existingVersion !== version) {
       console.error(
@@ -167,11 +190,27 @@ function main() {
       );
       process.exit(1);
     }
+    const existingRu = JSON.parse(fs.readFileSync(CATALOG_RU_JSON, 'utf8'));
+    const existingEn = JSON.parse(fs.readFileSync(CATALOG_EN_JSON, 'utf8'));
+    const expectedRu = JSON.stringify({ entries: sortEntriesForPicker(existingCatalogEntries, 'ru') }, null, 2) + '\n';
+    const expectedEn = JSON.stringify({ entries: sortEntriesForPicker(existingCatalogEntries, 'en') }, null, 2) + '\n';
+    const actualRu = JSON.stringify({ entries: existingRu.entries ?? [] }, null, 2) + '\n';
+    const actualEn = JSON.stringify({ entries: existingEn.entries ?? [] }, null, 2) + '\n';
+    if (actualRu !== expectedRu) {
+      console.error('ingredient-catalog.ru.json drift: entries are not sorted by labelRu');
+      process.exit(1);
+    }
+    if (actualEn !== expectedEn) {
+      console.error('ingredient-catalog.en.json drift: entries are not sorted by labelEn');
+      process.exit(1);
+    }
     console.log(`OK check: ${readyIds.length} thumbs, catalogVersion=${version}`);
     return;
   }
 
   fs.writeFileSync(CATALOG_JSON, JSON.stringify({ entries }, null, 2) + '\n', 'utf8');
+  fs.writeFileSync(CATALOG_RU_JSON, JSON.stringify({ entries: sortEntriesForPicker(entries, 'ru') }, null, 2) + '\n', 'utf8');
+  fs.writeFileSync(CATALOG_EN_JSON, JSON.stringify({ entries: sortEntriesForPicker(entries, 'en') }, null, 2) + '\n', 'utf8');
   fs.writeFileSync(MANIFEST_JSON, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
   console.log(
     `Synced ${readyIds.length} entries, catalogVersion=${version}, thumbs → ${NATIVE_THUMBS_DIR}`,

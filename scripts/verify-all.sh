@@ -9,6 +9,13 @@ cd "$ROOT"
 VERIFY_SKIP_BUILD=0 "$ROOT/scripts/build-for-verify.sh"
 export VERIFY_SKIP_BUILD=1
 
+# Catalog drift gate: bundled ingredient-catalog.{json,ru.json,en.json,manifest.json}
+# must match the web registry. Runs before any simulator work so failures are fast.
+if ! node "$ROOT/scripts/sync-ingredient-illustrations.mjs" --check; then
+  echo "FAILED: ingredient catalog drift — run 'node scripts/sync-ingredient-illustrations.mjs' and commit" >&2
+  exit 1
+fi
+
 scripts=(
   verify-recipe-description-native.sh
   verify-app-shell.sh

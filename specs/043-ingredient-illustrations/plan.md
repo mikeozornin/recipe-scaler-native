@@ -76,6 +76,20 @@ flowchart TB
 5. Запись manifest; `readyEntryCount` = len(ready).
 6. Опциональный флаг `--check` для CI: не копировать, только сверить counts/hash.
 
+### Pre-sorted picker catalogs (parity with web `3e6cce9`)
+
+Сборка также эмиттит два пресортированных артефакта рядом с canonical:
+
+| Файл | Назначение |
+|------|------------|
+| `RecipeScalerCore/Resources/ingredient-catalog.json` | Canonical, отсортирован по `id`. Основа `entries`, `entriesById`, `haystackById`, alias-индекса. Хэшируется в `catalogVersion`. |
+| `RecipeScalerCore/Resources/ingredient-catalog.ru.json` | Та же schema, записи отсортированы по `labelRu` (`localeCompare('ru', { sensitivity: 'base' })`) + `id` tiebreak. |
+| `RecipeScalerCore/Resources/ingredient-catalog.en.json` | Та же schema, записи отсортированы по `labelEn` + `id` tiebreak. |
+
+Runtime (`IngredientIllustrationCatalog`) грузит все три файла один раз в `init`, кэширует пресортированные массивы и их `[PickerEntry]`-проекции. Метод `search(query:locale:)` становится **filter-only**: для пустого запроса возвращает кэшированный view, для непустого — фильтрует `haystackById` с сохранением pre-sort порядка. Вызовов `.localizedCompare` / `.sorted` в горячем пути больше нет — сортировка уехала в build-time.
+
+`--check` режим верифицирует дрифт всех трёх файлов: canonical hash + совпадение locale-сортировки с ре-деривом из canonical. Cross-check тесты в `IngredientIllustrationCatalogTests` ловят ICU-collator drift между Node `localeCompare` и Foundation `.localizedCompare`.
+
 ## Yjs / редактирование
 
 Паритет с веб `applyIngredientIllustrationPickerSelection` / `Clear`:

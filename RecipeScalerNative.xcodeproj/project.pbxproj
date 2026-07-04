@@ -471,6 +471,8 @@
 		ILL043C14 /* IngredientIllustrationLazyResolve.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F14 /* IngredientIllustrationLazyResolve.swift */; };
 		ILL043C04 /* ingredient-catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = ILL043F04 /* ingredient-catalog.json */; };
 		ILL043C05 /* ingredient-catalog.manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = ILL043F05 /* ingredient-catalog.manifest.json */; };
+		ILL043C18 /* ingredient-catalog.ru.json in Resources */ = {isa = PBXBuildFile; fileRef = ILL043F18 /* ingredient-catalog.ru.json */; };
+		ILL043C19 /* ingredient-catalog.en.json in Resources */ = {isa = PBXBuildFile; fileRef = ILL043F19 /* ingredient-catalog.en.json */; };
 		ILL043C06 /* IngredientIllustrationImageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F06 /* IngredientIllustrationImageStore.swift */; };
 		ILL043C07 /* IngredientBowlIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F07 /* IngredientBowlIcon.swift */; };
 		ILL043C08 /* IngredientIllustrationThumb.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F08 /* IngredientIllustrationThumb.swift */; };
@@ -1058,6 +1060,8 @@
 		ILL043F14 /* IngredientIllustrationLazyResolve.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationLazyResolve.swift; sourceTree = "<group>"; };
 		ILL043F04 /* ingredient-catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Resources/ingredient-catalog.json; sourceTree = "<group>"; };
 		ILL043F05 /* ingredient-catalog.manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Resources/ingredient-catalog.manifest.json; sourceTree = "<group>"; };
+		ILL043F18 /* ingredient-catalog.ru.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Resources/ingredient-catalog.ru.json; sourceTree = "<group>"; };
+		ILL043F19 /* ingredient-catalog.en.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Resources/ingredient-catalog.en.json; sourceTree = "<group>"; };
 		ILL043F06 /* IngredientIllustrationImageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationImageStore.swift; sourceTree = "<group>"; };
 		ILL043F07 /* IngredientBowlIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientBowlIcon.swift; sourceTree = "<group>"; };
 		ILL043F08 /* IngredientIllustrationThumb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationThumb.swift; sourceTree = "<group>"; };
@@ -1509,6 +1513,8 @@
 				ILL043G01 /* IngredientIllustrations */,
 				ILL043F04 /* ingredient-catalog.json */,
 				ILL043F05 /* ingredient-catalog.manifest.json */,
+				ILL043F18 /* ingredient-catalog.ru.json */,
+				ILL043F19 /* ingredient-catalog.en.json */,
 				B723ECE01A3D4E2F85D856AC /* Shared.xcstrings */,
 				2957EAE3186567297DECD2F3 /* Snapshots */,
 				C8F000A9193A47F3955634E8 /* TimerViews */,
@@ -2258,6 +2264,8 @@
 				EB4EDF7C30F646A99BDD3767 /* Shared.xcstrings in Resources */,
 				ILL043C04 /* ingredient-catalog.json in Resources */,
 				ILL043C05 /* ingredient-catalog.manifest.json in Resources */,
+				ILL043C18 /* ingredient-catalog.ru.json in Resources */,
+				ILL043C19 /* ingredient-catalog.en.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

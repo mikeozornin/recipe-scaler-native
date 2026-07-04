@@ -46,6 +46,95 @@ final class IngredientIllustrationCatalogTests: XCTestCase {
         XCTAssertEqual(IngredientIllustrationCatalog.shared.entryCount, readyCount)
     }
 
+    func testPreSortedCatalogsHaveSameEntryCountAsCanonical() {
+        let bundle = Bundle(for: IngredientIllustrationCatalog.self)
+        for resource in ["ingredient-catalog.ru", "ingredient-catalog.en"] {
+            guard let url = bundle.url(forResource: resource, withExtension: "json"),
+                  let data = try? Data(contentsOf: url),
+                  let payload = try? JSONDecoder().decode(SingleCatalogFile.self, from: data)
+            else {
+                XCTFail("\(resource).json missing or unreadable")
+                continue
+            }
+            XCTAssertEqual(
+                payload.entries.count,
+                IngredientIllustrationCatalog.shared.entryCount,
+                "\(resource).json entry count drifted from canonical"
+            )
+            XCTAssertEqual(
+                Set(payload.entries.map(\.id)),
+                Set(IngredientIllustrationCatalog.shared.allEntriesForMatching().map(\.id)),
+                "\(resource).json ids must match canonical catalog ids"
+            )
+        }
+    }
+
+    /// Safety net for ICU-collator drift between Node `localeCompare({sensitivity:'base'})`
+    /// (used by `scripts/sync-ingredient-illustrations.mjs`) and Foundation `.localizedCompare`
+    /// (used to be the runtime sort). If Node and Foundation ever disagree, this test fails
+    /// before the bundled JSON drifts silently.
+    func testBundledRuCatalogIsPreSortedForPicker() {
+        let catalog = IngredientIllustrationCatalog.shared
+        let expected = Self.referenceLocalizedSortedIds(
+            from: catalog.allEntriesForMatching(),
+            label: { $0.labelRu },
+            localeIdentifier: "ru"
+        )
+        let actual = catalog.allPickerEntries(locale: .ru).map(\.id)
+        XCTAssertEqual(actual, expected, "ingredient-catalog.ru.json order disagrees with Foundation .localizedCompare")
+    }
+
+    func testBundledEnCatalogIsPreSortedForPicker() {
+        let catalog = IngredientIllustrationCatalog.shared
+        let expected = Self.referenceLocalizedSortedIds(
+            from: catalog.allEntriesForMatching(),
+            label: { $0.labelEn },
+            localeIdentifier: "en"
+        )
+        let actual = catalog.allPickerEntries(locale: .en).map(\.id)
+        XCTAssertEqual(actual, expected, "ingredient-catalog.en.json order disagrees with Foundation .localizedCompare")
+    }
+
+    func testSearchPreservesPreSortedOrderWhenFiltered() {
+        let catalog = IngredientIllustrationCatalog.shared
+        for locale in [IngredientIllustrationCatalogLocale.ru, .en] {
+            let baseline = catalog.allPickerEntries(locale: locale).map(\.id)
+            let result = catalog.search(query: "flour", locale: locale).map(\.id)
+            XCTAssertFalse(result.isEmpty, "filter 'flour' should match at least one entry for locale \(locale)")
+
+            var baselineIndex = 0
+            var resultIndex = 0
+            while baselineIndex < baseline.count, resultIndex < result.count {
+                if baseline[baselineIndex] == result[resultIndex] {
+                    resultIndex += 1
+                }
+                baselineIndex += 1
+            }
+            XCTAssertEqual(
+                resultIndex,
+                result.count,
+                "search result is not a subsequence of allPickerEntries for locale \(locale) — filter must not re-sort"
+            )
+        }
+    }
+
+    private static func referenceLocalizedSortedIds(
+        from entries: [IngredientIllustrationCatalogEntry],
+        label: (IngredientIllustrationCatalogEntry) -> String,
+        localeIdentifier: String
+    ) -> [String] {
+        entries.sorted { lhs, rhs in
+            let l = label(lhs)
+            let r = label(rhs)
+            if l != r { return l.localizedCompare(r) == .orderedAscending }
+            return lhs.id.localizedCompare(rhs.id) == .orderedAscending
+        }.map(\.id)
+    }
+
+    private struct SingleCatalogFile: Codable {
+        let entries: [IngredientIllustrationCatalogEntry]
+    }
+
     func testMergeStoredIllustrationBindingsPrefersPersistedPickerChoice() {
         let stored = [
             IngredientData(id: "ing-1", name: "Eggs", illustrationId: "apricot-jam"),

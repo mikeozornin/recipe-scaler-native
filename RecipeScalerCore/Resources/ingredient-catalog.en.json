@@ -1,0 +1,4970 @@
+{
+  "entries": [
+    {
+      "id": "allspice",
+      "category": "spices",
+      "labelRu": "Душистый перец",
+      "labelEn": "Allspice",
+      "aliasesRu": [
+        "душистый перец",
+        "гвоздичный перец",
+        "душистый перец горошком",
+        "молотый душистый перец",
+        "черный душистый перец"
+      ],
+      "aliasesEn": [
+        "allspice"
+      ]
+    },
+    {
+      "id": "almond-butter",
+      "category": "nuts-seeds",
+      "labelRu": "Миндальная паста",
+      "labelEn": "Almond butter",
+      "aliasesRu": [
+        "миндальная паста"
+      ],
+      "aliasesEn": [
+        "almond butter",
+        "almond paste"
+      ]
+    },
+    {
+      "id": "almond",
+      "category": "nuts-seeds",
+      "labelRu": "Миндаль",
+      "labelEn": "Almonds",
+      "aliasesRu": [
+        "миндаль",
+        "миндальные лепестки",
+        "тертый миндаль",
+        "экстракт миндаля"
+      ],
+      "aliasesEn": [
+        "almond",
+        "almonds"
+      ]
+    },
+    {
+      "id": "anchovies",
+      "category": "fish",
+      "labelRu": "Анчоусы",
+      "labelEn": "Anchovies",
+      "aliasesRu": [
+        "анчоусы",
+        "анчоус",
+        "филе анчоуса"
+      ],
+      "aliasesEn": [
+        "anchovy",
+        "anchovies"
+      ]
+    },
+    {
+      "id": "apple",
+      "category": "fruits",
+      "labelRu": "Яблоко",
+      "labelEn": "Apple",
+      "aliasesRu": [
+        "яблоко",
+        "яблоки",
+        "зеленые яблоки",
+        "кислые яблоки",
+        "райские яблоки",
+        "яблоки «гренни-смит»",
+        "яблочное пюре"
+      ],
+      "aliasesEn": [
+        "apple",
+        "apples"
+      ]
+    },
+    {
+      "id": "jam-apricot",
+      "category": "condiments",
+      "labelRu": "Абрикосовый джем",
+      "labelEn": "Apricot jam",
+      "aliasesRu": [
+        "абрикосовый конфитюр",
+        "абрикосовый джем"
+      ],
+      "aliasesEn": [
+        "apricot jam",
+        "apricot preserve"
+      ]
+    },
+    {
+      "id": "artichoke",
+      "category": "vegetables",
+      "labelRu": "Артишок",
+      "labelEn": "Artichoke",
+      "aliasesRu": [
+        "артишок"
+      ],
+      "aliasesEn": [
+        "artichoke"
+      ]
+    },
+    {
+      "id": "arugula",
+      "category": "greens-herbs",
+      "labelRu": "Руккола",
+      "labelEn": "Arugula",
+      "aliasesRu": [
+        "руккола",
+        "рукола"
+      ],
+      "aliasesEn": [
+        "arugula",
+        "rocket"
+      ]
+    },
+    {
+      "id": "asian-pear",
+      "category": "fruits",
+      "labelRu": "Китайская груша",
+      "labelEn": "Asian pear",
+      "aliasesRu": [
+        "китайские груши"
+      ],
+      "aliasesEn": [
+        "asian pear",
+        "nashi pear"
+      ]
+    },
+    {
+      "id": "asparagus",
+      "category": "vegetables",
+      "labelRu": "Спаржа",
+      "labelEn": "Asparagus",
+      "aliasesRu": [
+        "спаржа"
+      ],
+      "aliasesEn": [
+        "asparagus"
+      ]
+    },
+    {
+      "id": "avocado",
+      "category": "vegetables",
+      "labelRu": "Авокадо",
+      "labelEn": "Avocado",
+      "aliasesRu": [
+        "авокадо"
+      ],
+      "aliasesEn": [
+        "avocado"
+      ]
+    },
+    {
+      "id": "bacon",
+      "category": "pork",
+      "labelRu": "Бекон",
+      "labelEn": "Bacon",
+      "aliasesRu": [
+        "бекон",
+        "бекон полосками",
+        "копченое сало",
+        "свинина копченая"
+      ],
+      "aliasesEn": [
+        "bacon",
+        "streaky bacon"
+      ]
+    },
+    {
+      "id": "baking-soda",
+      "category": "baking",
+      "labelRu": "Пищевая сода (не разрыхлитель)",
+      "labelEn": "Baking soda (not baking powder)",
+      "aliasesRu": [
+        "сода",
+        "пищевая сода"
+      ],
+      "aliasesEn": [
+        "baking soda",
+        "sodium bicarbonate"
+      ]
+    },
+    {
+      "id": "vinegar-balsamic",
+      "category": "condiments",
+      "labelRu": "Бальзамический уксус",
+      "labelEn": "Balsamic vinegar",
+      "aliasesRu": [
+        "бальзамический уксус",
+        "бальзамик"
+      ],
+      "aliasesEn": [
+        "balsamic vinegar",
+        "balsamic"
+      ]
+    },
+    {
+      "id": "banana",
+      "category": "fruits",
+      "labelRu": "Банан",
+      "labelEn": "Banana",
+      "aliasesRu": [
+        "банан",
+        "бананы"
+      ],
+      "aliasesEn": [
+        "banana",
+        "bananas"
+      ]
+    },
+    {
+      "id": "barberry",
+      "category": "fruits",
+      "labelRu": "Барбарис",
+      "labelEn": "Barberries",
+      "aliasesRu": [
+        "барбарис"
+      ],
+      "aliasesEn": [
+        "barberry",
+        "barberries"
+      ]
+    },
+    {
+      "id": "bay-leaf",
+      "category": "greens-herbs",
+      "labelRu": "Лавровый лист",
+      "labelEn": "Bay leaf",
+      "aliasesRu": [
+        "лавровый лист",
+        "лавр"
+      ],
+      "aliasesEn": [
+        "bay leaf",
+        "laurel leaf"
+      ]
+    },
+    {
+      "id": "beef-brisket",
+      "category": "beef",
+      "labelRu": "Грудинка говяжья",
+      "labelEn": "Beef brisket",
+      "aliasesRu": [
+        "грудинка",
+        "грудинка говяжья",
+        "говяжья грудинка",
+        "говяжьи ребра"
+      ],
+      "aliasesEn": [
+        "beef brisket",
+        "brisket"
+      ]
+    },
+    {
+      "id": "beef-stew",
+      "category": "beef",
+      "labelRu": "Говядина кубиками для тушения и рагу",
+      "labelEn": "Beef cubes for stewing and braising",
+      "aliasesRu": [
+        "говядина кубиками",
+        "говядина для тушения",
+        "говядина на гуляш",
+        "мякоть говядины кусочками",
+        "говядина",
+        "говядина с костями",
+        "говяжьи голяшки",
+        "огузок говяжий",
+        "говяжья лопатка",
+        "говяжья тушенка",
+        "говяжья шейка"
+      ],
+      "aliasesEn": [
+        "beef stew meat",
+        "stewing beef",
+        "beef cubes",
+        "beef for braising",
+        "beef for goulash"
+      ]
+    },
+    {
+      "id": "beef-liver",
+      "category": "beef",
+      "labelRu": "Говяжья печень",
+      "labelEn": "Beef liver",
+      "aliasesRu": [
+        "говяжья печень",
+        "печень говяжья",
+        "свиная печень"
+      ],
+      "aliasesEn": [
+        "beef liver"
+      ]
+    },
+    {
+      "id": "beef-steak",
+      "category": "beef",
+      "labelRu": "Говяжий стейк",
+      "labelEn": "Beef steak",
+      "aliasesRu": [
+        "говяжий стейк",
+        "стейк",
+        "рибай",
+        "антрекот",
+        "говяжий рибай",
+        "говяжья корейка на кости",
+        "пиканья",
+        "фланк-стейк"
+      ],
+      "aliasesEn": [
+        "beef steak",
+        "steak",
+        "ribeye",
+        "sirloin"
+      ]
+    },
+    {
+      "id": "stock-beef",
+      "category": "condiments",
+      "labelRu": "Говяжий бульон",
+      "labelEn": "Beef stock",
+      "aliasesRu": [
+        "говяжий бульон",
+        "бульон",
+        "мясной бульон"
+      ],
+      "aliasesEn": [
+        "beef stock",
+        "beef broth"
+      ]
+    },
+    {
+      "id": "beef-tenderloin",
+      "category": "beef",
+      "labelRu": "Вырезка говяжья",
+      "labelEn": "Beef tenderloin",
+      "aliasesRu": [
+        "вырезка",
+        "говяжья вырезка",
+        "филе говядины",
+        "телячья вырезка"
+      ],
+      "aliasesEn": [
+        "beef tenderloin",
+        "tenderloin",
+        "filet mignon"
+      ]
+    },
+    {
+      "id": "beet",
+      "category": "vegetables",
+      "labelRu": "Свёкла",
+      "labelEn": "Beet",
+      "aliasesRu": [
+        "свёкла",
+        "свекла с ботвой",
+        "свекольная ботва",
+        "маринованная свекла"
+      ],
+      "aliasesEn": [
+        "beet",
+        "beetroot"
+      ]
+    },
+    {
+      "id": "currant-black",
+      "category": "fruits",
+      "labelRu": "Смородина",
+      "labelEn": "Black currant",
+      "aliasesRu": [
+        "чёрная смородина",
+        "смородина"
+      ],
+      "aliasesEn": [
+        "black currant",
+        "currants"
+      ]
+    },
+    {
+      "id": "olives-black",
+      "category": "canned-preserved",
+      "labelRu": "Оливки чёрные",
+      "labelEn": "Black olives",
+      "aliasesRu": [
+        "оливки чёрные",
+        "маслины",
+        "маслины без косточек",
+        "оливки каламата"
+      ],
+      "aliasesEn": [
+        "black olives"
+      ]
+    },
+    {
+      "id": "black-pepper",
+      "category": "spices",
+      "labelRu": "Чёрный перец горошком (специя)",
+      "labelEn": "Black peppercorns (spice)",
+      "aliasesRu": [
+        "чёрный перец",
+        "перец горошком",
+        "молотый чёрный перец",
+        "свежемолотый черный перец",
+        "черный перец горошком"
+      ],
+      "aliasesEn": [
+        "black pepper",
+        "peppercorns"
+      ]
+    },
+    {
+      "id": "black-radish",
+      "category": "vegetables",
+      "labelRu": "Редька",
+      "labelEn": "Black radish",
+      "aliasesRu": [
+        "редька"
+      ],
+      "aliasesEn": [
+        "black radish"
+      ]
+    },
+    {
+      "id": "blue-cheese",
+      "category": "dairy",
+      "labelRu": "Сыр с голубой плесенью",
+      "labelEn": "Blue cheese with mold veins",
+      "aliasesRu": [
+        "сыр с плесенью",
+        "горгонзола",
+        "рокфор",
+        "дорблю",
+        "голубой сыр"
+      ],
+      "aliasesEn": [
+        "blue cheese",
+        "gorgonzola",
+        "roquefort"
+      ]
+    },
+    {
+      "id": "blueberry",
+      "category": "fruits",
+      "labelRu": "Черника",
+      "labelEn": "Blueberry",
+      "aliasesRu": [
+        "черника",
+        "голубика"
+      ],
+      "aliasesEn": [
+        "blueberry",
+        "blueberries"
+      ]
+    },
+    {
+      "id": "broth-cube",
+      "category": "condiments",
+      "labelRu": "Бульонный кубик (концентрат)",
+      "labelEn": "Bouillon stock cube",
+      "aliasesRu": [
+        "бульонный кубик",
+        "кубик бульона"
+      ],
+      "aliasesEn": [
+        "bouillon cube",
+        "broth cube",
+        "stock cube"
+      ]
+    },
+    {
+      "id": "broccoli",
+      "category": "vegetables",
+      "labelRu": "Брокколи",
+      "labelEn": "Broccoli",
+      "aliasesRu": [
+        "брокколи"
+      ],
+      "aliasesEn": [
+        "broccoli"
+      ]
+    },
+    {
+      "id": "rice-brown",
+      "category": "grains",
+      "labelRu": "Рис бурый",
+      "labelEn": "Brown rice",
+      "aliasesRu": [
+        "бурый рис",
+        "коричневый рис"
+      ],
+      "aliasesEn": [
+        "brown rice"
+      ]
+    },
+    {
+      "id": "sugar-brown",
+      "category": "baking",
+      "labelRu": "Сахар коричневый",
+      "labelEn": "Brown sugar",
+      "aliasesRu": [
+        "коричневый сахар",
+        "сахар коричневый",
+        "тростниковый сахар",
+        "пальмовый сахар",
+        "сахар мусковадо",
+        "сахар демерара"
+      ],
+      "aliasesEn": [
+        "brown sugar"
+      ]
+    },
+    {
+      "id": "buckwheat",
+      "category": "grains",
+      "labelRu": "Гречка",
+      "labelEn": "Buckwheat",
+      "aliasesRu": [
+        "гречка",
+        "гречневая крупа",
+        "гречневая мука"
+      ],
+      "aliasesEn": [
+        "buckwheat",
+        "buckwheat groats"
+      ]
+    },
+    {
+      "id": "bulgur",
+      "category": "grains",
+      "labelRu": "Булгур",
+      "labelEn": "Bulgur",
+      "aliasesRu": [
+        "булгур",
+        "круглозерная пшеница (дзавар)"
+      ],
+      "aliasesEn": [
+        "bulgur"
+      ]
+    },
+    {
+      "id": "butter",
+      "category": "dairy",
+      "labelRu": "Сливочное масло",
+      "labelEn": "Butter",
+      "aliasesRu": [
+        "сливочное масло",
+        "масло сливочное"
+      ],
+      "aliasesEn": [
+        "butter",
+        "unsalted butter"
+      ]
+    },
+    {
+      "id": "buttermilk",
+      "category": "dairy",
+      "labelRu": "Пахта",
+      "labelEn": "Buttermilk",
+      "aliasesRu": [
+        "пахта"
+      ],
+      "aliasesEn": [
+        "buttermilk"
+      ]
+    },
+    {
+      "id": "mushroom-button",
+      "category": "mushrooms",
+      "labelRu": "Шампиньоны",
+      "labelEn": "Button mushrooms",
+      "aliasesRu": [
+        "шампиньоны",
+        "шампиньон",
+        "опята"
+      ],
+      "aliasesEn": [
+        "button mushroom",
+        "champignon",
+        "white mushroom"
+      ]
+    },
+    {
+      "id": "candied-orange",
+      "category": "fruits",
+      "labelRu": "Апельсиновые цукаты",
+      "labelEn": "Candied orange peel",
+      "aliasesRu": [
+        "цукаты апельсиновые",
+        "апельсиновые цукаты"
+      ],
+      "aliasesEn": [
+        "candied orange peel",
+        "orange peel"
+      ]
+    },
+    {
+      "id": "beans-canned",
+      "category": "canned-preserved",
+      "labelRu": "Фасоль консервированная",
+      "labelEn": "Canned beans",
+      "aliasesRu": [
+        "фасоль консервированная",
+        "консервированная фасоль"
+      ],
+      "aliasesEn": [
+        "canned beans"
+      ]
+    },
+    {
+      "id": "coconut-milk",
+      "category": "canned-preserved",
+      "labelRu": "Кокосовое молоко в банке",
+      "labelEn": "Canned coconut milk",
+      "aliasesRu": [
+        "кокосовое молоко",
+        "кокосовые сливки"
+      ],
+      "aliasesEn": [
+        "coconut milk"
+      ]
+    },
+    {
+      "id": "salmon-canned-pink",
+      "category": "canned-preserved",
+      "labelRu": "Горбуша консервированная",
+      "labelEn": "Canned pink salmon",
+      "aliasesRu": [
+        "горбуша консервированная в собственном соку"
+      ],
+      "aliasesEn": [
+        "canned pink salmon",
+        "canned salmon"
+      ]
+    },
+    {
+      "id": "sardines-canned",
+      "category": "fish",
+      "labelRu": "Сардины консервированные",
+      "labelEn": "Canned sardines",
+      "aliasesRu": [
+        "сардины",
+        "сардины в масле",
+        "килька пряного посола"
+      ],
+      "aliasesEn": [
+        "canned sardines",
+        "sardines"
+      ]
+    },
+    {
+      "id": "corn-canned",
+      "category": "canned-preserved",
+      "labelRu": "Кукуруза консервированная в банке",
+      "labelEn": "Canned sweet corn",
+      "aliasesRu": [
+        "кукуруза консервированная"
+      ],
+      "aliasesEn": [
+        "canned corn"
+      ]
+    },
+    {
+      "id": "tomatoes-canned",
+      "category": "canned-preserved",
+      "labelRu": "Томаты в собственном соку",
+      "labelEn": "Canned tomatoes",
+      "aliasesRu": [
+        "томаты в собственном соку",
+        "томаты консервированные"
+      ],
+      "aliasesEn": [
+        "canned tomatoes",
+        "tinned tomatoes"
+      ]
+    },
+    {
+      "id": "tuna-canned",
+      "category": "canned-preserved",
+      "labelRu": "Тунец консервированный",
+      "labelEn": "Canned tuna",
+      "aliasesRu": [
+        "консервированный тунец",
+        "стружка тунца"
+      ],
+      "aliasesEn": [
+        "canned tuna",
+        "tinned tuna"
+      ]
+    },
+    {
+      "id": "capers",
+      "category": "condiments",
+      "labelRu": "Каперсы",
+      "labelEn": "Capers",
+      "aliasesRu": [
+        "каперсы"
+      ],
+      "aliasesEn": [
+        "capers"
+      ]
+    },
+    {
+      "id": "cardamom",
+      "category": "spices",
+      "labelRu": "Кардамон",
+      "labelEn": "Cardamom",
+      "aliasesRu": [
+        "кардамон",
+        "коробочки кардамона",
+        "молотый кардамон",
+        "черные семена кардамона"
+      ],
+      "aliasesEn": [
+        "cardamom"
+      ]
+    },
+    {
+      "id": "carrot",
+      "category": "vegetables",
+      "labelRu": "Морковь",
+      "labelEn": "Carrot",
+      "aliasesRu": [
+        "морковь",
+        "морковка",
+        "желтая морковь"
+      ],
+      "aliasesEn": [
+        "carrot",
+        "carrots"
+      ]
+    },
+    {
+      "id": "cashew",
+      "category": "nuts-seeds",
+      "labelRu": "Кешью",
+      "labelEn": "Cashews",
+      "aliasesRu": [
+        "кешью"
+      ],
+      "aliasesEn": [
+        "cashew",
+        "cashews"
+      ]
+    },
+    {
+      "id": "cauliflower",
+      "category": "vegetables",
+      "labelRu": "Цветная капуста",
+      "labelEn": "Cauliflower",
+      "aliasesRu": [
+        "цветная капуста"
+      ],
+      "aliasesEn": [
+        "cauliflower"
+      ]
+    },
+    {
+      "id": "celery-root",
+      "category": "vegetables",
+      "labelRu": "Корень сельдерея",
+      "labelEn": "Celeriac root",
+      "aliasesRu": [
+        "корень сельдерея"
+      ],
+      "aliasesEn": [
+        "celeriac",
+        "celery root"
+      ]
+    },
+    {
+      "id": "celery",
+      "category": "vegetables",
+      "labelRu": "Сельдерей",
+      "labelEn": "Celery",
+      "aliasesRu": [
+        "сельдерей",
+        "стебель сельдерея",
+        "зелень сельдерея",
+        "стебель сельдерея с листьями"
+      ],
+      "aliasesEn": [
+        "celery",
+        "celery stalk"
+      ]
+    },
+    {
+      "id": "cheese-cheddar",
+      "category": "dairy",
+      "labelRu": "Сыр чеддер",
+      "labelEn": "Cheddar cheese",
+      "aliasesRu": [
+        "чеддер",
+        "сыр чеддер",
+        "российский сыр"
+      ],
+      "aliasesEn": [
+        "cheddar",
+        "cheddar cheese"
+      ]
+    },
+    {
+      "id": "cherry",
+      "category": "fruits",
+      "labelRu": "Вишня",
+      "labelEn": "Cherries",
+      "aliasesRu": [
+        "вишня без косточек",
+        "вишня"
+      ],
+      "aliasesEn": [
+        "cherry",
+        "cherries"
+      ]
+    },
+    {
+      "id": "chia-seeds",
+      "category": "nuts-seeds",
+      "labelRu": "Семена чиа",
+      "labelEn": "Chia seeds",
+      "aliasesRu": [
+        "чиа",
+        "семена чиа"
+      ],
+      "aliasesEn": [
+        "chia seeds",
+        "chia"
+      ]
+    },
+    {
+      "id": "chicken-breast",
+      "category": "poultry",
+      "labelRu": "Куриное филе",
+      "labelEn": "Chicken breast",
+      "aliasesRu": [
+        "куриное филе",
+        "грудка курицы",
+        "филе курицы",
+        "куриная грудка",
+        "грудка куриная на кости"
+      ],
+      "aliasesEn": [
+        "chicken breast",
+        "chicken fillet",
+        "boneless chicken breast"
+      ]
+    },
+    {
+      "id": "chicken-drumstick",
+      "category": "poultry",
+      "labelRu": "Куриная ножка",
+      "labelEn": "Chicken drumstick",
+      "aliasesRu": [
+        "куриная ножка",
+        "голень курицы",
+        "ножка курицы"
+      ],
+      "aliasesEn": [
+        "chicken drumstick",
+        "chicken leg",
+        "drumstick"
+      ]
+    },
+    {
+      "id": "chicken-liver",
+      "category": "poultry",
+      "labelRu": "Куриная печень",
+      "labelEn": "Chicken liver",
+      "aliasesRu": [
+        "куриная печень",
+        "печень курицы",
+        "куриные желудки"
+      ],
+      "aliasesEn": [
+        "chicken liver"
+      ]
+    },
+    {
+      "id": "chicken-thigh",
+      "category": "poultry",
+      "labelRu": "Куриное бедро",
+      "labelEn": "Chicken thigh",
+      "aliasesRu": [
+        "куриное бедро",
+        "бедро курицы",
+        "филе куриного бедра",
+        "куриные окорочка"
+      ],
+      "aliasesEn": [
+        "chicken thigh",
+        "chicken leg quarter"
+      ]
+    },
+    {
+      "id": "chicken-wing",
+      "category": "poultry",
+      "labelRu": "Куриные крылья",
+      "labelEn": "Chicken wings",
+      "aliasesRu": [
+        "куриные крылья",
+        "крылья курицы"
+      ],
+      "aliasesEn": [
+        "chicken wing",
+        "chicken wings"
+      ]
+    },
+    {
+      "id": "chickpeas",
+      "category": "legumes",
+      "labelRu": "Нут",
+      "labelEn": "Chickpeas",
+      "aliasesRu": [
+        "нут",
+        "консервированный нут"
+      ],
+      "aliasesEn": [
+        "chickpeas",
+        "garbanzo beans"
+      ]
+    },
+    {
+      "id": "chili-flakes",
+      "category": "spices",
+      "labelRu": "Хлопья чили",
+      "labelEn": "Chili flakes",
+      "aliasesRu": [
+        "хлопья чили",
+        "острый перец хлопья",
+        "кайенский перец",
+        "молотый красный корейский перец"
+      ],
+      "aliasesEn": [
+        "chili flakes",
+        "red pepper flakes"
+      ]
+    },
+    {
+      "id": "chorizo",
+      "category": "pork",
+      "labelRu": "Чоризо",
+      "labelEn": "Chorizo sausage",
+      "aliasesRu": [
+        "чоризо"
+      ],
+      "aliasesEn": [
+        "chorizo"
+      ]
+    },
+    {
+      "id": "cinnamon-stick",
+      "category": "spices",
+      "labelRu": "Корица",
+      "labelEn": "Cinnamon",
+      "aliasesRu": [
+        "корица",
+        "палочки корицы",
+        "молотая корица"
+      ],
+      "aliasesEn": [
+        "cinnamon",
+        "cinnamon stick"
+      ]
+    },
+    {
+      "id": "clams",
+      "category": "seafood",
+      "labelRu": "Вонголе",
+      "labelEn": "Clams",
+      "aliasesRu": [
+        "ракушки-венерки",
+        "ракушки-венерки (вонголе)"
+      ],
+      "aliasesEn": [
+        "clams",
+        "vongole"
+      ]
+    },
+    {
+      "id": "cloves",
+      "category": "spices",
+      "labelRu": "Гвоздика специя (бутоны)",
+      "labelEn": "Cloves spice (dried buds)",
+      "aliasesRu": [
+        "гвоздика",
+        "молотая гвоздика"
+      ],
+      "aliasesEn": [
+        "cloves",
+        "clove"
+      ]
+    },
+    {
+      "id": "cocoa-powder",
+      "category": "baking",
+      "labelRu": "Какао",
+      "labelEn": "Cocoa powder",
+      "aliasesRu": [
+        "какао",
+        "какао-порошок"
+      ],
+      "aliasesEn": [
+        "cocoa powder",
+        "cocoa"
+      ]
+    },
+    {
+      "id": "cod-fillet",
+      "category": "fish",
+      "labelRu": "Треска",
+      "labelEn": "Cod",
+      "aliasesRu": [
+        "треска",
+        "филе трески",
+        "камбала",
+        "карп",
+        "сибас",
+        "судак",
+        "филе сибаса",
+        "хек"
+      ],
+      "aliasesEn": [
+        "cod",
+        "cod fillet"
+      ]
+    },
+    {
+      "id": "ham",
+      "category": "pork",
+      "labelRu": "Ветчина варёная (нарезка)",
+      "labelEn": "Cooked ham slices",
+      "aliasesRu": [
+        "ветчина",
+        "окорок варёный",
+        "вареная ветчина"
+      ],
+      "aliasesEn": [
+        "ham",
+        "cooked ham"
+      ]
+    },
+    {
+      "id": "coriander-seeds",
+      "category": "spices",
+      "labelRu": "Семена кориандра (специя)",
+      "labelEn": "Coriander seeds (spice)",
+      "aliasesRu": [
+        "кориандр",
+        "семена кориандра",
+        "молотый кориандр"
+      ],
+      "aliasesEn": [
+        "coriander seeds"
+      ]
+    },
+    {
+      "id": "cornstarch",
+      "category": "baking",
+      "labelRu": "Кукурузный крахмал",
+      "labelEn": "Cornstarch (corn starch)",
+      "aliasesRu": [
+        "крахмал",
+        "кукурузный крахмал",
+        "кукурузная мука",
+        "кукурузная мука грубого помола",
+        "картофельный крахмал",
+        "мука для темпуры",
+        "темпура микс"
+      ],
+      "aliasesEn": [
+        "cornstarch",
+        "corn starch"
+      ]
+    },
+    {
+      "id": "cottage-cheese",
+      "category": "dairy",
+      "labelRu": "Творог",
+      "labelEn": "Cottage cheese",
+      "aliasesRu": [
+        "творог",
+        "мягкий творог",
+        "творог 18%-ный"
+      ],
+      "aliasesEn": [
+        "cottage cheese",
+        "quark",
+        "farmer cheese"
+      ]
+    },
+    {
+      "id": "zucchini",
+      "category": "vegetables",
+      "labelRu": "Кабачок",
+      "labelEn": "Courgette (light)",
+      "aliasesRu": [
+        "кабачок",
+        "кабачки"
+      ],
+      "aliasesEn": [
+        "courgette",
+        "light green zucchini"
+      ]
+    },
+    {
+      "id": "couscous",
+      "category": "grains",
+      "labelRu": "Кускус",
+      "labelEn": "Couscous",
+      "aliasesRu": [
+        "кускус"
+      ],
+      "aliasesEn": [
+        "couscous"
+      ]
+    },
+    {
+      "id": "crab",
+      "category": "seafood",
+      "labelRu": "Краб",
+      "labelEn": "Crab",
+      "aliasesRu": [
+        "краб",
+        "крабовое мясо"
+      ],
+      "aliasesEn": [
+        "crab",
+        "crab meat"
+      ]
+    },
+    {
+      "id": "crayfish",
+      "category": "seafood",
+      "labelRu": "Раки",
+      "labelEn": "Crayfish",
+      "aliasesRu": [
+        "раки"
+      ],
+      "aliasesEn": [
+        "crayfish",
+        "crawfish"
+      ]
+    },
+    {
+      "id": "cream-cheese",
+      "category": "dairy",
+      "labelRu": "Сливочный сыр",
+      "labelEn": "Cream cheese",
+      "aliasesRu": [
+        "сливочный сыр",
+        "плавленый сырок"
+      ],
+      "aliasesEn": [
+        "cream cheese"
+      ]
+    },
+    {
+      "id": "crepes",
+      "category": "grains",
+      "labelRu": "Блины",
+      "labelEn": "Crepes",
+      "aliasesRu": [
+        "блин",
+        "блины"
+      ],
+      "aliasesEn": [
+        "crepes",
+        "pancakes"
+      ]
+    },
+    {
+      "id": "croissant",
+      "category": "grains",
+      "labelRu": "Круассан",
+      "labelEn": "Croissant",
+      "aliasesRu": [
+        "круассан"
+      ],
+      "aliasesEn": [
+        "croissant"
+      ]
+    },
+    {
+      "id": "cucumber",
+      "category": "vegetables",
+      "labelRu": "Огурец",
+      "labelEn": "Cucumber",
+      "aliasesRu": [
+        "огурец",
+        "огурцы"
+      ],
+      "aliasesEn": [
+        "cucumber",
+        "cucumbers"
+      ]
+    },
+    {
+      "id": "cumin",
+      "category": "spices",
+      "labelRu": "Зира",
+      "labelEn": "Cumin",
+      "aliasesRu": [
+        "зира",
+        "кумин",
+        "молотый зира",
+        "молотый кумин (зира)",
+        "кумин (зира)",
+        "семена зиры",
+        "тмин",
+        "молотый тмин"
+      ],
+      "aliasesEn": [
+        "cumin",
+        "cumin seeds"
+      ]
+    },
+    {
+      "id": "curry-leaves",
+      "category": "greens-herbs",
+      "labelRu": "Листья карри",
+      "labelEn": "Curry leaves",
+      "aliasesRu": [
+        "листья карри"
+      ],
+      "aliasesEn": [
+        "curry leaves"
+      ]
+    },
+    {
+      "id": "curry-powder",
+      "category": "spices",
+      "labelRu": "Карри порошок",
+      "labelEn": "Curry powder",
+      "aliasesRu": [
+        "карри",
+        "порошок карри"
+      ],
+      "aliasesEn": [
+        "curry powder",
+        "curry"
+      ]
+    },
+    {
+      "id": "daikon",
+      "category": "vegetables",
+      "labelRu": "Дайкон",
+      "labelEn": "Daikon radish",
+      "aliasesRu": [
+        "дайкон"
+      ],
+      "aliasesEn": [
+        "daikon",
+        "daikon radish"
+      ]
+    },
+    {
+      "id": "chocolate-dark",
+      "category": "baking",
+      "labelRu": "Тёмный шоколад",
+      "labelEn": "Dark chocolate",
+      "aliasesRu": [
+        "тёмный шоколад",
+        "шоколад",
+        "горький шоколад",
+        "черный шоколад 70%-ный",
+        "шоколадные капли"
+      ],
+      "aliasesEn": [
+        "dark chocolate",
+        "chocolate bar"
+      ]
+    },
+    {
+      "id": "dashi-powder",
+      "category": "asian-pantry",
+      "labelRu": "Порошок даши",
+      "labelEn": "Dashi powder",
+      "aliasesRu": [
+        "даши",
+        "порошок даши"
+      ],
+      "aliasesEn": [
+        "dashi powder",
+        "dashi stock powder"
+      ]
+    },
+    {
+      "id": "dates-dried",
+      "category": "fruits",
+      "labelRu": "Финики",
+      "labelEn": "Dates",
+      "aliasesRu": [
+        "финики без косточек",
+        "финики"
+      ],
+      "aliasesEn": [
+        "dates",
+        "dried dates"
+      ]
+    },
+    {
+      "id": "mustard-dijon",
+      "category": "condiments",
+      "labelRu": "Горчица дижонская",
+      "labelEn": "Dijon mustard",
+      "aliasesRu": [
+        "горчица",
+        "горчица дижонская",
+        "дижонская горчица"
+      ],
+      "aliasesEn": [
+        "dijon mustard",
+        "mustard"
+      ]
+    },
+    {
+      "id": "apricots-dried",
+      "category": "fruits",
+      "labelRu": "Курага",
+      "labelEn": "Dried apricots",
+      "aliasesRu": [
+        "курага"
+      ],
+      "aliasesEn": [
+        "dried apricots",
+        "apricots dried"
+      ]
+    },
+    {
+      "id": "cranberry-dried",
+      "category": "fruits",
+      "labelRu": "Клюква сушёная",
+      "labelEn": "Dried cranberries",
+      "aliasesRu": [
+        "клюква",
+        "клюква сушёная",
+        "сушеная клюква"
+      ],
+      "aliasesEn": [
+        "dried cranberries",
+        "cranberry"
+      ]
+    },
+    {
+      "id": "garlic-powder",
+      "category": "spices",
+      "labelRu": "Чеснок сушёный молотый (специя)",
+      "labelEn": "Dried garlic powder (spice)",
+      "aliasesRu": [
+        "чеснок сушёный",
+        "чеснок порошок"
+      ],
+      "aliasesEn": [
+        "garlic powder",
+        "dried garlic"
+      ]
+    },
+    {
+      "id": "marjoram-dried",
+      "category": "spices",
+      "labelRu": "Майоран сушёный",
+      "labelEn": "Dried marjoram",
+      "aliasesRu": [
+        "майоран",
+        "сушеный майоран"
+      ],
+      "aliasesEn": [
+        "marjoram",
+        "dried marjoram"
+      ]
+    },
+    {
+      "id": "onion-powder",
+      "category": "spices",
+      "labelRu": "Лук сушёный молотый (специя)",
+      "labelEn": "Dried onion powder (spice)",
+      "aliasesRu": [
+        "лук сушёный",
+        "лук порошок"
+      ],
+      "aliasesEn": [
+        "onion powder",
+        "dried onion"
+      ]
+    },
+    {
+      "id": "oregano-dried",
+      "category": "spices",
+      "labelRu": "Орегано",
+      "labelEn": "Dried oregano",
+      "aliasesRu": [
+        "орегано",
+        "душица",
+        "сушеный орегано"
+      ],
+      "aliasesEn": [
+        "oregano",
+        "dried oregano"
+      ]
+    },
+    {
+      "id": "mushroom-porcini-dried",
+      "category": "mushrooms",
+      "labelRu": "Белые грибы сушёные",
+      "labelEn": "Dried porcini",
+      "aliasesRu": [
+        "белые грибы",
+        "боровики",
+        "порчини",
+        "сушеные грибы"
+      ],
+      "aliasesEn": [
+        "porcini",
+        "dried porcini",
+        "cep"
+      ]
+    },
+    {
+      "id": "rosemary-dried",
+      "category": "spices",
+      "labelRu": "Розмарин сушёный (специя)",
+      "labelEn": "Dried rosemary (spice)",
+      "aliasesRu": [
+        "розмарин сушёный"
+      ],
+      "aliasesEn": [
+        "dried rosemary"
+      ]
+    },
+    {
+      "id": "thyme-dried",
+      "category": "spices",
+      "labelRu": "Тимьян сушёный (специя)",
+      "labelEn": "Dried thyme (spice)",
+      "aliasesRu": [
+        "тимьян сушёный",
+        "чабрец сушёный"
+      ],
+      "aliasesEn": [
+        "dried thyme"
+      ]
+    },
+    {
+      "id": "water",
+      "category": "condiments",
+      "labelRu": "Питьевая вода",
+      "labelEn": "Drinking water",
+      "aliasesRu": [
+        "вода"
+      ],
+      "aliasesEn": [
+        "water"
+      ]
+    },
+    {
+      "id": "adjika-dry",
+      "category": "spices",
+      "labelRu": "Сухая аджика",
+      "labelEn": "Dry adjika",
+      "aliasesRu": [
+        "аджика сухая",
+        "сухая аджика"
+      ],
+      "aliasesEn": [
+        "adjika",
+        "dry adjika"
+      ]
+    },
+    {
+      "id": "breadcrumbs",
+      "category": "baking",
+      "labelRu": "Панировочные сухари",
+      "labelEn": "Dry breadcrumbs",
+      "aliasesRu": [
+        "сухари",
+        "панировочные сухари",
+        "панировочные сухари панко",
+        "хлебные крошки"
+      ],
+      "aliasesEn": [
+        "breadcrumbs"
+      ]
+    },
+    {
+      "id": "ramen-noodles",
+      "category": "asian-pantry",
+      "labelRu": "Лапша рамен сухая",
+      "labelEn": "Dry ramen noodles",
+      "aliasesRu": [
+        "рамен",
+        "лапша рамен",
+        "тесто вонтон"
+      ],
+      "aliasesEn": [
+        "ramen",
+        "ramen noodles"
+      ]
+    },
+    {
+      "id": "duck-breast",
+      "category": "poultry",
+      "labelRu": "Утиная грудка",
+      "labelEn": "Duck breast",
+      "aliasesRu": [
+        "утка",
+        "утиная грудка",
+        "филе утки",
+        "паштет утиный"
+      ],
+      "aliasesEn": [
+        "duck breast",
+        "duck"
+      ]
+    },
+    {
+      "id": "duck-leg",
+      "category": "poultry",
+      "labelRu": "Утиные ножки",
+      "labelEn": "Duck legs",
+      "aliasesRu": [
+        "утиная ножка",
+        "утиные ножки"
+      ],
+      "aliasesEn": [
+        "duck legs",
+        "duck leg"
+      ]
+    },
+    {
+      "id": "edamame",
+      "category": "legumes",
+      "labelRu": "Эдамаме",
+      "labelEn": "Edamame",
+      "aliasesRu": [
+        "эдамаме",
+        "горох маш"
+      ],
+      "aliasesEn": [
+        "edamame"
+      ]
+    },
+    {
+      "id": "noodles-egg",
+      "category": "pasta-noodles",
+      "labelRu": "Яичная лапша",
+      "labelEn": "Egg noodles",
+      "aliasesRu": [
+        "яичная лапша",
+        "лапша яичная",
+        "лапша",
+        "тесто для пельменей"
+      ],
+      "aliasesEn": [
+        "egg noodles"
+      ]
+    },
+    {
+      "id": "eggplant",
+      "category": "vegetables",
+      "labelRu": "Баклажан",
+      "labelEn": "Eggplant",
+      "aliasesRu": [
+        "баклажан",
+        "баклажаны",
+        "тайские баклажаны"
+      ],
+      "aliasesEn": [
+        "eggplant",
+        "aubergine"
+      ]
+    },
+    {
+      "id": "cheese-emmental",
+      "category": "dairy",
+      "labelRu": "Сыр эмменталь",
+      "labelEn": "Emmental cheese",
+      "aliasesRu": [
+        "эмменталь",
+        "сыр эмменталь"
+      ],
+      "aliasesEn": [
+        "emmental",
+        "emmentaler cheese"
+      ]
+    },
+    {
+      "id": "fennel-bulb",
+      "category": "vegetables",
+      "labelRu": "Фенхель",
+      "labelEn": "Fennel",
+      "aliasesRu": [
+        "фенхель",
+        "молотые семена фенхеля"
+      ],
+      "aliasesEn": [
+        "fennel",
+        "fennel bulb"
+      ]
+    },
+    {
+      "id": "fennel-seeds",
+      "category": "spices",
+      "labelRu": "Семена фенхеля",
+      "labelEn": "Fennel seeds",
+      "aliasesRu": [
+        "семена фенхеля"
+      ],
+      "aliasesEn": [
+        "fennel seeds"
+      ]
+    },
+    {
+      "id": "fenugreek",
+      "category": "spices",
+      "labelRu": "Пажитник",
+      "labelEn": "Fenugreek",
+      "aliasesRu": [
+        "семена пажитника",
+        "пажитник",
+        "листья пажитника"
+      ],
+      "aliasesEn": [
+        "fenugreek",
+        "fenugreek seeds"
+      ]
+    },
+    {
+      "id": "feta",
+      "category": "dairy",
+      "labelRu": "Фета",
+      "labelEn": "Feta",
+      "aliasesRu": [
+        "фета",
+        "сыр фета",
+        "брынза",
+        "сыр брынза",
+        "адыгейский сыр",
+        "светлая брынза",
+        "светлый брынза"
+      ],
+      "aliasesEn": [
+        "feta",
+        "feta cheese",
+        "brynza",
+        "brynza cheese",
+        "brined cheese",
+        "adyghe cheese"
+      ]
+    },
+    {
+      "id": "fish-sauce",
+      "category": "condiments",
+      "labelRu": "Рыбный соус",
+      "labelEn": "Fish sauce",
+      "aliasesRu": [
+        "рыбный соус"
+      ],
+      "aliasesEn": [
+        "fish sauce"
+      ]
+    },
+    {
+      "id": "stock-fish",
+      "category": "condiments",
+      "labelRu": "Рыбный бульон",
+      "labelEn": "Fish stock",
+      "aliasesRu": [
+        "рыбный бульон"
+      ],
+      "aliasesEn": [
+        "fish stock",
+        "fish broth"
+      ]
+    },
+    {
+      "id": "five-spice",
+      "category": "spices",
+      "labelRu": "Пять специй",
+      "labelEn": "Five spice",
+      "aliasesRu": [
+        "пять специй"
+      ],
+      "aliasesEn": [
+        "five spice",
+        "chinese five spice"
+      ]
+    },
+    {
+      "id": "flax-seeds",
+      "category": "nuts-seeds",
+      "labelRu": "Семена льна",
+      "labelEn": "Flax seeds",
+      "aliasesRu": [
+        "лен",
+        "семена льна"
+      ],
+      "aliasesEn": [
+        "flax seeds",
+        "linseed"
+      ]
+    },
+    {
+      "id": "tortilla",
+      "category": "grains",
+      "labelRu": "Тортилья",
+      "labelEn": "Flour tortilla",
+      "aliasesRu": [
+        "тортильи",
+        "лаваш",
+        "азербайджанский лаваш"
+      ],
+      "aliasesEn": [
+        "tortilla",
+        "tortillas",
+        "flour tortilla"
+      ]
+    },
+    {
+      "id": "sausage-frankfurter",
+      "category": "pork",
+      "labelRu": "Сосиски",
+      "labelEn": "Frankfurter sausages",
+      "aliasesRu": [
+        "сосиски"
+      ],
+      "aliasesEn": [
+        "frankfurters",
+        "hot dog sausages"
+      ]
+    },
+    {
+      "id": "basil-fresh",
+      "category": "greens-herbs",
+      "labelRu": "Базилик",
+      "labelEn": "Fresh basil",
+      "aliasesRu": [
+        "базилик",
+        "сушеный базилик",
+        "красный базилик"
+      ],
+      "aliasesEn": [
+        "basil",
+        "fresh basil"
+      ]
+    },
+    {
+      "id": "cilantro-fresh",
+      "category": "greens-herbs",
+      "labelRu": "Кинза свежая (зелень кориандра)",
+      "labelEn": "Fresh cilantro leaves",
+      "aliasesRu": [
+        "кинза",
+        "кориандр зелень",
+        "листья кинзы (кориандра)",
+        "свежая кинза (кориандр)"
+      ],
+      "aliasesEn": [
+        "cilantro",
+        "coriander leaves"
+      ]
+    },
+    {
+      "id": "corn",
+      "category": "vegetables",
+      "labelRu": "Кукуруза свежая в початке",
+      "labelEn": "Fresh corn on the cob",
+      "aliasesRu": [
+        "кукуруза",
+        "початок кукурузы",
+        "початки кукурузы"
+      ],
+      "aliasesEn": [
+        "corn",
+        "sweet corn",
+        "corn cob"
+      ]
+    },
+    {
+      "id": "dill-fresh",
+      "category": "greens-herbs",
+      "labelRu": "Укроп",
+      "labelEn": "Fresh dill",
+      "aliasesRu": [
+        "укроп",
+        "сушеный укроп",
+        "семена укропа"
+      ],
+      "aliasesEn": [
+        "dill",
+        "fresh dill"
+      ]
+    },
+    {
+      "id": "ginger-root",
+      "category": "vegetables",
+      "labelRu": "Корень имбиря свежий",
+      "labelEn": "Fresh ginger root",
+      "aliasesRu": [
+        "имбирь",
+        "имбирь свежий",
+        "корень имбиря",
+        "имбирная паста",
+        "молотый имбирь",
+        "тертый имбирь",
+        "маринованный имбирь"
+      ],
+      "aliasesEn": [
+        "fresh ginger",
+        "ginger root",
+        "ginger"
+      ]
+    },
+    {
+      "id": "peas",
+      "category": "vegetables",
+      "labelRu": "Зелёный горошек свежий",
+      "labelEn": "Fresh green peas",
+      "aliasesRu": [
+        "горошек",
+        "зелёный горошек",
+        "замороженный зеленый горошек",
+        "консервированный зеленый горошек",
+        "горох"
+      ],
+      "aliasesEn": [
+        "green peas",
+        "peas",
+        "pea"
+      ]
+    },
+    {
+      "id": "chili-pepper-fresh",
+      "category": "vegetables",
+      "labelRu": "Свежий острый перец чили",
+      "labelEn": "Fresh hot chili pepper",
+      "aliasesRu": [
+        "острый перец",
+        "чили",
+        "перец чили",
+        "халапеньо",
+        "зеленый перец чили",
+        "красный перец чили",
+        "сушеный перец чили",
+        "молотый перец чили",
+        "молотый красный перец",
+        "перец чили хлопьями",
+        "сладкий соус чили",
+        "сычуаньское масло чили",
+        "чили-паста",
+        "тайский острый перец птичий глаз",
+        "консервированный перец чипотле"
+      ],
+      "aliasesEn": [
+        "chili pepper",
+        "hot pepper",
+        "chili",
+        "jalapeno"
+      ]
+    },
+    {
+      "id": "mint-fresh",
+      "category": "greens-herbs",
+      "labelRu": "Мята",
+      "labelEn": "Fresh mint",
+      "aliasesRu": [
+        "мята",
+        "свежая мята",
+        "сушеная мята"
+      ],
+      "aliasesEn": [
+        "mint",
+        "fresh mint"
+      ]
+    },
+    {
+      "id": "parsley-fresh",
+      "category": "greens-herbs",
+      "labelRu": "Петрушка",
+      "labelEn": "Fresh parsley",
+      "aliasesRu": [
+        "петрушка",
+        "кудрявая петрушка",
+        "рубленая петрушка",
+        "корень петрушки"
+      ],
+      "aliasesEn": [
+        "parsley",
+        "fresh parsley"
+      ]
+    },
+    {
+      "id": "sausage-fresh",
+      "category": "pork",
+      "labelRu": "Сырые колбаски для жарки",
+      "labelEn": "Fresh raw sausages for cooking",
+      "aliasesRu": [
+        "колбаски",
+        "сырые колбаски",
+        "колбаса сырая",
+        "купаты"
+      ],
+      "aliasesEn": [
+        "fresh sausage",
+        "raw sausage",
+        "sausage"
+      ]
+    },
+    {
+      "id": "rosemary-fresh",
+      "category": "greens-herbs",
+      "labelRu": "Розмарин свежий",
+      "labelEn": "Fresh rosemary sprigs",
+      "aliasesRu": [
+        "розмарин",
+        "сушеный розмарин"
+      ],
+      "aliasesEn": [
+        "fresh rosemary",
+        "rosemary"
+      ]
+    },
+    {
+      "id": "sage-fresh",
+      "category": "greens-herbs",
+      "labelRu": "Шалфей",
+      "labelEn": "Fresh sage",
+      "aliasesRu": [
+        "шалфей",
+        "листья шалфея"
+      ],
+      "aliasesEn": [
+        "sage",
+        "fresh sage"
+      ]
+    },
+    {
+      "id": "thyme-fresh",
+      "category": "greens-herbs",
+      "labelRu": "Тимьян свежий (чабрец)",
+      "labelEn": "Fresh thyme sprigs",
+      "aliasesRu": [
+        "тимьян",
+        "чабрец",
+        "свежий тимьян",
+        "сушеный тимьян"
+      ],
+      "aliasesEn": [
+        "fresh thyme",
+        "thyme"
+      ]
+    },
+    {
+      "id": "pasta-fusilli",
+      "category": "pasta-noodles",
+      "labelRu": "Фузилли",
+      "labelEn": "Fusilli",
+      "aliasesRu": [
+        "фузилли",
+        "спиральки"
+      ],
+      "aliasesEn": [
+        "fusilli"
+      ]
+    },
+    {
+      "id": "galangal",
+      "category": "asian-pantry",
+      "labelRu": "Галангал",
+      "labelEn": "Galangal root",
+      "aliasesRu": [
+        "галангал"
+      ],
+      "aliasesEn": [
+        "galangal",
+        "galangal root"
+      ]
+    },
+    {
+      "id": "garam-masala",
+      "category": "spices",
+      "labelRu": "Гарам масала",
+      "labelEn": "Garam masala",
+      "aliasesRu": [
+        "гарам масала",
+        "гарам-масала"
+      ],
+      "aliasesEn": [
+        "garam masala"
+      ]
+    },
+    {
+      "id": "garlic",
+      "category": "vegetables",
+      "labelRu": "Чеснок",
+      "labelEn": "Garlic",
+      "aliasesRu": [
+        "чеснок",
+        "зубчик чеснока",
+        "имбирно-чесночная паста",
+        "молотый сушеный чеснок",
+        "чесночная паста"
+      ],
+      "aliasesEn": [
+        "garlic",
+        "garlic clove"
+      ]
+    },
+    {
+      "id": "gelatin",
+      "category": "baking",
+      "labelRu": "Желатин",
+      "labelEn": "Gelatin",
+      "aliasesRu": [
+        "желатин",
+        "желатин в пластинах"
+      ],
+      "aliasesEn": [
+        "gelatin"
+      ]
+    },
+    {
+      "id": "ghee",
+      "category": "oils-fats",
+      "labelRu": "Гхи",
+      "labelEn": "Ghee",
+      "aliasesRu": [
+        "гхи",
+        "топлёное масло"
+      ],
+      "aliasesEn": [
+        "ghee",
+        "clarified butter"
+      ]
+    },
+    {
+      "id": "grape",
+      "category": "fruits",
+      "labelRu": "Виноград",
+      "labelEn": "Grapes",
+      "aliasesRu": [
+        "виноград",
+        "белый виноград"
+      ],
+      "aliasesEn": [
+        "grape",
+        "grapes"
+      ]
+    },
+    {
+      "id": "green-beans",
+      "category": "vegetables",
+      "labelRu": "Стручковая фасоль",
+      "labelEn": "Green beans",
+      "aliasesRu": [
+        "стручковая фасоль",
+        "фасоль стручковая"
+      ],
+      "aliasesEn": [
+        "green beans",
+        "string beans",
+        "haricot verts"
+      ]
+    },
+    {
+      "id": "curry-paste-green",
+      "category": "asian-pantry",
+      "labelRu": "Паста карри зелёная",
+      "labelEn": "Green curry paste",
+      "aliasesRu": [
+        "зелёная паста карри"
+      ],
+      "aliasesEn": [
+        "green curry paste"
+      ]
+    },
+    {
+      "id": "lentils-green",
+      "category": "legumes",
+      "labelRu": "Чечевица зелёная",
+      "labelEn": "Green lentils",
+      "aliasesRu": [
+        "чечевица зелёная",
+        "коричневая чечевица"
+      ],
+      "aliasesEn": [
+        "green lentils",
+        "brown lentils"
+      ]
+    },
+    {
+      "id": "olives-green",
+      "category": "canned-preserved",
+      "labelRu": "Оливки зелёные",
+      "labelEn": "Green olives",
+      "aliasesRu": [
+        "оливки",
+        "оливки зелёные"
+      ],
+      "aliasesEn": [
+        "green olives",
+        "olives"
+      ]
+    },
+    {
+      "id": "onion-green",
+      "category": "vegetables",
+      "labelRu": "Зелёный лук",
+      "labelEn": "Green onion",
+      "aliasesRu": [
+        "зелёный лук",
+        "перья лука",
+        "зеленый лук с луковицей"
+      ],
+      "aliasesEn": [
+        "green onion",
+        "scallion",
+        "spring onion"
+      ]
+    },
+    {
+      "id": "papaya-green",
+      "category": "fruits",
+      "labelRu": "Зелёная папайя",
+      "labelEn": "Green papaya",
+      "aliasesRu": [
+        "зеленая папайя"
+      ],
+      "aliasesEn": [
+        "green papaya"
+      ]
+    },
+    {
+      "id": "bell-pepper-green",
+      "category": "vegetables",
+      "labelRu": "Болгарский перец зелёный сладкий",
+      "labelEn": "Green sweet bell pepper",
+      "aliasesRu": [
+        "зелёный перец",
+        "перец зелёный"
+      ],
+      "aliasesEn": [
+        "green bell pepper"
+      ]
+    },
+    {
+      "id": "beef-ground",
+      "category": "beef",
+      "labelRu": "Говяжий фарш",
+      "labelEn": "Ground beef",
+      "aliasesRu": [
+        "говяжий фарш",
+        "фарш говяжий",
+        "фарш из говядины",
+        "мясной фарш",
+        "фарш"
+      ],
+      "aliasesEn": [
+        "ground beef",
+        "minced beef",
+        "beef mince"
+      ]
+    },
+    {
+      "id": "chicken-ground",
+      "category": "poultry",
+      "labelRu": "Куриный фарш",
+      "labelEn": "Ground chicken",
+      "aliasesRu": [
+        "куриный фарш"
+      ],
+      "aliasesEn": [
+        "ground chicken",
+        "minced chicken"
+      ]
+    },
+    {
+      "id": "ginger-dried",
+      "category": "spices",
+      "labelRu": "Имбирь молотый сушёный (специя)",
+      "labelEn": "Ground dried ginger (spice)",
+      "aliasesRu": [
+        "имбирь молотый",
+        "порошок имбиря"
+      ],
+      "aliasesEn": [
+        "ground ginger",
+        "dried ginger",
+        "ginger powder"
+      ]
+    },
+    {
+      "id": "lamb-ground",
+      "category": "lamb-veal",
+      "labelRu": "Фарш бараний",
+      "labelEn": "Ground lamb",
+      "aliasesRu": [
+        "бараний фарш",
+        "фарш из баранины"
+      ],
+      "aliasesEn": [
+        "ground lamb",
+        "minced lamb"
+      ]
+    },
+    {
+      "id": "pork-ground",
+      "category": "pork",
+      "labelRu": "Свиной фарш",
+      "labelEn": "Ground pork",
+      "aliasesRu": [
+        "свиной фарш",
+        "фарш свиной"
+      ],
+      "aliasesEn": [
+        "ground pork",
+        "minced pork",
+        "pork mince"
+      ]
+    },
+    {
+      "id": "cheese-gruyere",
+      "category": "dairy",
+      "labelRu": "Сыр грюйер",
+      "labelEn": "Gruyère cheese",
+      "aliasesRu": [
+        "грюйер",
+        "сыр грюйер",
+        "швейцарский сыр"
+      ],
+      "aliasesEn": [
+        "gruyere",
+        "gruyère cheese"
+      ]
+    },
+    {
+      "id": "hazelnut",
+      "category": "nuts-seeds",
+      "labelRu": "Фундук",
+      "labelEn": "Hazelnuts",
+      "aliasesRu": [
+        "фундук",
+        "лесной орех"
+      ],
+      "aliasesEn": [
+        "hazelnut",
+        "hazelnuts"
+      ]
+    },
+    {
+      "id": "cream-35",
+      "category": "dairy",
+      "labelRu": "Сливки жирностью 35 процентов (для взбивания)",
+      "labelEn": "Heavy whipping cream 35% fat",
+      "aliasesRu": [
+        "сливки 35%",
+        "жирные сливки",
+        "сливки для взбивания",
+        "сливки 35%-ные",
+        "сливки 33%-ные",
+        "сливки 30%-ные",
+        "взбитые сливки"
+      ],
+      "aliasesEn": [
+        "heavy cream",
+        "whipping cream",
+        "cream 35%",
+        "double cream"
+      ]
+    },
+    {
+      "id": "herbes-de-provence",
+      "category": "spices",
+      "labelRu": "Прованские травы",
+      "labelEn": "Herbes de Provence",
+      "aliasesRu": [
+        "прованские травы",
+        "букет гарни"
+      ],
+      "aliasesEn": [
+        "herbes de provence"
+      ]
+    },
+    {
+      "id": "herring",
+      "category": "fish",
+      "labelRu": "Сельдь",
+      "labelEn": "Herring",
+      "aliasesRu": [
+        "сельдь",
+        "селёдка",
+        "маринованная сельдь",
+        "слабосоленая сельдь"
+      ],
+      "aliasesEn": [
+        "herring"
+      ]
+    },
+    {
+      "id": "hoisin",
+      "category": "asian-pantry",
+      "labelRu": "Соус хойсин",
+      "labelEn": "Hoisin sauce",
+      "aliasesRu": [
+        "хойсин",
+        "соус хойсин"
+      ],
+      "aliasesEn": [
+        "hoisin sauce",
+        "hoisin"
+      ]
+    },
+    {
+      "id": "honey",
+      "category": "baking",
+      "labelRu": "Мёд",
+      "labelEn": "Honey",
+      "aliasesRu": [
+        "мёд",
+        "жидкий мед",
+        "патока",
+        "сахарный сироп",
+        "сироп из глюкозы"
+      ],
+      "aliasesEn": [
+        "honey"
+      ]
+    },
+    {
+      "id": "horseradish",
+      "category": "condiments",
+      "labelRu": "Тертый хрен",
+      "labelEn": "Horseradish",
+      "aliasesRu": [
+        "хрен",
+        "тертый хрен"
+      ],
+      "aliasesEn": [
+        "horseradish",
+        "grated horseradish"
+      ]
+    },
+    {
+      "id": "hot-sauce",
+      "category": "condiments",
+      "labelRu": "Острый соус",
+      "labelEn": "Hot sauce",
+      "aliasesRu": [
+        "острый соус",
+        "соус чили",
+        "табаско",
+        "tabasco®"
+      ],
+      "aliasesEn": [
+        "hot sauce",
+        "chili sauce"
+      ]
+    },
+    {
+      "id": "hummus",
+      "category": "legumes",
+      "labelRu": "Хумус (паста из нута)",
+      "labelEn": "Hummus chickpea spread",
+      "aliasesRu": [
+        "хумус"
+      ],
+      "aliasesEn": [
+        "hummus"
+      ]
+    },
+    {
+      "id": "sausage-hunter",
+      "category": "pork",
+      "labelRu": "Охотничьи колбаски",
+      "labelEn": "Hunter sausages",
+      "aliasesRu": [
+        "охотничьи колбаски"
+      ],
+      "aliasesEn": [
+        "hunter sausages",
+        "cocktail sausages"
+      ]
+    },
+    {
+      "id": "cheese-imereti",
+      "category": "dairy",
+      "labelRu": "Имеретинский сыр",
+      "labelEn": "Imeretian cheese",
+      "aliasesRu": [
+        "имеретинский сыр"
+      ],
+      "aliasesEn": [
+        "imeretian cheese",
+        "imeruli cheese"
+      ]
+    },
+    {
+      "id": "imeretian-saffron",
+      "category": "spices",
+      "labelRu": "Имеретинский шафран",
+      "labelEn": "Imeretian saffron (marigold)",
+      "aliasesRu": [
+        "имеретинский шафран"
+      ],
+      "aliasesEn": [
+        "imeretian saffron",
+        "dried marigold petals"
+      ]
+    },
+    {
+      "id": "kale",
+      "category": "vegetables",
+      "labelRu": "Капуста кейл",
+      "labelEn": "Kale",
+      "aliasesRu": [
+        "кейл",
+        "капуста кейл"
+      ],
+      "aliasesEn": [
+        "kale",
+        "curly kale"
+      ]
+    },
+    {
+      "id": "kaymak",
+      "category": "dairy",
+      "labelRu": "Каймак",
+      "labelEn": "Kaymak clotted cream",
+      "aliasesRu": [
+        "каймак"
+      ],
+      "aliasesEn": [
+        "kaymak",
+        "clotted cream"
+      ]
+    },
+    {
+      "id": "kecap-manis",
+      "category": "asian-pantry",
+      "labelRu": "Соус кесап манис",
+      "labelEn": "Kecap manis",
+      "aliasesRu": [
+        "кесап манис",
+        "соус кесап манис"
+      ],
+      "aliasesEn": [
+        "kecap manis",
+        "sweet soy sauce"
+      ]
+    },
+    {
+      "id": "kefir",
+      "category": "dairy",
+      "labelRu": "Кефир",
+      "labelEn": "Kefir",
+      "aliasesRu": [
+        "кефир"
+      ],
+      "aliasesEn": [
+        "kefir"
+      ]
+    },
+    {
+      "id": "ketchup",
+      "category": "condiments",
+      "labelRu": "Кетчуп",
+      "labelEn": "Ketchup",
+      "aliasesRu": [
+        "кетчуп"
+      ],
+      "aliasesEn": [
+        "ketchup"
+      ]
+    },
+    {
+      "id": "khmeli-suneli",
+      "category": "spices",
+      "labelRu": "Хмели-сунели",
+      "labelEn": "Khmeli suneli",
+      "aliasesRu": [
+        "хмели сунели",
+        "хмели-сунели",
+        "уцхо-сунели"
+      ],
+      "aliasesEn": [
+        "khmeli suneli",
+        "hops suneli"
+      ]
+    },
+    {
+      "id": "kiwi",
+      "category": "fruits",
+      "labelRu": "Киви",
+      "labelEn": "Kiwi",
+      "aliasesRu": [
+        "киви"
+      ],
+      "aliasesEn": [
+        "kiwi"
+      ]
+    },
+    {
+      "id": "ladyfingers",
+      "category": "baking",
+      "labelRu": "Печенье савоярди",
+      "labelEn": "Ladyfinger cookies",
+      "aliasesRu": [
+        "савоярди",
+        "печенье савоярди"
+      ],
+      "aliasesEn": [
+        "ladyfingers",
+        "savoiardi"
+      ]
+    },
+    {
+      "id": "lamb-chop",
+      "category": "lamb-veal",
+      "labelRu": "Отбивная из баранины",
+      "labelEn": "Lamb chop",
+      "aliasesRu": [
+        "баранина",
+        "котлета баранья",
+        "отбивная из баранины",
+        "баранина (задняя часть)",
+        "баранина на кости",
+        "баранья лопатка",
+        "бараньи ребра",
+        "баранья корейка"
+      ],
+      "aliasesEn": [
+        "lamb chop",
+        "lamb",
+        "lamb cutlet"
+      ]
+    },
+    {
+      "id": "lard",
+      "category": "oils-fats",
+      "labelRu": "Смалец",
+      "labelEn": "Lard",
+      "aliasesRu": [
+        "смалец",
+        "сало топлёное",
+        "сало",
+        "курдючное сало",
+        "сало (пузанина)",
+        "шпик"
+      ],
+      "aliasesEn": [
+        "lard"
+      ]
+    },
+    {
+      "id": "lasagna-sheets",
+      "category": "pasta-noodles",
+      "labelRu": "Листы для лазаньи",
+      "labelEn": "Lasagna sheets",
+      "aliasesRu": [
+        "лазанья",
+        "листы лазаньи"
+      ],
+      "aliasesEn": [
+        "lasagna sheets",
+        "lasagna"
+      ]
+    },
+    {
+      "id": "lettuce",
+      "category": "greens-herbs",
+      "labelRu": "Салат листовой (латук)",
+      "labelEn": "Leaf lettuce (latuk)",
+      "aliasesRu": [
+        "салат",
+        "листья салата",
+        "латук",
+        "зеленый салат",
+        "листья латука",
+        "салат романо"
+      ],
+      "aliasesEn": [
+        "lettuce",
+        "leaf lettuce"
+      ]
+    },
+    {
+      "id": "leek",
+      "category": "vegetables",
+      "labelRu": "Лук-порей",
+      "labelEn": "Leek",
+      "aliasesRu": [
+        "лук-порей",
+        "порей",
+        "молодой лук-порей"
+      ],
+      "aliasesEn": [
+        "leek"
+      ]
+    },
+    {
+      "id": "lamb-leg",
+      "category": "lamb-veal",
+      "labelRu": "Нога баранья",
+      "labelEn": "Leg of lamb",
+      "aliasesRu": [
+        "баранья нога",
+        "нога баранья",
+        "бараний окорок"
+      ],
+      "aliasesEn": [
+        "leg of lamb",
+        "lamb leg"
+      ]
+    },
+    {
+      "id": "lemon",
+      "category": "fruits",
+      "labelRu": "Лимон",
+      "labelEn": "Lemon",
+      "aliasesRu": [
+        "лимон",
+        "лимоны",
+        "лимонный сок",
+        "лимонная цедра"
+      ],
+      "aliasesEn": [
+        "lemon",
+        "lemons"
+      ]
+    },
+    {
+      "id": "lemongrass",
+      "category": "asian-pantry",
+      "labelRu": "Лимонная трава",
+      "labelEn": "Lemongrass",
+      "aliasesRu": [
+        "лимонная трава"
+      ],
+      "aliasesEn": [
+        "lemongrass",
+        "lemon grass"
+      ]
+    },
+    {
+      "id": "cream-10",
+      "category": "dairy",
+      "labelRu": "Сливки жирностью 10 процентов",
+      "labelEn": "Light cream 10% fat",
+      "aliasesRu": [
+        "сливки 10%",
+        "сливки лёгкие",
+        "сливки для кофе",
+        "сливки 20%-ные",
+        "сливки"
+      ],
+      "aliasesEn": [
+        "cream 10%",
+        "light cream",
+        "coffee cream",
+        "table cream"
+      ]
+    },
+    {
+      "id": "lime",
+      "category": "fruits",
+      "labelRu": "Лайм",
+      "labelEn": "Lime",
+      "aliasesRu": [
+        "лайм",
+        "сок лайма",
+        "листья кафрского лайма",
+        "листья лайма"
+      ],
+      "aliasesEn": [
+        "lime",
+        "limes"
+      ]
+    },
+    {
+      "id": "lingonberry",
+      "category": "fruits",
+      "labelRu": "Брусника",
+      "labelEn": "Lingonberries",
+      "aliasesRu": [
+        "брусника"
+      ],
+      "aliasesEn": [
+        "lingonberry",
+        "lingonberries"
+      ]
+    },
+    {
+      "id": "lobster",
+      "category": "seafood",
+      "labelRu": "Омар",
+      "labelEn": "Lobster",
+      "aliasesRu": [
+        "омар",
+        "лобстер"
+      ],
+      "aliasesEn": [
+        "lobster"
+      ]
+    },
+    {
+      "id": "mackerel",
+      "category": "fish",
+      "labelRu": "Скумбрия",
+      "labelEn": "Mackerel",
+      "aliasesRu": [
+        "скумбрия",
+        "филе скумбрии"
+      ],
+      "aliasesEn": [
+        "mackerel"
+      ]
+    },
+    {
+      "id": "mango",
+      "category": "fruits",
+      "labelRu": "Манго",
+      "labelEn": "Mango",
+      "aliasesRu": [
+        "манго",
+        "тайское манго"
+      ],
+      "aliasesEn": [
+        "mango"
+      ]
+    },
+    {
+      "id": "maple-syrup",
+      "category": "condiments",
+      "labelRu": "Кленовый сироп",
+      "labelEn": "Maple syrup",
+      "aliasesRu": [
+        "кленовый сироп",
+        "карамельный соус",
+        "сироп агавы"
+      ],
+      "aliasesEn": [
+        "maple syrup"
+      ]
+    },
+    {
+      "id": "mascarpone",
+      "category": "dairy",
+      "labelRu": "Маскарпоне",
+      "labelEn": "Mascarpone",
+      "aliasesRu": [
+        "сыр маскарпоне"
+      ],
+      "aliasesEn": [
+        "mascarpone"
+      ]
+    },
+    {
+      "id": "mashed-potato",
+      "category": "vegetables",
+      "labelRu": "Картофельное пюре",
+      "labelEn": "Mashed potatoes",
+      "aliasesRu": [
+        "картофельное пюре"
+      ],
+      "aliasesEn": [
+        "mashed potatoes",
+        "mashed potato"
+      ]
+    },
+    {
+      "id": "matsoni",
+      "category": "dairy",
+      "labelRu": "Мацони",
+      "labelEn": "Matsoni yogurt",
+      "aliasesRu": [
+        "мацони",
+        "катык"
+      ],
+      "aliasesEn": [
+        "matsoni",
+        "matzoni"
+      ]
+    },
+    {
+      "id": "mayonnaise",
+      "category": "condiments",
+      "labelRu": "Майонез",
+      "labelEn": "Mayonnaise",
+      "aliasesRu": [
+        "майонез",
+        "японский майонез"
+      ],
+      "aliasesEn": [
+        "mayonnaise",
+        "mayo"
+      ]
+    },
+    {
+      "id": "millet",
+      "category": "grains",
+      "labelRu": "Пшено",
+      "labelEn": "Millet groats",
+      "aliasesRu": [
+        "пшено"
+      ],
+      "aliasesEn": [
+        "millet",
+        "millet groats"
+      ]
+    },
+    {
+      "id": "mirin",
+      "category": "asian-pantry",
+      "labelRu": "Мирин",
+      "labelEn": "Mirin",
+      "aliasesRu": [
+        "мирин"
+      ],
+      "aliasesEn": [
+        "mirin"
+      ]
+    },
+    {
+      "id": "miso",
+      "category": "asian-pantry",
+      "labelRu": "Мисо",
+      "labelEn": "Miso",
+      "aliasesRu": [
+        "мисо",
+        "мисо-паста"
+      ],
+      "aliasesEn": [
+        "miso",
+        "miso paste"
+      ]
+    },
+    {
+      "id": "mozzarella",
+      "category": "dairy",
+      "labelRu": "Моцарелла",
+      "labelEn": "Mozzarella",
+      "aliasesRu": [
+        "моцарелла",
+        "сыр моцарелла",
+        "сыр моцарелла для пиццы"
+      ],
+      "aliasesEn": [
+        "mozzarella"
+      ]
+    },
+    {
+      "id": "mussels",
+      "category": "seafood",
+      "labelRu": "Мидии",
+      "labelEn": "Mussels",
+      "aliasesRu": [
+        "мидии",
+        "мидия",
+        "мидии в ракушках"
+      ],
+      "aliasesEn": [
+        "mussels",
+        "mussel"
+      ]
+    },
+    {
+      "id": "mustard-seeds",
+      "category": "spices",
+      "labelRu": "Горчица семена",
+      "labelEn": "Mustard seeds",
+      "aliasesRu": [
+        "семена горчицы",
+        "горчичное семя"
+      ],
+      "aliasesEn": [
+        "mustard seeds"
+      ]
+    },
+    {
+      "id": "napa-cabbage",
+      "category": "vegetables",
+      "labelRu": "Пекинская капуста",
+      "labelEn": "Napa cabbage",
+      "aliasesRu": [
+        "китайская капуста",
+        "пекинская капуста"
+      ],
+      "aliasesEn": [
+        "napa cabbage",
+        "chinese cabbage"
+      ]
+    },
+    {
+      "id": "narsharab",
+      "category": "condiments",
+      "labelRu": "Соус наршараб",
+      "labelEn": "Narsharab pomegranate sauce",
+      "aliasesRu": [
+        "соус наршараб"
+      ],
+      "aliasesEn": [
+        "narsharab",
+        "pomegranate sauce"
+      ]
+    },
+    {
+      "id": "nori",
+      "category": "asian-pantry",
+      "labelRu": "Нори",
+      "labelEn": "Nori",
+      "aliasesRu": [
+        "нори",
+        "водоросли нори",
+        "сухие водоросли нори",
+        "водоросли вакамэ"
+      ],
+      "aliasesEn": [
+        "nori",
+        "seaweed"
+      ]
+    },
+    {
+      "id": "nutmeg",
+      "category": "spices",
+      "labelRu": "Мускатный орех",
+      "labelEn": "Nutmeg",
+      "aliasesRu": [
+        "мускатный орех",
+        "мускат",
+        "мускатный цвет"
+      ],
+      "aliasesEn": [
+        "nutmeg"
+      ]
+    },
+    {
+      "id": "octopus",
+      "category": "seafood",
+      "labelRu": "Осьминог",
+      "labelEn": "Octopus",
+      "aliasesRu": [
+        "осьминог"
+      ],
+      "aliasesEn": [
+        "octopus"
+      ]
+    },
+    {
+      "id": "okonomiyaki-sauce",
+      "category": "asian-pantry",
+      "labelRu": "Соус окономияки",
+      "labelEn": "Okonomiyaki sauce",
+      "aliasesRu": [
+        "соус окономияки"
+      ],
+      "aliasesEn": [
+        "okonomiyaki sauce"
+      ]
+    },
+    {
+      "id": "okra",
+      "category": "vegetables",
+      "labelRu": "Бамия",
+      "labelEn": "Okra",
+      "aliasesRu": [
+        "бамия",
+        "окра"
+      ],
+      "aliasesEn": [
+        "okra"
+      ]
+    },
+    {
+      "id": "olive-oil",
+      "category": "oils-fats",
+      "labelRu": "Оливковое масло",
+      "labelEn": "Olive oil",
+      "aliasesRu": [
+        "оливковое масло",
+        "оливковое масло extra virgin"
+      ],
+      "aliasesEn": [
+        "olive oil",
+        "extra virgin olive oil"
+      ]
+    },
+    {
+      "id": "orange",
+      "category": "fruits",
+      "labelRu": "Апельсин",
+      "labelEn": "Orange",
+      "aliasesRu": [
+        "апельсин",
+        "апельсины",
+        "свежевыжатый апельсиновый сок"
+      ],
+      "aliasesEn": [
+        "orange",
+        "oranges"
+      ]
+    },
+    {
+      "id": "oxtail",
+      "category": "beef",
+      "labelRu": "Бычий хвост",
+      "labelEn": "Oxtail",
+      "aliasesRu": [
+        "бычий хвост"
+      ],
+      "aliasesEn": [
+        "oxtail"
+      ]
+    },
+    {
+      "id": "mushroom-oyster",
+      "category": "mushrooms",
+      "labelRu": "Вёшенки",
+      "labelEn": "Oyster mushrooms",
+      "aliasesRu": [
+        "вёшенки"
+      ],
+      "aliasesEn": [
+        "oyster mushroom"
+      ]
+    },
+    {
+      "id": "oyster-sauce",
+      "category": "asian-pantry",
+      "labelRu": "Устричный соус",
+      "labelEn": "Oyster sauce",
+      "aliasesRu": [
+        "устричный соус"
+      ],
+      "aliasesEn": [
+        "oyster sauce"
+      ]
+    },
+    {
+      "id": "paneer",
+      "category": "dairy",
+      "labelRu": "Панир",
+      "labelEn": "Paneer",
+      "aliasesRu": [
+        "сыр панир"
+      ],
+      "aliasesEn": [
+        "paneer"
+      ]
+    },
+    {
+      "id": "paprika",
+      "category": "spices",
+      "labelRu": "Паприка",
+      "labelEn": "Paprika",
+      "aliasesRu": [
+        "паприка",
+        "паприка сладкая",
+        "молотая паприка",
+        "острая паприка",
+        "сладкая паприка",
+        "паста из паприки",
+        "паприка копчёная",
+        "копченая паприка"
+      ],
+      "aliasesEn": [
+        "paprika",
+        "sweet paprika",
+        "smoked paprika"
+      ]
+    },
+    {
+      "id": "parmesan",
+      "category": "dairy",
+      "labelRu": "Пармезан",
+      "labelEn": "Parmesan",
+      "aliasesRu": [
+        "пармезан",
+        "сыр пармезан",
+        "тертый сыр пармезан",
+        "тертый сыр пекорино романо",
+        "твердый сыр",
+        "тертый сыр",
+        "тертый твердый сыр"
+      ],
+      "aliasesEn": [
+        "parmesan",
+        "parmigiano"
+      ]
+    },
+    {
+      "id": "parsnip",
+      "category": "vegetables",
+      "labelRu": "Пастернак",
+      "labelEn": "Parsnip",
+      "aliasesRu": [
+        "пастернак",
+        "корень пастернака"
+      ],
+      "aliasesEn": [
+        "parsnip"
+      ]
+    },
+    {
+      "id": "peach",
+      "category": "fruits",
+      "labelRu": "Персик",
+      "labelEn": "Peach",
+      "aliasesRu": [
+        "персик",
+        "персики"
+      ],
+      "aliasesEn": [
+        "peach",
+        "peaches"
+      ]
+    },
+    {
+      "id": "peanut-butter",
+      "category": "nuts-seeds",
+      "labelRu": "Арахисовое масло",
+      "labelEn": "Peanut butter",
+      "aliasesRu": [
+        "арахисовая паста",
+        "арахисовое масло"
+      ],
+      "aliasesEn": [
+        "peanut butter"
+      ]
+    },
+    {
+      "id": "peanut",
+      "category": "nuts-seeds",
+      "labelRu": "Арахис",
+      "labelEn": "Peanuts",
+      "aliasesRu": [
+        "арахис",
+        "жареный арахис",
+        "очищенный несоленый арахис"
+      ],
+      "aliasesEn": [
+        "peanut",
+        "peanuts"
+      ]
+    },
+    {
+      "id": "pear",
+      "category": "fruits",
+      "labelRu": "Груша",
+      "labelEn": "Pear",
+      "aliasesRu": [
+        "груша",
+        "груши"
+      ],
+      "aliasesEn": [
+        "pear",
+        "pears"
+      ]
+    },
+    {
+      "id": "barley",
+      "category": "grains",
+      "labelRu": "Перловка (крупа)",
+      "labelEn": "Pearl barley groats",
+      "aliasesRu": [
+        "перловка",
+        "ячмень",
+        "перловая крупа"
+      ],
+      "aliasesEn": [
+        "barley",
+        "pearl barley"
+      ]
+    },
+    {
+      "id": "pasta-penne",
+      "category": "pasta-noodles",
+      "labelRu": "Пенне",
+      "labelEn": "Penne",
+      "aliasesRu": [
+        "пенне",
+        "паста пенне"
+      ],
+      "aliasesEn": [
+        "penne",
+        "penne pasta"
+      ]
+    },
+    {
+      "id": "pesto",
+      "category": "condiments",
+      "labelRu": "Песто",
+      "labelEn": "Pesto",
+      "aliasesRu": [
+        "песто"
+      ],
+      "aliasesEn": [
+        "pesto",
+        "basil pesto"
+      ]
+    },
+    {
+      "id": "phyllo-dough",
+      "category": "baking",
+      "labelRu": "Тесто фило",
+      "labelEn": "Phyllo dough",
+      "aliasesRu": [
+        "фило",
+        "тесто фило",
+        "тесто катаифи"
+      ],
+      "aliasesEn": [
+        "phyllo dough",
+        "filo pastry"
+      ]
+    },
+    {
+      "id": "pickled-mushrooms",
+      "category": "canned-preserved",
+      "labelRu": "Соленые грибы",
+      "labelEn": "Pickled mushrooms",
+      "aliasesRu": [
+        "маринованные грибы",
+        "соленые грибы"
+      ],
+      "aliasesEn": [
+        "pickled mushrooms",
+        "marinated mushrooms"
+      ]
+    },
+    {
+      "id": "pickles",
+      "category": "canned-preserved",
+      "labelRu": "Огурцы маринованные",
+      "labelEn": "Pickles",
+      "aliasesRu": [
+        "огурцы маринованные",
+        "корнишоны",
+        "маринованные огурцы",
+        "соленые огурцы"
+      ],
+      "aliasesEn": [
+        "pickles",
+        "gherkins",
+        "pickled cucumbers"
+      ]
+    },
+    {
+      "id": "pine-nut",
+      "category": "nuts-seeds",
+      "labelRu": "Кедровые орехи",
+      "labelEn": "Pine nuts",
+      "aliasesRu": [
+        "кедровые орехи",
+        "кедровый орех"
+      ],
+      "aliasesEn": [
+        "pine nuts",
+        "pignoli"
+      ]
+    },
+    {
+      "id": "pistachios",
+      "category": "nuts-seeds",
+      "labelRu": "Фисташки",
+      "labelEn": "Pistachios",
+      "aliasesRu": [
+        "фисташки"
+      ],
+      "aliasesEn": [
+        "pistachios",
+        "pistachio"
+      ]
+    },
+    {
+      "id": "pita-bread",
+      "category": "grains",
+      "labelRu": "Пита",
+      "labelEn": "Pita bread",
+      "aliasesRu": [
+        "пита"
+      ],
+      "aliasesEn": [
+        "pita",
+        "pita bread",
+        "pita pocket"
+      ]
+    },
+    {
+      "id": "yogurt-natural",
+      "category": "dairy",
+      "labelRu": "Натуральный йогурт без добавок",
+      "labelEn": "Plain natural yogurt",
+      "aliasesRu": [
+        "йогурт",
+        "йогурт натуральный",
+        "греческий йогурт",
+        "натуральный йогурт"
+      ],
+      "aliasesEn": [
+        "yogurt",
+        "plain yogurt",
+        "natural yogurt"
+      ]
+    },
+    {
+      "id": "plum",
+      "category": "fruits",
+      "labelRu": "Слива",
+      "labelEn": "Plum",
+      "aliasesRu": [
+        "слива",
+        "сливы"
+      ],
+      "aliasesEn": [
+        "plum",
+        "plums"
+      ]
+    },
+    {
+      "id": "polenta",
+      "category": "grains",
+      "labelRu": "Полента",
+      "labelEn": "Polenta",
+      "aliasesRu": [
+        "полента",
+        "кукурузная крупа"
+      ],
+      "aliasesEn": [
+        "polenta",
+        "cornmeal"
+      ]
+    },
+    {
+      "id": "pomegranate-juice",
+      "category": "fruits",
+      "labelRu": "Гранатовый сок",
+      "labelEn": "Pomegranate juice",
+      "aliasesRu": [
+        "гранатовый сок"
+      ],
+      "aliasesEn": [
+        "pomegranate juice"
+      ]
+    },
+    {
+      "id": "pomegranate-seeds",
+      "category": "fruits",
+      "labelRu": "Зерна граната",
+      "labelEn": "Pomegranate seeds",
+      "aliasesRu": [
+        "гранат",
+        "зерна граната",
+        "гранатовый сок",
+        "гранаты"
+      ],
+      "aliasesEn": [
+        "pomegranate seeds",
+        "pomegranate arils"
+      ]
+    },
+    {
+      "id": "poppy-seeds",
+      "category": "spices",
+      "labelRu": "Мак",
+      "labelEn": "Poppy seeds",
+      "aliasesRu": [
+        "семена мака",
+        "мак"
+      ],
+      "aliasesEn": [
+        "poppy seeds"
+      ]
+    },
+    {
+      "id": "pork-belly",
+      "category": "pork",
+      "labelRu": "Свиная грудинка",
+      "labelEn": "Pork belly",
+      "aliasesRu": [
+        "свиная грудинка",
+        "грудинка свиная"
+      ],
+      "aliasesEn": [
+        "pork belly"
+      ]
+    },
+    {
+      "id": "pork-chop",
+      "category": "pork",
+      "labelRu": "Свиная отбивная",
+      "labelEn": "Pork chop",
+      "aliasesRu": [
+        "свиная отбивная",
+        "свиной отбивной кусок",
+        "корейка свиная",
+        "свинина",
+        "свиная вырезка",
+        "свиная корейка",
+        "свиная лопатка"
+      ],
+      "aliasesEn": [
+        "pork chop",
+        "pork cutlet"
+      ]
+    },
+    {
+      "id": "pork-knuckle",
+      "category": "pork",
+      "labelRu": "Свиная рулька",
+      "labelEn": "Pork knuckle",
+      "aliasesRu": [
+        "свиная рулька"
+      ],
+      "aliasesEn": [
+        "pork knuckle",
+        "pork hock"
+      ]
+    },
+    {
+      "id": "pork-neck",
+      "category": "pork",
+      "labelRu": "Свиная шея",
+      "labelEn": "Pork neck",
+      "aliasesRu": [
+        "шея свиная",
+        "свиная шея"
+      ],
+      "aliasesEn": [
+        "pork neck",
+        "pork collar"
+      ]
+    },
+    {
+      "id": "pork-ribs",
+      "category": "pork",
+      "labelRu": "Свиные рёбрышки",
+      "labelEn": "Pork ribs",
+      "aliasesRu": [
+        "свиные рёбрышки",
+        "рёбрышки",
+        "свиные копченые ребра",
+        "свиные ребра"
+      ],
+      "aliasesEn": [
+        "pork ribs",
+        "spare ribs"
+      ]
+    },
+    {
+      "id": "potato",
+      "category": "vegetables",
+      "labelRu": "Картофель",
+      "labelEn": "Potato",
+      "aliasesRu": [
+        "картофель",
+        "картошка",
+        "мини-картофель",
+        "молодой картофель",
+        "отварной картофель",
+        "картофель фри"
+      ],
+      "aliasesEn": [
+        "potato",
+        "potatoes"
+      ]
+    },
+    {
+      "id": "powder-sachet",
+      "category": "baking",
+      "labelRu": "Порошок в пакетике",
+      "labelEn": "Powder sachet",
+      "aliasesRu": [
+        "агар-агар",
+        "разрыхлитель",
+        "дрожжи",
+        "сухие дрожжи",
+        "свежие дрожжи"
+      ],
+      "aliasesEn": [
+        "agar agar",
+        "baking powder",
+        "yeast",
+        "dry yeast",
+        "instant yeast"
+      ]
+    },
+    {
+      "id": "preserved-lemon",
+      "category": "condiments",
+      "labelRu": "Солёные лимоны",
+      "labelEn": "Preserved lemons",
+      "aliasesRu": [
+        "соленые лимоны"
+      ],
+      "aliasesEn": [
+        "preserved lemons"
+      ]
+    },
+    {
+      "id": "prosciutto",
+      "category": "pork",
+      "labelRu": "Прошутто",
+      "labelEn": "Prosciutto",
+      "aliasesRu": [
+        "прошутто",
+        "сыровяленая ветчина",
+        "хамон",
+        "пастрами"
+      ],
+      "aliasesEn": [
+        "prosciutto",
+        "parma ham"
+      ]
+    },
+    {
+      "id": "prunes-dried",
+      "category": "fruits",
+      "labelRu": "Чернослив",
+      "labelEn": "Prunes",
+      "aliasesRu": [
+        "чернослив сушёный",
+        "чернослив"
+      ],
+      "aliasesEn": [
+        "prunes",
+        "dried plums"
+      ]
+    },
+    {
+      "id": "puff-pastry",
+      "category": "baking",
+      "labelRu": "Слоёное тесто",
+      "labelEn": "Puff pastry",
+      "aliasesRu": [
+        "слоеное тесто",
+        "пресное слоеное тесто",
+        "бездрожжевое слоеное тесто"
+      ],
+      "aliasesEn": [
+        "puff pastry",
+        "puff pastry dough"
+      ]
+    },
+    {
+      "id": "pumpkin",
+      "category": "vegetables",
+      "labelRu": "Тыква",
+      "labelEn": "Pumpkin",
+      "aliasesRu": [
+        "тыква",
+        "тыква сквош"
+      ],
+      "aliasesEn": [
+        "pumpkin"
+      ]
+    },
+    {
+      "id": "pumpkin-seeds",
+      "category": "nuts-seeds",
+      "labelRu": "Тыквенные семечки",
+      "labelEn": "Pumpkin seeds",
+      "aliasesRu": [
+        "тыквенные семечки",
+        "семена тыквы",
+        "очищенные семена тыквы"
+      ],
+      "aliasesEn": [
+        "pumpkin seeds"
+      ]
+    },
+    {
+      "id": "quinoa",
+      "category": "grains",
+      "labelRu": "Киноа",
+      "labelEn": "Quinoa",
+      "aliasesRu": [
+        "киноа"
+      ],
+      "aliasesEn": [
+        "quinoa"
+      ]
+    },
+    {
+      "id": "rabbit-leg",
+      "category": "lamb-veal",
+      "labelRu": "Ножки кролика",
+      "labelEn": "Rabbit legs",
+      "aliasesRu": [
+        "ножки кролика"
+      ],
+      "aliasesEn": [
+        "rabbit legs",
+        "rabbit"
+      ]
+    },
+    {
+      "id": "radish",
+      "category": "vegetables",
+      "labelRu": "Редис",
+      "labelEn": "Radish",
+      "aliasesRu": [
+        "редис",
+        "редиска"
+      ],
+      "aliasesEn": [
+        "radish",
+        "radishes"
+      ]
+    },
+    {
+      "id": "raisin",
+      "category": "fruits",
+      "labelRu": "Изюм",
+      "labelEn": "Raisins",
+      "aliasesRu": [
+        "изюм",
+        "светлый изюм",
+        "темный изюм"
+      ],
+      "aliasesEn": [
+        "raisin",
+        "raisins"
+      ]
+    },
+    {
+      "id": "raspberry",
+      "category": "fruits",
+      "labelRu": "Малина",
+      "labelEn": "Raspberry",
+      "aliasesRu": [
+        "малина"
+      ],
+      "aliasesEn": [
+        "raspberry",
+        "raspberries"
+      ]
+    },
+    {
+      "id": "jam-raspberry",
+      "category": "condiments",
+      "labelRu": "Малиновый джем",
+      "labelEn": "Raspberry jam",
+      "aliasesRu": [
+        "малиновый джем"
+      ],
+      "aliasesEn": [
+        "raspberry jam"
+      ]
+    },
+    {
+      "id": "salmon-fillet",
+      "category": "fish",
+      "labelRu": "Филе лосося (сырое)",
+      "labelEn": "Raw salmon fillet",
+      "aliasesRu": [
+        "лосось",
+        "семга",
+        "филе лосося",
+        "красная рыба",
+        "нерка",
+        "форель",
+        "радужная форель",
+        "филе форели"
+      ],
+      "aliasesEn": [
+        "salmon",
+        "salmon fillet",
+        "trout",
+        "rainbow trout",
+        "trout fillet"
+      ]
+    },
+    {
+      "id": "tuna-steak",
+      "category": "fish",
+      "labelRu": "Стейк или филе тунца (сырое)",
+      "labelEn": "Raw tuna steak or fillet",
+      "aliasesRu": [
+        "тунец",
+        "стейк тунца",
+        "филе тунца"
+      ],
+      "aliasesEn": [
+        "tuna",
+        "tuna steak"
+      ]
+    },
+    {
+      "id": "stock-chicken",
+      "category": "condiments",
+      "labelRu": "Куриный бульон готовый жидкий",
+      "labelEn": "Ready-made chicken stock (liquid)",
+      "aliasesRu": [
+        "куриный бульон",
+        "бульон куриный"
+      ],
+      "aliasesEn": [
+        "chicken stock",
+        "chicken broth"
+      ]
+    },
+    {
+      "id": "beans-red",
+      "category": "legumes",
+      "labelRu": "Фасоль красная",
+      "labelEn": "Red beans",
+      "aliasesRu": [
+        "фасоль красная",
+        "красная фасоль"
+      ],
+      "aliasesEn": [
+        "kidney beans",
+        "red beans"
+      ]
+    },
+    {
+      "id": "cabbage-red",
+      "category": "vegetables",
+      "labelRu": "Капуста краснокочанная",
+      "labelEn": "Red cabbage",
+      "aliasesRu": [
+        "краснокочанная капуста",
+        "капуста красная"
+      ],
+      "aliasesEn": [
+        "red cabbage"
+      ]
+    },
+    {
+      "id": "curry-paste-red",
+      "category": "asian-pantry",
+      "labelRu": "Паста карри красная",
+      "labelEn": "Red curry paste",
+      "aliasesRu": [
+        "паста карри",
+        "красная паста карри",
+        "желтая паста карри"
+      ],
+      "aliasesEn": [
+        "red curry paste",
+        "thai curry paste"
+      ]
+    },
+    {
+      "id": "fish-roe",
+      "category": "seafood",
+      "labelRu": "Красная икра рыбы",
+      "labelEn": "Red fish roe (caviar)",
+      "aliasesRu": [
+        "икра",
+        "икра красная",
+        "икра лосося",
+        "кявар"
+      ],
+      "aliasesEn": [
+        "fish roe",
+        "caviar",
+        "salmon roe"
+      ]
+    },
+    {
+      "id": "lentils-red",
+      "category": "legumes",
+      "labelRu": "Чечевица красная",
+      "labelEn": "Red lentils",
+      "aliasesRu": [
+        "чечевица",
+        "чечевица красная"
+      ],
+      "aliasesEn": [
+        "red lentils",
+        "lentils"
+      ]
+    },
+    {
+      "id": "onion-red",
+      "category": "vegetables",
+      "labelRu": "Красный лук",
+      "labelEn": "Red onion",
+      "aliasesRu": [
+        "красный лук",
+        "лук красный"
+      ],
+      "aliasesEn": [
+        "red onion"
+      ]
+    },
+    {
+      "id": "bell-pepper-red",
+      "category": "vegetables",
+      "labelRu": "Болгарский перец красный сладкий",
+      "labelEn": "Red sweet bell pepper",
+      "aliasesRu": [
+        "болгарский перец",
+        "красный перец",
+        "сладкий перец",
+        "перец болгарский",
+        "желтый сладкий перец",
+        "зеленый перец",
+        "зеленый сладкий перец",
+        "красный сладкий перец",
+        "свежий красный перец"
+      ],
+      "aliasesEn": [
+        "bell pepper",
+        "red bell pepper",
+        "sweet pepper",
+        "capsicum"
+      ]
+    },
+    {
+      "id": "wine-red-cooking",
+      "category": "condiments",
+      "labelRu": "Красное вино для готовки",
+      "labelEn": "Red wine for cooking",
+      "aliasesRu": [
+        "красное вино",
+        "вино красное",
+        "красное сухое вино"
+      ],
+      "aliasesEn": [
+        "red wine",
+        "cooking wine"
+      ]
+    },
+    {
+      "id": "rice-noodles",
+      "category": "pasta-noodles",
+      "labelRu": "Рисовая лапша",
+      "labelEn": "Rice noodles",
+      "aliasesRu": [
+        "рисовая лапша",
+        "крахмальная лапша",
+        "рисовая бумага"
+      ],
+      "aliasesEn": [
+        "rice noodles",
+        "rice vermicelli"
+      ]
+    },
+    {
+      "id": "rice-vinegar",
+      "category": "asian-pantry",
+      "labelRu": "Рисовый уксус",
+      "labelEn": "Rice vinegar",
+      "aliasesRu": [
+        "рисовый уксус",
+        "черный рисовый уксус",
+        "кокосовый уксус"
+      ],
+      "aliasesEn": [
+        "rice vinegar"
+      ]
+    },
+    {
+      "id": "rice-wine",
+      "category": "asian-pantry",
+      "labelRu": "Рисовое вино",
+      "labelEn": "Rice wine",
+      "aliasesRu": [
+        "рисовое вино"
+      ],
+      "aliasesEn": [
+        "rice wine",
+        "cooking rice wine"
+      ]
+    },
+    {
+      "id": "ricotta",
+      "category": "dairy",
+      "labelRu": "Рикотта",
+      "labelEn": "Ricotta",
+      "aliasesRu": [
+        "рикотта",
+        "сыр рикотта"
+      ],
+      "aliasesEn": [
+        "ricotta"
+      ]
+    },
+    {
+      "id": "oat-flakes",
+      "category": "grains",
+      "labelRu": "Овсяные хлопья (геркулес)",
+      "labelEn": "Rolled oat flakes",
+      "aliasesRu": [
+        "овсянка",
+        "овсяные хлопья",
+        "геркулес",
+        "овсяная крупа"
+      ],
+      "aliasesEn": [
+        "oat flakes",
+        "rolled oats",
+        "oats"
+      ]
+    },
+    {
+      "id": "bread-rye",
+      "category": "grains",
+      "labelRu": "Ржаной хлеб",
+      "labelEn": "Rye bread",
+      "aliasesRu": [
+        "ржаной хлеб",
+        "бородинский хлеб"
+      ],
+      "aliasesEn": [
+        "rye bread"
+      ]
+    },
+    {
+      "id": "flour-rye",
+      "category": "baking",
+      "labelRu": "Мука ржаная",
+      "labelEn": "Rye flour",
+      "aliasesRu": [
+        "мука ржаная",
+        "ржаная мука"
+      ],
+      "aliasesEn": [
+        "rye flour"
+      ]
+    },
+    {
+      "id": "saffron",
+      "category": "spices",
+      "labelRu": "Шафран",
+      "labelEn": "Saffron",
+      "aliasesRu": [
+        "шафран"
+      ],
+      "aliasesEn": [
+        "saffron"
+      ]
+    },
+    {
+      "id": "salami",
+      "category": "lamb-veal",
+      "labelRu": "Салями",
+      "labelEn": "Salami",
+      "aliasesRu": [
+        "салями",
+        "краковская колбаса",
+        "вареная колбаса"
+      ],
+      "aliasesEn": [
+        "salami"
+      ]
+    },
+    {
+      "id": "salt",
+      "category": "spices",
+      "labelRu": "Соль",
+      "labelEn": "Salt",
+      "aliasesRu": [
+        "соль",
+        "морская соль",
+        "крупная морская соль",
+        "крупная соль",
+        "розовая гималайская соль",
+        "белая фасоль",
+        "красная консервированная фасоль",
+        "кенийская фасоль",
+        "красная фасоль",
+        "зеленая стручковая фасоль",
+        "консервированная фасоль",
+        "фасоль"
+      ],
+      "aliasesEn": [
+        "salt",
+        "sea salt",
+        "table salt"
+      ]
+    },
+    {
+      "id": "sauerkraut",
+      "category": "canned-preserved",
+      "labelRu": "Квашеная капуста",
+      "labelEn": "Sauerkraut",
+      "aliasesRu": [
+        "квашеная капуста"
+      ],
+      "aliasesEn": [
+        "sauerkraut"
+      ]
+    },
+    {
+      "id": "scallops",
+      "category": "seafood",
+      "labelRu": "Гребешки",
+      "labelEn": "Scallops",
+      "aliasesRu": [
+        "гребешки",
+        "гребешок"
+      ],
+      "aliasesEn": [
+        "scallops",
+        "scallop"
+      ]
+    },
+    {
+      "id": "semolina",
+      "category": "grains",
+      "labelRu": "Манка",
+      "labelEn": "Semolina",
+      "aliasesRu": [
+        "манка",
+        "манная крупа",
+        "мука семола"
+      ],
+      "aliasesEn": [
+        "semolina"
+      ]
+    },
+    {
+      "id": "egg-white",
+      "category": "eggs",
+      "labelRu": "Яичный белок отдельно",
+      "labelEn": "Separated egg white",
+      "aliasesRu": [
+        "яичный белок",
+        "белки яиц",
+        "альбумин"
+      ],
+      "aliasesEn": [
+        "egg white",
+        "egg whites",
+        "albumen"
+      ]
+    },
+    {
+      "id": "egg-yolk",
+      "category": "eggs",
+      "labelRu": "Яичный желток отдельно",
+      "labelEn": "Separated egg yolk",
+      "aliasesRu": [
+        "желток",
+        "желтки",
+        "яичный желток"
+      ],
+      "aliasesEn": [
+        "egg yolk",
+        "yolk",
+        "yolks"
+      ]
+    },
+    {
+      "id": "sesame-seeds",
+      "category": "nuts-seeds",
+      "labelRu": "Кунжут",
+      "labelEn": "Sesame seeds",
+      "aliasesRu": [
+        "кунжут",
+        "семена кунжута",
+        "жареный кунжут",
+        "кунжутные семечки",
+        "кунжутное масло",
+        "черные кунжутные семечки"
+      ],
+      "aliasesEn": [
+        "sesame seeds",
+        "sesame"
+      ]
+    },
+    {
+      "id": "shallot",
+      "category": "vegetables",
+      "labelRu": "Лук-шалот",
+      "labelEn": "Shallot",
+      "aliasesRu": [
+        "шалот",
+        "лук-шалот"
+      ],
+      "aliasesEn": [
+        "shallot",
+        "shallots"
+      ]
+    },
+    {
+      "id": "sherry-vinegar",
+      "category": "condiments",
+      "labelRu": "Хересный уксус",
+      "labelEn": "Sherry vinegar",
+      "aliasesRu": [
+        "хересный уксус"
+      ],
+      "aliasesEn": [
+        "sherry vinegar"
+      ]
+    },
+    {
+      "id": "mushroom-shiitake",
+      "category": "mushrooms",
+      "labelRu": "Шиитаке",
+      "labelEn": "Shiitake",
+      "aliasesRu": [
+        "шиитаке",
+        "грибы шиитаке",
+        "сушеные грибы шиитаке"
+      ],
+      "aliasesEn": [
+        "shiitake"
+      ]
+    },
+    {
+      "id": "shrimp",
+      "category": "seafood",
+      "labelRu": "Креветки",
+      "labelEn": "Shrimp",
+      "aliasesRu": [
+        "креветки",
+        "креветка",
+        "вареные креветки",
+        "очищенные креветки",
+        "соленые креветки",
+        "сушеные креветки"
+      ],
+      "aliasesEn": [
+        "shrimp",
+        "prawns"
+      ]
+    },
+    {
+      "id": "shrimp-paste",
+      "category": "asian-pantry",
+      "labelRu": "Креветочная паста",
+      "labelEn": "Shrimp paste",
+      "aliasesRu": [
+        "креветочная паста"
+      ],
+      "aliasesEn": [
+        "shrimp paste"
+      ]
+    },
+    {
+      "id": "sichuan-peppercorn",
+      "category": "spices",
+      "labelRu": "Сычуаньский перец",
+      "labelEn": "Sichuan peppercorns",
+      "aliasesRu": [
+        "сычуаньский перец"
+      ],
+      "aliasesEn": [
+        "sichuan pepper",
+        "szechuan peppercorns"
+      ]
+    },
+    {
+      "id": "cherry-tomato",
+      "category": "vegetables",
+      "labelRu": "Помидоры черри мелкие",
+      "labelEn": "Small cherry tomatoes",
+      "aliasesRu": [
+        "помидоры черри",
+        "томаты черри",
+        "черри помидоры"
+      ],
+      "aliasesEn": [
+        "cherry tomato",
+        "cherry tomatoes"
+      ]
+    },
+    {
+      "id": "eel-smoked",
+      "category": "fish",
+      "labelRu": "Копчёный угорь",
+      "labelEn": "Smoked eel",
+      "aliasesRu": [
+        "копченый угорь"
+      ],
+      "aliasesEn": [
+        "smoked eel"
+      ]
+    },
+    {
+      "id": "soba",
+      "category": "pasta-noodles",
+      "labelRu": "Соба",
+      "labelEn": "Soba",
+      "aliasesRu": [
+        "соба"
+      ],
+      "aliasesEn": [
+        "soba",
+        "soba noodles"
+      ]
+    },
+    {
+      "id": "sorrel",
+      "category": "greens-herbs",
+      "labelRu": "Щавель",
+      "labelEn": "Sorrel",
+      "aliasesRu": [
+        "щавель"
+      ],
+      "aliasesEn": [
+        "sorrel",
+        "garden sorrel"
+      ]
+    },
+    {
+      "id": "sour-cream",
+      "category": "dairy",
+      "labelRu": "Сметана",
+      "labelEn": "Sour cream",
+      "aliasesRu": [
+        "сметана",
+        "сметана 20%-ная",
+        "сметана 30%-ная"
+      ],
+      "aliasesEn": [
+        "sour cream",
+        "creme fraiche"
+      ]
+    },
+    {
+      "id": "soy-sauce",
+      "category": "condiments",
+      "labelRu": "Соевый соус",
+      "labelEn": "Soy sauce",
+      "aliasesRu": [
+        "соевый соус",
+        "легкий соевый соус",
+        "светлый соевый соус"
+      ],
+      "aliasesEn": [
+        "soy sauce"
+      ]
+    },
+    {
+      "id": "soy-bean-sprouts",
+      "category": "vegetables",
+      "labelRu": "Ростки сои",
+      "labelEn": "Soybean sprouts",
+      "aliasesRu": [
+        "соевые ростки",
+        "ростки сои",
+        "бобовые проростки"
+      ],
+      "aliasesEn": [
+        "soybean sprouts",
+        "bean sprouts"
+      ]
+    },
+    {
+      "id": "pasta-spaghetti",
+      "category": "pasta-noodles",
+      "labelRu": "Спагетти",
+      "labelEn": "Spaghetti",
+      "aliasesRu": [
+        "спагетти",
+        "макароны",
+        "вермишель",
+        "паста стеллине",
+        "паста феттучини"
+      ],
+      "aliasesEn": [
+        "spaghetti"
+      ]
+    },
+    {
+      "id": "spinach",
+      "category": "greens-herbs",
+      "labelRu": "Шпинат",
+      "labelEn": "Spinach",
+      "aliasesRu": [
+        "шпинат"
+      ],
+      "aliasesEn": [
+        "spinach"
+      ]
+    },
+    {
+      "id": "squid",
+      "category": "seafood",
+      "labelRu": "Кальмар",
+      "labelEn": "Squid",
+      "aliasesRu": [
+        "кальмар",
+        "кальмары"
+      ],
+      "aliasesEn": [
+        "squid",
+        "calamari"
+      ]
+    },
+    {
+      "id": "sriracha",
+      "category": "asian-pantry",
+      "labelRu": "Срирача",
+      "labelEn": "Sriracha",
+      "aliasesRu": [
+        "срирача",
+        "соус тобадзян"
+      ],
+      "aliasesEn": [
+        "sriracha"
+      ]
+    },
+    {
+      "id": "star-anise",
+      "category": "spices",
+      "labelRu": "Бадьян",
+      "labelEn": "Star anise",
+      "aliasesRu": [
+        "бадьян",
+        "звёздчатый анис",
+        "анис (бадьян)",
+        "молотый анис (бадьян)"
+      ],
+      "aliasesEn": [
+        "star anise"
+      ]
+    },
+    {
+      "id": "strawberry",
+      "category": "fruits",
+      "labelRu": "Клубника",
+      "labelEn": "Strawberry",
+      "aliasesRu": [
+        "клубника"
+      ],
+      "aliasesEn": [
+        "strawberry",
+        "strawberries"
+      ]
+    },
+    {
+      "id": "sturgeon",
+      "category": "fish",
+      "labelRu": "Осетрина",
+      "labelEn": "Sturgeon",
+      "aliasesRu": [
+        "осетрина"
+      ],
+      "aliasesEn": [
+        "sturgeon",
+        "sturgeon fillet"
+      ]
+    },
+    {
+      "id": "cheese-suluguni",
+      "category": "dairy",
+      "labelRu": "Сыр сулугуни",
+      "labelEn": "Suluguni cheese",
+      "aliasesRu": [
+        "сулугуни",
+        "сыр сулугуни"
+      ],
+      "aliasesEn": [
+        "suluguni",
+        "sulguni cheese"
+      ]
+    },
+    {
+      "id": "sumac",
+      "category": "spices",
+      "labelRu": "Сумах",
+      "labelEn": "Sumac",
+      "aliasesRu": [
+        "сумах"
+      ],
+      "aliasesEn": [
+        "sumac"
+      ]
+    },
+    {
+      "id": "sunflower-oil",
+      "category": "oils-fats",
+      "labelRu": "Подсолнечное масло",
+      "labelEn": "Sunflower oil",
+      "aliasesRu": [
+        "подсолнечное масло",
+        "растительное масло",
+        "масло растительное",
+        "масло для фритюра"
+      ],
+      "aliasesEn": [
+        "sunflower oil",
+        "vegetable oil",
+        "canola oil"
+      ]
+    },
+    {
+      "id": "sunflower-seeds",
+      "category": "nuts-seeds",
+      "labelRu": "Семечки",
+      "labelEn": "Sunflower seeds",
+      "aliasesRu": [
+        "семечки",
+        "семена подсолнечника",
+        "семечки подсолнуха"
+      ],
+      "aliasesEn": [
+        "sunflower seeds"
+      ]
+    },
+    {
+      "id": "sweet-potato",
+      "category": "vegetables",
+      "labelRu": "Батат",
+      "labelEn": "Sweet potato",
+      "aliasesRu": [
+        "батат",
+        "сладкий картофель"
+      ],
+      "aliasesEn": [
+        "sweet potato"
+      ]
+    },
+    {
+      "id": "condensed-milk",
+      "category": "dairy",
+      "labelRu": "Сгущённое молоко с сахаром",
+      "labelEn": "Sweetened condensed milk",
+      "aliasesRu": [
+        "сгущённое молоко",
+        "сгущёнка",
+        "вареное сгущенное молоко",
+        "концентрированное молоко"
+      ],
+      "aliasesEn": [
+        "condensed milk",
+        "sweetened condensed milk"
+      ]
+    },
+    {
+      "id": "tahini",
+      "category": "condiments",
+      "labelRu": "Тахини",
+      "labelEn": "Tahini",
+      "aliasesRu": [
+        "тахини"
+      ],
+      "aliasesEn": [
+        "tahini"
+      ]
+    },
+    {
+      "id": "tamarind-paste",
+      "category": "asian-pantry",
+      "labelRu": "Паста тамаринда",
+      "labelEn": "Tamarind paste",
+      "aliasesRu": [
+        "тамаринд",
+        "паста тамаринда"
+      ],
+      "aliasesEn": [
+        "tamarind paste",
+        "tamarind"
+      ]
+    },
+    {
+      "id": "tarragon",
+      "category": "greens-herbs",
+      "labelRu": "Эстрагон",
+      "labelEn": "Tarragon",
+      "aliasesRu": [
+        "эстрагон свежий",
+        "эстрагон",
+        "листья эстрагона"
+      ],
+      "aliasesEn": [
+        "tarragon",
+        "fresh tarragon"
+      ]
+    },
+    {
+      "id": "tkemali",
+      "category": "condiments",
+      "labelRu": "Ткемали",
+      "labelEn": "Tkemali sauce",
+      "aliasesRu": [
+        "зеленый ткемали",
+        "ткемали"
+      ],
+      "aliasesEn": [
+        "tkemali"
+      ]
+    },
+    {
+      "id": "tofu",
+      "category": "legumes",
+      "labelRu": "Тофу",
+      "labelEn": "Tofu",
+      "aliasesRu": [
+        "тофу",
+        "твердый тофу"
+      ],
+      "aliasesEn": [
+        "tofu"
+      ]
+    },
+    {
+      "id": "tomato",
+      "category": "vegetables",
+      "labelRu": "Помидор",
+      "labelEn": "Tomato",
+      "aliasesRu": [
+        "помидор",
+        "помидоры",
+        "томат",
+        "помидоры пелати",
+        "помидоры черри"
+      ],
+      "aliasesEn": [
+        "tomato",
+        "tomatoes"
+      ]
+    },
+    {
+      "id": "tomato-paste",
+      "category": "condiments",
+      "labelRu": "Томатная паста",
+      "labelEn": "Tomato paste",
+      "aliasesRu": [
+        "томатная паста",
+        "томат-паста",
+        "томатное пюре",
+        "измельченные помидоры в собственном соку",
+        "консервированные помидоры кусочками",
+        "томатный соус пассата"
+      ],
+      "aliasesEn": [
+        "tomato paste"
+      ]
+    },
+    {
+      "id": "tonkatsu-sauce",
+      "category": "asian-pantry",
+      "labelRu": "Соус тонкацу",
+      "labelEn": "Tonkatsu sauce",
+      "aliasesRu": [
+        "соус тонкацу"
+      ],
+      "aliasesEn": [
+        "tonkatsu sauce"
+      ]
+    },
+    {
+      "id": "turkey-breast",
+      "category": "poultry",
+      "labelRu": "Грудка индейки (филе)",
+      "labelEn": "Turkey breast fillet",
+      "aliasesRu": [
+        "индейка",
+        "грудка индейки",
+        "филе индейки",
+        "копченая грудка индейки"
+      ],
+      "aliasesEn": [
+        "turkey",
+        "turkey breast"
+      ]
+    },
+    {
+      "id": "turmeric",
+      "category": "spices",
+      "labelRu": "Куркума",
+      "labelEn": "Turmeric",
+      "aliasesRu": [
+        "куркума"
+      ],
+      "aliasesEn": [
+        "turmeric"
+      ]
+    },
+    {
+      "id": "turnip",
+      "category": "vegetables",
+      "labelRu": "Репа",
+      "labelEn": "Turnip",
+      "aliasesRu": [
+        "репа",
+        "брюква"
+      ],
+      "aliasesEn": [
+        "turnip"
+      ]
+    },
+    {
+      "id": "udon",
+      "category": "pasta-noodles",
+      "labelRu": "Удон",
+      "labelEn": "Udon",
+      "aliasesRu": [
+        "удон"
+      ],
+      "aliasesEn": [
+        "udon",
+        "udon noodles"
+      ]
+    },
+    {
+      "id": "vanilla-pod",
+      "category": "spices",
+      "labelRu": "Ваниль",
+      "labelEn": "Vanilla",
+      "aliasesRu": [
+        "ваниль",
+        "ваниль в стручках",
+        "ванильный экстракт",
+        "ванилин",
+        "ванильная эссенция",
+        "ванильный стручок",
+        "молотая ваниль"
+      ],
+      "aliasesEn": [
+        "vanilla",
+        "vanilla bean",
+        "vanilla pod"
+      ]
+    },
+    {
+      "id": "veal-cutlet",
+      "category": "beef",
+      "labelRu": "Мясо телятины",
+      "labelEn": "Veal meat",
+      "aliasesRu": [
+        "телятина",
+        "телятина на котлеты",
+        "корейка теленка"
+      ],
+      "aliasesEn": [
+        "veal",
+        "veal cutlet"
+      ]
+    },
+    {
+      "id": "walnut",
+      "category": "nuts-seeds",
+      "labelRu": "Грецкий орех",
+      "labelEn": "Walnuts",
+      "aliasesRu": [
+        "грецкий орех",
+        "грецкие орехи"
+      ],
+      "aliasesEn": [
+        "walnut",
+        "walnuts"
+      ]
+    },
+    {
+      "id": "watermelon",
+      "category": "fruits",
+      "labelRu": "Арбуз",
+      "labelEn": "Watermelon",
+      "aliasesRu": [
+        "арбуз"
+      ],
+      "aliasesEn": [
+        "watermelon"
+      ]
+    },
+    {
+      "id": "flour-wheat",
+      "category": "baking",
+      "labelRu": "Мука пшеничная",
+      "labelEn": "Wheat flour",
+      "aliasesRu": [
+        "мука",
+        "мука пшеничная",
+        "пшеничная мука",
+        "мука мелкого помола",
+        "рисовая мука",
+        "миндальная мука",
+        "миндальная пудра"
+      ],
+      "aliasesEn": [
+        "flour",
+        "wheat flour",
+        "all-purpose flour",
+        "rice flour",
+        "almond flour",
+        "almond meal"
+      ]
+    },
+    {
+      "id": "beans-white",
+      "category": "legumes",
+      "labelRu": "Фасоль белая",
+      "labelEn": "White beans",
+      "aliasesRu": [
+        "фасоль белая",
+        "белая фасоль",
+        "фасоль"
+      ],
+      "aliasesEn": [
+        "white beans",
+        "cannellini",
+        "navy beans"
+      ]
+    },
+    {
+      "id": "bread-white",
+      "category": "grains",
+      "labelRu": "Белый хлеб",
+      "labelEn": "White bread",
+      "aliasesRu": [
+        "белый хлеб",
+        "хлеб",
+        "черствый белый хлеб",
+        "французский багет",
+        "хлеб для тостов",
+        "булочка",
+        "свердловская булочка"
+      ],
+      "aliasesEn": [
+        "white bread",
+        "bread loaf"
+      ]
+    },
+    {
+      "id": "cabbage-white",
+      "category": "vegetables",
+      "labelRu": "Капуста белокочанная",
+      "labelEn": "White cabbage",
+      "aliasesRu": [
+        "капуста",
+        "белокочанная капуста",
+        "капуста белокочанная"
+      ],
+      "aliasesEn": [
+        "white cabbage",
+        "cabbage"
+      ]
+    },
+    {
+      "id": "sugar-white",
+      "category": "baking",
+      "labelRu": "Сахар белый кристаллический",
+      "labelEn": "White granulated sugar",
+      "aliasesRu": [
+        "сахар",
+        "сахар белый",
+        "мелкий белый сахар",
+        "сахарная пудра",
+        "ванильный сахар"
+      ],
+      "aliasesEn": [
+        "sugar",
+        "white sugar",
+        "granulated sugar"
+      ]
+    },
+    {
+      "id": "white-pepper",
+      "category": "spices",
+      "labelRu": "Белый перец горошком (специя)",
+      "labelEn": "White peppercorns (spice)",
+      "aliasesRu": [
+        "белый перец",
+        "молотый белый перец"
+      ],
+      "aliasesEn": [
+        "white pepper"
+      ]
+    },
+    {
+      "id": "rice-white",
+      "category": "grains",
+      "labelRu": "Рис белый",
+      "labelEn": "White rice",
+      "aliasesRu": [
+        "рис",
+        "белый рис",
+        "вареный рис",
+        "жасминовый рис",
+        "вареный жасминовый рис",
+        "рис басмати",
+        "круглый рис",
+        "длиннозерный рис",
+        "рис арборио",
+        "рис бомба",
+        "рис девзира",
+        "рис для суши",
+        "узбекский рис"
+      ],
+      "aliasesEn": [
+        "white rice",
+        "rice"
+      ]
+    },
+    {
+      "id": "vinegar-white",
+      "category": "condiments",
+      "labelRu": "Столовый уксус белый",
+      "labelEn": "White table vinegar",
+      "aliasesRu": [
+        "уксус",
+        "столовый уксус",
+        "уксус 3%-ный",
+        "уксус 9%-ный",
+        "белый винный уксус",
+        "винный уксус",
+        "красный винный уксус"
+      ],
+      "aliasesEn": [
+        "vinegar",
+        "white vinegar"
+      ]
+    },
+    {
+      "id": "wine-white-cooking",
+      "category": "condiments",
+      "labelRu": "Белое вино для готовки",
+      "labelEn": "White wine for cooking",
+      "aliasesRu": [
+        "белое вино",
+        "вино белое",
+        "белое сухое вино",
+        "марсала"
+      ],
+      "aliasesEn": [
+        "white wine"
+      ]
+    },
+    {
+      "id": "chicken-whole",
+      "category": "poultry",
+      "labelRu": "Курица целиком",
+      "labelEn": "Whole chicken",
+      "aliasesRu": [
+        "курица",
+        "цыплёнок",
+        "куриная тушка",
+        "курица гриль",
+        "петух"
+      ],
+      "aliasesEn": [
+        "whole chicken",
+        "chicken",
+        "broiler chicken"
+      ]
+    },
+    {
+      "id": "egg-whole",
+      "category": "eggs",
+      "labelRu": "Куриное яйцо целиком в скорлупе",
+      "labelEn": "Whole chicken egg in shell",
+      "aliasesRu": [
+        "яйцо",
+        "яйца",
+        "куриное яйцо",
+        "куриное яйцо (деревенское)"
+      ],
+      "aliasesEn": [
+        "egg",
+        "eggs",
+        "chicken egg"
+      ]
+    },
+    {
+      "id": "coconut",
+      "category": "fruits",
+      "labelRu": "Кокос целый",
+      "labelEn": "Whole coconut",
+      "aliasesRu": [
+        "кокос",
+        "кокосовая стружка"
+      ],
+      "aliasesEn": [
+        "coconut"
+      ]
+    },
+    {
+      "id": "milk-whole",
+      "category": "dairy",
+      "labelRu": "Молоко коровье цельное",
+      "labelEn": "Whole cow milk",
+      "aliasesRu": [
+        "молоко",
+        "коровье молоко",
+        "молоко 3"
+      ],
+      "aliasesEn": [
+        "milk",
+        "whole milk",
+        "cow milk"
+      ]
+    },
+    {
+      "id": "worcestershire",
+      "category": "condiments",
+      "labelRu": "Ворчестерский соус",
+      "labelEn": "Worcestershire sauce",
+      "aliasesRu": [
+        "ворчестерский соус",
+        "вустерширский соус"
+      ],
+      "aliasesEn": [
+        "worcestershire sauce",
+        "worcestershire"
+      ]
+    },
+    {
+      "id": "curry-paste-yellow",
+      "category": "asian-pantry",
+      "labelRu": "Жёлтая паста карри",
+      "labelEn": "Yellow curry paste",
+      "aliasesRu": [
+        "желтая паста карри"
+      ],
+      "aliasesEn": [
+        "yellow curry paste"
+      ]
+    },
+    {
+      "id": "mustard-yellow",
+      "category": "condiments",
+      "labelRu": "Горчица американская",
+      "labelEn": "Yellow mustard",
+      "aliasesRu": [
+        "горчица американская",
+        "жёлтая горчица"
+      ],
+      "aliasesEn": [
+        "yellow mustard",
+        "american mustard"
+      ]
+    },
+    {
+      "id": "onion-yellow",
+      "category": "vegetables",
+      "labelRu": "Лук репчатый",
+      "labelEn": "Yellow onion",
+      "aliasesRu": [
+        "лук",
+        "репчатый лук",
+        "лук репчатый",
+        "молотый сушеный лук",
+        "белый лук"
+      ],
+      "aliasesEn": [
+        "onion",
+        "yellow onion",
+        "brown onion"
+      ]
+    },
+    {
+      "id": "bell-pepper-yellow",
+      "category": "vegetables",
+      "labelRu": "Болгарский перец жёлтый сладкий",
+      "labelEn": "Yellow sweet bell pepper",
+      "aliasesRu": [
+        "жёлтый перец"
+      ],
+      "aliasesEn": [
+        "yellow bell pepper"
+      ]
+    },
+    {
+      "id": "zucchini-dark",
+      "category": "vegetables",
+      "labelRu": "Цукини",
+      "labelEn": "Zucchini (dark)",
+      "aliasesRu": [
+        "цукини",
+        "цуккини"
+      ],
+      "aliasesEn": [
+        "zucchini",
+        "dark green zucchini"
+      ]
+    }
+  ]
+}

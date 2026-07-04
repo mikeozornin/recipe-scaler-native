@@ -29,7 +29,11 @@ public final class IngredientIllustrationCatalog: @unchecked Sendable {
 
     private let entries: [IngredientIllustrationCatalogEntry]
     private let entriesById: [String: IngredientIllustrationCatalogEntry]
-    private let searchIndex: [(entry: IngredientIllustrationCatalogEntry, haystack: String)]
+    private let haystackById: [String: String]
+    private let pickerEntriesRu: [IngredientIllustrationCatalogEntry]
+    private let pickerEntriesEn: [IngredientIllustrationCatalogEntry]
+    private let pickerViewRu: [IngredientIllustrationPickerEntry]
+    private let pickerViewEn: [IngredientIllustrationPickerEntry]
     private lazy var cachedAliasIndex: [IngredientIllustrationAliasEntry] = Self.buildAliasIndex(entries: entries)
 
     public var entryCount: Int { entries.count }
@@ -45,10 +49,13 @@ public final class IngredientIllustrationCatalog: @unchecked Sendable {
     }
 
     public init(bundle: Bundle = Bundle(for: IngredientIllustrationCatalog.self)) {
-        let loaded = Self.loadEntries(from: bundle)
-        self.entries = loaded
-        self.entriesById = Dictionary(uniqueKeysWithValues: loaded.map { ($0.id, $0) })
-        self.searchIndex = loaded.map { entry in
+        let canonical = Self.loadEntries(from: bundle, resource: "ingredient-catalog")
+        let ruSorted = Self.loadEntries(from: bundle, resource: "ingredient-catalog.ru")
+        let enSorted = Self.loadEntries(from: bundle, resource: "ingredient-catalog.en")
+
+        self.entries = canonical
+        self.entriesById = Dictionary(uniqueKeysWithValues: canonical.map { ($0.id, $0) })
+        self.haystackById = Dictionary(uniqueKeysWithValues: canonical.map { entry in
             let parts = [
                 entry.labelRu,
                 entry.labelEn,
@@ -57,8 +64,15 @@ public final class IngredientIllustrationCatalog: @unchecked Sendable {
                 entry.id,
             ]
             let haystack = IngredientIllustrationSearchNormalization.normalizeForSearch(parts.joined(separator: " "))
-            return (entry, haystack)
-        }
+            return (entry.id, haystack)
+        })
+
+        let resolvedRu = ruSorted.count == canonical.count ? ruSorted : Self.legacyLocalizedSort(canonical, locale: .ru)
+        let resolvedEn = enSorted.count == canonical.count ? enSorted : Self.legacyLocalizedSort(canonical, locale: .en)
+        self.pickerEntriesRu = resolvedRu
+        self.pickerEntriesEn = resolvedEn
+        self.pickerViewRu = resolvedRu.map { IngredientIllustrationPickerEntry(id: $0.id, primaryLabel: $0.labelRu) }
+        self.pickerViewEn = resolvedEn.map { IngredientIllustrationPickerEntry(id: $0.id, primaryLabel: $0.labelEn) }
     }
 
     public func contains(id: String?) -> Bool {
@@ -75,33 +89,35 @@ public final class IngredientIllustrationCatalog: @unchecked Sendable {
     }
 
     public func allPickerEntries(locale: IngredientIllustrationCatalogLocale) -> [IngredientIllustrationPickerEntry] {
-        entries
-            .sorted { lhs, rhs in
-                let l = primaryLabel(for: lhs, locale: locale)
-                let r = primaryLabel(for: rhs, locale: locale)
-                if l != r { return l.localizedCompare(r) == .orderedAscending }
-                return lhs.id.localizedCompare(rhs.id) == .orderedAscending
-            }
-            .map { IngredientIllustrationPickerEntry(id: $0.id, primaryLabel: primaryLabel(for: $0, locale: locale)) }
+        switch locale {
+        case .ru: return pickerViewRu
+        case .en: return pickerViewEn
+        }
     }
 
-    /// Empty query returns all entries (sorted). Non-empty: AND token match on NFKD haystack.
+    /// Empty query returns all entries in pre-sorted picker order.
+    /// Non-empty: AND token match on NFKD haystack, preserving pre-sorted order.
     public func search(query: String, locale: IngredientIllustrationCatalogLocale) -> [IngredientIllustrationPickerEntry] {
         let tokens = IngredientIllustrationSearchNormalization.tokenizeQuery(query)
-        let filtered: [IngredientIllustrationCatalogEntry]
-        if tokens.isEmpty {
-            filtered = entries
-        } else {
-            filtered = searchIndex.compactMap { indexed in
-                tokens.allSatisfy { indexed.haystack.contains($0) } ? indexed.entry : nil
-            }
+        let source: [IngredientIllustrationCatalogEntry]
+        let view: [IngredientIllustrationPickerEntry]
+        switch locale {
+        case .ru:
+            source = pickerEntriesRu
+            view = pickerViewRu
+        case .en:
+            source = pickerEntriesEn
+            view = pickerViewEn
         }
-        return filtered
-            .sorted { lhs, rhs in
-                let l = primaryLabel(for: lhs, locale: locale)
-                let r = primaryLabel(for: rhs, locale: locale)
-                if l != r { return l.localizedCompare(r) == .orderedAscending }
-                return lhs.id.localizedCompare(rhs.id) == .orderedAscending
+
+        if tokens.isEmpty {
+            return view
+        }
+
+        return source
+            .filter { entry in
+                guard let haystack = haystackById[entry.id] else { return false }
+                return tokens.allSatisfy { haystack.contains($0) }
             }
             .map { IngredientIllustrationPickerEntry(id: $0.id, primaryLabel: primaryLabel(for: $0, locale: locale)) }
     }
@@ -113,8 +129,8 @@ public final class IngredientIllustrationCatalog: @unchecked Sendable {
         }
     }
 
-    private static func loadEntries(from bundle: Bundle) -> [IngredientIllustrationCatalogEntry] {
-        guard let url = bundle.url(forResource: "ingredient-catalog", withExtension: "json"),
+    private static func loadEntries(from bundle: Bundle, resource: String) -> [IngredientIllustrationCatalogEntry] {
+        guard let url = bundle.url(forResource: resource, withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let payload = try? JSONDecoder().decode(CatalogFile.self, from: data)
         else {
@@ -125,6 +141,21 @@ public final class IngredientIllustrationCatalog: @unchecked Sendable {
 
     private struct CatalogFile: Codable {
         let entries: [IngredientIllustrationCatalogEntry]
+    }
+
+    /// Backwards-compatibility fallback used when the pre-sorted `*.ru.json` / `*.en.json`
+    /// artifacts are missing (e.g. partial bundle). Produces the same order the runtime
+    /// used to compute on every call before the build-time pre-sort optimization.
+    private static func legacyLocalizedSort(
+        _ entries: [IngredientIllustrationCatalogEntry],
+        locale: IngredientIllustrationCatalogLocale
+    ) -> [IngredientIllustrationCatalogEntry] {
+        entries.sorted { lhs, rhs in
+            let l = locale == .ru ? lhs.labelRu : lhs.labelEn
+            let r = locale == .ru ? rhs.labelRu : rhs.labelEn
+            if l != r { return l.localizedCompare(r) == .orderedAscending }
+            return lhs.id.localizedCompare(rhs.id) == .orderedAscending
+        }
     }
 
     private static func buildAliasIndex(entries: [IngredientIllustrationCatalogEntry]) -> [IngredientIllustrationAliasEntry] {
