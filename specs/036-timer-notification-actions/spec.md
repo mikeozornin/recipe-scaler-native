@@ -3,7 +3,7 @@
 **Ветка**: `036-timer-notification-actions`
 **Дата**: 2026-06-21
 **Статус**: 🟢 DONE
-**Зависимости**: [014-timers-sync](../014-timers-sync/spec.md) (DONE), [026-timer-live-activity](../026-timer-live-activity/spec.md) (in progress), [023-push-notifications](../023-push-notifications/spec.md) (push-coexistence)
+**Зависимости**: [014-timers-sync](../014-timers-sync/spec.md) (DONE), [044-timer-live-activity](../044-timer-live-activity/spec.md) (in progress), [023-push-notifications](../023-push-notifications/spec.md) (push-coexistence)
 **Не требует платного аккаунта**: локальные `UNNotification`, без APNs/Associated Domains.
 
 ## Контекст

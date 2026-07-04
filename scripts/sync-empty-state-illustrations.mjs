@@ -26,7 +26,7 @@ const REGISTRY_PATH = path.join(
 );
 const WEB_IMAGES_DIR = path.join(
   WEB_ROOT,
-  'recipe-scaler/public/assets/illustrations/empty-states',
+  'recipe-scaler/assets-source/empty-state-illustrations/generated',
 );
 
 const ASSETS_DIR = path.join(NATIVE_ROOT, 'RecipeScalerNative/Assets.xcassets');
@@ -107,7 +107,7 @@ function buildManifest(ready, hashes) {
   return {
     pixelSize: PIXEL_SIZE,
     displayPt: PIXEL_SIZE / 3,
-    source: 'recipe-scaler-web/recipe-scaler/public/assets/illustrations/empty-states',
+    source: 'recipe-scaler-web/recipe-scaler/assets-source/empty-state-illustrations/generated',
     entries: ready.map((e) => ({
       webId: e.id,
       assetName: WEB_ID_TO_ASSET[e.id],

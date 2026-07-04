@@ -1,6 +1,6 @@
 # Спецификация: disk cache публичных изображений + миграция личных
 
-**Ветка**: `021-public-image-cache`  
+**Ветка**: `045-public-image-cache`  
 **Дата**: 2026-06-15 (постфактум)  
 **Статус**: **Done** — реализовано, `verify-discover-public.sh` зелёный, build succeeded  
 **Зависимости**: `003-recipe-image-offline-cache`, `017-discover-enablement`

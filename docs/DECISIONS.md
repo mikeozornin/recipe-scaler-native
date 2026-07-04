@@ -166,7 +166,7 @@ Chronological log of substantive choices (newest last).
 
 ---
 
-### 2026-06-12 — Timer Live Activities (spec 026)
+### 2026-06-12 — Timer Live Activities (spec 044)
 
 **Decision:** One Live Activity per active timer on Lock Screen; system semantic colors (`primary` / `orange` / `red`); edge-to-edge progress overlay; pause/resume via `LiveActivityIntent` + App Group action queue; deep link tap opens recipe via `recipe-scaler://recipe/{id}`.
 
@@ -362,9 +362,9 @@ Chronological log of substantive choices (newest last).
 
 ---
 
-### 2026-07-03 — Defer Mac/iPad layout (spec 043) on a branch
+### 2026-07-03 — Defer Mac/iPad layout (spec 046) on a branch
 
-**Decision:** Pause spec 043 Mac/iPad layout work on a dedicated branch until iPad simulator navigation and hit-testing issues are resolved; do not ship partial iPad layout on `master` yet.
+**Decision:** Pause spec 046 Mac/iPad layout work on a dedicated branch until iPad simulator navigation and hit-testing issues are resolved; do not ship partial iPad layout on `master` yet.
 
 **Rationale:** iPad simulator showed a white screen and non-clickable UI; user chose to defer polish rather than block `master` with unfinished adaptive shell work.
 
@@ -374,7 +374,7 @@ Chronological log of substantive choices (newest last).
 
 **Decision:** Ingredient illustration parity with web ships for iPhone first; iPad-specific layout for the picker/catalog is out of scope for the initial implementation (“ipad не делаем”).
 
-**Rationale:** User narrowed scope to match web behavior on phone; iPad adaptive UI deferred with spec 043.
+**Rationale:** User narrowed scope to match web behavior on phone; iPad adaptive UI deferred with spec 046.
 
 ---
 

@@ -1,6 +1,6 @@
 # План: Live Activity для кулинарных таймеров
 
-**Ветка**: `026-timer-live-activity`  
+**Ветка**: `044-timer-live-activity`  
 **Дата**: 2026-06-12  
 **Статус**: In progress  
 **Спека**: [spec.md](./spec.md)  
@@ -122,9 +122,9 @@ flowchart TB
 
 | Файл | Назначение |
 |------|------------|
-| `specs/026-timer-live-activity/spec.md` | Требования, состояния UI, lifecycle, критерии успеха |
-| `specs/026-timer-live-activity/plan.md` | Этот файл — план и карта кода |
-| `specs/026-timer-live-activity/quickstart.md` | Сборка, проверка на симуляторе/устройстве, troubleshooting |
+| `specs/044-timer-live-activity/spec.md` | Требования, состояния UI, lifecycle, критерии успеха |
+| `specs/044-timer-live-activity/plan.md` | Этот файл — план и карта кода |
+| `specs/044-timer-live-activity/quickstart.md` | Сборка, проверка на симуляторе/устройстве, troubleshooting |
 | `docs/DECISIONS.md` | ADR: одна activity на таймер, semantic colors, App Group queue |
 
 ### Widget Extension (`TimerLiveActivityExtension/`)

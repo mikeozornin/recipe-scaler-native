@@ -10,7 +10,7 @@
 
 - **Breadcrumb sticky header из веба НЕ реализован.** Вместо него — стандартный `NavigationStack` back-button + `navigationTitle`. Соответствует iOS HIG: iOS back-button уже телеграфирует иерархию, дублирующий breadcrumb parent-link избыточен и визуально перегружает экран. Если позже потребуется веб-parity breadcrumb — отдельная задача.
 - **Search**: используется нативный `.searchable(text:, placement: .navigationBarDrawer(.automatic), prompt:)`. Правила фильтрации — токенизированные через `RecipeSearchUtils` (NFKD + diacritics + quoted phrases + AND), переиспользуется с `RecipeListView`.
-- **Preview images**: `PublicImageCacheService` + `DiscoverImageMemoryCache` — disk cache в `Caches/PublicImages/` с ETag (spec 021). Не offline-first; iOS может очистить. Личный `RecipeImageService` для Discover **не** используется.
+- **Preview images**: `PublicImageCacheService` + `DiscoverImageMemoryCache` — disk cache в `Caches/PublicImages/` с ETag (spec 045). Не offline-first; iOS может очистить. Личный `RecipeImageService` для Discover **не** используется.
 - **HTML description** curated-рецептов: простой regex-конвертер в plain text → markdown (`AttributedString(markdown:)`). Аутентичный Tiptap-рендеринг — вне scope 017.
 - **Toast после clone**: переиспользуется существующий `TransientStatusBanner` через `ShoppingFeedback.postStatus`.
 - **Импорт-таб**: оставлен как 5-й равноправный таб, открывает sheet (веб-parity, по решению пользователя). Отклонение от iOS HIG осознанное.

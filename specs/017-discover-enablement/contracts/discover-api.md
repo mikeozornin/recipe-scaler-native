@@ -32,7 +32,7 @@
 
 ## Кэширование
 
-- **Disk cache (public)**: `PublicImageCacheService` → `{Caches}/PublicImages/{sha256(url)}.webp`. ETag / `If-None-Match`, лимит ~150 MB. Spec 021.
+- **Disk cache (public)**: `PublicImageCacheService` → `{Caches}/PublicImages/{sha256(url)}.webp`. ETag / `If-None-Match`, лимит ~150 MB. Spec 045.
 - **Memory cache**: `DiscoverImageMemoryCache` (NSCache) для мгновенного restore при scroll.
 - **Offline**: последний disk cache + placeholder; не offline-first persistence.
 - **Личные рецепты**: `RecipeImageService` → `Application Support/RecipeImages/` (spec 003, 021). Для Discover **не** используется.

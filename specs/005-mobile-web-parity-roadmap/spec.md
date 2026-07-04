@@ -32,7 +32,8 @@
 | 023 | Push APNs | 🟡 in progress |
 | 024 | Список покупок + share/export + вкладка Shopping | ✅ (2026-06-04) |
 | 025 | Share/Action Extension | 🟡 ~85% |
-| 026 | Collections / Live Activity | 🟡 ~90% |
+| 026 | Collections | 🟡 ~90% |
+| 044 | Live Activity | 🟡 ~90% |
 | — | Auth BIP39, таймеры локальные, i18n ru/en, масштаб порций UI-local | ✅ Phase 1 |
 
 ## Этапы (после 004)

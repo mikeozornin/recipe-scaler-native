@@ -3,7 +3,7 @@
 **Ветка**: `030-timer-widget`
 **Дата**: 2026-06-17
 **Статус**: 🟡 В работе
-**Зависимости**: [014-timers-sync](../014-timers-sync/spec.md) (DONE), [026-timer-live-activity](../026-timer-live-activity/spec.md) (in progress — переиспользуем `TimerLiveActivityAccent` и `TimerLiveActivityPalette`)
+**Зависимости**: [014-timers-sync](../014-timers-sync/spec.md) (DONE), [044-timer-live-activity](../044-timer-live-activity/spec.md) (in progress — переиспользуем `TimerLiveActivityAccent` и `TimerLiveActivityPalette`)
 
 ## Цель
 

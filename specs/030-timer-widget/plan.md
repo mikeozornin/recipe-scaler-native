@@ -7,7 +7,7 @@
 **Data model**: [data-model.md](./data-model.md)
 **Layout (Figma)**: [layout.md](./layout.md) · `bash scripts/audit-ui-layout.sh specs/030-timer-widget`
 **Quickstart**: [quickstart.md](./quickstart.md)
-**Зависимости**: [014-timers-sync](../014-timers-sync/spec.md) (DONE), [026-timer-live-activity](../026-timer-live-activity/spec.md) (переиспользуем accent logic)
+**Зависимости**: [014-timers-sync](../014-timers-sync/spec.md) (DONE), [044-timer-live-activity](../044-timer-live-activity/spec.md) (переиспользуем accent logic)
 
 ## Кратко
 

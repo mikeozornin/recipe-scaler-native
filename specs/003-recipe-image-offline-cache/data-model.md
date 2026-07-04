@@ -35,7 +35,7 @@ flowchart LR
 | `preview` | `{recipeId}_preview.webp` | Строка списка 44×44 |
 | `full` | `{recipeId}_full.webp` | Шапка детального экрана |
 
-Корень: `Library/Application Support/RecipeImages/` (через `FileManager.applicationSupportDirectory`). Ранее — `Caches/`; one-time migration при первом обращении (spec 021).
+Корень: `Library/Application Support/RecipeImages/` (через `FileManager.applicationSupportDirectory`). Ранее — `Caches/`; one-time migration при первом обращении (spec 045).
 
 ## Метаданные HTTP (UserDefaults)
 
