@@ -9,7 +9,7 @@
 - **i18n** — строки только в `RecipeScalerNative/Resources/Localizable.xcstrings`; не хардкодь текст в view; без fallback на дефолтные строки. Подробности — [docs/I18N.md](docs/I18N.md).
 - **UI / UX** — `.appBody()` / `.appFootnote()`, web parity, паттерны экранов. Подробности — [docs/UI.md](docs/UI.md).
 - **UI по Figma / макетам** — до реализации view обязательны `specs/<feature>/layout.md` (ревью человеком) и `layout-audit.json`; прогон `bash scripts/audit-ui-layout.sh specs/<feature>`. Подробности — [docs/UI-LAYOUT-FROM-FIGMA.md](docs/UI-LAYOUT-FROM-FIGMA.md).
-- **Spec Kit** — артефакты в `specs/<feature>/` на **русском** (`spec.md`, `plan.md`, …).
+- **Spec Kit** — артефакты в `specs/<feature>/` на **русском** (`spec.md`, `plan.md`, …). Шаблон плана: `specs/_template/plan.md` (с секциями **Downstream consumers** и **Positive invariants** — обязательны при рефакторинге observable-эффектов; класс регрессий MIK-187).
 
 ## Контекст проекта (кратко)
 
@@ -36,6 +36,7 @@
 | [docs/UI.md](docs/UI.md) | типографика, HIG, web parity, паттерны экранов |
 | [docs/UI-LAYOUT-FROM-FIGMA.md](docs/UI-LAYOUT-FROM-FIGMA.md) | **макеты**: layout.md, layout-audit.json, audit-ui-layout, agent loop |
 | [docs/AGENT-WORKFLOW.md](docs/AGENT-WORKFLOW.md) | fix-until-green, verify-скрипты, отладка |
+| [docs/TESTING.md](docs/TESTING.md) | **тесты**: positive invariants, downstream consumers, DEBUG/edge-cases, postmortem-дисциплина |
 | [llm/how-to-debug.md](llm/how-to-debug.md) | **журналирование**: `AppLog`, NDJSON, `pull-app-logs.sh`, экспорт с телефона |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | CRDT, yrs, sync layers |
 | [docs/PAID-APPLE-DEVELOPER-REQUIRED.md](docs/PAID-APPLE-DEVELOPER-REQUIRED.md) | TestFlight, extensions, App Groups |

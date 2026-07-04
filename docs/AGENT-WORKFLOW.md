@@ -18,6 +18,8 @@
 
 Отдельные skills: `debug` (root cause по логам), `verify-this` (оформление claim/evidence), `check-work` (опциональный второй проход по diff).
 
+Принципы тестирования (positive invariants, downstream consumers, DEBUG/edge-cases, postmortem) — см. [TESTING.md](./TESTING.md).
+
 ## Сборка после правок
 
 После изменений в Swift/Xcode **агент обязан сам прогнать сборку** и убедиться, что проект компилируется, прежде чем считать задачу выполненной. Не проси пользователя проверить compile, если сборку можно запустить локально.
@@ -79,6 +81,15 @@ bash scripts/run-dual-simulators.sh
 ## Проверка фич
 
 - Feature verification scripts: `scripts/verify-<feature>.sh` и `scripts/verify-all.sh`.
+- **UI smoke (после правок view / navigation):** `bash scripts/verify-ui-smoke.sh` — обходит основные табы, ловит crash / main-thread hang / empty-state flicker. Не заменяет per-feature verify-*.sh, а закрывает дыру между ними.
+- **i18n lint (после правок view или новых экранов):** `bash scripts/lint-i18n.sh` — детектор хардкода UI-строк в Swift. Расширение `verify-translations.sh` на `Views/`, `Screens/`, `Widgets/` и т.п.
+
+## Планы Spec Kit
+
+При написании `specs/<feature>/plan.md` используй шаблон [`specs/_template/plan.md`](../specs/_template/plan.md). Шаблон требует:
+
+- **Downstream consumers** — список всех, кто читает изменяемое состояние или вызывает меняемый API (views, widgets, extensions, sync, persisted state, tests). Класс регрессий MIK-187: функция делает две вещи, одну забыли — план без этой секции пропускает такие баги.
+- **Positive invariants** — для каждого observable-эффекта хотя бы один положительный инвариант для теста. Не «не должно сломаться», а «должно произойти X».
 
 ## UI по макетам (Figma)
 

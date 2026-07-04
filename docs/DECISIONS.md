@@ -393,3 +393,11 @@ Chronological log of substantive choices (newest last).
 **Rationale:** Code review flagged data loss if the app crashes between emit and ack. User chose the reliable variant (“корректный и надёжный”) over faster dequeue, aligning with durable offline-first sync.
 
 ---
+
+### 2026-07-04 — Process: positive invariants + downstream consumers in plans
+
+**Decision:** Every feature `plan.md` (Spec Kit) must include two mandatory sections: **Downstream consumers** (all readers of mutated state, including cross-process ones) and **Positive invariants** (one observable behavioural assertion per effect). Template at `specs/_template/plan.md`. Principles codified in `docs/TESTING.md`. Supporting tooling: `scripts/verify-ui-smoke.sh` (cross-screen smoke), `scripts/lint-i18n.sh` (hardcoded UI literal detector).
+
+**Rationale:** Recurring regression class (most notably MIK-187 widget freeze, 22 Jun 2026): a function doing two observable effects had negative tests only. Removing the "extra" effect (widget snapshot) passed all tests because no assertion required it. ~200 i18n corrections and ~400 UI-layout corrections over 30 days of transcripts indicated the existing per-feature verify-*.sh scripts leave gaps between features. New tooling closes launch/crash/hang/empty-flicker detection at the cross-screen level, and the i18n lint widens the existing `verify-translations.sh` scope. Plan-level rule shifts the burden of identifying "what could break downstream" from the reviewer to the author, before code is written.
+
+---
