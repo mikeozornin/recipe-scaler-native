@@ -98,16 +98,29 @@ struct AssistantComposer: View {
                 .padding(.bottom, 4)
 
             composerToolbar
-                .zIndex(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemBackground))
+        .background {
+            if isVoiceActive {
+                AssistantRecordingShimmer(cornerRadius: Self.shellCornerRadius)
+            } else {
+                Color(.systemBackground)
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: Self.shellCornerRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: Self.shellCornerRadius, style: .continuous)
-                .stroke(Color(.separator), lineWidth: 1)
+                .stroke(borderColor, lineWidth: 1)
                 .allowsHitTesting(false)
         }
+    }
+
+    private var isVoiceActive: Bool {
+        voiceRecorder.state == .recording || voiceRecorder.state == .transcribing
+    }
+
+    private var borderColor: Color {
+        isVoiceActive ? .clear : Color(.separator)
     }
 
     // MARK: - Subviews
@@ -139,27 +152,75 @@ struct AssistantComposer: View {
     }
 
     private var composerToolbar: some View {
-        HStack(spacing: 0) {
+        Group {
             if voiceRecorder.state == .recording {
-                AssistantVoiceLevelMeter(samples: voiceRecorder.samples)
-                    .padding(.leading, 16)
-                    .frame(maxWidth: .infinity, minHeight: AppToolbarStyle.minimumTapSide)
-                    .background(Color(.systemBackground))
+                recordingControls
+                    .frame(height: AppToolbarStyle.minimumTapSide)
+            } else if voiceRecorder.state == .transcribing {
+                transcribingControls
+                    .frame(height: AppToolbarStyle.minimumTapSide)
             } else {
-                HStack(spacing: 4) {
-                    attachButton
-                    if showContextRecipeTag, let contextAttachment {
-                        contextRecipeTagButton(for: contextAttachment)
-                    }
-                }
-                Spacer(minLength: 8)
+                idleControls
+                    .frame(minHeight: AppToolbarStyle.minimumTapSide)
             }
-            voiceButton
-            sendButton
         }
         .padding(.leading, 2)
         .padding(.trailing, 2)
         .padding(.bottom, 2)
+    }
+
+    private var recordingControls: some View {
+        HStack(spacing: 0) {
+            Button {
+                voiceRecorder.cancel()
+            } label: {
+                composerIconOnly(systemName: "xmark")
+            }
+            .appToolbarIconButton()
+            .accessibilityLabel(Text("assistant.voice-cancel"))
+            .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceCancelButton)
+
+            AssistantVoiceLevelMeter(barHeights: voiceRecorder.barHeights)
+                .padding(.horizontal, 8)
+
+            Button {
+                Task { await stopVoiceRecording() }
+            } label: {
+                composerIconOnly(systemName: "checkmark")
+            }
+            .appToolbarIconButton()
+            .accessibilityLabel(Text("assistant.voice-stop"))
+            .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceStopButton)
+            .symbolEffect(.pulse)
+        }
+    }
+
+    private var transcribingControls: some View {
+        HStack(spacing: 6) {
+            Spacer()
+            ProgressView()
+                .tint(Color.primary)
+            Text("assistant.voice-transcribing")
+                .appFootnote()
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceTranscribingButton)
+    }
+
+    private var idleControls: some View {
+        HStack(spacing: 0) {
+            HStack(spacing: 4) {
+                attachButton
+                if showContextRecipeTag, let contextAttachment {
+                    contextRecipeTagButton(for: contextAttachment)
+                }
+            }
+            Spacer(minLength: 8)
+            voiceButton
+            sendButton
+        }
     }
 
     private var contextRecipeEntry: CollectionEntry? {
@@ -248,35 +309,16 @@ struct AssistantComposer: View {
 
     @ViewBuilder
     private var voiceButton: some View {
-        switch voiceRecorder.state {
-        case .idle:
-            Button {
-                Task { await startVoiceRecording() }
-            } label: {
-                composerIconOnly(systemName: "mic")
-            }
-            .appToolbarIconButton()
-            .accessibilityLabel(Text("assistant.voice-record"))
-            .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceRecordButton)
-            .disabled(isSending)
-            .opacity(isSending ? 0.4 : 1)
-        case .recording:
-            Button {
-                Task { await stopVoiceRecording() }
-            } label: {
-                composerIconOnly(systemName: "stop.fill", tint: .red)
-            }
-            .appToolbarIconButton()
-            .accessibilityLabel(Text("assistant.voice-stop"))
-            .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceStopButton)
-        case .transcribing:
-            ProgressView()
-                .tint(Color.primary)
-                .frame(width: AppToolbarStyle.iconSide, height: AppToolbarStyle.iconSide)
-                .frame(width: AppToolbarStyle.minimumTapSide, height: AppToolbarStyle.minimumTapSide)
-                .accessibilityLabel(Text("assistant.voice-transcribing"))
-                .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceTranscribingButton)
+        Button {
+            Task { await startVoiceRecording() }
+        } label: {
+            composerIconOnly(systemName: "mic")
         }
+        .appToolbarIconButton()
+        .accessibilityLabel(Text("assistant.voice-record"))
+        .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceRecordButton)
+        .disabled(isSending)
+        .opacity(isSending ? 0.4 : 1)
     }
 
     private var sendButton: some View {
@@ -554,4 +596,234 @@ struct AssistantRecipePicker: View {
             .padding(.top, RecipeRowLayoutMetrics.listHorizontalInset)
             .padding(.bottom, 8)
     }
+}
+
+// MARK: - Recording shimmer overlay
+
+/// Cyan-blue shimmer that fills the composer shell while recording or transcribing.
+/// Web parity: `.assistant-recording-shimmer` (recipe-scaler-web/src/index.css).
+/// iOS 18+: animated `MeshGradient`; iOS 17: linear fallback. Pauses when Reduce Motion is on.
+private struct AssistantRecordingShimmer: View {
+    let cornerRadius: CGFloat
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        Group {
+            if #available(iOS 18.0, *) {
+                AssistantRecordingMeshShimmer(
+                    cornerRadius: cornerRadius,
+                    colorScheme: colorScheme,
+                    reduceMotion: reduceMotion
+                )
+            } else {
+                AssistantRecordingLinearShimmer(
+                    cornerRadius: cornerRadius,
+                    colorScheme: colorScheme,
+                    reduceMotion: reduceMotion
+                )
+            }
+        }
+    }
+}
+
+// MARK: Mesh shimmer (iOS 18+)
+
+@available(iOS 18.0, *)
+private struct AssistantRecordingMeshShimmer: View {
+    let cornerRadius: CGFloat
+    let colorScheme: ColorScheme
+    let reduceMotion: Bool
+
+    var body: some View {
+        Group {
+            if reduceMotion {
+                mesh(at: 0)
+            } else {
+                TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+                    mesh(at: timeline.date.timeIntervalSinceReferenceDate)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func mesh(at time: TimeInterval) -> some View {
+        MeshGradient(
+            width: AssistantRecordingMeshShimmerMath.gridWidth,
+            height: AssistantRecordingMeshShimmerMath.gridHeight,
+            points: AssistantRecordingMeshShimmerMath.points(at: time),
+            colors: AssistantRecordingMeshShimmerMath.colors(for: colorScheme, at: time),
+            background: AssistantRecordingMeshShimmerMath.background(for: colorScheme),
+            smoothsColors: true
+        )
+    }
+}
+
+@available(iOS 18.0, *)
+private enum AssistantRecordingMeshShimmerMath {
+    static let gridWidth = 4
+    static let gridHeight = 4
+    static let animationSpeed = 1.0
+
+    /// Near-static grid. Tiny drift keeps the surface organic without introducing
+    /// several visible "moving centres" — the colour flow does the work.
+    private static let jitter: Float = 0.02
+
+    static func points(at time: TimeInterval) -> [SIMD2<Float>] {
+        let t = time * animationSpeed
+        func p(_ x: Float, _ y: Float, _ phase: Double) -> SIMD2<Float> {
+            // Corners/edges pinned; interior nudged by a shared slow drift only.
+            let interior = (x > 0 && x < 1 && y > 0 && y < 1)
+            guard interior else { return SIMD2(x, y) }
+            return SIMD2(
+                x + jitter * Float(sin(t * 0.5 + phase)),
+                y + jitter * Float(cos(t * 0.4 + phase))
+            )
+        }
+        return [
+            p(0, 0, 0), p(0.34, 0, 0), p(0.66, 0, 0), p(1, 0, 0),
+            p(0, 0.34, 1), p(0.34, 0.34, 1), p(0.66, 0.34, 2), p(1, 0.34, 2),
+            p(0, 0.66, 3), p(0.34, 0.66, 3), p(0.66, 0.66, 4), p(1, 0.66, 4),
+            p(0, 1, 0), p(0.34, 1, 0), p(0.66, 1, 0), p(1, 1, 0),
+        ]
+    }
+
+    /// One coherent gradient band that flows diagonally and gently sways — a single smooth
+    /// sweep across the whole shell, not many independent blinking centres.
+    static func colors(for scheme: ColorScheme, at time: TimeInterval) -> [Color] {
+        let t = time * animationSpeed
+        // Direction sways slowly around the diagonal for an organic, non-linear feel.
+        let angle = 0.72 + 0.30 * sin(t * 0.13)
+        let dirX = cos(angle)
+        let dirY = sin(angle)
+
+        return (0 ..< gridWidth * gridHeight).map { index in
+            let x = Double(index % gridWidth) / Double(gridWidth - 1)
+            let y = Double(index / gridWidth) / Double(gridHeight - 1)
+            return nodeColor(for: scheme, x: x, y: y, dirX: dirX, dirY: dirY, time: t)
+        }
+    }
+
+    static func background(for scheme: ColorScheme) -> Color {
+        scheme == .dark
+            ? Color(hue: 202.0 / 360.0, saturation: 0.60, brightness: 0.60)
+            : Color(hue: 200.0 / 360.0, saturation: 0.52, brightness: 0.88)
+    }
+
+    private static func nodeColor(
+        for scheme: ColorScheme,
+        x: Double,
+        y: Double,
+        dirX: Double,
+        dirY: Double,
+        time: Double
+    ) -> Color {
+        // Projection onto the (swaying) flow direction → one smooth band across the grid.
+        let proj = x * dirX + y * dirY
+        let band = (sin(proj * 3.1 - time * 1.4) + 1) / 2
+
+        let tone = scheme == .dark ? darkTones : lightTones
+        // Blue ↔ light-cyan along the band; mostly blue, so it reads as a tinted gradient.
+        let base = lerpHSB(tone.deep, tone.light, smoothstep(band))
+        // Gentle crest of brightness only at the very peak — no heavy white wash.
+        let crest = pow(band, 4.0) * 0.28
+        return color(from: lerpHSB(base, tone.crest, crest))
+    }
+
+    private static func smoothstep(_ v: Double) -> Double {
+        let c = max(0, min(1, v))
+        return c * c * (3 - 2 * c)
+    }
+
+    private struct Tone {
+        let crest: (h: Double, s: Double, b: Double)
+        let light: (h: Double, s: Double, b: Double)
+        let deep: (h: Double, s: Double, b: Double)
+    }
+
+    private static let lightTones = Tone(
+        crest: (192.0 / 360.0, 0.12, 1.00),
+        light: (193.0 / 360.0, 0.42, 0.94),
+        deep: (206.0 / 360.0, 0.74, 0.80)
+    )
+
+    private static let darkTones = Tone(
+        crest: (194.0 / 360.0, 0.16, 0.90),
+        light: (196.0 / 360.0, 0.46, 0.78),
+        deep: (208.0 / 360.0, 0.70, 0.60)
+    )
+
+    private static func lerpHSB(_ a: (h: Double, s: Double, b: Double), _ b: (h: Double, s: Double, b: Double), _ t: Double) -> (h: Double, s: Double, b: Double) {
+        let clamped = max(0, min(1, t))
+        return (
+            h: a.h + (b.h - a.h) * clamped,
+            s: a.s + (b.s - a.s) * clamped,
+            b: a.b + (b.b - a.b) * clamped
+        )
+    }
+
+    private static func color(from hsb: (h: Double, s: Double, b: Double)) -> Color {
+        Color(hue: hsb.h, saturation: hsb.s, brightness: hsb.b)
+    }
+}
+
+// MARK: Linear shimmer fallback (iOS 17)
+
+private struct AssistantRecordingLinearShimmer: View {
+    let cornerRadius: CGFloat
+    let colorScheme: ColorScheme
+    let reduceMotion: Bool
+
+    private static let halfCycleDuration: TimeInterval = 3.5
+
+    @State private var animate = false
+
+    var body: some View {
+        LinearGradient(
+            stops: colorScheme == .dark ? Self.darkGradientStops : Self.lightGradientStops,
+            startPoint: animate ? Self.endStartPoint : Self.startStartPoint,
+            endPoint: animate ? Self.endEndPoint : Self.startEndPoint
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: Self.halfCycleDuration).repeatForever(autoreverses: true),
+            value: animate
+        )
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .onAppear {
+            guard !reduceMotion else { return }
+            animate = true
+        }
+        .onDisappear {
+            animate = false
+        }
+        .onChange(of: reduceMotion) { _, newValue in
+            animate = !newValue
+        }
+    }
+
+    private static let startStartPoint = UnitPoint(x: -0.45, y: -0.05)
+    private static let startEndPoint = UnitPoint(x: 0.55, y: 1.05)
+    private static let endStartPoint = UnitPoint(x: 0.45, y: -0.05)
+    private static let endEndPoint = UnitPoint(x: 1.45, y: 1.05)
+
+    private static let lightGradientStops: [Gradient.Stop] = [
+        .init(color: Color.white.opacity(0.98), location: 0.0),
+        .init(color: Color.white.opacity(0.92), location: 0.14),
+        .init(color: Color(hue: 190.0 / 360.0, saturation: 0.50, brightness: 0.97, opacity: 0.88), location: 0.32),
+        .init(color: Color(hue: 200.0 / 360.0, saturation: 0.82, brightness: 0.78, opacity: 0.92), location: 0.58),
+        .init(color: Color(hue: 205.0 / 360.0, saturation: 0.92, brightness: 0.52, opacity: 0.96), location: 1.0),
+    ]
+
+    private static let darkGradientStops: [Gradient.Stop] = [
+        .init(color: Color.white.opacity(0.82), location: 0.0),
+        .init(color: Color(hue: 185.0 / 360.0, saturation: 0.35, brightness: 0.95, opacity: 0.72), location: 0.14),
+        .init(color: Color(hue: 195.0 / 360.0, saturation: 0.65, brightness: 0.72, opacity: 0.68), location: 0.38),
+        .init(color: Color(hue: 200.0 / 360.0, saturation: 0.80, brightness: 0.58, opacity: 0.74), location: 0.62),
+        .init(color: Color(hue: 205.0 / 360.0, saturation: 0.88, brightness: 0.45, opacity: 0.78), location: 1.0),
+    ]
 }

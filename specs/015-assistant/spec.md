@@ -51,6 +51,15 @@ iOS: нет UI и нет streaming client.
 
 Запись → `POST transcribe`; ошибка `audio_too_long` локализована.
 
+**UI parity с веб-коммитом `a9f193ff` (2026-07-05):**
+
+- `AssistantRecordingShimmer` — cyan-blue градиент-оверлей через весь composer shell во время `recording`/`transcribing` (`AssistantComposer.swift`). Анимация `LinearGradient` 7s `easeInOut` autoreverse; `@Environment(\.accessibilityReduceMotion)` → статичный градиент. Light/dark наборы стопов паритетны `.assistant-recording-shimmer` в `recipe-scaler-web/src/index.css`.
+- `AssistantVoiceLevelMeter` переписан как «tape»: 2pt бары, gap 2pt, окно ~10s (50 баров при одном баре на ~200ms). Высота каждого бара предвычислена в `AssistantVoiceRecorder.barHeights` и стабильна после записи (web peak-RMS parity). Новые семплы справа, старые скроллятся влево.
+- `recordingControls`: X (cancel — сбрасывает запись без транскрипции, `voiceRecorder.cancel()`) + meter + ✓ (stop, `symbolEffect(.pulse)`). Web `check`/`xmark` icons parity.
+- `transcribingControls`: центрированный `ProgressView` + localized label, фиксированная высота `AppToolbarStyle.minimumTapSide` — исправляет скачки высоты composer между состояниями (web `h-9` parity).
+- Composer shell border → `.clear` во время recording/transcribing (web `border-transparent` parity).
+- i18n: `assistant.voice-cancel` (en/ru); accessibility id `assistantVoiceCancelButton`.
+
 ### US5 — Actions (P2)
 
 Подтверждённые действия (scale, add to shopping) вызывают существующие сервисы iOS.

@@ -3840,6 +3840,22 @@
         }
       }
     },
+    "assistant.voice-cancel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel recording"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отменить запись"
+          }
+        }
+      }
+    },
     "assistant.voice-error.permission-denied": {
       "extractionState": "stale",
       "localizations": {

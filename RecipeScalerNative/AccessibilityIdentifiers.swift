@@ -62,6 +62,7 @@ enum AccessibilityIdentifiers {
     static let assistantHistoryButton = "assistant_history_button"
     static let assistantOfflineFootnote = "assistant_offline_footnote"
     static let assistantVoiceStopButton = "assistant_voice_stop_button"
+    static let assistantVoiceCancelButton = "assistant_voice_cancel_button"
     static let assistantVoiceTranscribingButton = "assistant_voice_transcribing_button"
     static let assistantVoiceLimitAlert = "assistant_voice_limit_alert"
     static let assistantThreadPanel = "assistant_thread_panel"

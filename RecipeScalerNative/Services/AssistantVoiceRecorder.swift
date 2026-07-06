@@ -39,15 +39,34 @@ final class AssistantVoiceRecorder {
     /// Silence floor in dB for level normalization (averagePower is -160..0).
     private static let minPowerDb: Float = -45
     private static let meterPollIntervalNs: UInt64 = 50_000_000
-    private static let maxSamples = 40
+    /// Tape meter: one bar appended per N meter polls (≈200ms per bar at 50ms poll).
+    private static let barsPerSample = 4
+    /// Tape window length in bars. Generously larger than any realistic visible bar count so
+    /// the meter never shows trailing silence placeholders on the left after long recordings.
+    /// At one bar per 200ms this is ~40s of recording; max record duration is 120s, but visible
+    /// bar count onscreen is well under 100, so we trim to display-size downstream anyway.
+    static let meterBarWindow: Int = 200
+    /// Meter geometry, web parity (`VOICE_METER_*_PX`).
+    static let meterBarWidth: CGFloat = 2
+    static let meterBarSpacing: CGFloat = 2
+    static let meterMinHeight: CGFloat = 3
+    static let meterMaxHeight: CGFloat = 24
+    /// Below this normalized level the bar stays at `meterMinHeight` (web `VOICE_METER_MIN_SCALE = 0.12`).
+    private static let meterMinScale: CGFloat = 0.12
 
     private(set) var state: AssistantVoiceRecordingState = .idle
-    private(set) var samples: [CGFloat] = []
+    /// Precomputed tape-meter bar heights in pt, newest last. Each bar keeps its
+    /// height once recorded (web parity: peak RMS scrolls right→left, stable height).
+    private(set) var barHeights: [CGFloat] = []
 
     private var recorder: AVAudioRecorder?
     private var recordingURL: URL?
     private var autoStopTask: Task<Void, Never>?
     private var meterTask: Task<Void, Never>?
+    /// Counter of meter polls since the last tape bar was committed.
+    private var pollsSinceLastBar: Int = 0
+    /// Max normalized level seen since the last tape bar was committed (web peak-RMS parity).
+    private var peakSinceLastBar: CGFloat = AssistantVoiceRecorder.meterMinScale
 
     var onLimitReached: (() -> Void)?
     var onAutoStopCapture: ((Data) async -> Void)?
@@ -81,7 +100,9 @@ final class AssistantVoiceRecorder {
 
         self.recorder = recorder
         recordingURL = url
-        samples = []
+        barHeights = []
+        pollsSinceLastBar = 0
+        peakSinceLastBar = Self.meterMinScale
         state = .recording
 
         startMetering()
@@ -129,8 +150,9 @@ final class AssistantVoiceRecorder {
         }
 
         state = .transcribing
+        // Sweep the temp file regardless of read success so a disk error can't strand PII.
+        defer { try? FileManager.default.removeItem(at: url) }
         let data = try Data(contentsOf: url)
-        try? FileManager.default.removeItem(at: url)
 
         guard !data.isEmpty else {
             state = .idle
@@ -141,7 +163,7 @@ final class AssistantVoiceRecorder {
 
     func markIdle() {
         state = .idle
-        samples = []
+        barHeights = []
     }
 
     func cancel() {
@@ -156,7 +178,7 @@ final class AssistantVoiceRecorder {
         recordingURL = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         state = .idle
-        samples = []
+        barHeights = []
     }
 
     private func startMetering() {
@@ -180,10 +202,24 @@ final class AssistantVoiceRecorder {
         recorder.updateMeters()
         let power = recorder.averagePower(forChannel: 0)
         let normalized = CGFloat(max((power - Self.minPowerDb) / -Self.minPowerDb, 0))
-        let clamped = min(max(normalized, 0.08), 1)
-        samples.append(clamped)
-        if samples.count > Self.maxSamples {
-            samples.removeFirst(samples.count - Self.maxSamples)
+        let clamped = min(max(normalized, Self.meterMinScale), 1)
+        if clamped > peakSinceLastBar {
+            peakSinceLastBar = clamped
+        }
+        pollsSinceLastBar += 1
+        if pollsSinceLastBar >= Self.barsPerSample {
+            commitBar(for: peakSinceLastBar)
+            pollsSinceLastBar = 0
+            peakSinceLastBar = Self.meterMinScale
+        }
+    }
+
+    private func commitBar(for normalizedLevel: CGFloat) {
+        let amplified = pow(normalizedLevel, 0.65)
+        let height = Self.meterMinHeight + amplified * (Self.meterMaxHeight - Self.meterMinHeight)
+        barHeights.append(height)
+        if barHeights.count > Self.meterBarWindow {
+            barHeights.removeFirst(barHeights.count - Self.meterBarWindow)
         }
     }
 
