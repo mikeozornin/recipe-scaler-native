@@ -21,15 +21,20 @@ struct AssistantVoiceLevelMeter: View {
     var body: some View {
         GeometryReader { geometry in
             let visibleCount = visibleBarCount(for: geometry.size.width)
-            // Show only the bars that physically fit; trim older history beyond that.
-            // If fewer bars exist than slots, we still right-align so newest is at the trailing edge.
-            let slice = Array(barHeights.suffix(visibleCount))
+            // Show only the bars that physically fit; older history beyond that is trimmed.
+            // If fewer bars exist than slots, right-align so the newest stays at the trailing edge.
+            let startIndex = max(0, barHeights.count - visibleCount)
+            let visibleRange = startIndex..<barHeights.count
             HStack(alignment: .center, spacing: barSpacing) {
-                ForEach(Array(slice.enumerated()), id: \.offset) { _, height in
-                    bar(height: height)
+                // Each bar id is its absolute index in `barHeights`, so adding a new bar
+                // at the right inserts a new view rather than morphing existing ones in place.
+                ForEach(visibleRange, id: \.self) { index in
+                    bar(height: barHeights[index])
+                        .id(index)
                 }
             }
             .frame(width: geometry.size.width, height: geometry.size.height, alignment: .trailing)
+            .animation(.easeOut(duration: 0.12), value: barHeights.count)
         }
         .frame(height: maxHeight)
         .accessibilityHidden(true)

@@ -184,6 +184,7 @@ struct AssistantComposer: View {
                 .padding(.horizontal, 8)
 
             Button {
+                guard voiceRecorder.state == .recording else { return }
                 Task { await stopVoiceRecording() }
             } label: {
                 composerIconOnly(systemName: "checkmark")
@@ -389,7 +390,13 @@ struct AssistantComposer: View {
     private func stopVoiceRecording() async {
         do {
             let audioData = try await voiceRecorder.stopCapture()
-            await transcribeCapturedAudio(audioData)
+            // Owned by the recorder so cancel() can abort an in-flight upload.
+            let task = Task { [weak voiceRecorder] in
+                await self.transcribeCapturedAudio(audioData)
+                await MainActor.run { voiceRecorder?.transcriptionTask = nil }
+            }
+            voiceRecorder.transcriptionTask = task
+            await task.value
         } catch let error as AssistantVoiceRecorderError {
             voiceRecorder.markIdle()
             voiceErrorMessage = error.errorDescription
@@ -402,8 +409,12 @@ struct AssistantComposer: View {
     private func transcribeCapturedAudio(_ audioData: Data) async {
         do {
             let transcribed = try await AssistantAPI.transcribe(audioData: audioData, mimeType: "audio/mp4")
+            // cancel() may have flipped state to .idle mid-flight; in that case drop the result.
+            guard !Task.isCancelled, voiceRecorder.state == .transcribing else { return }
             voiceRecorder.markIdle()
             appendTranscription(transcribed)
+        } catch is CancellationError {
+            voiceRecorder.markIdle()
         } catch let error as APIError {
             voiceRecorder.markIdle()
             voiceErrorMessage = error.userFacingMessage()
@@ -641,7 +652,7 @@ private struct AssistantRecordingMeshShimmer: View {
             if reduceMotion {
                 mesh(at: 0)
             } else {
-                TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+                TimelineView(.animation(minimumInterval: 1.0 / 24.0)) { timeline in
                     mesh(at: timeline.date.timeIntervalSinceReferenceDate)
                 }
             }
@@ -663,7 +674,8 @@ private struct AssistantRecordingMeshShimmer: View {
     }
 }
 
-@available(iOS 18.0, *)
+// MARK: Mesh shimmer math (iOS 18+ view, but pure-Swift math usable from iOS 17 / tests)
+
 private enum AssistantRecordingMeshShimmerMath {
     static let gridWidth = 4
     static let gridHeight = 4
@@ -700,11 +712,13 @@ private enum AssistantRecordingMeshShimmerMath {
         let angle = 0.72 + 0.30 * sin(t * 0.13)
         let dirX = cos(angle)
         let dirY = sin(angle)
+        let tone = scheme == .dark ? darkTones : lightTones
 
+        // Pre-resolve the 16 node positions once per frame; nodeColor does the rest.
         return (0 ..< gridWidth * gridHeight).map { index in
             let x = Double(index % gridWidth) / Double(gridWidth - 1)
             let y = Double(index / gridWidth) / Double(gridHeight - 1)
-            return nodeColor(for: scheme, x: x, y: y, dirX: dirX, dirY: dirY, time: t)
+            return nodeColor(tone: tone, x: x, y: y, dirX: dirX, dirY: dirY, time: t)
         }
     }
 
@@ -715,7 +729,7 @@ private enum AssistantRecordingMeshShimmerMath {
     }
 
     private static func nodeColor(
-        for scheme: ColorScheme,
+        tone: Tone,
         x: Double,
         y: Double,
         dirX: Double,
@@ -726,7 +740,6 @@ private enum AssistantRecordingMeshShimmerMath {
         let proj = x * dirX + y * dirY
         let band = (sin(proj * 3.1 - time * 1.4) + 1) / 2
 
-        let tone = scheme == .dark ? darkTones : lightTones
         // Blue ↔ light-cyan along the band; mostly blue, so it reads as a tinted gradient.
         let base = lerpHSB(tone.deep, tone.light, smoothstep(band))
         // Gentle crest of brightness only at the very peak — no heavy white wash.
@@ -739,7 +752,7 @@ private enum AssistantRecordingMeshShimmerMath {
         return c * c * (3 - 2 * c)
     }
 
-    private struct Tone {
+    fileprivate struct Tone {
         let crest: (h: Double, s: Double, b: Double)
         let light: (h: Double, s: Double, b: Double)
         let deep: (h: Double, s: Double, b: Double)

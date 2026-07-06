@@ -235,6 +235,12 @@ final class LocalizationConsistencyTests: XCTestCase {
             "assistant.message.empty",
             "assistant.message.too-long",
             "assistant.stream.http-error",
+            // MARK: Spec 015 US4 — assistant voice recording UI
+            "assistant.voice-cancel",
+            "assistant.voice-stop",
+            "assistant.voice-record",
+            "assistant.voice-transcribing",
+            "assistant.voice-limit-alert",
             // MARK: Spec 031 — Socket.IO sync_error (SyncErrorCode)
             "sync.error.ownership",
             "sync.error.recipe-deleted",

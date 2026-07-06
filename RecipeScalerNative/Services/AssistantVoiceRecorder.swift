@@ -45,7 +45,7 @@ final class AssistantVoiceRecorder {
     /// the meter never shows trailing silence placeholders on the left after long recordings.
     /// At one bar per 200ms this is ~40s of recording; max record duration is 120s, but visible
     /// bar count onscreen is well under 100, so we trim to display-size downstream anyway.
-    static let meterBarWindow: Int = 200
+    private static let meterBarWindow: Int = 200
     /// Meter geometry, web parity (`VOICE_METER_*_PX`).
     static let meterBarWidth: CGFloat = 2
     static let meterBarSpacing: CGFloat = 2
@@ -63,6 +63,9 @@ final class AssistantVoiceRecorder {
     private var recordingURL: URL?
     private var autoStopTask: Task<Void, Never>?
     private var meterTask: Task<Void, Never>?
+    /// In-flight transcription; cancelled by `cancel()` so a late server reply can't
+    /// overwrite the composer text after the user abandoned the recording.
+    internal(set) var transcriptionTask: Task<Void, Never>?
     /// Counter of meter polls since the last tape bar was committed.
     private var pollsSinceLastBar: Int = 0
     /// Max normalized level seen since the last tape bar was committed (web peak-RMS parity).
@@ -126,6 +129,8 @@ final class AssistantVoiceRecorder {
     }
 
     /// Stops capture and returns recorded audio bytes. Sets `transcribing` until `markIdle()`.
+    /// Caller is responsible for assigning the returned data to `transcriptionTask` so that
+    /// `cancel()` can abort an in-flight upload.
     func stopCapture() async throws -> Data {
         autoStopTask?.cancel()
         autoStopTask = nil
@@ -139,13 +144,13 @@ final class AssistantVoiceRecorder {
         }
 
         guard let url = recordingURL else {
-            state = .idle
+            reset()
             throw AssistantVoiceRecorderError.recordingFailed
         }
         recordingURL = nil
 
         guard FileManager.default.fileExists(atPath: url.path) else {
-            state = .idle
+            reset()
             throw AssistantVoiceRecorderError.recordingFailed
         }
 
@@ -155,18 +160,27 @@ final class AssistantVoiceRecorder {
         let data = try Data(contentsOf: url)
 
         guard !data.isEmpty else {
-            state = .idle
+            reset()
             throw AssistantVoiceRecorderError.recordingFailed
         }
         return data
     }
 
+    /// Resets to `.idle`, drops meter history, and stops all background work except the
+    /// transcription task (use `cancel()` to abort an in-flight transcription).
     func markIdle() {
-        state = .idle
-        barHeights = []
+        reset()
     }
 
+    /// Aborts everything: capture, auto-stop, metering, AND in-flight transcription.
+    /// Safe to call from any state (idle / recording / transcribing).
     func cancel() {
+        transcriptionTask?.cancel()
+        transcriptionTask = nil
+        reset()
+    }
+
+    private func reset() {
         autoStopTask?.cancel()
         autoStopTask = nil
         stopMetering()
@@ -177,6 +191,8 @@ final class AssistantVoiceRecorder {
         }
         recordingURL = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        pollsSinceLastBar = 0
+        peakSinceLastBar = Self.meterMinScale
         state = .idle
         barHeights = []
     }
@@ -218,6 +234,8 @@ final class AssistantVoiceRecorder {
         let amplified = pow(normalizedLevel, 0.65)
         let height = Self.meterMinHeight + amplified * (Self.meterMaxHeight - Self.meterMinHeight)
         barHeights.append(height)
+        // Bounded ring at 200 entries; removeFirst is O(n) but at ≤200 CGFloats per ~200ms push
+        // this is sub-microsecond work — not worth a wrap-around buffer's indexing complexity.
         if barHeights.count > Self.meterBarWindow {
             barHeights.removeFirst(barHeights.count - Self.meterBarWindow)
         }
