@@ -76,4 +76,32 @@ final class AppLogTests: XCTestCase {
         AppLog.info(.app, "should_not_appear")
         XCTAssertFalse(FileManager.default.fileExists(atPath: logURL.path))
     }
+
+    // MARK: - sanitizeForLog
+
+    func testSanitizeForLogShortStringUnchanged() {
+        XCTAssertEqual(AppLog.sanitizeForLog("Ownership validation failed"), "Ownership validation failed")
+    }
+
+    func testSanitizeForLogStripsNewlines() {
+        XCTAssertEqual(AppLog.sanitizeForLog("line1\nline2\r\nline3\ttabbed"), "line1 line2 line3 tabbed")
+    }
+
+    func testSanitizeForLogCollapsesMultipleSpaces() {
+        XCTAssertEqual(AppLog.sanitizeForLog("a   b\t\tc"), "a b c")
+    }
+
+    func testSanitizeForLogTruncatesLongString() {
+        let long = String(repeating: "a", count: 200)
+        let result = AppLog.sanitizeForLog(long, maxChars: 120)
+        XCTAssertEqual(result.count, 121)
+        XCTAssertTrue(result.hasSuffix("…"))
+    }
+
+    func testSanitizeForLogDefaultMaxCharsIs120() {
+        let long = String(repeating: "b", count: 150)
+        let result = AppLog.sanitizeForLog(long)
+        XCTAssertEqual(result.count, 121)
+        XCTAssertTrue(result.hasSuffix("…"))
+    }
 }

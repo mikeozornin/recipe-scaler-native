@@ -28,4 +28,11 @@ enum UserIdFormatter {
         let rest = String(docKey[colonIndex...])
         return "\(redact(userIdPart))\(rest)"
     }
+
+    /// Redact a bare recipeId (no userId prefix) for logs.
+    /// "abc-123-456" -> "<recipe:abc-12>"; nil/empty -> "<recipe:nil>".
+    static func redactRecipeId(_ recipeId: String?) -> String {
+        guard let recipeId, !recipeId.isEmpty else { return "<recipe:nil>" }
+        return "<recipe:\(String(recipeId.prefix(6)))>"
+    }
 }

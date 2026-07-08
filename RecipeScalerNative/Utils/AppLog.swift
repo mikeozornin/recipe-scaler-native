@@ -195,16 +195,25 @@ enum AppLog {
         let text = "\(prefix)\(message) @ \(location)"
         switch level {
         case .debug:
-            logger.debug("\(text, privacy: .public)")
+            logger.debug("\(text, privacy: .private)")
         case .info:
-            logger.info("\(text, privacy: .public)")
+            logger.info("\(text, privacy: .private)")
         case .notice:
-            logger.notice("\(text, privacy: .public)")
+            logger.notice("\(text, privacy: .private)")
         case .error:
-            logger.error("\(text, privacy: .public)")
+            logger.error("\(text, privacy: .private)")
         case .fault:
-            logger.fault("\(text, privacy: .public)")
+            logger.fault("\(text, privacy: .private)")
         }
+    }
+
+    /// Truncate to `maxChars` and collapse newlines/tabs into single spaces
+    /// so server strings can't inject multi-line or oversized fragments into log entries.
+    static func sanitizeForLog(_ value: String, maxChars: Int = 120) -> String {
+        let collapsed = value.split(whereSeparator: { $0.isWhitespace || $0.isNewline })
+            .joined(separator: " ")
+        if collapsed.count <= maxChars { return collapsed }
+        return String(collapsed.prefix(maxChars)) + "…"
     }
 
     #if DEBUG

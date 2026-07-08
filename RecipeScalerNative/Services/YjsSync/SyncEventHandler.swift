@@ -195,8 +195,8 @@ final class SyncEventHandler {
 
         AppLog.error(.sync, "sync_error_classified", data: [
             "code": code.rawValue,
-            "message": message,
-            "recipeId": recipeId ?? "none"
+            "message": AppLog.sanitizeForLog(message),
+            "recipeId": UserIdFormatter.redactRecipeId(recipeId)
         ])
         onSyncError?(code, message, recipeId)
     }

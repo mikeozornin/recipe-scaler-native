@@ -38,4 +38,22 @@ final class UserIdFormatterTests: XCTestCase {
     func testRedactDocKeyWithoutColon() {
         XCTAssertEqual(UserIdFormatter.redactDocKey("no-colon-here"), "<unknown>")
     }
+
+    // MARK: - redactRecipeId
+
+    func testRedactRecipeIdNil() {
+        XCTAssertEqual(UserIdFormatter.redactRecipeId(nil), "<recipe:nil>")
+    }
+
+    func testRedactRecipeIdEmpty() {
+        XCTAssertEqual(UserIdFormatter.redactRecipeId(""), "<recipe:nil>")
+    }
+
+    func testRedactRecipeIdFull() {
+        XCTAssertEqual(UserIdFormatter.redactRecipeId("abc-123-456"), "<recipe:abc-12>")
+    }
+
+    func testRedactRecipeIdShortStringKeptAsIs() {
+        XCTAssertEqual(UserIdFormatter.redactRecipeId("ab"), "<recipe:ab>")
+    }
 }

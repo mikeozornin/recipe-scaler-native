@@ -2573,7 +2573,7 @@ final class YjsSyncService {
     }
 
     private func handleSyncError(code: SyncErrorCode, message: String, recipeId: String?) async {
-        logger.error("Sync error: \(message), code: \(code.rawValue), recipeId: \(recipeId ?? "none")")
+        logger.error("Sync error: \(AppLog.sanitizeForLog(message)), code: \(code.rawValue), recipeId: \(UserIdFormatter.redactRecipeId(recipeId))")
 
         if let recipeId, recipeId != "collection" {
             writeSyncStates[recipeId] = .error(code.localizedMessage)
