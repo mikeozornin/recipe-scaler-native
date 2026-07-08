@@ -514,7 +514,11 @@ final class YjsSyncService {
     private func scheduleDescriptionWireExportIfNeeded(recipeIds: [String]) async {
         for recipeId in recipeIds where isRecipeDocument(recipeId: recipeId) {
             guard await hasUnsyncedLocalChanges(recipeId: recipeId) else { continue }
-            if descriptionEditorSessions[recipeId]?.bridge != nil { continue }
+            // A session entry (even with nil bridge) means the editor is in a
+            // transition window between deinit and async unregister. Treat it
+            // as "session possibly active" and skip the wire export to avoid
+            // spurious requests racing with a reopen.
+            if descriptionEditorSessions[recipeId] != nil { continue }
             requestDescriptionWireExport(recipeId: recipeId)
         }
     }
