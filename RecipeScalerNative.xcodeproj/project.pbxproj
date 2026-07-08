@@ -24,6 +24,7 @@
 		082B9A25B01040469E077B58 /* SharedAuthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F696F3421504AD3A7836B0C /* SharedAuthStore.swift */; };
 		0952E30F55AC49E7BCCDEE93 /* TimerLockScreenLiveActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B83AB2645384EAFBD1AD4A3 /* TimerLockScreenLiveActivityView.swift */; };
 		A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */; };
+		SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */; };
 		0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */; };
 		0AD461511B9166BD9EF50932 /* WidgetTimerAccent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 707268FFBE33ABC1D5A95D82 /* WidgetTimerAccent.swift */; };
 		0B897FD6085B1E738ED5302B /* NutritionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA2CE2F227482882F3F3C07 /* NutritionData.swift */; };
@@ -403,6 +404,7 @@
 		E5F60718293A4B70CD074276 /* ImportRecipeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7060097EA7 /* ImportRecipeSheet.swift */; };
 		E5F60718293A4B70CD094881 /* LocalizedNavigationTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */; };
 		B041LGR001 /* LegacyAuthBannerReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B041LGR002 /* LegacyAuthBannerReminder.swift */; };
+		SRTIPPREF0001AA0001BB01 /* ShoppingRemindersTipPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRTIPPREF0002AA0002BB02 /* ShoppingRemindersTipPreferences.swift */; };
 		B041LGB001 /* LegacyAuthBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B041LGB002 /* LegacyAuthBannerView.swift */; };
 		EA1E0A1A293A4B70EA100001 /* ErrorAlertModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA1E0A1A293A4B70EA100002 /* ErrorAlertModifier.swift */; };
 		EA1E0A1A293A4B70EA100003 /* AppSheetChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA1E0A1A293A4B70EA100004 /* AppSheetChrome.swift */; };
@@ -633,6 +635,7 @@
 		1D90E06DB664829F1CEFCCD5 /* TimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerManager.swift; sourceTree = "<group>"; };
 		21566C9DA1EEFF6ACCDAD702 /* TimerWidgetKind.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimerWidgetKind.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellCoordinatorTests.swift; sourceTree = "<group>"; };
+		SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingRemindersTipPreferencesTests.swift; sourceTree = "<group>"; };
 		2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeScalerNativeTests.swift; sourceTree = "<group>"; };
 		2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationConsistencyTests.swift; sourceTree = "<group>"; };
 		24D8ACC6DE6F3FE3D4AE9C40 /* IngredientData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientData.swift; sourceTree = "<group>"; };
@@ -999,6 +1002,7 @@
 		E5F60718293A4B70CD094871 /* Bundle+Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Language.swift"; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedNavigationTitle.swift; sourceTree = "<group>"; };
 		B041LGR002 /* LegacyAuthBannerReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyAuthBannerReminder.swift; sourceTree = "<group>"; };
+		SRTIPPREF0002AA0002BB02 /* ShoppingRemindersTipPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingRemindersTipPreferences.swift; sourceTree = "<group>"; };
 		B041LGB002 /* LegacyAuthBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyAuthBannerView.swift; sourceTree = "<group>"; };
 		EA1E0A1A293A4B70EA100002 /* ErrorAlertModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorAlertModifier.swift; sourceTree = "<group>"; };
 		EA1E0A1A293A4B70EA100004 /* AppSheetChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSheetChrome.swift; sourceTree = "<group>"; };
@@ -1539,6 +1543,7 @@
 				94F6EEB0522CF5E6241A73B1 /* Info.plist */,
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
 				A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */,
+				SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */,
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
 				FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */,
 				B3TESTERR0020 /* ErrorLocalizationTests.swift */,
@@ -1758,6 +1763,7 @@
 				A140000A0000000000000000A /* GuideAssetResolver.swift */,
 				E5F60718293A4B70CD094880 /* LocalizedNavigationTitle.swift */,
 				B041LGR002 /* LegacyAuthBannerReminder.swift */,
+				SRTIPPREF0002AA0002BB02 /* ShoppingRemindersTipPreferences.swift */,
 				EA1E0A1A293A4B70EA100002 /* ErrorAlertModifier.swift */,
 				EA1E0A1A293A4B70EA100004 /* AppSheetChrome.swift */,
 				AB1234567890ABCDEF123450 /* InAppSafariView.swift */,
@@ -2551,6 +2557,7 @@
 				E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */,
 				B041LGB001 /* LegacyAuthBannerView.swift in Sources */,
 				B041LGR001 /* LegacyAuthBannerReminder.swift in Sources */,
+				SRTIPPREF0001AA0001BB01 /* ShoppingRemindersTipPreferences.swift in Sources */,
 				95DD7E548A202A1047110394 /* FeatureAdoptionDetailView.swift in Sources */,
 				E5F60718293A4B7061726B18 /* TelegramConnectionView.swift in Sources */,
 				E5F60718293A4B7010A27A52 /* AssistantSheet.swift in Sources */,
@@ -2708,6 +2715,7 @@
 			files = (
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
 				A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */,
+				SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */,
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
 				FADLAY04D293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift in Sources */,
 				B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */,

@@ -18,6 +18,7 @@ private enum ShoppingPurchaseTiming {
 struct ShoppingListView: View {
     @Environment(YjsSyncService.self) private var syncService
     @Environment(TimerManager.self) private var timerManager
+    @Environment(AppShellCoordinator.self) private var coordinator
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var path: NavigationPath
     @State private var bottomDraft = ""
@@ -27,6 +28,7 @@ struct ShoppingListView: View {
     @State private var errorMessage: String?
     @State private var purchasePhases: [String: ToBuyPurchasePhase] = [:]
     @State private var shoppingModel = ShoppingViewModel()
+    @State private var showRemindersTip = false
     @FocusState private var focusedField: Field?
 
     private enum Field: Hashable {
@@ -90,10 +92,15 @@ struct ShoppingListView: View {
         .sheet(isPresented: $showShareSheet) {
             ShoppingListShareSheet(isOnline: isOnline)
                 .environment(syncService)
+                .environment(shoppingModel)
         }
         .errorAlert(message: $errorMessage)
         .task {
             shoppingModel.recompute(snapshot: snapshot, purchasePhases: purchasePhases)
+            refreshRemindersTipVisibility()
+        }
+        .onAppear {
+            refreshRemindersTipVisibility()
         }
         .onChange(of: snapshot) { _, newValue in
             shoppingModel.recompute(snapshot: newValue, purchasePhases: purchasePhases)
@@ -105,6 +112,25 @@ struct ShoppingListView: View {
 
     private var shoppingList: some View {
         List {
+            if showRemindersTip {
+                Section {
+                    ShoppingRemindersTipBanner(
+                        onEnable: {
+                            ShoppingRemindersTipPreferences.dismiss()
+                            showRemindersTip = false
+                            coordinator.requestRemindersSetup()
+                        },
+                        onDismiss: {
+                            ShoppingRemindersTipPreferences.dismiss()
+                            showRemindersTip = false
+                        }
+                    )
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                }
+            }
+
             Section {
                 shoppingSortControl
                     .sortControlRow()
@@ -159,6 +185,11 @@ struct ShoppingListView: View {
             style: .listHeader
         )
         .accessibilityLabel("shopping.sort")
+    }
+
+    private func refreshRemindersTipVisibility() {
+        showRemindersTip = ShoppingRemindersTipPreferences.shouldShow
+            && !RemindersSyncPreferences.isEnabled
     }
 
     private var purchasedSectionHeader: some View {
@@ -433,10 +464,52 @@ private extension View {
     }
 }
 
+// MARK: - Reminders tip
+
+private struct ShoppingRemindersTipBanner: View {
+    let onEnable: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Text("shopping.reminders-tip.message")
+                    .appBody()
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button(action: onDismiss) {
+                    AppSymbol.image("xmark")
+                        .font(AppTypography.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Bundle.currentLocalizedString("common.close"))
+                .accessibilityIdentifier(AccessibilityIdentifiers.shoppingRemindersTipDismiss)
+            }
+
+            Button(action: onEnable) {
+                Text("shopping.reminders-tip.enable")
+                    .appBody()
+                    .foregroundStyle(Color.accentColor)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier(AccessibilityIdentifiers.shoppingRemindersTipEnable)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .accessibilityIdentifier(AccessibilityIdentifiers.shoppingRemindersTip)
+    }
+}
+
 // MARK: - Share sheet
 
 private struct ShoppingListShareSheet: View {
     @Environment(YjsSyncService.self) private var syncService
+    @Environment(ShoppingViewModel.self) private var shoppingModel
     @Environment(\.dismiss) private var dismiss
 
     let isOnline: Bool
@@ -455,21 +528,7 @@ private struct ShoppingListShareSheet: View {
     }
 
     private var toBuy: [ShoppingListItem] {
-        let items = syncService.shoppingSnapshot.items.filter { !$0.purchased }
-        switch sortMode {
-        case .recipe:
-            return items.sorted { lhs, rhs in
-                let ln = lhs.recipeName.isEmpty ? "~" : lhs.recipeName
-                let rn = rhs.recipeName.isEmpty ? "~" : rhs.recipeName
-                if ln != rn { return ln.localizedCompare(rn) == .orderedAscending }
-                return lhs.label.localizedCompare(rhs.label) == .orderedAscending
-            }
-        case .alphabet:
-            return items.sorted {
-                ShoppingListFromRecipe.sortName(for: $0.label)
-                    .localizedCompare(ShoppingListFromRecipe.sortName(for: $1.label)) == .orderedAscending
-            }
-        }
+        shoppingModel.sortedToBuy
     }
 
     var body: some View {

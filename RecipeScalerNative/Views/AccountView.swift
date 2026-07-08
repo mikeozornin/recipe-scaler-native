@@ -18,6 +18,7 @@ struct AccountView: View {
     @Environment(AuthService.self) private var authService
     @Environment(FeatureAdoptionStore.self) private var featureAdoptionStore
     @Environment(TimerManager.self) private var timerManager
+    @Environment(AppShellCoordinator.self) private var coordinator
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Environment(\.locale) private var locale
     @State private var viewModel = AccountSettingsViewModel()
@@ -28,6 +29,7 @@ struct AccountView: View {
     @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)
     private var collectionsLayoutRaw: String = RecipeFolderRoutes.defaultCollectionsRootLayout.rawValue
     @State private var isTelegramConnected = false
+    @State private var showRemindersListPicker = false
 
     private var collectionsLayout: RecipeFolderRoutes.CollectionsRootLayout {
         RecipeFolderRoutes.CollectionsRootLayout(rawValue: collectionsLayoutRaw)
@@ -38,11 +40,13 @@ struct AccountView: View {
     enum AccountViewSection {
         case publicRecipes
         case telegram
+        case reminders
 
         var id: String {
             switch self {
             case .publicRecipes: return "account.section.public-recipes"
             case .telegram: return "account.section.telegram"
+            case .reminders: return "account.section.reminders"
             }
         }
     }
@@ -84,6 +88,7 @@ struct AccountView: View {
                     telegramSection
                         .id(AccountViewSection.telegram.id)
                     preferencesSection
+                        .id(AccountViewSection.reminders.id)
                     dataSection
                     logExportSection
 
@@ -111,6 +116,23 @@ struct AccountView: View {
                     \.featureAdoptionProfileScrollCta,
                     makeProfileScrollCtaHandler(proxy: proxy)
                 )
+                .navigationDestination(isPresented: $showRemindersListPicker) {
+                    RemindersListPickerView(
+                        availableLists: viewModel.availableRemindersLists,
+                        currentIdentifier: RemindersSyncPreferences.listIdentifier
+                    ) { identifier in
+                        Task { @MainActor in
+                            await viewModel.selectRemindersList(
+                                identifier,
+                                syncService: syncService,
+                                remindersService: remindersService
+                            )
+                        }
+                    }
+                    .onAppear {
+                        viewModel.loadRemindersLists(remindersService: remindersService)
+                    }
+                }
                 .sheet(item: $presentedSheet) { destination in
                     switch destination {
                     case .seed:
@@ -144,6 +166,7 @@ struct AccountView: View {
                     await featureAdoptionStore.refresh()
                     await viewModel.refresh(syncService: syncService)
                     appLanguage = .current
+                    await consumePendingRemindersSetupIfNeeded(scrollProxy: proxy)
                 }
                 .onChange(of: syncService.connectionState) { _, _ in
                     Task { @MainActor in
@@ -154,8 +177,35 @@ struct AccountView: View {
                     guard !wasConnected, isConnected else { return }
                     Task { await featureAdoptionStore.refresh() }
                 }
+                .onChange(of: coordinator.pendingRemindersSetup) { _, isPending in
+                    guard isPending else { return }
+                    Task { @MainActor in
+                        await consumePendingRemindersSetupIfNeeded(scrollProxy: proxy)
+                    }
+                }
             }
         }
+    }
+
+    @MainActor
+    private func consumePendingRemindersSetupIfNeeded(scrollProxy: ScrollViewProxy) async {
+        guard coordinator.pendingRemindersSetup else { return }
+        coordinator.clearPendingRemindersSetup()
+        ShoppingRemindersTipPreferences.dismiss()
+
+        withAnimation {
+            scrollProxy.scrollTo(AccountViewSection.reminders.id, anchor: .top)
+        }
+
+        await viewModel.setRemindersSyncEnabled(
+            true,
+            syncService: syncService,
+            remindersService: remindersService
+        )
+
+        guard viewModel.remindersSyncEnabled else { return }
+        viewModel.loadRemindersLists(remindersService: remindersService)
+        showRemindersListPicker = true
     }
 
     // MARK: - Sections
@@ -668,8 +718,12 @@ private struct AccountSeedPhraseSheet: View {
 
 #if DEBUG
 #Preview {
-    NavigationStack {
+    let store = try! YDocStore.inMemory()
+    let sync = YjsSyncService(store: store)
+    let coordinator = AppShellCoordinator(syncService: sync, deepLinkRouter: DeepLinkRouter())
+    return NavigationStack {
         AccountView()
+            .environment(coordinator)
     }
 }
 #endif

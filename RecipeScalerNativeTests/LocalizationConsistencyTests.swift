@@ -20,6 +20,8 @@ final class LocalizationConsistencyTests: XCTestCase {
             "shopping.empty-to-buy",
             "shopping.empty-to-buy-all-done",
             "shopping.copy-as-text",
+            "shopping.reminders-tip.message",
+            "shopping.reminders-tip.enable",
             "shopping.items-added.one",
             "shopping.items-added.few",
             "shopping.items-added.many",

@@ -121,6 +121,7 @@ struct AppShellView: View {
 
     var body: some View {
         tabView
+            .environment(coordinator)
             .environment(
                 \.featureAdoptionAppCta,
                 makeFeatureAdoptionAppCtaHandler()

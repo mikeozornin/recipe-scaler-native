@@ -128,6 +128,7 @@ final class AppShellCoordinatorTests: XCTestCase {
         coordinator.importPresentation = ImportPresentation()
         coordinator.recipesPath.append(RecipesRoute.folder(CollectionVirtualFolders.allRecipesFolderId))
         coordinator.shoppingPath.append("shopping-depth-probe")
+        coordinator.requestRemindersSetup()
         router.handle(.openRecipe(recipeId: "11111111-2222-3333-4444-555555555555"))
         UserDefaults.standard.set("legacy-recipe", forKey: DeepLinkRouter.pendingRecipeIdKey)
 
@@ -138,7 +139,21 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.recipesPath.isEmpty)
         XCTAssertTrue(coordinator.shoppingPath.isEmpty)
         XCTAssertTrue(coordinator.discoverPath.isEmpty)
+        XCTAssertFalse(coordinator.pendingRemindersSetup)
         XCTAssertNil(router.pending)
         XCTAssertNil(UserDefaults.standard.string(forKey: DeepLinkRouter.pendingRecipeIdKey))
+    }
+
+    func test_requestRemindersSetup_switchesToProfileAndSetsPending() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.selectedTab = .shopping
+
+        coordinator.requestRemindersSetup()
+
+        XCTAssertEqual(coordinator.selectedTab, .profile)
+        XCTAssertTrue(coordinator.pendingRemindersSetup)
+
+        coordinator.clearPendingRemindersSetup()
+        XCTAssertFalse(coordinator.pendingRemindersSetup)
     }
 }

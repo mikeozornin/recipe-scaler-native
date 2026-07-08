@@ -9786,6 +9786,38 @@
         }
       }
     },
+    "shopping.reminders-tip.enable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включить"
+          }
+        }
+      }
+    },
+    "shopping.reminders-tip.message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By the way, you can sync your shopping list with Apple Reminders"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кстати, покупки можно синхронизировать с Apple Reminders"
+          }
+        }
+      }
+    },
     "shopping.section.purchased": {
       "extractionState": "stale",
       "localizations": {

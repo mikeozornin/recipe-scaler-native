@@ -23,6 +23,8 @@ final class AppShellCoordinator {
     var discoverPath = NavigationPath()
     var shoppingPath = NavigationPath()
     private(set) var pendingSpotlightRecipeId: String?
+    /// When true, Profile (`AccountView`) should scroll to Reminders, enable sync, and open list picker.
+    private(set) var pendingRemindersSetup = false
 
     init(syncService: YjsSyncService, deepLinkRouter: DeepLinkRouter) {
         self.syncService = syncService
@@ -45,6 +47,18 @@ final class AppShellCoordinator {
 
     func presentImport() {
         importPresentation = ImportPresentation()
+    }
+
+    // MARK: - Shopping → Reminders setup CTA
+
+    /// Switches to Profile and asks `AccountView` to enable Reminders + open list picker.
+    func requestRemindersSetup() {
+        pendingRemindersSetup = true
+        selectedTab = .profile
+    }
+
+    func clearPendingRemindersSetup() {
+        pendingRemindersSetup = false
     }
 
     // MARK: - Import completion
@@ -132,6 +146,7 @@ final class AppShellCoordinator {
     func resetShellStateForLogout() {
         importPresentation = nil
         pendingSpotlightRecipeId = nil
+        pendingRemindersSetup = false
         selectedTab = .recipes
         recipesPath = NavigationPath()
         discoverPath = NavigationPath()
