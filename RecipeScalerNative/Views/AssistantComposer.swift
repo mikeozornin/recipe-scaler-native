@@ -359,9 +359,8 @@ struct AssistantComposer: View {
 
     private var availableEntries: [CollectionEntry] {
         // Pinned-first → alphabetical by display name (emoji ignored) → id, same rule as "All Recipes".
-        RecipeTitleEmoji.sortCollectionEntries(
-            syncService.collectionEntries.filter { !$0.deleted }
-        )
+        // Reads the memoized `collectionIndex.live` (rebuilt on sync deltas) instead of re-sorting on every render.
+        syncService.collectionIndex.live
     }
 
     // MARK: - Actions

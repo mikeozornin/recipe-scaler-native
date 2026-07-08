@@ -49,13 +49,14 @@ struct RecipeListView: View {
 
     /// Entries to render: precomputed filtered snapshot when searching, the
     /// full sorted list otherwise. Reads the live `@Observable` snapshot from
-    /// `syncService.collectionEntries` directly so any field-level change
-    /// (name/color/image/pin/folder) invalidates `body` — no manual cache.
+    /// `syncService.collectionIndex.live` (pre-sorted on sync deltas) so any
+    /// field-level change (name/color/image/pin/folder) invalidates `body`
+    /// without re-sorting on every render.
     private var filteredEntries: [CollectionEntry] {
         if isSearching {
             return searchStore.filteredSnapshot
         }
-        return RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
+        return syncService.collectionIndex.live
     }
 
     private var pinnedRowItems: [RecipeRowData] {

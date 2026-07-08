@@ -30,9 +30,7 @@ struct ManageCollectionRecipesSheet: View {
 
     /// All live recipes sorted for display.
     private var allRecipes: [CollectionEntry] {
-        RecipeTitleEmoji.sortCollectionEntries(
-            syncService.collectionEntries.filter { !$0.deleted }
-        )
+        syncService.collectionIndex.live
     }
 
     private var isSearching: Bool {
