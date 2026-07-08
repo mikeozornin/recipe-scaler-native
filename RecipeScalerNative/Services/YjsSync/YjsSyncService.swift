@@ -2613,10 +2613,15 @@ final class YjsSyncService {
             }
 
         case .generic:
-            try? await Task.sleep(nanoseconds: 5_000_000_000)
-            if let recipeId {
-                clearInFlightOfflineTracking(forDocKey: docKeyFor(recipeId: recipeId))
-                requestDocumentReload(recipeId: recipeId)
+            guard let recipeId else { return }
+            let docKey = docKeyFor(recipeId: recipeId)
+            Task.detached { [weak self] in
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                await MainActor.run {
+                    guard let self else { return }
+                    self.clearInFlightOfflineTracking(forDocKey: docKey)
+                    self.requestDocumentReload(recipeId: recipeId)
+                }
             }
         }
     }
