@@ -165,12 +165,13 @@ final class YjsSyncService {
         }
 
         // Sweep the dead-write `lastServerDocBytes:{recipeId}` keys left over by
-        // earlier app versions (never cleaned on logout).
+        // earlier app versions (never cleaned on logout). Use the app's scoped
+        // persistent domain instead of dictionaryRepresentation() to avoid
+        // materializing the entire (system + app) defaults domain.
         let legacyBytesPrefix = "lastServerDocBytes:"
-        let staleKeys = UserDefaults.standard
-            .dictionaryRepresentation()
-            .keys
-            .filter { $0.hasPrefix(legacyBytesPrefix) }
+        let bundleId = Bundle.main.bundleIdentifier ?? ""
+        let appDomain = UserDefaults.standard.persistentDomain(forName: bundleId) ?? [:]
+        let staleKeys = appDomain.keys.filter { $0.hasPrefix(legacyBytesPrefix) }
         for key in staleKeys {
             UserDefaults.standard.removeObject(forKey: key)
         }
