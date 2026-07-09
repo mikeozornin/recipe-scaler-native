@@ -1250,6 +1250,21 @@ final class RecipeScalerNativeTests: XCTestCase {
         ]
         let index = CollectionRecipesIndexBuilder.build(from: entries)
         XCTAssertEqual(index.live.map(\.id), ["p", "a", "z"])
+        XCTAssertEqual(index.pinned.map(\.id), ["p"])
+        XCTAssertEqual(index.unpinned.map(\.id), ["a", "z"])
+    }
+
+    func testCollectionRecipesIndexPartitionPinned() {
+        let sorted: [CollectionEntry] = [
+            CollectionEntry(id: "p1", name: "P1", color: "#000", imageUrl: nil, updatedAt: "", deleted: false, isPinned: true, folderIds: []),
+            CollectionEntry(id: "p2", name: "P2", color: "#000", imageUrl: nil, updatedAt: "", deleted: false, isPinned: true, folderIds: []),
+            CollectionEntry(id: "u1", name: "U1", color: "#000", imageUrl: nil, updatedAt: "", deleted: false, isPinned: false, folderIds: []),
+        ]
+        let parts = CollectionRecipesIndex.partitionPinned(sorted)
+        XCTAssertEqual(parts.pinned.map(\.id), ["p1", "p2"])
+        XCTAssertEqual(parts.unpinned.map(\.id), ["u1"])
+        XCTAssertEqual(CollectionRecipesIndex.partitionPinned([]).pinned.count, 0)
+        XCTAssertEqual(CollectionRecipesIndex.empty.pinned.count, 0)
     }
 
     func testFolderDisplayNameReturnsLocalizedNoTitleForBlankNames() {

@@ -46,10 +46,17 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
         context.coordinator.onTimerTap = onTimerTap
         context.coordinator.textView = textView
         let styled = Self.attributedString(runs: runs, accentColor: accentColor, typography: typography)
+        let highlight = UIColor(accentColor)
+        // Skip no-op writes — parent re-renders (servings, collection echo) used to
+        // reassign identical attributed text and force UITextView layout.
         if let descriptionTextView = textView as? RecipeDescriptionTextView {
-            descriptionTextView.timerHighlightColor = UIColor(accentColor)
-            descriptionTextView.attributedText = styled
-        } else {
+            if descriptionTextView.timerHighlightColor != highlight {
+                descriptionTextView.timerHighlightColor = highlight
+            }
+            if descriptionTextView.attributedText?.isEqual(to: styled) != true {
+                descriptionTextView.attributedText = styled
+            }
+        } else if textView.attributedText?.isEqual(to: styled) != true {
             textView.attributedText = styled
         }
     }

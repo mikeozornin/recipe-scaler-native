@@ -70,11 +70,16 @@ struct CollectionFolderView: View {
     }
 
     private var pinnedRowItems: [RecipeRowData] {
-        filteredEntries.filter(\.isPinned).map(RecipeRowData.init(entry:))
+        pinPartitionedEntries.pinned.map(RecipeRowData.init(entry:))
     }
 
     private var unpinnedRowItems: [RecipeRowData] {
-        filteredEntries.filter { !$0.isPinned }.map(RecipeRowData.init(entry:))
+        pinPartitionedEntries.unpinned.map(RecipeRowData.init(entry:))
+    }
+
+    /// Folder lists and search snapshots are pin-first sorted; partition once.
+    private var pinPartitionedEntries: (pinned: [CollectionEntry], unpinned: [CollectionEntry]) {
+        CollectionRecipesIndex.partitionPinned(filteredEntries)
     }
 
     /// Stable signature of the PIN STATE only (which entries are pinned,

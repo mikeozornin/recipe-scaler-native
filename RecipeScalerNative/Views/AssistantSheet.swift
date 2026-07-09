@@ -140,9 +140,8 @@ struct AssistantSheet: View {
     private var messageList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
-                ForEach(messages.indices, id: \.self) { index in
-                    let message = messages[index]
-                    let isLast = index == messages.indices.last
+                ForEach(messages) { message in
+                    let isLast = message.id == messages.last?.id
                     messageBubble(for: message, isLast: isLast)
                 }
             }

@@ -127,6 +127,7 @@ struct YDocIngredientsSection: View {
             }
         }
         .onPreferenceChange(IngredientEditRowHeightKey.self) { heights in
+            guard heights != measuredRowHeights else { return }
             measuredRowHeights = heights
         }
         .toolbar {
@@ -420,6 +421,7 @@ struct YDocIngredientsEditSection: View {
             }
         }
         .onPreferenceChange(IngredientEditRowHeightKey.self) { heights in
+            guard heights != measuredRowHeights else { return }
             measuredRowHeights = heights
         }
         .onAppear {

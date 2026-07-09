@@ -5,12 +5,42 @@ import Foundation
 struct CollectionRecipesIndex: Sendable, Equatable {
     /// All non-deleted recipes, in display order (pinned → A–Z → id).
     let live: [CollectionEntry]
+    /// Pin-first partition of `live` — avoids filter+map on every list `body`.
+    let pinned: [CollectionEntry]
+    let unpinned: [CollectionEntry]
     /// Live recipes whose `folderIds` is empty/absent.
     let uncategorized: [CollectionEntry]
     /// Recipe count per folder id (a recipe counted once per folder).
     let countByFolder: [String: Int]
     /// Recipes grouped per folder id; each list sorted for display.
     let folderRecipesById: [String: [CollectionEntry]]
+
+    static let empty = CollectionRecipesIndex(
+        live: [],
+        pinned: [],
+        unpinned: [],
+        uncategorized: [],
+        countByFolder: [:],
+        folderRecipesById: [:]
+    )
+
+    /// Split a pin-first sorted list in one pass (no dual `filter`).
+    /// Requires entries already ordered with all pinned items first (display sort).
+    static func partitionPinned(
+        _ sortedPinFirst: [CollectionEntry]
+    ) -> (pinned: [CollectionEntry], unpinned: [CollectionEntry]) {
+        let split = sortedPinFirst.firstIndex(where: { !$0.isPinned }) ?? sortedPinFirst.endIndex
+        if split == sortedPinFirst.startIndex {
+            return ([], sortedPinFirst)
+        }
+        if split == sortedPinFirst.endIndex {
+            return (sortedPinFirst, [])
+        }
+        return (
+            Array(sortedPinFirst[..<split]),
+            Array(sortedPinFirst[split...])
+        )
+    }
 }
 
 enum CollectionRecipesIndexBuilder {
@@ -37,11 +67,15 @@ enum CollectionRecipesIndexBuilder {
             }
         }
 
+        let sortedLive = sortForDisplay(live)
+        let (pinned, unpinned) = CollectionRecipesIndex.partitionPinned(sortedLive)
         let sortedUncategorized = sortForDisplay(uncategorized)
         let sortedByFolder = folderRecipesById.mapValues(sortForDisplay)
 
         return CollectionRecipesIndex(
-            live: sortForDisplay(live),
+            live: sortedLive,
+            pinned: pinned,
+            unpinned: unpinned,
             uncategorized: sortedUncategorized,
             countByFolder: countByFolder,
             folderRecipesById: sortedByFolder

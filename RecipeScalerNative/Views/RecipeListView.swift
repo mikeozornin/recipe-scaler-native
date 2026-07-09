@@ -60,11 +60,20 @@ struct RecipeListView: View {
     }
 
     private var pinnedRowItems: [RecipeRowData] {
-        filteredEntries.filter(\.isPinned).map(RecipeRowData.init(entry:))
+        pinPartitionedEntries.pinned.map(RecipeRowData.init(entry:))
     }
 
     private var unpinnedRowItems: [RecipeRowData] {
-        filteredEntries.filter { !$0.isPinned }.map(RecipeRowData.init(entry:))
+        pinPartitionedEntries.unpinned.map(RecipeRowData.init(entry:))
+    }
+
+    /// One partition of the current list (search snapshot or pre-split index).
+    private var pinPartitionedEntries: (pinned: [CollectionEntry], unpinned: [CollectionEntry]) {
+        if isSearching {
+            return CollectionRecipesIndex.partitionPinned(searchStore.filteredSnapshot)
+        }
+        let index = syncService.collectionIndex
+        return (index.pinned, index.unpinned)
     }
 
     private var hasAnyRows: Bool {

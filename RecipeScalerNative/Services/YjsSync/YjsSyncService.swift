@@ -17,9 +17,7 @@ final class YjsSyncService {
     /// Active (non-deleted) folders from the collection doc, sorted for display.
     private(set) var folders: [RecipeFolder] = []
     /// Derived in-memory index for the collections view.
-    private(set) var collectionIndex: CollectionRecipesIndex = CollectionRecipesIndex(
-        live: [], uncategorized: [], countByFolder: [:], folderRecipesById: [:]
-    )
+    private(set) var collectionIndex: CollectionRecipesIndex = .empty
     private(set) var shoppingSnapshot: ShoppingListSnapshot = .empty
     private(set) var currentRecipe: RecipeData?
     /// Whether the initial local snapshot load has completed. Used by collection views
@@ -1192,9 +1190,7 @@ final class YjsSyncService {
         stop()
         collectionEntries = []
         folders = []
-        collectionIndex = CollectionRecipesIndex(
-            live: [], uncategorized: [], countByFolder: [:], folderRecipesById: [:]
-        )
+        collectionIndex = .empty
         writeSyncStates = [:]
         imageCacheStatus = RecipeImageCacheStatus()
         await documentManager.resetSession()
@@ -2422,9 +2418,12 @@ final class YjsSyncService {
             if collectionEntries != filtered {
                 collectionEntries = filtered
             }
-            // Rebuild the derived collections index and refresh folders so the
-            // collections view stays in sync after any recipes change.
-            collectionIndex = CollectionRecipesIndexBuilder.build(from: filtered)
+            // Idempotent: skip reassignment when the derived index is unchanged so
+            // observers (list / collections root) do not re-render on echo refreshes.
+            let newIndex = CollectionRecipesIndexBuilder.build(from: filtered)
+            if collectionIndex != newIndex {
+                collectionIndex = newIndex
+            }
             await refreshFolders()
             syncActiveRecipeFromCollection()
             scheduleImagePrefetch(for: filtered)
@@ -2446,7 +2445,9 @@ final class YjsSyncService {
     private func refreshFolders() async {
         do {
             let active = try await documentManager.readFolders()
-            folders = active
+            if folders != active {
+                folders = active
+            }
         } catch {
             logger.error("Failed to read folders: \(error)")
         }
