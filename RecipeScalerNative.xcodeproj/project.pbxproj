@@ -196,7 +196,6 @@
 		A0EE53060E475AD1805AADC4 /* RecipeScalerCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E05920822F344D9691E82401 /* RecipeScalerCore.framework */; };
 		A1B2C3D4E5F60718293A4B5D /* UserIdFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* UserIdFormatter.swift */; };
 		A1B2C3D4E5F60718293A4B63 /* OfflineWriteQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B62 /* OfflineWriteQueue.swift */; };
-		A1B2C3D4E5F60718293A4B72 /* Agentation in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60718293A4B71 /* Agentation */; };
 		A1B2C3D4E5F64789AABBCC02 /* TimerLiveActivityLinearProgressStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F64789AABBCC01 /* TimerLiveActivityLinearProgressStyle.swift */; };
 		A1B2C3D4E5F64789AABBCC03 /* TimerLiveActivityLinearProgressStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F64789AABBCC01 /* TimerLiveActivityLinearProgressStyle.swift */; };
 		A1TYPOG1A2B3C4D5E6F7080902 /* AppTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1TYPOG1A2B3C4D5E6F7080901 /* AppTypography.swift */; };
@@ -1136,7 +1135,6 @@
 				BFBD67F13972B46AF2DCF378 /* SocketIO in Frameworks */,
 				1A53619D3D6AF4AF6CD2CDE8 /* KeychainAccess in Frameworks */,
 				B21E98DE40075926FE4CF18B /* GRDB in Frameworks */,
-				A1B2C3D4E5F60718293A4B72 /* Agentation in Frameworks */,
 				EK00020001BB000200EK0001 /* EventKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2127,7 +2125,6 @@
 				209008F3F2C5E8241023341F /* SocketIO */,
 				397972E3080EA1238A19CE9C /* KeychainAccess */,
 				D5AD4954620B5F09F6E7BD90 /* GRDB */,
-				A1B2C3D4E5F60718293A4B71 /* Agentation */,
 			);
 			productName = RecipeScalerNative;
 			productReference = C72EF414B1E9D2F706A7CE30 /* RecipeScalerNative.app */;
@@ -2178,7 +2175,6 @@
 				7467910DD391C78018059E70 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */,
 				98547C1E1E623FEAE02655FD /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 				A027027000301 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
-				A1B2C3D4E5F60718293A4B70 /* XCLocalSwiftPackageReference "swift-agentation" */,
 			);
 			productRefGroup = 76B3DA4533E03AE5D9E730B3 /* Products */;
 			projectDirPath = "";
@@ -3549,13 +3545,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		A1B2C3D4E5F60718293A4B70 /* XCLocalSwiftPackageReference "swift-agentation" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "Packages/swift-agentation";
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCRemoteSwiftPackageReference section */
 		406F1D0C74F7E20F797A11E0 /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -3614,11 +3603,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A027027000301 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
 			productName = ZIPFoundation;
-		};
-		A1B2C3D4E5F60718293A4B71 /* Agentation */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1B2C3D4E5F60718293A4B70 /* XCLocalSwiftPackageReference "swift-agentation" */;
-			productName = Agentation;
 		};
 		B3SNAP01A293A4B701000003 /* SnapshotTesting */ = {
 			isa = XCSwiftPackageProductDependency;

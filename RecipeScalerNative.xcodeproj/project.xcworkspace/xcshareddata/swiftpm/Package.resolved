@@ -1,5 +1,5 @@
 {
-  "originHash" : "36f2225fc869b4f347f75681dbfdcee78a49c7ac1ada2ad16e4659979e15f327",
+  "originHash" : "0ae5e3ba7848afd086424c56a5fc2cab688238cf30f6462af06f7e07d3a56b8c",
   "pins" : [
     {
       "identity" : "grdb.swift",
@@ -62,15 +62,6 @@
       "state" : {
         "revision" : "4799286537280063c85a32f09884cfbca301b1a1",
         "version" : "602.0.0"
-      }
-    },
-    {
-      "identity" : "universalglass",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Aeastr/UniversalGlass.git",
-      "state" : {
-        "revision" : "9c084472801ac2c1b4c753668b275094c635b8a2",
-        "version" : "1.1.0"
       }
     },
     {

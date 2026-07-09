@@ -133,7 +133,7 @@ final class AssistantMarkdownRendererTests: XCTestCase {
         XCTAssertTrue(items[0].hasPrefix("**Укроп:**"))
     }
 
-    func testAgentationStyleExample() {
+    func testSectionHeadingAndLocationBoldExample() {
         let markdown = """
         ### 1. UIHostingController<ModifiedContent<AnyView, RootModifier>>
         **Location:** NavigationStackHostingController<AnyView> > "Инструкции"

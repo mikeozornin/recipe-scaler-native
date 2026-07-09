@@ -8,9 +8,6 @@ import CoreSpotlight
 import SwiftUI
 import SwiftData
 import UIKit
-#if DEBUG
-import Agentation
-#endif
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
@@ -73,10 +70,6 @@ struct RecipeScalerNativeApp: App {
         AppFonts.registerBundledFontsIfNeeded()
         TimerManager.registerBackgroundTasksIfNeeded()
         AppChromeAppearance.configure()
-        #if DEBUG
-        Agentation.shared.toolbarHorizontalAlignment = .leading
-        Agentation.shared.install()
-        #endif
 
         // Construct the dependency graph. SwiftData ModelContainer is created
         // synchronously first (separate from AppContainer; owned by WindowGroup).
