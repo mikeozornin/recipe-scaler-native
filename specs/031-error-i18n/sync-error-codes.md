@@ -1,3 +1,6 @@
+> **Канон (shared):** [`../../../recipe-scaler-web/specs/shared/error-codes/`](../../../recipe-scaler-web/specs/shared/error-codes/)  
+> Этот файл — historical copy; правка кодов — в shared JSON/MD.
+
 # Контракт: коды ошибок Socket.IO `sync_error`
 
 Instance для валидации: [`sync-error-codes.json`](sync-error-codes.json) (против [`sync-error-codes.schema.json`](sync-error-codes.schema.json)).

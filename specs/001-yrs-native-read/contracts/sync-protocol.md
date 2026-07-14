@@ -1,3 +1,7 @@
+> **Канон (shared):** [`../../../../recipe-scaler-web/specs/shared/sync-protocol.md`](../../../../recipe-scaler-web/specs/shared/sync-protocol.md)  
+> Yjs schema: [`../../../../recipe-scaler-web/specs/shared/yjs-schema.md`](../../../../recipe-scaler-web/specs/shared/yjs-schema.md)  
+> Ниже — historical Phase 2 native contract (legacy load_document + platform FSM). При расхождении wire — **shared wins**.
+
 # Socket.IO Sync Protocol Contract
 
 **Date**: 2026-06-01

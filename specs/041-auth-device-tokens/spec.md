@@ -1,3 +1,7 @@
+> **Канон wire (shared):** [`../../../recipe-scaler-web/specs/shared/auth.md`](../../../recipe-scaler-web/specs/shared/auth.md)  
+> Web as-built: `recipe-scaler-web/specs/041-auth-device-tokens/spec.md`  
+> Ниже — native feature-спека (AC, iOS keychain, extensions). При расхождении REST/Socket wire — **shared wins**.
+
 # Спецификация: Device tokens — замена plaintext `x-user-id` на bearer-токен
 
 **Линейные задачи**: [MIK-117](https://linear.app/mikeozornin/issue/MIK-117/review-33-rasshireniya-autentificiruyutsya-tolko-plaintext-ne) (нахождение #33), частично [review finding #1](../../../review-kilo-glm-5.2-recipe-scaler-native.md) (корневая проблема: auth = публичный `userId`).
