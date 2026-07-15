@@ -407,6 +407,28 @@ final class YjsOfflineOutboxTests: XCTestCase {
         XCTAssertEqual(rows.count, 2)
         XCTAssertTrue(rows.contains { $0.recipeId == "recipe-b" && $0.yjsUpdate == Data([2]) })
     }
+
+    /// MIK-173: per-recipe fetch must not return other recipes' rows, and must preserve enqueue order.
+    func testFetchOfflineQueueForRecipeIdFiltersAndOrders() async throws {
+        let queue = try DatabaseQueue()
+        try YrsDatabase.migrateForTests(queue)
+        let store = YDocStore(dbQueue: queue)
+        let offline = OfflineWriteQueue(store: store)
+
+        try await store.enqueueOfflineUpdate(docKey: "user:recipe:a", recipeId: "recipe-a", yjsUpdate: Data([1]))
+        try await store.enqueueOfflineUpdate(docKey: "user:recipe:b", recipeId: "recipe-b", yjsUpdate: Data([2]))
+        try await store.enqueueOfflineUpdate(docKey: "user:recipe:a", recipeId: "recipe-a", yjsUpdate: Data([3]))
+
+        let forA = try await offline.fetch(forRecipeId: "recipe-a")
+        XCTAssertEqual(forA.map(\.yjsUpdate), [Data([1]), Data([3])])
+        XCTAssertTrue(forA.allSatisfy { $0.recipeId == "recipe-a" })
+
+        let forB = try await offline.fetch(forRecipeId: "recipe-b")
+        XCTAssertEqual(forB.map(\.yjsUpdate), [Data([2])])
+
+        let missing = try await offline.fetch(forRecipeId: "recipe-missing")
+        XCTAssertTrue(missing.isEmpty)
+    }
 }
 
 private extension YrsDatabase {

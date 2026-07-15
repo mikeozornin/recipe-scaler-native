@@ -409,8 +409,8 @@ final class YjsSyncService {
         }
         if let queuedRecipeIds {
             if queuedRecipeIds.contains(recipeId) { return true }
-        } else if let entries = try? await offlineQueue.fetchAll(),
-                  entries.contains(where: { $0.recipeId == recipeId }) {
+        } else if let entries = try? await offlineQueue.fetch(forRecipeId: recipeId),
+                  !entries.isEmpty {
             return true
         }
         let pendingObserver = await documentManager.pendingSyncByteCount(recipeId: recipeId)
@@ -1767,7 +1767,8 @@ final class YjsSyncService {
         if let queueEntries {
             resolvedQueueEntries = queueEntries
         } else {
-            resolvedQueueEntries = (try? await offlineQueue.fetchAll())?.filter { $0.recipeId == recipeId } ?? []
+            // Debounced single-recipe path: SQL filter, not full-queue scan (MIK-173).
+            resolvedQueueEntries = (try? await offlineQueue.fetch(forRecipeId: recipeId)) ?? []
         }
         let parts = resolvedQueueEntries.map(\.yjsUpdate).filter { $0.count > 2 }
         let wireBootstrap: Data?
@@ -1882,8 +1883,7 @@ final class YjsSyncService {
         }
 
         if isRecipeDocument(recipeId: recipeId) {
-            let stillQueued = (try? await offlineQueue.fetchAll())?
-                .contains { $0.recipeId == recipeId } ?? false
+            let stillQueued = !((try? await offlineQueue.fetch(forRecipeId: recipeId)) ?? []).isEmpty
             if stillQueued {
                 await markRecipeUnsynced(recipeId)
                 writeSyncStates[recipeId] = .queued

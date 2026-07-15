@@ -16,6 +16,11 @@ actor OfflineWriteQueue {
         try await store.fetchOfflineQueue()
     }
 
+    /// Rows for one recipe only — avoids full-queue scan on debounced per-recipe paths (MIK-173).
+    func fetch(forRecipeId recipeId: String) async throws -> [OfflineSyncEntry] {
+        try await store.fetchOfflineQueue(forRecipeId: recipeId)
+    }
+
     func deleteEntry(id: Int64) async throws {
         try await store.deleteOfflineEntry(id: id)
     }

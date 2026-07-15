@@ -159,6 +159,16 @@ actor YDocStore {
         }
     }
 
+    /// Offline queue rows for a single recipe (ordered by enqueue time).
+    func fetchOfflineQueue(forRecipeId recipeId: String) throws -> [OfflineSyncEntry] {
+        try dbQueue.read { db in
+            try OfflineSyncEntry
+                .filter(Column("recipeId") == recipeId)
+                .order(Column("createdAt").asc)
+                .fetchAll(db)
+        }
+    }
+
     func deleteOfflineEntry(id: Int64) throws {
         try dbQueue.write { db in
             _ = try OfflineSyncEntry.deleteOne(db, key: id)
