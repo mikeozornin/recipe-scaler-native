@@ -43,6 +43,31 @@ final class SyncErrorCodeTests: XCTestCase {
         XCTAssertEqual(code, .generic)
     }
 
+    // MARK: - Spec 054: truncatedCollection
+
+    func testFrom_resolvesKnownCode_truncatedCollection_dotKey() {
+        let code = SyncErrorCode.from(code: "sync.error.truncated-collection", legacyMessage: nil)
+        XCTAssertEqual(code, .truncatedCollection)
+    }
+
+    func testFrom_resolvesKnownCode_truncatedCollection_serverWireSnakeCase() {
+        // Server emits `code: 'truncated_collection'` (snake_case) per
+        // specs/shared/sync-protocol.md (web commit 2c7e081f). Client-side
+        // canonical rawValue is the dot-key, but `from` must accept both.
+        let code = SyncErrorCode.from(code: "truncated_collection", legacyMessage: nil)
+        XCTAssertEqual(code, .truncatedCollection)
+    }
+
+    func testFrom_legacyMessage_truncatedCollection_phrase() {
+        let code = SyncErrorCode.from(code: nil, legacyMessage: "truncated collection detected")
+        XCTAssertEqual(code, .truncatedCollection)
+    }
+
+    func testFrom_legacyMessage_truncatedCollection_snakePhrase() {
+        let code = SyncErrorCode.from(code: nil, legacyMessage: "truncated_collection event")
+        XCTAssertEqual(code, .truncatedCollection)
+    }
+
     func testFrom_codeTakesPrecedenceOverLegacyMessage() {
         // Even if legacyMessage matches a different pattern, the `code` wins.
         let code = SyncErrorCode.from(
@@ -128,7 +153,8 @@ final class SyncErrorCodeTests: XCTestCase {
     // MARK: - CaseIterable / raw values
 
     func test_allCasesCoverContractCatalog() {
-        // The five cases enumerated in specs/031-error-i18n/sync-error-codes.md.
+        // The cases enumerated in specs/031-error-i18n/sync-error-codes.md,
+        // plus `truncated-collection` added in spec 054.
         XCTAssertEqual(
             Set(SyncErrorCode.allCases.map(\.rawValue)),
             [
@@ -136,6 +162,7 @@ final class SyncErrorCodeTests: XCTestCase {
                 "sync.error.recipe-deleted",
                 "sync.error.empty-update",
                 "sync.error.invalid-update",
+                "sync.error.truncated-collection",
                 "sync.error.generic",
             ]
         )

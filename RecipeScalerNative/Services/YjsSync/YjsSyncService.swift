@@ -2618,6 +2618,15 @@ final class YjsSyncService {
                 loadCollectionDocument()
             }
 
+        case .truncatedCollection:
+            // Spec 054: server detected that the collection doc carries hard-deletes
+            // with a saturated state vector. Native client uses legacy `load_document`
+            // which always returns canonical state, so a plain reload is enough — no
+            // doc-drop/empty-SV handshake like the web client does. Do not surface as a
+            // user-facing error: this is an internal recovery signal.
+            clearInFlightOfflineTracking(forDocKey: docKeyFor(recipeId: "collection"))
+            reloadCollectionFromServer()
+
         case .generic:
             guard let recipeId else { return }
             let docKey = docKeyFor(recipeId: recipeId)

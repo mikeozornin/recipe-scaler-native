@@ -36,6 +36,19 @@ struct UserSettingsDTO: Decodable, Sendable {
     let nutritionEnabled: Bool?
 }
 
+/// Spec 054: outcome of a cold-start `/api/settings` probe used by
+/// `AuthService.performStaleSessionHealthCheck()`.
+enum UserExistsResult: Sendable {
+    /// 2xx — user present on server, keep local session as-is.
+    case exists
+    /// HTTP 404 — user no longer exists (e.g. after server DB cutover).
+    case userMissing
+    /// HTTP 401 / 403 — token revoked or account locked.
+    case unauthorized
+    /// 5xx, network error, decoding error, or anything else transient.
+    case transient
+}
+
 /// Feature-adoption report (spec 038). All 10 keys are always present in the
 /// server payload; each is modeled as `Bool?` and treated as `false` when nil
 /// via `value(for:)`. Snake_case JSON keys map to camelCase Swift properties.
@@ -185,6 +198,33 @@ enum AccountAPI {
             path: "/api/settings"
         )
         return try APIClient.unwrapResponse(response, fallback: .accountSettingsLoadFailed)
+    }
+
+    /// Spec 054: lightweight existence check for the stored user on cold start.
+    ///
+    /// Wraps `fetchUserSettings()` with error classification so the caller can
+    /// decide between wipe (user missing / token revoked) and keep going
+    /// (transient server / network error). Never throws.
+    ///
+    /// Returns `.exists` only on a successful 2xx; `.userMissing` on HTTP 404;
+    /// `.unauthorized` on HTTP 401/403; `.transient` on 5xx, network errors,
+    /// decoding errors, or any other unexpected failure.
+    static func checkUserExists() async -> UserExistsResult {
+        do {
+            _ = try await fetchUserSettings()
+            return .exists
+        } catch let error as APIError {
+            switch error {
+            case .httpError(let code) where code == 404:
+                return .userMissing
+            case .httpError(let code) where code == 401 || code == 403:
+                return .unauthorized
+            default:
+                return .transient
+            }
+        } catch {
+            return .transient
+        }
     }
 
     static func updateNutritionEnabled(_ enabled: Bool) async throws {

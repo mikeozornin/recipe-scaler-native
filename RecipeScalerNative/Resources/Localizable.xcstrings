@@ -10106,6 +10106,23 @@
         }
       }
     },
+    "sync.error.truncated-collection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collection was out of sync with the server. Reloading."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Коллекция рассинхронизировалась с сервером. Перезагружаем."
+          }
+        }
+      }
+    },
     "sync.status.a11y.images": {
       "extractionState": "manual",
       "localizations": {

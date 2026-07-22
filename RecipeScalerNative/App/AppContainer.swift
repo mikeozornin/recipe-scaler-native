@@ -77,6 +77,10 @@ final class AppContainer {
     /// Captured at `bootstrap(userId:)` for re-runs (account switch, root view churn).
     private var bootstrappedUserId: String?
 
+    /// Spec 054: one-shot gate so the stale-session health-check runs at most
+    /// once per cold start, not on every `bootstrap(userId:)` re-entry.
+    private var didPerformStaleSessionHealthCheck = false
+
     // MARK: - Construction
 
     init(modelContext: ModelContext) throws {
@@ -194,6 +198,21 @@ final class AppContainer {
             return
         }
 
+        // Spec 054: before anything else, verify the stored user still exists
+        // on the server. If `/api/settings` 404s, wipe local credentials and
+        // bail out — `ContentView` will fall back to `AuthView` because
+        // `auth.isAuthenticated == false`. Runs once per cold start.
+        if !didPerformStaleSessionHealthCheck {
+            didPerformStaleSessionHealthCheck = true
+            await auth.performStaleSessionHealthCheck()
+            if !auth.isAuthenticated {
+                // Wipe rewrote auth state; do not start sync/timer/socket for
+                // a user that no longer exists. The next login will re-enter
+                // `bootstrap(userId:)` with a fresh `userId`.
+                return
+            }
+        }
+
         let isSameUser = bootstrappedUserId == userId
         if !isSameUser {
             shellCoordinator.resetShellStateForLogout()
@@ -278,6 +297,8 @@ final class AppContainer {
     /// Clears bootstrap bookkeeping so the next login runs full `sync.start`, not `resumeSession`.
     func resetBootstrapAfterLogout() {
         bootstrappedUserId = nil
+        // Spec 054: a fresh login after a wipe should re-probe on next bootstrap.
+        didPerformStaleSessionHealthCheck = false
     }
 
     /// Stop sync + clear local state on logout (formerly `ContentView.onChange(of: authService.isAuthenticated)`).

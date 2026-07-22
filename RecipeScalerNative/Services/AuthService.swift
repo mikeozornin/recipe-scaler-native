@@ -133,6 +133,11 @@ class AuthService {
     var userId: String?
     var token: String?
 
+    /// Spec 054: probe used by `performStaleSessionHealthCheck()` to verify the
+    /// restored user still exists on the server. Indirected through a closure
+    /// so unit tests can inject a stub without hitting the network.
+    var checkUserExistsProvider: () async -> UserExistsResult = { await AccountAPI.checkUserExists() }
+
     private let keychain = Keychain(service: "com.recipescaler.native")
     private let seedPhraseKey = "seedPhrase"
 
@@ -172,6 +177,55 @@ class AuthService {
         if restoredToken == nil {
             Task { await ensureDeviceTokenMigratedIfNeeded() }
         }
+        // Spec 054: stale-session health-check is awaited from
+        // `AppContainer.bootstrap(userId:)` BEFORE `sync.start`, so a stale
+        // user is wiped before any socket/timer tries to authenticate with it.
+    }
+
+    /// Spec 054: cold-start probe. Idempotent; safe to call from
+    /// `AppContainer.bootstrap(userId:)`.
+    ///
+    /// On `.userMissing` or `.unauthorized` the local session is fully wiped
+    /// (Keychain seed, SharedAuthStore, APIClient, watch) and the UI falls
+    /// back to `AuthView` because `isAuthenticated == false`. Transient
+    /// failures (network / 5xx) leave the session intact so a temporary
+    /// outage doesn't log the user out.
+    ///
+    /// Gating (XCTest, simulator DEBUG auto-login) is the caller's
+    /// responsibility — `AppContainer.bootstrap` already short-circuits
+    /// under `XCTestConfigurationFilePath` / `ui-testing`. This method itself
+    /// is pure logic so it can be unit-tested with a stub probe.
+    func performStaleSessionHealthCheck() async {
+        guard SharedAuthStore.userId != nil, isAuthenticated else { return }
+
+        let result = await checkUserExistsProvider()
+        switch result {
+        case .exists, .transient:
+            AppLog.info(.app, "stale_session_check_ok", data: ["result": "\(result)"])
+        case .userMissing, .unauthorized:
+            AppLog.info(.app, "stale_session_detected", data: ["result": "\(result)"])
+            wipeLocalSession()
+            AppLog.info(.app, "stale_session_cleared", data: ["result": "\(result)"])
+        }
+    }
+
+    /// Spec 054: wipe local credentials when the server confirms the user is
+    /// gone. Mirrors `logout()` minus the server-side `POST /api/auth/logout`
+    /// (the user already doesn't exist) — and never throws, so the wipe is
+    /// best-effort even if Keychain access fails mid-way.
+    private func wipeLocalSession() {
+        try? deleteSeedPhraseFromKeychain()
+        SharedAuthStore.clear()
+        WatchCredentialsBridge.shared.purge()
+
+        userId = nil
+        token = nil
+        isAuthenticated = false
+
+        apiClient.configure(authToken: nil)
+        apiClient.configure(userId: nil)
+
+        AppContainer.shared?.featureAdoption.clearForLogout()
     }
 
     /// Spec 041: silent `/exchange-seed-for-token` when there is a `userId` but no

@@ -30,17 +30,20 @@ import Foundation
 /// The view layer resolves via `Bundle.currentLocalizedString(code.rawValue)`
 /// through the `localizedMessage` extension — no prefix-sniffing on the view side.
 public enum SyncErrorCode: String, Sendable, Equatable, CaseIterable {
-    case ownershipFailed = "sync.error.ownership"
-    case recipeDeleted   = "sync.error.recipe-deleted"
-    case emptyUpdate     = "sync.error.empty-update"
-    case invalidUpdate   = "sync.error.invalid-update"
-    case generic         = "sync.error.generic"
+    case ownershipFailed      = "sync.error.ownership"
+    case recipeDeleted        = "sync.error.recipe-deleted"
+    case emptyUpdate          = "sync.error.empty-update"
+    case invalidUpdate        = "sync.error.invalid-update"
+    case truncatedCollection  = "sync.error.truncated-collection"
+    case generic              = "sync.error.generic"
 
     /// Resolve a `sync_error` payload into a typed code.
     ///
     /// - Parameters:
     ///   - code: Future dot-key from `payload["code"]`. Takes precedence over
-    ///     the legacy message when present and recognized.
+    ///     the legacy message when present and recognized. Accepts both the
+    ///     client dot-key (`sync.error.truncated-collection`) and the server
+    ///     wire code (`truncated_collection`).
     ///   - legacyMessage: Today's English `payload["error"]` string. Used only
     ///     when `code` is missing or unknown — preserves client behavior with
     ///     un-migrated servers.
@@ -51,14 +54,19 @@ public enum SyncErrorCode: String, Sendable, Equatable, CaseIterable {
         legacyMessage: String?,
         fallback: SyncErrorCode = .generic
     ) -> SyncErrorCode {
-        if let code, !code.isEmpty, let resolved = SyncErrorCode(rawValue: code) {
-            return resolved
+        if let code, !code.isEmpty {
+            if let resolved = SyncErrorCode(rawValue: code) {
+                return resolved
+            }
+            if code == "truncated_collection" { return .truncatedCollection }
         }
         if let legacyMessage, !legacyMessage.isEmpty {
             if legacyMessage.contains("Ownership validation failed") { return .ownershipFailed }
             if legacyMessage.contains("Recipe is deleted")          { return .recipeDeleted }
             if legacyMessage.contains("Invalid update")             { return .invalidUpdate }
             if legacyMessage.contains("Empty update")             { return .emptyUpdate }
+            if legacyMessage.contains("truncated collection")
+                || legacyMessage.contains("truncated_collection") { return .truncatedCollection }
         }
         return fallback
     }
