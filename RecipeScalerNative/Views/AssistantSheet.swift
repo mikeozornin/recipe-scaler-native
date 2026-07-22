@@ -516,6 +516,9 @@ struct AssistantSheet: View {
             case .final(let data):
                 streamingToolStatusKey = nil
                 applyFinal(data, optimisticAssistantId: assistantMessageId)
+                #if os(iOS)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                #endif
                 return
             case .error(let code):
                 streamingToolStatusKey = nil
@@ -523,6 +526,9 @@ struct AssistantSheet: View {
                     msg.text = Bundle.currentLocalizedString(code.rawValue)
                     msg.isStreaming = false
                 }
+                #if os(iOS)
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                #endif
                 return
             }
         }
