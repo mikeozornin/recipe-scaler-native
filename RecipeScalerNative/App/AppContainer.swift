@@ -206,10 +206,24 @@ final class AppContainer {
             didPerformStaleSessionHealthCheck = true
             await auth.performStaleSessionHealthCheck()
             if !auth.isAuthenticated {
-                // Wipe rewrote auth state; do not start sync/timer/socket for
-                // a user that no longer exists. The next login will re-enter
-                // `bootstrap(userId:)` with a fresh `userId`.
+                // Wipe rewrote auth state. On device, stop here so ContentView
+                // shows AuthView and the next login re-enters bootstrap.
+                //
+                // Simulator DEBUG auto-login forces `ContentView.isAuthenticated`
+                // and a hardcoded `debugUserId`, so AuthView never appears and
+                // `.task(id:)` does not re-fire after wipe. Returning here leaves
+                // `isLocalDataLoaded == false` forever ("Loading recipes…").
+                // Fall through so reconcile + sync.start bind the debug user.
+                #if targetEnvironment(simulator)
+                if ProcessInfo.processInfo.arguments.contains("-DisableDebugAutoLogin=1") {
+                    return
+                }
+                AppLog.info(.app, "stale_session_sim_debug_continue", data: [
+                    "userId": UserIdFormatter.redact(userId)
+                ])
+                #else
                 return
+                #endif
             }
         }
 
