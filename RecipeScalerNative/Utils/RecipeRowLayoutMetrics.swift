@@ -5,6 +5,8 @@ import UIKit
 enum RecipeDetailLayoutMetrics {
     /// Top inset before the title block when there is no image; same gap between hero image and title.
     static let titleTopSpacing: CGFloat = RecipeRowLayoutMetrics.listHorizontalInset
+    /// Breathing room under the last description line above the tab bar safe area.
+    static let descriptionBottomPadding: CGFloat = 16
 }
 
 /// Shared list row box model (recipe list + ingredient rows).

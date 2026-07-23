@@ -196,6 +196,7 @@ struct StepsSection: View {
                 .padding(.horizontal)
             }
         }
+        .padding(.bottom, RecipeDetailLayoutMetrics.descriptionBottomPadding)
         .accessibilityIdentifier(AccessibilityIdentifiers.stepsSection)
         .task(id: htmlContent) {
             let parsed = RecipeDescriptionParser.parse(htmlContent)
