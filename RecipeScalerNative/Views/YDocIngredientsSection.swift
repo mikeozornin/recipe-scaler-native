@@ -766,7 +766,7 @@ private struct IngredientColumnHeaderRow: View {
             } else {
                 IngredientGridRow(
                     ingredients: {
-                        IngredientGridIngredientsColumn(leadingSlot: .empty) {
+                        IngredientGridIngredientsColumn(leadingSlot: nil) {
                             Text("recipes.ingredient-header")
                                 .appHeadline()
                                 .foregroundStyle(.primary)
