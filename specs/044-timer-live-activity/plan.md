@@ -64,7 +64,7 @@ flowchart TB
 - [x] `TimerLiveActivityBundle` — `@main` WidgetBundle
 - [x] `TimerLiveActivityWidget` — `ActivityConfiguration` (Lock Screen + Dynamic Island)
 - [x] `TimerLockScreenLiveActivityView` — кастомный Lock Screen UI
-- [x] App Group entitlement: `group.ru.recipescaler.RecipeScalerNative`
+- [x] App Group entitlement: `group.ru.recipescaler.RecipeScaler`
 - [x] Shared Swift-файлы в **обоих** targets (attributes, palette, accent, formatting, intents, action queue)
 
 ### 3. Lock Screen UI (основной экран)

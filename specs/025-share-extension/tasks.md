@@ -24,11 +24,11 @@
 
 **⚠️ КРИТИЧНО**: эти задачи выполняются вручную в Xcode по чеклисту из `quickstart.md`. Агент может только писать код и обновлять существующие файлы; создание target'ов в pbxproj без UI рискованно.
 
-- [ ] T001 Создать App Group `group.ru.recipescaler.RecipeScalerNative` на Apple Developer Portal (team `2L5JDYE2L7`) — **блокер**: требует платный Apple Developer Program; код использует этот group id во всех entitlements (проверено verify-share-extension.sh)
-- [x] T002 Создать target `RecipeScalerCore` (Cocoa Touch Framework, Swift, iOS 17). Bundle ID `ru.recipescaler.RecipeScalerNative.Core`
-- [x] T003 Создать target `ShareExtension` (Share Extension template). Bundle ID `ru.recipescaler.RecipeScalerNative.Share`
-- [x] T004 Создать target `ActionExtension` (Action Extension template, "Presents user interface"). Bundle ID `ru.recipescaler.RecipeScalerNative.Action`
-- [x] T005 На 3 target'ах (main app, Share, Action) добавить capability "App Groups" → выбрать `group.ru.recipescaler.RecipeScalerNative`
+- [ ] T001 Создать App Group `group.ru.recipescaler.RecipeScaler` на Apple Developer Portal (team `ZBPX4JYT24`) — **блокер**: требует платный Apple Developer Program; код использует этот group id во всех entitlements (проверено verify-share-extension.sh)
+- [x] T002 Создать target `RecipeScalerCore` (Cocoa Touch Framework, Swift, iOS 17). Bundle ID `ru.recipescaler.RecipeScaler.Core`
+- [x] T003 Создать target `ShareExtension` (Share Extension template). Bundle ID `ru.recipescaler.RecipeScaler.Share`
+- [x] T004 Создать target `ActionExtension` (Action Extension template, "Presents user interface"). Bundle ID `ru.recipescaler.RecipeScaler.Action`
+- [x] T005 На 3 target'ах (main app, Share, Action) добавить capability "App Groups" → выбрать `group.ru.recipescaler.RecipeScaler`
 - [x] T006 На main app target → General → Frameworks → добавить `RecipeScalerCore.framework` → "Embed & Sign"
 - [x] T007 На ShareExtension + ActionExtension → Frameworks → `RecipeScalerCore.framework` → "Do Not Embed"
 - [x] T008 Embed App Extensions build phase главного аппа должен содержать ShareExtension + ActionExtension
@@ -114,7 +114,7 @@
 ### Scaffold (Xcode template сгенерировал; настроить)
 
 - [x] T029 [P] Заменить `ShareExtension/Info.plist` — `NSExtensionActivationRule` по spec FR-SE-003; `NSExtensionPrincipalClass = $(PRODUCT_MODULE_NAME).ShareViewController`
-- [x] T030 [P] Настроить `ShareExtension/ShareExtension.entitlements` — App Group `group.ru.recipescaler.RecipeScalerNative`
+- [x] T030 [P] Настроить `ShareExtension/ShareExtension.entitlements` — App Group `group.ru.recipescaler.RecipeScaler`
 - [x] T031 [P] Добавить `import RecipeScalerCore` в `ShareExtension/ShareViewController.swift` (template)
 
 ### Content extraction

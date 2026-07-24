@@ -27,8 +27,8 @@
 ## watchOS target
 
 - [ ] Создать `RecipeScalerNativeWatch` target в `project.pbxproj`
-  - [ ] `PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScalerNative.watchkitapp`
-  - [ ] `WKCompanionAppBundleIdentifier = ru.recipescaler.RecipeScalerNative`
+  - [ ] `PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.watchkitapp`
+  - [ ] `WKCompanionAppBundleIdentifier = ru.recipescaler.RecipeScaler`
   - [ ] `WKWatchOnly = NO`
   - [ ] `WATCHOS_DEPLOYMENT_TARGET = 10.0`
   - [ ] `SDKROOT = watchos`

@@ -4,11 +4,11 @@
 <dict>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.ru.recipescaler.RecipeScalerNative</string>
+		<string>group.ru.recipescaler.RecipeScaler</string>
 	</array>
 	<key>keychain-access-groups</key>
 	<array>
-		<string>$(AppIdentifierPrefix)ru.recipescaler.RecipeScalerNative</string>
+		<string>$(AppIdentifierPrefix)ru.recipescaler.RecipeScaler</string>
 	</array>
 </dict>
 </plist>

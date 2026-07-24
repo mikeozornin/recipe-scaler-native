@@ -148,7 +148,7 @@ sim_pull_debug_log
 ### Прямой pull
 
 ```bash
-CONTAINER=$(xcrun simctl get_app_container booted ru.recipescaler.RecipeScalerNative data)
+CONTAINER=$(xcrun simctl get_app_container booted ru.recipescaler.RecipeScaler data)
 cp "$CONTAINER/Library/Application Support/debug-session.ndjson" .debug-session.ndjson
 ```
 

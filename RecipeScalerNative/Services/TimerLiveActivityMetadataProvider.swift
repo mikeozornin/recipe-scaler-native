@@ -5,6 +5,7 @@
 
 import Foundation
 import UIKit
+import RecipeScalerCore
 
 struct TimerLiveActivityRecipeMetadata: Sendable {
     var recipeName: String?
@@ -16,7 +17,7 @@ enum TimerLiveActivityMetadataProvider {
     /// Installed from `ContentView` where `YjsSyncService` is available.
     static var recipeNameLookup: ((String) -> String?)?
 
-    private static let appGroupIdentifier = "group.ru.recipescaler.RecipeScalerNative"
+    private static let appGroupIdentifier = AppGroup.id
 
     static func metadata(for recipeId: String?) async -> TimerLiveActivityRecipeMetadata {
         guard let recipeId, !recipeId.isEmpty else {

@@ -14,7 +14,7 @@ import Foundation
 enum FeatureFlags {
     /// Spec 040 — per-item drill-in guides on the Feature Adoption screen.
     /// OFF by default. Enable for development:
-    ///   `defaults write ru.recipescaler.RecipeScalerNative featureAdoptionGuides -bool YES`
+    ///   `defaults write ru.recipescaler.RecipeScaler featureAdoptionGuides -bool YES`
     static var featureAdoptionGuidesEnabled: Bool {
         UserDefaults.standard.object(forKey: Self.featureAdoptionGuidesKey) as? Bool ?? false
     }

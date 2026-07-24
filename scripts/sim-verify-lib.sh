@@ -5,7 +5,7 @@
 ROOT="${ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 : "${SIM_ID:=EFC65E55-4F28-4C21-B489-D9733D2BE6B5}"
 
-BUNDLE_ID="ru.recipescaler.RecipeScalerNative"
+BUNDLE_ID="ru.recipescaler.RecipeScaler"
 VERIFY_BUILD_STAMP="${VERIFY_BUILD_STAMP:-$ROOT/.verify-build-stamp}"
 
 # Stale EagerLinking TBD stubs for watchsimulator omit x86_64 (or arm64) and break

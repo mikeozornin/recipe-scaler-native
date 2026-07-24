@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 struct RecipeSnapshot: Codable, Identifiable, Sendable {
     let id: String
@@ -13,7 +14,7 @@ struct RecipeSnapshot: Codable, Identifiable, Sendable {
 /// Persists a lightweight list of recipes to App Group UserDefaults so that
 /// App Intents can resolve recipe entities even when the main app isn't running.
 enum RecipeSnapshotStore {
-    static let appGroupID = "group.ru.recipescaler.RecipeScalerNative"
+    private static let appGroupID = AppGroup.id
     private static let key = "appIntents.recipeSnapshots"
 
     private static var defaults: UserDefaults? {

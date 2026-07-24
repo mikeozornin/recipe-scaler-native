@@ -23,7 +23,7 @@ cd "$ROOT"
 source "$ROOT/scripts/sim-verify-lib.sh"
 
 BUNDLE_ID_PHONE="$BUNDLE_ID"
-BUNDLE_ID_WATCH="ru.recipescaler.RecipeScalerNative.watchkitapp"
+BUNDLE_ID_WATCH="ru.recipescaler.RecipeScaler.watchkitapp"
 WATCH_LAUNCH_DELAY_SEC="${WATCH_LAUNCH_DELAY_SEC:-4}"
 
 usage() {

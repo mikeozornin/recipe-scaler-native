@@ -26,12 +26,15 @@
 
 | Сущность | Значение |
 |----------|----------|
-| Team ID (в `project.pbxproj`) | `2L5JDYE2L7` |
-| Main app | `ru.recipescaler.RecipeScalerNative` |
-| Framework `RecipeScalerCore` | `ru.recipescaler.RecipeScalerNative.Core` |
-| Share Extension | фактический Bundle ID из Xcode (ожидаемо `…Share`) |
-| Action Extension | фактический Bundle ID из Xcode (ожидаемо `…Action`) |
-| **App Group** | `group.ru.recipescaler.RecipeScalerNative` |
+| Team ID (в `project.pbxproj`) | `ZBPX4JYT24` |
+| Main app | `ru.recipescaler.RecipeScaler` |
+| Framework `RecipeScalerCore` | `ru.recipescaler.RecipeScaler.Core` |
+| Share Extension | `ru.recipescaler.RecipeScaler.Share` |
+| Action Extension | `ru.recipescaler.RecipeScaler.Action` |
+| Home Widget | `ru.recipescaler.RecipeScaler.HomeWidget` |
+| Timer Live Activity | `ru.recipescaler.RecipeScaler.TimerLiveActivity` |
+| Watch app | `ru.recipescaler.RecipeScaler.watchkitapp` |
+| **App Group** | `group.ru.recipescaler.RecipeScaler` |
 
 Файлы entitlements в репозитории (должны совпасть с порталом и provisioning):
 
@@ -47,7 +50,7 @@
 
 1. [Identifiers → App Groups](https://developer.apple.com/account/resources/identifiers/list/applicationGroup)
 2. **+** → App Groups
-3. Identifier: `group.ru.recipescaler.RecipeScalerNative`
+3. Identifier: `group.ru.recipescaler.RecipeScaler`
 4. Description: например `Recipe Scaler — shared storage for extensions`
 
 ### 1.2 App IDs и capabilities
@@ -55,7 +58,7 @@
 Для **main app** и **каждого extension** (Bundle ID из Xcode):
 
 - App ID существует или создаётся.
-- Включить **App Groups** → привязать `group.ru.recipescaler.RecipeScalerNative`.
+- Включить **App Groups** → привязать `group.ru.recipescaler.RecipeScaler`.
 
 Минимум для фичи Share/Action (spec `025-share-extension`):
 
@@ -86,7 +89,7 @@
 На таргетах **RecipeScalerNative**, **ShareExtension**, **ActionExtension**:
 
 1. **Signing & Capabilities** → **+ Capability** → **App Groups**
-2. Отметить `group.ru.recipescaler.RecipeScalerNative`
+2. Отметить `group.ru.recipescaler.RecipeScaler`
 
 Детальный setup таргетов и smoke: `specs/025-share-extension/quickstart.md`.
 
@@ -137,4 +140,4 @@
 
 **Связанные спеки**: `025-share-extension` (extensions, deep link), `023-push-notifications` (push — отдельно при релизе, **после Activity Charts**).
 
-**Дата фиксации**: 2026-06-06.
+**Дата фиксации**: 2026-06-06; обновлено 2026-07-24 (Team ID `ZBPX4JYT24`, App Group `group.ru.recipescaler.RecipeScaler`, bundle ID prefix `ru.recipescaler.RecipeScaler`).

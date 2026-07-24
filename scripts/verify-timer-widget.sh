@@ -69,11 +69,11 @@ fi
 echo "[verify] NSExtensionPointIdentifier OK ($POINT)"
 
 # Confirm the binary contains our App Group + bundle id (proves the widget was compiled).
-if ! strings "$BINARY" | grep -q "group.ru.recipescaler.RecipeScalerNative"; then
+if ! strings "$BINARY" | grep -q "group.ru.recipescaler.RecipeScaler"; then
   echo "[verify] FAIL: App Group reference not found in binary" >&2
   exit 1
 fi
-if ! strings "$BINARY" | grep -q "ru.recipescaler.RecipeScalerNative.HomeWidget"; then
+if ! strings "$BINARY" | grep -q "ru.recipescaler.RecipeScaler.HomeWidget"; then
   echo "[verify] FAIL: Widget bundle id not found in binary" >&2
   exit 1
 fi

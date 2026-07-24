@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 enum TimerLiveActivityAction: String, Codable, Sendable {
     case pause
@@ -24,7 +25,7 @@ private func timerLiveActivityDarwinCallback(
 
 /// App Group bridge: Live Activity intents (extension) → main app `TimerManager`.
 enum TimerLiveActivityActionQueue {
-    static let appGroupID = "group.ru.recipescaler.RecipeScalerNative"
+    private static let appGroupID = AppGroup.id
     private static let pendingKey = "timerLiveActivity.pendingAction"
     private static let notificationNameString = "com.recipescaler.timerLiveActivity.action" as CFString
     private static let notificationName = CFNotificationName(notificationNameString)

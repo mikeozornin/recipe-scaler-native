@@ -93,7 +93,7 @@ Framework используется main app target, Share Extension target, Acti
 
 ### FR-SE-002 — App Group
 
-Создать App Group `group.ru.recipescaler.RecipeScalerNative`:
+Создать App Group `group.ru.recipescaler.RecipeScaler`:
 
 - Добавить entitlement в main app (`RecipeScalerNative.entitlements`).
 - Добавить entitlement в Share Extension (`ShareExtension.entitlements`).
@@ -103,7 +103,7 @@ Framework используется main app target, Share Extension target, Acti
 
 ### FR-SE-003 — Share Extension Target
 
-- Bundle ID: `ru.recipescaler.RecipeScalerNative.Share`.
+- Bundle ID: `ru.recipescaler.RecipeScaler.Share`.
 - Display Name: «Импорт в Recipe Scaler» (локализованный).
 - `NSExtensionActivationRule`:
   - `NSExtensionActivationSupportsWebURLWithMaxCount: 1`
@@ -137,7 +137,7 @@ Localization через `Bundle.module` (framework resources).
 
 ### FR-SE-006 — Action Extension Target
 
-- Bundle ID: `ru.recipescaler.RecipeScalerNative.Action`.
+- Bundle ID: `ru.recipescaler.RecipeScaler.Action`.
 - Display Name: «Импорт в Recipe Scaler».
 - `NSExtensionPointIdentifier`: `com.apple.ui-services`.
 - `NSExtensionJavaScriptPreprocessingFile`: `GetURLFromPage.js` — берёт `document.URL` из активной вкладки Safari.
@@ -152,7 +152,7 @@ Localization через `Bundle.module` (framework resources).
 <array>
   <dict>
     <key>CFBundleURLName</key>
-    <string>ru.recipescaler.RecipeScalerNative</string>
+    <string>ru.recipescaler.RecipeScaler</string>
     <key>CFBundleURLSchemes</key>
     <array><string>recipe-scaler</string></array>
   </dict>
@@ -211,11 +211,11 @@ WindowGroup {
 
 ### FR-SE-012 — Provisioning
 
-На Apple Developer Portal (team `2L5JDYE2L7`):
+На Apple Developer Portal (team `ZBPX4JYT24`):
 
-- Создать App Group `group.ru.recipescaler.RecipeScalerNative`.
-- Создать App ID для `ru.recipescaler.RecipeScalerNative.Share` с включённым App Group.
-- Создать App ID для `ru.recipescaler.RecipeScalerNative.Action` с включённым App Group.
+- Создать App Group `group.ru.recipescaler.RecipeScaler`.
+- Создать App ID для `ru.recipescaler.RecipeScaler.Share` с включённым App Group.
+- Создать App ID для `ru.recipescaler.RecipeScaler.Action` с включённым App Group.
 - Обновить provisioning profile для main app + оба extension.
 
 Симулятор не требует реальных entitlements для smoke-тестирования, но `UserDefaults(suiteName:)` работает только если App Group объявлен — на симуляторе валиден любой suiteName, поэтому логику покрывает без профиля.

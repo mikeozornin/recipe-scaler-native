@@ -51,7 +51,7 @@
 ## Debug launch
 
 ```bash
-xcrun simctl launch booted ru.recipescaler.RecipeScalerNative \
+xcrun simctl launch booted ru.recipescaler.RecipeScaler \
   -OpenRecipeId=<UUID> -StartInEditMode=1
 ```
 

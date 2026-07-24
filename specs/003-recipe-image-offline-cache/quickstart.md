@@ -47,7 +47,7 @@
 
 ```bash
 # Путь к кэшу на симуляторе (подставить container UUID из ~/Library/Developer/CoreSimulator/Devices/...)
-ls "$(xcrun simctl get_app_container booted ru.recipescaler.RecipeScalerNative data)/Library/Application Support/RecipeImages/"
+ls "$(xcrun simctl get_app_container booted ru.recipescaler.RecipeScaler data)/Library/Application Support/RecipeImages/"
 ```
 
 Ожидаемые файлы: `{recipeId}_preview.webp`, `{recipeId}_full.webp`.

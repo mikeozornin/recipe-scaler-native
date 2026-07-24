@@ -613,7 +613,7 @@ def main() -> None:
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = {ent};
 \t\t\t\tCODE_SIGN_IDENTITY = \"iPhone Developer\";
 \t\t\t\tCURRENT_PROJECT_VERSION = 1;
-\t\t\t\tDEVELOPMENT_TEAM = 2L5JDYE2L7;
+\t\t\t\tDEVELOPMENT_TEAM = ZBPX4JYT24;
 \t\t\t\tGENERATE_INFOPLIST_FILE = NO;
 \t\t\t\tINFOPLIST_FILE = {plist};
 \t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -636,7 +636,7 @@ def main() -> None:
 \t\t\t\tCODE_SIGN_IDENTITY = \"iPhone Developer\";
 \t\t\t\tCURRENT_PROJECT_VERSION = 1;
 \t\t\t\tDEFINES_MODULE = YES;
-\t\t\t\tDEVELOPMENT_TEAM = 2L5JDYE2L7;
+\t\t\t\tDEVELOPMENT_TEAM = ZBPX4JYT24;
 \t\t\t\tDYLIB_INSTALL_NAME_BASE = \"@rpath\";
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_KEY_CFBundleDisplayName = RecipeScalerCore;
@@ -648,7 +648,7 @@ def main() -> None:
 \t\t\t\t\t\"@loader_path/Frameworks\",
 \t\t\t\t);
 \t\t\t\tMARKETING_VERSION = 1.0;
-\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScalerNative.Core;
+\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.Core;
 \t\t\t\tPRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";
 \t\t\t\tSDKROOT = iphoneos;
 \t\t\t\tSKIP_INSTALL = YES;
@@ -670,22 +670,22 @@ def main() -> None:
 \t\t}};
 \t\t{share_dbg} /* Debug */ = {{
 \t\t\tisa = XCBuildConfiguration;
-{fw_settings('ru.recipescaler.RecipeScalerNative.Share', 'ShareExtension/Info.plist', 'ShareExtension/ShareExtension.entitlements', 'YES')}
+{fw_settings('ru.recipescaler.RecipeScaler.Share', 'ShareExtension/Info.plist', 'ShareExtension/ShareExtension.entitlements', 'YES')}
 \t\t\tname = Debug;
 \t\t}};
 \t\t{share_rel} /* Release */ = {{
 \t\t\tisa = XCBuildConfiguration;
-{fw_settings('ru.recipescaler.RecipeScalerNative.Share', 'ShareExtension/Info.plist', 'ShareExtension/ShareExtension.entitlements', 'YES')}
+{fw_settings('ru.recipescaler.RecipeScaler.Share', 'ShareExtension/Info.plist', 'ShareExtension/ShareExtension.entitlements', 'YES')}
 \t\t\tname = Release;
 \t\t}};
 \t\t{action_dbg} /* Debug */ = {{
 \t\t\tisa = XCBuildConfiguration;
-{fw_settings('ru.recipescaler.RecipeScalerNative.Action', 'ActionExtension/Info.plist', 'ActionExtension/ActionExtension.entitlements', 'YES')}
+{fw_settings('ru.recipescaler.RecipeScaler.Action', 'ActionExtension/Info.plist', 'ActionExtension/ActionExtension.entitlements', 'YES')}
 \t\t\tname = Debug;
 \t\t}};
 \t\t{action_rel} /* Release */ = {{
 \t\t\tisa = XCBuildConfiguration;
-{fw_settings('ru.recipescaler.RecipeScalerNative.Action', 'ActionExtension/Info.plist', 'ActionExtension/ActionExtension.entitlements', 'YES')}
+{fw_settings('ru.recipescaler.RecipeScaler.Action', 'ActionExtension/Info.plist', 'ActionExtension/ActionExtension.entitlements', 'YES')}
 \t\t\tname = Release;
 \t\t}};
 """

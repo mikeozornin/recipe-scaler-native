@@ -26,7 +26,7 @@
 ## Debug launch
 
 ```bash
-xcrun simctl launch … ru.recipescaler.RecipeScalerNative \
+xcrun simctl launch … ru.recipescaler.RecipeScaler \
   -OpenRecipeId=<uuid> -StartDescriptionEdit=1
 ```
 

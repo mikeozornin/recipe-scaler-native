@@ -16,7 +16,7 @@
 //
 //      <key>keychain-access-groups</key>
 //      <array>
-//          <string>$(AppIdentifierPrefix)ru.recipescaler.RecipeScalerNative</string>
+//          <string>$(AppIdentifierPrefix)ru.recipescaler.RecipeScaler</string>
 //      </array>
 //
 //  to every consuming target's entitlements.
@@ -44,10 +44,10 @@ public enum SharedAuthStore {
     /// Shared keychain access group. Resolves to `nil` on simulator / dev
     /// builds (no provisioning profile) so the keychain query stays valid
     /// without an access-group attribute. On signed builds the value is
-    /// `$(AppIdentifierPrefix)ru.recipescaler.RecipeScalerNative`.
+    /// `$(AppIdentifierPrefix)ru.recipescaler.RecipeScaler`.
     public static var keychainAccessGroup: String? {
         if hasKeychainAccessGroupEntitlement {
-            return "$(AppIdentifierPrefix)ru.recipescaler.RecipeScalerNative"
+            return "$(AppIdentifierPrefix)ru.recipescaler.RecipeScaler"
         }
         return nil
     }

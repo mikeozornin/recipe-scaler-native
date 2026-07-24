@@ -11,7 +11,7 @@
 
 | Параметр | Значение |
 |---|---|
-| App Group | `group.ru.recipescaler.RecipeScalerNative` |
+| App Group | `group.ru.recipescaler.RecipeScaler` |
 | UserDefaults key | `widgets.timerSnapshot` |
 | Формат | JSON (Codable) |
 | Обновляется | main app в `TimerManager.persist/mutate` |

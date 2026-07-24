@@ -4,11 +4,12 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 /// Persists the shopping list snapshot to App Group UserDefaults so that
 /// App Intents can resolve shopping items even when the main app isn't running.
 enum ShoppingListSnapshotStore {
-    static let appGroupID = "group.ru.recipescaler.RecipeScalerNative"
+    private static let appGroupID = AppGroup.id
     private static let key = "appIntents.shoppingListSnapshot"
 
     private static var defaults: UserDefaults? {

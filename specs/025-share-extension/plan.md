@@ -8,7 +8,7 @@
 
 Добавляется **внешний импорт рецептов** через системный Share Sheet из любого iOS-аппа (Safari, Messages, Telegram, Photos) + Action Extension для контекстного меню Safari. Главный апп открывается на новом рецепте через URL scheme `recipe-scaler://recipe/{id}`.
 
-Архитектурно появляется общий **`RecipeScalerCore` framework** (Cocoa Touch Framework), который использует `RecipeImportAPI` и main app, и extension'ы. Auth credentials (только `userId`, без токенов) шарятся через **App Group `UserDefaults`** (`group.ru.recipescaler.RecipeScalerNative`).
+Архитектурно появляется общий **`RecipeScalerCore` framework** (Cocoa Touch Framework), который использует `RecipeImportAPI` и main app, и extension'ы. Auth credentials (только `userId`, без токенов) шарятся через **App Group `UserDefaults`** (`group.ru.recipescaler.RecipeScaler`).
 
 Ключевые изменения:
 
@@ -43,7 +43,7 @@
 
 **Тестирование**: XCTest для `DeepLinkRouter`, ручной smoke (Safari/Messages/Telegram/Photos) на симуляторе. Реальные device / TestFlight — для проверки provisioning profile.
 
-**Платформа**: iOS 17.0+, Xcode 16.0+, Bundle ID prefix `ru.recipescaler.RecipeScalerNative`.
+**Платформа**: iOS 17.0+, Xcode 16.0+, Bundle ID prefix `ru.recipescaler.RecipeScaler`.
 
 **Цели по производительности**: открытие extension ≤ 500 мс, импорт через extension ≤ время того же запроса из main app sheet (5–30 с в зависимости от источника).
 
@@ -126,11 +126,11 @@ flowchart TB
 
 См. `quickstart.md` для пошагового чек-листа. Кратко:
 
-1. Создать App Group `group.ru.recipescaler.RecipeScalerNative` на Apple Developer Portal.
+1. Создать App Group `group.ru.recipescaler.RecipeScaler` на Apple Developer Portal.
 2. В Xcode: File → New → Target → Cocoa Touch Framework → `RecipeScalerCore`. iOS 17, Language Swift, Include Tests: No.
-3. В Xcode: File → New → Target → Share Extension → `ShareExtension`. Bundle ID `ru.recipescaler.RecipeScalerNative.Share`, language Swift, "Include UI Test" No.
-4. В Xcode: File → New → Target → Action Extension → `ActionExtension`. Bundle ID `ru.recipescaler.RecipeScalerNative.Action`, language Swift, "Include UI Test" No. Action type: "Presents user interface".
-5. На main app target → Signing & Capabilities → + App Groups → выбрать `group.ru.recipescaler.RecipeScalerNative`.
+3. В Xcode: File → New → Target → Share Extension → `ShareExtension`. Bundle ID `ru.recipescaler.RecipeScaler.Share`, language Swift, "Include UI Test" No.
+4. В Xcode: File → New → Target → Action Extension → `ActionExtension`. Bundle ID `ru.recipescaler.RecipeScaler.Action`, language Swift, "Include UI Test" No. Action type: "Presents user interface".
+5. На main app target → Signing & Capabilities → + App Groups → выбрать `group.ru.recipescaler.RecipeScaler`.
 6. То же на ShareExtension и ActionExtension target.
 7. На main app target → General → Frameworks, Libraries, and Embedded Content → добавить `RecipeScalerCore.framework` → Embed & Sign.
 8. На ShareExtension и ActionExtension → General → Frameworks → добавить `RecipeScalerCore.framework` → Do Not Embed (extension embed нельзя; main app уже embed'ит).
@@ -205,7 +205,7 @@ RecipeScalerCore/
 
 ```swift
 public enum SharedAuthStore {
-    public static let appGroupID = "group.ru.recipescaler.RecipeScalerNative"
+    public static let appGroupID = "group.ru.recipescaler.RecipeScaler"
     public static let userIdKey = "shared.userId"
 
     public static var userId: String? {
@@ -227,7 +227,7 @@ public enum SharedAuthStore {
 - После логаута: `SharedAuthStore.clear()`.
 - На старте: `userId = SharedAuthStore.userId ?? readFromUserDefaults()` (обратная совместимость).
 
-**Контрольная точка**: `UserDefaults(suiteName: "group.ru.recipescaler.RecipeScalerNative")?.string(forKey: "shared.userId")` возвращает тот же `userId`, что `authService.userId` в main app.
+**Контрольная точка**: `UserDefaults(suiteName: "group.ru.recipescaler.RecipeScaler")?.string(forKey: "shared.userId")` возвращает тот же `userId`, что `authService.userId` в main app.
 
 ## Фаза 3 — i18n для framework
 
@@ -399,7 +399,7 @@ func loadContent(from context: NSExtensionContext) async -> ContentKind {
 <dict>
     <key>com.apple.security.application-groups</key>
     <array>
-        <string>group.ru.recipescaler.RecipeScalerNative</string>
+        <string>group.ru.recipescaler.RecipeScaler</string>
     </array>
 </dict>
 </plist>
@@ -571,7 +571,7 @@ UDID — из `xcrun simctl list devices available | rg 'iPhone 17'`.
 - **Memory limits** — Share Extension ~120 MB, Action Extension ~16 MB. Для 8 фото × 25 MB = 200 MB в памяти одновременно — риск OOM. Решение: стримить фото по одному через `withCheckedThrowingContinuation` + autoreleasepool, не держать `[Data]` в памяти.
 - **Холодный старт по deep link** — `recipe-scaler://recipe/{id}` открывает main app; Y.Doc может быть не готов. `YDocRecipeDetailView` уже показывает skeleton — этого достаточно для MVP.
 - **JavaScript preprocessing для Action Extension** — работает только в Safari. В Messages/Telegram/share sheet — только Share Extension.
-- **Bundle ID prefix** — `ru.recipescaler.RecipeScalerNative` уже используется; extension'ы — `.Share` и `.Action`. App Group — `group.ru.recipescaler.RecipeScalerNative`.
+- **Bundle ID prefix** — `ru.recipescaler.RecipeScaler` уже используется; extension'ы — `.Share` и `.Action`. App Group — `group.ru.recipescaler.RecipeScaler`.
 - **iOS 17 minimum** — `Mutex` доступен, `os.OSUnfairLock` тоже; предпочтительнее `Mutex` (Swift Concurrency native).
 
 ## Out of scope

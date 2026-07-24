@@ -38,7 +38,7 @@
 
 ```bash
 # Симулятор — подставить container UUID
-ls "$(xcrun simctl get_app_container booted ru.recipescaler.RecipeScalerNative data)/Library/Application Support/RecipeImages/"
+ls "$(xcrun simctl get_app_container booted ru.recipescaler.RecipeScaler data)/Library/Application Support/RecipeImages/"
 ```
 
 4. **Не** должно быть новых файлов публичных URL в этой папке.
@@ -46,7 +46,7 @@ ls "$(xcrun simctl get_app_container booted ru.recipescaler.RecipeScalerNative d
 ## 5. Public cache path
 
 ```bash
-ls "$(xcrun simctl get_app_container booted ru.recipescaler.RecipeScalerNative data)/Library/Caches/PublicImages/"
+ls "$(xcrun simctl get_app_container booted ru.recipescaler.RecipeScaler data)/Library/Caches/PublicImages/"
 ```
 
 Ожидание: файлы `{64-char-hex}.webp` после просмотра Discover.

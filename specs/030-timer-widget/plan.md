@@ -59,7 +59,7 @@ flowchart TD
 
 - **Язык**: Swift 5.9+, SwiftUI, WidgetKit
 - **Минимум iOS**: 17.0 (deploйте target проекта; accessory families уже с iOS 16, но StandBy — iOS 17+)
-- **Хранилище**: App Group `UserDefaults` (group.ru.recipescaler.RecipeScalerNative), ключ `widgets.timerSnapshot`
+- **Хранилище**: App Group `UserDefaults` (group.ru.recipescaler.RecipeScaler), ключ `widgets.timerSnapshot`
 - **Тестирование**: симулятор iPhone 16 Pro (для Dynamic Island / Live Activity / StandBy); без платного аккаунта
 - **Проект**: native iOS monorepo, схема `RecipeScalerNative`
 
@@ -99,9 +99,9 @@ HomeWidgetExtension/
 
 ### Phase 0 — Scaffolding
 
-- [ ] Создать Xcode target `HomeWidgetExtension` (Bundle ID `ru.recipescaler.RecipeScalerNative.HomeWidget`), embed в main app
+- [ ] Создать Xcode target `HomeWidgetExtension` (Bundle ID `ru.recipescaler.RecipeScaler.HomeWidget`), embed в main app
 - [ ] `HomeWidgetExtension.entitlements` (App Group), `Info.plist`
-- [ ] `RecipeScalerCore/AppGroup.swift` — `public enum AppGroup { static let id = "group.ru.recipescaler.RecipeScalerNative" }`
+- [ ] `RecipeScalerCore/AppGroup.swift` — `public enum AppGroup { static let id = "group.ru.recipescaler.RecipeScaler" }`
 - [ ] **Deep link:** `DeepLink.openHome` case + парсинг в `DeepLinkRouter.swift` + case в `AppShellView.swift`
 
 ### Phase 1 — Snapshot инфраструктура

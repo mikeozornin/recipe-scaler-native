@@ -201,7 +201,7 @@
 - ~~**Area**: `RecipeScalerNative/Services/AuthService.swift:117-119,154-156`; `RecipeScalerCore/Auth/SharedAuthStore.swift:24-34`~~
 - ~~**Description**: `userId` (единственный креденшал по находке №1) персистится в `UserDefaults.standard` и зеркалируется в App Group `UserDefaults`. UserDefaults — plaintext plist на диске. Keychain (правильно используемый для сид-фразы) дал бы hardware-backed шифрованное хранилище.~~ `SharedAuthStore` переписан на `kSecClassGenericPassword` через raw Security framework (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`); `AuthService` пишет/читает `userId` только через Keychain; legacy plaintext-следы в `UserDefaults.standard` и App Group `UserDefaults` вычищаются один раз за холодный старт (`purgeLegacyUserDefaultsCredentials`).
 - ~~**Impact**: На скомпрометированном/резервном устройстве forensic-инструменты читают UserDefaults тривиально; получение userId = полный takeover.~~
-- ~~**Recommendation**: Хранить креденшал в Keychain (класс `.afterFirstUnlockThisDeviceOnly`); если extensions должны читать — добавить keychain access group в entitlements.~~ Выполнено: `keychain-access-groups = [$(AppIdentifierPrefix)ru.recipescaler.RecipeScalerNative]` добавлен во все 5 entitlements (main + Share/Action/HomeWidget/TimerLiveActivity); тесты `SharedAuthStoreTests` (6) + `AuthServiceMigrationTests` (3) зелёные.
+- ~~**Recommendation**: Хранить креденшал в Keychain (класс `.afterFirstUnlockThisDeviceOnly`); если extensions должны читать — добавить keychain access group в entitlements.~~ Выполнено: `keychain-access-groups = [$(AppIdentifierPrefix)ru.recipescaler.RecipeScaler]` добавлен во все 5 entitlements (main + Share/Action/HomeWidget/TimerLiveActivity); тесты `SharedAuthStoreTests` (6) + `AuthServiceMigrationTests` (3) зелёные.
 
 #### 13. **[Security]** Нет TLS certificate/SPKI-pinning'а
 - **Area**: `RecipeScalerCore/Networking/APIClient.swift:145`; Socket.IO в `YjsSyncService.swift:1120`
@@ -405,7 +405,7 @@
 
 #### 44. **[Architecture]** App Group identifier захардкожен в двух местах
 - **Area**: `RecipeScalerCore/AppGroup.swift:28`; `RecipeScalerCore/Auth/SharedAuthStore.swift:14`
-- **Description**: Один литерал `"group.ru.recipescaler.RecipeScalerNative"` в обоих файлах. Комментарий в `AppGroup.swift:8-11` говорит, что миграция ожидается — но не сделана.
+- **Description**: Один литерал `"group.ru.recipescaler.RecipeScaler"` в обоих файлах. Комментарий в `AppGroup.swift:8-11` говорит, что миграция ожидается — но не сделана.
 - **Recommendation**: Заменить `SharedAuthStore.appGroupID` на `AppGroup.id`.
 
 #### 45. **[Architecture]** Per-recipe sync-флаги в `UserDefaults.standard` вместо существующего SQLite

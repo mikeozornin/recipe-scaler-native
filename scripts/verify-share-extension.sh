@@ -34,7 +34,7 @@ for ent in \
     echo "FAIL: entitlement file missing: $ent"
     exit 1
   fi
-  if ! rg -q "group.ru.recipescaler.RecipeScalerNative" "$ROOT/$ent"; then
+  if ! rg -q "group.ru.recipescaler.RecipeScaler" "$ROOT/$ent"; then
     echo "FAIL: App Group key missing in $ent"
     exit 1
   fi

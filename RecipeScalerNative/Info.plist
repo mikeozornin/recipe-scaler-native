@@ -20,37 +20,53 @@
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>ru.recipescaler.RecipeScalerNative</string>
+			<string>ru.recipescaler.RecipeScaler</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>recipe-scaler</string>
 			</array>
 		</dict>
 	</array>
-	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>CoreSpotlightActions</key>
+	<array>
+		<dict>
+			<key>CoreSpotlightActionIdentifier</key>
+			<string>addToShopping</string>
+			<key>CoreSpotlightActionSystemImageName</key>
+			<string>cart.badge.plus</string>
+			<key>CoreSpotlightActionTitle</key>
+			<string>spotlight.action.addToShopping.title</string>
+		</dict>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<string>$(RS_ALLOWS_LOCAL_NETWORKING)</string>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Recipe Scaler uses the camera to scan QR codes to log in with your seed phrase.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Recipe Scaler uses the microphone so you can dictate messages to the AI assistant.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Recipe Scaler syncs your shopping list with Apple Reminders so you can check off items on Apple Watch, ask Siri, and access your list from any Apple device.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>Recipe Scaler syncs your shopping list with Apple Reminders so you can check off items on Apple Watch, ask Siri, and access your list from any Apple device.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSUserNotificationAlertStyle</key>
 	<string>alert</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Recipe Scaler uses the microphone so you can dictate messages to the AI assistant.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Recipe Scaler uses the camera to scan QR codes to log in with your seed phrase.</string>
-	<key>NSRemindersFullAccessUsageDescription</key>
-	<string>Recipe Scaler syncs your shopping list with Apple Reminders so you can check off items on Apple Watch, ask Siri, and access your list from any Apple device.</string>
-	<key>NSRemindersUsageDescription</key>
-	<string>Recipe Scaler syncs your shopping list with Apple Reminders so you can check off items on Apple Watch, ask Siri, and access your list from any Apple device.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
@@ -78,26 +94,6 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<!-- MIK-139 [review #56]: NSAllowsLocalNetworking is a DEBUG-only
-		     concession via $(RS_ALLOWS_LOCAL_NETWORKING). Release builds do
-		     not define this user setting, so the key resolves to NO and ATS
-		     stays fully enforced for production HTTPS traffic. -->
-		<key>NSAllowsLocalNetworking</key>
-		<string>$(RS_ALLOWS_LOCAL_NETWORKING)</string>
-	</dict>
-	<key>CoreSpotlightActions</key>
-	<array>
-		<dict>
-			<key>CoreSpotlightActionIdentifier</key>
-			<string>addToShopping</string>
-			<key>CoreSpotlightActionTitle</key>
-			<string>spotlight.action.addToShopping.title</string>
-			<key>CoreSpotlightActionSystemImageName</key>
-			<string>cart.badge.plus</string>
-		</dict>
 	</array>
 </dict>
 </plist>

@@ -15,7 +15,7 @@
 
 1. Зайти на https://developer.apple.com/account/resources/identifiers/list/applicationGroup
 2. + New Identifier → App Groups
-3. Identifier: `group.ru.recipescaler.RecipeScalerNative`
+3. Identifier: `group.ru.recipescaler.RecipeScaler`
 4. Description: `Recipe Scaler — shared storage for extensions`
 5. Сохранить
 
@@ -62,7 +62,7 @@
 2. выбрать target
 3. вкладка "Signing & Capabilities"
 4. + Capability → App Groups
-5. выбрать `group.ru.recipescaler.RecipeScalerNative`
+5. выбрать `group.ru.recipescaler.RecipeScaler`
 
 ### 1.6. RecipeScalerCore на 3 target'ах
 
@@ -97,7 +97,7 @@
 <array>
   <dict>
     <key>CFBundleURLName</key>
-    <string>ru.recipescaler.RecipeScalerNative</string>
+    <string>ru.recipescaler.RecipeScaler</string>
     <key>CFBundleURLSchemes</key>
     <array><string>recipe-scaler</string></array>
   </dict>
@@ -128,7 +128,7 @@ xcodebuild -scheme RecipeScalerNative \
 4. Залогиниться (на debug-сборке — автологин).
 5. Подтвердить, что в `SharedAuthStore.userId` записан id:
    ```bash
-   xcrun simctl get_app_container booted ru.recipescaler.RecipeScalerNative data
+   xcrun simctl get_app_container booted ru.recipescaler.RecipeScaler data
    # в папке /Library/Preferences/ должен быть plist
    ```
    Или: добавить debug-принт в `ContentView.init`.

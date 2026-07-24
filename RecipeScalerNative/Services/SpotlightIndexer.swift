@@ -18,7 +18,7 @@ import UIKit
 @MainActor
 @Observable
 final class SpotlightIndexer {
-    static let domainIdentifier = "ru.recipescaler.RecipeScalerNative.recipes"
+    static let domainIdentifier = "ru.recipescaler.RecipeScaler.recipes"
 
     /// Mirrors `CoreSpotlightActionIdentifier` in Info.plist.
     static let actionAddToShopping = "addToShopping"

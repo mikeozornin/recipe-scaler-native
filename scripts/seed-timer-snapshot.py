@@ -82,11 +82,11 @@ def main() -> int:
     if scenario.startswith("--"):
         scenario = scenario[2:]
 
-    bundle_id = "ru.recipescaler.RecipeScalerNative"
+    bundle_id = "ru.recipescaler.RecipeScaler"
     container = app_data_container(sim_udid, bundle_id)
     prefs_dir = container / "Library" / "Preferences"
     prefs_dir.mkdir(parents=True, exist_ok=True)
-    plist_path = prefs_dir / "group.ru.recipescaler.RecipeScalerNative.plist"
+    plist_path = prefs_dir / "group.ru.recipescaler.RecipeScaler.plist"
 
     doc = build_document(scenario)
     encoded = json.dumps(doc, separators=(",", ":"))

@@ -12,7 +12,7 @@ public enum AppGroup {
     /// App Group identifier shared between the main app and all extensions.
     ///
     /// Must be configured in the target's entitlements file:
-    /// `com.apple.security.application-groups = [group.ru.recipescaler.RecipeScalerNative]`
+    /// `com.apple.security.application-groups = [group.ru.recipescaler.RecipeScaler]`
     ///
     /// Currently consumed by:
     /// - `SharedAuthStore` (auth user id)
@@ -21,7 +21,7 @@ public enum AppGroup {
     /// - `TimerLiveActivityActionQueue` (extension → app action bridge)
     /// - `TimerLiveActivityMetadataProvider` (recipe thumbnails)
     /// - `TimerSnapshotStore` (timer snapshot for HomeWidgetExtension)
-    public static let id = "group.ru.recipescaler.RecipeScalerNative"
+    public static let id = "group.ru.recipescaler.RecipeScaler"
 
     /// Convenience accessor for the shared `UserDefaults` suite.
     public static var userDefaults: UserDefaults? {

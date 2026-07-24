@@ -83,7 +83,7 @@ flowchart LR
 
 ## Решения v1
 
-- **Bundle ID**: `ru.recipescaler.RecipeScalerNative.watchkitapp` (следование существующей схеме).
+- **Bundle ID**: `ru.recipescaler.RecipeScaler.watchkitapp` (следование существующей схеме).
 - **watchOS min**: 10.0 (parity с iOS 17 floor проекта).
 - **Push**: отсутствует в v1 — refresh при открытии/wake; push как follow-up.
 - **Single target** (modern watchOS 9+ architecture, без `.watchkitapp.extension`).

@@ -6,6 +6,7 @@
 import ActivityKit
 import SwiftUI
 import WidgetKit
+import RecipeScalerCore
 
 struct TimerLockScreenLiveActivityView: View {
     let attributes: RecipeTimerActivityAttributes
@@ -18,7 +19,7 @@ struct TimerLockScreenLiveActivityView: View {
 
     private static let overdueHorizon: TimeInterval = 24 * 60 * 60
     private static let progressBarHeight: CGFloat = 8
-    private static let appGroupIdentifier = "group.ru.recipescaler.RecipeScalerNative"
+    private static let appGroupIdentifier = AppGroup.id
 
     private static let timerDigitsFont = Font.custom("Martian Mono Nr Lt", size: 40)
     private static let timerNameFont = Font.custom("Martian Grotesk Nr Md", size: 16)

@@ -26,18 +26,18 @@ fi
 
 xcrun simctl boot "$SIM_ID" 2>/dev/null || true
 xcrun simctl install "$SIM_ID" "$APP"
-xcrun simctl terminate "$SIM_ID" ru.recipescaler.RecipeScalerNative 2>/dev/null || true
+xcrun simctl terminate "$SIM_ID" ru.recipescaler.RecipeScaler 2>/dev/null || true
 
 export SIMCTL_CHILD_AGENT_DEBUG_LOG="$LOG_FILE"
 echo "== Launch (RecipeReadDiagnostics=$RECIPE_ID) =="
-xcrun simctl launch "$SIM_ID" ru.recipescaler.RecipeScalerNative \
+xcrun simctl launch "$SIM_ID" ru.recipescaler.RecipeScaler \
   "-RecipeReadDiagnostics=$RECIPE_ID" >/dev/null
 
 echo "Waiting 20s for sync + diagnostics..."
 sleep 20
 
 if [[ ! -s "$LOG_FILE" ]]; then
-  CONTAINER=$(xcrun simctl get_app_container "$SIM_ID" ru.recipescaler.RecipeScalerNative data 2>/dev/null || true)
+  CONTAINER=$(xcrun simctl get_app_container "$SIM_ID" ru.recipescaler.RecipeScaler data 2>/dev/null || true)
   if [[ -n "$CONTAINER" && -f "$CONTAINER/Library/Caches/debug-session.ndjson" ]]; then
     cp "$CONTAINER/Library/Caches/debug-session.ndjson" "$LOG_FILE"
   fi

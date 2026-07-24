@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import RecipeScalerCore
 
 enum ShoppingIntentAction: Codable, Sendable {
     case addItem(label: String)
@@ -12,7 +13,7 @@ enum ShoppingIntentAction: Codable, Sendable {
 /// App Group queue for shopping list actions enqueued by App Intents.
 /// Drained by `ShoppingIntentDrainer` when the app enters foreground with an active sync session.
 enum ShoppingIntentActionQueue {
-    private static let appGroupID = "group.ru.recipescaler.RecipeScalerNative"
+    private static let appGroupID = AppGroup.id
     private static let key = "appIntents.pendingShoppingActions"
 
     private static var defaults: UserDefaults? {

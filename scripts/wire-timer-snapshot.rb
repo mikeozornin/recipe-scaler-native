@@ -91,12 +91,12 @@ unless widget_target
 
   # Place build product next to other extensions
   widget_target.build_configurations.each do |config|
-    config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'ru.recipescaler.RecipeScalerNative.HomeWidget'
+    config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'ru.recipescaler.RecipeScaler.HomeWidget'
     config.build_settings['PRODUCT_NAME'] = 'HomeWidgetExtension'
     config.build_settings['MARKETING_VERSION'] = '1.0'
     config.build_settings['CURRENT_PROJECT_VERSION'] = '1'
     config.build_settings['SWIFT_VERSION'] = '5.9'
-    config.build_settings['DEVELOPMENT_TEAM'] = '2L5JDYE2L7'
+    config.build_settings['DEVELOPMENT_TEAM'] = 'ZBPX4JYT24'
     config.build_settings['CODE_SIGN_IDENTITY'] = 'iPhone Developer'
     config.build_settings['INFOPLIST_FILE'] = 'HomeWidgetExtension/Info.plist'
     config.build_settings['GENERATE_INFOPLIST_FILE'] = 'NO'
