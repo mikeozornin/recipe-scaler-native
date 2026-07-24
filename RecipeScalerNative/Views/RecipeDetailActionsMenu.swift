@@ -40,6 +40,7 @@ struct RecipeDetailActionsMenu: View {
                 } label: {
                     AppLabel.make("shopping.detail-add-all", symbol: "cart.badge.plus")
                 }
+                .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailMenuAddAllToShopping)
 
                 Button(role: .destructive) {
                     recipePendingDelete = true

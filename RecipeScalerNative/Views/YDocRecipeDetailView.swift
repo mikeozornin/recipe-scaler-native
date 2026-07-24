@@ -422,6 +422,7 @@ struct YDocRecipeDetailView: View {
                             Task { await toggleEditMode() }
                         }
                         .appToolbarConfirmButton()
+                        .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailDone)
                     } else if let recipe {
                         RecipeDetailActionsMenu(
                             recipeId: recipeId,

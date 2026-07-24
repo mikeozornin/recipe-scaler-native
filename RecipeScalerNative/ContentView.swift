@@ -12,8 +12,13 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     private let isUITesting = ProcessInfo.processInfo.arguments.contains("ui-testing")
 
-    /// Debug: auto-authenticate on simulator
+    /// Debug: auto-authenticate on simulator. Debug-only — must never ship in
+    /// Release. Guarded by `#if DEBUG` so the literal UUID is stripped from
+    /// production binaries and the auto-login path is unreachable on device
+    /// release builds. See review finding High #8.
+    #if DEBUG
     private let debugUserId = "cfcd839f-56f2-4411-9632-7795b75f96d1"
+    #endif
 
     /// Fallback construction for previews/tests when no AppContainer is in
     /// the environment. Returns nil in production (container is always present).
@@ -23,7 +28,14 @@ struct ContentView: View {
     private var authService: AuthService? { container?.auth }
 
     private var effectiveUserId: String? {
+        #if DEBUG
         #if targetEnvironment(simulator)
+        // E2E UI tests inject a per-test fresh userId via launch env so each
+        // test gets its own clean user (web parity: register-auto fixture).
+        if let env = ProcessInfo.processInfo.environment["E2E_OVERRIDE_USER_ID"],
+           !env.isEmpty {
+            return env
+        }
         if ProcessInfo.processInfo.arguments.contains("-DisableDebugAutoLogin=1") {
             return authService?.userId
         }
@@ -31,14 +43,24 @@ struct ContentView: View {
         #else
         return authService?.userId
         #endif
+        #else
+        return authService?.userId
+        #endif
     }
 
     private var isAuthenticated: Bool {
+        #if DEBUG
         #if targetEnvironment(simulator)
+        if ProcessInfo.processInfo.environment["E2E_OVERRIDE_USER_ID"] != nil {
+            return true
+        }
         if ProcessInfo.processInfo.arguments.contains("-DisableDebugAutoLogin=1") {
             return authService?.isAuthenticated ?? false
         }
         return true
+        #else
+        return authService?.isAuthenticated ?? false
+        #endif
         #else
         return authService?.isAuthenticated ?? false
         #endif

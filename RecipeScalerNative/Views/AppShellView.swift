@@ -35,6 +35,21 @@ enum AppTab: String, CaseIterable, Hashable {
         case .profile: "person"
         }
     }
+
+    /// Accessibility identifier applied to the `AppTabBarLabel` (the actual
+    /// tab-bar button), so XCUITest can target `tab_discover` etc. directly.
+    /// The modifier on `tabRoot(...)` in `tabView` does NOT propagate to the
+    /// UITabBarButton — it lands on an inner container — so we attach it here
+    /// on the label view instead.
+    var accessibilityId: String {
+        switch self {
+        case .discover: AccessibilityIdentifiers.tabDiscover
+        case .importTab: AccessibilityIdentifiers.tabImport
+        case .recipes: AccessibilityIdentifiers.tabRecipes
+        case .shopping: AccessibilityIdentifiers.tabShopping
+        case .profile: AccessibilityIdentifiers.tabProfile
+        }
+    }
 }
 
 private struct AppTabBarLabel: View {
@@ -43,6 +58,7 @@ private struct AppTabBarLabel: View {
     var body: some View {
         Label(tab.title, systemImage: tab.tabBarSymbol)
             .font(AppTypography.tabBar)
+            .accessibilityIdentifier(tab.accessibilityId)
     }
 }
 
@@ -341,7 +357,6 @@ struct AppShellView: View {
             set: { coordinator.handleTabSelection($0) }
         )
     }
-
     private func postTransientStatus(_ message: String) {
         NotificationCenter.default.post(name: .shoppingStatusMessage, object: message)
     }

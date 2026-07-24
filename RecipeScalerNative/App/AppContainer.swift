@@ -198,6 +198,33 @@ final class AppContainer {
             return
         }
 
+        // E2E UI tests inject a per-test fresh user via launch env so each
+        // test runs in isolation (web parity: register-auto fixture).
+        // Override SharedAuthStore + AuthService before any other bootstrap
+        // step reads them so socket handshake, REST calls and exchange all
+        // use the test-injected credentials.
+        //
+        // Guarded by `#if DEBUG` so a Release build cannot be impersonated by
+        // any process that can set launch env (MDM, debugger-attached
+        // processes, `xcrun simctl launch` on shared devices, share-extension
+        // co-processes). See review finding Critical #1.
+        #if DEBUG
+        if let envUserId = ProcessInfo.processInfo.environment["E2E_OVERRIDE_USER_ID"],
+           let envToken = ProcessInfo.processInfo.environment["E2E_OVERRIDE_DEVICE_TOKEN"],
+           !envUserId.isEmpty, !envToken.isEmpty {
+            SharedAuthStore.userId = envUserId
+            SharedAuthStore.token = envToken
+            auth.userId = envUserId
+            auth.token = envToken
+            auth.isAuthenticated = true
+            APIClient.shared.configure(authToken: envToken)
+            APIClient.shared.configure(userId: envUserId)
+            // Skip stale-session health check for E2E — freshly-registered
+            // user is guaranteed to exist on the server.
+            didPerformStaleSessionHealthCheck = true
+        }
+        #endif
+
         // Spec 054: before anything else, verify the stored user still exists
         // on the server. If `/api/settings` 404s, wipe local credentials and
         // bail out — `ContentView` will fall back to `AuthView` because

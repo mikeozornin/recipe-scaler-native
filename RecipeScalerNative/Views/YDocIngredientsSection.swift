@@ -111,6 +111,7 @@ struct YDocIngredientsSection: View {
                                         Label("shopping.ingredient-add", systemImage: "cart.badge.plus")
                                     }
                                     .tint(.green)
+                                    .accessibilityIdentifier(AccessibilityIdentifiers.ingredientSwipeAddToShopping)
                                 }
                             }
                         }

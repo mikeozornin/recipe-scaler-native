@@ -121,6 +121,7 @@ struct ImportRecipeSheet: View {
                         }
                         .appToolbarConfirmButton()
                         .disabled(isProcessing || !canSubmit)
+                        .accessibilityIdentifier(AccessibilityIdentifiers.importSubmitButton)
                     } else if mode != .file {
                         Button("import.try-later") { dismiss() }
                             .appToolbarTextButton()

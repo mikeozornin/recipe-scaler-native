@@ -43,11 +43,13 @@ struct AssistantFabButton: View {
             .buttonStyle(.glassProminent)
             .buttonBorderShape(.circle)
             .frame(width: AssistantFabStyle.diameter, height: AssistantFabStyle.diameter)
+            .accessibilityIdentifier(AccessibilityIdentifiers.assistantFab)
         } else {
             Button(action: action) {
                 AssistantFabStyle.iconLabel
             }
             .buttonStyle(AssistantFabLegacyButtonStyle())
+            .accessibilityIdentifier(AccessibilityIdentifiers.assistantFab)
         }
     }
 }

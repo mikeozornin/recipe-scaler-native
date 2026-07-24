@@ -37,6 +37,7 @@
 | [docs/UI-LAYOUT-FROM-FIGMA.md](docs/UI-LAYOUT-FROM-FIGMA.md) | **макеты**: layout.md, layout-audit.json, audit-ui-layout, agent loop |
 | [docs/AGENT-WORKFLOW.md](docs/AGENT-WORKFLOW.md) | fix-until-green, verify-скрипты, отладка |
 | [docs/TESTING.md](docs/TESTING.md) | **тесты**: positive invariants, downstream consumers, DEBUG/edge-cases, postmortem-дисциплина |
+| [docs/E2E.md](docs/E2E.md) | **E2E UI-тесты** (XCTest): infrastructure, page-objects, REST fixtures, parity с web Playwright |
 | [llm/how-to-debug.md](llm/how-to-debug.md) | **журналирование**: `AppLog`, NDJSON, `pull-app-logs.sh`, экспорт с телефона |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | CRDT, yrs, sync layers |
 | [docs/PAID-APPLE-DEVELOPER-REQUIRED.md](docs/PAID-APPLE-DEVELOPER-REQUIRED.md) | TestFlight, extensions, App Groups |

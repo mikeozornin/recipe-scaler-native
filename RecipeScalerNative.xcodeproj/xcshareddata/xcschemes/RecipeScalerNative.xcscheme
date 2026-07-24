@@ -73,7 +73,7 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "4E70CEE2203A00F6D13FE76A"
+               BlueprintIdentifier = "UITESTTARGET0010000000"
                BuildableName = "RecipeScalerNativeUITests.xctest"
                BlueprintName = "RecipeScalerNativeUITests"
                ReferencedContainer = "container:RecipeScalerNative.xcodeproj">

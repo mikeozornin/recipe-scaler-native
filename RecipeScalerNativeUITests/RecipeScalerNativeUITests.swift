@@ -1,9 +1,24 @@
 import XCTest
 
+/// Local copy of accessibility identifiers used by UI tests.
+/// Kept in sync with `RecipeScalerNative/AccessibilityIdentifiers.swift`.
+/// UI test targets can't use `@testable import` because the app target
+/// transitively depends on C modules (GRDB) that aren't reachable from
+/// the UI test bundle's module graph.
+enum UIAccessibilityIdentifiers {
+    static let descriptionEditorKeyboardDone = "description_editor_keyboard_done"
+    static let recipeEditNewIngredientRow = "recipe_edit_new_ingredient_row"
+}
+
+/// Legacy smoke suite from before Specs/ E2E infrastructure.
+/// Superseded by `BaseTestCase` + `Specs/*Spec.swift`. Kept in the target so
+/// the file still compiles, but every case soft-skips — do not re-enable without
+/// porting to BaseTestCase (register-auto + no `ui-testing` launch arg).
 final class RecipeScalerNativeUITests: XCTestCase {
-    override func setUp() {
-        super.setUp()
+    override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
+        throw XCTSkip("Legacy smoke superseded by RecipeScalerNativeUITests/Specs/* — use BaseTestCase specs")
     }
 
     func testAuthScreenAppears() {
@@ -58,7 +73,7 @@ final class RecipeScalerNativeUITests: XCTestCase {
             "Formatting bar should appear when description editor is focused"
         )
 
-        let keyboardDone = app.buttons[AccessibilityIdentifiers.descriptionEditorKeyboardDone]
+        let keyboardDone = app.buttons[UIAccessibilityIdentifiers.descriptionEditorKeyboardDone]
         let toolbarDone = app.toolbars.buttons["Done"].firstMatch
         if keyboardDone.waitForExistence(timeout: 3) {
             keyboardDone.tap()
@@ -103,11 +118,13 @@ final class RecipeScalerNativeUITests: XCTestCase {
         )
 
         XCTAssertTrue(
-            app.otherElements[AccessibilityIdentifiers.recipeEditNewIngredientRow].waitForExistence(timeout: 5),
+            app.otherElements[UIAccessibilityIdentifiers.recipeEditNewIngredientRow].waitForExistence(timeout: 5),
             "New ingredient row missing in edit mode"
         )
 
-        add(XCTAttachment(screenshot: XCUIScreen.main.screenshot(), name: "ingredients-edit-grid"))
+        let screenshotAttachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screenshotAttachment.name = "ingredients-edit-grid"
+        add(screenshotAttachment)
 
         let doneButton = app.navigationBars.buttons["Done"]
         XCTAssertTrue(doneButton.waitForExistence(timeout: 5))
@@ -162,7 +179,9 @@ final class RecipeScalerNativeUITests: XCTestCase {
             "Manual shopping item should appear in list"
         )
 
-        add(XCTAttachment(screenshot: XCUIScreen.main.screenshot(), name: "shopping-list-after-adds"))
+        let finalShot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        finalShot.name = "shopping-list-after-adds"
+        add(finalShot)
     }
 
     private func addManualShoppingItem(app: XCUIApplication, shoppingTab: XCUIElement, label: String) {
