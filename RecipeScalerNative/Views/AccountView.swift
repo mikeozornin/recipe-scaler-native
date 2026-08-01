@@ -722,7 +722,7 @@ private struct AccountDeleteSeedSheet: View {
                         .font(AppTypography.mono(AppTypography.bodySize))
                         .accessibilityIdentifier(AccessibilityIdentifiers.deleteAccountSeedInput)
                 } header: {
-                    Text("account.delete.seed.label").appBody()
+                    AppSectionHeader("account.delete.seed.label")
                 } footer: {
                     if let errorMessage {
                         Text(errorMessage)
@@ -732,7 +732,6 @@ private struct AccountDeleteSeedSheet: View {
                     }
                 }
             }
-            .localizedNavigationTitle("account.delete.seed.title")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
