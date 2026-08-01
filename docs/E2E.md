@@ -125,7 +125,7 @@ This prevents a 100%-green run from masking 0%-actually-verified feature coverag
 - `-OpenTab=<tab>` — открывает указанную вкладку (recipes/shopping/discover/profile/import)
 - **НЕ ИСПОЛЬЗУЕМ `ui-testing`** — этот аргумент отключает `AppContainer.bootstrap` (sync/socket/push не стартуют), и приложение не подключается к продакшену
 
-Аутентификация: симуляторный DEBUG-build использует hardcoded `debugUserId` в `ContentView` → приложение автоматически логинится под `cfcd839f-…` против `recipe-scaler.ru`.
+Аутентификация: симуляторный DEBUG-build использует `DebugSimulatorAutoLogin` (`userId` + `device_token`) → приложение автоматически логинится под `cfcd839f-…` против `recipe-scaler.ru` с Bearer (spec 041). Override токена: `DEBUG_DEVICE_TOKEN`. Отключить: `-DisableDebugAutoLogin=1`.
 
 ## Добавление нового spec'а
 

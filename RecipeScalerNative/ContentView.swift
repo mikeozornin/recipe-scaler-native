@@ -16,8 +16,9 @@ struct ContentView: View {
     /// Release. Guarded by `#if DEBUG` so the literal UUID is stripped from
     /// production binaries and the auto-login path is unreachable on device
     /// release builds. See review finding High #8.
+    /// Credentials (userId + device_token) live in `DebugSimulatorAutoLogin`.
     #if DEBUG
-    private let debugUserId = "cfcd839f-56f2-4411-9632-7795b75f96d1"
+    private var debugUserId: String { DebugSimulatorAutoLogin.userId }
     #endif
 
     /// Fallback construction for previews/tests when no AppContainer is in

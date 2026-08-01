@@ -238,6 +238,17 @@ class AuthService {
         await migrateDeviceTokenIfNeeded()
     }
 
+    #if DEBUG
+    /// Injects a full Bearer session for DEBUG simulator auto-login (parity with
+    /// `E2E_OVERRIDE_USER_ID` + `E2E_OVERRIDE_DEVICE_TOKEN`). Also parks the
+    /// documented debug seed in Keychain so Account → Secret Phrase and silent
+    /// re-exchange keep working after a wipe.
+    func applyDebugSimulatorSession(userId: String, deviceToken: String, seedPhrase: String) {
+        applySession(userId: userId, deviceToken: deviceToken)
+        try? saveSeedPhraseToKeychain(seedPhrase)
+    }
+    #endif
+
     private func applySession(userId: String, deviceToken: String?) {
         SharedAuthStore.userId = userId
         if let deviceToken, !deviceToken.isEmpty {

@@ -7,6 +7,7 @@
 - Native app — здесь; web sources — `../recipe-scaler-web`; production API — `https://recipe-scaler.ru`.
 - Offline-first: приложение работает офлайн, кроме отдельных фич (например Discover).
 - Debug builds auto-login configured prod debug user — не полагайся на ручный ввод seed в рутинном тестировании. Seed phrase при необходимости: `mass layer gossip slight bachelor broken spend story rabbit biology tower blast`
+- DEBUG simulator auto-login injects `device_token` together with `debugUserId` (spec 041; legacy `x-user-id` disabled on prod). Override via launch env `DEBUG_DEVICE_TOKEN`. Credentials: `RecipeScalerNative/App/DebugSimulatorAutoLogin.swift`.
 - Architecture/sync markdown (`sync.md` и т.п.) может быть устаревшим — сверяй с live code и web `yjs-client.ts` перед тем как считать источником правды.
 - **Shared contracts (Yjs, sync, auth, export, error codes):** `../recipe-scaler-web/specs/shared/` — SoT для wire; native `docs/YJS-SCHEMA.md` и contracts — pointers + platform notes.
 

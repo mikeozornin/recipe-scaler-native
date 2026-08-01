@@ -222,6 +222,12 @@ final class AppContainer {
             // Skip stale-session health check for E2E — freshly-registered
             // user is guaranteed to exist on the server.
             didPerformStaleSessionHealthCheck = true
+        } else if DebugSimulatorAutoLogin.isEnabled {
+            // Spec 041: prod disabled legacy x-user-id for the debug user.
+            // Inject Bearer + userId before health check / sync (same shape as
+            // E2E overrides). Prefer launch-env token; on unauthorized wipe,
+            // re-exchange the documented debug seed.
+            await applyDebugSimulatorAutoLoginCredentials(preferBundledToken: true)
         }
         #endif
 
@@ -238,16 +244,17 @@ final class AppContainer {
                 //
                 // Simulator DEBUG auto-login forces `ContentView.isAuthenticated`
                 // and a hardcoded `debugUserId`, so AuthView never appears and
-                // `.task(id:)` does not re-fire after wipe. Returning here leaves
-                // `isLocalDataLoaded == false` forever ("Loading recipes…").
-                // Fall through so reconcile + sync.start bind the debug user.
-                #if targetEnvironment(simulator)
-                if ProcessInfo.processInfo.arguments.contains("-DisableDebugAutoLogin=1") {
+                // `.task(id:)` does not re-fire after wipe. Re-inject Bearer via
+                // seed exchange, then fall through so sync.start binds the user.
+                #if DEBUG
+                if DebugSimulatorAutoLogin.isEnabled {
+                    AppLog.info(.app, "stale_session_sim_debug_continue", data: [
+                        "userId": UserIdFormatter.redact(userId)
+                    ])
+                    await applyDebugSimulatorAutoLoginCredentials(preferBundledToken: false)
+                } else {
                     return
                 }
-                AppLog.info(.app, "stale_session_sim_debug_continue", data: [
-                    "userId": UserIdFormatter.redact(userId)
-                ])
                 #else
                 return
                 #endif
@@ -351,4 +358,50 @@ final class AppContainer {
         await spotlight.clearAll()
         featureAdoption.clearForLogout()
     }
+
+    #if DEBUG
+    /// Injects `DebugSimulatorAutoLogin` Bearer credentials the same way E2E
+    /// launch env does. When `preferBundledToken` is false (post-wipe recovery),
+    /// always re-exchanges the documented debug seed so a revoked bundled token
+    /// cannot leave the simulator stuck on legacy auth.
+    private func applyDebugSimulatorAutoLoginCredentials(preferBundledToken: Bool) async {
+        let userId = DebugSimulatorAutoLogin.userId
+        let seed = DebugSimulatorAutoLogin.seedPhrase
+        let env = ProcessInfo.processInfo.environment
+        let launchToken = ["DEBUG_DEVICE_TOKEN", "E2E_OVERRIDE_DEVICE_TOKEN"]
+            .compactMap { env[$0] }
+            .first { !$0.isEmpty }
+
+        let token: String
+        if let launchToken {
+            token = launchToken
+        } else if preferBundledToken,
+                  let existing = SharedAuthStore.token,
+                  !existing.isEmpty,
+                  SharedAuthStore.userId == userId {
+            token = existing
+        } else if preferBundledToken {
+            token = DebugSimulatorAutoLogin.deviceToken
+        } else {
+            do {
+                token = try await auth.exchangeSeedForToken(seedPhrase: seed)
+                AppLog.info(.app, "debug_autologin_token_exchanged")
+            } catch {
+                AppLog.info(.app, "debug_autologin_token_exchange_failed", data: [
+                    "reason": String(describing: type(of: error)),
+                ])
+                token = DebugSimulatorAutoLogin.deviceToken
+            }
+        }
+
+        auth.applyDebugSimulatorSession(
+            userId: userId,
+            deviceToken: token,
+            seedPhrase: seed
+        )
+        AppLog.info(.app, "debug_autologin_credentials_injected", data: [
+            "userId": UserIdFormatter.redact(userId),
+        ])
+    }
+    #endif
 }

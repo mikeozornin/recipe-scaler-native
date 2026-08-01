@@ -189,6 +189,7 @@
 		APP0000000000000000000091 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000001 /* AppContainer.swift */; };
 		APP0000000000000000000092 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000002 /* AppEnvironment.swift */; };
 		APP0000000000000000000093 /* TimerEventBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000003 /* TimerEventBridge.swift */; };
+		APP0000000000000000000094 /* DebugSimulatorAutoLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000004 /* DebugSimulatorAutoLogin.swift */; };
 		APURL0001000200030004000A3 /* AppURLSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = APURL0001000200030004000A2 /* AppURLSession.swift */; };
 		B041LGB001 /* LegacyAuthBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B041LGB002 /* LegacyAuthBannerView.swift */; };
 		B041LGR001 /* LegacyAuthBannerReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B041LGR002 /* LegacyAuthBannerReminder.swift */; };
@@ -858,6 +859,7 @@
 		APP0000000000000000000001 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
 		APP0000000000000000000002 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		APP0000000000000000000003 /* TimerEventBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerEventBridge.swift; sourceTree = "<group>"; };
+		APP0000000000000000000004 /* DebugSimulatorAutoLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSimulatorAutoLogin.swift; sourceTree = "<group>"; };
 		APURL0001000200030004000A2 /* AppURLSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppURLSession.swift; sourceTree = "<group>"; };
 		B041LGB002 /* LegacyAuthBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyAuthBannerView.swift; sourceTree = "<group>"; };
 		B041LGR002 /* LegacyAuthBannerReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyAuthBannerReminder.swift; sourceTree = "<group>"; };
@@ -1739,6 +1741,7 @@
 				APP0000000000000000000001 /* AppContainer.swift */,
 				APP0000000000000000000002 /* AppEnvironment.swift */,
 				APP0000000000000000000003 /* TimerEventBridge.swift */,
+				APP0000000000000000000004 /* DebugSimulatorAutoLogin.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -2761,6 +2764,7 @@
 				APP0000000000000000000091 /* AppContainer.swift in Sources */,
 				APP0000000000000000000092 /* AppEnvironment.swift in Sources */,
 				APP0000000000000000000093 /* TimerEventBridge.swift in Sources */,
+				APP0000000000000000000094 /* DebugSimulatorAutoLogin.swift in Sources */,
 				E5F60718293A4B700000000C /* AgentSyncDebugLog.swift in Sources */,
 				E5F60719293A4B7000000093 /* AgentDebugLogging.swift in Sources */,
 				E5F60719293A4B7000000089 /* DebugSessionNDJSONLog.swift in Sources */,
