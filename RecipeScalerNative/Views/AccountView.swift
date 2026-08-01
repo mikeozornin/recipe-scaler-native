@@ -641,18 +641,23 @@ private struct AccountSeedPhraseSheet: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("account.secret-phrase")
-                                .font(AppTypography.body)
+                                .appBody()
                             if let seed = try? authService.getSeedPhrase() {
                                 Text(seed)
                                     .font(AppTypography.mono(AppTypography.bodySize))
+                                    .lineSpacing(AppTypography.bodyLineSpacing)
                                     .textSelection(.enabled)
                                 ShareLink(item: seed) {
-                                    Label("account.seed.copy", systemImage: "doc.on.doc")
+                                    Label {
+                                        Text("account.seed.copy").appBody()
+                                    } icon: {
+                                        Image(systemName: "doc.on.doc")
+                                    }
                                 }
                                 SeedQRCodeView(text: seed)
                             } else {
                                 Text("account.no-seed")
-                                    .font(AppTypography.body)
+                                    .appBody()
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -665,10 +670,10 @@ private struct AccountSeedPhraseSheet: View {
                     } description: {
                         if let authError {
                             Text(authError)
-                                .font(AppTypography.body)
+                                .appBody()
                         } else {
                             Text("account.seed.unlock-hint")
-                                .font(AppTypography.body)
+                                .appBody()
                         }
                     } actions: {
                         Button("account.seed.unlock") {
@@ -679,8 +684,6 @@ private struct AccountSeedPhraseSheet: View {
                 }
             }
             .background(Color(.systemBackground))
-            .localizedNavigationTitle("account.secret-phrase")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("common.done") { dismiss() }
