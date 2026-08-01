@@ -90,7 +90,6 @@ struct AccountView: View {
                     preferencesSection
                         .id(AccountViewSection.reminders.id)
                     dataSection
-                    logExportSection
 
                     if let statusMessage = viewModel.statusMessage {
                         Section {
@@ -101,6 +100,7 @@ struct AccountView: View {
                     }
 
                     footerSection
+                    logExportSection
 
                     if MobileTimerPanelListChrome.needsSpacer(
                         timerManager: timerManager,
