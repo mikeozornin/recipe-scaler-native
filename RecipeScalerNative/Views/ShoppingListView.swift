@@ -537,7 +537,7 @@ private struct ShoppingListShareSheet: View {
                 if !isOnline {
                     Section {
                         Text("account.offline.alert")
-                            .font(AppTypography.subheadline)
+                            .appBody()
                             .foregroundStyle(.secondary)
                     }
                 }
