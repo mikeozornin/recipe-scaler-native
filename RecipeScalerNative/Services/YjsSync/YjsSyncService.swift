@@ -28,6 +28,17 @@ final class YjsSyncService {
     private(set) var connectionTransport: SyncConnectionTransport = .pollingAndWebsocket
     private(set) var writeSyncStates: [String: WriteSyncState] = [:]
     var syncErrorMessage: String?
+
+    /// Spec 055 Phase R: callback invoked when the socket receives an
+    /// `auth_error` whose `message` matches
+    /// `AuthRevocationConstants.accountDeletedSocketMessage` — the server's
+    /// post-commit teardown signal for account deletion (online peer path).
+    ///
+    /// Set by `AppContainer.init` to delegate into
+    /// `AuthService.handleAccountDeleted(reason: .socketSignal)`. `nil` by
+    /// default so previews/tests without a container simply no-op.
+    var authInvalidationHandler: ((AccountInvalidationReason) async -> Void)?
+
     private(set) var activeRecipeWasRemoved = false
     private(set) var imageCacheStatus = RecipeImageCacheStatus()
     private(set) var recipeDocumentCacheStatus = RecipeDocumentCacheStatus()
@@ -1390,6 +1401,17 @@ final class YjsSyncService {
                 // a compromised server or MITM could otherwise inject arbitrary text into
                 // the trusted sync banner (`ConnectionState.displayLabel`). MIK-163.
                 self.logger.error("Socket.IO auth_error: \(detail)")
+
+                // Spec 055 Phase R: server confirms post-commit account
+                // deletion via `realtime.disconnectUser(user, "Account deleted")`.
+                // Hand off to the runtime recovery flow (seed exchange +
+                // wipe) instead of just surfacing a stuck error banner.
+                if detail == AuthRevocationConstants.accountDeletedSocketMessage {
+                    self.logger.notice("Socket.IO auth_error: account deleted signal — delegating to AuthService")
+                    await self.authInvalidationHandler?(.socketSignal)
+                    return
+                }
+
                 let userMessage = Bundle.currentLocalizedString("connection.state.auth-error")
                 self.setConnectionState(.error(userMessage), reason: "auth_error")
             }

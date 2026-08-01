@@ -1,10 +1,11 @@
 # Спецификация: Удаление аккаунта (native)
 
 **Дата**: 2026-08-01
-**Статус**: 🟢 Реализовано
+**Статус**: 🟡 Дорабатывается (Phase R — runtime recovery)
 **Canonical spec**: `../recipe-scaler-web/specs/055-account-deletion/spec.md` —
 shared-контракты (API, БД, cleanup) описаны там. Здесь — native-пара и
-локальный cleanup.
+локальный cleanup, включая runtime-реакцию на server-side удаление
+(online peer `auth_error` + offline REST 401 → exchange → 404).
 
 ## Контекст и мотивация
 
@@ -12,6 +13,16 @@ shared-контракты (API, БД, cleanup) описаны там. Здесь
 (как в web): warning-alert → ввод seed-фразы. После успешного ответа сервера
 локальные credentials и Yjs/контейнеры зачищаются (web parity: wipe **только
 после** 2xx).
+
+**Phase R (runtime recovery):** баг — при удалении аккаунта из веба (или с
+другого устройства) нативный клиент, оставшийся онлайн, держит устаревший
+`SharedAuthStore.token` и `AuthService.isAuthenticated == true`. Сокет
+получает `auth_error`, но обработчик только переводит `connectionState` в
+`.error` и **не запускает wipe**. UI показывает «оффлайн», но данные не
+чищены до холодного старта, где их подбирает spec 054
+(`performStaleSessionHealthCheck`). Эта фаза добавляет паритет с веб-клиентом
+`auth-session-revoked.ts`: ловим server-side invalidation в рантайме и
+молча уходим на `AuthView` (silent UX — без баннеров).
 
 ## Цель
 
@@ -112,6 +123,107 @@ shared-контракты (API, БД, cleanup) описаны там. Здесь
 - [ ] AC4. Web-пара: `recipe-scaler-web/specs/055-account-deletion/spec.md` —
   canonical shared-контракты.
 
+## Runtime recovery (native parity с web US5/US6)
+
+Phase R. Поведение при удалении аккаунта **на другом устройстве** или **на
+сервере напрямую**, пока нативный клиент работает. Контракт —
+`../recipe-scaler-web/specs/shared/auth.md` (US5 online peers + US6 offline
+wipe) и `recipe-scaler-web/recipe-scaler/src/services/auth-session-revoked.ts`.
+
+### Триггеры wipe в рантайме
+
+1. **Socket.IO `auth_error`** с `message == "Account deleted"` (константа
+   `AUTH_ACCOUNT_DELETED_SOCKET_MESSAGE`). Сервер шлёт это post-commit через
+   `realtime.disconnectUser` после `DELETE FROM users`.
+2. **REST 401** с `code == "device_token_invalid"` (Bearer отклонён, потому
+   что строка `devices` уже снесена CASCADE). Клиент пытается
+   `exchange-seed-for-token`:
+   - `200` (токен восстановлен) → сессия жива, **wipe не нужен**.
+   - `404 "User not found"` → аккаунт удалён пока устройство было оффлайн →
+     полный `wipeLocalSession`.
+   - 5xx / network failure → light-revoke (`wipeLocalSession` без
+     `stopForLogout`), пользователь может retry.
+
+### Требования
+
+- **FR-R1.** `AuthService.handleAccountDeleted(reason:) async` —
+  централизованный entry point. Re-entry guard (`isHandlingAccountInvalidation`)
+  чтобы параллельные socket `auth_error` + REST 401 не дублировали teardown.
+  Делегирует в `wipeLocalSession(reason:)`, затем в
+  `AppContainer.shared?.sync.clearSessionForLogout()` + `stopForLogout()`.
+  Silent UX: `isAuthenticated = false` → `ContentView.onChange` уводит на
+  `AuthView` без баннеров/alerts.
+- **FR-R2.** `AuthService.handleDeviceTokenInvalid() async` — вызывается из
+  APIClient 401-interceptor. Пробует `exchangeSeedForToken(seed:)` (seed из
+  app-local Keychain). Различает:
+  - `AuthError.apiError(404, "User not found" | message contains "not found")`
+    → `handleAccountDeleted(reason: .restInvalidation)`.
+  - Успех → `applySession(...)` (сессия восстановлена, остаёмся).
+  - Любая другая ошибка → `wipeLocalSession(reason: .lightRevoke)`,
+    `isAuthenticated = false`, но **без** `stopForLogout` (пользователь
+    может пере-логиниться, данные не потеряны).
+- **FR-R3.** `APIClient.shared` — централизованный 401-interceptor:
+  `unauthorizedHandler: (@Sendable () async -> Void)?`. При возврате
+  `APIError.httpError(401)` (или `APIError.unauthorized`) из любого
+  authenticated REST-запроса — вызывается handler. Handler делегирует в
+  `AuthService.handleDeviceTokenInvalid()` через `Task { @MainActor in ... }`.
+  Вся wipe-логика — на MainActor (AuthService `@MainActor`); interceptor
+  только запускает task и сразу бросает ошибку наверх (caller видит 401).
+  Thread-safety: `APIClient` остаётся `nonisolated sendable`, handler только
+  `@Sendable` closure.
+- **FR-R4.** `YjsSyncService` auth_error handler (сейчас на строке ~1384):
+  парсит `message` из payload. Если
+  `== AuthRevocationConstants.accountDeletedSocketMessage` →
+  `Task { await authInvalidationHandler?(.socketSignal) }`. Иначе — текущее
+  поведение (`setConnectionState(.error(...))`).
+- **FR-R5.** Idempotency: повторные `auth_error` / 401 пока wipe в полёте
+  игнорируются (re-entry guard в `handleAccountDeleted`). Один сигнал —
+  один wipe.
+- **FR-R6.** `DebugSimulatorAutoLogin` совместимость: после wipe в DEBUG
+  simulator, следующая попытка bootstrap повторно инжектит debug-сессию
+  (через `applyDebugSimulatorAutoLoginCredentials(preferBundledToken: false)`
+  — уже есть в `AppContainer.bootstrap`). Не блокирует флоу восстановления.
+
+### Downstream consumers (изменяемое состояние)
+
+- `AuthService.isAuthenticated`, `.userId`, `.token` — читают `ContentView`
+  (через `onChange` → `clearSessionForLogout` + `stopForLogout`),
+  `AccountSettingsViewModel`, watch через `SharedAuthStore`.
+- `SharedAuthStore` — читают extensions, watch, `APIClient.shared`. Wipe
+  очищает через `SharedAuthStore.clear()`.
+- `YjsSyncService.authInvalidationHandler` — новая closure-инъекция.
+  Устанавливается из `AppContainer.init` после создания `auth` и `sync`.
+- `APIClient.shared.unauthorizedHandler` — новая closure-инъекция.
+  Устанавливается из `AppContainer.init`.
+- `RecipeSnapshotStore` (Home Screen Quick Actions / Live Activity) —
+  должен быть очищен в `wipeLocalSession` (добавить в Phase R, если ещё нет).
+- Live Activity (Timer) — invalidate при wipe, иначе остаётся с устаревшим
+  recipe name.
+- `WatchCredentialsBridge` — уже чистится в текущем `wipeLocalSession`.
+
+### Positive invariants (для тестов)
+
+| Эффект | Инвариант | Где проверять |
+|--------|-----------|---------------|
+| Socket `auth_error` "Account deleted" | `isAuthenticated == false`, Keychain seed пуст, `SharedAuthStore` пуст, `clearSessionForLogout` вызван, `stopForLogout` вызван | `AuthSessionInvalidationTests.test_socket_account_deleted_wipes` |
+| REST 401 `device_token_invalid` + exchange 404 | `isAuthenticated == false`, `wipeLocalSession` вызван, `stopForLogout` вызван | `AuthSessionInvalidationTests.test_rest_401_exchange_404_wipes` |
+| REST 401 `device_token_invalid` + exchange success | `isAuthenticated == true`, новый токен применён, wipe **не** вызван | `AuthSessionInvalidationTests.test_rest_401_exchange_success_keeps_session` |
+| REST 401 + exchange network failure | `isAuthenticated == false`, `wipeLocalSession` вызван, `stopForLogout` **не** вызван (light revoke) | `AuthSessionInvalidationTests.test_rest_401_exchange_network_light_revoke` |
+| Double `auth_error` подряд | wipe вызван ровно 1 раз | `AuthSessionInvalidationTests.test_double_signal_single_wipe` |
+
+### Note
+
+- Центральный interceptor в `APIClient` выбран вместо точечной обработки в
+  call sites для паритета с вебовским `fetchWithAuth`. Любой новый
+  authenticated REST-запрос автоматически получает 401-обработку.
+- Seed exchange recovery добавляет сетевой запрос (до 3с таймаут) перед
+  wipe. Это намеренно: device_token может быть отозван по другим причинам
+  (rotate, admin revoke), не только при удалении аккаунта. Wipe только
+  когда сервер подтвердил `User not found`.
+- `YjsSyncService` построен в `AppContainer.init` до `AuthService`, но оба
+  — свойства `let` на контейнере. Замыкание `authInvalidationHandler`
+  устанавливается в `init` после создания обоих сервисов.
+
 ## Риски
 
 - **R1.** `TextEditor.typeText` в UITest может не сработать на sheet при
@@ -120,9 +232,27 @@ shared-контракты (API, БД, cleanup) описаны там. Здесь
 - **R2.** Warning-alert (system) кнопки не имеют accessibility id — ищем по
   EN label (`"Cancel"` / `"Continue"`); UITest runner не содержит
   `Localizable.xcstrings`.
+- **R3 (Phase R).** `APIClient` — `nonisolated sendable`, общий для app и
+  extensions. unauthorizedHandler не должен дедлокить на MainActor.
+  **Mitigation:** interceptor только запускает `Task { @MainActor in ... }`
+  и сразу бросает ошибку; вся синхронная работа на MainActor.
+- **R4 (Phase R).** Seed exchange recovery добавляет сетевой запрос (до 3с)
+  перед wipe — задержка видна пользователю как «оффлайн-баннер».
+  **Mitigation:** light-revoke путь не блокирует UI; при socket `auth_error`
+  recovery не делаем (сервер уже сказал "Account deleted" — доп. проверка
+  не нужна).
+- **R5 (Phase R).** `DebugSimulatorAutoLogin` после wipe повторно
+  инжектит debug-сессию в `bootstrap` — тестирование runtime recovery на
+  симуляторе требует `-DisableDebugAutoLogin=1`.
+- **R6 (Phase R).** Live Activity / Widget / Watch могут держать устаревший
+  userId. **Mitigation:** `wipeLocalSession` чистит
+  `WatchCredentialsBridge`, `RecipeSnapshotStore`, Live Activity
+  invalidate (добавляется в Phase R).
 
 ## Ссылки
 
 - Canonical: `../recipe-scaler-web/specs/055-account-deletion/spec.md`
+- Web parity: `../recipe-scaler-web/recipe-scaler/src/services/auth-session-revoked.ts`,
+  `../recipe-scaler-web/recipe-scaler/src/services/wipe-local-session.ts`
 - Native spec 041 — auth device tokens
-- Native spec 054 — stale-session recovery (`wipeLocalSession`)
+- Native spec 054 — stale-session recovery (`wipeLocalSession`, cold-start path)

@@ -41,6 +41,26 @@ public final class APIClient: @unchecked Sendable {
 
     private let baseURL: String
 
+    /// Spec 055 Phase R: central 401 interceptor. Set by `AppContainer.init`
+    /// (main app only — extensions leave this `nil`). When any authenticated
+    /// REST call returns 401, `notifyUnauthorizedIfNeeded(statusCode:)` fires
+    /// the handler so `AuthService.handleDeviceTokenInvalid()` can run seed
+    /// exchange recovery (web parity with `fetchWithAuth` /
+    /// `handleAuthFailureResponse` in `auth-session-revoked.ts`).
+    ///
+    /// The handler is `@Sendable` because `APIClient` is `nonisolated`. The
+    /// closure is expected to hop to `MainActor` itself — `APIClient` does
+    /// not synchronise on any actor and must not block the calling thread.
+    ///
+    /// Reads/writes are guarded by `handlerLock` so the "set once from
+    /// `AppContainer.init`" contract is enforced even if a test or a future
+    /// module reassigns the handler concurrently with a 401 in flight.
+    public var unauthorizedHandler: (@Sendable () async -> Void)? {
+        get { handlerLock.withLock { $0 } }
+        set { handlerLock.withLock { $0 = newValue } }
+    }
+    private let handlerLock = OSAllocatedUnfairLock(initialState: Optional<(@Sendable () async -> Void)>.none)
+
     /// Mutex-guarded mutable auth state. Reads/writes from any thread are safe.
     private struct AuthState {
         var authToken: String?
@@ -60,6 +80,18 @@ public final class APIClient: @unchecked Sendable {
 
     public func configure(userId: String?) {
         authLock.withLock { $0.userId = userId }
+    }
+
+    // MARK: - Spec 055 Phase R: unauthorized interceptor
+
+    /// Fire `unauthorizedHandler` when an authenticated response came back 401.
+    /// No-op when the handler isn't installed (Share/Action extensions, previews,
+    /// tests). The handler runs in a detached `Task` so the caller's request
+    /// path is not blocked — the 401 is still thrown to the caller as usual.
+    public func notifyUnauthorizedIfNeeded(statusCode: Int) {
+        guard statusCode == 401 else { return }
+        guard let handler = unauthorizedHandler else { return }
+        Task { await handler() }
     }
 
     // MARK: - Image URL Helpers

@@ -129,6 +129,43 @@ enum AuthError: LocalizedError {
     }
 }
 
+// MARK: - Spec 055 Phase R: account invalidation types
+
+/// What kind of signal triggered the runtime account-invalidation flow.
+/// Logged via `AppLog` for diagnostics; never reaches the UI.
+enum AccountInvalidationReason: String, Sendable {
+    /// Socket.IO `auth_error` with `message == "Account deleted"` — server
+    /// confirmed post-commit teardown (spec 055 US5 online peer path).
+    case socketSignal
+    /// REST 401 → `exchange-seed-for-token` → `404 User not found`. Account
+    /// was deleted while this device was offline (spec 055 US5 offline path).
+    case restInvalidation
+}
+
+/// Why the local session is being wiped. Mirrors the cold-start `staleSession`
+/// case from spec 054 plus the runtime recovery paths added in spec 055 Phase R.
+/// Logged via `AppLog.info(.app, "session_wiped", data: ["reason": ...])`.
+enum SessionWipeReason: String, Sendable {
+    case staleSession
+    case accountDeletedSocket
+    case accountDeletedRest
+    case lightRevoke
+    case explicitDeleteAccount
+}
+
+/// Outcome of `exchange-seed-for-token` when recovering from a 401. Used so
+/// tests can stub the network without hitting the server.
+enum DeviceTokenExchangeOutcome: Sendable {
+    /// Exchange succeeded — apply the new token, keep the session alive.
+    case token(String)
+    /// `404 User not found` — the account was deleted while this device was
+    /// offline. Trigger full wipe.
+    case userNotFound
+    /// Any other failure (5xx, network error, malformed response). Light
+    /// revoke: clear auth state but keep local data so the user can retry.
+    case transient
+}
+
 // MARK: - Auth Service
 @MainActor
 @Observable
@@ -153,6 +190,39 @@ class AuthService {
     /// restored user still exists on the server. Indirected through a closure
     /// so unit tests can inject a stub without hitting the network.
     var checkUserExistsProvider: () async -> UserExistsResult = { await AccountAPI.checkUserExists() }
+
+    /// Spec 055 Phase R: seed-exchange recovery stub for `handleDeviceTokenInvalid()`.
+    /// Default implementation calls `exchangeSeedForToken(seedPhrase:)` on this
+    /// instance; tests override to inject `.token` / `.userNotFound` / `.transient`
+    /// outcomes without hitting the network.
+    var exchangeSeedForTokenRecoveryProvider: (String) async -> DeviceTokenExchangeOutcome = { seed in
+        do {
+            let token = try await AuthService.shared.exchangeSeedForToken(seedPhrase: seed)
+            return .token(token)
+        } catch AuthError.apiError(let statusCode, let message) {
+            // Spec 055 Phase R FR-R2: server returns 404 when the user row is
+            // gone (CASCADE deleted alongside `users`). Legacy paths may emit
+            // 400/401 with a "user not found" message — match the exact phrase
+            // (case-insensitive) rather than the loose "not found" substring
+            // so benign errors like "Recipe not found" cannot trigger a wipe.
+            let lowercased = message.lowercased()
+            let isUserNotFoundPhrase = lowercased == "user not found"
+                || lowercased.contains("user not found")
+            if statusCode == 404 || isUserNotFoundPhrase {
+                return .userNotFound
+            }
+            return .transient
+        } catch {
+            return .transient
+        }
+    }
+
+    /// Spec 055 Phase R: re-entry guard. Multiple sources (socket `auth_error`,
+    /// REST 401, race-induced double-fire) can call `handleAccountDeleted` in
+    /// burst. Without this guard, teardown runs N times — the second pass
+    /// no-ops on an empty Keychain but still churns the UI and emits duplicate
+    /// `account_deleted` audits.
+    private var isHandlingAccountInvalidation = false
 
     private let keychain = Keychain(service: "com.recipescaler.native")
     private let seedPhraseKey = "seedPhrase"
@@ -220,19 +290,143 @@ class AuthService {
             AppLog.info(.app, "stale_session_check_ok", data: ["result": "\(result)"])
         case .userMissing, .unauthorized:
             AppLog.info(.app, "stale_session_detected", data: ["result": "\(result)"])
-            wipeLocalSession()
+            wipeLocalSession(reason: .staleSession)
             AppLog.info(.app, "stale_session_cleared", data: ["result": "\(result)"])
         }
     }
 
-    /// Spec 054: wipe local credentials when the server confirms the user is
-    /// gone. Mirrors `logout()` minus the server-side `POST /api/auth/logout`
-    /// (the user already doesn't exist) — and never throws, so the wipe is
-    /// best-effort even if Keychain access fails mid-way.
-    private func wipeLocalSession() {
+    // MARK: - Spec 055 Phase R: runtime account-invalidation recovery
+
+    /// Centralized entry point for "server says the account is gone".
+    ///
+    /// Idempotent: a re-entry guard ensures the wipe + teardown runs at most
+    /// once even when multiple signals (`auth_error` + REST 401) fire in
+    /// burst. After wipe, `isAuthenticated == false` flips and
+    /// `ContentView.onChange(of: authService.isAuthenticated)` runs the
+    /// sync/container teardown (`clearSessionForLogout` + `stopForLogout`).
+    ///
+    /// UX: silent. No banners, no alerts — the user just lands on `AuthView`.
+    /// Web parity: `handleAccountDeletedLocal()` in
+    /// `recipe-scaler-web/recipe-scaler/src/services/auth-session-revoked.ts`.
+    func handleAccountDeleted(reason: AccountInvalidationReason) async {
+        guard !isHandlingAccountInvalidation else { return }
+        isHandlingAccountInvalidation = true
+        defer { isHandlingAccountInvalidation = false }
+
+        let wipeReason: SessionWipeReason = reason == .socketSignal
+            ? .accountDeletedSocket
+            : .accountDeletedRest
+
+        AppLog.info(.app, "account_invalidation", data: [
+            "source": reason.rawValue,
+            "wipe_reason": wipeReason.rawValue,
+        ])
+
+        await performInvalidationTeardown(wipeReason: wipeReason)
+    }
+
+    /// Shared wipe + container teardown. Called from `handleAccountDeleted`
+    /// and from the `userNotFound` branch of `handleDeviceTokenInvalid`.
+    /// Assumes the re-entry guard is already held by the caller — does not
+    /// re-check it (so internal delegation from REST → wipe is not blocked
+    /// by the guard set at the top of `handleDeviceTokenInvalid`).
+    private func performInvalidationTeardown(wipeReason: SessionWipeReason) async {
+        wipeLocalSession(reason: wipeReason)
+
+        // `ContentView.onChange(isAuthenticated)` will fire from the flip
+        // above and run `clearSessionForLogout` + `stopForLogout`. We call
+        // them defensively here too so the state is consistent even if the
+        // SwiftUI environment hasn't observed the change yet (e.g. tests,
+        // extensions, app not in foreground).
+        if let container = AppContainer.shared {
+            await container.sync.clearSessionForLogout()
+            await container.stopForLogout()
+        }
+    }
+
+    /// REST 401 recovery (spec 055 US5 offline path).
+    ///
+    /// Called by `APIClient.unauthorizedHandler` when any authenticated REST
+    /// call returns 401. The device token may be revoked for several reasons
+    /// (account deletion, admin revoke, rotation) — only treat the account as
+    /// deleted when the server confirms via `exchange-seed-for-token` →
+    /// `404 User not found`. On success the session is silently recovered;
+    /// on transient failure we light-revoke (clear auth, keep local data).
+    ///
+    /// Web parity: `handleAuthFailureResponse()` in
+    /// `recipe-scaler-web/recipe-scaler/src/services/auth-session-revoked.ts`.
+    ///
+    /// Re-entry guard spans the entire method (including the awaited seed
+    /// exchange) so a burst of REST 401s collapses into a single recovery
+    /// attempt — FR-R5 invariant.
+    func handleDeviceTokenInvalid() async {
+        guard !isHandlingAccountInvalidation else { return }
+        isHandlingAccountInvalidation = true
+        defer { isHandlingAccountInvalidation = false }
+
+        let seed: String
+        do {
+            seed = try retrieveSeedPhraseFromKeychain()
+        } catch {
+            // No seed to recover with — wipe silently. Local data stays
+            // (logout() path wipes seed; recovery without it is impossible).
+            AppLog.info(.app, "device_token_recovery_no_seed")
+            wipeLocalSession(reason: .lightRevoke)
+            return
+        }
+
+        let outcome = await exchangeSeedForTokenRecoveryProvider(seed)
+
+        switch outcome {
+        case .token(let newToken):
+            guard let userId = SharedAuthStore.userId ?? userId else {
+                AppLog.info(.app, "device_token_recovery_no_user")
+                wipeLocalSession(reason: .lightRevoke)
+                return
+            }
+            applySession(userId: userId, deviceToken: newToken)
+            AppLog.info(.app, "device_token_recovered")
+
+        case .userNotFound:
+            AppLog.info(.app, "device_token_recovery_user_not_found")
+            // Full wipe — account is gone. Inline into the teardown helper
+            // instead of delegating to `handleAccountDeleted` (which would
+            // short-circuit via the re-entry guard already set above).
+            await performInvalidationTeardown(wipeReason: .accountDeletedRest)
+
+        case .transient:
+            AppLog.info(.app, "device_token_recovery_transient")
+            // Light revoke — keep local data so the user can retry once the
+            // transient condition clears. Web parity: "light-revoke" branch.
+            wipeLocalSession(reason: .lightRevoke)
+        }
+    }
+
+    /// Spec 054 / Spec 055 Phase R: wipe local credentials when the server confirms
+    /// the user is gone, or when runtime recovery decides the account was deleted.
+    /// Mirrors `logout()` minus the server-side `POST /api/auth/logout` (the user
+    /// already doesn't exist) — and never throws, so the wipe is best-effort
+    /// even if Keychain access fails mid-way.
+    ///
+    /// Spec 055 Phase R additions: also clear `RecipeSnapshotStore` so App
+    /// Intents cannot resolve recipe entities for a user that no longer
+    /// exists, and invalidate any running timer Live Activities (otherwise
+    /// they keep showing the deleted user's recipe name on the Lock Screen).
+    /// Live Activity teardown is `@MainActor`-isolated and idempotent — safe
+    /// to call from every wipe path, including cold-start `staleSession`
+    /// where `ContentView.onChange` has not yet wired up `stopForLogout`.
+    ///
+    /// Note: `ShoppingListSnapshotStore` is intentionally NOT cleared here —
+    /// it is not registered in the main app target (only in the Share
+    /// extension group). Tracked as a parity gap in the Phase R review
+    /// (review-code-reviewer-glm52-max-master.md, finding M6).
+    private func wipeLocalSession(reason: SessionWipeReason) {
+        AppLog.info(.app, "session_wiped", data: ["reason": reason.rawValue])
+
         try? deleteSeedPhraseFromKeychain()
         SharedAuthStore.clear()
         WatchCredentialsBridge.shared.purge()
+        RecipeSnapshotStore.clear()
 
         userId = nil
         token = nil
@@ -242,6 +436,14 @@ class AuthService {
         apiClient.configure(userId: nil)
 
         AppContainer.shared?.featureAdoption.clearForLogout()
+
+        // End Live Activities directly so every wipe path (cold-start
+        // `staleSession`, runtime `handleAccountDeleted`, light revoke)
+        // clears the Lock Screen — not just the explicit-logout path that
+        // routes through `AppContainer.stopForLogout`.
+        Task { @MainActor in
+            await AppContainer.shared?.timerLiveActivityCoordinator.endAll()
+        }
     }
 
     /// Spec 041: silent `/exchange-seed-for-token` when there is a `userId` but no
@@ -426,6 +628,7 @@ class AuthService {
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {
+            apiClient.notifyUnauthorizedIfNeeded(statusCode: httpResponse.statusCode)
             if let errorResponse = try? JSONDecoder().decode([String: String].self, from: data),
                let errorMessage = errorResponse["error"] ?? errorResponse["message"] {
                 throw AuthError.apiError(statusCode: httpResponse.statusCode, message: errorMessage)
@@ -589,7 +792,7 @@ class AuthService {
         }
 
         // Account is already gone server-side — never throw from local purge.
-        wipeLocalSession()
+        wipeLocalSession(reason: .explicitDeleteAccount)
     }
 
     /// Get the current authentication status

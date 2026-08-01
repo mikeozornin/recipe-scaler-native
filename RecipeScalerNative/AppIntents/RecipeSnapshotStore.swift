@@ -35,4 +35,11 @@ enum RecipeSnapshotStore {
         else { return [] }
         return snapshots
     }
+
+    /// Spec 055 Phase R: wipe persisted snapshots when the account is deleted
+    /// or the user signs out, so App Intents cannot resolve recipe entities for
+    /// a user that no longer exists on the server. Idempotent.
+    static func clear() {
+        defaults?.removeObject(forKey: key)
+    }
 }

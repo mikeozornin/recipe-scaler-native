@@ -170,6 +170,27 @@ final class AppContainer {
             APIClient.shared.configure(userId: sharedUserId)
         }
 
+        // Spec 055 Phase R: wire central auth-invalidation interceptors.
+        // `APIClient.unauthorizedHandler` fires on any authenticated REST 401;
+        // `sync.authInvalidationHandler` fires on socket `auth_error` with
+        // `message == "Account deleted"`. Both delegate to `AuthService`,
+        // which owns the re-entry-guarded wipe + teardown flow. Extensions do
+        // NOT install these handlers — they must not wipe the session.
+        //
+        // The closures hop to `MainActor` themselves via `Task { @MainActor in }`
+        // because `APIClient` is `nonisolated` and may call the handler from
+        // any thread. AuthService is `@MainActor`, so the body runs there.
+        APIClient.shared.unauthorizedHandler = { [weak auth] in
+            await Task { @MainActor in
+                await auth?.handleDeviceTokenInvalid()
+            }.value
+        }
+        sync.authInvalidationHandler = { [weak auth] reason in
+            await Task { @MainActor in
+                await auth?.handleAccountDeleted(reason: reason)
+            }.value
+        }
+
         AgentSyncDebugLog.sync(
             location: "AppContainer.init",
             message: "container_constructed",
@@ -356,6 +377,9 @@ final class AppContainer {
         sync.stop()
         spotlight.stop()
         await spotlight.clearAll()
+        // Spec 055 Phase R: end Live Activities so the Lock Screen does not
+        // keep advertising a deleted/logged-out user's recipe timers.
+        await timerLiveActivityCoordinator.endAll()
         featureAdoption.clearForLogout()
     }
 

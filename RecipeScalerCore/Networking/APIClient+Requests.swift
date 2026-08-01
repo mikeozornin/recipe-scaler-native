@@ -22,6 +22,7 @@ extension APIClient {
             throw APIError.invalidResponse
         }
         guard (200...299).contains(http.statusCode) else {
+            notifyUnauthorizedIfNeeded(statusCode: http.statusCode)
             throw APIError.httpError(statusCode: http.statusCode)
         }
         let decoder = JSONDecoder()
@@ -75,6 +76,7 @@ extension APIClient {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+            notifyUnauthorizedIfNeeded(statusCode: code)
             if let apiError = Self.parseAPIFailureBody(data) {
                 throw APIError.serverError(code: apiError)
             }
@@ -92,7 +94,9 @@ extension APIClient {
         let request = try buildRequest(path: path, method: method, body: body)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-            throw APIError.httpError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? -1)
+            let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+            notifyUnauthorizedIfNeeded(statusCode: code)
+            throw APIError.httpError(statusCode: code)
         }
         return try JSONDecoder().decode(T.self, from: data)
     }

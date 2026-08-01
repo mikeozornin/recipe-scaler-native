@@ -61,6 +61,7 @@
 		5411E9FD3A574C33BF34761B /* RecipeEditToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E7DB29212A4BCAA61019F1 /* RecipeEditToolbar.swift */; };
 		556AAEB995E9C8AE4A19A4C8 /* MartianGrotesk-NrLt.otf in Resources */ = {isa = PBXBuildFile; fileRef = EB452B44E6C61233D3482133 /* MartianGrotesk-NrLt.otf */; };
 		5A3A3288082F455BA73D41F3 /* Networking/ServerErrorCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69F9BFE990A641C6A64D4CFC /* Networking/ServerErrorCode.swift */; };
+		5A55A1B2000000000000007C /* Networking/AuthRevocationConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A55A1B2000000000000007D /* Networking/AuthRevocationConstants.swift */; };
 		5D0EE20ED1453C5DEED41011 /* WidgetTimerFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CCD8DBFFA5A4C5207801356 /* WidgetTimerFormatting.swift */; };
 		5EC690AD5A434697B8C0A82C /* TimerLiveActivityMetadataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 057A55B7EC424D69BA4BA244 /* TimerLiveActivityMetadataProvider.swift */; };
 		5F3CAA6DD42650B4E5C55C77 /* WidgetTimerLinearRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522FA5F6C32DEEC9F50B4A9C /* WidgetTimerLinearRow.swift */; };
@@ -100,6 +101,7 @@
 		982960F83D64336767544729 /* WidgetTimerLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B65555D56665D8687D4FEAF /* WidgetTimerLayout.swift */; };
 		98FFEFD12926BBB5917A6B53 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C46C342D35721B88D83D58BB /* QRScannerView.swift */; };
 		99AF3DDD4E7F480FB1B3833B /* RecipeScalerCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E05920822F344D9691E82401 /* RecipeScalerCore.framework */; };
+		A7F3E91B2C4D5061728394A1 /* RecipeScalerCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E05920822F344D9691E82401 /* RecipeScalerCore.framework */; };
 		99B7BAFEF20D4EBBF5CAC721 /* RecipeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2FD0DF0B71C1B50552D1B2F /* RecipeListView.swift */; };
 		99B7BAFEF20D4EBBF5CAC722 /* RecipeZoomTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2FD0DF0B71C1B50552D1B30 /* RecipeZoomTransition.swift */; };
 		9BD6EC5F84CE4ED8B03516B8 /* Services/WatchCredentialsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DCF8C86EAE34546B5F18B38 /* Services/WatchCredentialsStore.swift */; };
@@ -208,6 +210,7 @@
 		B3ATPR02B293A4B701000002 /* ActiveTimerPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ATPR02A293A4B701000001 /* ActiveTimerPresentationTests.swift */; };
 		B3AUTHERR0010 /* AuthErrorLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AUTHERR0020 /* AuthErrorLocalizationTests.swift */; };
 		B3AUTHSTALE01B293A4B70100001 /* AuthServiceStaleSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AUTHSTALE01A293A4B70100001 /* AuthServiceStaleSessionTests.swift */; };
+		B3AUTHINV01B293A4B70100001 /* AuthSessionInvalidationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AUTHINV01A293A4B70100001 /* AuthSessionInvalidationTests.swift */; };
 		B3C33C8186E14EA2B37291D4 /* RecipeScalerCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E05920822F344D9691E82401 /* RecipeScalerCore.framework */; };
 		B3DOTKEYLOC001 /* DotKeyLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DOTKEYLOC002 /* DotKeyLocalizer.swift */; };
 		B3KCA01B293A4B701000001 /* SharedAuthStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3KCA01A293A4B701000001 /* SharedAuthStoreTests.swift */; };
@@ -503,6 +506,7 @@
 		UIT643561DEE74DDA35A6 /* TestUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = UITE9382F99766001D7CE /* TestUser.swift */; };
 		UIT6BA3E003CB7B4060F2 /* RecipeDetailPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = UIT119DF470D6A5550793 /* RecipeDetailPage.swift */; };
 		UIT6DFE0DE4AFC78E75C8 /* AuthStaleSessionRecoverySpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = UITD6A04991F2B9915FF3 /* AuthStaleSessionRecoverySpec.swift */; };
+		UIT6DFE0DE4AFC78E75C9 /* AccountDeletionRuntimeSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = UITD6A04991F2B9915FF4 /* AccountDeletionRuntimeSpec.swift */; };
 		UIT77B174F5EAF7119FFF /* DiscoverPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = UITD2C1495EBC7AEC883C /* DiscoverPage.swift */; };
 		UIT7AD60F02AAE56B5CEA /* DiscoverEnablementSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = UIT042788CF0A93FC75C3 /* DiscoverEnablementSpec.swift */; };
 		UIT7E6E6E2F5859696D5D /* ShoppingListPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = UITDD48A757A60C9C1698 /* ShoppingListPage.swift */; };
@@ -567,6 +571,13 @@
 			remoteInfo = RecipeScalerNative;
 		};
 		8E46972A0D2F61C8E53FEFBC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5EE18DEE47E00A9648AA02B9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C04EC12C7971431D922B6085;
+			remoteInfo = RecipeScalerCore;
+		};
+		A7F3E91B2C4D5061728394A2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 5EE18DEE47E00A9648AA02B9 /* Project object */;
 			proxyType = 1;
@@ -738,6 +749,7 @@
 		5E839A2DA9F0412BB2AD9538 /* Views/TimerListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/TimerListViewModel.swift; sourceTree = "<group>"; };
 		6393C5116C06476E9BBCC288 /* TimerLiveActivityPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityPalette.swift; sourceTree = "<group>"; };
 		69F9BFE990A641C6A64D4CFC /* Networking/ServerErrorCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/ServerErrorCode.swift; sourceTree = "<group>"; };
+		5A55A1B2000000000000007D /* Networking/AuthRevocationConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/AuthRevocationConstants.swift; sourceTree = "<group>"; };
 		6A46C39B025B41C69FD12A6A /* Import/ImportErrorLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Import/ImportErrorLocalizer.swift; sourceTree = "<group>"; };
 		6C6A0A37120248F8AAB066E8 /* Import/ImportPhotoValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Import/ImportPhotoValidator.swift; sourceTree = "<group>"; };
 		6CCD8DBFFA5A4C5207801356 /* WidgetTimerFormatting.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetTimerFormatting.swift; sourceTree = "<group>"; };
@@ -881,6 +893,7 @@
 		B3ATPR02A293A4B701000001 /* ActiveTimerPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveTimerPresentationTests.swift; sourceTree = "<group>"; };
 		B3AUTHERR0020 /* AuthErrorLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthErrorLocalizationTests.swift; sourceTree = "<group>"; };
 		B3AUTHSTALE01A293A4B70100001 /* AuthServiceStaleSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthServiceStaleSessionTests.swift; sourceTree = "<group>"; };
+		B3AUTHINV01A293A4B70100001 /* AuthSessionInvalidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSessionInvalidationTests.swift; sourceTree = "<group>"; };
 		B3DOTKEYLOC002 /* DotKeyLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DotKeyLocalizer.swift; sourceTree = "<group>"; };
 		B3KCA01A293A4B701000001 /* SharedAuthStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAuthStoreTests.swift; sourceTree = "<group>"; };
 		B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthServiceMigrationTests.swift; sourceTree = "<group>"; };
@@ -1184,6 +1197,7 @@
 		UITD2C1495EBC7AEC883C /* DiscoverPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverPage.swift; sourceTree = "<group>"; };
 		UITD5561AD131286C9DB8 /* RecipeCollectionsSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeCollectionsSpec.swift; sourceTree = "<group>"; };
 		UITD6A04991F2B9915FF3 /* AuthStaleSessionRecoverySpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthStaleSessionRecoverySpec.swift; sourceTree = "<group>"; };
+		UITD6A04991F2B9915FF4 /* AccountDeletionRuntimeSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDeletionRuntimeSpec.swift; sourceTree = "<group>"; };
 		UITDD48A757A60C9C1698 /* ShoppingListPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListPage.swift; sourceTree = "<group>"; };
 		UITDEE27E20EB03E59F8A /* SharingSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingSpec.swift; sourceTree = "<group>"; };
 		UITDFAA47F57620A70384 /* AppLoggingSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLoggingSpec.swift; sourceTree = "<group>"; };
@@ -1228,6 +1242,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A7F3E91B2C4D5061728394A1 /* RecipeScalerCore.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1595,6 +1610,7 @@
 				FADKEY01A293A4B701000001 /* Networking/FeatureAdoptionClientFeature.swift */,
 				72C0961D8B504667B05C4AB4 /* Networking/ServerActiveTimer.swift */,
 				69F9BFE990A641C6A64D4CFC /* Networking/ServerErrorCode.swift */,
+				5A55A1B2000000000000007D /* Networking/AuthRevocationConstants.swift */,
 				DA95C7943B584B11A547EB85 /* Import/RecipeImportAPI.swift */,
 				D24E09F4CE9D4C34852A98AF /* Import/ImportContentClassifier.swift */,
 				6C6A0A37120248F8AAB066E8 /* Import/ImportPhotoValidator.swift */,
@@ -1645,6 +1661,7 @@
 				B3KCA01A293A4B701000001 /* SharedAuthStoreTests.swift */,
 				B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */,
 				B3AUTHSTALE01A293A4B70100001 /* AuthServiceStaleSessionTests.swift */,
+				B3AUTHINV01A293A4B70100001 /* AuthSessionInvalidationTests.swift */,
 				B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */,
 				B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */,
 				B3TBDISC01A293A4B70100001 /* TabBarDiscoveryTests.swift */,
@@ -2145,6 +2162,7 @@
 				UITC911BDEEFF2D1F41B9 /* AccountTelegramExportSpec.swift */,
 				UITDEE27E20EB03E59F8A /* SharingSpec.swift */,
 				UITD6A04991F2B9915FF3 /* AuthStaleSessionRecoverySpec.swift */,
+				UITD6A04991F2B9915FF4 /* AccountDeletionRuntimeSpec.swift */,
 				UITA56155B7F382DB85EC /* AuthDeviceTokensSpec.swift */,
 				UIT5C134FFBDA5FFD010E /* DescriptionEditorSpec.swift */,
 				UIT90C3A9928938912E4F /* DescriptionEditorRichtextSpec.swift */,
@@ -2260,6 +2278,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				A7F3E91B2C4D5061728394A3 /* PBXTargetDependency */,
 			);
 			name = TimerLiveActivityExtension;
 			productName = TimerLiveActivityExtension;
@@ -2577,6 +2596,7 @@
 				BF935BE1E76D49118FA3FB7E /* TimerFonts.swift in Sources */,
 				0B14CB3FC8C14335BD2D7365 /* TimerLinearRow.swift in Sources */,
 				5A3A3288082F455BA73D41F3 /* Networking/ServerErrorCode.swift in Sources */,
+				5A55A1B2000000000000007C /* Networking/AuthRevocationConstants.swift in Sources */,
 				9F1626D0C1684DB3AC78F8C0 /* Import/RecipeImportAPI.swift in Sources */,
 				857BCD5170F747838D6F5D7B /* Import/ImportContentClassifier.swift in Sources */,
 				A520DBD4E2174DD9B97FDF13 /* Import/ImportPhotoValidator.swift in Sources */,
@@ -2984,6 +3004,7 @@
 				B3KCA01B293A4B701000001 /* SharedAuthStoreTests.swift in Sources */,
 				B3KCA02B293A4B701000001 /* AuthServiceMigrationTests.swift in Sources */,
 				B3AUTHSTALE01B293A4B70100001 /* AuthServiceStaleSessionTests.swift in Sources */,
+				B3AUTHINV01B293A4B70100001 /* AuthSessionInvalidationTests.swift in Sources */,
 				B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */,
 				B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */,
 				B3TBDISC01B293A4B70100001 /* TabBarDiscoveryTests.swift in Sources */,
@@ -3074,6 +3095,7 @@
 				UIT941579DCCCC7A286AF /* DescriptionEditorSpec.swift in Sources */,
 				UIT271613FD86553D4F35 /* AuthDeviceTokensSpec.swift in Sources */,
 				UIT6DFE0DE4AFC78E75C8 /* AuthStaleSessionRecoverySpec.swift in Sources */,
+				UIT6DFE0DE4AFC78E75C9 /* AccountDeletionRuntimeSpec.swift in Sources */,
 				UIT494EE297F2BAE36739 /* SharingSpec.swift in Sources */,
 				UIT9E8551D4466083B79E /* AccountTelegramExportSpec.swift in Sources */,
 				UITADFB1482B3A17F6B71 /* I18nNewViewsSpec.swift in Sources */,
@@ -3107,6 +3129,12 @@
 			name = RecipeScalerCore;
 			target = C04EC12C7971431D922B6085 /* RecipeScalerCore */;
 			targetProxy = 8E46972A0D2F61C8E53FEFBC /* PBXContainerItemProxy */;
+		};
+		A7F3E91B2C4D5061728394A3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = RecipeScalerCore;
+			target = C04EC12C7971431D922B6085 /* RecipeScalerCore */;
+			targetProxy = A7F3E91B2C4D5061728394A2 /* PBXContainerItemProxy */;
 		};
 		5F14BB93E9AE46F5BC0EAA5B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;

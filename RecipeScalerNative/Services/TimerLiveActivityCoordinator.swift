@@ -176,6 +176,19 @@ final class TimerLiveActivityCoordinator {
         }
     }
 
+    /// Spec 055 Phase R: end every currently-installed Live Activity for this
+    /// app. Used during account-invalidation wipe so the Lock Screen does not
+    /// keep advertising a deleted user's recipe timers. Best-effort — swallows
+    /// per-activity errors so one bad activity doesn't block the rest.
+    func endAll() async {
+        for timerId in Array(activityByTimerId.keys) {
+            await end(timerId: timerId)
+        }
+        for activity in Activity<RecipeTimerActivityAttributes>.activities {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+    }
+
     private func end(activity: Activity<RecipeTimerActivityAttributes>, timerId: String) async {
         activityByTimerId.removeValue(forKey: timerId)
         failureTimestamps.removeValue(forKey: timerId)
