@@ -695,6 +695,7 @@
       }
     },
     "account.delete.seed.label" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2683,7 +2684,6 @@
       }
     },
     "account.seed.copy" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
