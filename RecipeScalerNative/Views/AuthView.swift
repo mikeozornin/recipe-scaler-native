@@ -130,25 +130,33 @@ struct AuthView: View {
                                         .padding(.top, 20)
                                         .allowsHitTesting(false)
                                 }
-
-                                VStack {
-                                    HStack {
-                                        Spacer()
-                                        Button {
-                                            showQRScanner = true
-                                        } label: {
-                                            AppSymbol.image("qrcode.viewfinder")
-                                                .font(AppTypography.iconSize(AppTypography.title3Size))
-                                                .foregroundColor(.primary)
-                                        }
-                                        .buttonStyle(.plain)
-                                        .padding(8)
-                                        .accessibilityLabel(Bundle.currentLocalizedString("Scan QR code"))
-                                        .accessibilityIdentifier(AccessibilityIdentifiers.authQRCodeButton)
-                                    }
-                                    Spacer()
-                                }
                             }
+
+                            Button {
+                                showQRScanner = true
+                            } label: {
+                                HStack(spacing: 8) {
+                                    AppSymbol.image("qrcode.viewfinder")
+                                        .font(AppTypography.iconSize(AppTypography.title3Size))
+                                        .foregroundColor(.primary)
+                                    Text(verbatim: Bundle.currentLocalizedString("Scan QR code"))
+                                        .font(AppTypography.sansMedium(18))
+                                        .foregroundColor(.primary)
+                                }
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 15)
+                                .frame(maxWidth: .infinity)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .strokeBorder(Color(.systemGray4), lineWidth: 2)
+                                )
+                                .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(Bundle.currentLocalizedString("Scan QR code"))
+                            .accessibilityIdentifier(AccessibilityIdentifiers.authQRCodeButton)
 
                             Button {
                                 Task { await loginUser() }
