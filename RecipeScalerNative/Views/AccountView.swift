@@ -584,7 +584,8 @@ struct AccountView: View {
                     imageCacheStatus: syncService.imageCacheStatus,
                     recipeDocumentCacheStatus: syncService.recipeDocumentCacheStatus,
                     onRetryImageDownload: { syncService.retryImagePrefetch() },
-                    onRetryRecipeDocumentsDownload: { syncService.retryRecipeDocumentsBatchLoad() }
+                    onRetryRecipeDocumentsDownload: { syncService.retryRecipeDocumentsBatchLoad() },
+                    onForceReconnect: { syncService.forceReconnect() }
                 )
                 .localizedNavigationTitle("account.sync.title")
                 .navigationBarTitleDisplayMode(.inline)

@@ -10565,6 +10565,23 @@
         }
       }
     },
+    "sync.status.connection.retry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try reconnecting"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторить подключение"
+          }
+        }
+      }
+    },
     "sync.status.images.downloading" : {
       "extractionState" : "manual",
       "localizations" : {

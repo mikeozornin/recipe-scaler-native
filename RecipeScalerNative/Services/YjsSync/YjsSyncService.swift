@@ -1271,6 +1271,19 @@ final class YjsSyncService {
         }
     }
 
+    /// User-driven reconnect from sync status UI. Always tears down and reconnects,
+    /// even when the socket appears live (half-dead recovery).
+    func forceReconnect() {
+        guard userId != nil else { return }
+        AppLog.info(.sync, "force_reconnect", data: [
+            "previousState": "\(connectionState)",
+            "transport": connectionTransport.rawValue,
+        ])
+        connectionTransport = .pollingAndWebsocket
+        teardownSocket()
+        connectSocket()
+    }
+
     // MARK: - Socket.IO Connection
 
     private func teardownSocket() {

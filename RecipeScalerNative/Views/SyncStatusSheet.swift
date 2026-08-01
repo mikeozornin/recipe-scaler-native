@@ -16,6 +16,7 @@ struct SyncStatusContent: View {
     let recipeDocumentCacheStatus: RecipeDocumentCacheStatus
     let onRetryImageDownload: () -> Void
     let onRetryRecipeDocumentsDownload: () -> Void
+    let onForceReconnect: () -> Void
 
     var body: some View {
         List {
@@ -38,6 +39,12 @@ struct SyncStatusContent: View {
                 }
                 .accessibilityIdentifier(AccessibilityIdentifiers.syncStatusTransport)
                 #endif
+
+                if showsReconnectButton {
+                    Button("sync.status.connection.retry") {
+                        onForceReconnect()
+                    }
+                }
             } header: {
                 AppSectionHeader("sync.status.section.connection")
             }
@@ -173,6 +180,19 @@ struct SyncStatusContent: View {
         }
         .appListBodyTypography()
         .appOpaqueGroupedListSurface()
+        .refreshable {
+            onForceReconnect()
+        }
+    }
+
+    /// Show retry when offline or in error; hide while already connecting.
+    private var showsReconnectButton: Bool {
+        switch connectionState {
+        case .disconnected, .error:
+            return true
+        case .connected, .connecting, .reconnecting:
+            return false
+        }
     }
 
     @ViewBuilder
@@ -297,6 +317,7 @@ struct SyncStatusSheet: View {
     let recipeDocumentCacheStatus: RecipeDocumentCacheStatus
     let onRetryImageDownload: () -> Void
     let onRetryRecipeDocumentsDownload: () -> Void
+    let onForceReconnect: () -> Void
 
     var body: some View {
         NavigationStack {
@@ -306,7 +327,8 @@ struct SyncStatusSheet: View {
                 imageCacheStatus: imageCacheStatus,
                 recipeDocumentCacheStatus: recipeDocumentCacheStatus,
                 onRetryImageDownload: onRetryImageDownload,
-                onRetryRecipeDocumentsDownload: onRetryRecipeDocumentsDownload
+                onRetryRecipeDocumentsDownload: onRetryRecipeDocumentsDownload,
+                onForceReconnect: onForceReconnect
             )
             .localizedNavigationTitle("sync.status.title")
             .navigationBarTitleDisplayMode(.inline)
