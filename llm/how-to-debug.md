@@ -154,7 +154,7 @@ cp "$CONTAINER/Library/Application Support/debug-session.ndjson" .debug-session.
 
 ## Снять лог: физический iPhone
 
-1. **Профиль → Диагностика → Экспорт журнала** (DEBUG-сборка, файл уже создан).
+1. **Профиль → Диагностика** — статус синхронизации и «Экспорт журнала» (DEBUG-сборка, файл уже создан).
 2. **Xcode console** — фильтр по категории `sync`, `document`, …
 3. **Download Container** — `AppData/Library/Application Support/debug-session.ndjson`
 

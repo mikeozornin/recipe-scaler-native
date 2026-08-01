@@ -85,10 +85,10 @@ struct AccountView: View {
                     featureAdoptionSection
                     publicRecipesSection
                         .id(AccountViewSection.publicRecipes.id)
-                    telegramSection
-                        .id(AccountViewSection.telegram.id)
                     preferencesSection
                         .id(AccountViewSection.reminders.id)
+                    telegramSection
+                        .id(AccountViewSection.telegram.id)
                     dataSection
 
                     if let statusMessage = viewModel.statusMessage {
@@ -514,6 +514,29 @@ struct AccountView: View {
     @ViewBuilder
     private var logExportSection: some View {
         Section {
+            NavigationLink {
+                SyncStatusContent(
+                    connectionState: syncService.connectionState,
+                    connectionTransport: syncService.connectionTransport,
+                    imageCacheStatus: syncService.imageCacheStatus,
+                    recipeDocumentCacheStatus: syncService.recipeDocumentCacheStatus,
+                    onRetryImageDownload: { syncService.retryImagePrefetch() },
+                    onRetryRecipeDocumentsDownload: { syncService.retryRecipeDocumentsBatchLoad() }
+                )
+                .localizedNavigationTitle("account.sync.title")
+                .navigationBarTitleDisplayMode(.inline)
+            } label: {
+                HStack {
+                    Text("account.sync.title")
+                        .appBody()
+                    Spacer()
+                    Text(syncDateLabel)
+                        .appBody()
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+
             if let url = AppLog.currentLogFileURL() {
                 ShareLink(item: url) {
                     Label {
@@ -548,29 +571,6 @@ struct AccountView: View {
     @ViewBuilder
     private var footerSection: some View {
         Section {
-            NavigationLink {
-                SyncStatusContent(
-                    connectionState: syncService.connectionState,
-                    connectionTransport: syncService.connectionTransport,
-                    imageCacheStatus: syncService.imageCacheStatus,
-                    recipeDocumentCacheStatus: syncService.recipeDocumentCacheStatus,
-                    onRetryImageDownload: { syncService.retryImagePrefetch() },
-                    onRetryRecipeDocumentsDownload: { syncService.retryRecipeDocumentsBatchLoad() }
-                )
-                .localizedNavigationTitle("account.sync.title")
-                .navigationBarTitleDisplayMode(.inline)
-            } label: {
-                HStack {
-                    Text("account.sync.title")
-                        .appBody()
-                    Spacer()
-                    Text(syncDateLabel)
-                        .appBody()
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            }
-
             Button {
                 presentedSheet = .about
             } label: {
