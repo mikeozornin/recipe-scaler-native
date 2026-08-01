@@ -338,6 +338,28 @@ final class AccountSettingsViewModel {
         }
     }
 
+    /// Spec 055: permanently delete the current account.
+    ///
+    /// Web parity: POST first (credentials wiped inside `AuthService` on
+    /// success). Yjs / container teardown runs **only after** the server
+    /// confirms deletion so a wrong seed / network failure leaves local data
+    /// intact. Returns `nil` on success; on failure sets `statusMessage` and
+    /// returns a localized error string (caller keeps the seed sheet open).
+    @discardableResult
+    func deleteAccount(seedPhrase: String, syncService: YjsSyncService) async -> String? {
+        do {
+            try await AuthService.shared.deleteAccount(seedPhrase: seedPhrase)
+            await syncService.clearSessionForLogout()
+            if let container = AppContainer.shared {
+                await container.stopForLogout()
+            }
+            return nil
+        } catch {
+            setStatus(from: error)
+            return UserFacingAPIError.message(for: error)
+        }
+    }
+
     private func sanitizeUsername(_ value: String) -> String {
         var result = value.lowercased()
         result = result.replacingOccurrences(of: #"[^a-z0-9_.-]"#, with: "-", options: .regularExpression)

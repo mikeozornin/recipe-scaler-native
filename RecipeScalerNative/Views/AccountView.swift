@@ -26,6 +26,12 @@ struct AccountView: View {
     @State private var showingLogoutConfirmation = false
     @State private var presentedSheet: AccountSheet?
     @State private var appLanguage: AppLanguagePreference = .current
+    @State private var showingDeleteWarning = false
+    @State private var showingDeleteSeedSheet = false
+    /// Set by warning Continue; consumed when the alert finishes dismissing so the
+    /// seed sheet does not race the system alert (SwiftUI alert→sheet bug).
+    @State private var pendingDeleteSeedSheet = false
+    @State private var isDeletingAccount = false
     @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)
     private var collectionsLayoutRaw: String = RecipeFolderRoutes.defaultCollectionsRootLayout.rawValue
     @State private var isTelegramConnected = false
@@ -90,6 +96,9 @@ struct AccountView: View {
                     telegramSection
                         .id(AccountViewSection.telegram.id)
                     dataSection
+                    if authService.isAuthenticated {
+                        dangerZoneSection
+                    }
 
                     if let statusMessage = viewModel.statusMessage {
                         Section {
@@ -146,6 +155,39 @@ struct AccountView: View {
                             .ignoresSafeArea()
                             .appOpaqueSheetPresentationPlain()
                     }
+                }
+                .alert(
+                    Bundle.currentLocalizedString("account.delete.warning.title"),
+                    isPresented: $showingDeleteWarning
+                ) {
+                    Button(Bundle.currentLocalizedString("account.delete.warning.continue"), role: .destructive) {
+                        pendingDeleteSeedSheet = true
+                    }
+                    Button(Bundle.currentLocalizedString("account.delete.warning.cancel"), role: .cancel) { }
+                } message: {
+                    Text(Bundle.currentLocalizedString("account.delete.warning.body"))
+                }
+                .onChange(of: showingDeleteWarning) { _, isPresented in
+                    guard !isPresented, pendingDeleteSeedSheet else { return }
+                    pendingDeleteSeedSheet = false
+                    showingDeleteSeedSheet = true
+                }
+                .sheet(isPresented: $showingDeleteSeedSheet) {
+                    AccountDeleteSeedSheet(
+                        isDeleting: isDeletingAccount,
+                        onDelete: { seedPhrase in
+                            isDeletingAccount = true
+                            let error = await viewModel.deleteAccount(
+                                seedPhrase: seedPhrase,
+                                syncService: syncService
+                            )
+                            isDeletingAccount = false
+                            if error == nil {
+                                showingDeleteSeedSheet = false
+                            }
+                            return error
+                        }
+                    )
                 }
                 .confirmationDialog(
                     Bundle.currentLocalizedString("account.logout.confirm"),
@@ -504,6 +546,27 @@ struct AccountView: View {
         .appListSectionHeaderStyle()
     }
 
+    /// Spec 055: separate Danger Zone section (not inside data management).
+    @ViewBuilder
+    private var dangerZoneSection: some View {
+        Section {
+            Button(role: .destructive) {
+                showingDeleteWarning = true
+            } label: {
+                Text("account.delete.title")
+                    .appBody()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .accessibilityIdentifier(AccessibilityIdentifiers.deleteAccountButton)
+        } header: {
+            AppSectionHeader("account.danger-zone")
+        } footer: {
+            Text("account.delete.description")
+                .appFootnote()
+        }
+        .appListSectionHeaderStyle()
+    }
+
     private var featureAdoptionDoneCount: Int {
         FeatureAdoptionItem.allCases
             .filter { featureAdoptionStore.value(for: $0) }
@@ -627,6 +690,84 @@ struct AccountView: View {
 }
 
 // MARK: - Seed phrase (biometrics + QR)
+
+private struct AccountDeleteSeedSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var seedPhrase = ""
+    @State private var errorMessage: String?
+
+    let isDeleting: Bool
+    /// Returns `nil` on success (parent dismisses sheet); otherwise a localized
+    /// error shown in the footer while the sheet stays open.
+    let onDelete: (String) async -> String?
+
+    private var isPhraseValid: Bool {
+        seedPhrase.trimmingCharacters(in: .whitespacesAndNewlines)
+            .split(whereSeparator: \.isWhitespace).count == 12
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Text("account.delete.seed.body")
+                        .appBody()
+                        .foregroundStyle(.secondary)
+                }
+                Section {
+                    TextEditor(text: $seedPhrase)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .frame(minHeight: 96)
+                        .font(AppTypography.mono(AppTypography.bodySize))
+                        .accessibilityIdentifier(AccessibilityIdentifiers.deleteAccountSeedInput)
+                } header: {
+                    Text("account.delete.seed.label").appBody()
+                } footer: {
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .appFootnote()
+                            .foregroundStyle(.red)
+                            .accessibilityIdentifier(AccessibilityIdentifiers.deleteAccountError)
+                    }
+                }
+            }
+            .localizedNavigationTitle("account.delete.seed.title")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("common.cancel")
+                    }
+                    .disabled(isDeleting)
+                    .accessibilityIdentifier(AccessibilityIdentifiers.deleteAccountCancelButton)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { @MainActor in
+                            errorMessage = nil
+                            if let error = await onDelete(seedPhrase) {
+                                errorMessage = error
+                            }
+                        }
+                    } label: {
+                        if isDeleting {
+                            ProgressView()
+                        } else {
+                            Text("account.delete.seed.confirm")
+                        }
+                    }
+                    .disabled(!isPhraseValid || isDeleting)
+                    .accessibilityIdentifier(AccessibilityIdentifiers.deleteAccountConfirmButton)
+                }
+            }
+        }
+        .interactiveDismissDisabled(isDeleting)
+        .appOpaqueSheetPresentationPlain()
+    }
+}
 
 private struct AccountSeedPhraseSheet: View {
     @Environment(AuthService.self) private var authService

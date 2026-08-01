@@ -71,6 +71,22 @@ struct ExchangeSeedForTokenRequest: Encodable {
     }
 }
 
+/// Spec 055: irreversible account deletion. The client sends the seed phrase;
+/// the server re-validates BIP39 + sha256 against `users.seed_hash` before
+/// deleting the account.
+struct DeleteAccountRequest: Encodable {
+    let seedPhrase: String
+
+    enum CodingKeys: String, CodingKey {
+        case seedPhrase = "seed_phrase"
+    }
+}
+
+/// Spec 055: the delete-account response carries no `data` payload — just
+/// `{ success: true }`. `APIResponse<T>` requires a Decodable `T` for the
+/// optional `data` field; this empty type decodes successfully and is always nil.
+struct EmptyPayload: Decodable {}
+
 // MARK: - Auth Errors
 enum AuthError: LocalizedError {
     case keychainError(String)
@@ -535,6 +551,45 @@ class AuthService {
         apiClient.configure(userId: nil)
 
         AppContainer.shared?.featureAdoption.clearForLogout()
+    }
+
+    /// Spec 055: irreversibly delete the current account.
+    ///
+    /// Re-validates the seed phrase client-side (12 words) for immediate
+    /// feedback, then POSTs `/api/auth/delete-account`. The server re-checks
+    /// BIP39 + sha256(seed) against `users.seed_hash`; a mismatch surfaces as
+    /// an `AuthError.apiError(401, ...)`.
+    ///
+    /// On success credentials are wiped via `wipeLocalSession()` (best-effort,
+    /// never throws — the server already deleted the account). The caller then
+    /// runs Yjs / container teardown (`clearSessionForLogout` + `stopForLogout`).
+    /// Do **not** wipe local stores before this call: a failed POST must leave
+    /// the session intact (web parity).
+    func deleteAccount(seedPhrase: String) async throws {
+        let words = seedPhrase.trimmingCharacters(in: .whitespacesAndNewlines)
+            .split(whereSeparator: \.isWhitespace)
+        guard words.count == 12 else {
+            throw AuthError.invalidSeedPhrase
+        }
+
+        let body = DeleteAccountRequest(seedPhrase: seedPhrase.trimmingCharacters(in: .whitespacesAndNewlines))
+        let data = try JSONEncoder().encode(body)
+
+        let response: APIResponse<EmptyPayload> = try await performAuthRequest(
+            path: "/api/auth/delete-account",
+            method: "POST",
+            body: data
+        )
+
+        guard response.success else {
+            throw AuthError.apiError(
+                statusCode: 400,
+                message: response.error ?? "account.delete.failed"
+            )
+        }
+
+        // Account is already gone server-side — never throw from local purge.
+        wipeLocalSession()
     }
 
     /// Get the current authentication status
