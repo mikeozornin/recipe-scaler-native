@@ -5,6 +5,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 source "$ROOT/scripts/sim-verify-lib.sh"
 
+trap 'sim_cleanup_home_screen' EXIT
+
 echo "== UI test: shopping list add flows =="
 xcodebuild test \
   -scheme RecipeScalerNative \

@@ -154,6 +154,17 @@ This prevents a 100%-green run from masking 0%-actually-verified feature coverag
 
 5. Обнови `specs/E2E-COVERAGE.md` — добавь строку в таблицу «Покрытие по фазам».
 
+## SpringBoard / иконки на симуляторе
+
+UI-тесты ставят временный `*.xctrunner` на домашний экран — так работает XCUITest, отключить установку нельзя. После прогона scheme post-action вызывает `scripts/cleanup-sim-home-screen.sh` и снимает:
+
+- `ru.recipescaler.RecipeScalerUITests.xctrunner` (и legacy `…NativeUITests.xctrunner`)
+- старый app id `ru.recipescaler.RecipeScalerNative` (до rename в `…RecipeScaler`)
+
+Вручную: `bash scripts/cleanup-sim-home-screen.sh`.
+
+Обычный Run / `xcodebuild build` ставит только `ru.recipescaler.RecipeScaler`.
+
 ## Известные ограничения
 
 - **Расширения (030/044/039):** widget/Live Activity/watchOS — отдельные test-target'ы, недоступны из XCTest UI host-приложения.

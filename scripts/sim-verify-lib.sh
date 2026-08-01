@@ -97,6 +97,11 @@ sim_install() {
   xcrun simctl install "$SIM_ID" "$APP"
 }
 
+# Drop XCUITest runners / legacy app ids left on SpringBoard after UI tests.
+sim_cleanup_home_screen() {
+  bash "$ROOT/scripts/cleanup-sim-home-screen.sh" "$SIM_ID" || true
+}
+
 sim_terminate() {
   xcrun simctl terminate "$SIM_ID" "$BUNDLE_ID" 2>/dev/null || true
 }
