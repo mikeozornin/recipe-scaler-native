@@ -17,6 +17,9 @@ class BaseTestCase: XCTestCase {
     /// fresh in `setUp` so credentials never leak between tests in the same
     /// process. `seedClient` is constructed after `user` is registered.
     private(set) var seedClient: SeedClient!
+    /// Registered E2E user for this test (seed phrase, tokens). Subclasses
+    /// read `e2eUser.seedPhrase` for flows that need the phrase in-UI.
+    private(set) var e2eUser: TestUser!
     private let debugUser = DebugUser()
 
     /// Override in subclass to add launch args. Composed before launch.
@@ -41,6 +44,7 @@ class BaseTestCase: XCTestCase {
         } catch {
             throw XCTSkip("E2E register-auto failed: \(error). Skipping test to avoid cascade.")
         }
+        e2eUser = user
         seedClient = SeedClient(user: debugUser)
 
         // Seed before launch when subclass needs it (hydrate tests).

@@ -80,6 +80,7 @@ RecipeScalerNativeUITests/
     ├── DescriptionEditorSpec.swift       # 006
     ├── AuthDeviceTokensSpec.swift        # 041
     ├── AuthStaleSessionRecoverySpec.swift # 054
+    ├── AccountSettingsSpec.swift         # 013 + 055 (account deletion)
     ├── SharingSpec.swift                 # 012
     ├── AccountTelegramExportSpec.swift   # 020
     ├── I18nNewViewsSpec.swift            # 022
@@ -104,11 +105,11 @@ RecipeScalerNativeUITests/
 | 2 — Read & list | 001, 004, 026, 008 | 4 | ✅ done (2026-07-24) |
 | 3 — Import & export | 010, 027, 029, 032, 033, 028 | 6 | ✅ done (2026-07-24) |
 | 4 — Realtime & assistant | 014, 015, 021, 019, 018, 006 | 6 | ✅ done (2026-07-24) |
-| 5 — Auth, sharing, account | 041, 054, 012, 020, 022, 031, 023 | 7 | ✅ done (2026-07-24) |
+| 5 — Auth, sharing, account | 041, 054, 055, 012, 020, 022, 031, 023 | 8 | ✅ done (2026-07-24); 055 added 2026-08-01 |
 | 6 — Native-only features | 016, 043, 045, 025, 036, 017, 038, 040 | 8 | ✅ done (2026-07-24) |
 | 7 — Extensions (optional) | 030, 044, 039, 046 | — | 🟡 требует отдельный test target; см. «Исключения» |
 
-Итого: **38 спеков**, 7 исключений.
+Итого: **39 спеков**, 7 исключений.
 
 ## Исключения (не E2E-тестируются)
 

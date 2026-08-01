@@ -59,6 +59,13 @@ enum UIA {
     static let accountTelegramRefresh = "account_telegram_refresh"
     static let accountTimerNotificationsToggle = "account_timer_notifications_toggle"
 
+    // MARK: - Account deletion (055)
+    static let deleteAccountButton = "delete_account_button"
+    static let deleteAccountSeedInput = "delete_account_seed_input"
+    static let deleteAccountConfirmButton = "delete_account_confirm_button"
+    static let deleteAccountCancelButton = "delete_account_cancel_button"
+    static let deleteAccountError = "delete_account_error"
+
     // MARK: - Assistant (015/021)
     static let assistantFab = "assistant_fab"
     static let assistantSheet = "assistant_sheet"
