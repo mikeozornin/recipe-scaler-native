@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-SIM_ID="${SIM_ID:-C3ED7448-2C55-4F02-B5DA-721E2853FD0B}"
+SIM_ID="${SIM_ID:-EFC65E55-4F28-4C21-B489-D9733D2BE6B5}"
 RECIPE_ID="${RECIPE_ID:-70c03b0e-a9c3-44bd-82b9-b949a7839e26}"
 LOG_FILE="${LOG_FILE:-$ROOT/.debug-session.ndjson}"
 DERIVED="${DERIVED:-$HOME/Library/Developer/Xcode/DerivedData/RecipeScalerNative-diymkplxrwchdvgvqkoehouiygur}"

@@ -29,7 +29,7 @@ echo "== Step 1: Create yrs-encoded state via XCTest =="
 cd "$ROOT"
 xcodebuild build-for-testing \
   -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,id=C3ED7448-2C55-4F02-B5DA-721E2853FD0B' \
+  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' \
   -configuration Debug \
   2>&1 | tail -3
 

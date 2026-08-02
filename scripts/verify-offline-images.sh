@@ -20,7 +20,7 @@ check() {
 
 echo "== Build =="
 xcodebuild -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,id=7CC5ABD7-A34F-4B94-B8CE-A0B396467214' \
+  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' \
   build 2>&1 | tail -3
 
 echo ""

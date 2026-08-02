@@ -12,7 +12,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-: "${SIM_ID:=7CC5ABD7-A34F-4B94-B8CE-A0B396467214}"
+: "${SIM_ID:=EFC65E55-4F28-4C21-B489-D9733D2BE6B5}"
 
 echo "== 1. Static checks =="
 

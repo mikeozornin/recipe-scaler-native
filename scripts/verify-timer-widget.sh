@@ -15,9 +15,9 @@ cd "$ROOT"
 
 PROJECT="RecipeScalerNative.xcodeproj"
 SCHEME="RecipeScalerNative"
-# Prefer iPhone 16 Pro at the latest available OS. Use generic platform to avoid
-# ambiguous destination matches across simulator OS versions.
-DESTINATION='platform=iOS Simulator,name=iPhone 16 Pro,OS=18.6'
+# Pin by UDID — only iOS 26.3 runtime is installed (no 18.x).
+: "${SIM_ID:=EFC65E55-4F28-4C21-B489-D9733D2BE6B5}"
+DESTINATION="platform=iOS Simulator,id=$SIM_ID"
 
 if [[ ! -d "$PROJECT" ]]; then
   echo "[verify] Run from the repo root (RecipeScalerNative.xcodeproj not found)" >&2

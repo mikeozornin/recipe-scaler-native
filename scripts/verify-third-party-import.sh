@@ -5,7 +5,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-DEST_ID="${XCODE_DEST_ID:-C3ED7448-2C55-4F02-B5DA-721E2853FD0B}"
+DEST_ID="${XCODE_DEST_ID:-EFC65E55-4F28-4C21-B489-D9733D2BE6B5}"
 
 echo "==> Building RecipeScalerNative (Debug)"
 xcodebuild \
