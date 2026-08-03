@@ -1,155 +1,275 @@
-# План: Home Widget — TimerWidget
+# План: Home Widget — TimerWidget (v2)
 
-**Ветка**: `030-timer-widget`
-**Дата**: 2026-06-17
-**Статус**: In progress
-**Спека**: [spec.md](./spec.md)
+**Date**: 2026-08-04 | **Spec**: [spec.md](./spec.md)
+**Статус**: v1 UI DONE · v2 background refresh — планирование/реализация
 **Data model**: [data-model.md](./data-model.md)
-**Layout (Figma)**: [layout.md](./layout.md) · `bash scripts/audit-ui-layout.sh specs/030-timer-widget`
+**Contract**: [contracts/widget-push.md](./contracts/widget-push.md)
+**Layout (Figma, без rewrite)**: [layout.md](./layout.md) · `bash scripts/audit-ui-layout.sh specs/030-timer-widget`
 **Quickstart**: [quickstart.md](./quickstart.md)
-**Зависимости**: [014-timers-sync](../014-timers-sync/spec.md) (DONE), [044-timer-live-activity](../044-timer-live-activity/spec.md) (переиспользуем accent logic)
+**Tasks**: [tasks.md](./tasks.md)
+**Зависимости**: 014 ✅ · 023 ✅ · 044 · 039 · [058](../058-live-activity-push/spec.md) (LA push — не дублировать)
 
 ## Кратко
 
-Net-new WidgetKit extension с одним виджетом `TimerWidget`. Все плейсменты: Home Screen `systemSmall` (169×169) + Lock Screen accessory (`accessoryCircular` / `accessoryRectangular` / `accessoryInline`) + StandBy (переиспользует accessory). Данные — из нового `TimerSnapshotStore` в App Group, который main app обновляет при каждой мутации таймера. Живой отсчёт через `Text(timerInterval:)`.
+**v1:** WidgetKit extension `TimerWidget` + `TimerSnapshotStore` в App Group + reload из `TimerManager` / backgrounding.
 
-## Архитектура
+**v2:** два канала фонового обновления snapshot/timeline:
+
+- **Phase A (same-device):** Live Activity Intent в `perform()` пишет snapshot + reload (очередь ActionQueue сохраняется для TimerManager).
+- **Phase B (cross-device):** WidgetKit push (iOS 18+) / silent APNs (iOS 17) → Provider `GET /api/v1/timers/active` → snapshot → timeline.
+
+## Очерёдность
+
+1. **Phase A — Intent snapshot** — закрывает US-A1 без сервера; разблокирует same-device UX.
+2. **Phase B1 — Server widget tokens + fan-out** — (после A; можно параллелить client registrar после контракта).
+3. **Phase B2 — Client WidgetPushHandler + registrar** — (после контракта B1).
+4. **Phase B3 — Provider network refresh** — (после B2 или в параллель с B2 после API готов).
+5. **Phase B4 — iOS 17 silent fallback** — (после B3).
+6. **Verify + device QA** — после A и B.
+
+> Live Activity push `update`/`end` — владение [058](../058-live-activity-push/spec.md). Здесь только widget fan-out рядом с теми же timer events.
+
+---
+
+## Архитектура v2
 
 ```mermaid
 flowchart TD
-    subgraph Main[Main App target]
-        TM[TimerManager @Observable]
-        RT[RecipeTimer SwiftData]
-        TSS_save[TimerSnapshotStore.save]
-        WC[WidgetCenter.reloadTimelines]
+    subgraph SameDevice[Phase A — same device]
+        LABtn[Live Activity Pause/Resume button]
+        Intent[Pause/ResumeRecipeTimerIntent.perform]
+        ActUp[Activity.update]
+        SnapA[TimerSnapshotStore.save]
+        RelA[WidgetCenter.reloadTimelines]
+        Queue[TimerLiveActivityActionQueue Darwin]
+        TM[TimerManager drain → SwiftData + sync]
     end
 
-    subgraph Core[RecipeScalerCore framework]
-        AG[AppGroup constant]
-        TSS[TimerSnapshotStore]
-        TS[TimerSnapshot]
-        WTA[WidgetTimerAccent]
+    subgraph CrossDevice[Phase B — cross device]
+        Web[Web / other device timer_*]
+        Server[TimerSyncService + fan-out]
+        WTok[(widget_push_tokens)]
+        LATok[(liveactivity_tokens — spec 058)]
+        WPush[APNs widgets content-changed iOS 18+]
+        Silent[APNs content-available iOS 17 via 023 token]
+        Handler[WidgetPushHandler / silent wake]
+        Prov[TimerWidgetProvider]
+        Fetch[GET /api/v1/timers/active]
+        Auth[SharedAuthStore bearer]
+        SnapB[TimerSnapshotStore.save]
+        RelB[reloadTimelines]
     end
 
-    subgraph Widget[HomeWidgetExtension NEW]
-        WB[HomeWidgetBundle]
-        TW[TimerWidget]
-        TP[TimerWidgetProvider]
-        HS[HomeSmallView Grid 2x2]
-        AC[AccessoryCircularView]
-        AR[AccessoryRectangularView]
-        AI[AccessoryInlineView]
+    subgraph Widget[HomeWidgetExtension]
+        Views[systemSmall + accessory views]
     end
 
-    TM --> RT
-    TM -- persist/mutate --> TSS_save
-    TSS_save -- JSON --> UD[(App Group UserDefaults)]
-    AG -.suiteName.-> TSS
-    TM -- debounce 200ms --> WC
-    WC -- reloadTimelines ofKind=TimerWidget --> TP
-    TP -- reads --> TSS
-    TP --> HS
-    TP --> AC
-    TP --> AR
-    TP --> AI
-    UD -- shared container --> Widget
+    LABtn --> Intent
+    Intent --> ActUp
+    Intent --> SnapA
+    Intent --> RelA
+    Intent --> Queue
+    Queue --> TM
+
+    Web --> Server
+    Server --> WTok
+    Server --> LATok
+    WTok --> WPush
+    Server --> Silent
+    WPush --> Prov
+    Silent --> Handler
+    Handler --> Fetch
+    Handler --> SnapB
+    Handler --> RelB
+    Prov --> Auth
+    Prov --> Fetch
+    Fetch --> SnapB
+    SnapA --> Views
+    SnapB --> Views
+    RelA --> Prov
+    RelB --> Prov
 ```
 
-## Технический контекст
+---
 
-- **Язык**: Swift 5.9+, SwiftUI, WidgetKit
-- **Минимум iOS**: 17.0 (deploйте target проекта; accessory families уже с iOS 16, но StandBy — iOS 17+)
-- **Хранилище**: App Group `UserDefaults` (group.ru.recipescaler.RecipeScaler), ключ `widgets.timerSnapshot`
-- **Тестирование**: симулятор iPhone 16 Pro (для Dynamic Island / Live Activity / StandBy); без платного аккаунта
-- **Проект**: native iOS monorepo, схема `RecipeScalerNative`
+## Phase A — Intent пишет snapshot (US-A1)
 
-## Структура файлов (net-new)
+### Изменения
+
+| Файл / зона | Действие |
+|-------------|----------|
+| `PauseRecipeTimerIntent` / resume Intent (Live Activity / App Intents) | В `perform()`: Activity.update + `TimerSnapshotStore` write + `reloadTimelines`; сохранить ActionQueue enqueue |
+| Shared helper (желательно в Core или рядом с snapshot mapping) | Единый mapping текущего Activity/timer → `TimerSnapshot` / document merge |
+| Unit tests | Intent path пишет store и вызывает reload (mock / spy) |
+
+### Downstream consumers
+
+- [ ] **SwiftUI views** — Home/Lock widget views читают `TimerSnapshot` через Provider entry; UI layout без изменений.
+- [ ] **Cross-process consumers** — `HomeWidgetExtension` (timeline); Live Activity content-state; Darwin ActionQueue → main app `TimerManager`.
+- [ ] **Sync boundaries** — Intent **не** шлёт sync сам; sync остаётся на drain ActionQueue → `TimerManager` → `TimerSyncService`. Не ломать этот порядок.
+- [ ] **Persisted state** — App Group `widgets.timerSnapshot`; ActionQueue persistence; SwiftData `RecipeTimer` после drain.
+- [ ] **Tests / verify-скрипты** — новые Intent/snapshot tests; `verify-timer-widget.sh` регрессия.
+
+### Positive invariants
+
+| Эффект функции / API | Инвариант | Где проверять |
+|---------------------|----------|---------------|
+| `PauseRecipeTimerIntent.perform()` | после perform snapshot в App Group содержит timer с `phase == .paused` | unit test / snapshot store spy |
+| `PauseRecipeTimerIntent.perform()` | вызывается `WidgetCenter.reloadTimelines(ofKind: "TimerWidget")` (или test double) | unit test |
+| `PauseRecipeTimerIntent.perform()` | событие всё ещё enqueued в ActionQueue | unit test |
+| Drain ActionQueue после wake | SwiftData + sync отражают pause (как сегодня) | существующие TimerManager / LA tests |
+
+### Note
+
+Не удалять ActionQueue «потому что snapshot уже обновлён» — иначе SwiftData/sync разъедутся с UI.
+
+---
+
+## Phase B1 — Server: widget_push_tokens + fan-out
+
+### Изменения
+
+| Зона | Действие |
+|------|----------|
+| DB migration | таблица `widget_push_tokens` (user_id, device_id, token, timestamps; UNIQUE user+device) |
+| HTTP | `POST` / `DELETE` register widget token (см. [contracts/widget-push.md](./contracts/widget-push.md)) |
+| Fan-out | рядом с LA events: `timer_started/paused/resumed/updated/deleted` → APNs widgets push; debounce ~1 с; exclude source `device_id` |
+| iOS 17 path (server) | опционально: silent на device token из spec 023 для устройств без widget token |
+
+> Реализация server — в `recipe-scaler-web`; этот plan описывает контракт для native implementers и зеркало спеки.
+
+### Downstream consumers
+
+- [ ] **SwiftUI views** — нет прямых.
+- [ ] **Cross-process consumers** — WidgetKit extension (reload); main app registrar.
+- [ ] **Sync boundaries** — fan-out **после** (или рядом с) `timer_event` emit; не заменяет CRDT/Yjs; не трогает LA payload 058.
+- [ ] **Persisted state** — `widget_push_tokens` на сервере; cleanup BadDeviceToken / Unregistered.
+- [ ] **Tests** — server unit/integration на register + fan-out debounce + exclude source (web repo).
+
+### Positive invariants
+
+| Эффект | Инвариант | Где проверять |
+|--------|-----------|---------------|
+| `timer_paused` от device A | device B с widget token получает widgets push; device A — нет | server test |
+| Два события < 1 с | один push с последним state (debounce) | server test |
+| `POST register` | UPSERT по (user_id, device_id) | server test |
+
+---
+
+## Phase B2 — Client: WidgetPushHandler + registrar
+
+### Изменения
+
+| Файл / зона | Действие |
+|-------------|----------|
+| Entitlements / capability | убедиться Push + App Group; WidgetKit push registration iOS 18+ |
+| `WidgetPushRegistrar` (имя уточнить) | получить device-level widget push token → POST register; unregister on logout |
+| `WidgetPushHandler` / WidgetKit push callback | на `content-changed` система перезагружает timeline; handler при необходимости логирует |
+| `AppContainer` / bootstrap | wire registrar рядом с APNs 023 / LA 058 registrars |
+| `#available(iOS 18, *)` | весь WidgetKit push API за availability |
+
+### Downstream consumers
+
+- [ ] **SwiftUI views** — Account / diagnostics опционально (не обязательно в v2).
+- [ ] **Cross-process consumers** — `HomeWidgetExtension` timelines; не путать с LA activity tokens (058).
+- [ ] **Sync boundaries** — register использует тот же auth, что 023/058 (`SharedAuthStore` / bearer).
+- [ ] **Persisted state** — token на сервере; локально кэш token optional.
+- [ ] **Tests** — registrar encode/UPSERT mocks; availability guards.
+
+### Positive invariants
+
+| Эффект | Инвариант | Где проверять |
+|--------|-----------|---------------|
+| Успешный widget token | `POST` register уходит с `device_id` + hex token | unit test |
+| Logout / account wipe | `DELETE` unregister (best-effort) | unit test |
+| iOS 17 build | нет вызовов iOS 18 WidgetKit push API без `#available` | compile + smoke |
+
+---
+
+## Phase B3 — Provider network refresh
+
+### Изменения
+
+| Файл / зона | Действие |
+|-------------|----------|
+| `TimerWidgetProvider` | при timeline: auth → `GET /api/v1/timers/active` → map `ServerActiveTimer` → `TimerSnapshotDocument` → save App Group |
+| Mapping helper | shared с Core (`ServerActiveTimer` уже в RecipeScalerCore) |
+| Offline / 401 / network error | оставить предыдущий snapshot; timeline из него |
+| Auth | `SharedAuthStore` в App Group (device bearer, spec 041) |
+
+### Downstream consumers
+
+- [ ] **SwiftUI views** — все TimerWidget families.
+- [ ] **Cross-process consumers** — extension network; App Group snapshot читают и main app, и extension.
+- [ ] **Sync boundaries** — **read-only** GET; не POST sync из виджета.
+- [ ] **Persisted state** — перезапись `widgets.timerSnapshot`.
+- [ ] **Tests** — mapping ServerActiveTimer → TimerSnapshot; offline keeps previous.
+
+### Positive invariants
+
+| Эффект | Инвариант | Где проверять |
+|--------|-----------|---------------|
+| Успешный GET с 2 running timers | snapshot.timers.count == 2, phases `.running` | unit / Provider test |
+| GET fails / offline | `TimerSnapshotStore.load()` равен pre-fetch document | unit test |
+| Нет bearer | fetch не вызывается (или no-op), snapshot не очищается | unit test |
+
+---
+
+## Phase B4 — iOS 17 silent fallback
+
+### Изменения
+
+| Зона | Действие |
+|------|----------|
+| AppDelegate / push handler (023) | silent `content-available` с timer/widget hint → sync active timers → snapshot save → reloadTimelines |
+| Server | для устройств без widget token (или всегда как secondary) — silent на device APNs token |
+| Документация | quickstart: iOS 17 = best-effort |
+
+### Downstream consumers
+
+- [ ] **Cross-process** — main app wake; widget reload.
+- [ ] **Sync boundaries** — переиспользовать существующий timer sync path (не invent parallel CRDT).
+- [ ] **023 coexistence** — не ломать alert push; silent payload не показывает UI.
+
+### Positive invariants
+
+| Эффект | Инвариант | Где проверять |
+|--------|-----------|---------------|
+| Silent wake + successful sync | snapshot обновлён + reload вызван | integration / manual device QA |
+| Alert push 023 | title/body по-прежнему доставляются | регрессия 023 |
+
+---
+
+## Структура файлов (ориентир для implementers)
+
+v1 (уже есть) + v2 добавления:
 
 ```
 RecipeScalerCore/
-├── AppGroup.swift                          # NEW: константа app group ID
-└── Snapshots/
-    ├── TimerSnapshotStore.swift            # NEW: App Group read/write
-    ├── TimerSnapshot.swift                 # NEW: snapshot типы
-    └── WidgetTimerAccent.swift             # NEW: normal/soon/exceeded
-
+└── Snapshots/ …                    # v1
+RecipeScalerNative/
+├── … Pause/ResumeRecipeTimerIntent # Phase A: snapshot + reload
+├── Services/WidgetPushRegistrar…   # Phase B2 (имя уточнить)
+└── … silent push hook (023)        # Phase B4
 HomeWidgetExtension/
-├── HomeWidgetBundle.swift                  # @main WidgetBundle { TimerWidget() }
-├── HomeWidgetExtension.entitlements        # App Group
-├── Info.plist                              # NSExtension (WidgetKit)
-├── TimerWidget.swift                       # StaticConfiguration + supportedFamilies
-├── TimerWidgetProvider.swift               # AppIntentTimelineProvider (read-only variant: TimelineProvider)
-├── TimerWidgetEntry.swift                  # TimelineEntry + [TimerSnapshot]
-└── Views/
-    ├── TimerHomeSmallView.swift            # systemSmall (169×169) Grid 2×2
-    ├── TimerAccessoryCircularView.swift    # accessoryCircular
-    ├── TimerAccessoryRectangularView.swift # accessoryRectangular
-    └── TimerAccessoryInlineView.swift      # accessoryInline
+└── TimerWidgetProvider.swift       # Phase B3: network refresh
+recipe-scaler-web/server/           # Phase B1 (вне native repo)
 ```
-
-## Изменения в существующем коде
-
-1. **`RecipeScalerNative/Routing/DeepLinkRouter.swift`**: добавить `case openHome` + парсинг `recipe-scaler://home` в `handle(_ url:)`.
-2. **`RecipeScalerNative/Views/AppShellView.swift`**: case `.openHome` → `selectedTab = .recipes` + `clear()`.
-3. **`RecipeScalerNative/Services/TimerManager.swift`**: hook сохранения snapshot + reload timeline на persist/mutate (debounce 200мс).
-4. **`RecipeScalerNative/App/RecipeScalerNativeApp.swift`** (или `ContentView`): `scenePhase → .background` → `WidgetCenter.shared.reloadAllTimelines()`.
-5. **`RecipeScalerNative/Resources/Localizable.xcstrings`**: новые ключи `widgets.timer.*` + target membership для `HomeWidgetExtension`.
-
-## План реализации (этапы)
-
-### Phase 0 — Scaffolding
-
-- [ ] Создать Xcode target `HomeWidgetExtension` (Bundle ID `ru.recipescaler.RecipeScaler.HomeWidget`), embed в main app
-- [ ] `HomeWidgetExtension.entitlements` (App Group), `Info.plist`
-- [ ] `RecipeScalerCore/AppGroup.swift` — `public enum AppGroup { static let id = "group.ru.recipescaler.RecipeScaler" }`
-- [ ] **Deep link:** `DeepLink.openHome` case + парсинг в `DeepLinkRouter.swift` + case в `AppShellView.swift`
-
-### Phase 1 — Snapshot инфраструктура
-
-- [ ] `RecipeScalerCore/Snapshots/TimerSnapshot.swift` (`TimerSnapshot`, `TimerSnapshotPhase`, `TimerSnapshotDocument`)
-- [ ] `RecipeScalerCore/Snapshots/WidgetTimerAccent.swift` (`WidgetTimerAccent` + `resolve`)
-- [ ] `RecipeScalerCore/Snapshots/TimerSnapshotStore.swift` (`save`/`load`/`clear` + mapping `RecipeTimer → TimerSnapshot`)
-- [ ] Hook в `TimerManager`: save snapshot + `WidgetCenter.reloadTimelines(ofKind: "TimerWidget")` с debounce 200мс
-
-### Phase 2 — TimerWidget `systemSmall`
-
-- [ ] `HomeWidgetBundle.swift` (`@main`)
-- [ ] `TimerWidget.swift` (`StaticConfiguration`, `.supportedFamilies`)
-- [ ] `TimerWidgetProvider.swift` (читает `TimerSnapshotStore.load()`)
-- [ ] `TimerWidgetEntry.swift`
-- [ ] `TimerHomeSmallView`: Grid 2×2, ring/linear progress, 0/1/2/3/4 states, live `Text(timerInterval:)`, empty state
-- [ ] `.containerBackground(Color(.secondarySystemBackground), for: .widget)`
-- [ ] `.widgetURL(URL(string: "recipe-scaler://home")!)`
-
-### Phase 3 — TimerWidget accessory (Lock Screen + StandBy)
-
-- [ ] `TimerAccessoryCircularView` (~52×52): ring + одна цифра
-- [ ] `TimerAccessoryRectangularView` (~160×72): name + countdown
-- [ ] `TimerAccessoryInlineView`: countdown + name
-- [ ] Монохром, `.widgetAccentable()`, `.containerBackground(.clear, for: .widget)`
-- [ ] Switch через `@Environment(\.widgetFamily)`
-
-### Phase 4 — Timeline + backgrounding
-
-- [ ] `scenePhase → .background` → `WidgetCenter.shared.reloadAllTimelines()`
-- [ ] 15-минутный `.atEnd` fallback в Provider
-- [ ] Debounce 200мс в TimerManager (anti-flapping)
-
-### Phase 5 — Verify
-
-- [ ] `scripts/verify-timer-widget.sh`
-- [ ] Смок на симуляторе iPhone 16 Pro
-- [ ] Localizable.xcstrings: ru + en
 
 ## Риски и смягчения
 
 | Риск | Смягчение |
-|---|---|
-| App Group нестабилен на бесплатном аккаунте на железе | Разработка и QA на симуляторе; production device QA — после платного аккаунта |
-| `Text(timerInterval:)` в accessory families может вести себя иначе | Проверить на симуляторе Lock Screen; fallback — статичный remainingTime |
-| WidgetCenter reload слишком частый → battery | Debounce 200мс; reload только на реальных мутациях, не на каждом timer tick |
-| Сборка extension ломает main app | Сначала сделать снапшот-стор (можно тестировать через unit test), потом extension target |
+|------|-----------|
+| Intent обновил snapshot, но TimerManager не drain'нул → рассинхрон SwiftData | ActionQueue обязателен; reconcile при foreground |
+| WidgetKit push только iOS 18+ | Silent fallback 023; deployment 17 |
+| Provider fetch без сети → empty flash | Never clear snapshot on error (US-B3) |
+| Двойной fan-out с 058 | Разные topics/tokens; widget body только `content-changed` |
+| Battery / APNs rate | Debounce ~1 с на сервере; client debounce 200 мс на TimerManager |
 
-## Следующий шаг
+## Verify
 
-После подтверждения плана — `tasks.md` через `/speckit-tasks` (если есть) или ручная декомпозиция. Начать с Phase 0 (scaffolding нового target).
+- `xcodebuild build` — scheme `RecipeScalerNative` (+ HomeWidgetExtension)
+- `xcodebuild test` — Intent snapshot tests, Provider mapping/offline tests, registrar tests
+- `bash scripts/verify-timer-widget.sh`
+- Device QA: [quickstart.md](./quickstart.md) § Phase A / Phase B
+- Не трогать `layout.md` Figma-дерево без отдельного запроса

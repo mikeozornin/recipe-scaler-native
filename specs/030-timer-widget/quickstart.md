@@ -1,65 +1,16 @@
-# Quickstart: TimerWidget
+# Quickstart: TimerWidget (v2)
 
 **Spec**: [030-timer-widget](./spec.md)
-**Дата**: 2026-06-17
+**Дата**: 2026-08-04
 
 ## Сборка
 
 ```bash
-# Симулятор (без платного аккаунта)
 xcodebuild \
   -scheme RecipeScalerNative \
   -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
   build
 ```
-
-После успешной сборки:
-
-```bash
-# Открыть симулятор и установить
-open -a Simulator
-xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
-```
-
-## Ручная проверка на симуляторе
-
-### 1. Home Screen виджет
-
-1. Запустить app на симуляторе: `Cmd+R` в Xcode.
-2. Создать таймер из app (через рецепт или timer panel).
-3. Выйти на Home Screen симулятора (`Cmd+Shift+H`).
-4. Long-press на пустом месте → `+` кнопка → найти **Recipe Scaler** в галерее.
-5. Выбрать **TimerWidget** в `systemSmall`.
-6. Проверить:
-   - Живой отсчёт работает (без rebuild).
-   - Empty state: удалить все таймеры в app → виджет показывает «Таймеров нет».
-   - 1/2/3/4 таймера: создать несколько → виджет обновляет layout.
-
-### 2. Lock Screen accessory
-
-1. На симуляторе: `Cmd+Shift+H` дважды → Settings → Wallpaper → Customize Lock Screen.
-2. Добавить виджет в зону под часами:
-   - `accessoryCircular` (круг с цифрой).
-   - `accessoryRectangular` (имя + countdown).
-3. Запустить активный таймер → Lock Screen (`Cmd+L`) → проверить живой отсчёт.
-4. Проверить монохром: цветные акценты (orange/red) **не должны** появляться — всё одного цвета в vibrancy.
-
-### 3. StandBy
-
-1. На симуляторе iPhone 16 Pro: положить телефон горизонтально (в Xcode → Device → Rotate).
-2. Включить StandBy в Settings → StandBy.
-3. Запустить активный таймер → проверить accessory rendering.
-
-### 4. Dark / Light режимы
-
-1. Settings → Developer → Dark Appearance (или `Cmd+Shift+D` в Simulator menu).
-2. Home Screen виджет должен адаптировать фон/текст.
-3. Accessory families — монохром в обоих режимах.
-
-### 5. Deep link
-
-1. Тап на Home Screen `systemSmall` виджет → app открывается на вкладке `.recipes`.
-2. Не должно быть ошибки или неоткрытого экрана.
 
 ## Автоматическая проверка
 
@@ -67,41 +18,104 @@ xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=
 bash scripts/verify-timer-widget.sh
 ```
 
-Скрипт:
-- Собирает `RecipeScalerNative` схему с `HomeWidgetExtension`.
-- Проверяет наличие `HomeWidgetExtension.appex` в `Products/`.
-- Проверяет `NSExtensionPointIdentifier`, App Group и bundle id в бинарнике.
-
-Повторная проверка без пересборки (после успешного `xcodebuild`):
+Повтор без пересборки:
 
 ```bash
-SKIP_BUILD=1 DERIVED_DATA=~/Library/Developer/Xcode/DerivedData/RecipeScalerNative-diymkplxrwchdvgvqkoehouiygur bash scripts/verify-timer-widget.sh
+SKIP_BUILD=1 DERIVED_DATA=~/Library/Developer/Xcode/DerivedData/RecipeScalerNative-<hash> \
+  bash scripts/verify-timer-widget.sh
 ```
 
 ### Seed snapshot на симуляторе (без UI)
 
-Чтобы виджет сразу показал данные, не создавая таймеры вручную:
-
 ```bash
 SIM_UDID=$(xcrun simctl list devices booted -j | python3 -c "import sys,json; d=json.load(sys.stdin); print(next(i['udid'] for r in d['devices'].values() for i in r if i.get('state')=='Booted'))")
-python3 scripts/seed-timer-snapshot.py "$SIM_UDID" four   # 4 таймера
-python3 scripts/seed-timer-snapshot.py "$SIM_UDID" empty   # empty state
-python3 scripts/seed-timer-snapshot.py "$SIM_UDID" one    # 1 таймер
+python3 scripts/seed-timer-snapshot.py "$SIM_UDID" four
+python3 scripts/seed-timer-snapshot.py "$SIM_UDID" empty
+python3 scripts/seed-timer-snapshot.py "$SIM_UDID" one
 ```
 
-После seed: перезапустить app или добавить виджет на Home Screen — `TimerWidgetProvider` прочитает snapshot из App Group.
+---
+
+## Ручная проверка v1 (регрессия)
+
+### 1. Home Screen виджет
+
+1. Запустить app → создать таймер.
+2. Home Screen → long-press → `+` → Recipe Scaler → TimerWidget `systemSmall`.
+3. Живой countdown; empty / 1 / 2 / 3 / 4 layouts.
+
+### 2. Lock Screen accessory + StandBy
+
+Accessory circular/rectangular/inline — монохром; StandBy на iPhone 16 Pro.
+
+### 3. Dark / Light + deep link
+
+Тап по виджету → app на вкладке `.recipes`.
+
+---
+
+## Phase A QA — Live Activity pause → widget (US-A1)
+
+**Цель:** pause/resume с Lock Screen Live Activity обновляет Home/Lock виджет **без** открытия app.
+
+1. Добавить TimerWidget на Home Screen.
+2. Запустить таймер из app → убедиться, что Live Activity на Lock Screen видна и виджет показывает running.
+3. Увести app в background (`Cmd+Shift+H` на симе) или подождать suspend; **не** открывать app снова.
+4. Lock Screen → нажать **Pause** на Live Activity.
+5. Вернуться на Home Screen (**не** через icon app — через Home gesture / `Cmd+Shift+H`).
+6. **Ожидание:** виджет показывает paused (время не тикает / фаза paused) в течение ~1 с.
+7. Resume с Live Activity → виджет снова running с живым countdown.
+8. После открытия app: SwiftData/sync/таймер-панель согласованы с виджетом (drain ActionQueue).
+
+**Fail:** виджет остаётся running до ручного открытия app → Intent не пишет snapshot/reload (gap v1).
+
+---
+
+## Phase B QA — Web → widget (US-B1–B3)
+
+**Требования:** физический iPhone предпочтительно; iOS 18+ для WidgetKit push; залогиненный user; виджет на Home Screen; app в background или force-quit.
+
+### B. Pause / resume с веба
+
+1. На iPhone: активный таймер + виджет + Live Activity (опционально).
+2. Force-quit или оставить app в фоне.
+3. В браузере на [recipe-scaler.ru](https://recipe-scaler.ru) (тот же аккаунт) — Pause таймера.
+4. **Ожидание (iOS 18+):** в течение ~3–5 с виджет на iPhone показывает paused.
+5. Resume в вебе → виджет снова running.
+
+### B. Start / delete с веба
+
+1. Start нового таймера в вебе → виджет добавляет ячейку (до 4).
+2. Delete в вебе → ячейка исчезает; при нуле — empty «Таймеров нет».
+
+### B. Offline (US-B3)
+
+1. Airplane Mode на iPhone с уже заполненным виджетом.
+2. Триггер reload (если возможно) или перезапуск timeline.
+3. **Ожидание:** виджет **не** вспыхивает empty; остаётся последний snapshot.
+
+### B. iOS 17 fallback
+
+На iOS 17 WidgetKit push нет: после web-pause виджет может обновиться только если silent push разбудил app (best-effort) или при следующем foreground. Зафиксировать результат в QA notes.
+
+---
 
 ## Дебаг
 
-- **Виджет не появляется в галерее**: проверить `HomeWidgetBundle` имеет `@main`, target membership Info.plist правильный, симулятор iOS 17+.
-- **Виджет пустой / не обновляется**: проверить `TimerSnapshotStore.load()` читает из того же App Group; в main app `TimerManager` вызывает `save` на мутациях.
-- **Цвета не меняются на `soon`/`exceeded`**: проверить `WidgetTimerAccent.resolve(remainingSeconds: totalDuration:)` логику в Provider.
-- **Accessory всё цветное**: проверить `.widgetAccentable()` на всех элементах accessory view.
+| Симптом | Куда смотреть |
+|---------|----------------|
+| Виджет не в галерее | `HomeWidgetBundle` `@main`, iOS 17+ |
+| Виджет пустой / не обновляется из app | `TimerSnapshotStore` App Group; `TimerManager` save+reload |
+| Pause с LA не двигает виджет | Intent `perform()` — snapshot + `reloadTimelines` (Phase A) |
+| Web pause не двигает виджет (iOS 18+) | registrar token; server `widget_push_tokens`; APNs topic `…push-type.widgets`; Provider GET `/api/v1/timers/active` |
+| Web pause не двигает виджет (iOS 17) | silent 023 path; ожидаемо best-effort |
+| Виджет обнулился offline | Provider clear на error — баг US-B3 |
+| LA карточка ок, виджет нет (cross-device) | 058 ≠ 030: разные tokens/topics; проверить widget fan-out отдельно |
 
-## Известные ограничения (без платного аккаунта)
+Логи (DEBUG): `bash scripts/pull-app-logs.sh` → `.debug-session.ndjson`. См. [llm/how-to-debug.md](../../llm/how-to-debug.md).
 
-- **На реальном iPhone** App Group нестабилен с бесплатным Apple ID → виджет может не получать snapshot. Симулятор работает корректно.
-- **TestFlight / App Store**: недоступно.
-- **Remote push для виджета**: отложено (нужен платный аккаунт + spec 023).
+## Платный аккаунт / push
+
+Платный Developer Program есть. Alert push — 023; Live Activity push — 058; **WidgetKit push — 030 v2** ([contracts/widget-push.md](./contracts/widget-push.md)).
 
 Подробнее: [PAID-APPLE-DEVELOPER-REQUIRED.md](../../docs/PAID-APPLE-DEVELOPER-REQUIRED.md).

@@ -232,6 +232,10 @@
 		B3TIMENOTIF01B293A4B70100001 /* TimerNotificationActionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */; };
 		B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */; };
 		B3TIMEWIDGET01B293A4B70100001 /* TimerWidgetTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */; };
+		B3TSPATCH01B293A4B70100001 /* TimerSnapshotDocumentPatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TSPATCH01A293A4B70100001 /* TimerSnapshotDocumentPatcher.swift */; };
+		B3LAINTP01B293A4B70100001 /* TimerLiveActivityIntentPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3LAINTP01A293A4B70100001 /* TimerLiveActivityIntentPerformer.swift */; };
+		B3LAINTP01C293A4B70100001 /* TimerLiveActivityIntentPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3LAINTP01A293A4B70100001 /* TimerLiveActivityIntentPerformer.swift */; };
+		B3LAINTT01B293A4B70100001 /* TimerLiveActivityIntentSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3LAINTT01A293A4B70100001 /* TimerLiveActivityIntentSnapshotTests.swift */; };
 		B3TORD01B293A4B701000002 /* TimerOrdering.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TORD01A293A4B701000001 /* TimerOrdering.swift */; };
 		B3TORD02B293A4B701000002 /* TimerOrderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TORD02A293A4B701000001 /* TimerOrderingTests.swift */; };
 		B3TPAL01B293A4B701000002 /* TimerPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TPAL01A293A4B701000001 /* TimerPaletteTests.swift */; };
@@ -920,6 +924,9 @@
 		B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerNotificationActionsTests.swift; sourceTree = "<group>"; };
 		B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPanelRefreshTests.swift; sourceTree = "<group>"; };
 		B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerWidgetTimelineTests.swift; sourceTree = "<group>"; };
+		B3TSPATCH01A293A4B70100001 /* TimerSnapshotDocumentPatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSnapshotDocumentPatcher.swift; sourceTree = "<group>"; };
+		B3LAINTP01A293A4B70100001 /* TimerLiveActivityIntentPerformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityIntentPerformer.swift; sourceTree = "<group>"; };
+		B3LAINTT01A293A4B70100001 /* TimerLiveActivityIntentSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityIntentSnapshotTests.swift; sourceTree = "<group>"; };
 		B3TORD01A293A4B701000001 /* TimerOrdering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerOrdering.swift; sourceTree = "<group>"; };
 		B3TORD02A293A4B701000001 /* TimerOrderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerOrderingTests.swift; sourceTree = "<group>"; };
 		B3TPAL01A293A4B701000001 /* TimerPaletteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPaletteTests.swift; sourceTree = "<group>"; };
@@ -1388,6 +1395,7 @@
 			children = (
 				11026E6FBE228038C3769C04 /* TimerSnapshot.swift */,
 				30D1FC17B7B577157543D1B8 /* TimerSnapshotStore.swift */,
+				B3TSPATCH01A293A4B70100001 /* TimerSnapshotDocumentPatcher.swift */,
 				21566C9DA1EEFF6ACCDAD702 /* TimerWidgetKind.swift */,
 			);
 			path = Snapshots;
@@ -1526,6 +1534,7 @@
 				56565D99438548F29F16D7DE /* TimerLiveActivityAccent.swift */,
 				4F90F40E8688492B815EB510 /* TimerLiveActivityFormatting.swift */,
 				4DE9AF6E91804571BD26336B /* TimerLiveActivityActionQueue.swift */,
+				B3LAINTP01A293A4B70100001 /* TimerLiveActivityIntentPerformer.swift */,
 				CEF518ADEDA245B099EC5C7E /* TimerLiveActivityIntents.swift */,
 				12919043AAC5B1C102723AAC /* TimerSnapshot+RecipeTimer.swift */,
 			);
@@ -1689,6 +1698,7 @@
 				B3TBDISC01A293A4B70100001 /* TabBarDiscoveryTests.swift */,
 				B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */,
 				B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */,
+				B3LAINTT01A293A4B70100001 /* TimerLiveActivityIntentSnapshotTests.swift */,
 				B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */,
 				B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */,
 				ILL043F11 /* IngredientIllustrationCatalogTests.swift */,
@@ -2641,6 +2651,7 @@
 				A456EBD108E7F61A6ED40F0B /* AppGroup.swift in Sources */,
 				36868E6A4338C22FDD6F8EAD /* TimerSnapshot.swift in Sources */,
 				B5B1532151BD871ECE63155C /* TimerSnapshotStore.swift in Sources */,
+				B3TSPATCH01B293A4B70100001 /* TimerSnapshotDocumentPatcher.swift in Sources */,
 				5F8CB757055EAA81BC46E69B /* TimerWidgetKind.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2658,6 +2669,7 @@
 				A1B2C3D4E5F64789AABBCC02 /* TimerLiveActivityLinearProgressStyle.swift in Sources */,
 				0FB07B606EF8451AB560DDC7 /* TimerLiveActivityFormatting.swift in Sources */,
 				4FD4C091C7E848E1B3EC0EAD /* TimerLiveActivityActionQueue.swift in Sources */,
+				B3LAINTP01C293A4B70100001 /* TimerLiveActivityIntentPerformer.swift in Sources */,
 				30F96B8BB19E42E699CD420D /* TimerLiveActivityIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2720,6 +2732,7 @@
 				A1B2C3D4E5F64789AABBCC03 /* TimerLiveActivityLinearProgressStyle.swift in Sources */,
 				EE235C1AE222411BAF3E3620 /* TimerLiveActivityFormatting.swift in Sources */,
 				D32494D8B32B4083A621A5D5 /* TimerLiveActivityActionQueue.swift in Sources */,
+				B3LAINTP01B293A4B70100001 /* TimerLiveActivityIntentPerformer.swift in Sources */,
 				6BBC390F7AF94B5AA3A27468 /* TimerLiveActivityIntents.swift in Sources */,
 				CC0002AA0002BB0002CC0002 /* PushRegistrationService.swift in Sources */,
 				E5F60718293A4B70116A7882 /* LiveActivityPushRegistrar.swift in Sources */,
@@ -3038,6 +3051,7 @@
 				B3TBDISC01B293A4B70100001 /* TabBarDiscoveryTests.swift in Sources */,
 				B3TIMENOTIF01B293A4B70100001 /* TimerNotificationActionsTests.swift in Sources */,
 				B3TIMEWIDGET01B293A4B70100001 /* TimerWidgetTimelineTests.swift in Sources */,
+				B3LAINTT01B293A4B70100001 /* TimerLiveActivityIntentSnapshotTests.swift in Sources */,
 				B3APPTEST02B293A4B70100001 /* ObservableMigrationTests.swift in Sources */,
 				B3APPTEST03B293A4B70100001 /* YjsMemoryLeakTests.swift in Sources */,
 				7F2675404F75AD0EC794F971 /* RecipeSearchUtilsTests.swift in Sources */,

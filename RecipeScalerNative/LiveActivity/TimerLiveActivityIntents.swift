@@ -22,7 +22,8 @@ struct PauseRecipeTimerIntent: LiveActivityIntent {
     }
 
     func perform() async throws -> some IntentResult {
-        TimerLiveActivityActionQueue.enqueue(action: .pause, timerId: timerId)
+        // Spec 030 Phase A: ActivityKit + snapshot + widget reload, then ActionQueue.
+        await TimerLiveActivityIntentPerformer.performPause(timerId: timerId)
         return .result()
     }
 }
@@ -43,7 +44,8 @@ struct ResumeRecipeTimerIntent: LiveActivityIntent {
     }
 
     func perform() async throws -> some IntentResult {
-        TimerLiveActivityActionQueue.enqueue(action: .resume, timerId: timerId)
+        // Spec 030 Phase A: ActivityKit + snapshot + widget reload, then ActionQueue.
+        await TimerLiveActivityIntentPerformer.performResume(timerId: timerId)
         return .result()
     }
 }
