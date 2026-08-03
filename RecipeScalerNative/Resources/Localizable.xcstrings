@@ -846,6 +846,22 @@
         }
       }
     },
+    "account.export.logs.clear" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear log"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить журнал"
+          }
+        }
+      }
+    },
     "account.export.logs.missing" : {
       "localizations" : {
         "en" : {
@@ -7175,22 +7191,6 @@
         }
       }
     },
-    "import.no-recipes-applied" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No recipes were imported"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось импортировать ни один рецепт"
-          }
-        }
-      }
-    },
     "import.error-static" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7371,6 +7371,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Режим"
+          }
+        }
+      }
+    },
+    "import.no-recipes-applied" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No recipes were imported"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось импортировать ни один рецепт"
           }
         }
       }

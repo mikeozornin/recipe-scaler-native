@@ -62,6 +62,20 @@ final class AppLogTests: XCTestCase {
         XCTAssertEqual(AppLog.currentLogFileURL()?.path, logURL.path)
     }
 
+    func testClearLogFilesRemovesCurrentAndArchives() {
+        AppLog.info(.app, "before_clear")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: logURL.path))
+
+        let archive = URL(fileURLWithPath: logURL.path + ".1")
+        FileManager.default.createFile(atPath: archive.path, contents: Data("archive\n".utf8))
+
+        AppLog.clearLogFiles()
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: logURL.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: archive.path))
+        XCTAssertNil(AppLog.currentLogFileURL())
+    }
+
     func testRotationCreatesArchiveFiles() {
         let line = String(repeating: "x", count: 1024) + "\n"
         let chunk = String(repeating: line, count: 6000)

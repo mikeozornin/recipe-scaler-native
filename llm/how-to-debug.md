@@ -26,6 +26,7 @@
 | `AppLog.debug/info/notice/error/fault(_:message:data:)` | Обычное журналирование с категорией (`sync`, `document`, `database`, …) |
 | `AppLog.agent(hypothesisId:location:message:data:)` | Agent/debug trace (совместим со старым `AgentSyncDebugLog`) |
 | `AppLog.currentLogFileURL()` | Путь к файлу для экспорта (nil в Release или если файла нет) |
+| `AppLog.clearLogFiles()` | Удаляет текущий журнал и ротированные архивы (кнопка в профиле) |
 
 Все записи зеркалируются в **OSLog** (`subsystem: com.recipescaler.native`). В DEBUG дополнительно пишутся в NDJSON-файл.
 

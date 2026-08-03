@@ -39,6 +39,8 @@ struct AccountView: View {
     /// Incremented on every pull-to-refresh so child views (Telegram status,
     /// legacy auth banner) re-run their `.task` and refetch non-pushed data.
     @State private var refreshTick = 0
+    /// Tracks NDJSON journal presence so export/clear rows refresh after wipe.
+    @State private var hasDebugLogFile = AppLog.currentLogFileURL() != nil
 
     private var collectionsLayout: RecipeFolderRoutes.CollectionsRootLayout {
         RecipeFolderRoutes.CollectionsRootLayout(rawValue: collectionsLayoutRaw)
@@ -608,7 +610,7 @@ struct AccountView: View {
                 }
             }
 
-            if let url = AppLog.currentLogFileURL() {
+            if hasDebugLogFile, let url = AppLog.currentLogFileURL() {
                 ShareLink(item: url) {
                     Label {
                         Text("account.export.logs.title")
@@ -617,6 +619,19 @@ struct AccountView: View {
                         AppSymbol.image("square.and.arrow.up")
                     }
                 }
+
+                Button {
+                    AppLog.clearLogFiles()
+                    hasDebugLogFile = false
+                } label: {
+                    Label {
+                        Text("account.export.logs.clear")
+                            .appBody()
+                    } icon: {
+                        AppSymbol.image("trash")
+                    }
+                }
+                .accessibilityIdentifier(AccessibilityIdentifiers.accountClearLogs)
             } else {
                 Label {
                     VStack(alignment: .leading, spacing: 4) {
@@ -637,6 +652,9 @@ struct AccountView: View {
             AppSectionHeader("account.section.logs")
         }
         .appListSectionHeaderStyle()
+        .onAppear {
+            hasDebugLogFile = AppLog.currentLogFileURL() != nil
+        }
     }
 
     @ViewBuilder

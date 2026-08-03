@@ -44,6 +44,7 @@ enum AccessibilityIdentifiers {
     static let importFilePickButton = "import_file_pick_button"
     static let accountRoot = "account_root"
     static let accountExportLogsMissing = "account_export_logs_missing"
+    static let accountClearLogs = "account_clear_logs"
     static let accountTelegramConnect = "account_telegram_connect"
     static let accountTelegramDisconnect = "account_telegram_disconnect"
     static let accountTelegramCode = "account_telegram_code"

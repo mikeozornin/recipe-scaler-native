@@ -129,6 +129,20 @@ enum AppLog {
         #endif
     }
 
+    /// Deletes the current NDJSON journal and rotated archives (`.1`…`.N`). No-op in Release.
+    static func clearLogFiles() {
+        #if DEBUG
+        writeQueue.sync {
+            let url = resolvedLogFileURL()
+            let fm = FileManager.default
+            try? fm.removeItem(at: url)
+            for index in 1...maxArchiveCount {
+                try? fm.removeItem(atPath: "\(url.path).\(index)")
+            }
+        }
+        #endif
+    }
+
     #if DEBUG
     /// Resolved log path (may not exist yet). Used by tests and agent pull helpers.
     static func resolvedLogFileURL() -> URL {
