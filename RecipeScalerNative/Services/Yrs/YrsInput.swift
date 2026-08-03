@@ -29,7 +29,8 @@ enum YrsInput {
         var entries: [(String, YrsInput)] = [
             ("id", .string(ingredient.id)),
             ("name", .string(ingredient.name)),
-            ("order", .int(Int64(ingredient.order))),
+            // Web parity: order is Y_JSON_NUM (matches ingMap.set('order', n)).
+            ("order", .double(Double(ingredient.order))),
             ("unit", .string(ingredient.unit)),
             ("isSeparator", .bool(ingredient.isSeparator)),
         ]

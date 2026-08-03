@@ -40,8 +40,10 @@ struct YrsMap {
     func int(key: String, txn: OpaquePointer) -> Int? {
         guard let output = ymap_get(branch, txn, key) else { return nil }
         defer { youtput_destroy(output) }
-        guard let ptr = youtput_read_long(output) else { return nil }
-        return Int(ptr.pointee)
+        if let ptr = youtput_read_long(output) { return Int(ptr.pointee) }
+        // Fallback: web stores some integer fields (e.g. ingredient.order) as Y_JSON_NUM.
+        if let ptr = youtput_read_float(output) { return Int(ptr.pointee) }
+        return nil
     }
 
     /// String, JSON number, or integer — as display text (web often stores `originalAmount` as number).

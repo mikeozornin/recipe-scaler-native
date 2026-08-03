@@ -161,6 +161,11 @@ struct AppShellView: View {
                     }
                 }
             }
+            .onChange(of: coordinator.pendingFileImportToast) { _, newValue in
+                guard let newValue else { return }
+                postTransientStatus(newValue)
+                coordinator.pendingFileImportToast = nil
+            }
         .onChange(of: showAssistant) { _, isOpen in
             assistantRecipeContext.isAssistantSheetOpen = isOpen
         }

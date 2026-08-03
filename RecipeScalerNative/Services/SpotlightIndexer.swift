@@ -144,7 +144,19 @@ final class SpotlightIndexer {
 
         guard !Task.isCancelled, !recipeData.isEmpty else { return }
 
-        let entriesById = Dictionary(uniqueKeysWithValues: dirty.map { ($0.id, $0) })
+        // Temporary: do not fatalError while we trace how duplicate application
+        // ids land in Y.Array(`recipes`). Last write wins for Spotlight only —
+        // collection data is left untouched.
+        var dirtyIdCounts: [String: Int] = [:]
+        for entry in dirty { dirtyIdCounts[entry.id, default: 0] += 1 }
+        let dirtyDups = dirtyIdCounts.filter { $0.value > 1 }.sorted { $0.key < $1.key }
+        if !dirtyDups.isEmpty {
+            AppLog.notice(
+                .spotlight,
+                "Duplicate collection ids in Spotlight dirty set: \(dirtyDups.prefix(3).map(\.key).joined(separator: ","))"
+            )
+        }
+        let entriesById = Dictionary(dirty.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
         let indexedIds = Set(recipeData.keys)
 
         let items: [CSSearchableItem] = await Task.detached(priority: .utility) { () -> [CSSearchableItem] in

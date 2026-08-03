@@ -65,7 +65,8 @@ enum RecipeYjsWriter {
         let len = array.length(txn: txn)
         for index in 0..<len {
             array.withMap(at: index, txn: txn) { ingMap in
-                ingMap.insert(key: "order", value: .int(Int64(index + 1)), txn: txn)
+                // Match web: ingMap.set('order', index + 1) → Y_JSON_NUM (not int, which becomes BigInt in JS).
+                ingMap.insert(key: "order", value: .double(Double(index + 1)), txn: txn)
             }
         }
     }
@@ -73,7 +74,8 @@ enum RecipeYjsWriter {
     static func writeIngredient(_ ingMap: YrsMap, ingredient: IngredientData, txn: OpaquePointer) {
         ingMap.insert(key: "id", value: .string(ingredient.id), txn: txn)
         ingMap.insert(key: "name", value: .string(ingredient.name), txn: txn)
-        ingMap.insert(key: "order", value: .int(Int64(ingredient.order)), txn: txn)
+        // Web parity: order is stored as Y_JSON_NUM (matches ingMap.set('order', n)).
+        ingMap.insert(key: "order", value: .double(Double(ingredient.order)), txn: txn)
         ingMap.insert(key: "isSeparator", value: .bool(ingredient.isSeparator), txn: txn)
         ingMap.insert(key: "unit", value: .string(ingredient.unit), txn: txn)
 

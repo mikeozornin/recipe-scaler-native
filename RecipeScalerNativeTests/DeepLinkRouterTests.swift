@@ -76,6 +76,31 @@ final class DeepLinkRouterTests: XCTestCase {
         XCTAssertNil(DeepLinkRouter.shared.pending)
     }
 
+    // MARK: - file:// URL handling (spec 057)
+
+    func test_fileURL_setsOpenRecipeFilePending() {
+        let url = URL(fileURLWithPath: "/tmp/incoming.recipe")
+        DeepLinkRouter.shared.handle(.openRecipeFile(url))
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openRecipeFile(url))
+    }
+
+    func test_handle_fileURL_routesToOpenRecipeFile() {
+        let url = URL(fileURLWithPath: "/tmp/incoming.recipe")
+        // Reproduce the routing logic from `RecipeScalerNativeApp.onOpenURL`.
+        // The `handle` static method only knows about the `recipe-scaler://`
+        // scheme; file URLs are dispatched via `.openRecipeFile` directly.
+        DeepLinkRouter.shared.handle(.openRecipeFile(url))
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openRecipeFile(url))
+    }
+
+    func test_handle_recipeSchemeURL_doesNotRouteFileURLs() {
+        // `recipe-scaler://` URLs are never treated as file URLs.
+        let id = "11111111-2222-3333-4444-555555555555"
+        let url = URL(string: "recipe-scaler://recipe/\(id)")!
+        DeepLinkRouter.handle(url)
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openRecipe(recipeId: id))
+    }
+
     // MARK: - consumePendingRecipeId (legacy UserDefaults path)
 
     func test_consumePendingRecipeId_returnsAndClears() {

@@ -604,6 +604,23 @@ final class YjsSyncService {
         isNetworkReachable = true
     }
 
+    /// Wait up to `timeoutSeconds` for the WebSocket to reach `.connected`.
+    ///
+    /// Returns `true` immediately if already connected, otherwise polls every 200ms
+    /// until the deadline expires. Used by `NativeExportImportService.importFile` so
+    /// that an incoming `.recipe` file opened right after app launch (when WS is
+    /// still in `.reconnecting`) can still upload its photo instead of being
+    /// skipped as offline. Never throws.
+    func waitForConnection(timeoutSeconds: Double) async -> Bool {
+        if connectionState == .connected { return true }
+        let deadline = Date().addingTimeInterval(timeoutSeconds)
+        while Date() < deadline {
+            if connectionState == .connected { return true }
+            try? await Task.sleep(nanoseconds: 200_000_000)
+        }
+        return connectionState == .connected
+    }
+
     private func reconcileStuckSyncingStates() {
         guard !isNetworkReachable || !connectionState.isConnected else { return }
         for (recipeId, state) in writeSyncStates where state == .syncing {
@@ -2258,6 +2275,22 @@ final class YjsSyncService {
         await refreshCollectionEntries()
     }
 
+    /// Histogram of duplicate application ids in live collection entries.
+    private static func duplicateIdSummary(
+        _ entries: [CollectionEntry]
+    ) -> (liveCount: Int, duplicateIdCount: Int, duplicateIds: String) {
+        var counts: [String: Int] = [:]
+        for entry in entries where !entry.deleted {
+            counts[entry.id, default: 0] += 1
+        }
+        let dups = counts.filter { $0.value > 1 }.sorted { $0.key < $1.key }
+        return (
+            counts.values.reduce(0, +),
+            dups.count,
+            dups.prefix(5).map { "\($0.key)x\($0.value)" }.joined(separator: ",")
+        )
+    }
+
     private func handleShoppingListUpdated(updateData: Data) async {
         guard let userId else { return }
         let key = Self.shoppingDocKey(userId: userId)
@@ -2438,6 +2471,12 @@ final class YjsSyncService {
         do {
             let entries = try await documentManager.readCollectionEntries()
             let filtered = entries.filter { !$0.deleted }
+            let dup = Self.duplicateIdSummary(filtered)
+            if dup.duplicateIdCount > 0 {
+                logger.warning(
+                    "Collection has \(dup.duplicateIdCount) duplicate application id(s): \(dup.duplicateIds)"
+                )
+            }
             if let recipeId = activeRecipeId,
                !filtered.contains(where: { $0.id == recipeId }),
                entries.contains(where: { $0.id == recipeId && $0.deleted }) {

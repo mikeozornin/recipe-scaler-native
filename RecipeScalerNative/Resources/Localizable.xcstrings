@@ -7175,6 +7175,22 @@
         }
       }
     },
+    "import.no-recipes-applied" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No recipes were imported"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось импортировать ни один рецепт"
+          }
+        }
+      }
+    },
     "import.error-static" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9411,6 +9427,23 @@
         }
       }
     },
+    "recipe.share.file-failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not prepare the recipe file"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось подготовить файл рецепта"
+          }
+        }
+      }
+    },
     "recipe.share.link" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9457,6 +9490,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выйдите в онлайн, чтобы поделиться"
+          }
+        }
+      }
+    },
+    "recipe.share.preparing-file" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing recipe file…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готовлю файл рецепта…"
+          }
+        }
+      }
+    },
+    "recipe.share.send-file" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send via AirDrop"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить через AirDrop"
           }
         }
       }

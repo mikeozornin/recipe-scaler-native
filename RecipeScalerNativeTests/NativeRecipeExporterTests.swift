@@ -463,4 +463,172 @@ final class NativeRecipeExporterTests: XCTestCase {
         XCTAssertEqual(nutrition.calories, 150)
         XCTAssertNil(nutrition.totalWeight)
     }
+
+    // MARK: - Spec 057: single-recipe `.recipe` export
+
+    /// T013 — `.recipe` file without images is still a ZIP archive with the
+    /// `.recipe` extension (constant extension for predictable AirDrop UX).
+    func testSingleRecipeExportWithoutImages() throws {
+        let recipe = makeSingleRecipe(name: "Cookies", id: "recipe-cookies")
+
+        let export = try NativeRecipeExporter.exportSingle(recipe: recipe)
+
+        XCTAssertTrue(export.filename.hasSuffix(".recipe"),
+                      "Expected `.recipe` extension, got \(export.filename)")
+        XCTAssertFalse(export.hasImages)
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("single-\(UUID().uuidString).recipe")
+        try export.data.write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let parsed = try NativeRecipeImporter.parse(url: tempURL)
+        XCTAssertEqual(parsed.version, .v1_4)
+        XCTAssertEqual(parsed.recipes.count, 1)
+        XCTAssertEqual(parsed.recipes.first?.name, "Cookies")
+        XCTAssertTrue(parsed.imageEntries.isEmpty)
+    }
+
+    /// T014 — `.recipe` file with image bundles the image bytes inside the
+    /// ZIP and the importer restores them.
+    func testSingleRecipeExportWithImages() throws {
+        let recipe = makeSingleRecipe(name: "Cake", id: "recipe-cake")
+        let fullImage = Data(repeating: 0xAA, count: 64)
+        let previewImage = Data(repeating: 0xBB, count: 32)
+
+        let export = try NativeRecipeExporter.exportSingle(
+            recipe: recipe,
+            imageData: (full: fullImage, preview: previewImage)
+        )
+
+        XCTAssertTrue(export.filename.hasSuffix(".recipe"))
+        XCTAssertTrue(export.hasImages)
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("single-\(UUID().uuidString).recipe")
+        try export.data.write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let parsed = try NativeRecipeImporter.parse(url: tempURL)
+        XCTAssertEqual(parsed.recipes.count, 1)
+        XCTAssertEqual(parsed.recipes.first?.name, "Cake")
+        XCTAssertEqual(parsed.imageEntries.count, 2)
+        XCTAssertTrue(parsed.imageEntries.contains {
+            $0.kind == .full && $0.recipeId == "recipe-cake"
+        })
+        XCTAssertTrue(parsed.imageEntries.contains {
+            $0.kind == .preview && $0.recipeId == "recipe-cake"
+        })
+        // Image bytes round-trip exactly.
+        let full = parsed.imageEntries.first { $0.kind == .full }
+        XCTAssertEqual(full?.data, fullImage)
+    }
+
+    /// T015 — full roundtrip: build a recipe with non-trivial fields,
+    /// export to `.recipe`, parse back — every field must survive.
+    func testSingleRecipeRoundtripPreservesAllFields() throws {
+        let recipe = ExportRecipe(
+            id: "roundtrip-id",
+            name: "Borscht",
+            description: "<p>Hot pink soup</p>",
+            ingredients: [
+                ExportIngredient(
+                    id: "beet",
+                    name: "beets",
+                    originalAmount: 3,
+                    amountText: nil,
+                    unit: "pcs",
+                    order: 1,
+                    isSeparator: nil
+                ),
+                ExportIngredient(
+                    id: "cream",
+                    name: "sour cream",
+                    originalAmount: nil,
+                    amountText: "to taste",
+                    unit: nil,
+                    order: 2,
+                    isSeparator: nil
+                )
+            ],
+            color: "oklch(0.65 0.25 25)",
+            servings: 6,
+            createdAt: "2026-01-01T00:00:00Z",
+            updatedAt: "2026-06-01T00:00:00Z",
+            originalRecipeLink: "https://example.com/borscht",
+            originalRecipe: "Grandma's Cookbook",
+            nutrition: ExportNutrition(
+                calories: 220,
+                protein: 8,
+                fat: 6,
+                carbs: 32,
+                calculatedAt: nil,
+                nutritionOutdated: false,
+                totalWeight: 1200
+            ),
+            imageUrl: nil
+        )
+
+        let export = try NativeRecipeExporter.exportSingle(recipe: recipe)
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("roundtrip-\(UUID().uuidString).recipe")
+        try export.data.write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let parsed = try NativeRecipeImporter.parse(url: tempURL)
+        let imported = try XCTUnwrap(parsed.recipes.first)
+
+        XCTAssertEqual(imported.id, "roundtrip-id")
+        XCTAssertEqual(imported.name, "Borscht")
+        XCTAssertEqual(imported.description, "<p>Hot pink soup</p>")
+        XCTAssertEqual(imported.servings, 6)
+        XCTAssertEqual(imported.color, "oklch(0.65 0.25 25)")
+        XCTAssertEqual(imported.ingredients.count, 2)
+        XCTAssertEqual(imported.ingredients[0].name, "beets")
+        XCTAssertEqual(imported.ingredients[1].name, "sour cream")
+        XCTAssertEqual(imported.ingredients[1].amountText, "to taste")
+        XCTAssertEqual(imported.nutrition?.calories, 220)
+        XCTAssertEqual(imported.nutrition?.totalWeight, 1200)
+    }
+
+    /// Slugification sanity check — recipe names with shell-unsafe characters
+    /// become filesystem-safe filenames.
+    func testSingleRecipeExportSlugifiesName() throws {
+        let recipe = makeSingleRecipe(name: "Soup / Tomato: Special*Edit", id: "x")
+        let export = try NativeRecipeExporter.exportSingle(recipe: recipe)
+        XCTAssertTrue(export.filename.hasSuffix(".recipe"))
+        XCTAssertFalse(export.filename.contains("/"),
+                       "Filename must not contain `/`: \(export.filename)")
+        XCTAssertFalse(export.filename.contains(":"),
+                       "Filename must not contain `:`: \(export.filename)")
+        XCTAssertFalse(export.filename.contains("*"),
+                       "Filename must not contain `*`: \(export.filename)")
+    }
+
+    /// Empty recipe name falls back to `recipe-<timestamp>.recipe`.
+    func testSingleRecipeExportEmptyNameFallback() throws {
+        let recipe = makeSingleRecipe(name: "   ", id: "empty")
+        let export = try NativeRecipeExporter.exportSingle(recipe: recipe)
+        XCTAssertTrue(export.filename.hasPrefix("recipe-"))
+        XCTAssertTrue(export.filename.hasSuffix(".recipe"))
+    }
+
+    // MARK: - Helpers
+
+    private func makeSingleRecipe(name: String, id: String) -> ExportRecipe {
+        ExportRecipe(
+            id: id,
+            name: name,
+            description: nil,
+            ingredients: [],
+            color: "oklch(0.65 0.25 270)",
+            servings: nil,
+            createdAt: nil,
+            updatedAt: nil,
+            originalRecipeLink: nil,
+            originalRecipe: nil,
+            nutrition: nil,
+            imageUrl: nil
+        )
+    }
 }

@@ -73,6 +73,9 @@
         }
       }
     },
+    "Recipe Scaler recipe" : {
+
+    },
     "spotlight.action.addToShopping.title" : {
       "extractionState" : "stale",
       "localizations" : {

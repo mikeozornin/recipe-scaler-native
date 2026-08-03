@@ -14,16 +14,16 @@ import Foundation
 /// Seed phrase is documented in `docs/PROJECT.md` and kept here so bootstrap
 /// can re-exchange if the bundled token is revoked.
 enum DebugSimulatorAutoLogin {
-    static let userId = "cfcd839f-56f2-4411-9632-7795b75f96d1"
+    static let userId = "f088233a-cfed-4fa5-8284-daa2d1ab827c"
 
     /// Same phrase as `docs/PROJECT.md` — DEBUG simulator recovery only.
     static let seedPhrase =
-        "mass layer gossip slight bachelor broken spend story rabbit biology tower blast"
+        "breeze roast wink solar guess tongue nothing subway theme palace mask wrist"
 
     /// Last known valid Bearer for `device_id=debug-simulator-autologin`.
     /// Prefer launch-env override; re-exchange via seed if this is revoked.
     private static let bundledDeviceToken =
-        "BnSx2ROVt4p_ADYNS1ctvvcS3AtuBAwknV-I0_0FGfM"
+        "Q5Xhsf1lxkGDE4F5ssFMgv2M6zlzoRHMBPDU7IJkNJE"
 
     static var isEnabled: Bool {
         #if targetEnvironment(simulator)

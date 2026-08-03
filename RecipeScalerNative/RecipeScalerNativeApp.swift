@@ -134,6 +134,13 @@ struct RecipeScalerNativeApp: App {
             ContentView()
                 .appEnvironment(container)
                 .onOpenURL { url in
+                    // Spec 057: file:// URLs (AirDrop, Files, Mail attachments)
+                    // go through a dedicated deep-link path that imports the
+                    // file directly without presenting ImportRecipeSheet.
+                    if url.isFileURL {
+                        DeepLinkRouter.shared.handle(.openRecipeFile(url))
+                        return
+                    }
                     DeepLinkRouter.handle(url)
                 }
                 .onContinueUserActivity(CSSearchableItemActionType) { activity in

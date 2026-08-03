@@ -9,7 +9,7 @@ public enum NativeFormatDetector {
     /// Returns the normalized version. Throws if the file is not a valid Recipe Scaler export.
     public static func detect(url: URL) throws -> NativeFormatVersion {
         let data: Data
-        if url.pathExtension.lowercased() == "zip" {
+        if isZipExtension(url.pathExtension) {
             data = try readRecipesJsonFromZip(url: url)
         } else {
             data = try Data(contentsOf: url)
@@ -50,6 +50,17 @@ public enum NativeFormatDetector {
             data.append(chunk)
         }
         return data
+    }
+
+    /// Returns `true` for file extensions that wrap a ZIP archive of the
+    /// Recipe Scaler v1.4 format.
+    ///
+    /// - `.zip` — bulk export (multiple recipes + images), supported since v1.0.
+    /// - `.recipe` — single-recipe AirDrop payload (spec 057); same ZIP layout
+    ///   with `recipes.json` at the root.
+    private static func isZipExtension(_ pathExtension: String) -> Bool {
+        let lower = pathExtension.lowercased()
+        return lower == "zip" || lower == "recipe"
     }
 }
 #endif

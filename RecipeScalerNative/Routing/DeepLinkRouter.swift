@@ -19,6 +19,10 @@ enum DeepLink: Equatable, Sendable {
     /// Opens the app on the default tab (`.recipes`). Used by `TimerWidget`
     /// taps on the Home Screen — there is no dedicated timers tab in the app.
     case openHome
+    /// Spec 057 — incoming `.recipe` file via AirDrop / Files / Mail.
+    /// The URL points to a security-scoped Inbox file that the coordinator
+    /// copies to `tmp` before importing through `NativeExportImportService`.
+    case openRecipeFile(URL)
 }
 
 // MARK: - DeepLinkRouter

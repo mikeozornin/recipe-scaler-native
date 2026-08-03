@@ -75,6 +75,24 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertNil(router.pending)
     }
 
+    /// Spec 057 T027 — `.openRecipeFile` runs the silent import path and
+    /// MUST NOT open `ImportRecipeSheet`. The actual import is async and
+    /// reads from disk; this test only checks the immediate observable
+    /// state changes: sheet stays `nil`, deep link is cleared.
+    func test_openRecipeFile_doesNotPresentImportSheet() throws {
+        let (coordinator, router, _) = try makeCoordinator()
+
+        // A non-existent file URL is fine — the coordinator kicks off a
+        // Task that will fail later; we only assert on synchronous state.
+        let url = URL(fileURLWithPath: "/tmp/nonexistent-\(UUID().uuidString).recipe")
+        coordinator.handleDeepLink(.openRecipeFile(url))
+
+        XCTAssertNil(coordinator.importPresentation,
+                     "AirDrop file import must not present ImportRecipeSheet")
+        XCTAssertNil(router.pending,
+                     "Deep link must be cleared even before the import Task finishes")
+    }
+
     func test_resolvePendingSpotlightRecipe_navigatesWhenEntryAppears() throws {
         let (coordinator, _, _) = try makeCoordinator()
         let recipeId = "11111111-2222-3333-4444-555555555555"

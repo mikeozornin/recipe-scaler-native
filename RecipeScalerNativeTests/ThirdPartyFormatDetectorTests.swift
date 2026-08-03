@@ -94,6 +94,46 @@ final class ThirdPartyFormatDetectorTests: XCTestCase {
         }
     }
 
+    /// Spec 057 T009 — `.recipe` files are the native Recipe Scaler format,
+    /// not third-party. They are detected via `NativeFormatDetector`, so the
+    /// third-party detector must report them as `.unsupported`.
+    func testDetectRecipeScalerNativeIsUnsupported() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("native-\(UUID().uuidString).recipe")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let recipeId = "test-native"
+        let payload: [String: Any] = [
+            "metadata": [
+                "version": "1.4",
+                "type": "recipes-v1.4",
+                "count": 1,
+                "exportDate": "2026-08-02T22:00:00Z"
+            ],
+            "recipes": [[
+                "id": recipeId,
+                "name": "Native Recipe",
+                "ingredients": [[String: Any]](),
+                "color": "#FF0000"
+            ]]
+        ]
+        let jsonData = try JSONSerialization.data(withJSONObject: payload)
+
+        guard let archive = Archive(url: url, accessMode: .create) else {
+            throw NSError(domain: "ThirdPartyFormatDetectorTests", code: 4)
+        }
+        try archive.addEntry(
+            with: "recipes.json",
+            type: .file,
+            uncompressedSize: UInt32(jsonData.count),
+            compressionMethod: .deflate
+        ) { position, size in
+            jsonData.subdata(in: Int(position)..<Int(position + size))
+        }
+
+        XCTAssertEqual(try ThirdPartyFormatDetector.detect(url: url), .unsupported)
+    }
+
     private func fixtureURL(named name: String, ext: String) throws -> URL {
         let bundle = Bundle(for: ThirdPartyFormatDetectorTests.self)
         guard let url = bundle.url(

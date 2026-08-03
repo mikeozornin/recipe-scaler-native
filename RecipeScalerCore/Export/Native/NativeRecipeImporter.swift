@@ -49,7 +49,10 @@ public enum NativeRecipeImporter {
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
 
-        let isZip = url.pathExtension.lowercased() == "zip"
+        let isZip: Bool = {
+            let ext = url.pathExtension.lowercased()
+            return ext == "zip" || ext == "recipe"
+        }()
 
         if isZip {
             return try parseZip(url: url)

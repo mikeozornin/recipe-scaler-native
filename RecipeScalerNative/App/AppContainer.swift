@@ -146,8 +146,17 @@ final class AppContainer {
         self.spotlight = SpotlightIndexer(syncService: sync)
         self.shellCoordinator = AppShellCoordinator(
             syncService: sync,
-            deepLinkRouter: deepLinkRouter
+            deepLinkRouter: deepLinkRouter,
+            fileImportCoordinator: nil
         )
+
+        // Spec 057: silent `.recipe` importer for AirDrop / Files / Mail.
+        // Built in the composition root (AGENTS.md: "all app-level services are
+        // constructed in AppContainer") with its `weak` back-reference to the
+        // shell coordinator wired immediately after construction.
+        let fileImportCoordinator = RecipeFileImportCoordinator(syncService: sync)
+        fileImportCoordinator.shellCoordinator = shellCoordinator
+        shellCoordinator.fileImportCoordinator = fileImportCoordinator
 
         // Feature adoption store (spec 038). Cache is loaded lazily in
         // `bootstrap(userId:)` so the section renders instantly on first appear.

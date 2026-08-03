@@ -17,6 +17,16 @@ final class AppShellCoordinator {
     private let syncService: YjsSyncService
     private let deepLinkRouter: DeepLinkRouter
 
+    /// Spec 057 — silent importer for incoming `.recipe` files via AirDrop /
+    /// Files / Mail. Injected by `AppContainer` so test doubles can be passed
+    /// in for unit testing; previews construct it lazily when they don't have
+    /// a real container.
+    ///
+    /// `private(set)` would block `AppContainer` from wiring the
+    /// `weak shellCoordinator` back-reference after both objects exist, so the
+    /// setter is internal (module-scoped only).
+    var fileImportCoordinator: RecipeFileImportCoordinator?
+
     var selectedTab: AppTab = .recipes
     var importPresentation: ImportPresentation?
     var recipesPath = NavigationPath()
@@ -25,10 +35,18 @@ final class AppShellCoordinator {
     private(set) var pendingSpotlightRecipeId: String?
     /// When true, Profile (`AccountView`) should scroll to Reminders, enable sync, and open list picker.
     private(set) var pendingRemindersSetup = false
+    /// Spec 057 — last user-facing toast message from a silent file import.
+    /// AppShellView renders this as a transient overlay.
+    var pendingFileImportToast: String?
 
-    init(syncService: YjsSyncService, deepLinkRouter: DeepLinkRouter) {
+    init(
+        syncService: YjsSyncService,
+        deepLinkRouter: DeepLinkRouter,
+        fileImportCoordinator: RecipeFileImportCoordinator? = nil
+    ) {
         self.syncService = syncService
         self.deepLinkRouter = deepLinkRouter
+        self.fileImportCoordinator = fileImportCoordinator
     }
 
     // MARK: - Tab selection
@@ -115,6 +133,25 @@ final class AppShellCoordinator {
             deepLinkRouter.clear()
         case .openHome:
             selectedTab = .recipes
+            deepLinkRouter.clear()
+        case .openRecipeFile(let url):
+            // Spec 057 — silent import path. ImportRecipeSheet is NOT
+            // presented; the coordinator runs `RecipeFileImportCoordinator`
+            // directly and reports back via toast + navigation.
+            guard let fileImportCoordinator else {
+                AppLog.notice(.app, "open_recipe_file_without_coordinator")
+                deepLinkRouter.clear()
+                return
+            }
+            Task { @MainActor in
+                let message = await fileImportCoordinator.importFile(
+                    at: url,
+                    isOnline: syncService.connectionState.isConnected
+                )
+                if let message {
+                    pendingFileImportToast = message
+                }
+            }
             deepLinkRouter.clear()
         }
     }

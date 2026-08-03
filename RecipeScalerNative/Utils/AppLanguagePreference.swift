@@ -29,13 +29,6 @@ enum AppLanguagePreference: String, CaseIterable, Identifiable, Hashable {
     }
 
     static func save(_ language: AppLanguagePreference) {
-        // #region agent log
-        AgentSyncDebugLog.sync(
-            location: "AppLanguagePreference.save",
-            message: "language_save",
-            data: ["language": language.rawValue]
-        )
-        // #endregion
         UserDefaults.standard.set(language.rawValue, forKey: storageKey)
         apply(language)
     }

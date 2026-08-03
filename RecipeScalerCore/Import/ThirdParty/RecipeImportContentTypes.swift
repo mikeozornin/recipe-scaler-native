@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 
 public enum RecipeImportContentTypes {
     public static var supported: [UTType] {
-        var types: [UTType] = [.json, .zip, .data]
+        var types: [UTType] = [.json, .zip, .data, UTType.recipeScalerRecipe]
         if let paprikaArchive = UTType(filenameExtension: "paprikarecipes") {
             types.append(paprikaArchive)
         }

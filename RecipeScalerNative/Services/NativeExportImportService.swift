@@ -161,6 +161,132 @@ final class NativeExportImportService {
         return fileURL
     }
 
+    // MARK: - Single-recipe export (AirDrop, spec 057)
+
+    /// Export a single recipe as a `.recipe` file (ZIP archive of the v1.4
+    /// format) ready to be passed to `ShareLink(item: fileURL)`.
+    ///
+    /// Heavy work (recipe read, image read, ZIP packing) runs on a background
+    /// executor via `Task.detached(priority: .userInitiated)`. Only the
+    /// initial `collectionEntries` snapshot is read on the MainActor, and
+    /// `progress` callbacks are routed back to the MainActor.
+    ///
+    /// - Parameters:
+    ///   - id: Recipe id to export. Must exist in `collectionEntries`.
+    ///   - progress: Optional MainActor callback for progress reporting.
+    ///     Called with `(1, 1)` after the entire export completes
+    ///     successfully (recipe payload built + image read + ZIP packed +
+    ///     file written). Not called on throw. Useful for showing a spinner
+    ///     in the share sheet while the file is being assembled.
+    /// - Returns: File URL in `temporaryDirectory` with the `.recipe` extension.
+    ///   The caller does **not** need to delete this file — iOS scavenges
+    ///   `temporaryDirectory` automatically; explicit cleanup is optional.
+    func exportRecipe(
+        id: String,
+        progress: (@MainActor (Int, Int) -> Void)? = nil
+    ) async throws -> URL {
+        // MainActor snapshot: confirm the recipe exists and grab the entry.
+        guard let entry = syncService.collectionEntries.first(where: {
+            $0.id == id && !$0.deleted
+        }) else {
+            throw NativeImportError.emptyArchive
+        }
+
+        let syncService = self.syncService
+
+        let fileURL: URL = try await Task.detached(priority: .userInitiated) {
+            let recipeData = try await syncService.readRecipeData(recipeId: entry.id)
+            guard let recipeData else {
+                throw NativeImportError.emptyArchive
+            }
+
+            let exportRecipe = ExportRecipe(
+                id: recipeData.id,
+                name: recipeData.name,
+                description: recipeData.description,
+                ingredients: recipeData.ingredients.map { ing in
+                    let numeric = ing.numericValue
+                    let rawText = ing.originalAmount.isEmpty
+                        ? ing.amount
+                        : ing.originalAmount
+                    let amountText: String? = (numeric == nil)
+                        && ing.hasQuantity
+                        && !rawText.isEmpty
+                        ? rawText
+                        : nil
+                    return ExportIngredient(
+                        id: ing.id,
+                        name: ing.name,
+                        originalAmount: numeric,
+                        amountText: amountText,
+                        unit: ing.unit.isEmpty ? nil : ing.unit,
+                        order: ing.order,
+                        isSeparator: ing.isSeparator ? true : nil
+                    )
+                },
+                color: recipeData.color,
+                servings: recipeData.servings,
+                createdAt: recipeData.createdAt,
+                updatedAt: recipeData.updatedAt,
+                originalRecipeLink: recipeData.originalRecipeLink,
+                originalRecipe: recipeData.originalRecipe,
+                nutrition: recipeData.nutrition.map { n in
+                    ExportNutrition(
+                        calories: n.calories,
+                        protein: n.protein,
+                        fat: n.fat,
+                        carbs: n.carbs,
+                        calculatedAt: nil,
+                        nutritionOutdated: n.nutritionOutdated,
+                        totalWeight: n.extra["totalWeight"]
+                    )
+                },
+                imageUrl: recipeData.imageUrl
+            )
+
+            var imageData: (full: Data, preview: Data)?
+            if recipeData.imageUrl != nil,
+               let fullURL = RecipeImageDiskCache.existingFileURL(
+                   recipeId: recipeData.id, variant: .full
+               ),
+               let previewURL = RecipeImageDiskCache.existingFileURL(
+                   recipeId: recipeData.id, variant: .preview
+               ),
+               let full = try? Data(contentsOf: fullURL),
+               let preview = try? Data(contentsOf: previewURL) {
+                imageData = (full: full, preview: preview)
+            }
+
+            let result = try NativeRecipeExporter.exportSingle(
+                recipe: exportRecipe,
+                imageData: imageData
+            )
+
+            let tempDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("RecipeScalerExport")
+            try FileManager.default.createDirectory(
+                at: tempDir,
+                withIntermediateDirectories: true
+            )
+            let fileURL = tempDir.appendingPathComponent(result.filename)
+            try result.data.write(to: fileURL)
+
+            // Spec 057 review HIGH #4: progress fires only after the entire
+            // export (recipe read + image read + ZIP packing + file write)
+            // completes successfully. The share sheet hides its spinner on
+            // this signal — firing it earlier (e.g. right after recipe read)
+            // would let the user tap the share button before the file exists,
+            // contradicting spec FR-004 ("progress indicator, т.к. сбор
+            // картинки может занять время"). On throw the caller's `catch`
+            // surfaces the error instead.
+            await MainActor.run { progress?(1, 1) }
+
+            return fileURL
+        }.value
+
+        return fileURL
+    }
+
     // MARK: - Import
 
     /// Import recipes from a Recipe Scaler export file.
@@ -224,8 +350,25 @@ final class NativeExportImportService {
 
                 let entries = imageMap[recipe.id] ?? []
                 if !entries.isEmpty {
-                    if !isOnline {
+                    // WS may still be in `.reconnecting` after app launch (typical for
+                    // an incoming `.recipe` file via AirDrop / Files). Give it a short
+                    // grace window before falling back to the offline-skip path.
+                    var effectiveOnline = isOnline
+                    if !effectiveOnline {
+                        effectiveOnline = await syncService.waitForConnection(timeoutSeconds: 5)
+                    }
+
+                    if !effectiveOnline {
                         photosSkippedOffline += 1
+                        AppLog.notice(
+                            .sync,
+                            "native_import_image_skipped_offline",
+                            data: [
+                                "recipeId": newId,
+                                "exportRecipeId": recipe.id,
+                                "entryCount": String(entries.count),
+                            ]
+                        )
                     } else {
                         await uploadRecipeImageIfNeeded(
                             exportRecipeId: recipe.id,
@@ -284,7 +427,7 @@ final class NativeExportImportService {
     static func isNativeFormat(url: URL) -> Bool {
         // Quick heuristic: check file extension and try to detect version
         let ext = url.pathExtension.lowercased()
-        guard ext == "json" || ext == "zip" || ext == "data" else { return false }
+        guard ext == "json" || ext == "zip" || ext == "data" || ext == "recipe" else { return false }
         return (try? NativeFormatDetector.detect(url: url)) != nil
     }
 

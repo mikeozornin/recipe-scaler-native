@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct RecipeDetailShareButton: View {
     let recipeId: String
@@ -53,6 +54,12 @@ private struct RecipeShareSheet: View {
     @State private var model = RecipeShareModel(api: .shared)
     @State private var isPublic: Bool
     @State private var isUpdating = false
+
+    // Spec 057: AirDrop file export state
+    @State private var fileExportURL: URL?
+    @State private var isPreparingFile = false
+    @State private var showFileActivitySheet = false
+    @State private var fileErrorMessage: LocalizedStringKey?
 
     init(recipeId: String, initialIsPublic: Bool, hasImage: Bool, hasSteps: Bool) {
         self.recipeId = recipeId
@@ -125,6 +132,11 @@ private struct RecipeShareSheet: View {
                         }
                     }
                 }
+
+                // Spec 057: AirDrop file transfer.
+                // Independent of the public-link section so the user can send
+                // a file regardless of `isPublic` state.
+                airdropFileSection
             }
             .appOpaqueGroupedListSurface()
             .localizedNavigationTitle("recipe.share")
@@ -132,6 +144,72 @@ private struct RecipeShareSheet: View {
         }
         .appOpaqueSheetPresentation(detents: [.medium, .large])
         .task { await model.loadSettings(syncService: syncService) }
+        .sheet(isPresented: $showFileActivitySheet) {
+            if let fileURL = fileExportURL {
+                ActivityShareSheet(activityItems: [fileURL])
+                    .presentationDetents([.medium, .large])
+            }
+        }
+    }
+
+    // MARK: - AirDrop file section (spec 057)
+
+    @ViewBuilder
+    private var airdropFileSection: some View {
+        Section {
+            if isPreparingFile {
+                HStack {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("recipe.share.preparing-file")
+                        .appBody()
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Button {
+                    Task { await prepareAndShareFile() }
+                } label: {
+                    Label("recipe.share.send-file", systemImage: "square.and.arrow.up")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .disabled(isPreparingFile)
+                .accessibilityIdentifier("recipe.share.airdrop-button")
+            }
+
+            if let fileErrorMessage {
+                Text(fileErrorMessage)
+                    .foregroundStyle(.red)
+                    .appFootnote()
+            }
+        } header: {
+            // Override the app-wide Martian environment font so this header
+            // matches the system insetGrouped section header (SF / system).
+            Text("recipe.share.send-file")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .textCase(AppSectionHeader.usesUpperCase ? .uppercase : nil)
+        }
+        .appListSectionHeaderStyle()
+    }
+
+    /// Build the `.recipe` file, then immediately present the system share sheet
+    /// so the user does not need a second tap after preparation finishes.
+    private func prepareAndShareFile() async {
+        isPreparingFile = true
+        fileErrorMessage = nil
+        showFileActivitySheet = false
+        let exporter = NativeExportImportService(syncService: syncService)
+        do {
+            let url = try await exporter.exportRecipe(id: recipeId)
+            fileExportURL = url
+            isPreparingFile = false
+            // Present after the progress row has left the hierarchy so the
+            // activity sheet is not fighting a mid-update List layout.
+            showFileActivitySheet = true
+        } catch {
+            fileErrorMessage = "recipe.share.file-failed"
+            isPreparingFile = false
+        }
     }
 
     // MARK: Mode description (shown when toggle is hidden)
@@ -190,4 +268,19 @@ private struct RecipeShareSheet: View {
             ShoppingFeedback.postStatus(Bundle.currentLocalizedString("shopping.link-copied"))
         }
     }
+}
+
+// MARK: - System share sheet
+
+/// Thin SwiftUI wrapper around `UIActivityViewController` so we can present
+/// AirDrop / Files / Messages as soon as the `.recipe` file is ready —
+/// without requiring a second tap on a `ShareLink`.
+private struct ActivityShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

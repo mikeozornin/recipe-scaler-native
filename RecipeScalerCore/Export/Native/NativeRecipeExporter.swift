@@ -163,6 +163,137 @@ public enum NativeRecipeExporter {
         }
     }
 
+    /// Export a single recipe as a `.recipe` file (spec 057 — AirDrop transfer).
+    ///
+    /// Always returns a ZIP archive with the `.recipe` extension, even when
+    /// there is no image: a constant extension keeps the UX predictable on
+    /// the receiving side (single UTType, single document type). The payload
+    /// layout is identical to `exportStreaming`:
+    ///
+    /// - `recipes.json` — single-recipe v1.4 manifest at the root;
+    /// - `images/<recipeId>/full.webp` + `images/<recipeId>/preview.webp` —
+    ///   only when `imageData` is provided.
+    ///
+    /// The output is fully backward-compatible with the existing importer
+    /// (`NativeRecipeImporter.parseZip`) and with older builds that don't
+    /// yet know about the `.recipe` extension (they read it as a generic
+    /// `.zip`).
+    public static func exportSingle(
+        recipe: ExportRecipe,
+        imageData: (full: Data, preview: Data)? = nil
+    ) throws -> ExportResult {
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+            .replacingOccurrences(of: ":", with: "-")
+            .replacingOccurrences(of: ".", with: "-")
+
+        let imageRecipeIds: Set<String> = imageData != nil ? [recipe.id] : []
+        let payload = buildPayload(
+            recipes: [recipe],
+            recipeFolderIds: [:],
+            folders: [],
+            imageRecipeIds: imageRecipeIds
+        )
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let encoded = try encoder.encode(payload)
+        let jsonString = normalizeLineTerminators(
+            String(data: encoded, encoding: .utf8) ?? ""
+        )
+        guard let jsonData = jsonString.data(using: String.Encoding.utf8) else {
+            throw NativeImportError.writeFailed("Failed to encode JSON")
+        }
+
+        let baseName = slugify(recipe.name) ?? "recipe-\(timestamp)"
+        if let imageData {
+            // Spec 057 review HIGH #5: collect the in-memory image backing
+            // files and clean them up after `createZipStreaming` so we don't
+            // leak ~50 MB of `.bin` files into `tmp/` on every AirDrop share.
+            // Previously the URLs were created and dropped on the floor;
+            // iOS scavenges `tmp/` lazily, so a busy sender could pile up
+            // hundreds of MB before the OS cleaned them.
+            let fullURL = makeInMemoryDataURL(imageData.full)
+            let previewURL = makeInMemoryDataURL(imageData.preview)
+            let imageFiles = [NativeRecipeExporter.ImageFile(
+                recipeId: recipe.id,
+                fullURL: fullURL,
+                previewURL: previewURL
+            )]
+            // Reuse the streaming path so the ZIP layout matches the bulk
+            // export entry-for-entry (single pass, lazy image reads).
+            do {
+                let zipData = try createZipStreaming(
+                    recipesJson: jsonData,
+                    imageFiles: imageFiles
+                )
+                try? FileManager.default.removeItem(at: fullURL)
+                try? FileManager.default.removeItem(at: previewURL)
+                return ExportResult(
+                    data: zipData,
+                    hasImages: true,
+                    filename: "\(baseName).recipe"
+                )
+            } catch {
+                try? FileManager.default.removeItem(at: fullURL)
+                try? FileManager.default.removeItem(at: previewURL)
+                throw error
+            }
+        } else {
+            let zipData = try createZipStreaming(
+                recipesJson: jsonData,
+                imageFiles: []
+            )
+            return ExportResult(
+                data: zipData,
+                hasImages: false,
+                filename: "\(baseName).recipe"
+            )
+        }
+    }
+
+    /// Turn a recipe name into a filesystem-safe slug for the output file.
+    /// Preserves unicode letters (no transliteration); replaces `/`, `:`,
+    /// newlines, and other shell-unsafe characters with `-`. Returns `nil`
+    /// for empty/whitespace-only input so callers can fall back.
+    private static func slugify(_ name: String) -> String? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        var slug = ""
+        for scalar in trimmed.unicodeScalars {
+            switch scalar {
+            case "/":
+                slug.append("-")
+            case "\u{0000}"..."\u{001F}":
+                slug.append("-")
+            case ":", "*", "?", "\"", "\\", "<", ">", "|":
+                slug.append("-")
+            default:
+                slug.unicodeScalars.append(scalar)
+            }
+        }
+        // Collapse runs of dashes introduced by replacements above.
+        while slug.contains("--") {
+            slug = slug.replacingOccurrences(of: "--", with: "-")
+        }
+        slug = slug.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        guard !slug.isEmpty else { return nil }
+        // Cap at 80 chars to keep the filename manageable in share sheets.
+        if slug.count > 80 {
+            slug = String(slug.prefix(80))
+        }
+        return slug
+    }
+
+    /// Wrap raw bytes in a temporary `file://` URL. `exportStreaming` reads
+    /// image bytes lazily via `FileHandle`, so we need a backing file even
+    /// for in-memory image data passed to `exportSingle`.
+    private static func makeInMemoryDataURL(_ data: Data) -> URL {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rs-export-\(UUID().uuidString).bin")
+        try? data.write(to: tmp)
+        return tmp
+    }
+
     // MARK: - Private
 
     /// Build the v1.4 payload structure shared by both the in-memory and

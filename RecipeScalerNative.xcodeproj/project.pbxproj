@@ -134,6 +134,11 @@
 		A027027000023 /* NativeRecipeImporterZipBombTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000123 /* NativeRecipeImporterZipBombTests.swift */; };
 		A027027000024 /* ImportLimitsConsistencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027027000124 /* ImportLimitsConsistencyTests.swift */; };
 		A027028000001 /* Import/ThirdParty/RecipeImportContentTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027028000101 /* Import/ThirdParty/RecipeImportContentTypes.swift */; };
+		A05700000101 /* Import/ThirdParty/UTTypeRecipeScaler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A05700000102 /* Import/ThirdParty/UTTypeRecipeScaler.swift */; };
+		A05700000300 /* RecipeFileImportCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A05700000301 /* RecipeFileImportCoordinator.swift */; };
+		A05700000200 /* UTTypeRecipeScalerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A05700000201 /* UTTypeRecipeScalerTests.swift */; };
+		A05700000210 /* NativeFormatDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A05700000202 /* NativeFormatDetectorTests.swift */; };
+		A05700000220 /* RecipeFileImportCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A05700000203 /* RecipeFileImportCoordinatorTests.swift */; };
 		A029031000001 /* NativeFormatVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000101 /* NativeFormatVersion.swift */; };
 		A029031000002 /* NativeFormatTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000102 /* NativeFormatTypes.swift */; };
 		A029031000003 /* NativeFormatDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000103 /* NativeFormatDetector.swift */; };
@@ -305,7 +310,6 @@
 		E5F60718293A4B700000002B /* RecipeTitleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700000002A /* RecipeTitleTextField.swift */; };
 		E5F60718293A4B7000000030 /* IngredientNutritionEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000031 /* IngredientNutritionEditing.swift */; };
 		E5F60718293A4B7000000040 /* XmlFragmentToHTML.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000041 /* XmlFragmentToHTML.swift */; };
-		E5F60718293A4B7000000042 /* RecipeReadDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000043 /* RecipeReadDiagnostics.swift */; };
 		E5F60718293A4B7000000050 /* RecipeDescriptionFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000051 /* RecipeDescriptionFixture.swift */; };
 		E5F60718293A4B7000000052 /* RecipeDescriptionParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000053 /* RecipeDescriptionParser.swift */; };
 		E5F60718293A4B7000000054 /* RecipeDescriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7000000055 /* RecipeDescriptionView.swift */; };
@@ -396,8 +400,6 @@
 		E5F60719293A4B7000000083 /* DescriptionFormattingBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000082 /* DescriptionFormattingBar.swift */; };
 		E5F60719293A4B7000000085 /* DescriptionEditorChromeState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000084 /* DescriptionEditorChromeState.swift */; };
 		E5F60719293A4B7000000087 /* DescriptionMarkupFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000086 /* DescriptionMarkupFlow.swift */; };
-		E5F60719293A4B7000000089 /* DebugSessionNDJSONLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000088 /* DebugSessionNDJSONLog.swift */; };
-		E5F60719293A4B7000000091 /* CursorDebugIngestLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000090 /* CursorDebugIngestLog.swift */; };
 		E5F60719293A4B7000000093 /* AgentDebugLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000092 /* AgentDebugLogging.swift */; };
 		E5F6071A293A4B7000000090 /* DescriptionWireExportHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6071A293A4B7000000091 /* DescriptionWireExportHost.swift */; };
 		E5LLMPARSE293A4B70100002 /* RecipeLLMParseAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5LLMPARSE293A4B70100001 /* RecipeLLMParseAPI.swift */; };
@@ -809,6 +811,11 @@
 		A027027000123 /* NativeRecipeImporterZipBombTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRecipeImporterZipBombTests.swift; sourceTree = "<group>"; };
 		A027027000124 /* ImportLimitsConsistencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportLimitsConsistencyTests.swift; sourceTree = "<group>"; };
 		A027028000101 /* Import/ThirdParty/RecipeImportContentTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Import/ThirdParty/RecipeImportContentTypes.swift; sourceTree = "<group>"; };
+		A05700000102 /* Import/ThirdParty/UTTypeRecipeScaler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Import/ThirdParty/UTTypeRecipeScaler.swift; sourceTree = "<group>"; };
+		A05700000301 /* RecipeFileImportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeFileImportCoordinator.swift; sourceTree = "<group>"; };
+		A05700000201 /* UTTypeRecipeScalerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTTypeRecipeScalerTests.swift; sourceTree = "<group>"; };
+		A05700000202 /* NativeFormatDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatDetectorTests.swift; sourceTree = "<group>"; };
+		A05700000203 /* RecipeFileImportCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeFileImportCoordinatorTests.swift; sourceTree = "<group>"; };
 		A029031000101 /* NativeFormatVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatVersion.swift; sourceTree = "<group>"; };
 		A029031000102 /* NativeFormatTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatTypes.swift; sourceTree = "<group>"; };
 		A029031000103 /* NativeFormatDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatDetector.swift; sourceTree = "<group>"; };
@@ -976,7 +983,6 @@
 		E5F60718293A4B700000002A /* RecipeTitleTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeTitleTextField.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000031 /* IngredientNutritionEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientNutritionEditing.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000041 /* XmlFragmentToHTML.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XmlFragmentToHTML.swift; sourceTree = "<group>"; };
-		E5F60718293A4B7000000043 /* RecipeReadDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeReadDiagnostics.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000051 /* RecipeDescriptionFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDescriptionFixture.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000053 /* RecipeDescriptionParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDescriptionParser.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7000000055 /* RecipeDescriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDescriptionView.swift; sourceTree = "<group>"; };
@@ -1068,8 +1074,6 @@
 		E5F60719293A4B7000000082 /* DescriptionFormattingBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionFormattingBar.swift; sourceTree = "<group>"; };
 		E5F60719293A4B7000000084 /* DescriptionEditorChromeState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionEditorChromeState.swift; sourceTree = "<group>"; };
 		E5F60719293A4B7000000086 /* DescriptionMarkupFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionMarkupFlow.swift; sourceTree = "<group>"; };
-		E5F60719293A4B7000000088 /* DebugSessionNDJSONLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSessionNDJSONLog.swift; sourceTree = "<group>"; };
-		E5F60719293A4B7000000090 /* CursorDebugIngestLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorDebugIngestLog.swift; sourceTree = "<group>"; };
 		E5F60719293A4B7000000092 /* AgentDebugLogging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentDebugLogging.swift; sourceTree = "<group>"; };
 		E5F6071A293A4B7000000091 /* DescriptionWireExportHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionWireExportHost.swift; sourceTree = "<group>"; };
 		E5LLMPARSE293A4B70100001 /* RecipeLLMParseAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeLLMParseAPI.swift; sourceTree = "<group>"; };
@@ -1622,6 +1626,7 @@
 				A027027000105 /* Import/ThirdParty/CroutonRecipeParser.swift */,
 				A027027000106 /* Import/ThirdParty/ThirdPartyFormatDetector.swift */,
 				A027028000101 /* Import/ThirdParty/RecipeImportContentTypes.swift */,
+				A05700000102 /* Import/ThirdParty/UTTypeRecipeScaler.swift */,
 				A029031000107 /* Export */,
 				6A46C39B025B41C69FD12A6A /* Import/ImportErrorLocalizer.swift */,
 				ILL043G01 /* IngredientIllustrations */,
@@ -1643,6 +1648,9 @@
 				94F6EEB0522CF5E6241A73B1 /* Info.plist */,
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
 				A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */,
+				A05700000201 /* UTTypeRecipeScalerTests.swift */,
+				A05700000202 /* NativeFormatDetectorTests.swift */,
+				A05700000203 /* RecipeFileImportCoordinatorTests.swift */,
 				SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */,
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
 				FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */,
@@ -1897,7 +1905,6 @@
 				E5F60718293A4B7000000031 /* IngredientNutritionEditing.swift */,
 				E5F60718293A4B7000000007 /* RecipeTitleEmoji.swift */,
 				E5F60718293A4B700000000B /* RecipeCollectionMerge.swift */,
-				E5F60718293A4B7000000043 /* RecipeReadDiagnostics.swift */,
 				E5F60718293A4B700000005D /* DebugLaunchOptions.swift */,
 				E5F60718293A4B7000000091 /* RecipeSearchUtils.swift */,
 				A5TH048293A4B7010000004 /* AssistantThreadSearch.swift */,
@@ -1913,8 +1920,6 @@
 				FADLAY01A293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift */,
 				E5F60718293A4B700000000D /* AgentSyncDebugLog.swift */,
 				E5F60719293A4B7000000092 /* AgentDebugLogging.swift */,
-				E5F60719293A4B7000000088 /* DebugSessionNDJSONLog.swift */,
-				E5F60719293A4B7000000090 /* CursorDebugIngestLog.swift */,
 				E5F60718293A4B7000000009 /* RecipeRowLayoutMetrics.swift */,
 				E5F60718293A4B70219947AF /* ShoppingListConstants.swift */,
 				E5F60718293A4B7040751435 /* ShoppingListFromRecipe.swift */,
@@ -2015,6 +2020,7 @@
 				D0574E4BB4D0DE3B5AE7CFAB /* Yrs */,
 				A027027000108 /* ThirdPartyRecipeImportService.swift */,
 				A029031000201 /* NativeExportImportService.swift */,
+				A05700000301 /* RecipeFileImportCoordinator.swift */,
 				A029031000110 /* NativeImportMessageLocalizer.swift */,
 				A029031000111 /* DescriptionBlockLocalizer.swift */,
 				E49E6DAE77BDA02267796630 /* YjsSync */,
@@ -2609,6 +2615,7 @@
 				A027027000005 /* Import/ThirdParty/CroutonRecipeParser.swift in Sources */,
 				A027027000006 /* Import/ThirdParty/ThirdPartyFormatDetector.swift in Sources */,
 				A027028000001 /* Import/ThirdParty/RecipeImportContentTypes.swift in Sources */,
+				A05700000101 /* Import/ThirdParty/UTTypeRecipeScaler.swift in Sources */,
 				A029031000001 /* NativeFormatVersion.swift in Sources */,
 				A029031000002 /* NativeFormatTypes.swift in Sources */,
 				A029031000003 /* NativeFormatDetector.swift in Sources */,
@@ -2759,7 +2766,6 @@
 				E5F60718293A4B700000000A /* RecipeCollectionMerge.swift in Sources */,
 				E5F60718293A4B7000000040 /* XmlFragmentToHTML.swift in Sources */,
 				E5F60718293A4B700000200 /* XmlFragmentToPlainText.swift in Sources */,
-				E5F60718293A4B7000000042 /* RecipeReadDiagnostics.swift in Sources */,
 				E5F60718293A4B700000005C /* DebugLaunchOptions.swift in Sources */,
 				E5F60718293A4B7000000090 /* RecipeSearchUtils.swift in Sources */,
 				E5F60718293A4B7000000092 /* RecipeListSearchStore.swift in Sources */,
@@ -2787,8 +2793,6 @@
 				APP0000000000000000000094 /* DebugSimulatorAutoLogin.swift in Sources */,
 				E5F60718293A4B700000000C /* AgentSyncDebugLog.swift in Sources */,
 				E5F60719293A4B7000000093 /* AgentDebugLogging.swift in Sources */,
-				E5F60719293A4B7000000089 /* DebugSessionNDJSONLog.swift in Sources */,
-				E5F60719293A4B7000000091 /* CursorDebugIngestLog.swift in Sources */,
 				E5F60718293A4B7000000003 /* EditIngredientNutritionSheet.swift in Sources */,
 				B2C3D4E5F60718293A4B62 /* ServingsStepperView.swift in Sources */,
 				B2C3D4E5F60718293A4B60 /* RecipeAccentColor.swift in Sources */,
@@ -2879,6 +2883,7 @@
 				E5F60718293A4B70A1B2C3E5 /* RecipeImageUploadPreprocessor.swift in Sources */,
 				A027027000008 /* ThirdPartyRecipeImportService.swift in Sources */,
 				A029031000211 /* NativeExportImportService.swift in Sources */,
+				A05700000300 /* RecipeFileImportCoordinator.swift in Sources */,
 				A029031000213 /* NativeImportMessageLocalizer.swift in Sources */,
 				A029031000215 /* DescriptionBlockLocalizer.swift in Sources */,
 				A029031000212 /* DataManagementView.swift in Sources */,
@@ -2986,6 +2991,9 @@
 			files = (
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
 				A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */,
+				A05700000200 /* UTTypeRecipeScalerTests.swift in Sources */,
+				A05700000210 /* NativeFormatDetectorTests.swift in Sources */,
+				A05700000220 /* RecipeFileImportCoordinatorTests.swift in Sources */,
 				SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */,
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
 				FADLAY04D293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift in Sources */,
