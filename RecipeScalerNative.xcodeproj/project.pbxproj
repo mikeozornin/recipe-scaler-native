@@ -445,6 +445,7 @@
 		FADKEY02B293A4B701000001 /* Networking/FeatureAdoptionClientFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADKEY01A293A4B701000001 /* Networking/FeatureAdoptionClientFeature.swift */; };
 		FADLAY02B293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADLAY01A293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift */; };
 		FADLAY04D293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */; };
+		FADFIX0A1B293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADFIX0A0A293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift */; };
 		FB47945F9C6342719A745D7B /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 0A5A136ADBF870BFBD1C3902 /* Localizable.xcstrings */; };
 		FE3231F287C04923B25E29E8 /* TimerLiveActivityAccent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56565D99438548F29F16D7DE /* TimerLiveActivityAccent.swift */; };
 		FE65CF9516F7EF7F3C31E708 /* RecipeTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11665252A14BBEBAF0D694C4 /* RecipeTimer.swift */; };
@@ -1108,6 +1109,7 @@
 		FADKEY01A293A4B701000001 /* Networking/FeatureAdoptionClientFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/FeatureAdoptionClientFeature.swift; sourceTree = "<group>"; };
 		FADLAY01A293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionRingLabelLayout.swift; sourceTree = "<group>"; };
 		FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionRingLabelLayoutTests.swift; sourceTree = "<group>"; };
+		FADFIX0A0A293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionInstalledFlagTests.swift; sourceTree = "<group>"; };
 		FAF82F83AFCF4454AA71B812 /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
 		FB815A7AAADF4189BC529973 /* Views/SettingsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/SettingsRow.swift; sourceTree = "<group>"; };
 		FBED86F57850D8012BF9D4BD /* RecipeScalerNativeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RecipeScalerNativeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1654,6 +1656,7 @@
 				SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */,
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
 				FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */,
+				FADFIX0A0A293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift */,
 				B3TESTERR0020 /* ErrorLocalizationTests.swift */,
 				B3SYNCERR0020 /* SyncErrorCodeTests.swift */,
 				B3AUTHERR0020 /* AuthErrorLocalizationTests.swift */,
@@ -2997,6 +3000,7 @@
 				SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */,
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
 				FADLAY04D293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift in Sources */,
+				FADFIX0A1B293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift in Sources */,
 				B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */,
 				B3SYNCERR0010 /* SyncErrorCodeTests.swift in Sources */,
 				B3AUTHERR0010 /* AuthErrorLocalizationTests.swift in Sources */,

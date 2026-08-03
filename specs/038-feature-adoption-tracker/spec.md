@@ -106,11 +106,11 @@
 
 `markFeatureInstalled()`:
 
-1. Проверить локальный флаг `UserDefaults.standard.bool(forKey: "feature-adoption.installed-reported")`. Если уже true — выйти (idempotency на устройстве).
+1. Проверить локальный флаг `UserDefaults.standard.bool(forKey: "feature-adoption.installed-reported")`. Если уже true — выйти (идемпотентность per-account: флаг стирается в `clearForLogout()` при logout/wipe/account-deletion, чтобы новый аккаунт на этом устройстве снова отправил POST — см. changelog 2026-08-03).
 2. Записать в кэш `feature-adoption-cache["installed_native_app"] = true` (instant UI update).
 3. Fire-and-forget `AccountAPI.markFeatureAdoption("installed_native_app")`. Не блокировать UI.
 4. При успехе — выставить `feature-adoption.installed-reported = true`.
-5. При ошибке — оставить флаг не выставленным; повторить при следующем запуске (cold start) через `AppContainer.task`. Достаточно одной попытки за запуск.
+5. При ошибке — оставить флаг не выставленным; повторить при следующем запуске (cold start) через `AppContainer.task`. Достаточно одной попытки за запуск. Все ветки (skip/begin/ok/failed) логируются через `AppLog` для диагностики.
 
 #### FR-038-N5 — i18n
 
@@ -319,6 +319,12 @@ for (const user of allUserIds) {
 | MCP OAuth (`llm/API.md` § MCP) | Триггер `connected_mcp_assistant` (server-side event) |
 
 ## Changelog
+
+### 2026-08-03 — `installed_native_app` per-account reset
+
+- **Баг:** глобальный на устройство идемпотент-флаг `feature-adoption.installed-reported` не сбрасывался при logout/wipe. Первый аккаунт на устройстве выставлял флаг один раз, и для всех последующих аккаунтов `markFeatureInstalled` делал ранний `return` — POST `installed_native_app` для них не уходил, серверная галочка в веб-профиле не появлялась. На одном DEBUG-телефоне за 3 дня наблюдалось 7 разных userId — все кроме первого страдали этой проблемой.
+- **Фикс:** `FeatureAdoptionStore.clearForLogout()` теперь стирает и `feature-adoption.installed-reported` (а не только cache + report). FR-038-N4 п.1 уточнён: идемпотентность — per-account, не per-device.
+- **Логирование:** во все пути feature adoption добавлен `AppLog` — `feature_adoption_installed_begin/_ok/_failed/_skip`, `feature_adoption_post_begin/_ok/_failed`, `feature_adoption_fetched`, `feature_adoption_refresh_failed`, `feature_adoption_cleared`. Раньше пути были полностью silent, что и мешало диагностировать баг по debug-логу.
 
 ### 2026-06-29 — `installed_watch_app`
 

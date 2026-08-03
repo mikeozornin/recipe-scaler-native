@@ -36,6 +36,13 @@ struct FeatureAdoptionReport: Codable, Sendable, Equatable {
 final class FeatureAdoptionStore {
     private static let cacheKey = "feature-adoption-cache"
 
+    /// Idempotency flag for `installed_native_app` (spec 038 FR-038-N4). Stored
+    /// in `UserDefaults` so a successful POST is not retried on every launch.
+    /// Reset in `clearForLogout()` so a previous account's flag does not block
+    /// the POST for a different account signing in on the same device — see
+    /// spec 038 changelog 2026-08-03 ("installed_native_app per-account reset").
+    static let installedReportedKey = "feature-adoption.installed-reported"
+
     var report: FeatureAdoptionReport = .empty
 
     func value(for item: FeatureAdoptionItem) -> Bool {
@@ -81,6 +88,11 @@ final class FeatureAdoptionStore {
             persist()
         } catch {
             // Silent: keep showing the last cached snapshot (spec US5 / SC-006).
+            // Log so offline / server issues are diagnosable in debug sessions
+            // without surfacing them to the user.
+            AppLog.info(.app, "feature_adoption_refresh_failed", data: [
+                "reason": String(describing: type(of: error))
+            ])
         }
     }
 
@@ -93,9 +105,17 @@ final class FeatureAdoptionStore {
     }
 
     /// Wipe in-memory report and persisted cache (logout / account switch).
+    ///
+    /// Also clears `installed-reported` so the next account signing in on this
+    /// device triggers a fresh `installed_native_app` POST. Without this reset
+    /// the very first account on a device would set the flag once and every
+    /// subsequent account would skip the POST, so their server-side flag never
+    /// gets recorded (spec 038 changelog 2026-08-03).
     func clearForLogout() {
         report = .empty
         UserDefaults.standard.removeObject(forKey: Self.cacheKey)
+        UserDefaults.standard.removeObject(forKey: Self.installedReportedKey)
+        AppLog.info(.app, "feature_adoption_cleared")
     }
 
     private func persist() {

@@ -217,6 +217,13 @@ class AuthService {
         }
     }
 
+    /// Spec 038: stub for `markFeatureInstalled()`'s fire-and-forget POST so
+    /// unit tests can assert call counts without hitting the network. Default
+    /// implementation delegates to `AccountAPI.markFeatureAdoption(_:)`.
+    var markFeatureAdoptionProvider: (FeatureAdoptionClientFeature) async throws -> Void = { feature in
+        try await AccountAPI.markFeatureAdoption(feature)
+    }
+
     /// Spec 055 Phase R: re-entry guard. Multiple sources (socket `auth_error`,
     /// REST 401, race-induced double-fire) can call `handleAccountDeleted` in
     /// burst. Without this guard, teardown runs N times — the second pass
@@ -808,26 +815,62 @@ class AuthService {
     // MARK: - Feature adoption (spec 038)
 
     /// Records `installed_native_app` on first successful native-app auth on this
-    /// device. Idempotent via the `feature-adoption.installed-reported` UserDefaults
-    /// flag: once the POST succeeds, the flag is set and subsequent logins skip the
-    /// call entirely. On failure the flag stays unset and the next cold start retries.
+    /// account. Idempotent via the `feature-adoption.installed-reported` UserDefaults
+    /// flag: once the POST succeeds, the flag is set and subsequent launches on the
+    /// same account skip the call entirely. On failure the flag stays unset and the
+    /// next cold start retries.
     ///
     /// Called only from `registerAuto()` and `loginWithSeed(_:)` (first native login).
     /// Deliberately NOT called from `restoreAuthenticationState()` — that is a same-device
     /// session restore, not a new native-app sign-in.
+    ///
+    /// The `installed-reported` flag is wiped by `FeatureAdoptionStore.clearForLogout()`
+    /// (logout / account-deletion / wipe paths) so a previous account's flag does not
+    /// block the POST when a different account signs in on the same device — spec 038
+    /// changelog 2026-08-03.
+    ///
+    /// Session-identity guard: the POST is fire-and-forget. If the user logs out
+    /// while it is in flight, `clearForLogout()` wipes `installed-reported`. The
+    /// success branch captures the `userId` *before* the POST and re-checks it
+    /// against the current `SharedAuthStore.userId` before writing the flag — so
+    /// a completed POST for user A can no longer re-arm the device flag right
+    /// after user B signed in. Without this guard the original multi-account
+    /// bug would resurface through a realistic ~100ms–2s logout race (spec 038
+    /// changelog 2026-08-03, code review finding HIGH-1).
     func markFeatureInstalled(featureAdoptionStore: FeatureAdoptionStore) {
-        let reportedKey = "feature-adoption.installed-reported"
-        guard !UserDefaults.standard.bool(forKey: reportedKey) else { return }
+        let reportedKey = FeatureAdoptionStore.installedReportedKey
+        guard !UserDefaults.standard.bool(forKey: reportedKey) else {
+            AppLog.info(.app, "feature_adoption_installed_skip", data: [
+                "reason": "already_reported"
+            ])
+            return
+        }
 
+        let sessionUserId = SharedAuthStore.userId
+        AppLog.info(.app, "feature_adoption_installed_begin")
         featureAdoptionStore.markInstalledLocally()
 
         Task { @MainActor [weak self] in
-            guard self != nil else { return }
+            guard let self else { return }
             do {
-                try await AccountAPI.markFeatureAdoption(.installedNativeApp)
+                try await self.markFeatureAdoptionProvider(.installedNativeApp)
+                // Re-check session identity before persisting the idempotency
+                // flag: a logout/account-switch that completed during the POST
+                // round-trip would otherwise let this write re-arm the device
+                // flag for the next account.
+                guard SharedAuthStore.userId == sessionUserId, sessionUserId != nil else {
+                    AppLog.info(.app, "feature_adoption_installed_skip_persist", data: [
+                        "reason": "session_changed_in_flight"
+                    ])
+                    return
+                }
                 UserDefaults.standard.set(true, forKey: reportedKey)
+                AppLog.info(.app, "feature_adoption_installed_ok")
             } catch {
                 // Leave the flag unset; retry on next launch / login.
+                AppLog.info(.app, "feature_adoption_installed_failed", data: [
+                    "reason": String(describing: type(of: error))
+                ])
             }
         }
     }

@@ -46,10 +46,16 @@ final class FeatureAdoptionRingLabelLayoutTests: XCTestCase {
         store.report.installedWatchApp = true
         store.markInstalledLocally()
         UserDefaults.standard.set(Data("{}".utf8), forKey: "feature-adoption-cache")
+        UserDefaults.standard.set(true, forKey: FeatureAdoptionStore.installedReportedKey)
 
         store.clearForLogout()
 
         XCTAssertEqual(store.report, .empty)
         XCTAssertNil(UserDefaults.standard.data(forKey: "feature-adoption-cache"))
+        // Spec 038 changelog 2026-08-03: the per-account idempotency flag must
+        // be cleared so a different account signing in on the same device
+        // triggers a fresh installed_native_app POST. Without this, the first
+        // account's flag suppresses the POST for every subsequent account.
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: FeatureAdoptionStore.installedReportedKey))
     }
 }

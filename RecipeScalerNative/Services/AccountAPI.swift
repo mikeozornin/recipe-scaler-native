@@ -275,11 +275,32 @@ enum AccountAPI {
         let response: APIResponse<FeatureAdoptionReportDTO> = try await APIClient.shared.requestJSON(
             path: "/api/users/me/feature-adoption"
         )
-        return try APIClient.unwrapResponse(response, fallback: .accountProfileLoadFailed)
+        let dto = try APIClient.unwrapResponse(response, fallback: .accountProfileLoadFailed)
+        AppLog.info(.app, "feature_adoption_fetched", data: [
+            "installed_native_app": String(dto.installedNativeApp ?? false)
+        ])
+        return dto
     }
 
     /// Idempotent: server applies `INSERT ... ON CONFLICT DO NOTHING`.
+    ///
+    /// Logged at the call site so request/response/error are visible in the
+    /// DEBUG journal without introducing a logging dependency in RecipeScalerCore.
     static func markFeatureAdoption(_ feature: FeatureAdoptionClientFeature) async throws {
-        try await FeatureAdoptionAPI.markFeatureAdoption(feature)
+        AppLog.info(.app, "feature_adoption_post_begin", data: [
+            "feature": feature.rawValue
+        ])
+        do {
+            try await FeatureAdoptionAPI.markFeatureAdoption(feature)
+            AppLog.info(.app, "feature_adoption_post_ok", data: [
+                "feature": feature.rawValue
+            ])
+        } catch {
+            AppLog.info(.app, "feature_adoption_post_failed", data: [
+                "feature": feature.rawValue,
+                "reason": String(describing: type(of: error))
+            ])
+            throw error
+        }
     }
 }
