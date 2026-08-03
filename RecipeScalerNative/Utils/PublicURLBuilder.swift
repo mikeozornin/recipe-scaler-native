@@ -31,11 +31,13 @@ enum PublicURLBuilder {
         URL(string: "\(Config.baseURL)/public/shopping-list/\(publicId)")
     }
 
+    /// HashRouter About page with app language for web `usePageLanguageOverride`.
     static var aboutURL: URL {
-        URL(string: "\(Config.baseURL)/#/about")!
+        URL(string: "\(Config.baseURL)/#/about?lang=\(AppLanguagePreference.current.rawValue)")!
     }
 
+    /// HashRouter Privacy page with app language for web `usePageLanguageOverride`.
     static var privacyURL: URL {
-        URL(string: "\(Config.baseURL)/#/privacy")!
+        URL(string: "\(Config.baseURL)/#/privacy?lang=\(AppLanguagePreference.current.rawValue)")!
     }
 }

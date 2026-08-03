@@ -205,6 +205,7 @@
 		B2C3D4E5F60718293A4B62 /* ServingsStepperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B61 /* ServingsStepperView.swift */; };
 		B2C3D4E5F60718293A4B64 /* YDocIngredientsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B63 /* YDocIngredientsSection.swift */; };
 		B3APIC01B293A4B701000006 /* APIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APIC01B293A4B701000005 /* APIClientTests.swift */; };
+		B3PUBURL01B293A4B701000001 /* PublicURLBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3PUBURL01A293A4B701000001 /* PublicURLBuilderTests.swift */; };
 		B3APIERRLOC001 /* APIError+Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APIELOC002 /* APIError+Localization.swift */; };
 		B3APPLOG01B293A4B70100002 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPLOG01A293A4B70100001 /* AppLog.swift */; };
 		B3APPLOG02B293A4B70100002 /* AppLogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPLOG02A293A4B70100001 /* AppLogTests.swift */; };
@@ -891,6 +892,7 @@
 		B2FD0DF0B71C1B50552D1B30 /* RecipeZoomTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeZoomTransition.swift; sourceTree = "<group>"; };
 		B3AE1379BA360BCA84247C8D /* CollectionEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEntry.swift; sourceTree = "<group>"; };
 		B3APIC01B293A4B701000005 /* APIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientTests.swift; sourceTree = "<group>"; };
+		B3PUBURL01A293A4B701000001 /* PublicURLBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicURLBuilderTests.swift; sourceTree = "<group>"; };
 		B3APIELOC002 /* APIError+Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIError+Localization.swift"; sourceTree = "<group>"; };
 		B3APPLOG01A293A4B70100001 /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		B3APPLOG02A293A4B70100001 /* AppLogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogTests.swift; sourceTree = "<group>"; };
@@ -1665,6 +1667,7 @@
 				B3RACLRT02A293A4B70100001 /* RecipeAccentColorTests.swift */,
 				B3PLUR01A293A4B701000001 /* PluralizationTests.swift */,
 				B3APIC01B293A4B701000005 /* APIClientTests.swift */,
+				B3PUBURL01A293A4B701000001 /* PublicURLBuilderTests.swift */,
 				B3WATCHREM01A293A4B70100001 /* ServerActiveTimerRemainingTests.swift */,
 				B3TPAL01A293A4B701000001 /* TimerPaletteTests.swift */,
 				B3TORD02A293A4B701000001 /* TimerOrderingTests.swift */,
@@ -3009,6 +3012,7 @@
 				B3RACLRT02B293A4B70100002 /* RecipeAccentColorTests.swift in Sources */,
 				B3PLUR01B293A4B701000002 /* PluralizationTests.swift in Sources */,
 				B3APIC01B293A4B701000006 /* APIClientTests.swift in Sources */,
+				B3PUBURL01B293A4B701000001 /* PublicURLBuilderTests.swift in Sources */,
 				B3WATCHREM02B293A4B70100001 /* ServerActiveTimerRemainingTests.swift in Sources */,
 				B3TPAL01B293A4B701000002 /* TimerPaletteTests.swift in Sources */,
 				B3TORD02B293A4B701000002 /* TimerOrderingTests.swift in Sources */,
