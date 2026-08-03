@@ -218,7 +218,7 @@ final class TimerManager: NSObject {
         startUpdateTimer()
         scheduleBackgroundTask()
         pushSchedule(timer)
-        syncLiveActivity(for: timer)
+        syncLiveActivity(for: timer, policy: .userAction)
         return timer
     }
 
@@ -233,7 +233,7 @@ final class TimerManager: NSObject {
         scheduleBackgroundTask()
         syncEnqueue(.timerStarted, timer: timer, extra: ["endTime": millis(timer.endTime)])
         pushSchedule(timer)
-        syncLiveActivity(for: timer)
+        syncLiveActivity(for: timer, policy: .userAction)
     }
 
     func pauseTimer(id: String) {
@@ -247,7 +247,7 @@ final class TimerManager: NSObject {
         stopUpdateLoopIfIdle()
         syncEnqueue(.timerPaused, timer: timer, extra: ["remaining": remaining])
         pushCancel(timer.id)
-        syncLiveActivity(for: timer)
+        syncLiveActivity(for: timer, policy: .userAction)
     }
 
     func resumeTimer(id: String) {
@@ -260,7 +260,7 @@ final class TimerManager: NSObject {
         scheduleBackgroundTask()
         syncEnqueue(.timerResumed, timer: timer, extra: ["endTime": millis(timer.endTime)])
         pushSchedule(timer)
-        syncLiveActivity(for: timer)
+        syncLiveActivity(for: timer, policy: .userAction)
     }
 
     /// Adds `minutes * 60` seconds to a running or completed timer.
@@ -289,7 +289,7 @@ final class TimerManager: NSObject {
         syncEnqueue(.timerStarted, timer: timer, extra: ["endTime": millis(timer.endTime) as Any])
         Task { await timerSync.flushPendingSyncImmediately() }
         pushSchedule(timer)
-        syncLiveActivity(for: timer)
+        syncLiveActivity(for: timer, policy: .userAction)
     }
 
     func deleteTimer(id: String) {
@@ -370,7 +370,7 @@ final class TimerManager: NSObject {
             insertTimer(timer, skipSync: true)
         }
         refreshPanelTimers()
-        syncLiveActivity(for: timer)
+        syncLiveActivity(for: timer, policy: .reconcile)
     }
 
     func removeTimerFromSync(id: String) {
@@ -466,25 +466,59 @@ final class TimerManager: NSObject {
         }
     }
 
+    /// Spec 058: while a foreground server pull is in flight, progress ticks must
+    /// not push stale local `.running` onto ActivityKit (APNs may already show pause).
+    private(set) var suppressProgressLiveActivitySync = false
+
+    /// Call before `loadActiveTimersFromServer(force:)` on becoming active.
+    func beginForegroundRemoteRefresh() {
+        suppressProgressLiveActivitySync = true
+    }
+
+    /// Call after the foreground server pull finishes (success or failure).
+    func endForegroundRemoteRefresh() {
+        suppressProgressLiveActivitySync = false
+        reconcileLiveActivities()
+    }
+
+    /// Test / verify seam: whether a progress tick is allowed to sync LA.
+    static func shouldAllowProgressLiveActivitySync(
+        appIsActive: Bool,
+        suppressProgressSync: Bool
+    ) -> Bool {
+        appIsActive && !suppressProgressSync
+    }
+
     private func syncLiveActivityProgress(_ timer: RecipeTimer) {
+        // Spec 058: while not active, APNs owns cross-device LA updates. Periodic
+        // local Activity.update(running) was overwriting push pause/resume with
+        // stale phone endTime. Also suppress while foreground remote refresh runs.
+        guard Self.shouldAllowProgressLiveActivitySync(
+            appIsActive: UIApplication.shared.applicationState == .active,
+            suppressProgressSync: suppressProgressLiveActivitySync
+        ) else { return }
         let now = Date()
         if let last = lastLiveActivityProgressSync[timer.id], now.timeIntervalSince(last) < 3 {
             return
         }
         lastLiveActivityProgressSync[timer.id] = now
-        syncLiveActivity(for: timer)
+        syncLiveActivity(for: timer, policy: .progress)
     }
 
     private var lastOverdueLiveActivitySync: [String: Date] = [:]
 
     /// Keeps exceeded Live Activity phase/content fresh while the app stays in memory.
     private func syncLiveActivityIfOverdue(_ timer: RecipeTimer) {
+        guard Self.shouldAllowProgressLiveActivitySync(
+            appIsActive: UIApplication.shared.applicationState == .active,
+            suppressProgressSync: suppressProgressLiveActivitySync
+        ) else { return }
         let now = Date()
         if let last = lastOverdueLiveActivitySync[timer.id], now.timeIntervalSince(last) < 5 {
             return
         }
         lastOverdueLiveActivitySync[timer.id] = now
-        syncLiveActivity(for: timer)
+        syncLiveActivity(for: timer, policy: .progress)
     }
 
     private func handleTimerReachedZero(_ timer: RecipeTimer) {
@@ -493,7 +527,7 @@ final class TimerManager: NSObject {
         persist(timer)
         refreshPanelTimers()
         sendCompletionNotification(for: timer)
-        syncLiveActivity(for: timer)
+        syncLiveActivity(for: timer, policy: .userAction)
     }
 
     // MARK: - Push schedule helpers
@@ -633,9 +667,8 @@ final class TimerManager: NSObject {
     }
 
     private func updateLiveActivitiesInBackground() {
-        for timer in timers where timer.isRunning {
-            syncLiveActivity(for: timer)
-        }
+        // Spec 058: do not push local running state onto ActivityKit in background —
+        // that races APNs content-state from web/Watch pause & resume.
     }
 
     private func handleBackgroundTask(_ task: BGProcessingTask) {
@@ -750,7 +783,7 @@ final class TimerManager: NSObject {
         reconcileLiveActivities()
     }
 
-    private func syncLiveActivity(for timer: RecipeTimer) {
+    private func syncLiveActivity(for timer: RecipeTimer, policy: LiveActivitySyncPolicy) {
         // Cancel any in-flight sync for this timerId and replace it. The last
         // caller wins — its snapshot of state is freshest. Cancelling (rather
         // than awaiting) keeps the API fire-and-forget from each call site.
@@ -758,12 +791,12 @@ final class TimerManager: NSObject {
         let timerId = timer.id
         let task: Task<Void, Never> = Task { [weak self] in
             guard let self else { return }
-            await self.runSyncLiveActivity(timerId: timerId)
+            await self.runSyncLiveActivity(timerId: timerId, policy: policy)
         }
         inFlightSyncTasks[timerId] = task
     }
 
-    private func runSyncLiveActivity(timerId: String) async {
+    private func runSyncLiveActivity(timerId: String, policy: LiveActivitySyncPolicy) async {
         // Re-resolve the timer from `timers` at execution time so the
         // coordinator sees the freshest state (rather than capturing a stale
         // `RecipeTimer` struct at the call site).
@@ -771,7 +804,7 @@ final class TimerManager: NSObject {
             inFlightSyncTasks.removeValue(forKey: timerId)
             return
         }
-        await TimerLiveActivityCoordinator.shared.sync(timer: timer)
+        await TimerLiveActivityCoordinator.shared.sync(timer: timer, policy: policy)
         // Only clear if we're still the active task — a newer caller may have
         // already replaced us and put their own Task here.
         if inFlightSyncTasks[timerId]?.isCancelled == false {

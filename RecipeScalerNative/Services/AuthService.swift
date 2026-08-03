@@ -444,12 +444,11 @@ class AuthService {
 
         AppContainer.shared?.featureAdoption.clearForLogout()
 
-        // End Live Activities directly so every wipe path (cold-start
-        // `staleSession`, runtime `handleAccountDeleted`, light revoke)
-        // clears the Lock Screen — not just the explicit-logout path that
-        // routes through `AppContainer.stopForLogout`.
+        // End Live Activities + wipe push-token cache on every wipe path
+        // (cold-start `staleSession`, `handleAccountDeleted`, light revoke) —
+        // not just the explicit-logout path through `AppContainer.stopForLogout`.
         Task { @MainActor in
-            await AppContainer.shared?.timerLiveActivityCoordinator.endAll()
+            await AppContainer.shared?.timerLiveActivityCoordinator.clearForLogout()
         }
     }
 

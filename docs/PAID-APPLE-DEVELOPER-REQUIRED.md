@@ -1,7 +1,9 @@
 # Платный Apple Developer Program — что отложено до $99/год
 
 **Проект**: Recipe Scaler Native (весь `recipe-scaler-native`)  
-**Статус**: платный аккаунт **пока нет** — единый чеклист, чтобы не потерять шаги в портале и на устройстве.
+**Статус**: платный аккаунт **есть** (Team `ZBPX4JYT24`). APNs alert push (spec 023) разблокирован.
+Следующий слой: Live Activity push — [specs/058-live-activity-push](../specs/058-live-activity-push/spec.md);
+WidgetKit push для TimerWidget — [specs/030-timer-widget](../specs/030-timer-widget/spec.md) v2.
 
 Программа: [Apple Developer Program](https://developer.apple.com/programs/).
 
@@ -16,7 +18,7 @@
 | **Deep link** `recipe-scaler://` в main app | То же |
 | **TestFlight**, **App Store**, публичное распространение | Да |
 | **App Groups** в портале + общие данные app ↔ extension на **реальном iPhone** | Нужно для production |
-| Полноценный **Push** (APNs) в проде | Capability + ключи в портале (когда включим push в релизе; **после Activity Charts**) |
+| Полноценный **Push** (APNs) в проде | Capability + ключи в портале; **alert push включён** (spec 023, `aps-environment=production`); **Live Activity push** — в работе (spec 058); **WidgetKit push** — spec 030 v2 |
 
 Большую часть нативки можно вести и собирать **без** платного аккаунта. Ниже — всё, что для **продакшена на устройствах пользователей** или для **расширений системы** требует платной программы.
 
@@ -38,7 +40,8 @@
 
 Файлы entitlements в репозитории (должны совпасть с порталом и provisioning):
 
-- `RecipeScalerNative/RecipeScalerNative.entitlements` — App Groups
+- `RecipeScalerNative/RecipeScalerNative.entitlements` — App Groups, `aps-environment=production`
+- `RecipeScalerNative/RecipeScalerNativeDebug.entitlements` — App Groups, `aps-environment=development`
 - `ShareExtension/ShareExtension.entitlements` — App Groups
 - `ActionExtension/ActionExtension.entitlements` — App Groups
 
@@ -64,10 +67,17 @@
 
 - Main + Share + Action — все три с одним App Group.
 
-**На будущее** (spec `023-push-notifications`, когда пойдём в прод с пушами — **только после Activity Charts**):
+**Alert push включён** (spec `023-push-notifications`):
 
-- На App ID main app включить **Push Notifications**.
-- Создать APNs key / сертификат в портале; настроить backend.
+- На App ID main app включена capability **Push Notifications**.
+- APNs key зарегистрирован в портале; backend настроен.
+- `aps-environment=production` в `RecipeScalerNative.entitlements`, `development` в `RecipeScalerNativeDebug.entitlements`.
+
+**Live Activity push** (spec `058-live-activity-push`, в работе) — отдельный APNs topic
+`<bundleID>.push-type.liveactivity`, переиспользует тот же ключ.
+
+**WidgetKit push** (spec `030-timer-widget` v2) — topic `<bundleID>.push-type.widgets`,
+`apns-push-type: widgets`, body `content-changed` — тот же APNs key.
 
 ### 1.3 Provisioning profiles
 
@@ -138,6 +148,6 @@
 - Платный аккаунт не заменяет код в репозитории; он **включает** портал и профили под уже прописанные entitlements.
 - Сменили Bundle ID extension в Xcode — обновить этот файл и App IDs в портале.
 
-**Связанные спеки**: `025-share-extension` (extensions, deep link), `023-push-notifications` (push — отдельно при релизе, **после Activity Charts**).
+**Связанные спеки**: `025-share-extension` (extensions, deep link), `023-push-notifications` (alert push — включён), `058-live-activity-push` (Live Activity push — в работе), `030-timer-widget` v2 (WidgetKit push).
 
-**Дата фиксации**: 2026-06-06; обновлено 2026-07-24 (Team ID `ZBPX4JYT24`, App Group `group.ru.recipescaler.RecipeScaler`, bundle ID prefix `ru.recipescaler.RecipeScaler`).
+**Дата фиксации**: 2026-06-06; обновлено 2026-07-24 (Team ID `ZBPX4JYT24`, App Group `group.ru.recipescaler.RecipeScaler`, bundle id prefix `ru.recipescaler.RecipeScaler`); обновлено 2026-08-03 (alert push разблокирован — `aps-environment` в обоих entitlements; Live Activity push — spec 058); обновлено 2026-08-04 (WidgetKit push — spec 030 v2).

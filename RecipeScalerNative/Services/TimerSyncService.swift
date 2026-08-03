@@ -183,11 +183,16 @@ final class TimerSyncService {
 
     // MARK: - HTTP
 
-    func loadActiveTimersFromServer() async {
+    /// - Parameter force: When true (foreground APNs-ownership refresh), bypass
+    ///   `minLoadInterval` so a recent background poll cannot skip the pull that
+    ///   must land before local Live Activity progress ticks resume.
+    func loadActiveTimersFromServer(force: Bool = false) async {
         guard userId != nil else { return }
         guard !isLoadingTimers else { return }
-        let elapsed = Date().timeIntervalSince(lastLoadTime)
-        guard elapsed >= minLoadInterval else { return }
+        if !force {
+            let elapsed = Date().timeIntervalSince(lastLoadTime)
+            guard elapsed >= minLoadInterval else { return }
+        }
 
         isLoadingTimers = true
         lastLoadTime = Date()

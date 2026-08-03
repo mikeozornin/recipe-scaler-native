@@ -44,6 +44,7 @@ final class AppContainer {
     /// do not recreate paths when `AppShellView` is torn down.
     let shellCoordinator: AppShellCoordinator
     let timerLiveActivityCoordinator: TimerLiveActivityCoordinator
+    let liveActivityPushRegistrar: LiveActivityPushRegistrar
 
     // MARK: - Networked services
 
@@ -112,7 +113,11 @@ final class AppContainer {
         self.yjsMergeHelper = YjsMergeHelper()
         self.assistantRecipeContext = AssistantRecipeContext()
         self.deepLinkRouter = DeepLinkRouter()
-        self.timerLiveActivityCoordinator = TimerLiveActivityCoordinator()
+        let liveActivityPushRegistrar = LiveActivityPushRegistrar()
+        self.liveActivityPushRegistrar = liveActivityPushRegistrar
+        self.timerLiveActivityCoordinator = TimerLiveActivityCoordinator(
+            pushRegistrar: liveActivityPushRegistrar
+        )
 
         // Networked (authConfigured from Keychain by AuthService.init)
         let auth = AuthService()
@@ -386,9 +391,9 @@ final class AppContainer {
         sync.stop()
         spotlight.stop()
         await spotlight.clearAll()
-        // Spec 055 Phase R: end Live Activities so the Lock Screen does not
-        // keep advertising a deleted/logged-out user's recipe timers.
-        await timerLiveActivityCoordinator.endAll()
+        // Spec 055/058: end Live Activities + wipe cached push tokens so the
+        // Lock Screen and UserDefaults cannot leak the previous user's timers.
+        await timerLiveActivityCoordinator.clearForLogout()
         featureAdoption.clearForLogout()
     }
 

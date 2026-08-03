@@ -6,6 +6,23 @@
 import ActivityKit
 import Foundation
 import os
+import UIKit
+
+/// Why a Live Activity sync was requested (spec 058).
+///
+/// Background skip of local `.running` updates protects APNs-applied pause
+/// (web/Watch) from stale in-memory `running`. That skip must **not** apply to
+/// Lock Screen / App Intent / in-app controls — the source device is excluded
+/// from APNs fan-out (R7 / US5), so self-resume would otherwise leave the card
+/// stuck on paused.
+enum LiveActivitySyncPolicy: Equatable, Sendable {
+    /// Explicit local mutation: start, pause, resume, addTime, LA button, etc.
+    case userAction
+    /// Periodic progress / overdue ticks while the app is in memory.
+    case progress
+    /// Snapshot reconcile after server load / collection sync.
+    case reconcile
+}
 
 @MainActor
 final class TimerLiveActivityCoordinator {
@@ -18,8 +35,9 @@ final class TimerLiveActivityCoordinator {
         return Standalone
     }
 
-    private static let Standalone = TimerLiveActivityCoordinator()
-
+    private static let Standalone = TimerLiveActivityCoordinator(
+        pushRegistrar: LiveActivityPushRegistrar()
+    )
     /// iOS imposes a hard cap on simultaneously running Live Activities per app
     /// (typically 5; ActivityKit surfaces it as
     /// `ActivityError.activityUnavailable("Maximum number of activities for target
@@ -33,21 +51,50 @@ final class TimerLiveActivityCoordinator {
     /// tick (3–5 sec). Reset by `reconcile(with:)` and by `end(timerId:)`.
     private static let failureBackoff: TimeInterval = 30
 
+    private let pushRegistrar: LiveActivityPushRegistering
     private var activityByTimerId: [String: Activity<RecipeTimerActivityAttributes>] = [:]
     private var failureTimestamps: [String: Date] = [:]
     private var activityUpdatesTask: Task<Void, Never>?
+    /// Spec 058 — one task per live activity observing `pushTokenUpdates`.
+    private var pushTokenTasks: [String: Task<Void, Never>] = [:]
+    /// Bumped on every `stopObservingPushToken` so in-flight `register` can detect invalidation.
+    private var pushTokenEpoch: [String: UInt64] = [:]
+    /// After a failed register, wait before allowing `sync` to resubscribe (avoids 3s spin).
+    private var pushTokenRetryAfter: [String: Date] = [:]
+    /// Activities created this process with `pushType: .token` — skip legacy migration.
+    private var createdWithPushTypeToken: Set<String> = []
+    /// TimerIds that received at least one `pushTokenUpdates` emission this observation.
+    private var pushTokenEmissionReceived: Set<String> = []
+    /// One-shot migration: end restored activities that never emit a push token.
+    private var legacyMigrationTasks: [String: Task<Void, Never>] = [:]
 
-    init() {
+    /// How long to wait for a push-token emission before treating a restored
+    /// activity as pre-058 (`pushType: nil`) and recreating it.
+    private static let legacyPushMigrationTimeout: Duration = .seconds(8)
+    /// Backoff after a failed token POST before the next `sync` may resubscribe.
+    private static let pushRegisterRetryBackoff: TimeInterval = 30
+
+    init(pushRegistrar: LiveActivityPushRegistering) {
+        self.pushRegistrar = pushRegistrar
         startObservingActivityUpdates()
     }
 
     deinit {
         activityUpdatesTask?.cancel()
+        for task in pushTokenTasks.values {
+            task.cancel()
+        }
+        for task in legacyMigrationTasks.values {
+            task.cancel()
+        }
     }
 
     func restoreFromSystem() {
         for activity in Activity<RecipeTimerActivityAttributes>.activities {
-            activityByTimerId[activity.attributes.timerId] = activity
+            let timerId = activity.attributes.timerId
+            activityByTimerId[timerId] = activity
+            // Restored activities may predate pushType: .token — observe + migrate if silent.
+            startObservingPushToken(for: activity, timerId: timerId, scheduleLegacyMigration: true)
         }
     }
 
@@ -69,7 +116,7 @@ final class TimerLiveActivityCoordinator {
             }
 
         for timer in sortedToShow {
-            await sync(timer: timer)
+            await sync(timer: timer, policy: .reconcile)
         }
 
         for (timerId, activity) in activityByTimerId where !visibleTimerIds.contains(timerId) {
@@ -82,7 +129,23 @@ final class TimerLiveActivityCoordinator {
         }
     }
 
-    func sync(timer: RecipeTimer) async {
+    /// Pure predicate for the background-`.running` skip (unit-tested).
+    ///
+    /// Skip only for progress/reconcile when the app is not active and an
+    /// activity already exists — never for `.userAction` (Lock Screen resume).
+    static func shouldSkipBackgroundRunningUpdate(
+        phase: TimerActivityPhase,
+        appIsActive: Bool,
+        hasExistingActivity: Bool,
+        policy: LiveActivitySyncPolicy
+    ) -> Bool {
+        phase == .running
+            && !appIsActive
+            && hasExistingActivity
+            && policy != .userAction
+    }
+
+    func sync(timer: RecipeTimer, policy: LiveActivitySyncPolicy) async {
         guard shouldShowActivity(for: timer) else {
             await end(timerId: timer.id)
             return
@@ -103,6 +166,34 @@ final class TimerLiveActivityCoordinator {
         let metadata = await TimerLiveActivityMetadataProvider.metadata(for: timer.recipeId)
         let contentState = makeContentState(for: timer, metadata: metadata)
 
+        let hasExisting = activityByTimerId[timer.id] != nil
+            || Activity<RecipeTimerActivityAttributes>.activities.contains(where: {
+                $0.attributes.timerId == timer.id
+            })
+        // Spec 058: progress/reconcile must not overwrite APNs pause with stale
+        // local `running` while backgrounded. User actions (Lock Screen resume)
+        // always apply — source device is excluded from APNs (R7).
+        if Self.shouldSkipBackgroundRunningUpdate(
+            phase: contentState.phase,
+            appIsActive: UIApplication.shared.applicationState == .active,
+            hasExistingActivity: hasExisting,
+            policy: policy
+        ) {
+            if let activity = activityByTimerId[timer.id]
+                ?? Activity<RecipeTimerActivityAttributes>.activities.first(where: {
+                    $0.attributes.timerId == timer.id
+                }) {
+                activityByTimerId[timer.id] = activity
+                let needsMigration = !createdWithPushTypeToken.contains(timer.id)
+                startObservingPushToken(
+                    for: activity,
+                    timerId: timer.id,
+                    scheduleLegacyMigration: needsMigration
+                )
+            }
+            return
+        }
+
         if let activity = activityByTimerId[timer.id] {
             await activity.update(
                 ActivityContent(
@@ -111,12 +202,24 @@ final class TimerLiveActivityCoordinator {
                 ),
                 alertConfiguration: nil
             )
+            let needsMigration = !createdWithPushTypeToken.contains(timer.id)
+            startObservingPushToken(
+                for: activity,
+                timerId: timer.id,
+                scheduleLegacyMigration: needsMigration
+            )
             return
         }
 
         if let existing = Activity<RecipeTimerActivityAttributes>.activities
             .first(where: { $0.attributes.timerId == timer.id }) {
             activityByTimerId[timer.id] = existing
+            let needsMigration = !createdWithPushTypeToken.contains(timer.id)
+            startObservingPushToken(
+                for: existing,
+                timerId: timer.id,
+                scheduleLegacyMigration: needsMigration
+            )
             await existing.update(
                 ActivityContent(
                     state: contentState,
@@ -144,17 +247,25 @@ final class TimerLiveActivityCoordinator {
 
         let attributes = makeAttributes(timer: timer)
         do {
+            // Spec 058: `.token` so ActivityKit issues a push token for
+            // cross-device Lock Screen updates when the app is backgrounded.
             let activity = try Activity.request(
                 attributes: attributes,
                 content: ActivityContent(
                     state: contentState,
                     staleDate: staleDate(for: timer, contentState: contentState)
                 ),
-                pushType: nil
+                pushType: .token
             )
             activityByTimerId[timer.id] = activity
             // A successful request invalidates any stale negative-cache entry.
             failureTimestamps.removeValue(forKey: timer.id)
+            createdWithPushTypeToken.insert(timer.id)
+            startObservingPushToken(
+                for: activity,
+                timerId: timer.id,
+                scheduleLegacyMigration: false
+            )
             AppLog.info(.timer, "Started Live Activity for timer \(timer.id)")
         } catch {
             recordFailure(for: timer.id,
@@ -164,6 +275,9 @@ final class TimerLiveActivityCoordinator {
 
     func end(timerId: String) async {
         failureTimestamps.removeValue(forKey: timerId)
+        createdWithPushTypeToken.remove(timerId)
+        stopObservingPushToken(timerId: timerId)
+        await pushRegistrar.unregister(timerId: timerId)
 
         if let activity = activityByTimerId.removeValue(forKey: timerId) {
             await activity.end(nil, dismissalPolicy: .immediate)
@@ -185,14 +299,109 @@ final class TimerLiveActivityCoordinator {
             await end(timerId: timerId)
         }
         for activity in Activity<RecipeTimerActivityAttributes>.activities {
+            let timerId = activity.attributes.timerId
+            createdWithPushTypeToken.remove(timerId)
+            stopObservingPushToken(timerId: timerId)
+            await pushRegistrar.unregister(timerId: timerId)
             await activity.end(nil, dismissalPolicy: .immediate)
         }
+    }
+
+    /// Spec 058: end activities + wipe cached push-token keys. Call from every
+    /// logout / session-wipe path so partial `endAll` cannot leave prior-user
+    /// `liveActivityPushToken.*` entries (mirrors `FeatureAdoptionStore.clearForLogout`).
+    func clearForLogout() async {
+        await endAll()
+        pushRegistrar.clearAllCachedTokens()
     }
 
     private func end(activity: Activity<RecipeTimerActivityAttributes>, timerId: String) async {
         activityByTimerId.removeValue(forKey: timerId)
         failureTimestamps.removeValue(forKey: timerId)
+        createdWithPushTypeToken.remove(timerId)
+        stopObservingPushToken(timerId: timerId)
+        await pushRegistrar.unregister(timerId: timerId)
         await activity.end(nil, dismissalPolicy: .immediate)
+    }
+
+    // MARK: - ActivityKit push token (spec 058)
+
+    private func startObservingPushToken(
+        for activity: Activity<RecipeTimerActivityAttributes>,
+        timerId: String,
+        scheduleLegacyMigration: Bool
+    ) {
+        if let until = pushTokenRetryAfter[timerId], until > Date() {
+            return
+        }
+        guard pushTokenTasks[timerId] == nil else { return }
+
+        pushTokenTasks[timerId] = Task { [weak self] in
+            for await tokenData in activity.pushTokenUpdates {
+                guard !Task.isCancelled else { return }
+                guard let self else { return }
+                self.pushTokenEmissionReceived.insert(timerId)
+                self.legacyMigrationTasks.removeValue(forKey: timerId)?.cancel()
+
+                let epochAtStart = self.pushTokenEpoch[timerId] ?? 0
+                let hex = tokenData.map { String(format: "%02x", $0) }.joined()
+                let ok = await self.pushRegistrar.register(timerId: timerId, tokenHex: hex)
+
+                let epochNow = self.pushTokenEpoch[timerId] ?? 0
+                if Task.isCancelled || epochNow != epochAtStart {
+                    // Invalidated during the network call — undo a late success.
+                    if ok {
+                        await self.pushRegistrar.unregister(timerId: timerId)
+                    }
+                    return
+                }
+
+                if !ok {
+                    // Clear the observer so a later sync can resubscribe after backoff.
+                    self.pushTokenRetryAfter[timerId] = Date().addingTimeInterval(
+                        Self.pushRegisterRetryBackoff
+                    )
+                    self.stopObservingPushToken(timerId: timerId)
+                    return
+                }
+
+                self.pushTokenRetryAfter.removeValue(forKey: timerId)
+            }
+        }
+
+        if scheduleLegacyMigration {
+            scheduleLegacyPushMigrationIfNeeded(timerId: timerId)
+        }
+    }
+
+    private func stopObservingPushToken(timerId: String) {
+        pushTokenEpoch[timerId, default: 0] += 1
+        pushTokenTasks.removeValue(forKey: timerId)?.cancel()
+        legacyMigrationTasks.removeValue(forKey: timerId)?.cancel()
+        pushTokenEmissionReceived.remove(timerId)
+    }
+
+    /// Pre-058 activities were created with `pushType: nil` and never emit tokens.
+    /// After timeout with zero emissions, end them so the next `sync` recreates with `.token`.
+    private func scheduleLegacyPushMigrationIfNeeded(timerId: String) {
+        guard !createdWithPushTypeToken.contains(timerId) else { return }
+        guard legacyMigrationTasks[timerId] == nil else { return }
+        if pushRegistrar.hasCachedToken(timerId: timerId) { return }
+
+        legacyMigrationTasks[timerId] = Task { [weak self] in
+            try? await Task.sleep(for: Self.legacyPushMigrationTimeout)
+            guard !Task.isCancelled else { return }
+            guard let self else { return }
+            guard !self.pushTokenEmissionReceived.contains(timerId) else { return }
+            guard self.activityByTimerId[timerId] != nil else { return }
+            guard !self.createdWithPushTypeToken.contains(timerId) else { return }
+
+            AppLog.notice(.timer, "live_activity_legacy_push_migration", data: [
+                "timerId": timerId
+            ])
+            await self.end(timerId: timerId)
+            // Next TimerManager sync recreates with pushType: .token.
+        }
     }
 
     private func shouldShowActivity(for timer: RecipeTimer) -> Bool {
@@ -324,6 +533,9 @@ final class TimerLiveActivityCoordinator {
             if activityByTimerId[timerId] === activity
                 || activityByTimerId[timerId] == nil {
                 activityByTimerId.removeValue(forKey: timerId)
+                createdWithPushTypeToken.remove(timerId)
+                stopObservingPushToken(timerId: timerId)
+                await pushRegistrar.unregister(timerId: timerId)
             }
         default:
             break

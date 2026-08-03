@@ -166,7 +166,14 @@ struct ContentView: View {
                     ShoppingIntentDrainer.drainIfNeeded(syncService: syncService)
                     syncService.handleEnteredForeground()
                 }
-                Task { await container.reminders.reconcileRemindersToUserSnapshot() }
+                // Spec 058: suppress progress LA sync, pull server timers (force),
+                // then reconcile — so APNs pause is not overwritten by stale running.
+                Task {
+                    container.timer.beginForegroundRemoteRefresh()
+                    await container.timerSync.loadActiveTimersFromServer(force: true)
+                    container.timer.endForegroundRemoteRefresh()
+                    await container.reminders.reconcileRemindersToUserSnapshot()
+                }
             @unknown default:
                 break
             }
