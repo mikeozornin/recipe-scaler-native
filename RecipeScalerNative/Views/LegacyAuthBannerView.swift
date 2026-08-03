@@ -9,6 +9,9 @@ import SwiftUI
 
 struct LegacyAuthBannerView: View {
     let userId: String
+    /// Incremented by the parent on pull-to-refresh so this view re-fetches
+    /// legacy-auth eligibility even when nothing else changes.
+    let refreshTick: Int
     @Environment(\.locale) private var locale
 
     @State private var isEligible = false
@@ -22,7 +25,7 @@ struct LegacyAuthBannerView: View {
                 bannerContent(cutoffAt: cutoffAt)
             }
         }
-        .task(id: userId) {
+        .task(id: "\(userId)-\(refreshTick)") {
             await refresh()
         }
     }

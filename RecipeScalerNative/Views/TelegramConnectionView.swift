@@ -11,6 +11,9 @@ private let statusPollIntervalSeconds: UInt64 = 3
 
 struct TelegramConnectionView: View {
     let isOnline: Bool
+    /// Incremented by the parent on pull-to-refresh so this view re-fetches
+    /// connection status even when nothing else changes.
+    let refreshTick: Int
     let onStatusChange: (Bool) -> Void
 
     @State private var isConnected = false
@@ -63,7 +66,7 @@ struct TelegramConnectionView: View {
     }
 
     private var pollTaskKey: String {
-        "\(isConnected)-\(connectionCode ?? "")-\(isOnline)"
+        "\(isConnected)-\(connectionCode ?? "")-\(isOnline)-\(refreshTick)"
     }
 
     @ViewBuilder

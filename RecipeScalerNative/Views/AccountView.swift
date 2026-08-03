@@ -36,6 +36,9 @@ struct AccountView: View {
     private var collectionsLayoutRaw: String = RecipeFolderRoutes.defaultCollectionsRootLayout.rawValue
     @State private var isTelegramConnected = false
     @State private var showRemindersListPicker = false
+    /// Incremented on every pull-to-refresh so child views (Telegram status,
+    /// legacy auth banner) re-run their `.task` and refetch non-pushed data.
+    @State private var refreshTick = 0
 
     private var collectionsLayout: RecipeFolderRoutes.CollectionsRootLayout {
         RecipeFolderRoutes.CollectionsRootLayout(rawValue: collectionsLayoutRaw)
@@ -201,7 +204,10 @@ struct AccountView: View {
                 }
                 .accessibilityIdentifier(AccessibilityIdentifiers.accountRoot)
                 .refreshable {
+                    await viewModel.refresh(syncService: syncService)
+                    viewModel.loadRemindersLists(remindersService: remindersService)
                     await featureAdoptionStore.refresh()
+                    refreshTick += 1
                 }
                 .task {
                     featureAdoptionStore.loadFromCache()
@@ -256,7 +262,7 @@ struct AccountView: View {
     private var legacyAuthBannerSection: some View {
         if let userId = authService.userId {
             Section {
-                LegacyAuthBannerView(userId: userId)
+                LegacyAuthBannerView(userId: userId, refreshTick: refreshTick)
             }
         }
     }
@@ -402,6 +408,7 @@ struct AccountView: View {
             }
             TelegramConnectionView(
                 isOnline: viewModel.isOnline,
+                refreshTick: refreshTick,
                 onStatusChange: { isTelegramConnected = $0 }
             )
         } header: {
