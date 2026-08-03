@@ -63,7 +63,7 @@ iPhone app закрыт.
 
 **Когда** серверное `timer_completed` событие проходит через cleanup или `scheduleTimerNotifications`
 **тогда** на iPhone приходит push `event=update` с `phase=exceeded`, карточка краснеет. На iOS 18+
-можно `event=end` с `dismiss-date`.
+можно `event=end` с `dismissal-date` (в прошлом — снять сразу).
 
 ## Решения v1
 
@@ -290,7 +290,7 @@ Payload (`event: end`):
     "timestamp": 1730000000,
     "event": "end",
     "content-state": { ... final state ... },
-    "dismiss-date": 1730000000
+    "dismissal-date": 1730000000
   }
 }
 ```

@@ -80,7 +80,7 @@ Topic = **main app Bundle ID** + `.push-type.liveactivity`. **Без** имен�
       "recipeThumbnailName": null,
       "syncedAt": 1730000000.0
     },
-    "dismiss-date": 1730000000
+    "dismissal-date": 1730000000
   }
 }
 ```
@@ -106,7 +106,9 @@ Swift `Date` Codable = `timeIntervalSinceReferenceDate` (2001-01-01), **не** U
 Сервер обязан слать `endDate` / `startedAt` / `syncedAt` как `unixSeconds - 978307200`.
 Иначе Lock Screen показывает ~`271752:xx:xx`.
 
-`timestamp` / `stale-date` / `dismiss-date` в `aps` — Unix seconds (1970).
+`timestamp` / `stale-date` / `dismissal-date` в `aps` — Unix seconds (1970).
+Ключ именно `dismissal-date` (не `dismiss-date`): иначе `event=end` оставляет
+карточку на Lock Screen до ~4ч с финальным content-state (paused/00).
 `timestamp` должен быть уникальным и монотонным для данной activity на каждый push.
 
 ## Mapping: ActiveTimer → content-state
@@ -125,7 +127,7 @@ Event selection:
 | Sync event | APNs `event` (v1) |
 |------------|--------------|
 | `timer_paused`, `timer_resumed`, `timer_started`, `timer_updated` | `update` (если activity token уже есть) |
-| `timer_deleted` | `end` (+ `dismiss-date: now`) |
+| `timer_deleted` | `end` (+ `dismissal-date` in the past for immediate remove) |
 
 **v2** (`timer_started` без activity на target, iOS 18+): `event=start` — см. секцию ниже.
 На iOS 17 remote start недоступен → только foreground reconcile.
