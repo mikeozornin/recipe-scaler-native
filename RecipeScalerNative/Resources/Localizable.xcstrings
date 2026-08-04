@@ -9525,22 +9525,6 @@
         }
       }
     },
-    "recipe.share.preparing-file" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Preparing recipe file…"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Готовлю файл рецепта…"
-          }
-        }
-      }
-    },
     "recipe.share.send-file" : {
       "localizations" : {
         "en" : {

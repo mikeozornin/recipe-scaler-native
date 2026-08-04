@@ -157,24 +157,16 @@ private struct RecipeShareSheet: View {
     @ViewBuilder
     private var airdropFileSection: some View {
         Section {
-            if isPreparingFile {
-                HStack {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text("recipe.share.preparing-file")
-                        .appBody()
-                        .foregroundStyle(.secondary)
-                }
-            } else {
-                Button {
-                    Task { await prepareAndShareFile() }
-                } label: {
-                    Label("recipe.share.send-file", systemImage: "square.and.arrow.up")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .disabled(isPreparingFile)
-                .accessibilityIdentifier("recipe.share.airdrop-button")
+            // Keep the button in place while the file is prepared — swapping it
+            // for a progress row caused a brief flash for typical recipes.
+            Button {
+                Task { await prepareAndShareFile() }
+            } label: {
+                Label("recipe.share.send-file", systemImage: "square.and.arrow.up")
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .disabled(isPreparingFile)
+            .accessibilityIdentifier("recipe.share.airdrop-button")
 
             if let fileErrorMessage {
                 Text(fileErrorMessage)
@@ -195,6 +187,7 @@ private struct RecipeShareSheet: View {
     /// Build the `.recipe` file, then immediately present the system share sheet
     /// so the user does not need a second tap after preparation finishes.
     private func prepareAndShareFile() async {
+        guard !isPreparingFile else { return }
         isPreparingFile = true
         fileErrorMessage = nil
         showFileActivitySheet = false
@@ -203,8 +196,6 @@ private struct RecipeShareSheet: View {
             let url = try await exporter.exportRecipe(id: recipeId)
             fileExportURL = url
             isPreparingFile = false
-            // Present after the progress row has left the hierarchy so the
-            // activity sheet is not fighting a mid-update List layout.
             showFileActivitySheet = true
         } catch {
             fileErrorMessage = "recipe.share.file-failed"
