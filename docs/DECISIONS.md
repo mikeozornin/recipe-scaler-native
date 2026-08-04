@@ -98,6 +98,14 @@ Chronological log of substantive choices (newest last).
 
 **Rationale:** User rejected unsynced local notifications as a substitute for web-style timer push. Personal Team cannot enable Push Notifications capability; partial UX would mislead users.
 
+**Superseded (2026-08-04):** Profile toggle shipped. APNs registration (`PushRegistrationService`) and silent widget wake (030) are in place; enabling the toggle requests UN permission when needed and always calls `registerForRemoteNotifications` so the device token is uploaded. Footer explains that pushes are also required for background widget and Live Activity updates.
+
+### 2026-08-04 — Profile push toggle enabled
+
+**Decision:** Show the Account preferences toggle «Notify when timer ends» (`account.timer-notifications.*`). On enable: request notification permission if `.notDetermined`, then register for remote notifications so the device token reaches `POST /api/push/apns-register`. Section footer documents that pushes are required for background timer widget and Live Activity updates.
+
+**Rationale:** Device APNs + silent `content-available` are the primary path for timely widget refresh when the app is killed (030); LA cross-device updates also depend on APNs. Keeping the toggle hidden after paid developer + backend were ready blocked opt-in registration from Account.
+
 ---
 
 ### 2026-06-06 — xcstrings typograf preserves Xcode formatting

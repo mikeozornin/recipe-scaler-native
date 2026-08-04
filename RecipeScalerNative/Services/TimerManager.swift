@@ -134,13 +134,18 @@ final class TimerManager: NSObject {
         do {
             let granted = try await notificationCenter.requestAuthorization(options: [.alert, .sound, .badge])
             if granted {
-                UIApplication.shared.registerForRemoteNotifications()
+                registerForRemoteNotifications()
             }
             return granted
         } catch {
             AppLog.error(.timer, "Notification authorization error: \(error.localizedDescription)")
             return false
         }
+    }
+
+    /// Requests an APNs device token when notification permission is already granted.
+    func registerForRemoteNotifications() {
+        UIApplication.shared.registerForRemoteNotifications()
     }
 
     private func loadTimers() {

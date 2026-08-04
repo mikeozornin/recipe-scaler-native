@@ -2,7 +2,7 @@
 
 **Ветка**: `023-push-notifications`  
 **Дата**: 2026-06-04  
-**Статус**: 🟡 В работе (~90% кода, аудит 2026-06-15) — регистрация APNs + schedule/cancel реализованы; QA на устройстве и toggle в Account pending. **Блокер**: device QA требует платный Apple Developer Account (см. [PAID-APPLE-DEVELOPER-REQUIRED.md](../../docs/PAID-APPLE-DEVELOPER-REQUIRED.md)); кодовая часть полностью готова.  
+**Статус**: 🟡 В работе (~95% кода, аудит 2026-08-04) — регистрация APNs + schedule/cancel + toggle в Account реализованы; device QA pending. **Блокер**: device QA на физическом устройстве (см. [PAID-APPLE-DEVELOPER-REQUIRED.md](../../docs/PAID-APPLE-DEVELOPER-REQUIRED.md)).  
 **Зависимости**: `014-timers-sync` ✅ (синк и UI таймеров), Phase 1 `TimerManager` (локальные UN)  
 **Эталон**: PRD § Timers, `recipe-scaler-web/llm/ARCHITECTURE.md` § Timers And Push, `recipe-scaler-web/recipe-scaler/src/services/timer-service.ts`, `server/src/routes/push.ts`
 
@@ -16,7 +16,7 @@
 | US4 pause/delete/resume → cancel/schedule | ✅ `PushScheduleService` + хуки в `TimerManager` |
 | US5 coexistence с локальными UN | ✅ дедуп в `TimerManager` |
 | FR-PUSH-004 deep link | 🟡 через payload (проверить на device) |
-| Toggle push в Account | ❌ вне v1 (см. `docs/DECISIONS.md`) |
+| Toggle push в Account | ✅ `AccountView` preferences + `AccountSettingsViewModel.setTimerNotificationsEnabled`; footer про виджет/LA |
 
 Код: `PushRegistrationService.swift`, `PushScheduleService.swift`, контракт `contracts/timer-push-schedule.md`.
 
