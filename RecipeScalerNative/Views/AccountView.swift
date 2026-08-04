@@ -551,6 +551,8 @@ struct AccountView: View {
                 Text("account.data.management")
                     .appBody()
             }
+        } header: {
+            AppSectionHeader("account.section.data")
         }
         .appListSectionHeaderStyle()
     }
