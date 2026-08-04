@@ -317,7 +317,10 @@ struct AccountView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        } header: {
+            AppSectionHeaderSpacer()
         }
+        .appListSectionHeaderStyle()
     }
 
     @ViewBuilder
