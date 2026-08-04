@@ -1,0 +1,400 @@
+{
+  "feature": "056-cooking-voice-mode",
+  "layout_doc": "layout.md",
+  "figma": {
+    "file_key": null,
+    "frames": [],
+    "note": "Layout проектируется с нуля — нет Figma макета. Web parity по RecipeDescriptionView + новые компоненты для voice."
+  },
+  "required_files": [
+    "RecipeScalerNative/Views/Cooking/CookingLayout.swift",
+    "RecipeScalerNative/Views/Cooking/CookingModeView.swift",
+    "RecipeScalerNative/Views/Cooking/CookingStepCard.swift",
+    "RecipeScalerNative/Views/Cooking/VoiceStatusPill.swift",
+    "RecipeScalerNative/Views/Cooking/ActiveTimerPanel.swift",
+    "RecipeScalerNative/Views/Cooking/CookingPermissionsSheet.swift",
+    "RecipeScalerNative/Views/Cooking/AssetInstallOverlay.swift",
+    "RecipeScalerNative/Views/Cooking/TimerRefChip.swift",
+    "RecipeScalerNative/Services/Cooking/CookingVoiceProvider.swift",
+    "RecipeScalerNative/Services/Cooking/CookingAudioEngineSF.swift",
+    "RecipeScalerNative/Services/Cooking/CookingAudioAnalyzer.swift",
+    "RecipeScalerNative/Services/Cooking/CookingCommandClassifier.swift",
+    "RecipeScalerNative/Services/Cooking/CookingSynonymDictionary.swift",
+    "RecipeScalerNative/Services/Cooking/CookingSpeechSynthesizer.swift",
+    "RecipeScalerNative/Services/Cooking/AssetInventoryInstaller.swift",
+    "RecipeScalerNative/Services/Cooking/CookingTranscript.swift",
+    "RecipeScalerNative/Services/Cooking/CookingVoiceListening.swift",
+    "RecipeScalerNative/Services/Cooking/CookingVoiceError.swift",
+    "RecipeScalerNative/ViewModels/CookingSessionViewModel.swift",
+    "RecipeScalerNative/Models/CookingStep.swift",
+    "RecipeScalerNative/Models/CookingCommand.swift",
+    "RecipeScalerNative/Models/CookingVoiceState.swift"
+  ],
+  "must_contain": [
+    {
+      "id": "cooking-scroll-target-behavior",
+      "description": "Peek-3 layout uses scrollTargetBehavior(.viewAligned) (iOS 17+)",
+      "pattern": "scrollTargetBehavior\\(\\.viewAligned\\)",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingModeView.swift"]
+    },
+    {
+      "id": "cooking-scroll-target-layout",
+      "description": "scrollTargetLayout() on LazyVStack for viewAligned to work",
+      "pattern": "scrollTargetLayout\\(\\)",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingModeView.swift"]
+    },
+    {
+      "id": "cooking-scroll-view-reader",
+      "description": "ScrollViewReader used to programmatically scroll to current step",
+      "pattern": "ScrollViewReader",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingModeView.swift"]
+    },
+    {
+      "id": "cooking-screen-awake-on-appear",
+      "description": "ScreenAwakeController.setActive(true) on .onAppear",
+      "pattern": "ScreenAwakeController\\.setActive\\(true\\)",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingModeView.swift"]
+    },
+    {
+      "id": "cooking-screen-awake-on-disappear",
+      "description": "ScreenAwakeController.deactivate() on .onDisappear",
+      "pattern": "ScreenAwakeController\\.deactivate\\(\\)",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingModeView.swift"]
+    },
+    {
+      "id": "cooking-persistent-system-overlays-hidden",
+      "description": ".persistentSystemOverlays(.hidden) for immersive experience",
+      "pattern": "persistentSystemOverlays\\(\\.hidden\\)",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingModeView.swift"]
+    },
+    {
+      "id": "cooking-control-button-min-size-49",
+      "description": "Prev/Next buttons ≥ 49pt touch target (uses controlButtonSize token)",
+      "pattern": "(controlButtonSize|frame\\(width: 5[6-9]|frame\\(width: [6-9][0-9])",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingModeView.swift"]
+    },
+    {
+      "id": "cooking-voice-pill-martian",
+      "description": "Voice status pill uses Martian Grotesk font",
+      "pattern": "Martian Grotesk",
+      "paths": ["RecipeScalerNative/Views/Cooking/VoiceStatusPill.swift"]
+    },
+    {
+      "id": "cooking-step-card-martian-body",
+      "description": "Step card body text uses Martian Grotesk",
+      "pattern": "Martian Grotesk",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingStepCard.swift"]
+    },
+    {
+      "id": "cooking-step-badge-martian-mono",
+      "description": "Step number badge uses Martian Mono",
+      "pattern": "Martian Mono",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingStepCard.swift"]
+    },
+    {
+      "id": "cooking-timer-text-interval",
+      "description": "Active timer countdown uses Text(timerInterval:), not Timer.publish",
+      "pattern": "Text\\(timerInterval:",
+      "paths": ["RecipeScalerNative/Views/Cooking/ActiveTimerPanel.swift"]
+    },
+    {
+      "id": "cooking-voice-pill-accessibility-id",
+      "description": "Voice status pill has accessibilityIdentifier",
+      "pattern": "accessibilityIdentifier\\(\"cooking_voice_status_pill\"\\)",
+      "paths": ["RecipeScalerNative/Views/Cooking/VoiceStatusPill.swift"]
+    },
+    {
+      "id": "cooking-permissions-sheet-3-rows",
+      "description": "Permissions sheet references all 3 permission keys",
+      "pattern": "cooking\\.permission\\.mic-title",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingPermissionsSheet.swift"]
+    },
+    {
+      "id": "cooking-permissions-sheet-speech-key",
+      "description": "Permissions sheet references speech permission key",
+      "pattern": "cooking\\.permission\\.speech-title",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingPermissionsSheet.swift"]
+    },
+    {
+      "id": "cooking-permissions-sheet-awake-key",
+      "description": "Permissions sheet references awake permission key",
+      "pattern": "cooking\\.permission\\.awake-title",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingPermissionsSheet.swift"]
+    },
+    {
+      "id": "cooking-permissions-sheet-privacy-hint",
+      "description": "Permissions sheet includes privacy hint text",
+      "pattern": "cooking\\.permission\\.privacy-hint",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingPermissionsSheet.swift"]
+    },
+    {
+      "id": "cooking-recipe-detail-entry-button",
+      "description": "YDocRecipeDetailView has 'Cook' navigation link to CookingModeView",
+      "pattern": "cooking\\.start-button",
+      "paths": ["RecipeScalerNative/Views/YDocRecipeDetailView.swift"]
+    },
+    {
+      "id": "cooking-classifier-nfkd-normalize",
+      "description": "CookingCommandClassifier uses NFKD normalization for diacritics",
+      "pattern": "(NFKD|nfkd|trimmingCharacters.*whitespace|folding\\(options: \\.diacriticInsensitive)",
+      "paths": ["RecipeScalerNative/Services/Cooking/CookingCommandClassifier.swift"]
+    },
+    {
+      "id": "cooking-classifier-lowercase",
+      "description": "CookingCommandClassifier lowercases input (case-insensitive per search rule)",
+      "pattern": "\\.lowercased\\(\\)",
+      "paths": ["RecipeScalerNative/Services/Cooking/CookingCommandClassifier.swift"]
+    },
+    {
+      "id": "cooking-classifier-synonym-dict-ru",
+      "description": "Synonym dictionary contains Russian commands",
+      "pattern": "(дальше|вперёд|следующий|назад|повтори|запусти|пауза|продолжи|стоп)",
+      "paths": ["RecipeScalerNative/Services/Cooking/CookingSynonymDictionary.swift"]
+    },
+    {
+      "id": "cooking-classifier-synonym-dict-en",
+      "description": "Synonym dictionary contains English commands",
+      "pattern": "(next|back|previous|repeat|pause|resume|stop|cancel)",
+      "paths": ["RecipeScalerNative/Services/Cooking/CookingSynonymDictionary.swift"]
+    },
+    {
+      "id": "cooking-voice-provider-strategy",
+      "description": "CookingVoiceProvider switches engine by iOS version availability",
+      "pattern": "#available\\(iOS 26",
+      "paths": ["RecipeScalerNative/Services/Cooking/CookingVoiceProvider.swift"]
+    },
+    {
+      "id": "cooking-voice-provider-main-actor",
+      "description": "CookingVoiceProvider is @MainActor (per concurrency rules)",
+      "pattern": "@MainActor",
+      "paths": ["RecipeScalerNative/Services/Cooking/CookingVoiceProvider.swift"]
+    },
+    {
+      "id": "cooking-audio-sf-on-device-required",
+      "description": "CookingAudioEngineSF requires on-device recognition (privacy)",
+      "pattern": "requiresOnDeviceRecognition\\s*=\\s*true",
+      "paths": ["RecipeScalerNative/Services/Cooking/CookingAudioEngineSF.swift"]
+    },
+    {
+      "id": "cooking-audio-sf-partial-results",
+      "description": "CookingAudioEngineSF requests partial results for responsive UX",
+      "pattern": "shouldReportPartialResults\\s*=\\s*true",
+      "paths": ["RecipeScalerNative/Services/Cooking/CookingAudioEngineSF.swift"]
+    },
+    {
+      "id": "cooking-audio-analyzer-available-guard",
+      "description": "CookingAudioAnalyzer guarded with @available(iOS 26.0, *)",
+      "pattern": "@available\\(iOS 26\\.0",
+      "paths": ["RecipeScalerNative/Services/Cooking/CookingAudioAnalyzer.swift"]
+    },
+    {
+      "id": "cooking-tts-mic-suspend",
+      "description": "CookingSpeechSynthesizer suspends mic while speaking (feedback loop prevention)",
+      "pattern": "(onMicSuspend|willSpeakRange)",
+      "paths": ["RecipeScalerNative/Services/Cooking/CookingSpeechSynthesizer.swift"]
+    },
+    {
+      "id": "cooking-tts-mic-resume",
+      "description": "CookingSpeechSynthesizer resumes mic when finished",
+      "pattern": "(onMicResume|didFinish)",
+      "paths": ["RecipeScalerNative/Services/Cooking/CookingSpeechSynthesizer.swift"]
+    },
+    {
+      "id": "cooking-timer-stepid-field",
+      "description": "RecipeTimer struct has optional stepId field",
+      "pattern": "(let|var)\\s+stepId:\\s*String\\?",
+      "paths": ["RecipeScalerNative"]
+    },
+    {
+      "id": "cooking-timer-stepid-payload",
+      "description": "TimerSyncService includes stepId in payload when present",
+      "pattern": "stepId",
+      "paths": ["RecipeScalerNative/Services/TimerSyncService.swift"]
+    },
+    {
+      "id": "cooking-i18n-listening",
+      "description": "cooking.voice-status.listening localized key used",
+      "pattern": "cooking\\.voice-status\\.listening",
+      "paths": ["RecipeScalerNative/Views/Cooking"]
+    },
+    {
+      "id": "cooking-i18n-confirm-step",
+      "description": "cooking.confirm.step-n localized key used (with placeholder)",
+      "pattern": "cooking\\.confirm\\.step",
+      "paths": ["RecipeScalerNative"]
+    },
+    {
+      "id": "cooking-i18n-not-understood",
+      "description": "cooking.confirm.not-understood localized key used",
+      "pattern": "cooking\\.confirm\\.not-understood",
+      "paths": ["RecipeScalerNative"]
+    },
+    {
+      "id": "cooking-i18n-start-button",
+      "description": "cooking.start-button localized key used in detail view",
+      "pattern": "cooking\\.start-button",
+      "paths": ["RecipeScalerNative/Views"]
+    },
+    {
+      "id": "cooking-view-environment-injection",
+      "description": "CookingModeView uses @Environment for voice provider (DI pattern)",
+      "pattern": "@Environment\\(.*CookingVoiceProvider",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingModeView.swift"]
+    },
+    {
+      "id": "cooking-observable-session-vm",
+      "description": "CookingSessionViewModel uses @Observable (modern Observation)",
+      "pattern": "@Observable",
+      "paths": ["RecipeScalerNative/ViewModels/CookingSessionViewModel.swift"]
+    }
+  ],
+  "must_not_contain": [
+    {
+      "id": "no-timer-publish-cooking",
+      "description": "Cooking views must not use Timer.publish (battery, system-driven countdown)",
+      "pattern": "Timer\\.publish",
+      "paths": ["RecipeScalerNative/Views/Cooking"]
+    },
+    {
+      "id": "no-system-font-text-cooking",
+      "description": "Text views in Cooking must not use .font(.system(size:)) — Martian required",
+      "pattern": "Text\\([^)]*\\)[\\s\\S]{0,200}?\\.font\\(\\.system\\(size:",
+      "paths": ["RecipeScalerNative/Views/Cooking"]
+    },
+    {
+      "id": "no-hardcoded-ru-text-cooking",
+      "description": "No hardcoded Russian UI strings in view files",
+      "pattern": "(?=.{0,200}Text\\(\"[А-Яа-яЁё])",
+      "paths": ["RecipeScalerNative/Views/Cooking"]
+    },
+    {
+      "id": "no-hardcoded-en-text-cooking",
+      "description": "No hardcoded English UI strings in view files (use LocalizedStringKey)",
+      "pattern": "Text\\(\"(Cook|Listen|Speaking|Next|Previous|Pause|Resume|Stop|Cancel|Continue)\"\\)",
+      "paths": ["RecipeScalerNative/Views/Cooking"]
+    },
+    {
+      "id": "no-available-ios-27-in-cooking",
+      "description": "Cooking feature must NOT require iOS 27 — works on iOS 17+ (only SpeechAnalyzer needs iOS 26)",
+      "pattern": "#available\\(iOS 27",
+      "paths": ["RecipeScalerNative/Views/Cooking", "RecipeScalerNative/Services/Cooking"]
+    },
+    {
+      "id": "no-shared-service-direct-access-cooking",
+      "description": "CookingModeView must not access services via .shared — use @Environment per CLAUDE.md",
+      "pattern": "CookingVoiceProvider\\.shared|CookingSpeechSynthesizer\\.shared",
+      "paths": ["RecipeScalerNative/Views/Cooking"]
+    },
+    {
+      "id": "no-server-url-for-speech",
+      "description": "Speech pipeline must not hit any server URL — on-device only",
+      "pattern": "(https?://.*speech|ingest.*127\\.0\\.0\\.1.*speech)",
+      "paths": ["RecipeScalerNative/Services/Cooking"]
+    },
+    {
+      "id": "no-force-unwrap-cooking-views",
+      "description": "No force-unwrap ! in cooking views (outside #Preview)",
+      "pattern": "[a-zA-Z_][a-zA-Z0-9_]*!",
+      "paths": ["RecipeScalerNative/Views/Cooking"]
+    }
+  ],
+  "previews": [
+    {
+      "id": "cooking-mode-preview",
+      "description": "CookingModeView preview with sample steps",
+      "pattern": "#Preview",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingModeView.swift"]
+    },
+    {
+      "id": "cooking-step-card-preview",
+      "description": "CookingStepCard preview with focused and peek variants",
+      "pattern": "#Preview",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingStepCard.swift"]
+    },
+    {
+      "id": "voice-pill-preview",
+      "description": "VoiceStatusPill preview with all states",
+      "pattern": "#Preview",
+      "paths": ["RecipeScalerNative/Views/Cooking/VoiceStatusPill.swift"]
+    },
+    {
+      "id": "active-timer-panel-preview",
+      "description": "ActiveTimerPanel preview with running + paused timers",
+      "pattern": "#Preview",
+      "paths": ["RecipeScalerNative/Views/Cooking/ActiveTimerPanel.swift"]
+    },
+    {
+      "id": "permissions-sheet-preview",
+      "description": "CookingPermissionsSheet preview",
+      "pattern": "#Preview",
+      "paths": ["RecipeScalerNative/Views/Cooking/CookingPermissionsSheet.swift"]
+    }
+  ],
+  "acceptance_claims": [
+    {
+      "id": "peek-three-claim",
+      "description": "На любом screen size виден хотя бы 24pt предыдущего и следующего шага, когда они есть",
+      "manual": true
+    },
+    {
+      "id": "pill-fixed-top-claim",
+      "description": "Voice status pill остаётся в top safe area при скролле шагов",
+      "manual": true
+    },
+    {
+      "id": "controls-fixed-bottom-claim",
+      "description": "Prev/Next кнопки всегда внизу экрана, не уезжают при скролле",
+      "manual": true
+    },
+    {
+      "id": "focused-vs-peek-visual-claim",
+      "description": "Focused step card визуально отличается от peek (background + foreground)",
+      "manual": true
+    },
+    {
+      "id": "tap-target-44-claim",
+      "description": "Все интерактивные элементы имеют tap area ≥ 44pt",
+      "manual": true
+    },
+    {
+      "id": "martian-everywhere-claim",
+      "description": "Весь текст в Cooking UI использует Martian (кроме SF Symbol для Image)",
+      "manual": true
+    },
+    {
+      "id": "ios17-builds-claim",
+      "description": "App собирается и запускается на iOS 17 симуляторе; Cooking mode открывается, навигация кнопками работает, voice (если доступен) реагирует на команды",
+      "manual": true
+    },
+    {
+      "id": "ios26-uses-speech-analyzer-claim",
+      "description": "На iOS 26 симуляторе voice pipeline использует SpeechAnalyzer (по логу AppLog cooking.voice_provider engine=speechAnalyzer)",
+      "manual": true
+    },
+    {
+      "id": "feedback-loop-prevention-claim",
+      "description": "TTS speaking приостанавливает микрофон — нет ситуации когда TTS распознаётся как команда",
+      "manual": true
+    },
+    {
+      "id": "interruption-recovery-claim",
+      "description": "После входящего звонка / Siri во время готовки микрофон корректно освобождается и возобновляется после возвращения в app",
+      "manual": true
+    },
+    {
+      "id": "permission-denied-graceful-claim",
+      "description": "При отказе в разрешении на микрофон/речь Cooking mode открывается в режиме «только кнопки» без краша, voice pill показывает .muted/.error",
+      "manual": true
+    },
+    {
+      "id": "stepid-backward-compat-claim",
+      "description": "Старые серверные payload без stepId десериализуются без ошибок, таймеры работают",
+      "manual": true
+    },
+    {
+      "id": "battery-reasonable-claim",
+      "description": "30 минут listening в Cooking mode разряжает батарею не более чем на 15% на iPhone 15+ (manual benchmark)",
+      "manual": true
+    }
+  ]
+}
