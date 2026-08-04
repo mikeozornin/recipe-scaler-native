@@ -164,11 +164,12 @@ struct RecipeScalerNativeApp: App {
                 .onContinueUserActivity(CSSearchableItemActionType) { activity in
                     handleSpotlightActivity(activity)
                 }
-                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { [container] activity in
+                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
                     guard let url = activity.webpageURL else { return }
-                    if let link = DeepLinkRouter.parse(url) {
-                        container.deepLinkRouter.handle(link)
-                    }
+                    // Route through `DeepLinkRouter.handle(_:)` so the same
+                    // double-delivery + cold-start debounce guards apply to
+                    // `NSUserActivityTypeBrowsingWeb` deliveries as well.
+                    DeepLinkRouter.handle(url)
                 }
         }
         .modelContainer(Self.sharedModelContainer)

@@ -28,6 +28,12 @@ enum DeepLink: Equatable, Sendable {
     case openPublicProfile(username: String)
     /// Spec 059 — Universal Link `https://…/public/@/{username}/{recipeId}`.
     case openPublicRecipe(recipeId: String, username: String)
+    /// Spec 059 — Universal Link `https://…/discover`.
+    case openDiscover
+    /// Spec 059 — Universal Link `https://…/discover/collection/{slug}`.
+    case openDiscoverCollection(slug: String)
+    /// Spec 059 — Universal Link `https://…/discover/recipe/{recipeId}` (curated).
+    case openDiscoverRecipe(recipeId: String)
 }
 
 // MARK: - DeepLinkRouter
@@ -88,6 +94,12 @@ final class DeepLinkRouter {
     /// - `recipe-scaler://recipe/{recipeId}` → `.openRecipe`
     /// - `recipe-scaler://home` → `.openHome`
     /// - `recipe-scaler://shopping` → `.openShoppingList`
+    /// - `https://recipe-scaler.ru/` → `.openHome`
+    /// - `https://recipe-scaler.ru/recipe/{id}` → `.openRecipe`
+    /// - `https://recipe-scaler.ru/shopping` → `.openShoppingList`
+    /// - `https://recipe-scaler.ru/discover` → `.openDiscover`
+    /// - `https://recipe-scaler.ru/discover/collection/{slug}` → `.openDiscoverCollection`
+    /// - `https://recipe-scaler.ru/discover/recipe/{id}` → `.openDiscoverRecipe`
     /// - `https://recipe-scaler.ru/public/@/{username}` → `.openPublicProfile`
     /// - `https://recipe-scaler.ru/public/@/{username}/{recipeId}` → `.openPublicRecipe`
     static func handle(_ url: URL) {
@@ -123,37 +135,78 @@ final class DeepLinkRouter {
                   let recipeId = UUID(uuidString: id)?.uuidString.lowercased() else { return nil }
             return .openRecipe(recipeId: recipeId)
         case "home":
+            guard url.pathComponents.filter({ $0 != "/" }).isEmpty else { return nil }
             return .openHome
         case "shopping":
+            // Bare `recipe-scaler://shopping` only — not `://shopping/{id}`
+            // (public shopping-list shares stay on https web).
+            guard url.pathComponents.filter({ $0 != "/" }).isEmpty else { return nil }
             return .openShoppingList
         default:
             return nil
         }
     }
 
-    /// Spec 059 — only `/public/@/{username}` and `/public/@/{username}/{uuid}`.
+    /// Spec 059 — claimed AASA paths only. Unknown https paths return nil
+    /// so Safari keeps them.
     private static func parseUniversalLink(_ url: URL) -> DeepLink? {
         guard let host = url.host?.lowercased(),
               Config.universalLinkHosts.contains(host) else { return nil }
 
-        // pathComponents: ["/", "public", "@", "username", optional "uuid"]
         let parts = url.pathComponents.filter { $0 != "/" }
-        guard parts.count >= 3,
-              parts[0] == "public",
-              parts[1] == "@" else { return nil }
 
-        let username = parts[2].removingPercentEncoding ?? parts[2]
-        guard !username.isEmpty else { return nil }
-
-        if parts.count == 3 {
-            return .openPublicProfile(username: username)
+        if parts.isEmpty {
+            return .openHome
         }
 
-        guard parts.count == 4,
-              let recipeId = UUID(uuidString: parts[3])?.uuidString.lowercased() else {
+        switch parts[0] {
+        case "shopping":
+            guard parts.count == 1 else { return nil }
+            return .openShoppingList
+
+        case "recipe":
+            guard parts.count == 2,
+                  let recipeId = UUID(uuidString: parts[1])?.uuidString.lowercased() else {
+                return nil
+            }
+            return .openRecipe(recipeId: recipeId)
+
+        case "discover":
+            if parts.count == 1 {
+                return .openDiscover
+            }
+            guard parts.count == 3 else { return nil }
+            switch parts[1] {
+            case "collection":
+                let slug = parts[2].removingPercentEncoding ?? parts[2]
+                guard !slug.isEmpty else { return nil }
+                return .openDiscoverCollection(slug: slug)
+            case "recipe":
+                guard let recipeId = UUID(uuidString: parts[2])?.uuidString.lowercased() else {
+                    return nil
+                }
+                return .openDiscoverRecipe(recipeId: recipeId)
+            default:
+                return nil
+            }
+
+        case "public":
+            // ["/public", "@", "username", optional "uuid"]
+            guard parts.count >= 3, parts[1] == "@" else { return nil }
+            let username = parts[2].removingPercentEncoding ?? parts[2]
+            guard !username.isEmpty else { return nil }
+            if parts.count == 3 {
+                return .openPublicProfile(username: username)
+            }
+            guard parts.count == 4,
+                  let recipeId = UUID(uuidString: parts[3])?.uuidString.lowercased() else {
+                return nil
+            }
+            return .openPublicRecipe(recipeId: recipeId, username: username)
+
+        default:
             return nil
         }
-        return .openPublicRecipe(recipeId: recipeId, username: username)
     }
 
     /// Legacy: consume recipe id written by extensions into UserDefaults.

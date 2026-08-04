@@ -44,22 +44,26 @@ final class AppShellCoordinatorTests: XCTestCase {
 
     func test_openShoppingList_switchesTabAndClearsRouter() throws {
         let (coordinator, router, _) = try makeCoordinator()
+        coordinator.shoppingPath.append("shopping-depth-probe")
         router.handle(.openShoppingList)
 
         coordinator.handleDeepLink(.openShoppingList)
 
         XCTAssertEqual(coordinator.selectedTab, .shopping)
+        XCTAssertTrue(coordinator.shoppingPath.isEmpty)
         XCTAssertNil(router.pending)
     }
 
     func test_openHome_switchesToRecipesAndClearsRouter() throws {
         let (coordinator, router, _) = try makeCoordinator()
         coordinator.selectedTab = .shopping
+        coordinator.recipesPath.append(RecipesRoute.folder(CollectionVirtualFolders.allRecipesFolderId))
         router.handle(.openHome)
 
         coordinator.handleDeepLink(.openHome)
 
         XCTAssertEqual(coordinator.selectedTab, .recipes)
+        XCTAssertTrue(coordinator.recipesPath.isEmpty)
         XCTAssertNil(router.pending)
     }
 

@@ -24,15 +24,19 @@
 
 **Когда** пользователь тапает `https://recipe-scaler.ru/public/@/{username}/{recipeId}`, **тогда** app открывает Discover → экран публичного рецепта (с возможностью «Copy to my recipes»).
 
-### US3 — Нет app / не заявленный path (P2)
+### US3 — Private / Discover path URLs (P1)
 
-**Когда** app не установлен **или** URL вне claimed paths (legacy `/public/{uuid}`, shopping-list, OAuth), **тогда** открывается Safari / веб как раньше.
+**Когда** пользователь тапает `https://recipe-scaler.ru/recipe/{id}`, `/`, `/shopping`, `/discover` или `/discover/collection|recipe/...`, **тогда** app открывает соответствующий экран (parity с `recipe-scaler://` и web path’ами).
+
+### US4 — Нет app / не заявленный path (P2)
+
+**Когда** app не установлен **или** URL вне claimed paths (legacy `/public/{uuid}`, public shopping-list, OAuth, about/privacy), **тогда** открывается Safari / веб как раньше.
 
 ## Требования
 
 ### FR-UL-001 — AASA
 
-Сервер отдаёт `GET /.well-known/apple-app-site-association` с `Content-Type: application/json`, без редиректа. Claimed paths: только `/public/@/*`. App ID: `ZBPX4JYT24.ru.recipescaler.RecipeScaler`.
+Сервер отдаёт `GET /.well-known/apple-app-site-association` с `Content-Type: application/json`, без редиректа. Claimed paths: `/public/@/*`, `/recipe/*`, `/discover`, `/discover/collection/*`, `/discover/recipe/*`, `/shopping`, `/`. App ID: `ZBPX4JYT24.ru.recipescaler.RecipeScaler`.
 
 ### FR-UL-002 — Associated Domains
 
@@ -40,11 +44,11 @@ Main app entitlement: `applinks:recipe-scaler.ru`. Capability в Apple Developer
 
 ### FR-UL-003 — Парсинг https
 
-`DeepLinkRouter` принимает `https://recipe-scaler.ru/public/@/{username}` и `…/{username}/{uuid}` (и `www`). Игнорирует legacy `/public/{uuid}`, shopping-list, чужие хосты. Схема `recipe-scaler://` без регрессий.
+`DeepLinkRouter` принимает Universal Links: `/public/@/...`, `/recipe/{uuid}`, `/`, `/shopping`, `/discover`, `/discover/collection/{slug}`, `/discover/recipe/{uuid}` (и `www`). Игнорирует legacy `/public/{uuid}`, shopping-list public, oauth, чужие хосты. Схема `recipe-scaler://` без регрессий.
 
 ### FR-UL-004 — Навигация
 
-Новые `DeepLink`: `openPublicProfile`, `openPublicRecipe` → `AppShellCoordinator` → tab Discover + `DiscoverRoute`.
+Новые / расширенные `DeepLink`: `openPublicProfile`, `openPublicRecipe`, `openDiscover`, `openDiscoverCollection`, `openDiscoverRecipe`, плюс https-parity для `openRecipe` / `openHome` / `openShoppingList` → `AppShellCoordinator`.
 
 ### FR-UL-005 — Entry points
 
@@ -53,16 +57,16 @@ Main app entitlement: `applinks:recipe-scaler.ru`. Capability в Apple Developer
 ## Вне scope
 
 - Legacy `/public/{recipeId}` без `@`
-- Guest shopping list viewer
-- Path-алиасы Discover / private recipes
-- BrowserRouter вместо HashRouter
+- Guest shopping list viewer (`/public/shopping-list/*`)
+- `/oauth/*`, `/about`, `/privacy`, `/account`
+- BrowserRouter — реализовано в web `060` (полная миграция); path в адресной строке совпадает с AASA
 
 ## Критерии успеха
 
 - **SC-001**: AASA на prod → 200 JSON с нужным `appID` и paths.
-- **SC-002**: Unit-тесты парсера: profile / recipe accepted; legacy / shopping / wrong host rejected.
+- **SC-002**: Unit-тесты парсера: public/@, recipe, home, shopping, discover accepted; legacy / public shopping-list / oauth / wrong host rejected.
 - **SC-003**: `recipe-scaler://recipe/{id}` по-прежнему → My Recipes.
-- **SC-004** (device): tap share link → app → Discover (после portal + signing).
+- **SC-004** (device): tap share / app URL → native screen (после portal + signing + CDN AASA cache).
 
 ## Артефакты
 

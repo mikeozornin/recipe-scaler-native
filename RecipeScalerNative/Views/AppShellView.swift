@@ -220,6 +220,14 @@ struct AppShellView: View {
         }
         .onAppear {
             RecipeImageDiskCache.migrateFromCachesIfNeeded()
+            // Spec 059 fix: on cold launch iOS delivers the Universal Link URL
+            // during splash, before `AppShellView` mounts. `onChange(pending)`
+            // cannot observe a value that was already set, so a queued link
+            // would be silently dropped and the app opened on the default tab.
+            // Drain any pre-existing pending link once on appear.
+            if let link = deepLinkRouter.pending {
+                coordinator.handleDeepLink(link)
+            }
         }
         #if DEBUG
         .onAppear {

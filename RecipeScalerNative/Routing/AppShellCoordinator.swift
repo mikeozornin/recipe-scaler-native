@@ -107,6 +107,7 @@ final class AppShellCoordinator {
         switch link {
         case .openRecipe(let recipeId):
             selectedTab = .recipes
+            recipesPath = NavigationPath()
             if syncService.collectionEntries.contains(where: { $0.id == recipeId && !$0.deleted }) {
                 pendingSpotlightRecipeId = nil
                 recipesPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
@@ -130,9 +131,11 @@ final class AppShellCoordinator {
             deepLinkRouter.clear()
         case .openShoppingList:
             selectedTab = .shopping
+            shoppingPath = NavigationPath()
             deepLinkRouter.clear()
         case .openHome:
             selectedTab = .recipes
+            recipesPath = NavigationPath()
             deepLinkRouter.clear()
         case .openPublicProfile(let username):
             selectedTab = .discover
@@ -148,6 +151,26 @@ final class AppShellCoordinator {
                     id: recipeId,
                     allowDownloads: true,
                     imageSource: .publicRecipe
+                )
+            )
+            deepLinkRouter.clear()
+        case .openDiscover:
+            selectedTab = .discover
+            discoverPath = NavigationPath()
+            deepLinkRouter.clear()
+        case .openDiscoverCollection(let slug):
+            selectedTab = .discover
+            discoverPath = NavigationPath()
+            discoverPath.append(DiscoverRoute.collection(slug))
+            deepLinkRouter.clear()
+        case .openDiscoverRecipe(let recipeId):
+            selectedTab = .discover
+            discoverPath = NavigationPath()
+            discoverPath.append(
+                DiscoverRoute.recipe(
+                    id: recipeId,
+                    allowDownloads: true,
+                    imageSource: .curatedDiscover
                 )
             )
             deepLinkRouter.clear()

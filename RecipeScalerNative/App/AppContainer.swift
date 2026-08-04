@@ -299,8 +299,17 @@ final class AppContainer {
             }
         }
 
-        let isSameUser = bootstrappedUserId == userId
-        if !isSameUser {
+        // Spec 059 fix: do NOT reset shell navigation state on the very first
+        // bootstrap of a process. On cold launch with a Universal Link, iOS
+        // delivers the URL before `container.bootstrap(userId:)` runs; by the
+        // time `bootstrap` executes, the coordinator has already appended the
+        // UL routes to `discoverPath`. The original logic treated `nil → userId`
+        // as "user switched" and called `resetShellStateForLogout()`, wiping
+        // the pending deep-link navigation. Reset only when we actually switch
+        // between two different real user ids (post-initial bootstrap).
+        let previousUserId = bootstrappedUserId
+        let isSameUser = previousUserId == userId
+        if !isSameUser, previousUserId != nil {
             shellCoordinator.resetShellStateForLogout()
         }
         bootstrappedUserId = userId

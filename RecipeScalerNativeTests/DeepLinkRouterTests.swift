@@ -113,6 +113,64 @@ final class DeepLinkRouterTests: XCTestCase {
         XCTAssertNil(DeepLinkRouter.shared.pending)
     }
 
+    func test_universalLink_home_setsOpenHome() {
+        let url = URL(string: "https://recipe-scaler.ru/")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openHome)
+    }
+
+    func test_universalLink_recipe_setsOpenRecipe() {
+        let id = "11111111-2222-3333-4444-555555555555"
+        let url = URL(string: "https://recipe-scaler.ru/recipe/\(id)")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openRecipe(recipeId: id))
+    }
+
+    func test_universalLink_shopping_setsOpenShoppingList() {
+        let url = URL(string: "https://recipe-scaler.ru/shopping")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openShoppingList)
+    }
+
+    func test_universalLink_discover_root_setsOpenDiscover() {
+        let url = URL(string: "https://recipe-scaler.ru/discover")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openDiscover)
+    }
+
+    func test_universalLink_discover_collection_setsPending() {
+        let url = URL(string: "https://recipe-scaler.ru/discover/collection/weeknight")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openDiscoverCollection(slug: "weeknight"))
+    }
+
+    func test_universalLink_discover_recipe_setsPending() {
+        let id = "11111111-2222-3333-4444-555555555555"
+        let url = URL(string: "https://recipe-scaler.ru/discover/recipe/\(id)")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openDiscoverRecipe(recipeId: id))
+    }
+
+    func test_universalLink_oauth_ignored() {
+        let url = URL(string: "https://recipe-scaler.ru/oauth/consent?client_id=x")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertNil(DeepLinkRouter.shared.pending)
+    }
+
     func test_universalLink_nonUUIDRecipe_ignored() {
         let url = URL(string: "https://recipe-scaler.ru/public/@/alice/not-a-uuid")!
 

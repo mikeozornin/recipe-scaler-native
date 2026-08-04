@@ -216,6 +216,7 @@
 		B3APIC01B293A4B701000006 /* APIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APIC01B293A4B701000005 /* APIClientTests.swift */; };
 		B3LAPR01B293A4B701000001 /* LiveActivityPushRegistrarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3LAPR01A293A4B701000001 /* LiveActivityPushRegistrarTests.swift */; };
 		B3PUBURL01B293A4B701000001 /* PublicURLBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3PUBURL01A293A4B701000001 /* PublicURLBuilderTests.swift */; };
+		B3DEEPLN01B293A4B701000001 /* DeepLinkRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DEEPLN01A293A4B701000001 /* DeepLinkRouterTests.swift */; };
 		B3LACRDT01B293A4B701000001 /* TimerLiveActivityCoordinatorPushTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3LACRDT01A293A4B701000001 /* TimerLiveActivityCoordinatorPushTokenTests.swift */; };
 		B3APIERRLOC001 /* APIError+Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APIELOC002 /* APIError+Localization.swift */; };
 		B3APPLOG01B293A4B70100002 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPLOG01A293A4B70100001 /* AppLog.swift */; };
@@ -919,6 +920,7 @@
 		B3APIC01B293A4B701000005 /* APIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientTests.swift; sourceTree = "<group>"; };
 		B3LAPR01A293A4B701000001 /* LiveActivityPushRegistrarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityPushRegistrarTests.swift; sourceTree = "<group>"; };
 		B3PUBURL01A293A4B701000001 /* PublicURLBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicURLBuilderTests.swift; sourceTree = "<group>"; };
+		B3DEEPLN01A293A4B701000001 /* DeepLinkRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouterTests.swift; sourceTree = "<group>"; };
 		B3LACRDT01A293A4B701000001 /* TimerLiveActivityCoordinatorPushTokenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityCoordinatorPushTokenTests.swift; sourceTree = "<group>"; };
 		B3APIELOC002 /* APIError+Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIError+Localization.swift"; sourceTree = "<group>"; };
 		B3APPLOG01A293A4B70100001 /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
@@ -1710,6 +1712,7 @@
 				B3APIC01B293A4B701000005 /* APIClientTests.swift */,
 				B3LAPR01A293A4B701000001 /* LiveActivityPushRegistrarTests.swift */,
 				B3PUBURL01A293A4B701000001 /* PublicURLBuilderTests.swift */,
+				B3DEEPLN01A293A4B701000001 /* DeepLinkRouterTests.swift */,
 				B3LACRDT01A293A4B701000001 /* TimerLiveActivityCoordinatorPushTokenTests.swift */,
 				B3WATCHREM01A293A4B70100001 /* ServerActiveTimerRemainingTests.swift */,
 				B3TPAL01A293A4B701000001 /* TimerPaletteTests.swift */,
@@ -3085,6 +3088,7 @@
 				B3APIC01B293A4B701000006 /* APIClientTests.swift in Sources */,
 				B3LAPR01B293A4B701000001 /* LiveActivityPushRegistrarTests.swift in Sources */,
 				B3PUBURL01B293A4B701000001 /* PublicURLBuilderTests.swift in Sources */,
+				B3DEEPLN01B293A4B701000001 /* DeepLinkRouterTests.swift in Sources */,
 				B3LACRDT01B293A4B701000001 /* TimerLiveActivityCoordinatorPushTokenTests.swift in Sources */,
 				B3WATCHREM02B293A4B70100001 /* ServerActiveTimerRemainingTests.swift in Sources */,
 				B3TPAL01B293A4B701000002 /* TimerPaletteTests.swift in Sources */,
