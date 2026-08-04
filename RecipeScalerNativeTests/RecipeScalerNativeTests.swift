@@ -73,6 +73,37 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertEqual(full, 44 + 50 + 60 + 2)
     }
 
+    func testIngredientEditListResolvedContentHeightFillsMissingWithEstimate() {
+        let rows: [(number: Int?, ingredient: IngredientData)] = (0..<3).map { index in
+            (
+                index + 1,
+                IngredientData(
+                    id: "ing-\(index)",
+                    name: "Ingredient \(index)",
+                    originalAmount: "\(index + 1)",
+                    order: index
+                )
+            )
+        }
+        let estimateOne = IngredientEditList.estimatedRowHeight(
+            ingredient: rows[2].ingredient,
+            nutritionEnabled: false
+        )
+        let partial = IngredientEditList.resolvedContentHeight(
+            rows: rows,
+            heights: ["ing-0": 66.7, "ing-1": 45],
+            nutritionEnabled: false
+        )
+        XCTAssertEqual(partial, 66.7 + 45 + estimateOne + 2, accuracy: 0.01)
+
+        let full = IngredientEditList.resolvedContentHeight(
+            rows: rows,
+            heights: ["ing-0": 66.7, "ing-1": 45, "ing-2": 66.7],
+            nutritionEnabled: false
+        )
+        XCTAssertEqual(full, 66.7 + 45 + 66.7 + 2, accuracy: 0.01)
+    }
+
     func testRecipeTitleEmojiLeading() {
         XCTAssertEqual(RecipeTitleEmoji.leadingEmoji(in: "🍕 Pizza"), "🍕")
         XCTAssertEqual(RecipeTitleEmoji.leadingEmoji(in: "  🍕 Pizza"), "🍕")

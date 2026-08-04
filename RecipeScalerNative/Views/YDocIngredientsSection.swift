@@ -54,17 +54,15 @@ struct YDocIngredientsSection: View {
     }
 
     private var viewListHeight: CGFloat {
-        let estimated = IngredientEditList.estimatedContentHeight(
+        // Mix measured row heights with estimates for rows not yet laid out.
+        // All-or-nothing measured height caused a feedback loop: short estimated
+        // frame clipped trailing rows → they never reported height → stayed estimated.
+        IngredientEditList.resolvedContentHeight(
             rows: numberedRows,
+            heights: measuredRowHeights,
             nutritionEnabled: nutritionEnabled,
             includesNewRow: false
         )
-        let measured = IngredientEditList.measuredContentHeight(
-            rowIds: ingredientRowIds,
-            heights: measuredRowHeights
-        )
-        // Prefer measured heights — estimate over-counts (+4pt/row, extra separators).
-        return measured > 0 ? measured : estimated
     }
 
     var body: some View {
@@ -364,17 +362,13 @@ struct YDocIngredientsEditSection: View {
     }
 
     private var editListHeight: CGFloat {
-        let estimated = IngredientEditList.estimatedContentHeight(
+        // Same hybrid as view mode — partial measurements must still grow the frame.
+        IngredientEditList.resolvedContentHeight(
             rows: numberedRows,
+            heights: measuredRowHeights,
             nutritionEnabled: nutritionEnabled,
             includesNewRow: false
         )
-        let measured = IngredientEditList.measuredContentHeight(
-            rowIds: ingredientRowIds,
-            heights: measuredRowHeights
-        )
-        // Prefer measured full-row heights — estimate can under-count nutrition edit rows.
-        return measured > 0 ? measured : estimated
     }
 
     private var fieldSequence: [IngredientFieldFocus] {
@@ -873,6 +867,31 @@ enum IngredientEditList {
         guard measured.count == rowIds.count, !measured.isEmpty else { return 0 }
         let rowsHeight = measured.reduce(0, +)
         let separators = CGFloat(max(0, rowIds.count - 1))
+        return rowsHeight + separators
+    }
+
+    /// Measured height when available; otherwise `estimatedRowHeight` for that row.
+    /// Avoids the all-or-nothing trap where a short estimated `List` frame clips trailing
+    /// rows so they never report a preference and the height never grows.
+    static func resolvedContentHeight(
+        rows: [(number: Int?, ingredient: IngredientData)],
+        heights: [String: CGFloat],
+        nutritionEnabled: Bool,
+        includesNewRow: Bool = false
+    ) -> CGFloat {
+        guard !rows.isEmpty else {
+            return includesNewRow ? RecipeRowLayoutMetrics.rowHeight + 12 : RecipeRowLayoutMetrics.rowHeight
+        }
+        let rowsHeight = rows.reduce(CGFloat.zero) { sum, row in
+            if let measured = heights[row.ingredient.id], measured > 0 {
+                return sum + measured
+            }
+            return sum + estimatedRowHeight(ingredient: row.ingredient, nutritionEnabled: nutritionEnabled)
+        }
+        let separators = CGFloat(max(0, rows.count - 1))
+        if includesNewRow {
+            return rowsHeight + separators + 12 + RecipeRowLayoutMetrics.rowHeight
+        }
         return rowsHeight + separators
     }
 }
