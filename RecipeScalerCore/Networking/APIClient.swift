@@ -193,6 +193,10 @@ public enum APIError: LocalizedError {
     case invalidResponse
     case httpError(statusCode: Int)
     case serverError(code: ServerErrorCode)
+    /// Legacy / unstructured `APIResponse.error` string (e.g. upstream fetch
+    /// failures). Kept so `ImportErrorLocalizer` can map known English phrases
+    /// without collapsing them into a generic HTTP status key.
+    case upstreamMessage(String)
     case decodingError(Error)
     case unauthorized
 
@@ -210,6 +214,8 @@ public enum APIError: LocalizedError {
             return "api.error.http:\(code)"
         case .serverError(let code):
             return code.rawValue
+        case .upstreamMessage(let message):
+            return message
         case .decodingError:
             return "api.error.decoding"
         case .unauthorized:

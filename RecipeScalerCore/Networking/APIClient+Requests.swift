@@ -23,7 +23,7 @@ extension APIClient {
         }
         guard (200...299).contains(http.statusCode) else {
             notifyUnauthorizedIfNeeded(statusCode: http.statusCode)
-            throw APIError.httpError(statusCode: http.statusCode)
+            throw Self.mapHTTPFailure(statusCode: http.statusCode, data: data)
         }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -77,10 +77,7 @@ extension APIClient {
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             let code = (response as? HTTPURLResponse)?.statusCode ?? -1
             notifyUnauthorizedIfNeeded(statusCode: code)
-            if let apiError = Self.parseAPIFailureBody(data) {
-                throw APIError.serverError(code: apiError)
-            }
-            throw APIError.httpError(statusCode: code)
+            throw Self.mapHTTPFailure(statusCode: code, data: data)
         }
         return data
     }
@@ -113,13 +110,28 @@ extension APIClient {
     }
 
     private static func parseAPIFailureBody(_ data: Data) -> ServerErrorCode? {
+        guard let message = parseAPIFailureMessage(data) else { return nil }
+        return ServerErrorCode(rawValue: message)
+    }
+
+    private static func parseAPIFailureMessage(_ data: Data) -> String? {
         struct Empty: Decodable {}
         guard let json = try? JSONDecoder().decode(APIResponse<Empty>.self, from: data),
-              !json.success,
               let error = json.error, !error.isEmpty else {
             return nil
         }
-        return ServerErrorCode(rawValue: error)
+        return error
+    }
+
+    /// Prefer typed / phrase-mappable server messages over bare HTTP status keys.
+    private static func mapHTTPFailure(statusCode: Int, data: Data) -> APIError {
+        guard let message = parseAPIFailureMessage(data) else {
+            return .httpError(statusCode: statusCode)
+        }
+        if let code = ServerErrorCode(rawValue: message) {
+            return .serverError(code: code)
+        }
+        return .upstreamMessage(message)
     }
 }
 
@@ -132,3 +144,4 @@ public struct AnyEncodable: Encodable {
         try encode(encoder)
     }
 }
+

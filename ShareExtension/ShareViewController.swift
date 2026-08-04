@@ -18,10 +18,10 @@ final class ShareViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
         view.backgroundColor = .systemBackground
 
-        // Build the SwiftUI view; capture the extension context for URL opening.
-        let shareView = ShareView(extensionContext: extensionContext)
+        let shareView = ShareView(extensionContext: extensionContext, hostViewController: self)
         let host = UIHostingController(rootView: shareView)
         addChild(host)
         host.view.translatesAutoresizingMaskIntoConstraints = false

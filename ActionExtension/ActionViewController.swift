@@ -90,7 +90,11 @@ final class ActionViewController: UIViewController {
         // Inject discovered URL via constructor; ShareView dispatches via ShareContentLoader.
         // The loader still runs but we feed the URL through `extensionContext` so the
         // standard URL-loading path picks it up from `attachments` too.
-        let shareView = ShareView(extensionContext: extensionContext, preloaded: initialContent)
+        let shareView = ShareView(
+            extensionContext: extensionContext,
+            hostViewController: self,
+            preloaded: initialContent
+        )
         let host = UIHostingController(rootView: shareView)
         addChild(host)
         host.view.translatesAutoresizingMaskIntoConstraints = false

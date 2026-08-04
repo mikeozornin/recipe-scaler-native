@@ -209,9 +209,16 @@ final class DeepLinkRouter {
         }
     }
 
-    /// Legacy: consume recipe id written by extensions into UserDefaults.
+    /// Legacy + App Group: consume recipe id written by Share/Action extensions.
+    /// Extensions write into the App Group suite (separate from `UserDefaults.standard`).
     /// Returns `nil` when nothing is pending.
     static func consumePendingRecipeId() -> String? {
+        if let suite = AppGroup.userDefaults,
+           let id = suite.string(forKey: pendingRecipeIdKey),
+           !id.isEmpty {
+            suite.removeObject(forKey: pendingRecipeIdKey)
+            return id
+        }
         let id = UserDefaults.standard.string(forKey: pendingRecipeIdKey)
         if id != nil {
             UserDefaults.standard.removeObject(forKey: pendingRecipeIdKey)

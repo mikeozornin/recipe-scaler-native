@@ -58,7 +58,8 @@ public enum ImportErrorLocalizer {
         }
 
         switch rawMessage {
-        case "Source page is protected by a captcha or anti-bot challenge":
+        case "Source page is protected by a captcha or anti-bot challenge",
+             "HTTP 403: Forbidden":
             return translate("import.error-captcha", bundle: bundle, locale: locale)
         case "Could not extract content with any static method":
             return translate("import.error-static", bundle: bundle, locale: locale)
@@ -68,6 +69,20 @@ public enum ImportErrorLocalizer {
             return translate("import.error", bundle: bundle, locale: locale)
         default:
             break
+        }
+
+        // Upstream fetch failures from recipe-extraction (`HTTP ${status}: …`).
+        if rawMessage.hasPrefix("HTTP 403:") || rawMessage.hasPrefix("HTTP 429:") {
+            return translate("import.error-captcha", bundle: bundle, locale: locale)
+        }
+        if rawMessage.hasPrefix("HTTP 404:") {
+            return translate("import.error-static", bundle: bundle, locale: locale)
+        }
+
+        // OpenRouter / LLM upstream failures bubbled as 500 from import routes.
+        if rawMessage.hasPrefix("LLM request failed:")
+            || rawMessage.hasPrefix("Assistant LLM request failed:") {
+            return translate("llm.parse-error", bundle: bundle, locale: locale)
         }
 
         if rawMessage.hasPrefix("Could not process image:") {

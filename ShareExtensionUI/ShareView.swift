@@ -20,10 +20,17 @@ public struct ShareView: View {
     @State private var errorMessage: String?
 
     private weak var extensionContext: NSExtensionContext?
+    /// Weak host for iOS 18 Share `UIApplication.open` via responder chain.
+    private let hostBox: HostViewControllerBox
     private let preloaded: ShareContent?
 
-    public init(extensionContext: NSExtensionContext?, preloaded: ShareContent? = nil) {
+    public init(
+        extensionContext: NSExtensionContext?,
+        hostViewController: UIViewController? = nil,
+        preloaded: ShareContent? = nil
+    ) {
         self.extensionContext = extensionContext
+        self.hostBox = HostViewControllerBox(hostViewController)
         self.preloaded = preloaded
     }
 
@@ -174,12 +181,20 @@ public struct ShareView: View {
         } else {
             id = lastResult?.recipeIds.first
         }
-        if let id, let url = URL(string: "recipe-scaler://recipe/\(id)") {
-            extensionContext?.open(url) { _ in
-                self.completeRequest()
-            }
-        } else {
+        guard let id, let url = URL(string: "recipe-scaler://recipe/\(id)") else {
             completeRequest()
+            return
+        }
+
+        // App Group backup when URL delivery races cold start / open fails.
+        AppGroup.userDefaults?.set(id, forKey: "routing.pendingRecipeId")
+
+        ExtensionHostURLOpener.open(
+            url,
+            extensionContext: extensionContext,
+            from: hostBox.viewController
+        ) { _ in
+            self.completeRequest()
         }
     }
 
@@ -212,6 +227,16 @@ public struct ShareView: View {
             locale: Locale.current,
             localizedString: { resourceBundle.localizedString(forKey: $0, value: nil, table: $1 ?? "Shared") }
         )
+    }
+}
+
+// MARK: - Host VC box (weak ref from a SwiftUI value type)
+
+private final class HostViewControllerBox {
+    weak var viewController: UIViewController?
+
+    init(_ viewController: UIViewController?) {
+        self.viewController = viewController
     }
 }
 

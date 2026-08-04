@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RecipeScalerCore
 
 struct ImportPresentation: Identifiable {
     let id = UUID()
@@ -230,6 +231,7 @@ final class AppShellCoordinator {
         shoppingPath = NavigationPath()
         deepLinkRouter.clear()
         UserDefaults.standard.removeObject(forKey: DeepLinkRouter.pendingRecipeIdKey)
+        AppGroup.userDefaults?.removeObject(forKey: DeepLinkRouter.pendingRecipeIdKey)
     }
 
     // MARK: - Private

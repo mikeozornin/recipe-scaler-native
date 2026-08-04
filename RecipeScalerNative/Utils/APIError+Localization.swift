@@ -38,6 +38,9 @@ extension APIError {
             return Bundle.currentLocalizedString("api.error.server-generic")
         case .serverError(let code):
             return Bundle.currentLocalizedString(code.rawValue)
+        case .upstreamMessage(let message):
+            // Phrase-map known scrape / captcha failures; otherwise generic import failed.
+            return ImportErrorLocalizer.localize(message, bundle: .main)
         }
     }
 }
