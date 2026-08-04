@@ -61,6 +61,8 @@ AppSectionHeader("key")       // footnote, .secondary, uppercase, tracking 0.8
 AppSectionHeaderSpacer()      // невидимый placeholder для отступа
 ```
 
+Кастомный `listSectionSpacing(30)` на Account пробовали и отклонили — см. [account-list-section-spacing.md](account-list-section-spacing.md). На профиле остаётся `.listSectionSpacing(12)`.
+
 ### UIKit chrome (AppChromeAppearance)
 
 Глобально настраивает шрифты для NavigationBar, BarButtonItems, TabBar, UITextField, UISegmentedControl через `appearance()`. Вызывается один раз при старте приложения.
