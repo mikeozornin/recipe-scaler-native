@@ -39,7 +39,7 @@
 | Remote push (**APNs**) | ❌ платный | spec 023 |
 | Share / Action **extensions** на реальном iPhone | ❌ платный | spec 025 |
 | **App Groups** «надёжно на железе» | ❌ платный | см. PAID-doc |
-| Universal links `https://` (**Associated Domains**) | ❌ платный | кастомная схема `recipe-scaler://` — без платного |
+| Universal links `https://` (**Associated Domains**) | ❌ платный (нужен portal) | Реализация: spec `059-universal-links`; схема `recipe-scaler://` работает и без платного |
 | iCloud / CloudKit, Sign in with Apple, WeatherKit | ❌ платный | — |
 
 > Важно: кастомная URL-схема `recipe-scaler://` работает **без** Associated Domains и без платного
@@ -176,9 +176,9 @@ usage-description камеры.
 ## Осознанно отложено (нужен платный аккаунт)
 
 Remote push (APNs, spec 023), Share/Action extensions на реальном iPhone (spec 025), App Groups на
-железе, универсальные `https://`-ссылки (Associated Domains), iCloud-синхронизация, Sign in with
-Apple, TestFlight/App Store. Подробности и чек-лист — в
-[`PAID-APPLE-DEVELOPER-REQUIRED.md`](./PAID-APPLE-DEVELOPER-REQUIRED.md).
+железе, iCloud-синхронизация, Sign in with Apple, TestFlight/App Store. Universal Links
+(`059-universal-links`) требуют Associated Domains в портале + AASA на домене — см.
+[`PAID-APPLE-DEVELOPER-REQUIRED.md`](./PAID-APPLE-DEVELOPER-REQUIRED.md) §1.2.1.
 
 ## Как проверять без платного аккаунта
 

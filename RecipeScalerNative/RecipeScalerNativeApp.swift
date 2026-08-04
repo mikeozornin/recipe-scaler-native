@@ -164,6 +164,12 @@ struct RecipeScalerNativeApp: App {
                 .onContinueUserActivity(CSSearchableItemActionType) { activity in
                     handleSpotlightActivity(activity)
                 }
+                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { [container] activity in
+                    guard let url = activity.webpageURL else { return }
+                    if let link = DeepLinkRouter.parse(url) {
+                        container.deepLinkRouter.handle(link)
+                    }
+                }
         }
         .modelContainer(Self.sharedModelContainer)
     }

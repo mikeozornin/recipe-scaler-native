@@ -134,6 +134,23 @@ final class AppShellCoordinator {
         case .openHome:
             selectedTab = .recipes
             deepLinkRouter.clear()
+        case .openPublicProfile(let username):
+            selectedTab = .discover
+            discoverPath = NavigationPath()
+            discoverPath.append(DiscoverRoute.profile(username))
+            deepLinkRouter.clear()
+        case .openPublicRecipe(let recipeId, let username):
+            selectedTab = .discover
+            discoverPath = NavigationPath()
+            discoverPath.append(DiscoverRoute.profile(username))
+            discoverPath.append(
+                DiscoverRoute.recipe(
+                    id: recipeId,
+                    allowDownloads: true,
+                    imageSource: .publicRecipe
+                )
+            )
+            deepLinkRouter.clear()
         case .openRecipeFile(let url):
             // Spec 057 — silent import path. ImportRecipeSheet is NOT
             // presented; the coordinator runs `RecipeFileImportCoordinator`

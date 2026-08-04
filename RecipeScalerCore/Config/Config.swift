@@ -42,4 +42,19 @@ public enum Config {
         #endif
         return "wss://recipe-scaler.ru"
     }
+
+    /// Hosts accepted for Universal Links (spec 059). Derived from `baseURL`
+    /// so DEBUG `E2E_OVERRIDE_API_BASE` exercises the UL parser against a
+    /// local backend, and any domain change in one place propagates here too.
+    /// Always includes the `www.` variant (and strips it if `baseURL` already
+    /// has one) so both forms are accepted in production.
+    public static var universalLinkHosts: Set<String> {
+        guard let host = URL(string: baseURL)?.host?.lowercased(), !host.isEmpty else {
+            return []
+        }
+        if host.hasPrefix("www.") {
+            return [host, String(host.dropFirst("www.".count))]
+        }
+        return [host, "www.\(host)"]
+    }
 }

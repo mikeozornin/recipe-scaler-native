@@ -1,7 +1,8 @@
 //
 //  DeepLinkRouterTests.swift
 //
-//  Spec 025-share-extension T028 — URL scheme parsing for recipe-scaler://.
+//  Spec 025 — URL scheme parsing for recipe-scaler://.
+//  Spec 059 — Universal Links https://recipe-scaler.ru/public/@/...
 //
 
 import XCTest
@@ -14,6 +15,8 @@ final class DeepLinkRouterTests: XCTestCase {
         try await super.setUp()
         // Clear pending state before each test.
         DeepLinkRouter.shared.clear()
+        // Reset the double-delivery guard (spec 059 architecture finding #2).
+        DeepLinkRouter._resetLastHandledURLForTesting()
     }
 
     // MARK: - URL scheme parsing
@@ -37,9 +40,9 @@ final class DeepLinkRouterTests: XCTestCase {
         XCTAssertEqual(DeepLinkRouter.shared.pending, .openRecipe(recipeId: normalized))
     }
 
-    func test_wrongScheme_isIgnored() {
+    func test_unrelatedHTTPS_isIgnored() {
         let id = "11111111-2222-3333-4444-555555555555"
-        let url = URL(string: "https://recipe/\(id)")!
+        let url = URL(string: "https://example.com/recipe/\(id)")!
 
         DeepLinkRouter.handle(url)
 
@@ -56,12 +59,112 @@ final class DeepLinkRouterTests: XCTestCase {
     }
 
     func test_nonUUIDPath_isIgnored() {
-        // recipe-scaler://recipe/not-a-uuid
         let url = URL(string: "recipe-scaler://recipe/not-a-uuid")!
 
         DeepLinkRouter.handle(url)
 
         XCTAssertNil(DeepLinkRouter.shared.pending)
+    }
+
+    // MARK: - Universal Links (spec 059)
+
+    func test_universalLink_publicProfile_setsPending() {
+        let url = URL(string: "https://recipe-scaler.ru/public/@/alice")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openPublicProfile(username: "alice"))
+    }
+
+    func test_universalLink_publicRecipe_setsPending() {
+        let id = "11111111-2222-3333-4444-555555555555"
+        let url = URL(string: "https://recipe-scaler.ru/public/@/alice/\(id)")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertEqual(
+            DeepLinkRouter.shared.pending,
+            .openPublicRecipe(recipeId: id, username: "alice")
+        )
+    }
+
+    func test_universalLink_wwwHost_accepted() {
+        let url = URL(string: "https://www.recipe-scaler.ru/public/@/bob")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openPublicProfile(username: "bob"))
+    }
+
+    func test_universalLink_legacyPublicRecipe_ignored() {
+        let id = "11111111-2222-3333-4444-555555555555"
+        let url = URL(string: "https://recipe-scaler.ru/public/\(id)")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertNil(DeepLinkRouter.shared.pending)
+    }
+
+    func test_universalLink_shoppingList_ignored() {
+        let url = URL(string: "https://recipe-scaler.ru/public/shopping-list/abc123")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertNil(DeepLinkRouter.shared.pending)
+    }
+
+    func test_universalLink_nonUUIDRecipe_ignored() {
+        let url = URL(string: "https://recipe-scaler.ru/public/@/alice/not-a-uuid")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertNil(DeepLinkRouter.shared.pending)
+    }
+
+    func test_universalLink_wrongHost_ignored() {
+        let url = URL(string: "https://evil.example/public/@/alice")!
+
+        DeepLinkRouter.handle(url)
+
+        XCTAssertNil(DeepLinkRouter.shared.pending)
+    }
+
+    func test_parse_doesNotMutatePending() {
+        let url = URL(string: "https://recipe-scaler.ru/public/@/alice")!
+        let link = DeepLinkRouter.parse(url)
+        XCTAssertEqual(link, .openPublicProfile(username: "alice"))
+        XCTAssertNil(DeepLinkRouter.shared.pending)
+    }
+
+    /// Spec 059 architecture finding #2 — double delivery (onOpenURL +
+    /// NSUserActivityTypeBrowsingWeb) of the same URL must not re-trigger.
+    func test_handle_sameURLTwice_isIdempotent() {
+        let url = URL(string: "https://recipe-scaler.ru/public/@/alice")!
+
+        DeepLinkRouter.handle(url)
+        let firstPending = DeepLinkRouter.shared.pending
+        XCTAssertEqual(firstPending, .openPublicProfile(username: "alice"))
+        DeepLinkRouter.shared.clear()
+
+        // Simulate iOS firing the same UL again via the second callback.
+        DeepLinkRouter.handle(url)
+
+        XCTAssertNil(DeepLinkRouter.shared.pending,
+                     "Second delivery of the same URL must not re-queue a pending link")
+    }
+
+    /// Spec 059 architecture finding #2 — a different URL after the first
+    /// still routes normally (guard is equality, not "any subsequent").
+    func test_handle_differentURL_afterFirst_isRouted() {
+        let first = URL(string: "https://recipe-scaler.ru/public/@/alice")!
+        let second = URL(string: "https://recipe-scaler.ru/public/@/bob")!
+
+        DeepLinkRouter.handle(first)
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openPublicProfile(username: "alice"))
+        DeepLinkRouter.shared.clear()
+
+        DeepLinkRouter.handle(second)
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openPublicProfile(username: "bob"))
     }
 
     // MARK: - pending lifecycle
@@ -86,15 +189,11 @@ final class DeepLinkRouterTests: XCTestCase {
 
     func test_handle_fileURL_routesToOpenRecipeFile() {
         let url = URL(fileURLWithPath: "/tmp/incoming.recipe")
-        // Reproduce the routing logic from `RecipeScalerNativeApp.onOpenURL`.
-        // The `handle` static method only knows about the `recipe-scaler://`
-        // scheme; file URLs are dispatched via `.openRecipeFile` directly.
         DeepLinkRouter.shared.handle(.openRecipeFile(url))
         XCTAssertEqual(DeepLinkRouter.shared.pending, .openRecipeFile(url))
     }
 
     func test_handle_recipeSchemeURL_doesNotRouteFileURLs() {
-        // `recipe-scaler://` URLs are never treated as file URLs.
         let id = "11111111-2222-3333-4444-555555555555"
         let url = URL(string: "recipe-scaler://recipe/\(id)")!
         DeepLinkRouter.handle(url)
@@ -110,7 +209,6 @@ final class DeepLinkRouterTests: XCTestCase {
         let consumed = DeepLinkRouter.consumePendingRecipeId()
         XCTAssertEqual(consumed, id)
 
-        // Second call returns nil (idempotent clear).
         let again = DeepLinkRouter.consumePendingRecipeId()
         XCTAssertNil(again)
     }

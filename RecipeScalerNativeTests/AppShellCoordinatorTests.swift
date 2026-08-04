@@ -63,6 +63,30 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertNil(router.pending)
     }
 
+    /// Spec 059 — Universal Link public profile → Discover tab + profile route.
+    func test_openPublicProfile_switchesToDiscover() throws {
+        let (coordinator, router, _) = try makeCoordinator()
+        coordinator.selectedTab = .recipes
+
+        coordinator.handleDeepLink(.openPublicProfile(username: "alice"))
+
+        XCTAssertEqual(coordinator.selectedTab, .discover)
+        XCTAssertFalse(coordinator.discoverPath.isEmpty)
+        XCTAssertNil(router.pending)
+    }
+
+    /// Spec 059 — Universal Link public recipe → Discover with profile + recipe stack.
+    func test_openPublicRecipe_switchesToDiscoverWithStack() throws {
+        let (coordinator, router, _) = try makeCoordinator()
+        let recipeId = "11111111-2222-3333-4444-555555555555"
+
+        coordinator.handleDeepLink(.openPublicRecipe(recipeId: recipeId, username: "alice"))
+
+        XCTAssertEqual(coordinator.selectedTab, .discover)
+        XCTAssertFalse(coordinator.discoverPath.isEmpty)
+        XCTAssertNil(router.pending)
+    }
+
     func test_openRecipe_whenMissing_stashesSpotlightId() throws {
         let (coordinator, router, _) = try makeCoordinator()
         let recipeId = "11111111-2222-3333-4444-555555555555"
