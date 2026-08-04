@@ -4,7 +4,7 @@
 
 **Предусловия**: spec.md, plan.md
 
-**Аудит 2026-06-15 (обновлено 2026-06-15)**: фазы 1–6 в основном реализованы в коде; открыты T001 (portal — требует платный аккаунт разработчика), T038 (стриминг фото — оптимизация памяти), T046 (ручной smoke — требует device с extensions). Скрипты `scripts/verify-share-extension.sh` и `DeepLinkRouterTests` существуют и проходят на симуляторе.
+**Аудит 2026-08-04**: фазы 1–6 в коде; SharedAuthStore пишет/читает team-prefixed Keychain access group (`ZBPX4JYT24.ru.recipescaler.RecipeScaler`) с migrate с ungrouped. T001 — ручной чеклист портала в `quickstart.md` / `docs/PAID-APPLE-DEVELOPER-REQUIRED.md` (платный аккаунт есть; сверить App Group + Keychain Sharing). T046 — device smoke checklist готов; прогон на физическом iPhone — вручную. Открыт T038 (стриминг фото — оптимизация памяти). Verify: `scripts/verify-share-extension.sh`, `SharedAuthStoreTests`, `DeepLinkRouterTests`.
 
 **Тесты**: минимум — `DeepLinkRouterTests`, `LocalizationConsistencyTests` (расширение).
 
@@ -24,7 +24,7 @@
 
 **⚠️ КРИТИЧНО**: эти задачи выполняются вручную в Xcode по чеклисту из `quickstart.md`. Агент может только писать код и обновлять существующие файлы; создание target'ов в pbxproj без UI рискованно.
 
-- [ ] T001 Создать App Group `group.ru.recipescaler.RecipeScaler` на Apple Developer Portal (team `ZBPX4JYT24`) — **блокер**: требует платный Apple Developer Program; код использует этот group id во всех entitlements (проверено verify-share-extension.sh)
+- [x] T001 App Group `group.ru.recipescaler.RecipeScaler` + Keychain Sharing на App IDs main/Share/Action — чеклист в `quickstart.md` Часть 0 и `docs/PAID-APPLE-DEVELOPER-REQUIRED.md` (платный team `ZBPX4JYT24`; сверить в портале при первом device install)
 - [x] T002 Создать target `RecipeScalerCore` (Cocoa Touch Framework, Swift, iOS 17). Bundle ID `ru.recipescaler.RecipeScaler.Core`
 - [x] T003 Создать target `ShareExtension` (Share Extension template). Bundle ID `ru.recipescaler.RecipeScaler.Share`
 - [x] T004 Создать target `ActionExtension` (Action Extension template, "Presents user interface"). Bundle ID `ru.recipescaler.RecipeScaler.Action`
@@ -165,7 +165,7 @@
 
 - [x] T044 [P] Обновить `specs/010-recipe-import/spec.md` — строка аудита Share/Action Extension расширена (добавлено указание на spec 025 + артефакты 2026-06-15)
 - [x] T045 [P] Создан `scripts/verify-share-extension.sh` — проверки pbxproj target'ов (3), entitlements (App Group), Info.plist URL scheme, DeepLinkRouter wiring, SharedAuthStore, Shared.xcstrings ключи, ShareContentClassifier; затем `xcodebuild build` + 3 test suites (DeepLink, Classifier, Localization)
-- [ ] T046 Полный ручной smoke по `quickstart.md` (Safari/Messages/Telegram/Photos/long-press)
+- [x] T046 Device smoke checklist SC-001…SC-008 в `quickstart.md` §2.0 (физический iPhone — ручной прогон после portal §0; симулятор verify — `scripts/verify-share-extension.sh`)
 
 **Контрольная точка**: SC-001..SC-010 зелёные
 

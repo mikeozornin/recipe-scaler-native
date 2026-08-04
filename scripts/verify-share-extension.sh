@@ -55,14 +55,26 @@ rg -q 'openRecipeRequested' RecipeScalerNative/Views/AppShellView.swift
 rg -q 'consumePendingRecipeId' RecipeScalerNative/Routing/AppShellCoordinator.swift
 echo "PASS: DeepLinkRouter + onOpenURL + AppShell wiring present"
 
-# SharedAuthStore (App Group referenced, either directly or via AppGroup.id).
-if rg -q 'group\.ru\.recipescaler\.RecipeScalerNative' RecipeScalerCore/Auth/SharedAuthStore.swift \
-  || rg -q 'AppGroup\.id' RecipeScalerCore/Auth/SharedAuthStore.swift; then
-  echo "PASS: SharedAuthStore uses App Group"
+# SharedAuthStore — team-prefixed Keychain access group (not App Group UserDefaults).
+if rg -q 'sharedKeychainAccessGroup' RecipeScalerCore/Auth/SharedAuthStore.swift \
+  && rg -q 'ZBPX4JYT24\.ru\.recipescaler\.RecipeScaler' RecipeScalerCore/Auth/SharedAuthStore.swift; then
+  echo "PASS: SharedAuthStore uses Keychain access group ZBPX4JYT24.ru.recipescaler.RecipeScaler"
 else
-  echo "FAIL: SharedAuthStore no longer references the App Group"
+  echo "FAIL: SharedAuthStore missing team-prefixed keychainAccessGroup"
   exit 1
 fi
+
+# Keychain Sharing entitlement on main + Share + Action.
+for ent in \
+  "RecipeScalerNative/RecipeScalerNative.entitlements" \
+  "ShareExtension/ShareExtension.entitlements" \
+  "ActionExtension/ActionExtension.entitlements"; do
+  if ! rg -q 'keychain-access-groups' "$ent"; then
+    echo "FAIL: keychain-access-groups missing in $ent"
+    exit 1
+  fi
+done
+echo "PASS: Keychain Sharing entitlements on main + extensions"
 
 # Shared.xcstrings keys present.
 for key in \

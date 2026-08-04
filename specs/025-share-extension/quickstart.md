@@ -7,9 +7,36 @@
 
 > **Платный Apple Developer Program:** единый чеклист по всей нативке — [docs/PAID-APPLE-DEVELOPER-REQUIRED.md](../../docs/PAID-APPLE-DEVELOPER-REQUIRED.md).
 
+## Часть 0. Портал (платный аккаунт, team `ZBPX4JYT24`)
+
+Код и entitlements уже в репо. Перед device smoke сверить портал (или создать, если нет):
+
+1. **App Group** — [Identifiers → App Groups](https://developer.apple.com/account/resources/identifiers/list/applicationGroup): `group.ru.recipescaler.RecipeScaler`.
+2. **App IDs** — для каждого включить **App Groups** + **Keychain Sharing**:
+   - `ru.recipescaler.RecipeScaler`
+   - `ru.recipescaler.RecipeScaler.Share`
+   - `ru.recipescaler.RecipeScaler.Action`
+   - App Group: `group.ru.recipescaler.RecipeScaler`
+   - Keychain group: `ru.recipescaler.RecipeScaler` (portal/Xcode добавят `ZBPX4JYT24.`)
+3. Xcode → Signing & Capabilities на main / Share / Action: Automatically manage signing, Team `ZBPX4JYT24`, без красных ошибок.
+4. После install проверить entitlements:
+
+```bash
+codesign -d --entitlements :- path/to/RecipeScalerNative.app
+codesign -d --entitlements :- path/to/RecipeScalerNative.app/PlugIns/ShareExtension.appex
+```
+
+Ожидается `application-groups` + `keychain-access-groups` с `ZBPX4JYT24.ru.recipescaler.RecipeScaler`.
+
+Полный чеклист: [docs/PAID-APPLE-DEVELOPER-REQUIRED.md](../../docs/PAID-APPLE-DEVELOPER-REQUIRED.md).
+
+**Auth note:** Share/Action читают `SharedAuthStore.token` из **Keychain access group**, не из App Group UserDefaults. Без Keychain Sharing на железе будет `share-extension.error-not-signed-in`.
+
+---
+
 ## Часть 1. Настройка Xcode (выполняется один раз)
 
-> **Важно**: эти шаги выполняются вручную в Xcode UI. Агент не может надёжно редактировать `project.pbxproj` под создание target'ов.
+> **Важно**: эти шаги выполняются вручную в Xcode UI. Агент не может надёжно редактировать `project.pbxproj` под создание target'ов. Targets в репо уже созданы — раздел нужен для восстановления с нуля.
 
 ### 1.1. Создать App Group
 
@@ -18,6 +45,7 @@
 3. Identifier: `group.ru.recipescaler.RecipeScaler`
 4. Description: `Recipe Scaler — shared storage for extensions`
 5. Сохранить
+6. На тех же App IDs включить **Keychain Sharing** (`ru.recipescaler.RecipeScaler`) — см. Часть 0
 
 ### 1.2. Создать target `RecipeScalerCore` (framework)
 
@@ -118,20 +146,34 @@ xcodebuild -scheme RecipeScalerNative \
 
 ---
 
-## Часть 2. Ручной smoke (симулятор)
+## Часть 2. Ручной smoke
 
-### 2.1. Запуск main app
+> **Симулятор** — удобен для UI / deep link / unit-тестов. **Device smoke на физическом iPhone обязателен** перед релизом (SC-001…SC-008 ниже). Без портала + Keychain Sharing на железе типичен `share-extension.error-not-signed-in`.
 
-1. `xcrun simctl list devices available | rg 'iPhone 16'` — взять UDID.
+### 2.0. Device smoke checklist (физический iPhone)
+
+Предусловие: портал (§0) OK; app установлен на iPhone; login / debug auto-login; в main app сессия есть (`SharedAuthStore.token` не nil).
+
+| ID | Сценарий | Ожидание |
+|----|----------|----------|
+| SC-001 | Safari → Share Sheet → Recipe Scaler → Импорт URL | Не «не залогинен»; success → «Открыть рецепт» |
+| SC-002 | Messages → Share URL и/или текст рецепта | Импорт OK |
+| SC-003 | Telegram → Share URL | Импорт OK |
+| SC-004 | Photos → 1–8 скринов рецепта | Multipart import OK |
+| SC-005 | Safari Action «Импорт в Recipe Scaler» | URL вкладки → import |
+| SC-006 | После импорта «Открыть рецепт» / `recipe-scaler://recipe/{id}` | Warm/cold start на экран рецепта |
+| SC-007 | Logout в app → Share из Safari | `share-extension.error-not-signed-in`, кнопки Импорт нет |
+| SC-008 | Авиарежим → Импорт | Локализованная сетевая ошибка + «Повторить» |
+
+Диагностика: `bash scripts/pull-app-logs.sh` → `.debug-session.ndjson` (после DEBUG-сессии в симуляторе); на телефоне — Профиль → Диагностика → Экспорт журнала.
+
+### 2.1. Запуск main app (симулятор)
+
+1. `xcrun simctl list devices available | rg 'iPhone'` — взять UDID.
 2. Запустить симулятор: `open -a Simulator`.
 3. Build & run из Xcode на симуляторе.
 4. Залогиниться (на debug-сборке — автологин).
-5. Подтвердить, что в `SharedAuthStore.userId` записан id:
-   ```bash
-   xcrun simctl get_app_container booted ru.recipescaler.RecipeScaler data
-   # в папке /Library/Preferences/ должен быть plist
-   ```
-   Или: добавить debug-принт в `ContentView.init`.
+5. Подтвердить, что `SharedAuthStore.token` / `userId` читаются (Keychain; не App Group plist).
 
 ### 2.2. Smoke: Share Extension из Safari (SC-001)
 
@@ -275,7 +317,7 @@ xcodebuild test \
 | Memory limit (Action Extension 16 MB) | Только URL в Action Extension; не передавать изображения |
 | Memory limit (Share Extension 120 MB) | Stream фото через autoreleasepool, не держать `[Data]` в памяти |
 | `recipe-scaler://` не открывает main app | Проверить `CFBundleURLTypes` в Info.plist; проверить, что URL scheme уникальный (не конфликтует с другими аппами) |
-| `SharedAuthStore.userId` nil из extension | Проверить, что App Group entitlement добавлен на ОБА target'а; что `AuthService` пишет в App Group `UserDefaults` |
+| `SharedAuthStore.token` / `userId` nil из extension («не залогинен») | 1) Portal + Xcode: **Keychain Sharing** на main + Share + Action (`ZBPX4JYT24.ru.recipescaler.RecipeScaler`). 2) App Groups тоже на всех трёх. 3) После логина в main app — переустановить app, если креды писались до фикса access group (миграция ungrouped→shared есть, но на device safer: logout/login). 4) `codesign -d --entitlements` на `.app` / `.appex` |
 | `Bundle.module` не находит strings | Проверить, что `Shared.xcstrings` добавлен в target membership `RecipeScalerCore` (Build Phases → Copy Bundle Resources) |
 | Холодный старт по deep link показывает список, не рецепт | Проверить, что `AppShellView.onAppear` читает pending id и пушит в `recipesPath` |
 
