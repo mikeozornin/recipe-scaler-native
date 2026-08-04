@@ -162,18 +162,6 @@ extension View {
     }
 }
 
-/// Invisible section header placeholder — keeps spacing above a headerless list group.
-struct AppSectionHeaderSpacer: View {
-    var body: some View {
-        Text(verbatim: " ")
-            .font(AppTypography.footnote)
-            .tracking(AppSectionHeader.usesUpperCase ? AppSectionHeader.letterSpacing : 0)
-            .textCase(AppSectionHeader.usesUpperCase ? .uppercase : nil)
-            .accessibilityHidden(true)
-            .opacity(0)
-    }
-}
-
 enum AppChromeAppearance {
     static func configure() {
         configureNavigationBar()

@@ -2987,7 +2987,6 @@
       }
     },
     "account.timer-notifications.denied" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3003,8 +3002,23 @@
         }
       }
     },
+    "account.timer-notifications.footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Push notifications are also required to update the timer widget and Live Activities in the background."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уведомления также нужны, чтобы виджет таймера и Live Activities обновлялись в фоне."
+          }
+        }
+      }
+    },
     "account.timer-notifications.label" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

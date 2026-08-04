@@ -97,6 +97,8 @@ struct AccountView: View {
                     publicRecipesSection
                         .id(AccountViewSection.publicRecipes.id)
                     preferencesSection
+                    timerNotificationsSection
+                    remindersSyncSection
                         .id(AccountViewSection.reminders.id)
                     telegramSection
                         .id(AccountViewSection.telegram.id)
@@ -315,10 +317,7 @@ struct AccountView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-        } header: {
-            AppSectionHeaderSpacer()
         }
-        .appListSectionHeaderStyle()
     }
 
     @ViewBuilder
@@ -481,7 +480,39 @@ struct AccountView: View {
                 Text("account.nutrition.show").appBody()
             }
 
-            // MARK: Apple Reminders sync
+        } header: {
+            AppSectionHeader("account.section.preferences")
+        }
+        .appListSectionHeaderStyle()
+    }
+
+    @ViewBuilder
+    private var timerNotificationsSection: some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { viewModel.timerNotificationsEnabled },
+                set: { value in
+                    Task { @MainActor in await viewModel.setTimerNotificationsEnabled(value) }
+                }
+            )) {
+                Text("account.timer-notifications.label").appBody()
+            }
+            .disabled(viewModel.timerNotificationsDenied)
+            .accessibilityIdentifier(AccessibilityIdentifiers.accountTimerNotificationsToggle)
+        } footer: {
+            if viewModel.timerNotificationsDenied {
+                Text("account.timer-notifications.denied")
+                    .appFootnote()
+            } else {
+                Text("account.timer-notifications.footer")
+                    .appFootnote()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var remindersSyncSection: some View {
+        Section {
             Toggle(isOn: Binding(
                 get: { viewModel.remindersSyncEnabled },
                 set: { value in
@@ -527,9 +558,6 @@ struct AccountView: View {
                     }
                 }
             }
-
-        } header: {
-            AppSectionHeader("account.section.preferences")
         } footer: {
             if viewModel.remindersSyncDenied {
                 Text("account.reminders.denied")
@@ -539,7 +567,6 @@ struct AccountView: View {
                     .appFootnote()
             }
         }
-        .appListSectionHeaderStyle()
     }
 
     @ViewBuilder
@@ -683,8 +710,6 @@ struct AccountView: View {
             if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
                 LabeledContent("account.version", value: version)
             }
-        } header: {
-            AppSectionHeaderSpacer()
         }
     }
 

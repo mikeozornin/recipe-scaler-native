@@ -237,6 +237,10 @@ final class AccountSettingsViewModel {
         var granted = status == .authorized
         if status == .notDetermined {
             granted = await TimerManager.shared.requestNotificationAuthorization()
+        } else if granted {
+            // Permission already granted — still request a device token so APNs
+            // registration runs even when prefs were off or the token was never uploaded.
+            TimerManager.shared.registerForRemoteNotifications()
         }
 
         if granted {
@@ -246,7 +250,14 @@ final class AccountSettingsViewModel {
         } else {
             TimerNotificationPreferences.isEnabled = false
             timerNotificationsEnabled = false
-            statusMessage = String(localized: "account.timer-notifications.not-granted")
+            let updatedStatus = await TimerManager.shared.notificationAuthorizationStatus()
+            if updatedStatus == .denied {
+                timerNotificationsDenied = true
+                statusMessage = String(localized: "account.timer-notifications.denied")
+            } else {
+                timerNotificationsDenied = false
+                statusMessage = String(localized: "account.timer-notifications.not-granted")
+            }
         }
     }
 
