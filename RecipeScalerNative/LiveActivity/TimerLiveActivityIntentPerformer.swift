@@ -25,6 +25,7 @@ struct TimerLiveActivityIntentDependencies: Sendable {
         Date?
     ) async -> Bool
     var applySnapshot: @Sendable (TimerSnapshot) -> Void
+    var markPendingLocal: @Sendable () -> Void
     var reloadWidget: @Sendable () -> Void
     var enqueue: @Sendable (TimerLiveActivityAction, String) -> Void
 
@@ -47,6 +48,9 @@ struct TimerLiveActivityIntentDependencies: Sendable {
         },
         applySnapshot: { snapshot in
             TimerSnapshotDocumentPatcher.applyAndSave(snapshot: snapshot)
+        },
+        markPendingLocal: {
+            TimerSnapshotStore.markPendingLocalMutation()
         },
         reloadWidget: {
             WidgetCenter.shared.reloadTimelines(ofKind: TimerWidgetKind.id)
@@ -74,7 +78,17 @@ enum TimerLiveActivityIntentPerformer {
         }
 
         if let loaded = dependencies.loadActivity(timerId) {
-            let remaining = max(0, loaded.state.remainingSeconds(now: now))
+            // Match TimerManager.pauseTimer: reject overdue (remaining < 0).
+            let remaining = loaded.state.remainingSeconds(now: now)
+            guard remaining >= 0 else {
+                log.error("live_activity_intent_pause_rejected_overdue timerId=\(timerId, privacy: .public)")
+                return
+            }
+            if loaded.state.phase == .paused {
+                log.error("live_activity_intent_pause_already_paused timerId=\(timerId, privacy: .public)")
+                return
+            }
+
             let contentState = RecipeTimerActivityAttributes.ContentState(
                 phase: .paused,
                 endDate: nil,
@@ -100,22 +114,28 @@ enum TimerLiveActivityIntentPerformer {
                 phase: .paused,
                 totalDurationSeconds: loaded.state.totalDuration
             )
+            dependencies.markPendingLocal()
             dependencies.applySnapshot(snapshot)
             dependencies.reloadWidget()
-        } else if let patched = Self.patchExistingSnapshot(
+            dependencies.enqueue(.pause, timerId)
+            return
+        }
+
+        if let patched = Self.patchExistingSnapshot(
             timerId: timerId,
             action: .pause,
             now: now,
+            markPendingLocal: dependencies.markPendingLocal,
             applySnapshot: dependencies.applySnapshot
         ) {
             _ = patched
             dependencies.reloadWidget()
+            dependencies.enqueue(.pause, timerId)
             log.error("live_activity_intent_pause_no_activity_used_snapshot timerId=\(timerId, privacy: .public)")
-        } else {
-            log.error("live_activity_intent_pause_no_activity_or_snapshot timerId=\(timerId, privacy: .public)")
+            return
         }
 
-        dependencies.enqueue(.pause, timerId)
+        log.error("live_activity_intent_pause_no_activity_or_snapshot timerId=\(timerId, privacy: .public)")
     }
 
     static func performResume(
@@ -129,11 +149,19 @@ enum TimerLiveActivityIntentPerformer {
         }
 
         if let loaded = dependencies.loadActivity(timerId) {
-            let remaining = max(0, loaded.state.pausedRemainingSeconds)
+            // Match TimerManager.resumeTimer: require remaining > 0.
+            let remaining = loaded.state.pausedRemainingSeconds
+            guard remaining > 0 else {
+                log.error("live_activity_intent_resume_rejected_nonpositive timerId=\(timerId, privacy: .public)")
+                return
+            }
+            guard loaded.state.phase == .paused else {
+                log.error("live_activity_intent_resume_not_paused timerId=\(timerId, privacy: .public)")
+                return
+            }
+
             let endDate = now.addingTimeInterval(TimeInterval(remaining))
-            let phase: TimerActivityPhase = remaining <= 0 ? .exceeded : .running
             let stale: Date? = {
-                guard phase == .running else { return nil }
                 var nextRefresh = endDate
                 let total = loaded.state.totalDuration
                 if total > 0 {
@@ -146,7 +174,7 @@ enum TimerLiveActivityIntentPerformer {
             }()
 
             let contentState = RecipeTimerActivityAttributes.ContentState(
-                phase: phase,
+                phase: .running,
                 endDate: endDate,
                 pausedRemainingSeconds: remaining,
                 startedAt: loaded.state.startedAt,
@@ -160,7 +188,6 @@ enum TimerLiveActivityIntentPerformer {
                 log.error("live_activity_intent_resume_activity_update_failed timerId=\(timerId, privacy: .public)")
             }
 
-            let snapshotPhase: TimerSnapshotPhase = remaining <= 0 ? .exceeded : .running
             let snapshot = TimerSnapshot(
                 id: timerId,
                 name: loaded.attributes.timerName,
@@ -168,33 +195,41 @@ enum TimerLiveActivityIntentPerformer {
                 recipeName: loaded.state.recipeName,
                 endDate: endDate,
                 pausedRemainingSeconds: nil,
-                phase: snapshotPhase,
+                phase: .running,
                 totalDurationSeconds: loaded.state.totalDuration
             )
+            dependencies.markPendingLocal()
             dependencies.applySnapshot(snapshot)
             dependencies.reloadWidget()
-        } else if let patched = Self.patchExistingSnapshot(
+            dependencies.enqueue(.resume, timerId)
+            return
+        }
+
+        if let patched = Self.patchExistingSnapshot(
             timerId: timerId,
             action: .resume,
             now: now,
+            markPendingLocal: dependencies.markPendingLocal,
             applySnapshot: dependencies.applySnapshot
         ) {
             _ = patched
             dependencies.reloadWidget()
+            dependencies.enqueue(.resume, timerId)
             log.error("live_activity_intent_resume_no_activity_used_snapshot timerId=\(timerId, privacy: .public)")
-        } else {
-            log.error("live_activity_intent_resume_no_activity_or_snapshot timerId=\(timerId, privacy: .public)")
+            return
         }
 
-        dependencies.enqueue(.resume, timerId)
+        log.error("live_activity_intent_resume_no_activity_or_snapshot timerId=\(timerId, privacy: .public)")
     }
 
     /// Fallback when ActivityKit has no matching activity but App Group already has the timer.
+    /// Returns nil when guards reject (same rules as ActivityKit path).
     @discardableResult
     private static func patchExistingSnapshot(
         timerId: String,
         action: TimerLiveActivityAction,
         now: Date,
+        markPendingLocal: @Sendable () -> Void,
         applySnapshot: @Sendable (TimerSnapshot) -> Void
     ) -> TimerSnapshot? {
         let doc = TimerSnapshotStore.load()
@@ -205,7 +240,9 @@ enum TimerLiveActivityIntentPerformer {
         let patched: TimerSnapshot
         switch action {
         case .pause:
-            let remaining = max(0, existing.remainingSeconds(now: now))
+            let remaining = existing.remainingSeconds(now: now)
+            guard remaining >= 0 else { return nil }
+            guard existing.phase != .paused else { return nil }
             patched = TimerSnapshot(
                 id: existing.id,
                 name: existing.name,
@@ -217,7 +254,9 @@ enum TimerLiveActivityIntentPerformer {
                 totalDurationSeconds: existing.totalDurationSeconds
             )
         case .resume:
-            let remaining = max(0, existing.pausedRemainingSeconds ?? existing.remainingSeconds(now: now))
+            let remaining = existing.pausedRemainingSeconds ?? 0
+            guard remaining > 0 else { return nil }
+            guard existing.phase == .paused else { return nil }
             let endDate = now.addingTimeInterval(TimeInterval(remaining))
             patched = TimerSnapshot(
                 id: existing.id,
@@ -226,10 +265,14 @@ enum TimerLiveActivityIntentPerformer {
                 recipeName: existing.recipeName,
                 endDate: endDate,
                 pausedRemainingSeconds: nil,
-                phase: remaining <= 0 ? .exceeded : .running,
+                phase: .running,
                 totalDurationSeconds: existing.totalDurationSeconds
             )
         }
+        // Set the pending-local gate BEFORE writing the snapshot so a Provider
+        // reload arriving in the micro-window between snapshot write and gate
+        // set cannot fetch stale server state over the optimistic patch.
+        markPendingLocal()
         applySnapshot(patched)
         return patched
     }

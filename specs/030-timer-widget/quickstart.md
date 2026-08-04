@@ -73,14 +73,14 @@ Accessory circular/rectangular/inline — монохром; StandBy на iPhone 
 
 ## Phase B QA — Web → widget (US-B1–B3)
 
-**Требования:** физический iPhone предпочтительно; iOS 18+ для WidgetKit push; залогиненный user; виджет на Home Screen; app в background или force-quit.
+**Требования:** физический iPhone предпочтительно; залогиненный user; виджет на Home Screen; app в background или force-quit. Primary path на iOS 17–25 — silent `content-available` + Provider fetch; WidgetKit `content-changed` — только когда клиент зарегистрирует widget token (SDK iOS 26+, future).
 
 ### B. Pause / resume с веба
 
 1. На iPhone: активный таймер + виджет + Live Activity (опционально).
 2. Force-quit или оставить app в фоне.
 3. В браузере на [recipe-scaler.ru](https://recipe-scaler.ru) (тот же аккаунт) — Pause таймера.
-4. **Ожидание (iOS 18+):** в течение ~3–5 с виджет на iPhone показывает paused.
+4. **Ожидание (iOS 17–25, silent + Provider):** виджет обновляется best-effort после silent wake / timeline reload (или при следующем foreground). **WidgetKit push (SDK iOS 26+):** ~3–5 с при зарегистрированном widget token.
 5. Resume в вебе → виджет снова running.
 
 ### B. Start / delete с веба
@@ -94,9 +94,9 @@ Accessory circular/rectangular/inline — монохром; StandBy на iPhone 
 2. Триггер reload (если возможно) или перезапуск timeline.
 3. **Ожидание:** виджет **не** вспыхивает empty; остаётся последний snapshot.
 
-### B. iOS 17 fallback
+### B. iOS 17–25 (silent + Provider, текущий primary)
 
-На iOS 17 WidgetKit push нет: после web-pause виджет может обновиться только если silent push разбудил app (best-effort) или при следующем foreground. Зафиксировать результат в QA notes.
+На iOS 17–25 WidgetKit `WidgetPushHandler` / `.pushHandler` недоступен (SDK API — iOS 26+): после web-pause виджет обновляется через silent push (best-effort) + Provider `GET /api/v1/timers/active`, либо при следующем foreground. Зафиксировать результат в QA notes.
 
 ---
 
@@ -107,8 +107,8 @@ Accessory circular/rectangular/inline — монохром; StandBy на iPhone 
 | Виджет не в галерее | `HomeWidgetBundle` `@main`, iOS 17+ |
 | Виджет пустой / не обновляется из app | `TimerSnapshotStore` App Group; `TimerManager` save+reload |
 | Pause с LA не двигает виджет | Intent `perform()` — snapshot + `reloadTimelines` (Phase A) |
-| Web pause не двигает виджет (iOS 18+) | registrar token; server `widget_push_tokens`; APNs topic `…push-type.widgets`; Provider GET `/api/v1/timers/active` |
-| Web pause не двигает виджет (iOS 17) | silent 023 path; ожидаемо best-effort |
+| Web pause не двигает виджет (iOS 17–25) | silent 023 path + Provider GET `/api/v1/timers/active`; ожидаемо best-effort |
+| Web pause не двигает виджет (future WidgetKit push / SDK iOS 26+) | registrar token; server `widget_push_tokens`; APNs topic `…push-type.widgets` |
 | Виджет обнулился offline | Provider clear на error — баг US-B3 |
 | LA карточка ок, виджет нет (cross-device) | 058 ≠ 030: разные tokens/topics; проверить widget fan-out отдельно |
 

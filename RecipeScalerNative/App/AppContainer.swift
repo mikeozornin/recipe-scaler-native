@@ -45,6 +45,8 @@ final class AppContainer {
     let shellCoordinator: AppShellCoordinator
     let timerLiveActivityCoordinator: TimerLiveActivityCoordinator
     let liveActivityPushRegistrar: LiveActivityPushRegistrar
+    /// Spec 030 B2 — widget push token register/unregister (composition-root only).
+    let widgetPushRegistrar: WidgetPushRegistrar
 
     // MARK: - Networked services
 
@@ -118,6 +120,7 @@ final class AppContainer {
         self.timerLiveActivityCoordinator = TimerLiveActivityCoordinator(
             pushRegistrar: liveActivityPushRegistrar
         )
+        self.widgetPushRegistrar = WidgetPushRegistrar()
 
         // Networked (authConfigured from Keychain by AuthService.init)
         let auth = AuthService()
@@ -394,6 +397,8 @@ final class AppContainer {
         // Spec 055/058: end Live Activities + wipe cached push tokens so the
         // Lock Screen and UserDefaults cannot leak the previous user's timers.
         await timerLiveActivityCoordinator.clearForLogout()
+        // Spec 030 B2: drop widget push registration on logout.
+        await widgetPushRegistrar.unregister()
         featureAdoption.clearForLogout()
     }
 

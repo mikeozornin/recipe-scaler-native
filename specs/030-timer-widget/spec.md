@@ -18,7 +18,7 @@
 **v2 (этот документ):** обновлять Home/Lock виджет, когда main app **не активен**:
 
 1. **Same-device (Phase A):** pause/resume с кнопки Live Activity на Lock Screen → виджет сразу отражает новое состояние (без ожидания `TimerManager`).
-2. **Cross-device (Phase B):** pause/resume/start/delete с веба (или другого устройства), пока iPhone app в фоне/убит → виджет обновляется через WidgetKit push (iOS 18+) или silent fallback (iOS 17) + fetch `GET /api/v1/timers/active` в Provider.
+2. **Cross-device (Phase B):** pause/resume/start/delete с веба (или другого устройства), пока iPhone app в фоне/убит → виджет обновляется через silent `content-available` + Provider fetch (iOS 17–25, текущий primary); WidgetKit `content-changed` push — когда клиент сможет зарегистрировать widget token (SDK API iOS 26+, без поднятия appex DT выше 17).
 
 ## Источники макетов
 
@@ -84,9 +84,11 @@ Figma `rVzFwMDS5SECfIq4HRLHya` (без изменений в v2 — layout ос�
 
 Очередь `TimerLiveActivityActionQueue` **остаётся** — единственный канал для `TimerManager` → SwiftData + `TimerSyncService`, когда app проснётся. Intent **не** заменяет drain очереди.
 
-### R2 — WidgetKit push (iOS 18+) как primary cross-device путь
+### R2 — WidgetKit push (iOS 26+ SDK) как будущий primary cross-device путь
 
-На iOS 18+:
+Apple `WidgetPushHandler` / `.pushHandler` — **`@available(iOS 26.0, *)`** (исторический текст спеки «iOS 18+» был неточен).
+
+На устройствах с зарегистрированным widget token:
 
 | Параметр | Значение |
 |----------|----------|
@@ -94,16 +96,17 @@ Figma `rVzFwMDS5SECfIq4HRLHya` (без изменений в v2 — layout ос�
 | `apns-topic` | `ru.recipescaler.RecipeScaler.push-type.widgets` |
 | Body | `{ "aps": { "content-changed": true } }` |
 
-Клиент: `WidgetPushHandler` + registrar **device-level** token (не per-timer, в отличие от LA tokens в 058).  
+Клиент (когда wire-up возможен без поднятия appex DT): `WidgetPushHandler` + registrar **device-level** token (не per-timer, в отличие от LA tokens в 058).  
+**Текущий native клиент:** HomeWidgetExtension и main app остаются на **deployment iOS 17**. `.pushHandler` **не** прикреплён к `TimerWidget` (opaque `WidgetConfiguration` + DT 17). Референс-handler есть в коде; включение — future dual-target / type-erasure. До этого primary update path на клиенте — **R3 + R4**.  
 Сервер: таблица `widget_push_tokens`; register/unregister; fan-out рядом с LA events (`timer_started` / `paused` / `resumed` / `updated` / `deleted`); debounce ~1 с; **exclude source device**.
 
 Контракт: [contracts/widget-push.md](./contracts/widget-push.md).
 
-### R3 — Silent push fallback на iOS 17
+### R3 — Silent push + Provider fetch на iOS 17–25 (текущий primary)
 
-Deployment target остаётся **iOS 17**. API WidgetKit push — за `#available(iOS 18, *)`.
+Deployment target main app и HomeWidgetExtension — **iOS 17**.
 
-На iOS 17: silent `content-available: 1` на **существующий** device APNs token (spec 023) → app sync → `TimerSnapshotStore.save` → `WidgetCenter.reloadTimelines`. Best-effort: OS может не разбудить app; при следующем foreground виджет всё равно догонит.
+На iOS 17–25 (и на любом устройстве без widget token): silent `content-available: 1` на **существующий** device APNs token (spec 023) → app sync → `TimerSnapshotStore.save` → `WidgetCenter.reloadTimelines`, плюс Provider `GET /api/v1/timers/active` при reload (R4). Best-effort: OS может не разбудить app; при следующем foreground виджет всё равно догонит.
 
 ### R4 — Provider fetch при reload
 
@@ -174,8 +177,8 @@ Server v1 для Live Activity `update`/`end` уже в 058. Эта спека *
 
 **v2 (добавляется):**
 - Intent `perform()` → snapshot + reload (US-A1).
-- WidgetKit push `content-changed` (iOS 18+) → system reload → Provider fetch (US-B*).
-- Silent push (iOS 17) → app wake → sync → snapshot → reload.
+- Silent push (iOS 17–25) → app wake → sync → snapshot → reload + Provider fetch (US-B*).
+- WidgetKit push `content-changed` (SDK iOS 26+, когда token wire-up без DT 26) → system reload → Provider fetch.
 
 ---
 
@@ -206,10 +209,10 @@ Server v1 для Live Activity `update`/`end` уже в 058. Эта спека *
 ### v2 (новые)
 
 - **US-A1:** Pause с Live Activity при suspended app → виджет показывает paused без открытия app.
-- **US-B1–B2:** Pause/resume/start/delete с веба при фоне/killed → виджет обновляется на iOS 18+ (WidgetKit push) и best-effort на iOS 17 (silent).
+- **US-B1–B2:** Pause/resume/start/delete с веба при фоне/killed → виджет обновляется best-effort на iOS 17–25 (silent + Provider); WidgetKit `content-changed` — когда клиент зарегистрирует widget token (SDK iOS 26+).
 - **US-B3:** Offline / нет auth → виджет сохраняет последний snapshot.
-- Deployment target **iOS 17**; iOS 18 WidgetKit push API только за `#available`.
-- Register/unregister widget push token; серверный fan-out с debounce ~1 с и exclude source device.
+- Deployment target **iOS 17** (main app **и** HomeWidgetExtension); WidgetKit push API только за `#available(iOS 26, *)` и без поднятия appex DT.
+- Register/unregister widget push token (server + registrar ready); серверный fan-out с debounce ~1 с и exclude source device.
 - Контракт [contracts/widget-push.md](./contracts/widget-push.md) согласован с web-зеркалом (когда появится).
 
 ## Артефакты

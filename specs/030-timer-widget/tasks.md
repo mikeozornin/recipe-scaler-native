@@ -38,37 +38,37 @@
 
 ---
 
-## Phase B2 — Client WidgetPushHandler + registrar (iOS 18+)
+## Phase B2 — Client WidgetPushHandler + registrar (SDK iOS 26+)
 
-- [ ] B2.1. Проверить entitlements Push + App Group (не дублировать лишние capability без нужды)
-- [ ] B2.2. Реализовать registrar: получить widget push token (`#available(iOS 18, *)`) → hex → POST register с `device_id`
-- [ ] B2.3. Token rotation → повторный POST
-- [ ] B2.4. Unregister на logout / account wipe
-- [ ] B2.5. Wire в `AppContainer` / bootstrap рядом с 023 и 058 registrars
-- [ ] B2.6. Логирование через `AppLog` (английские event names)
-- [ ] B2.7. Unit tests registrar (mock APIClient)
-- [ ] B2.8. Сборка на deployment iOS 17 без ошибок availability
+- [x] B2.1. Проверить entitlements Push + App Group (не дублировать лишние capability без нужды)
+- [x] B2.2. Реализовать registrar: hex → POST register с `device_id` (token source: future `WidgetPushHandler`; SDK `@available(iOS 26.0, *)`)
+- [x] B2.3. Token rotation → повторный POST
+- [x] B2.4. Unregister на logout / account wipe
+- [x] B2.5. Wire в `AppContainer` / bootstrap рядом с 023 и 058 registrars
+- [x] B2.6. Логирование через `AppLog` (английские event names)
+- [x] B2.7. Unit tests registrar (mock APIClient)
+- [x] B2.8. Сборка на deployment iOS 17: main app **и** HomeWidgetExtension DT **17.0**; `.pushHandler` **не** на `TimerWidget` (opaque config); handler-файл как reference; primary path = B3/B4 silent + Provider
 
 ---
 
 ## Phase B3 — TimerWidgetProvider network refresh
 
-- [ ] B3.1. В Provider: читать `SharedAuthStore` bearer
-- [ ] B3.2. `GET /api/v1/timers/active` (переиспользовать `ServerActiveTimer` / `ActiveTimersResponse` из Core)
-- [ ] B3.3. Map `ServerActiveTimer` → `TimerSnapshot` / document (см. [data-model.md](./data-model.md))
-- [ ] B3.4. `TimerSnapshotStore.save` перед построением timeline
-- [ ] B3.5. Offline / 401 / transport error → **не** clear; timeline из existing load
-- [ ] B3.6. Нет bearer → skip fetch, existing snapshot
-- [ ] B3.7. Unit tests: mapping running/paused/exceeded; offline keeps previous; no-auth no-clear
-- [ ] B3.8. `xcodebuild test` + `bash scripts/verify-timer-widget.sh`
+- [x] B3.1. В Provider: читать `SharedAuthStore` bearer
+- [x] B3.2. `GET /api/v1/timers/active` (переиспользовать `ServerActiveTimer` / `ActiveTimersResponse` из Core)
+- [x] B3.3. Map `ServerActiveTimer` → `TimerSnapshot` / document (см. [data-model.md](./data-model.md))
+- [x] B3.4. `TimerSnapshotStore.save` перед построением timeline
+- [x] B3.5. Offline / 401 / transport error → **не** clear; timeline из existing load
+- [x] B3.6. Нет bearer → skip fetch, existing snapshot
+- [x] B3.7. Unit tests: mapping running/paused/exceeded; offline keeps previous; no-auth no-clear
+- [x] B3.8. `xcodebuild test` + `bash scripts/verify-timer-widget.sh`
 
 ---
 
 ## Phase B4 — iOS 17 silent fallback
 
-- [ ] B4.1. Server: silent `content-available` на device token 023 для устройств без widget token (или dual-send policy — зафиксировать в web)
-- [ ] B4.2. Client silent handler: sync active timers → snapshot save → `reloadTimelines`
-- [ ] B4.3. Не ломать alert push 023 (регрессия)
+- [x] B4.1. Server: silent `content-available` на device token 023 для устройств без widget token (или dual-send policy — зафиксировать в web)
+- [x] B4.2. Client silent handler: sync active timers → snapshot save → `reloadTimelines`
+- [x] B4.3. Не ломать alert push 023 (регрессия)
 - [ ] B4.4. Manual QA на iOS 17 device/sim policy (best-effort)
 
 ---

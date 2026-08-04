@@ -21,6 +21,24 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         AppLog.error(.push, "apns_register_failed", data: ["error": error.localizedDescription])
     }
 
+    /// Spec 030 B4 — silent `content-available` wake refreshes the TimerWidget snapshot.
+    /// Alert pushes (023 timer completed) keep system / UNUserNotificationCenter presentation;
+    /// this path never suppresses alerts — it only optionally refreshes App Group state.
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        guard WidgetSilentPushHandler.shouldRefreshWidget(userInfo: userInfo) else {
+            completionHandler(.noData)
+            return
+        }
+        Task { @MainActor in
+            let updated = await WidgetSilentPushHandler.refreshSnapshotFromServer()
+            completionHandler(updated ? .newData : .failed)
+        }
+    }
+
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // Spec 039 — activate WCSession so AuthService can publish userId to
         // a paired Apple Watch. No-op when WCSession is unsupported (iPad,

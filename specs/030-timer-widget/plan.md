@@ -16,7 +16,7 @@
 **v2:** два канала фонового обновления snapshot/timeline:
 
 - **Phase A (same-device):** Live Activity Intent в `perform()` пишет snapshot + reload (очередь ActionQueue сохраняется для TimerManager).
-- **Phase B (cross-device):** WidgetKit push (iOS 18+) / silent APNs (iOS 17) → Provider `GET /api/v1/timers/active` → snapshot → timeline.
+- **Phase B (cross-device):** silent APNs + Provider fetch (iOS 17–25, primary) / WidgetKit push (SDK iOS 26+, future) → `GET /api/v1/timers/active` → snapshot → timeline.
 
 ## Очерёдность
 
@@ -50,9 +50,9 @@ flowchart TD
         Server[TimerSyncService + fan-out]
         WTok[(widget_push_tokens)]
         LATok[(liveactivity_tokens — spec 058)]
-        WPush[APNs widgets content-changed iOS 18+]
-        Silent[APNs content-available iOS 17 via 023 token]
-        Handler[WidgetPushHandler / silent wake]
+        WPush[APNs widgets content-changed SDK iOS 26+]
+        Silent[APNs content-available iOS 17-25 via 023 token]
+        Handler[silent wake / future WidgetPushHandler]
         Prov[TimerWidgetProvider]
         Fetch[GET /api/v1/timers/active]
         Auth[SharedAuthStore bearer]
@@ -134,7 +134,7 @@ flowchart TD
 | DB migration | таблица `widget_push_tokens` (user_id, device_id, token, timestamps; UNIQUE user+device) |
 | HTTP | `POST` / `DELETE` register widget token (см. [contracts/widget-push.md](./contracts/widget-push.md)) |
 | Fan-out | рядом с LA events: `timer_started/paused/resumed/updated/deleted` → APNs widgets push; debounce ~1 с; exclude source `device_id` |
-| iOS 17 path (server) | опционально: silent на device token из spec 023 для устройств без widget token |
+| iOS 17–25 path (server) | silent на device token из spec 023 для устройств без widget token (primary, пока нет widget token) |
 
 > Реализация server — в `recipe-scaler-web`; этот plan описывает контракт для native implementers и зеркало спеки.
 
@@ -162,11 +162,11 @@ flowchart TD
 
 | Файл / зона | Действие |
 |-------------|----------|
-| Entitlements / capability | убедиться Push + App Group; WidgetKit push registration iOS 18+ |
-| `WidgetPushRegistrar` (имя уточнить) | получить device-level widget push token → POST register; unregister on logout |
-| `WidgetPushHandler` / WidgetKit push callback | на `content-changed` система перезагружает timeline; handler при необходимости логирует |
+| Entitlements / capability | убедиться Push + App Group; WidgetKit push registration — SDK `@available(iOS 26.0, *)` (не iOS 18) |
+| `WidgetPushRegistrar` (имя уточнить) | future: device-level widget push token → POST register; unregister on logout; до wire-up — silent + Provider |
+| `WidgetPushHandler` / WidgetKit push callback | SDK iOS 26+; на `content-changed` система перезагружает timeline; handler при необходимости логирует |
 | `AppContainer` / bootstrap | wire registrar рядом с APNs 023 / LA 058 registrars |
-| `#available(iOS 18, *)` | весь WidgetKit push API за availability |
+| `#available(iOS 26, *)` | весь WidgetKit push API за availability; appex DT остаётся 17 |
 
 ### Downstream consumers
 
@@ -182,7 +182,7 @@ flowchart TD
 |--------|-----------|---------------|
 | Успешный widget token | `POST` register уходит с `device_id` + hex token | unit test |
 | Logout / account wipe | `DELETE` unregister (best-effort) | unit test |
-| iOS 17 build | нет вызовов iOS 18 WidgetKit push API без `#available` | compile + smoke |
+| iOS 17 build | нет вызовов WidgetKit push API (iOS 26+) без `#available` | compile + smoke |
 
 ---
 
@@ -223,7 +223,7 @@ flowchart TD
 |------|----------|
 | AppDelegate / push handler (023) | silent `content-available` с timer/widget hint → sync active timers → snapshot save → reloadTimelines |
 | Server | для устройств без widget token (или всегда как secondary) — silent на device APNs token |
-| Документация | quickstart: iOS 17 = best-effort |
+| Документация | quickstart: iOS 17–25 = silent + Provider best-effort; WidgetKit push = SDK iOS 26+ future |
 
 ### Downstream consumers
 
@@ -261,7 +261,7 @@ recipe-scaler-web/server/           # Phase B1 (вне native repo)
 | Риск | Смягчение |
 |------|-----------|
 | Intent обновил snapshot, но TimerManager не drain'нул → рассинхрон SwiftData | ActionQueue обязателен; reconcile при foreground |
-| WidgetKit push только iOS 18+ | Silent fallback 023; deployment 17 |
+| WidgetKit push только SDK iOS 26+ | Silent + Provider primary на iOS 17–25 (023); deployment 17 |
 | Provider fetch без сети → empty flash | Never clear snapshot on error (US-B3) |
 | Двойной fan-out с 058 | Разные topics/tokens; widget body только `content-changed` |
 | Battery / APNs rate | Debounce ~1 с на сервере; client debounce 200 мс на TimerManager |

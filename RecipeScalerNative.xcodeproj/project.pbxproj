@@ -11,6 +11,15 @@
 		031287A80FDB41308E31AE3E /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7585E91075F045FF9D2C26D1 /* ShareViewController.swift */; };
 		0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C45A57EDAC270C757266F8FA /* AuthService.swift */; };
 		082B9A25B01040469E077B58 /* Auth/SharedAuthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F696F3421504AD3A7836B0C /* Auth/SharedAuthStore.swift */; };
+		70062F0B35A42FD9810D0B8B /* Auth/SharedDeviceId.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3497363D26FF94F419BA85F /* Auth/SharedDeviceId.swift */; };
+		D750066ACA5505A1A07A4780 /* Networking/WidgetPushTokenClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BE92D4F7D7D370A1E12BF5 /* Networking/WidgetPushTokenClient.swift */; };
+		CC36F1622B2C07DCCADC8310 /* TimerSnapshot+ServerActiveTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5942CB97921F9C6CC9AD6B51 /* TimerSnapshot+ServerActiveTimer.swift */; };
+		3A809462F86A2ADD2A492047 /* WidgetPushRegistrar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F89323F776D65016934FBB2 /* WidgetPushRegistrar.swift */; };
+		922A2B3A3550913CA9886250 /* WidgetSilentPushHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCCF9006265F5B2697622906 /* WidgetSilentPushHandler.swift */; };
+		AE6149B3EB41238B4A40A652 /* TimerWidgetPushHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA782D4A8C11ED57CE8A11A1 /* TimerWidgetPushHandler.swift */; };
+		DB2D408AD7ED0316C3657CE3 /* WidgetPushRegistrarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6293E6CF2D08DC5DEA259B6 /* WidgetPushRegistrarTests.swift */; };
+		EAC62AD8B937F1738613C0EB /* WidgetSilentPushHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95FDE9BE4DC2CA4E5B1DDA73 /* WidgetSilentPushHandlerTests.swift */; };
+		56D2D60C90B84D3045B59723 /* TimerSnapshotServerMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33225776134280B7CD7FECE /* TimerSnapshotServerMappingTests.swift */; };
 		0952E30F55AC49E7BCCDEE93 /* TimerLockScreenLiveActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B83AB2645384EAFBD1AD4A3 /* TimerLockScreenLiveActivityView.swift */; };
 		0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */; };
 		0AD461511B9166BD9EF50932 /* WidgetTimerAccent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 707268FFBE33ABC1D5A95D82 /* WidgetTimerAccent.swift */; };
@@ -706,6 +715,15 @@
 		0DE37FE421F74BCDAC651EE4 /* Views/EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/EmptyStateView.swift; sourceTree = "<group>"; };
 		0EF2B3F0EB5A4599AE467921 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
 		0F696F3421504AD3A7836B0C /* Auth/SharedAuthStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/SharedAuthStore.swift; sourceTree = "<group>"; };
+		A3497363D26FF94F419BA85F /* Auth/SharedDeviceId.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/SharedDeviceId.swift; sourceTree = "<group>"; };
+		47BE92D4F7D7D370A1E12BF5 /* Networking/WidgetPushTokenClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/WidgetPushTokenClient.swift; sourceTree = "<group>"; };
+		5942CB97921F9C6CC9AD6B51 /* TimerSnapshot+ServerActiveTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TimerSnapshot+ServerActiveTimer.swift"; sourceTree = "<group>"; };
+		1F89323F776D65016934FBB2 /* WidgetPushRegistrar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPushRegistrar.swift; sourceTree = "<group>"; };
+		DCCF9006265F5B2697622906 /* WidgetSilentPushHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSilentPushHandler.swift; sourceTree = "<group>"; };
+		DA782D4A8C11ED57CE8A11A1 /* TimerWidgetPushHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerWidgetPushHandler.swift; sourceTree = "<group>"; };
+		D6293E6CF2D08DC5DEA259B6 /* WidgetPushRegistrarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPushRegistrarTests.swift; sourceTree = "<group>"; };
+		95FDE9BE4DC2CA4E5B1DDA73 /* WidgetSilentPushHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSilentPushHandlerTests.swift; sourceTree = "<group>"; };
+		F33225776134280B7CD7FECE /* TimerSnapshotServerMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSnapshotServerMappingTests.swift; sourceTree = "<group>"; };
 		1056FC9B5113FFE50B50E8AB /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
 		10B70ADFDAFB46C18446F390 /* YrsXCFramework.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = YrsXCFramework.xcframework; path = Frameworks/YrsXCFramework.xcframework; sourceTree = "<group>"; };
 		11026E6FBE228038C3769C04 /* TimerSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimerSnapshot.swift; sourceTree = "<group>"; };
@@ -1395,6 +1413,8 @@
 			children = (
 				11026E6FBE228038C3769C04 /* TimerSnapshot.swift */,
 				30D1FC17B7B577157543D1B8 /* TimerSnapshotStore.swift */,
+				5942CB97921F9C6CC9AD6B51 /* TimerSnapshot+ServerActiveTimer.swift */,
+
 				B3TSPATCH01A293A4B70100001 /* TimerSnapshotDocumentPatcher.swift */,
 				21566C9DA1EEFF6ACCDAD702 /* TimerWidgetKind.swift */,
 			);
@@ -1595,6 +1615,8 @@
 			children = (
 				F58FAB09283CA8326C38419C /* HomeWidgetBundle.swift */,
 				B45B89CCA2BD6814320CF091 /* TimerWidget.swift */,
+				DA782D4A8C11ED57CE8A11A1 /* TimerWidgetPushHandler.swift */,
+
 				27F7288EC5F094475438A06F /* TimerWidgetProvider.swift */,
 				98A60ED09D57AE1CE0E67D37 /* TimerWidgetEntry.swift */,
 				F5E9D4D462FE8E664A5CAAA9 /* Views */,
@@ -1626,12 +1648,16 @@
 			children = (
 				B1FC95C981104E30AE6DFE07 /* RecipeScalerCore.swift */,
 				0F696F3421504AD3A7836B0C /* Auth/SharedAuthStore.swift */,
+				A3497363D26FF94F419BA85F /* Auth/SharedDeviceId.swift */,
+
 				E3CBCE9817864C1C8B333764 /* Config/Config.swift */,
 				922F28300880430B97A0348C /* Networking/APIClient.swift */,
 				41F1A2877817482DAC0FE2DC /* Networking/APIClient+Requests.swift */,
 				FADAPI01A293A4B701000001 /* Networking/FeatureAdoptionAPI.swift */,
 				FADKEY01A293A4B701000001 /* Networking/FeatureAdoptionClientFeature.swift */,
 				72C0961D8B504667B05C4AB4 /* Networking/ServerActiveTimer.swift */,
+				47BE92D4F7D7D370A1E12BF5 /* Networking/WidgetPushTokenClient.swift */,
+
 				69F9BFE990A641C6A64D4CFC /* Networking/ServerErrorCode.swift */,
 				5A55A1B2000000000000007D /* Networking/AuthRevocationConstants.swift */,
 				DA95C7943B584B11A547EB85 /* Import/RecipeImportAPI.swift */,
@@ -1690,6 +1716,12 @@
 				B3TORD02A293A4B701000001 /* TimerOrderingTests.swift */,
 				B3ATPR02A293A4B701000001 /* ActiveTimerPresentationTests.swift */,
 				B3KCA01A293A4B701000001 /* SharedAuthStoreTests.swift */,
+				F33225776134280B7CD7FECE /* TimerSnapshotServerMappingTests.swift */,
+
+				95FDE9BE4DC2CA4E5B1DDA73 /* WidgetSilentPushHandlerTests.swift */,
+
+				D6293E6CF2D08DC5DEA259B6 /* WidgetPushRegistrarTests.swift */,
+
 				B3KCA02A293A4B701000001 /* AuthServiceMigrationTests.swift */,
 				B3AUTHSTALE01A293A4B70100001 /* AuthServiceStaleSessionTests.swift */,
 				B3AUTHINV01A293A4B70100001 /* AuthSessionInvalidationTests.swift */,
@@ -2041,6 +2073,10 @@
 				E5F60718293A4B70A0433F17 /* TimerSyncService.swift */,
 				CC0001AA0001BB0001CC0001 /* PushRegistrationService.swift */,
 				E5F60718293A4B70A0770F71 /* LiveActivityPushRegistrar.swift */,
+				DCCF9006265F5B2697622906 /* WidgetSilentPushHandler.swift */,
+
+				1F89323F776D65016934FBB2 /* WidgetPushRegistrar.swift */,
+
 				CC0003AA0003BB0003CC0003 /* PushScheduleService.swift */,
 				D0574E4BB4D0DE3B5AE7CFAB /* Yrs */,
 				A027027000108 /* ThirdPartyRecipeImportService.swift */,
@@ -2614,6 +2650,10 @@
 				ILL043C03 /* IngredientIllustrationLayoutMetrics.swift in Sources */,
 				ILL043C13 /* IngredientIllustrationNameMatcher.swift in Sources */,
 				082B9A25B01040469E077B58 /* Auth/SharedAuthStore.swift in Sources */,
+				D750066ACA5505A1A07A4780 /* Networking/WidgetPushTokenClient.swift in Sources */,
+
+				70062F0B35A42FD9810D0B8B /* Auth/SharedDeviceId.swift in Sources */,
+
 				D963C6002ACA43AE8B000E1D /* Config/Config.swift in Sources */,
 				1BAEE2C386A5454CB68D9C8B /* Networking/APIClient.swift in Sources */,
 				1A94422F09EA4C03BD017D23 /* Networking/APIClient+Requests.swift in Sources */,
@@ -2651,6 +2691,8 @@
 				A456EBD108E7F61A6ED40F0B /* AppGroup.swift in Sources */,
 				36868E6A4338C22FDD6F8EAD /* TimerSnapshot.swift in Sources */,
 				B5B1532151BD871ECE63155C /* TimerSnapshotStore.swift in Sources */,
+				CC36F1622B2C07DCCADC8310 /* TimerSnapshot+ServerActiveTimer.swift in Sources */,
+
 				B3TSPATCH01B293A4B70100001 /* TimerSnapshotDocumentPatcher.swift in Sources */,
 				5F8CB757055EAA81BC46E69B /* TimerWidgetKind.swift in Sources */,
 			);
@@ -2736,6 +2778,10 @@
 				6BBC390F7AF94B5AA3A27468 /* TimerLiveActivityIntents.swift in Sources */,
 				CC0002AA0002BB0002CC0002 /* PushRegistrationService.swift in Sources */,
 				E5F60718293A4B70116A7882 /* LiveActivityPushRegistrar.swift in Sources */,
+				922A2B3A3550913CA9886250 /* WidgetSilentPushHandler.swift in Sources */,
+
+				3A809462F86A2ADD2A492047 /* WidgetPushRegistrar.swift in Sources */,
+
 				CC0004AA0004BB0004CC0004 /* PushScheduleService.swift in Sources */,
 				DD2201AABB000100000001 /* YrsObserver.swift in Sources */,
 				DD2201AABB000100000002 /* RecipeDetailViewModel.swift in Sources */,
@@ -2956,6 +3002,8 @@
 			files = (
 				41043E5774649BBB0EB1CEA6 /* HomeWidgetBundle.swift in Sources */,
 				726546A91291B7DF93D0CC9F /* TimerWidget.swift in Sources */,
+				AE6149B3EB41238B4A40A652 /* TimerWidgetPushHandler.swift in Sources */,
+
 				D478160040C08F50D4A06091 /* TimerWidgetProvider.swift in Sources */,
 				A6F7AE7D9127ACA699DE84DB /* TimerWidgetEntry.swift in Sources */,
 				1057DC79BE957450BC6695E6 /* TimerHomeSmallView.swift in Sources */,
@@ -3043,6 +3091,12 @@
 				B3TORD02B293A4B701000002 /* TimerOrderingTests.swift in Sources */,
 				B3ATPR02B293A4B701000002 /* ActiveTimerPresentationTests.swift in Sources */,
 				B3KCA01B293A4B701000001 /* SharedAuthStoreTests.swift in Sources */,
+				56D2D60C90B84D3045B59723 /* TimerSnapshotServerMappingTests.swift in Sources */,
+
+				EAC62AD8B937F1738613C0EB /* WidgetSilentPushHandlerTests.swift in Sources */,
+
+				DB2D408AD7ED0316C3657CE3 /* WidgetPushRegistrarTests.swift in Sources */,
+
 				B3KCA02B293A4B701000001 /* AuthServiceMigrationTests.swift in Sources */,
 				B3AUTHSTALE01B293A4B70100001 /* AuthServiceStaleSessionTests.swift in Sources */,
 				B3AUTHINV01B293A4B70100001 /* AuthSessionInvalidationTests.swift in Sources */,

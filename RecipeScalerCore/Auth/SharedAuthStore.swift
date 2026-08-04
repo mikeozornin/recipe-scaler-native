@@ -8,18 +8,20 @@
 //  (`kSecClassGenericPassword`) so that forensic extraction of on-disk
 //  plists (UserDefaults) cannot reveal them. Sharing across the main app
 //  and Share/Action/Home/Timer extensions is achieved via a shared
-//  keychain access group declared in every target's entitlements.
-//
-//  On simulator / unsigned dev builds without a paid provisioning profile
-//  the access-group attribute is omitted: the keychain still works, just
-//  scoped to the single process. Production builds MUST add:
+//  keychain access group declared in every target's entitlements:
 //
 //      <key>keychain-access-groups</key>
 //      <array>
 //          <string>$(AppIdentifierPrefix)ru.recipescaler.RecipeScaler</string>
 //      </array>
 //
-//  to every consuming target's entitlements.
+//  `$(AppIdentifierPrefix)` expands at codesign time to `ZBPX4JYT24.`.
+//  Swift must use the expanded team-prefixed string — the Xcode macro is
+//  not substituted in source.
+//
+//  Writes mirror into both the shared access group (for extensions on device)
+//  and the process-scoped keychain (fallback when the entitlement is missing,
+//  e.g. some XCTest hosts). Reads prefer the shared group, then ungrouped.
 //
 
 import Foundation
@@ -41,15 +43,14 @@ public enum SharedAuthStore {
     /// `AppGroup.id` for the shared `UserDefaults` suite.
     public static let legacyAppGroupUserIdKey = "shared.userId"
 
-    /// Shared keychain access group. Resolves to `nil` on simulator / dev
-    /// builds (no provisioning profile) so the keychain query stays valid
-    /// without an access-group attribute. On signed builds the value is
-    /// `$(AppIdentifierPrefix)ru.recipescaler.RecipeScaler`.
+    /// Team ID from `DEVELOPMENT_TEAM` (`ZBPX4JYT24`) + keychain sharing suffix.
+    /// Matches entitlements after `$(AppIdentifierPrefix)` expansion.
+    public static let sharedKeychainAccessGroup = "ZBPX4JYT24.ru.recipescaler.RecipeScaler"
+
+    /// Documented access group for SecItem queries. Always the team-prefixed
+    /// group — never the literal `$(AppIdentifierPrefix)…` macro.
     public static var keychainAccessGroup: String? {
-        if hasKeychainAccessGroupEntitlement {
-            return "$(AppIdentifierPrefix)ru.recipescaler.RecipeScaler"
-        }
-        return nil
+        sharedKeychainAccessGroup
     }
 
     /// Currently authenticated user identifier, or `nil` when signed out.
@@ -78,6 +79,7 @@ public enum SharedAuthStore {
     }
 
     /// Remove stored credentials. Idempotent — calling on an empty store is a no-op.
+    /// Clears both shared-group and process-scoped items.
     public static func clear() {
         deleteItem(account: userIdAccount)
         deleteItem(account: tokenAccount)
@@ -85,20 +87,28 @@ public enum SharedAuthStore {
 
     // MARK: - Keychain primitives
 
-    private static func baseQuery(account: String) -> [String: Any] {
+    private static func baseQuery(account: String, accessGroup: String?) -> [String: Any] {
         var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
             kSecAttrAccount as String: account,
         ]
-        if let group = keychainAccessGroup {
-            query[kSecAttrAccessGroup as String] = group
+        if let accessGroup {
+            query[kSecAttrAccessGroup as String] = accessGroup
         }
         return query
     }
 
+    /// Prefer shared access group (extensions on device); fall back to process-scoped.
     private static func readString(account: String) -> String? {
-        var query = baseQuery(account: account)
+        if let shared = copyMatching(account: account, accessGroup: sharedKeychainAccessGroup) {
+            return shared
+        }
+        return copyMatching(account: account, accessGroup: nil)
+    }
+
+    private static func copyMatching(account: String, accessGroup: String?) -> String? {
+        var query = baseQuery(account: account, accessGroup: accessGroup)
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
 
@@ -110,33 +120,32 @@ public enum SharedAuthStore {
         return String(data: data, encoding: .utf8)
     }
 
+    /// Mirror into shared group (best-effort) and process-scoped keychain.
+    /// Extensions on a paid/signed build read the shared copy; XCTest hosts
+    /// that cannot use the access group still round-trip via the ungrouped copy.
     private static func writeString(_ value: String, account: String) {
         let data = Data(value.utf8)
-        var query = baseQuery(account: account)
+        _ = upsert(data: data, account: account, accessGroup: sharedKeychainAccessGroup)
+        _ = upsert(data: data, account: account, accessGroup: nil)
+    }
+
+    @discardableResult
+    private static func upsert(data: Data, account: String, accessGroup: String?) -> OSStatus {
+        deleteItem(account: account, accessGroup: accessGroup)
+        var query = baseQuery(account: account, accessGroup: accessGroup)
         query[kSecValueData as String] = data
         query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         query[kSecAttrSynchronizable as String] = kCFBooleanFalse
-
-        let addStatus = SecItemAdd(query as CFDictionary, nil)
-        if addStatus == errSecDuplicateItem {
-            var updateQuery = baseQuery(account: account)
-            let attributes: [String: Any] = [
-                kSecValueData as String: data,
-                kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-                kSecAttrSynchronizable as String: kCFBooleanFalse,
-            ]
-            SecItemUpdate(updateQuery as CFDictionary, attributes as CFDictionary)
-        }
+        return SecItemAdd(query as CFDictionary, nil)
     }
 
     private static func deleteItem(account: String) {
-        SecItemDelete(baseQuery(account: account) as CFDictionary)
+        deleteItem(account: account, accessGroup: sharedKeychainAccessGroup)
+        deleteItem(account: account, accessGroup: nil)
     }
 
-    // MARK: - Entitlement probe
-
-    private static var hasKeychainAccessGroupEntitlement: Bool {
-        Bundle.main.object(forInfoDictionaryKey: "keychain-access-groups") != nil
+    private static func deleteItem(account: String, accessGroup: String?) {
+        SecItemDelete(baseQuery(account: account, accessGroup: accessGroup) as CFDictionary)
     }
 }
 

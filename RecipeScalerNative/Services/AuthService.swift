@@ -430,6 +430,16 @@ class AuthService {
     private func wipeLocalSession(reason: SessionWipeReason) {
         AppLog.info(.app, "session_wiped", data: ["reason": reason.rawValue])
 
+        // Spec 030 B2 + security review critical finding: widget push unregister
+        // DELETE must reach the server authenticated. Capture credentials BEFORE
+        // the keychain wipe below — otherwise the deferred unregister Task would
+        // send the request with an empty Authorization header, receive 401, and
+        // leave an orphan `widget_push_tokens` row that survives the next
+        // account's session (cross-account APNs wake leak).
+        let bearerForUnregister = SharedAuthStore.token?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let userIdForUnregister = SharedAuthStore.userId
+
         try? deleteSeedPhraseFromKeychain()
         SharedAuthStore.clear()
         WatchCredentialsBridge.shared.purge()
@@ -448,7 +458,15 @@ class AuthService {
         // (cold-start `staleSession`, `handleAccountDeleted`, light revoke) —
         // not just the explicit-logout path through `AppContainer.stopForLogout`.
         Task { @MainActor in
+            if let bearerForUnregister, !bearerForUnregister.isEmpty {
+                APIClient.shared.configure(authToken: bearerForUnregister)
+            }
+            if let userIdForUnregister, !userIdForUnregister.isEmpty {
+                APIClient.shared.configure(userId: userIdForUnregister)
+            }
             await AppContainer.shared?.timerLiveActivityCoordinator.clearForLogout()
+            // Spec 030 B2: also drop widget push registration on account wipe.
+            await AppContainer.shared?.widgetPushRegistrar.unregister()
         }
     }
 

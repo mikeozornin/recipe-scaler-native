@@ -79,13 +79,13 @@ Topic = **main app Bundle ID** + `.push-type.widgets`.
 2. После (или параллельно с) realtime `timer_event` / LA push pipeline.
 3. Для каждого **другого** устройства пользователя с строкой в `widget_push_tokens` — отправить widgets push.
 4. **Exclude** `device_id` источника события.
-5. **Debounce ~1 s** per `(user_id)` (или per `(user_id, device_id)`): последний event wins, один push.
+5. **Debounce ~1 s** per `user_id`: один push на окно; **union** всех `device_id` источников в окне исключается из fan-out (не «last exclude wins»).
 6. `ApnsService.isConfigured === false` → no-op.
 7. APNs `BadDeviceToken` / `Unregistered` → DELETE row из `widget_push_tokens` (parity с 023/058 cleanup).
 
-## iOS 17 fallback (silent)
+## iOS 17–25 primary path (silent + Provider fetch)
 
-Если на устройстве нет widget token (iOS до 18) или WidgetKit push недоступен:
+Apple `WidgetPushHandler` / `.pushHandler` — **SDK `@available(iOS 26.0, *)`** (не iOS 18). Пока HomeWidgetExtension `IPHONEOS_DEPLOYMENT_TARGET` = **17.0**, клиент **не** регистрирует widget push token через `.pushHandler` (opaque config + DT floor). Primary client path:
 
 | Header / field | Value |
 |----------------|-------|
@@ -93,17 +93,30 @@ Topic = **main app Bundle ID** + `.push-type.widgets`.
 | Token | существующий **device** APNs token (таблица/путь spec 023) |
 | Body | `aps.content-available: 1` (+ опциональный data-ключ `reason: "timers"` / `widget-refresh`) |
 
-Клиент: при silent wake — sync active timers → `TimerSnapshotStore.save` → `WidgetCenter.reloadTimelines(ofKind: "TimerWidget")`.
+Клиент: при silent wake — sync active timers → `TimerSnapshotStore.save` → `WidgetCenter.reloadTimelines(ofKind: "TimerWidget")`. Provider дополнительно делает `GET /api/v1/timers/active` при timeline reload.
 
 Best-effort: iOS может отложить или не разбудить app.
 
-## iOS registration lifecycle
+### Server policy (B4.1) — зафиксировано
 
-1. При старте app на iOS 18+: запросить / подписаться на WidgetKit push token (API Apple WidgetKit push registration).
+**Silent только для устройств без widget token** (не dual-send):
+
+1. На тех же timer events / том же debounce (~1 s per `user_id`), что и widget fan-out.
+2. Для каждого **другого** `device_id` с строкой в `apns_tokens` **и без** строки в `widget_push_tokens` — silent `content-available`.
+3. Устройства с widget token получают только WidgetKit `content-changed` (iOS 26 path не дублируется silent).
+4. Exclude `device_id` источника.
+5. `BadDeviceToken` / `Unregistered` → DELETE из `apns_tokens` (parity 023).
+
+Payload data-ключ: `reason: "timers"`.
+
+## iOS registration lifecycle (WidgetKit push — future / iOS 26+)
+
+1. Когда `.pushHandler` снова прикреплён к widget config (dual-target или type-erasure **без** поднятия appex DT выше 17): система отдаёт WidgetKit push token в `WidgetPushHandler`.
 2. Hex-encode → `POST /api/push/apns-register-widget` с `device_id`.
 3. Token rotation → POST снова (UPSERT).
 4. Logout / wipe → `DELETE …?device_id=…`.
-5. Все вызовы WidgetKit push API — только под `#available(iOS 18, *)`; deployment target проекта остаётся **iOS 17**.
+5. Все вызовы WidgetKit push API — только под `#available(iOS 26, *)`; deployment target main app **и** HomeWidgetExtension остаётся **iOS 17**.
+6. До wire-up: registrar в main app готов принимать cached token; silent + Provider покрывают cross-device.
 
 ## Provider после push
 

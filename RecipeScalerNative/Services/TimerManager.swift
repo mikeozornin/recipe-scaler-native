@@ -422,6 +422,10 @@ final class TimerManager: NSObject {
         let work = DispatchWorkItem {
             let document = self.timers.timerSnapshotDocument()
             TimerSnapshotStore.save(document)
+            // Intent optimistic writes set pending-local; durable Manager snapshot
+            // is authoritative — release the Provider / silent network gate early
+            // instead of waiting out the full 15s TTL.
+            TimerSnapshotStore.clearPendingLocalMutation()
             WidgetCenter.shared.reloadTimelines(ofKind: TimerWidgetKind.id)
         }
         snapshotWriteWorkItem = work

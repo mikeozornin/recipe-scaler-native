@@ -113,6 +113,7 @@ final class TimerLiveActivityIntentSnapshotTests: XCTestCase {
                 )
                 _ = doc
             },
+            markPendingLocal: { TimerSnapshotStore.markPendingLocalMutation(now: self.fixedNow) },
             reloadWidget: {
                 reloadedKinds.value.append(TimerWidgetKind.id)
             },
@@ -138,6 +139,7 @@ final class TimerLiveActivityIntentSnapshotTests: XCTestCase {
         XCTAssertNil(timer?.endDate)
         XCTAssertEqual(timer?.pausedRemainingSeconds, remaining)
         XCTAssertFalse(savedDocs.value.isEmpty)
+        XCTAssertTrue(TimerSnapshotStore.hasPendingLocalMutation(now: fixedNow.addingTimeInterval(1)))
 
         XCTAssertEqual(reloadedKinds.value, [TimerWidgetKind.id])
         XCTAssertEqual(enqueued.value.count, 1)
@@ -180,6 +182,7 @@ final class TimerLiveActivityIntentSnapshotTests: XCTestCase {
                     now: self.fixedNow
                 )
             },
+            markPendingLocal: { TimerSnapshotStore.markPendingLocalMutation(now: self.fixedNow) },
             reloadWidget: {
                 reloadedKinds.value.append(TimerWidgetKind.id)
             },
@@ -244,6 +247,7 @@ final class TimerLiveActivityIntentSnapshotTests: XCTestCase {
             applySnapshot: { snapshot in
                 TimerSnapshotDocumentPatcher.applyAndSave(snapshot: snapshot, now: self.fixedNow)
             },
+            markPendingLocal: { TimerSnapshotStore.markPendingLocalMutation(now: self.fixedNow) },
             reloadWidget: { reloadCount.value += 1 },
             enqueue: { action, id in enqueued.value.append((action, id)) }
         )
@@ -257,6 +261,84 @@ final class TimerLiveActivityIntentSnapshotTests: XCTestCase {
         XCTAssertEqual(TimerSnapshotStore.load().timers.first?.phase, .paused)
         XCTAssertEqual(reloadCount.value, 1)
         XCTAssertEqual(enqueued.value.map(\.0), [.pause])
+        XCTAssertTrue(TimerSnapshotStore.hasPendingLocalMutation(now: fixedNow.addingTimeInterval(1)))
+    }
+
+    func testPause_Overdue_DoesNotEnqueueOrUpdate() async {
+        let remaining = -30
+        let updatedStates = MutationBox<[RecipeTimerActivityAttributes.ContentState]>([])
+        let enqueued = MutationBox<[(TimerLiveActivityAction, String)]>([])
+        let attrs = RecipeTimerActivityAttributes(
+            timerId: timerId,
+            timerName: "Overdue",
+            recipeId: nil
+        )
+        let exceededState = RecipeTimerActivityAttributes.ContentState(
+            phase: .exceeded,
+            endDate: fixedNow.addingTimeInterval(TimeInterval(remaining)),
+            pausedRemainingSeconds: 0,
+            startedAt: fixedNow.addingTimeInterval(-400),
+            totalDuration: 300,
+            recipeName: nil,
+            recipeThumbnailName: nil,
+            syncedAt: fixedNow
+        )
+        let deps = TimerLiveActivityIntentDependencies(
+            loadActivity: { _ in (attrs, exceededState) },
+            updateActivity: { _, state, _ in
+                updatedStates.value.append(state)
+                return true
+            },
+            applySnapshot: { _ in XCTFail("must not apply snapshot for overdue pause") },
+            markPendingLocal: { XCTFail("must not mark pending for overdue pause") },
+            reloadWidget: { XCTFail("must not reload for overdue pause") },
+            enqueue: { action, id in enqueued.value.append((action, id)) }
+        )
+        await TimerLiveActivityIntentPerformer.performPause(
+            timerId: timerId,
+            now: fixedNow,
+            dependencies: deps
+        )
+        XCTAssertTrue(updatedStates.value.isEmpty)
+        XCTAssertTrue(enqueued.value.isEmpty)
+    }
+
+    func testResume_ZeroRemaining_DoesNotEnqueueOrUpdate() async {
+        let updatedStates = MutationBox<[RecipeTimerActivityAttributes.ContentState]>([])
+        let enqueued = MutationBox<[(TimerLiveActivityAction, String)]>([])
+        let attrs = RecipeTimerActivityAttributes(
+            timerId: timerId,
+            timerName: "Zero",
+            recipeId: nil
+        )
+        let pausedState = RecipeTimerActivityAttributes.ContentState(
+            phase: .paused,
+            endDate: nil,
+            pausedRemainingSeconds: 0,
+            startedAt: fixedNow.addingTimeInterval(-100),
+            totalDuration: 300,
+            recipeName: nil,
+            recipeThumbnailName: nil,
+            syncedAt: fixedNow
+        )
+        let deps = TimerLiveActivityIntentDependencies(
+            loadActivity: { _ in (attrs, pausedState) },
+            updateActivity: { _, state, _ in
+                updatedStates.value.append(state)
+                return true
+            },
+            applySnapshot: { _ in XCTFail("must not apply snapshot for zero resume") },
+            markPendingLocal: { XCTFail("must not mark pending for zero resume") },
+            reloadWidget: { XCTFail("must not reload for zero resume") },
+            enqueue: { action, id in enqueued.value.append((action, id)) }
+        )
+        await TimerLiveActivityIntentPerformer.performResume(
+            timerId: timerId,
+            now: fixedNow,
+            dependencies: deps
+        )
+        XCTAssertTrue(updatedStates.value.isEmpty)
+        XCTAssertTrue(enqueued.value.isEmpty)
     }
 
     // Intent.perform() is a one-liner into TimerLiveActivityIntentPerformer

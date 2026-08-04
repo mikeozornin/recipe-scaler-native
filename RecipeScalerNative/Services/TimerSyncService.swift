@@ -76,12 +76,9 @@ final class TimerSyncService {
     }
 
     static func storedDeviceId() -> String {
-        if let existing = UserDefaults.standard.string(forKey: "deviceId"), !existing.isEmpty {
-            return existing
-        }
-        let newId = UUID().uuidString
-        UserDefaults.standard.set(newId, forKey: "deviceId")
-        return newId
+        // Spec 030: mirror into App Group so widget / silent / future WidgetPushHandler
+        // posts the same device_id as sync / alert push registration.
+        SharedDeviceId.current()
     }
 
     func configure(userId: String?, deviceId: String, timerManager: TimerManager) {

@@ -13,6 +13,12 @@ import Foundation
 public enum TimerSnapshotStore {
     /// UserDefaults key under the shared App Group suite.
     private static let key = "widgets.timerSnapshot"
+    /// Wall-clock deadline (timeIntervalSince1970) while Intent optimistic writes
+    /// must win over Provider `GET /api/v1/timers/active` (review finding #1).
+    private static let pendingLocalUntilKey = "widgets.timerSnapshot.pendingLocalUntil"
+
+    /// Default window for Intent → TimerManager drain before network may overwrite.
+    public static let pendingLocalMutationTTL: TimeInterval = 15
 
     private static var defaults: UserDefaults? {
         AppGroup.userDefaults
@@ -40,5 +46,31 @@ public enum TimerSnapshotStore {
     /// Remove the stored snapshot (e.g. on sign-out).
     public static func clear() {
         defaults?.removeObject(forKey: key)
+        clearPendingLocalMutation()
+    }
+
+    // MARK: - Pending local mutation (Intent optimistic vs Provider fetch)
+
+    /// Mark that App Group snapshot was written locally and must not be overwritten
+    /// by a stale `/active` response until `ttl` elapses or `clearPendingLocalMutation`.
+    public static func markPendingLocalMutation(
+        ttl: TimeInterval = pendingLocalMutationTTL,
+        now: Date = Date()
+    ) {
+        let until = now.addingTimeInterval(ttl).timeIntervalSince1970
+        defaults?.set(until, forKey: pendingLocalUntilKey)
+    }
+
+    /// Clear the pending-local gate (after TimerManager pause/resume persist).
+    public static func clearPendingLocalMutation() {
+        defaults?.removeObject(forKey: pendingLocalUntilKey)
+    }
+
+    /// Whether Provider/network refresh must keep the existing snapshot.
+    public static func hasPendingLocalMutation(now: Date = Date()) -> Bool {
+        guard let until = defaults?.object(forKey: pendingLocalUntilKey) as? Double else {
+            return false
+        }
+        return now.timeIntervalSince1970 < until
     }
 }
