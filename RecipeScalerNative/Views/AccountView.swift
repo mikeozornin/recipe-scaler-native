@@ -499,6 +499,8 @@ struct AccountView: View {
             }
             .disabled(viewModel.timerNotificationsDenied)
             .accessibilityIdentifier(AccessibilityIdentifiers.accountTimerNotificationsToggle)
+        } header: {
+            AppSectionHeaderSpacer()
         } footer: {
             if viewModel.timerNotificationsDenied {
                 Text("account.timer-notifications.denied")
@@ -508,6 +510,7 @@ struct AccountView: View {
                     .appFootnote()
             }
         }
+        .appListSectionHeaderStyle()
     }
 
     @ViewBuilder
