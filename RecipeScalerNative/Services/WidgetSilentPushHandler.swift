@@ -14,6 +14,24 @@ enum WidgetSilentPushHandler {
     /// Reasons accepted in the silent payload data dictionary (contract widget-push.md).
     static let refreshReasons: Set<String> = ["timers", "widget-refresh"]
 
+    /// Outcome of a silent-push snapshot refresh, mapped 1:1 to
+    /// `UIBackgroundFetchResult` by `AppDelegate`:
+    /// - `.newData` → `.newData` (snapshot changed; tells iOS the wake was useful)
+    /// - `.noData`  → `.noData`  (intentional skip: signed out, pending-local,
+    ///   empty payload, or no change — NOT a failure, do not ask APNs to retry)
+    /// - `.transientFailure` → `.failed` (transport/decode error; a retry is useful)
+    ///
+    /// Reporting `.noData` (not `.failed`) for intentional skips matters: iOS
+    /// treats `.failed` as "deliver again with exponential backoff", which
+    /// loops forever on signed-out devices and during the 15-s pending-local
+    /// window, drains battery, and reduces the system's willingness to deliver
+    /// future silent pushes to this install. Code review 2026-08-05, finding #2.
+    enum RefreshOutcome {
+        case newData
+        case noData
+        case transientFailure
+    }
+
     /// Whether this remote notification should trigger a widget snapshot refresh.
     ///
     /// - Pure silent (`content-available` without `alert`) → yes.
@@ -39,22 +57,21 @@ enum WidgetSilentPushHandler {
     }
 
     /// Fetch active timers, save snapshot, reload TimerWidget timelines.
-    /// Returns whether new data was written (for `UIBackgroundFetchResult`).
     ///
     /// Honours the same `pendingLocal` + `apply` gate as `TimerWidgetProvider`
     /// so a silent wake during the Intent → TimerManager drain window cannot
     /// overwrite an optimistic Lock Screen pause (review finding #1).
     @MainActor
-    static func refreshSnapshotFromServer() async -> Bool {
+    static func refreshSnapshotFromServer() async -> RefreshOutcome {
         guard let bearer = SharedAuthStore.token?.trimmingCharacters(in: .whitespacesAndNewlines),
               !bearer.isEmpty else {
             AppLog.notice(.push, "widget_silent_refresh_skipped_no_auth")
-            return false
+            return .noData
         }
 
         if TimerSnapshotStore.hasPendingLocalMutation() {
             AppLog.info(.push, "widget_silent_refresh_skipped_pending_local")
-            return false
+            return .noData
         }
 
         APIClient.shared.configure(authToken: bearer)
@@ -70,7 +87,7 @@ enum WidgetSilentPushHandler {
             )
             guard response.success, let timers = response.data?.timers else {
                 AppLog.notice(.push, "widget_silent_refresh_empty_payload")
-                return false
+                return .noData
             }
             fetchResult = .success(timers)
         } catch {
@@ -92,20 +109,23 @@ enum WidgetSilentPushHandler {
                 "timerCount": "\(document.timers.count)",
                 "previousCount": "\(existing.timers.count)"
             ])
-            return true
+            return .newData
         case .keptExisting:
             if case .failure(let error) = fetchResult {
                 AppLog.notice(.push, "widget_silent_refresh_failed", data: [
                     "error": error.localizedDescription
                 ])
+                return .transientFailure
             }
-            return false
+            // Server returned a valid payload that matched the cached snapshot
+            // — nothing changed, this is not a failure.
+            return .noData
         case .skippedNoAuth(existing: _):
             AppLog.notice(.push, "widget_silent_refresh_skipped_no_auth_apply")
-            return false
+            return .noData
         case .skippedPendingLocal(existing: _):
             AppLog.info(.push, "widget_silent_refresh_skipped_pending_local_apply")
-            return false
+            return .noData
         }
     }
 }

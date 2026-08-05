@@ -336,7 +336,7 @@ final class TimerLiveActivityCoordinator {
         }
         guard pushTokenTasks[timerId] == nil else { return }
 
-        pushTokenTasks[timerId] = Task { [weak self] in
+        pushTokenTasks[timerId] = Task { @MainActor [weak self] in
             for await tokenData in activity.pushTokenUpdates {
                 guard !Task.isCancelled else { return }
                 guard let self else { return }
@@ -388,7 +388,7 @@ final class TimerLiveActivityCoordinator {
         guard legacyMigrationTasks[timerId] == nil else { return }
         if pushRegistrar.hasCachedToken(timerId: timerId) { return }
 
-        legacyMigrationTasks[timerId] = Task { [weak self] in
+        legacyMigrationTasks[timerId] = Task { @MainActor [weak self] in
             try? await Task.sleep(for: Self.legacyPushMigrationTimeout)
             guard !Task.isCancelled else { return }
             guard let self else { return }
@@ -513,7 +513,7 @@ final class TimerLiveActivityCoordinator {
     /// activity (silently failing).
     private func startObservingActivityUpdates() {
         activityUpdatesTask?.cancel()
-        activityUpdatesTask = Task { [weak self] in
+        activityUpdatesTask = Task { @MainActor [weak self] in
             // `activityUpdates` is a main-actor-bound async sequence on iOS 16+.
             for await activity in Activity<RecipeTimerActivityAttributes>.activityUpdates {
                 guard !Task.isCancelled else { return }

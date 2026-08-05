@@ -387,6 +387,18 @@ final class AppContainer {
         //    (formerly `ContentView.task:212-213`).
         ShortcutItemsUpdater.update(from: sync.collectionEntries)
         RecipeSnapshotStore.save(sync.collectionEntries)
+
+        // 9. Spec 030 B2 — re-POST widget push token if the widget extension
+        //    already cached one before this process bootstrapped (typical on
+        //    cold launch with a widget on the Home Screen). Without this call,
+        //    `WidgetPushRegistrar` is constructed in the container but never
+        //    invoked from production code, leaving the entire B2 register layer
+        //    as dead scaffolding. Code review 2026-08-05, finding #5.
+        //    Fire-and-forget: registration failure is logged inside the registrar
+        //    and retried on the next bootstrap.
+        Task { [widgetPushRegistrar] in
+            await widgetPushRegistrar.registerCachedIfNeeded()
+        }
     }
 
     /// Clears bootstrap bookkeeping so the next login runs full `sync.start`, not `resumeSession`.

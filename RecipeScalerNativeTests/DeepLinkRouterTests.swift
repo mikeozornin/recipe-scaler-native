@@ -196,7 +196,9 @@ final class DeepLinkRouterTests: XCTestCase {
 
     /// Spec 059 architecture finding #2 — double delivery (onOpenURL +
     /// NSUserActivityTypeBrowsingWeb) of the same URL must not re-trigger.
-    func test_handle_sameURLTwice_isIdempotent() {
+    /// Code review 2026-08-05, finding #1 — must still re-route after the
+    /// dedup TTL elapses, so a real user re-tap of the same UL navigates.
+    func test_handle_sameURLTwice_withinDedupWindow_isIdempotent() {
         let url = URL(string: "https://recipe-scaler.ru/public/@/alice")!
 
         DeepLinkRouter.handle(url)
@@ -204,11 +206,28 @@ final class DeepLinkRouterTests: XCTestCase {
         XCTAssertEqual(firstPending, .openPublicProfile(username: "alice"))
         DeepLinkRouter.shared.clear()
 
-        // Simulate iOS firing the same UL again via the second callback.
+        // Simulate iOS firing the same UL again immediately via the second callback.
         DeepLinkRouter.handle(url)
 
         XCTAssertNil(DeepLinkRouter.shared.pending,
-                     "Second delivery of the same URL must not re-queue a pending link")
+                     "Second delivery of the same URL within the dedup window must not re-queue a pending link")
+    }
+
+    /// Code review 2026-08-05, finding #1 — after the dedup window elapses,
+    /// a repeat tap on the same URL must route again (real user re-tap).
+    func test_handle_sameURL_afterDedupWindow_isRouted() {
+        let url = URL(string: "https://recipe-scaler.ru/public/@/alice")!
+
+        DeepLinkRouter.handle(url)
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openPublicProfile(username: "alice"))
+        DeepLinkRouter.shared.clear()
+
+        // Push the last-handled timestamp out past the dedup window.
+        DeepLinkRouter._backdateLastHandledForTesting(by: DeepLinkRouter.lastHandledURLDedupWindow + 1)
+
+        DeepLinkRouter.handle(url)
+        XCTAssertEqual(DeepLinkRouter.shared.pending, .openPublicProfile(username: "alice"),
+                       "After dedup window elapses, the same URL must route again")
     }
 
     /// Spec 059 architecture finding #2 — a different URL after the first

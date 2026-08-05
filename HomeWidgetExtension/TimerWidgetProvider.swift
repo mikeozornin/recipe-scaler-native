@@ -13,17 +13,17 @@ import RecipeScalerCore
 /// Coalesces overlapping Provider network refreshes (review finding #5).
 private actor TimerWidgetNetworkRefreshGate {
     static let shared = TimerWidgetNetworkRefreshGate()
-    private var inFlight: Task<Void, Never>?
+    private var inFlight: Task<Bool, Never>?
 
-    func run(_ body: @escaping @Sendable () async -> Void) async {
+    func run(_ body: @escaping @Sendable () async -> Bool) async -> Bool {
         if let inFlight {
-            await inFlight.value
-            return
+            return await inFlight.value
         }
         let task = Task { await body() }
         inFlight = task
-        await task.value
+        let result = await task.value
         inFlight = nil
+        return result
     }
 }
 
@@ -48,27 +48,37 @@ struct TimerWidgetProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<TimerWidgetEntry>) -> Void) {
-        Task {
-            await Self.refreshFromNetworkIfPossible()
-            let document = TimerSnapshotStore.load()
-            let now = Date()
-            let timers = document.timers
+        // Build the timeline from the cached App Group snapshot first so iOS
+        // gets a fast answer; the widget extension is not held alive by a
+        // network round-trip. Code review 2026-08-05, finding #4.
+        let document = TimerSnapshotStore.load()
+        let now = Date()
+        let timers = document.timers
 
-            if Self.needsSecondGranularity(timers, now: now) {
-                let horizon = Self.secondGranularityHorizon(timers, now: now)
-                let entries = (0..<horizon).map { offset in
-                    TimerWidgetEntry(
-                        date: now.addingTimeInterval(TimeInterval(offset)),
-                        timers: timers
-                    )
-                }
-                completion(Timeline(entries: entries, policy: .atEnd))
-                return
+        if Self.needsSecondGranularity(timers, now: now) {
+            let horizon = Self.secondGranularityHorizon(timers, now: now)
+            let entries = (0..<horizon).map { offset in
+                TimerWidgetEntry(
+                    date: now.addingTimeInterval(TimeInterval(offset)),
+                    timers: timers
+                )
             }
-
+            completion(Timeline(entries: entries, policy: .atEnd))
+        } else {
             let entry = TimerWidgetEntry(date: now, timers: timers)
             let nextReload = Self.nextReloadDate(for: timers, now: now)
             completion(Timeline(entries: [entry], policy: .after(nextReload)))
+        }
+
+        // Fire-and-forget refresh: if the fetch produces a different snapshot,
+        // ask WidgetCenter for another reload so the new data renders. The
+        // TimelineProvider contract allows `WidgetCenter.reloadTimelines` from
+        // any process.
+        Task {
+            let didChange = await Self.refreshFromNetworkIfPossible()
+            if didChange {
+                WidgetCenter.shared.reloadTimelines(ofKind: TimerWidgetKind.id)
+            }
         }
     }
 
@@ -76,26 +86,34 @@ struct TimerWidgetProvider: TimelineProvider {
 
     /// Fetch active timers when authenticated, snapshot stale, and no pending local.
     /// Never clears the snapshot on error.
-    static func refreshFromNetworkIfPossible() async {
+    ///
+    /// Returns `true` if the App Group snapshot was overwritten with new server
+    /// data, so the caller can decide whether to call
+    /// `WidgetCenter.shared.reloadTimelines(ofKind:)`. Code review 2026-08-05,
+    /// finding #4 — `getTimeline` no longer blocks on this; it runs after the
+    /// cached timeline has already been delivered.
+    static func refreshFromNetworkIfPossible() async -> Bool {
         await TimerWidgetNetworkRefreshGate.shared.run {
             await Self.performNetworkRefreshWithTimeout()
         }
     }
 
-    private static func performNetworkRefreshWithTimeout() async {
-        await withTaskGroup(of: Void.self) { group in
+    private static func performNetworkRefreshWithTimeout() async -> Bool {
+        await withTaskGroup(of: Bool.self) { group in
             group.addTask {
                 await Self.performNetworkRefresh()
             }
             group.addTask {
                 try? await Task.sleep(nanoseconds: networkTimeoutNanoseconds)
+                return false
             }
-            await group.next()
+            let first = await group.next() ?? false
             group.cancelAll()
+            return first
         }
     }
 
-    private static func performNetworkRefresh() async {
+    private static func performNetworkRefresh() async -> Bool {
         let now = Date()
         let existing = TimerSnapshotStore.load()
         let pending = TimerSnapshotStore.hasPendingLocalMutation(now: now)
@@ -105,11 +123,11 @@ struct TimerWidgetProvider: TimelineProvider {
             hasPendingLocal: pending,
             now: now
         ) else {
-            return
+            return false
         }
 
         let bearer = SharedAuthStore.token?.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let bearer, !bearer.isEmpty else { return }
+        guard let bearer, !bearer.isEmpty else { return false }
 
         APIClient.shared.configure(authToken: bearer)
         if let userId = SharedAuthStore.userId, !userId.isEmpty {
@@ -118,7 +136,7 @@ struct TimerWidgetProvider: TimelineProvider {
 
         // Re-check pending after await gaps — Intent may have written meanwhile.
         let pendingBeforeApply = TimerSnapshotStore.hasPendingLocalMutation(now: Date())
-        if pendingBeforeApply { return }
+        if pendingBeforeApply { return false }
 
         let fetchResult: Result<[ServerActiveTimer], Error>
         do {
@@ -137,15 +155,16 @@ struct TimerWidgetProvider: TimelineProvider {
         let applyNow = Date()
         switch TimerWidgetNetworkRefresh.apply(
             bearer: bearer,
-            existing: TimerSnapshotStore.load(),
+            existing: existing,
             fetchResult: fetchResult,
             hasPendingLocal: TimerSnapshotStore.hasPendingLocalMutation(now: applyNow),
             now: applyNow
         ) {
         case .updated(let document):
             TimerSnapshotStore.save(document)
+            return true
         case .keptExisting, .skippedNoAuth, .skippedPendingLocal:
-            break
+            return false
         }
     }
 

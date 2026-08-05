@@ -104,8 +104,9 @@ final class WidgetSilentPushHandlerTests: XCTestCase {
         XCTAssertTrue(TimerSnapshotStore.hasPendingLocalMutation(now: Date()))
 
         // Silent refresh should short-circuit and leave the paused snapshot intact.
-        let wrote = await WidgetSilentPushHandler.refreshSnapshotFromServer()
-        XCTAssertFalse(wrote, "Pending-local gate must block silent push overwrite")
+        let outcome = await WidgetSilentPushHandler.refreshSnapshotFromServer()
+        XCTAssertEqual(outcome, .noData,
+                       "Pending-local gate must block silent push overwrite and report noData (not transientFailure)")
 
         let after = TimerSnapshotStore.load()
         XCTAssertEqual(after.timers.first?.phase, .paused)

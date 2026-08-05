@@ -61,14 +61,25 @@ final class DeepLinkRouter {
     /// by Share/Action extensions.
     static let pendingRecipeIdKey = "routing.pendingRecipeId"
 
-    /// Last URL consumed by `handle(_:)`. Guards against double delivery of
-    /// the same Universal Link via both `.onOpenURL` and
-    /// `.onContinueUserActivity(NSUserActivityTypeBrowsingWeb)` (spec 059):
-    /// on some scene/lifecycle configurations iOS calls both callbacks for
-    /// one tap. Without this guard, the second call would re-trigger
-    /// navigation even after the coordinator cleared `pending`.
-    /// Spec 059 architecture review, finding #2.
+    /// Last URL consumed by `handle(_:)` plus the wall-clock time it was
+    /// routed. Guards against double delivery of the same Universal Link via
+    /// both `.onOpenURL` and `.onContinueUserActivity(NSUserActivityTypeBrowsingWeb)`
+    /// (spec 059): on some scene/lifecycle configurations iOS calls both
+    /// callbacks for one tap. The double-fire happens within milliseconds;
+    /// a genuine second tap by the user is seconds-to-minutes apart.
+    ///
+    /// The TTL window (`lastHandledURLDedupWindow`) keeps the dedup tight
+    /// enough to suppress iOS's same-tap double-fire, but wide enough that a
+    /// real user re-tap of the same link still routes. Without TTL, a static
+    /// `URL?` slot permanently blocks the second delivery and the user has
+    /// to kill the app to navigate again. Code review 2026-08-05, finding #1.
     private static var lastHandledURL: URL?
+    private static var lastHandledAt: Date?
+
+    /// Same-tap double-delivery window. iOS double-fires within ~10–100 ms;
+    /// 2 s leaves comfortable headroom for slower devices / scene transitions
+    /// without absorbing a genuine second tap (which is rarely < 2 s apart).
+    static let lastHandledURLDedupWindow: TimeInterval = 2
 
     var pending: DeepLink?
 
@@ -87,8 +98,9 @@ final class DeepLinkRouter {
     /// Parse an inbound URL and queue it as a deep link.
     /// Called from `.onOpenURL` and Universal Link user activities.
     ///
-    /// Double-delivery guard: if the same URL was already routed (see
-    /// `lastHandledURL`), this is a no-op.
+    /// Double-delivery guard: if the same URL was routed within
+    /// `lastHandledURLDedupWindow`, this is a no-op. After the window
+    /// elapses, the same URL routes again (real user re-tap).
     ///
     /// Supported routes:
     /// - `recipe-scaler://recipe/{recipeId}` → `.openRecipe`
@@ -103,9 +115,14 @@ final class DeepLinkRouter {
     /// - `https://recipe-scaler.ru/public/@/{username}` → `.openPublicProfile`
     /// - `https://recipe-scaler.ru/public/@/{username}/{recipeId}` → `.openPublicRecipe`
     static func handle(_ url: URL) {
-        if url == lastHandledURL { return }
+        if let last = lastHandledURL, last == url,
+           let handledAt = lastHandledAt,
+           Date().timeIntervalSince(handledAt) < lastHandledURLDedupWindow {
+            return
+        }
         if let link = parse(url) {
             lastHandledURL = url
+            lastHandledAt = Date()
             shared.handle(link)
         }
     }
@@ -113,6 +130,13 @@ final class DeepLinkRouter {
     /// Test-only reset of the double-delivery guard.
     static func _resetLastHandledURLForTesting() {
         lastHandledURL = nil
+        lastHandledAt = nil
+    }
+
+    /// Test-only backdate of the last delivery timestamp, so tests that want
+    /// to simulate a post-TTL re-tap don't have to sleep for real seconds.
+    static func _backdateLastHandledForTesting(by seconds: TimeInterval) {
+        lastHandledAt = Date().addingTimeInterval(-seconds)
     }
 
     /// Pure parse for tests and callers that want the link without mutating state.

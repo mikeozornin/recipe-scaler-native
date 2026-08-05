@@ -34,8 +34,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             return
         }
         Task { @MainActor in
-            let updated = await WidgetSilentPushHandler.refreshSnapshotFromServer()
-            completionHandler(updated ? .newData : .failed)
+            let outcome = await WidgetSilentPushHandler.refreshSnapshotFromServer()
+            switch outcome {
+            case .newData:
+                completionHandler(.newData)
+            case .noData:
+                // Intentional skip (signed out, pending-local, no change, empty
+                // payload). Reporting `.noData` (not `.failed`) prevents APNs
+                // from redelivering the same silent push with backoff forever.
+                // Code review 2026-08-05, finding #2.
+                completionHandler(.noData)
+            case .transientFailure:
+                // Real transport/decode error — a retry is useful.
+                completionHandler(.failed)
+            }
         }
     }
 
@@ -78,6 +90,9 @@ struct RecipeScalerNativeApp: App {
         // Install bundle swizzle + apply stored language preference before any
         // SwiftUI view body evaluates `String(localized:)` / `LocalizedStringKey`.
         AppLanguagePreference.bootstrap()
+        #if DEBUG
+        DebugLaunchOptions.applyScreenshotPreferences()
+        #endif
         // Force CoreText registration of bundled Martian OTF faces now, so the
         // first .environment(\.font, AppTypography.body) lookup resolves them.
         // This is the single source of truth for the main app target — the
