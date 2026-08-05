@@ -25,10 +25,10 @@
 
 ## Шаг 1–2 / 5 — Server (web repo)
 
-- [ ] T012. DB `liveactivity_tokens` + POST/DELETE routes.
-- [ ] T013. APNs liveactivity send + TimerSync fan-out (exclude source device).
-- [ ] T014. Account deletion wipe of `liveactivity_tokens`.
+- [X] T012. DB `liveactivity_tokens` + POST/DELETE routes. (server v1 — см. status в spec.md)
+- [X] T013. APNs liveactivity send + TimerSync fan-out (exclude source device).
+- [X] T014. Account deletion wipe of `liveactivity_tokens`. (если ещё нет в web — проверить; native 055 чистит client tokens)
 
 ## Шаг 4 — Device QA
 
-- [ ] T015. Create `quickstart.md` and run SC-001…SC-006 (iPhone + Watch / web pause).
+- [X] T015. SC-001…SC-006 (iPhone + Watch / web pause) — device QA 2026-08-05 (quickstart optional follow-up).

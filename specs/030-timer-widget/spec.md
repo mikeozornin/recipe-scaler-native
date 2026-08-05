@@ -2,14 +2,14 @@
 
 **Ветка**: `030-timer-widget` (работа на `master` допустима для doc/v2-slice)
 **Дата**: 2026-08-04
-**Статус**: 🟡 v1 UI DONE · v2 background refresh — в работе
+**Статус**: ✅ DONE (2026-08-05) — v1 UI + v2 background (Intent→snapshot, silent push, Provider) + **device QA**
 **Версия**: **v2** (background widget updates)
 **Зависимости**:
 - [014-timers-sync](../014-timers-sync/spec.md) ✅ DONE
-- [023-push-notifications](../023-push-notifications/spec.md) ✅ DONE (device APNs token + silent `content-available`)
-- [044-timer-live-activity](../044-timer-live-activity/spec.md) 🟡 (локальный ActivityKit + Intent)
-- [058-live-activity-push](../058-live-activity-push/spec.md) 🟡 (LA push `update`/`end`; **не** переспецифицируем здесь — только cross-link)
-- [039-watchos-timers](../039-watchos-timers/spec.md) 🟡 (`GET /api/v1/timers/active`, `ServerActiveTimer`)
+- [023-push-notifications](../023-push-notifications/spec.md) ✅ DONE
+- [044-timer-live-activity](../044-timer-live-activity/spec.md) ✅ DONE
+- [058-live-activity-push](../058-live-activity-push/spec.md) ✅ v1 DONE
+- [039-watchos-timers](../039-watchos-timers/spec.md) 🟡 companion (`GET /api/v1/timers/active`, `ServerActiveTimer`)
 
 ## Цель
 

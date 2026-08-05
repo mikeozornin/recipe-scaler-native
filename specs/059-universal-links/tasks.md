@@ -21,3 +21,7 @@
 - [x] T023 `onContinueUserActivity(NSUserActivityTypeBrowsingWeb)`
 - [x] T024 Unit tests UL matrix
 - [x] T025 `xcodebuild` build / tests
+
+## Phase 4 — Device QA
+
+- [x] T030 Notes/Messages → public profile/recipe UL; cold start — 2026-08-05

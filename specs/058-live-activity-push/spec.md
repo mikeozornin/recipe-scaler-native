@@ -2,7 +2,7 @@
 
 **Ветка**: `058-live-activity-push`
 **Дата**: 2026-08-03
-**Статус**: 🟢 **v1** (`event=update` / `event=end`) — native client готов (pushType `.token` + register/unregister); **server v1 реализован** в `recipe-scaler-web` (fan-out + APNs). 🟡 **v2** (`event=start`, iOS 18+) — специфицировано ниже, реализация отдельно.
+**Статус**: 🟢 **v1** (`event=update` / `event=end`) — ✅ native + server + **device QA** 2026-08-05 (Watch/web → LA на фоне). 🟡 **v2** (`event=start`, iOS 18+) — специфицировано ниже, реализация отдельно.
 **Зависимости**:
 - [023-push-notifications](../023-push-notifications/spec.md) ✅ DONE (APNs ключ + entitlements)
 - [044-timer-live-activity](../044-timer-live-activity/spec.md) 🟡 (локальный ActivityKit готов; push v1 — эта спека)

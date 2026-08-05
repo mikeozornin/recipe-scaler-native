@@ -2,21 +2,21 @@
 
 **Ветка**: `023-push-notifications`  
 **Дата**: 2026-06-04  
-**Статус**: 🟡 В работе (~95% кода, аудит 2026-08-04) — регистрация APNs + schedule/cancel + toggle в Account реализованы; device QA pending. **Блокер**: device QA на физическом устройстве (см. [PAID-APPLE-DEVELOPER-REQUIRED.md](../../docs/PAID-APPLE-DEVELOPER-REQUIRED.md)).  
+**Статус**: ✅ DONE (2026-08-05) — код + **device QA** alert push (toggle → completion в фоне). Silent path для виджета — см. [030](../030-timer-widget/spec.md). [PAID-doc](../../docs/PAID-APPLE-DEVELOPER-REQUIRED.md).  
 **Зависимости**: `014-timers-sync` ✅ (синк и UI таймеров), Phase 1 `TimerManager` (локальные UN)  
 **Эталон**: PRD § Timers, `recipe-scaler-web/llm/ARCHITECTURE.md` § Timers And Push, `recipe-scaler-web/recipe-scaler/src/services/timer-service.ts`, `server/src/routes/push.ts`
 
-## Аудит реализации (2026-06-15)
+## Аудит реализации (2026-08-05)
 
 | Требование | Статус |
 |------------|--------|
-| US1 APNs registration | ✅ `PushRegistrationService` → `POST /api/push/apns-register`; `RecipeScalerNativeApp` delegate |
-| US2 completion в фоне | 🟡 код есть; device QA pending |
-| US3 reminder >30 мин | 🟡 серверная логика; клиент передаёт `duration_seconds` |
-| US4 pause/delete/resume → cancel/schedule | ✅ `PushScheduleService` + хуки в `TimerManager` |
+| US1 APNs registration | ✅ `PushRegistrationService` + Account toggle |
+| US2 completion в фоне | ✅ device QA |
+| US3 reminder >30 мин | ✅ сервер + клиент `duration_seconds` (покрыто в device QA / серверной логике) |
+| US4 pause/delete/resume → cancel/schedule | ✅ `PushScheduleService` + хуки |
 | US5 coexistence с локальными UN | ✅ дедуп в `TimerManager` |
-| FR-PUSH-004 deep link | 🟡 через payload (проверить на device) |
-| Toggle push в Account | ✅ `AccountView` preferences + `AccountSettingsViewModel.setTimerNotificationsEnabled`; footer про виджет/LA |
+| FR-PUSH-004 deep link | ✅ через payload (device QA) |
+| Toggle push в Account | ✅ |
 
 Код: `PushRegistrationService.swift`, `PushScheduleService.swift`, контракт `contracts/timer-push-schedule.md`.
 

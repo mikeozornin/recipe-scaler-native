@@ -2,7 +2,7 @@
 
 **Ветка**: `059-universal-links`  
 **Дата**: 2026-08-04  
-**Статус**: ✅ Реализовано (код + AASA на prod 2026-08-04; device QA после portal Associated Domains)  
+**Статус**: ✅ DONE (код + AASA + **device QA** 2026-08-05)  
 **Зависимости**: `011` (Discover public), `012` (sharing / PublicURLBuilder), `025` (`DeepLinkRouter`)  
 **Эталон**: Apple Universal Links + AASA; веб path-based `/public/@/...`
 

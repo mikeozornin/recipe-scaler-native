@@ -1,7 +1,7 @@
 # План: Home Widget — TimerWidget (v2)
 
 **Date**: 2026-08-04 | **Spec**: [spec.md](./spec.md)
-**Статус**: v1 UI DONE · v2 background refresh — планирование/реализация
+**Статус**: v1 UI DONE · v2 код + device QA DONE (2026-08-05)
 **Data model**: [data-model.md](./data-model.md)
 **Contract**: [contracts/widget-push.md](./contracts/widget-push.md)
 **Layout (Figma, без rewrite)**: [layout.md](./layout.md) · `bash scripts/audit-ui-layout.sh specs/030-timer-widget`

@@ -1,24 +1,31 @@
 # Платный Apple Developer Program — портал и device smoke
 
-**Проект**: Recipe Scaler Native (весь `recipe-scaler-native`)  
-**Статус**: платный аккаунт **есть** (team `ZBPX4JYT24`) — остаётся сверить портал (App Group / App IDs / Keychain Sharing) и прогнать device smoke для Share/Action.
+**Проект**: Recipe Scaler Native  
+**Статус**: платный аккаунт **есть** (team `ZBPX4JYT24`). Device QA ✅: Share (025), push (023), LA (044/058), widget (030), Universal Links (059). Watch (039) — ⏸️ нет железа; TestFlight — по желанию.
 
 Программа: [Apple Developer Program](https://developer.apple.com/programs/).
 
 ---
 
-## Краткий вывод
+## Карта фич (актуально 2026-08-05)
 
-| Без платного (Personal Team / бесплатный Apple ID) | С платным Developer Program |
-|----------------------------------------------------|-----------------------------|
-| Сборка и запуск **основного приложения** на симуляторе; часто на своём iPhone (подпись ~7 дней, лимиты Apple) | Стабильнее подпись, меньше сюрпризов с **app extensions** |
-| Разработка UI, API, offline, Yjs, импорт из **sheet** внутри app | То же |
-| **Deep link** `recipe-scaler://` в main app | То же |
-| **TestFlight**, **App Store**, публичное распространение | Да |
-| **App Groups** + **Keychain Sharing** в портале → общие креды app ↔ extension на **реальном iPhone** | Нужно для production Share/Action |
-| Полноценный **Push** (APNs) в проде | Capability + ключи в портале (когда включим push в релизе; **после Activity Charts**) |
+Сверка по спекам + свежим коммитам (`c63ce83` APNs toggle, `4d29d9a` widget silent push, `f4c1983` LA→widget, `058` LA push, `374e705`/`ac96282` Universal Links, `42c5c47` Share, `19d7baf`+ watch).
 
-Большую часть нативки можно вести и собирать **без** платного аккаунта. Ниже — всё, что для **продакшена на устройствах пользователей** или для **расширений системы** требует платной программы.
+| Фича | Spec | Код | Портал / entitlements | Device QA |
+|------|------|-----|------------------------|-----------|
+| **Alert + silent push (таймеры)** | [023](../specs/023-push-notifications/spec.md) | ✅ register + schedule/cancel + Account toggle | `aps-environment` на main (prod/debug); Push capability + APNs `.p8` на backend | ✅ alert push device QA 2026-08-05 |
+| **LA local + Lock Screen Intent** | [044](../specs/044-timer-live-activity/spec.md) | ✅ ActivityKit + Intent → snapshot/widget | App Group на LA extension | ✅ вместе с 058 device QA |
+| **LA push update/end** | [058](../specs/058-live-activity-push/spec.md) | ✅ client v1; server v1 (web) | Push на main; topic `…push-type.liveactivity` | ✅ Watch/web → LA на фоне, 2026-08-05 |
+| **LA remote start** | 058 v2 | ❌ отдельно | то же + iOS 18+ | — |
+| **Home Widget v1 UI** | [030](../specs/030-timer-widget/spec.md) | ✅ | App Group + Keychain на widget | ✅ device QA 2026-08-05 |
+| **Widget background refresh** | 030 v2 | ✅ Phase A–B4 в коде (silent + Provider; WidgetKit push registrar iOS 26+) | Push на main (+ widget `aps-environment` development в repo) | ✅ LA→widget + silent/Provider 2026-08-05 |
+| **Share / Action** | [025](../specs/025-share-extension/spec.md) | ✅ + Keychain Sharing / deep link fixes | App Group + Keychain на main/Share/Action | ✅ device smoke 2026-08-05 |
+| **Universal Links** | [059](../specs/059-universal-links/spec.md) | ✅ + AASA на prod | Associated Domains `applinks:recipe-scaler.ru` | ✅ device QA 2026-08-05 |
+| **watchOS timers** | [039](../specs/039-watchos-timers/spec.md) | ✅ companion v1 | App ID + App Group watch | ⏸️ нет Apple Watch у владельца — отложено |
+| **TestFlight / App Store** | — | — | Distribution profiles | ⬜ по готовности smoke |
+| Associated Domains / iCloud / Sign in with Apple (прочее) | — | UL только | по необходимости | — |
+
+**Не блокер кода:** milestone «production push после Activity Charts / Live Activities» (DECISIONS 2026-06-08) **закрыт** — LA shipped; push capability включать и проверять сейчас.
 
 ---
 
@@ -26,7 +33,7 @@
 
 | Сущность | Значение |
 |----------|----------|
-| Team ID (в `project.pbxproj`) | `ZBPX4JYT24` |
+| Team ID | `ZBPX4JYT24` |
 | Main app | `ru.recipescaler.RecipeScaler` |
 | Framework `RecipeScalerCore` | `ru.recipescaler.RecipeScaler.Core` |
 | Share Extension | `ru.recipescaler.RecipeScaler.Share` |
@@ -37,147 +44,142 @@
 | **App Group** | `group.ru.recipescaler.RecipeScaler` |
 | **Keychain access group** | `$(AppIdentifierPrefix)ru.recipescaler.RecipeScaler` → runtime `ZBPX4JYT24.ru.recipescaler.RecipeScaler` |
 
-Файлы entitlements в репозитории (должны совпасть с порталом и provisioning):
+Entitlements в репо (должны совпасть с порталом):
 
-- `RecipeScalerNative/RecipeScalerNative.entitlements` — App Groups + Keychain Sharing
-- `RecipeScalerNative/RecipeScalerNativeDebug.entitlements` — то же (+ debug push env)
-- `ShareExtension/ShareExtension.entitlements` — App Groups + Keychain Sharing
-- `ActionExtension/ActionExtension.entitlements` — App Groups + Keychain Sharing
-- `HomeWidgetExtension/HomeWidgetExtension.entitlements`
-- `TimerLiveActivityExtension/TimerLiveActivityExtension.entitlements`
+| Файл | Capabilities |
+|------|----------------|
+| `RecipeScalerNative/RecipeScalerNative.entitlements` | App Groups, Keychain Sharing, **Push** (`aps-environment=production`), **Associated Domains** |
+| `RecipeScalerNative/RecipeScalerNativeDebug.entitlements` | то же, `aps-environment=development` |
+| `ShareExtension` / `ActionExtension` | App Groups + Keychain Sharing |
+| `HomeWidgetExtension` | App Groups + Keychain + `aps-environment` |
+| `TimerLiveActivityExtension` | App Groups + Keychain |
+| `RecipeScalerNativeWatch` | App Groups + Keychain |
 
 ---
 
-## 1. Apple Developer Portal (чеклист — сверить / донастроить)
+## 1. Apple Developer Portal (сверить / донастроить)
 
 ### 1.1 App Group
 
 1. [Identifiers → App Groups](https://developer.apple.com/account/resources/identifiers/list/applicationGroup)
-2. Если нет — **+** → App Groups
-3. Identifier: `group.ru.recipescaler.RecipeScaler`
-4. Description: например `Recipe Scaler — shared storage for extensions`
-5. Сохранить
+2. Identifier: `group.ru.recipescaler.RecipeScaler`
+3. Description: например `Recipe Scaler — shared storage for extensions`
 
 ### 1.2 App IDs и capabilities
 
-Для каждого Bundle ID ниже:
+| Bundle ID | Capabilities |
+|-----------|----------------|
+| `ru.recipescaler.RecipeScaler` | App Groups; Keychain Sharing `ru.recipescaler.RecipeScaler`; **Push Notifications**; **Associated Domains** `applinks:recipe-scaler.ru` |
+| `…Share` / `…Action` | App Groups + Keychain Sharing (**без** Associated Domains / без Push) |
+| `…HomeWidget` | App Groups (+ Push, если нужен WidgetKit push token path) |
+| `…TimerLiveActivity` | App Groups |
+| `…watchkitapp` | App Groups |
 
-| Bundle ID | Нужные capabilities |
-|-----------|---------------------|
-| `ru.recipescaler.RecipeScaler` | App Groups → `group.ru.recipescaler.RecipeScaler`; **Keychain Sharing** → `ru.recipescaler.RecipeScaler`; **Associated Domains** → `applinks:recipe-scaler.ru` (spec `059-universal-links`) |
-| `ru.recipescaler.RecipeScaler.Share` | App Groups + Keychain Sharing (как выше; **без** Associated Domains) |
-| `ru.recipescaler.RecipeScaler.Action` | App Groups + Keychain Sharing (как выше; **без** Associated Domains) |
+Share/Action (025): креды (`SharedAuthStore.token` / `userId`) в **Keychain access group**, не в App Group UserDefaults.
 
-Минимум для фичи Share/Action (spec `025-share-extension`):
+### 1.2.1 Push / APNs (023 + 058 + 030 silent)
 
-- Main + Share + Action — один App Group + один Keychain Sharing group.
-- Креды (`SharedAuthStore.token` / `userId`) живут в **Keychain access group**, не в App Group UserDefaults.
+1. Main App ID → **Push Notifications** → On.
+2. [Keys](https://developer.apple.com/account/resources/authkeys/list) → APNs key (`.p8`) → backend (`recipe-scaler-web`).
+3. Topics (server):
+   - alert / silent device: `ru.recipescaler.RecipeScaler`
+   - Live Activity: `ru.recipescaler.RecipeScaler.push-type.liveactivity`
+   - WidgetKit push (iOS 26+): `ru.recipescaler.RecipeScaler.push-type.widgets`
+4. Debug builds → development APNs; Release/TestFlight → production.
 
-### 1.2.1 Associated Domains (Universal Links, spec `059-universal-links`)
+### 1.2.2 Associated Domains (059)
 
-1. [Identifiers](https://developer.apple.com/account/resources/identifiers/list) → App ID `ru.recipescaler.RecipeScaler` → **Associated Domains** → On.
-2. Xcode main target: **Signing & Capabilities** → Associated Domains → `applinks:recipe-scaler.ru` (уже в entitlements).
-3. Сервер: `GET https://recipe-scaler.ru/.well-known/apple-app-site-association` → 200, `application/json`, `appID` = `ZBPX4JYT24.ru.recipescaler.RecipeScaler`, paths = `["/public/@/*"]`.
-4. Smoke:
+1. Main App ID → Associated Domains → On.
+2. Xcode: `applinks:recipe-scaler.ru` (уже в entitlements).
+3. AASA: `GET https://recipe-scaler.ru/.well-known/apple-app-site-association` → 200, `application/json`, `appID` = `ZBPX4JYT24.ru.recipescaler.RecipeScaler`.
 
 ```bash
 curl -sI https://recipe-scaler.ru/.well-known/apple-app-site-association
 curl -s https://recipe-scaler.ru/.well-known/apple-app-site-association | jq .
 ```
 
-Apple CDN может кэшировать AASA до ~1 суток после первого fetch.
+Apple CDN может кэшировать AASA до ~1 суток.
 
-**На будущее** (spec `023-push-notifications`, когда пойдём в прод с пушами — **только после Activity Charts**):
+### 1.3 Provisioning
 
-- На App ID main app включить **Push Notifications**.
-- Создать APNs key / сертификат в портале; настроить backend.
+Development (+ Distribution при TestFlight) для всех таргетов выше.  
+Xcode: **Automatically manage signing**, team `ZBPX4JYT24`, без красных ошибок.
 
-### 1.3 Provisioning profiles
+### 1.4 Распространение
 
-- Development (и при необходимости Distribution) для:
-  - `RecipeScalerNative`
-  - `ShareExtension`
-  - `ActionExtension`
-- Xcode: **Automatically manage signing**, одна Team (`ZBPX4JYT24`), без ошибок на всех таргетах.
+- **TestFlight** — Share Sheet, extensions, push, чужие устройства.
+- **App Store** — extensions внутри основного бинарника.
 
-### 1.4 Распространение (только платное)
-
-- **TestFlight** — тест на чужих iPhone, Share Sheet, extensions.
-- **App Store** — релиз; extensions встроены в основной бинарник.
-
-### 1.5 Проверка entitlements на установленном бинарнике
-
-После install на device/sim:
+### 1.5 Проверка entitlements на бинарнике
 
 ```bash
 codesign -d --entitlements :- /path/to/RecipeScalerNative.app
 codesign -d --entitlements :- /path/to/RecipeScalerNative.app/PlugIns/ShareExtension.appex
 ```
 
-Ожидается:
-
-- `com.apple.security.application-groups` = `group.ru.recipescaler.RecipeScaler`
-- `keychain-access-groups` содержит `ZBPX4JYT24.ru.recipescaler.RecipeScaler` (не литерал `$(AppIdentifierPrefix)…`)
+Ожидается: App Group; `keychain-access-groups` с `ZBPX4JYT24.ru.recipescaler.RecipeScaler`; на main — `aps-environment` и Associated Domains.
 
 ---
 
-## 2. Xcode (после портала)
+## 2. Xcode
 
-На таргетах **RecipeScalerNative**, **ShareExtension**, **ActionExtension**:
+На **main / Share / Action** (минимум для 025):
 
-1. **Signing & Capabilities** → **App Groups** → `group.ru.recipescaler.RecipeScaler`
-2. **Keychain Sharing** → `ru.recipescaler.RecipeScaler` (Xcode допишет team prefix)
+1. App Groups → `group.ru.recipescaler.RecipeScaler`
+2. Keychain Sharing → `ru.recipescaler.RecipeScaler`
+3. Main: Push + Associated Domains
 
-Детальный setup таргетов и smoke: `specs/025-share-extension/quickstart.md`.
-
----
-
-## 3. Share / Action на iPhone
-
-### Что блокировало без портала / при сломанном access group
-
-- Extension читает `SharedAuthStore.token` (Keychain). Без общего **keychain-access-groups** main app и extension видят разные скоупы → `share-extension.error-not-signed-in`.
-- App Group нужен для других shared IPC (snapshots и т.п.); **логин extension зависит от Keychain Sharing**.
-
-### Device smoke (обязателен перед релизом)
-
-Полный чеклист SC-001…SC-008 — в `specs/025-share-extension/quickstart.md` (Часть 2 / device). Кратко:
-
-1. Логин в main app → Safari Share → extension **не** «не залогинен».
-2. Импорт URL → «Открыть рецепт» → `recipe-scaler://recipe/{id}`.
-3. Messages / Telegram / Photos / Safari Action.
-4. Logout → Share показывает not-signed-in; offline → сетевая ошибка + Retry.
-
-На **симуляторе** можно отлаживать UI и deep link; это **не заменяет** проверку на телефоне.
-
-### Весь продукт
-
-- Раздача сборки тестерам через **TestFlight**.
-- Публикация в **App Store**.
-- Любые **новые** App IDs / App Groups / Push / Associated Domains / iCloud — регистрация в портале под платной программой.
+Детали Share: `specs/025-share-extension/quickstart.md`.  
+Widget: `specs/030-timer-widget/quickstart.md`.
 
 ---
 
-## 4. Порядок действий (portal → device)
+## 3. Device smoke — приоритеты
 
-1. Чеклист портала (§ 1) — App Group + Keychain Sharing на трёх App ID.
-2. Xcode: три таргета, Signing без красных ошибок.
-3. Установка на **свой iPhone** (не только симулятор).
-4. Логин в app → убедиться, что `SharedAuthStore.token` записан (debug auto-login OK).
-5. Share из Safari → extension видит сессию → импорт → «Открыть рецепт» / deep link.
-6. Safari → Action «Импорт в Recipe Scaler».
-7. Остальной smoke (Messages / Telegram / Photos / logout / offline).
-8. При необходимости: TestFlight.
+### ✅ Share / Action (025) — device QA 2026-08-05
+
+Проверено: логин → Safari Share (сессия видна) → импорт → «Открыть рецепт»; Messages / Telegram / Photos / Safari Action; logout → not-signed-in.
+
+### ✅ Alert push (023) — device QA 2026-08-05
+
+Проверено: Profile toggle → permission → completion в фоне/killed; reminder / deep link / pause-cancel — по прогону пользователя.
+
+### ✅ LA push (058) + local LA (044) — device QA 2026-08-05
+
+Проверено: таймер → Lock Screen; pause/resume/delete с Watch/web при свёрнутом iPhone → карточка обновляется/исчезает без открытия app.
+
+### ✅ Home Widget (030) — device QA 2026-08-05
+
+Проверено: TimerWidget на Home/Lock; pause/resume с LA → виджет сразу; pause с веба/другого устройства при фоне app → подтягивание (silent/Provider).
+
+### ✅ Universal Links (059) — device QA 2026-08-05
+
+Проверено: Notes/Messages → `https://recipe-scaler.ru/public/@/{user}` (+ recipe) открывает app на Discover; cold start сохраняет навигацию.
+
+### ⏸️ Watch (039) — отложено (нет Apple Watch)
+
+Код companion v1 есть. Device QA на парных часах — когда появится железо или тестер с Watch. LA push с «другого устройства» уже проверен через веб (058).
+
+### P2 — TestFlight
+
+Сборка с production `aps-environment` + Distribution; smoke Share + push на чужом устройстве.
+
+---
+
+## 4. Порядок на ближайшие дни
+
+1. TestFlight — по желанию / перед релизом.
+2. Watch (039) device QA — когда будет Apple Watch.
 
 ---
 
 ## 5. Заметки
 
-- Бесплатная подпись: срок действия, лимит приложений/устройств; **extensions**, **App Groups** и **Keychain Sharing** — частые ошибки `Failed to register bundle identifier` / provisioning profile.
-- Платный аккаунт не заменяет код в репозитории; он **включает** портал и профили под уже прописанные entitlements.
-- Runtime access group в `SharedAuthStore` — `ZBPX4JYT24.ru.recipescaler.RecipeScaler` (макрос `$(AppIdentifierPrefix)` раскрывается только в entitlements XML).
-- Сменили Bundle ID extension в Xcode — обновить этот файл и App IDs в портале.
+- Платный аккаунт не заменяет код; он открывает портал и профили под уже прописанные entitlements.
+- Runtime Keychain group в `SharedAuthStore`: `ZBPX4JYT24.ru.recipescaler.RecipeScaler`.
+- Смена Bundle ID → обновить этот файл и App IDs в портале.
+- Исторический список «что можно было без платного» — [`NATIVE-FEATURES-NO-PAID-ACCOUNT.md`](NATIVE-FEATURES-NO-PAID-ACCOUNT.md) (архив).
 
-**Связанные спеки**: `025-share-extension` (extensions, deep link), `023-push-notifications` (push — отдельно при релизе, **после Activity Charts**), `041-auth-device-tokens` (bearer в Keychain).
+**Связанные спеки**: `023`, `025`, `030`, `039`, `044`, `058`, `059`, `041` (bearer Keychain).
 
-**Дата фиксации**: 2026-06-06; обновлено 2026-08-04 (платный аккаунт активен; Keychain Sharing + SharedAuthStore access group; device smoke checklist).
+**Дата фиксации**: 2026-06-06; обновлено **2026-08-05** (аккаунт активен; push/LA/widget/UL/watch в карте; убрано «после Activity Charts»).

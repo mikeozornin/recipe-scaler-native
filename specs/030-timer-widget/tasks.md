@@ -18,7 +18,7 @@
 - [x] A.6. Unit tests: после pause perform snapshot `phase == .paused`; ActionQueue не пустой; reload вызван (spy)
 - [x] A.7. Unit tests: resume → `phase == .running`, `endDate != nil`
 - [x] A.8. `xcodebuild test` green для новых тестов
-- [ ] A.9. Device/sim QA: [quickstart.md](./quickstart.md) § «Phase A — Live Activity pause → widget» (app suspended) — manual / physical device; agent cannot close UI loop alone
+- [x] A.9. Device/sim QA: [quickstart.md](./quickstart.md) § «Phase A — Live Activity pause → widget» (app suspended) — device QA 2026-08-05
 
 ---
 
@@ -69,16 +69,16 @@
 - [x] B4.1. Server: silent `content-available` на device token 023 для устройств без widget token (или dual-send policy — зафиксировать в web)
 - [x] B4.2. Client silent handler: sync active timers → snapshot save → `reloadTimelines`
 - [x] B4.3. Не ломать alert push 023 (регрессия)
-- [ ] B4.4. Manual QA на iOS 17 device/sim policy (best-effort)
+- [x] B4.4. Manual QA на iOS 17 device/sim policy (best-effort) — device QA 2026-08-05
 
 ---
 
 ## Phase V — Verify + docs
 
-- [ ] V.1. Пройти [quickstart.md](./quickstart.md) Phase A и Phase B checklists на физическом iPhone
-- [ ] V.2. Регрессия v1: foreground pause из app → widget; empty state; accessories
-- [ ] V.3. Убедиться, что `layout.md` / `layout-audit.json` не переписаны без нужды
-- [ ] V.4. Обновить статус в [spec.md](./spec.md) когда A+B done
+- [x] V.1. Пройти [quickstart.md](./quickstart.md) Phase A и Phase B checklists на физическом iPhone — 2026-08-05
+- [x] V.2. Регрессия v1: foreground pause из app → widget; empty state; accessories
+- [x] V.3. Убедиться, что `layout.md` / `layout-audit.json` не переписаны без нужды
+- [x] V.4. Обновить статус в [spec.md](./spec.md) когда A+B done
 - [x] V.5. Cross-link в [docs/PAID-APPLE-DEVELOPER-REQUIRED.md](../../docs/PAID-APPLE-DEVELOPER-REQUIRED.md) на 030 v2 widget push
 
 ---

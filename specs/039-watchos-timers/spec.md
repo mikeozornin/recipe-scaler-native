@@ -2,8 +2,8 @@
 
 **Линейная задача**: [MIK-184](https://linear.app/mikeozornin/issue/MIK-184/watchos-companion-app-prosmotr-tajmerov-i-pauseresume)
 **Дата**: 2026-06-26
-**Статус**: 🟡 В работе
-**Зависимости**: [014-timers-sync](../014-timers-sync/spec.md) (DONE), [023-push-notifications](../023-push-notifications/spec.md) (DONE), [030-timer-widget](../030-timer-widget/spec.md) (DONE — переиспользуем примитивы)
+**Статус**: 🟢 companion v1 в коде; ⏸️ **device QA отложено** — нет Apple Watch у владельца (2026-08-05). Кросс-девайс LA уже покрыт вебом (058).
+**Зависимости**: [014-timers-sync](../014-timers-sync/spec.md) (DONE), [023-push-notifications](../023-push-notifications/spec.md) (DONE), [030-timer-widget](../030-timer-widget/spec.md) (DONE)
 
 ## Цель
 

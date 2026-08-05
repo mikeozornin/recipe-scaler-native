@@ -154,6 +154,8 @@ Chronological log of substantive choices (newest last).
 
 **Rationale:** User wants to test timer visibility on lock screen first; push registration requires paid Developer Program and should follow the Activity Charts milestone, not precede it.
 
+**Superseded 2026-08-05:** Live Activities (044) + LA push v1 (058) shipped; paid account active. Production alert/silent push (023) and widget background (030 v2) are in scope now — see updated PAID-doc.
+
 ---
 
 ### 2026-06-10 — Yjs schema mismatch: native bridge writes elements, web tiptap expects marks

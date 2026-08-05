@@ -32,7 +32,7 @@
 
 ## Платформа и расширения
 
-- Paid Apple Developer Program ($99/yr): optional for simulator/dev; TestFlight, App Store, App Groups on device, extensions, APNs — см. [PAID-APPLE-DEVELOPER-REQUIRED.md](PAID-APPLE-DEVELOPER-REQUIRED.md). Account preferences include a timer/push notifications toggle (permission + APNs device registration); silent push also wakes widget timelines when the app is backgrounded/killed.
+- Paid Apple Developer Program ($99/yr): **active** (team `ZBPX4JYT24`). Portal + device smoke — [PAID-APPLE-DEVELOPER-REQUIRED.md](PAID-APPLE-DEVELOPER-REQUIRED.md). Timer push toggle registers APNs; silent push wakes widget timelines; Universal Links (`059`) + Share/Action (`025`) need device verification.
 - Share Extension + Action Extension targets exist for URL/text import (`specs/025-share-extension`); full on-device Share Sheet testing needs paid program + App Group provisioning.
 
 ## Экспорт и импорт данных (native)
