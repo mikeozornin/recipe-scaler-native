@@ -22,12 +22,16 @@ rg -q 'DELETE_TIMER'        "$TM"
 # New addTime API
 rg -q 'func addTime\(id: String, minutes: Int\)' "$TM"
 
-# Localized titles for the three actions + title/body
-rg -q 'timer\.notification\.action\.add-minute'        "$TM"
-rg -q 'timer\.notification\.action\.add-five-minutes'  "$TM"
-rg -q 'timer\.notification\.action\.delete'            "$TM"
-rg -q 'timer\.notification\.title'                     "$TM"
-rg -q 'timer\.notification\.body'                      "$TM"
+# Localized titles for the three actions + title/body (in-app locale, not String(localized:))
+rg -q 'Bundle\.currentLocalizedString\("timer\.notification\.action\.add-minute"\)'        "$TM"
+rg -q 'Bundle\.currentLocalizedString\("timer\.notification\.action\.add-five-minutes"\)'  "$TM"
+rg -q 'Bundle\.currentLocalizedString\("timer\.notification\.action\.delete"\)'            "$TM"
+rg -q 'Bundle\.currentLocalizedString\("timer\.notification\.title"\)'                     "$TM"
+rg -q 'Bundle\.currentLocalizedString\("timer\.notification\.body"\)'                      "$TM"
+if rg -n 'String\(localized: "timer\.notification\.' "$TM"; then
+  echo "FAIL: timer.notification.* still uses String(localized:) — must use Bundle.currentLocalizedString" >&2
+  exit 1
+fi
 
 # xcstrings has the new keys
 rg -q 'timer\.notification\.title'                     "$XC"

@@ -84,7 +84,7 @@ flowchart TD
 
 В `deliverCompletionNotification(for:)` (паритет с веб push):
 - `content.title = String(format: Bundle.currentLocalizedString("timer.notification.title"), timer.name)`
-- `content.body = String(localized: "timer.notification.body")`
+- `content.body = Bundle.currentLocalizedString("timer.notification.body")`
 
 ### FR-036-005 — Cancel-id fix
 

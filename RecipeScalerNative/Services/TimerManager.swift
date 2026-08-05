@@ -570,19 +570,22 @@ final class TimerManager: NSObject {
     // MARK: - Notifications
 
     private func registerNotificationCategories() {
+        // UNNotificationAction titles are UIKit strings — must use
+        // Bundle.currentLocalizedString so they follow the in-app language
+        // override (String(localized:) can resolve via system locale instead).
         let addOneMinute = UNNotificationAction(
             identifier: Self.addActionOneMinuteIdentifier,
-            title: String(localized: "timer.notification.action.add-minute"),
+            title: Bundle.currentLocalizedString("timer.notification.action.add-minute"),
             options: []
         )
         let addFiveMinutes = UNNotificationAction(
             identifier: Self.addActionFiveMinutesIdentifier,
-            title: String(localized: "timer.notification.action.add-five-minutes"),
+            title: Bundle.currentLocalizedString("timer.notification.action.add-five-minutes"),
             options: []
         )
         let deleteTimer = UNNotificationAction(
             identifier: Self.deleteTimerIdentifier,
-            title: String(localized: "timer.notification.action.delete"),
+            title: Bundle.currentLocalizedString("timer.notification.action.delete"),
             options: [.destructive]
         )
         let timerComplete = UNNotificationCategory(
@@ -627,7 +630,7 @@ final class TimerManager: NSObject {
             format: Bundle.currentLocalizedString("timer.notification.title"),
             timer.name
         )
-        content.body = String(localized: "timer.notification.body")
+        content.body = Bundle.currentLocalizedString("timer.notification.body")
         content.sound = .default
         var userInfo: [String: Any] = ["timerId": timer.id, "timerName": timer.name]
         if let recipeId = timer.recipeId, !recipeId.isEmpty {
