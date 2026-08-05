@@ -135,6 +135,15 @@ struct TimerLockScreenLiveActivityView: View {
                 .foregroundStyle(color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
+        } else if isLuminanceReduced {
+            // AOD / dimmed lock screen: system Text(timerInterval:) hides seconds as
+            // "44 : --". Show widget-style compact "44m" / "-44m" instead.
+            Text(TimerFormatting.compactRemaining(seconds: state.remainingSeconds()))
+                .font(Self.timerDigitsFont)
+                .monospacedDigit()
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
         } else if overdue, let endDate = state.endDate {
             HStack(spacing: 0) {
                 Text("-")
