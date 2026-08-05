@@ -93,7 +93,7 @@ sequenceDiagram
 
 ## Acceptance criteria
 
-- AC1. После `publish` баннер виден на Recipes tab над `DatabaseInitFailedBanner` (если тот тоже показан) и над всем списком.
+- AC1. После `publish` баннер виден на Recipes tab внутри списка (первая строка / верх ScrollView коллекций) и уезжает со скроллом.
 - AC2. Тап по крестику скрывает баннер мгновенно; dismiss-запрос уходит; повторный холодный старт баннер не возвращает.
 - AC3. Смена языка в Profile обновляет текст баннера в той же сессии без рефетча (`AppLanguagePreference` observed).
 - AC4. `clearForLogout()` корректно вызывается из `AppContainer.stopForLogout()` и из обоих вызовов `AuthService.wipeLocalSession(reason:)` / delete-account.

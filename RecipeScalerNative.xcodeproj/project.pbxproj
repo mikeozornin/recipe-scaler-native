@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		F1538D8095C24C9ABD330E36 /* SystemBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3AC0B0A69EA4637B134D9A5 /* SystemBannerView.swift */; };
+		SB061CHRB293A4B701000002 /* SystemBannerChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = SB061CHRB293A4B701000001 /* SystemBannerChrome.swift */; };
 		AC6A576E26314798BE3FBF1A /* SystemBannerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */; };
 		1758D7142F1C4429B9A37584 /* SystemBannerAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C08EE69E64A48AE8B692E6A /* SystemBannerAPI.swift */; };
 		0089FE21D37A4D84BF4355E3 /* ShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B8E4D1A7552D487F80885A2F /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -714,6 +715,7 @@
 
 /* Begin PBXFileReference section */
 		A3AC0B0A69EA4637B134D9A5 /* SystemBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerView.swift; sourceTree = "<group>"; };
+		SB061CHRB293A4B701000001 /* SystemBannerChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerChrome.swift; sourceTree = "<group>"; };
 		E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerStore.swift; sourceTree = "<group>"; };
 		3C08EE69E64A48AE8B692E6A /* SystemBannerAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerAPI.swift; sourceTree = "<group>"; };
 		057A55B7EC424D69BA4BA244 /* TimerLiveActivityMetadataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityMetadataProvider.swift; sourceTree = "<group>"; };
@@ -1514,6 +1516,7 @@
 				E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */,
 				E5F60718293A4B707F3A30E0 /* TransientStatusBanner.swift */,
 				A3AC0B0A69EA4637B134D9A5 /* SystemBannerView.swift */,
+				SB061CHRB293A4B701000001 /* SystemBannerChrome.swift */,
 				REMINDERS0008AA0008BB08 /* RemindersListPickerView.swift */,
 				C011ECB100000001 /* CollectionsRootView.swift */,
 				C011ECB200000002 /* CollectionFolderView.swift */,
@@ -2943,6 +2946,7 @@
 				E5F60718293A4B70321FB5DD /* ScreenAwakeStatusBanner.swift in Sources */,
 				E5F60718293A4B7005B62F9C /* TransientStatusBanner.swift in Sources */,
 				F1538D8095C24C9ABD330E36 /* SystemBannerView.swift in Sources */,
+				SB061CHRB293A4B701000002 /* SystemBannerChrome.swift in Sources */,
 				E5F60718293A4B701757B9DA /* ScreenAwakeController.swift in Sources */,
 				E5F60718293A4B703C4C8B66 /* TimerUtils.swift in Sources */,
 				E5F60718293A4B70DEADB002 /* SharingSettingsCache.swift in Sources */,

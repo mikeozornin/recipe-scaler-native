@@ -55,7 +55,8 @@ final class SystemBannerStore {
             applyFetchedBanner(banner, forEpoch: epoch)
         } catch {
             AppLog.info(.app, "system_banner_refresh_failed", data: [
-                "reason": String(describing: type(of: error))
+                "reason": String(describing: type(of: error)),
+                "detail": String(describing: error)
             ])
         }
     }

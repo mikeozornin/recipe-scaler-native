@@ -28,32 +28,33 @@ struct SystemBannerView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(verbatim: banner.title(for: languageCode))
-                .appHeadline()
-                .fixedSize(horizontal: false, vertical: true)
-
-            let bodyText = banner.body(for: languageCode)
-            if !bodyText.isEmpty {
-                Text(verbatim: bodyText)
-                    .appFootnote()
-                    .foregroundStyle(.secondary)
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(verbatim: banner.title(for: languageCode))
+                    .appHeadline()
                     .fixedSize(horizontal: false, vertical: true)
-            }
 
-            HStack(spacing: 16) {
-                Spacer(minLength: 0)
-                Button {
-                    onDismiss()
-                } label: {
-                    AppSymbol.image("xmark")
-                        .font(AppTypography.footnote)
+                let bodyText = banner.body(for: languageCode)
+                if !bodyText.isEmpty {
+                    Text(verbatim: bodyText)
+                        .appFootnote()
                         .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(Bundle.currentLocalizedString("common.close"))
-                .accessibilityIdentifier(AccessibilityIdentifiers.systemBannerDismiss)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button {
+                onDismiss()
+            } label: {
+                AppSymbol.image("xmark")
+                    .font(AppTypography.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            // `.plain` avoids the sticky pressed/highlight chrome of `.borderless`.
+            .buttonStyle(.plain)
+            .accessibilityLabel(Bundle.currentLocalizedString("common.close"))
+            .accessibilityIdentifier(AccessibilityIdentifiers.systemBannerDismiss)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)

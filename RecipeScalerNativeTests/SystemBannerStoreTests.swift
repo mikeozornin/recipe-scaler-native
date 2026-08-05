@@ -30,7 +30,7 @@ final class SystemBannerStoreTests: XCTestCase {
         titleRu: String = "Техработы",
         bodyEn: String = "Brief downtime at 03:00 UTC.",
         bodyRu: String = "Короткий простой в 03:00 UTC.",
-        createdAt: Date = Date(timeIntervalSince1970: 1_700_000_000)
+        createdAt: String = "2023-11-14T22:13:20.000Z"
     ) -> SystemBannerDTO {
         SystemBannerDTO(
             id: id,
@@ -40,6 +40,30 @@ final class SystemBannerStoreTests: XCTestCase {
             bodyRu: bodyRu,
             createdAt: createdAt
         )
+    }
+
+    /// Server `toISOString()` always includes fractional seconds. Decoding must
+    /// not go through `JSONDecoder.dateDecodingStrategy = .iso8601` (rejects ms).
+    func testDecodeWirePayloadWithFractionalSeconds() throws {
+        let id = UUID()
+        let json = """
+        {
+          "id": "\(id.uuidString)",
+          "title_en": "Maintenance",
+          "title_ru": "Техработы",
+          "body_en": "Brief downtime.",
+          "body_ru": "Короткий простой.",
+          "created_at": "2026-08-05T22:47:09.999Z"
+        }
+        """.data(using: .utf8)!
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let banner = try decoder.decode(SystemBannerDTO.self, from: json)
+
+        XCTAssertEqual(banner.id, id)
+        XCTAssertEqual(banner.createdAt, "2026-08-05T22:47:09.999Z")
+        XCTAssertEqual(banner.title(for: "ru"), "Техработы")
     }
 
     /// `dismiss()` must clear `activeBanner` synchronously, before the

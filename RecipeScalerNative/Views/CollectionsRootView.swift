@@ -58,6 +58,8 @@ struct CollectionsRootView: View {
     @ViewBuilder
     private var listContent: some View {
         List {
+            SystemBannerListRow()
+
             collectionRow(
                 folderId: CollectionVirtualFolders.allRecipesFolderId,
                 title: Bundle.currentLocalizedString("collections.all-recipes"),
@@ -117,6 +119,8 @@ struct CollectionsRootView: View {
     @ViewBuilder
     private var gridContent: some View {
         ScrollView {
+            SystemBannerChrome()
+
             let columns = [
                 GridItem(.flexible(), spacing: 16),
                 GridItem(.flexible(), spacing: 16),

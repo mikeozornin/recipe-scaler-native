@@ -4,7 +4,6 @@ import UIKit
 struct RecipeListView: View {
     @Environment(YjsSyncService.self) private var syncService
     @Environment(TimerManager.self) private var timerManager
-    @Environment(SystemBannerStore.self) private var systemBannerStore
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
     @State private var searchText = ""
@@ -104,12 +103,6 @@ struct RecipeListView: View {
                     DatabaseInitFailedBanner()
                 }
 
-                if let banner = systemBannerStore.activeBanner {
-                    SystemBannerView(banner: banner) {
-                        Task { await systemBannerStore.dismiss() }
-                    }
-                }
-
                 Group {
                 if showsCollectionsRoot {
                     CollectionsRootView(navigationPath: $navigationPath)
@@ -117,31 +110,43 @@ struct RecipeListView: View {
                             || (!isUITestingHost
                                 && syncService.connectionState == .connecting
                                 && syncService.collectionEntries.isEmpty) {
-                    ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
-                        .mobileTimerPanelBottomPadding()
+                    VStack(spacing: 0) {
+                        SystemBannerChrome()
+                        ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
+                            .mobileTimerPanelBottomPadding()
+                    }
                 } else if !hasAnyRows {
                     if isSearching {
-                        ContentUnavailableView {
-                            AppEmptyState.label("recipe.list.search-empty.title", symbol: "magnifyingglass")
+                        VStack(spacing: 0) {
+                            SystemBannerChrome()
+                            ContentUnavailableView {
+                                AppEmptyState.label("recipe.list.search-empty.title", symbol: "magnifyingglass")
+                            }
+                            .font(AppTypography.body)
+                            .mobileTimerPanelBottomPadding()
                         }
-                        .font(AppTypography.body)
-                        .mobileTimerPanelBottomPadding()
                     } else {
-                        ContentUnavailableView {
-                            VStack(spacing: 12) {
-                                AppEmptyStateIllustration(asset: .recipeNotebookEmpty)
-                                Text("recipe.list.empty.title")
+                        VStack(spacing: 0) {
+                            SystemBannerChrome()
+                            ContentUnavailableView {
+                                VStack(spacing: 12) {
+                                    AppEmptyStateIllustration(asset: .recipeNotebookEmpty)
+                                    Text("recipe.list.empty.title")
+                                        .appBody()
+                                }
+                            } description: {
+                                Text("recipe.list.empty.description")
                                     .appBody()
                             }
-                        } description: {
-                            Text("recipe.list.empty.description")
-                                .appBody()
+                            .font(AppTypography.body)
+                            .mobileTimerPanelBottomPadding()
                         }
-                        .font(AppTypography.body)
-                        .mobileTimerPanelBottomPadding()
                     }
                 } else {
                     List {
+                        // Scrolls away with recipe rows (not sticky above the List).
+                        SystemBannerListRow()
+
                         if !pinnedRowItems.isEmpty {
                             RecipeListSectionHeader(isPinnedSection: true)
                                 .recipeListSectionHeaderRow()

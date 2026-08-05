@@ -13,15 +13,19 @@
 import Foundation
 import RecipeScalerCore
 
-/// Wire DTO for the active system banner. Matches the snake_case server shape;
-/// `requestJSON` runs through a `JSONDecoder` with `.iso8601` date strategy.
+/// Wire DTO for the active system banner. Matches the snake_case server shape.
+///
+/// `created_at` is kept as `String` (ISO 8601) rather than `Date`: `APIClient.requestJSON`
+/// uses `JSONDecoder.dateDecodingStrategy = .iso8601`, which rejects fractional
+/// seconds (`…09.999Z`) that Node's `Date.toISOString()` always emits. Decoding
+/// as `String` avoids a silent refresh failure that left the banner blank.
 struct SystemBannerDTO: Decodable, Sendable, Equatable, Identifiable {
     let id: UUID
     let titleEn: String
     let titleRu: String
     let bodyEn: String
     let bodyRu: String
-    let createdAt: Date
+    let createdAt: String
 
     enum CodingKeys: String, CodingKey {
         case id
