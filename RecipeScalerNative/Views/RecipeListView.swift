@@ -4,6 +4,7 @@ import UIKit
 struct RecipeListView: View {
     @Environment(YjsSyncService.self) private var syncService
     @Environment(TimerManager.self) private var timerManager
+    @Environment(SystemBannerStore.self) private var systemBannerStore
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
     @State private var searchText = ""
@@ -101,6 +102,12 @@ struct RecipeListView: View {
             VStack(spacing: 0) {
                 if showsDatabaseInitFailedBanner {
                     DatabaseInitFailedBanner()
+                }
+
+                if let banner = systemBannerStore.activeBanner {
+                    SystemBannerView(banner: banner) {
+                        Task { await systemBannerStore.dismiss() }
+                    }
                 }
 
                 Group {

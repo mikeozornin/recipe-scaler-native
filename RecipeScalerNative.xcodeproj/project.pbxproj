@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F1538D8095C24C9ABD330E36 /* SystemBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3AC0B0A69EA4637B134D9A5 /* SystemBannerView.swift */; };
+		AC6A576E26314798BE3FBF1A /* SystemBannerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */; };
+		1758D7142F1C4429B9A37584 /* SystemBannerAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C08EE69E64A48AE8B692E6A /* SystemBannerAPI.swift */; };
 		0089FE21D37A4D84BF4355E3 /* ShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B8E4D1A7552D487F80885A2F /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		031287A80FDB41308E31AE3E /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7585E91075F045FF9D2C26D1 /* ShareViewController.swift */; };
 		0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C45A57EDAC270C757266F8FA /* AuthService.swift */; };
@@ -462,6 +465,7 @@
 		FA4B1C2D3E4F5A6B7C8D9EF2 /* MartianMono-NrLt.otf in Resources */ = {isa = PBXBuildFile; fileRef = DE1ABB28709A39ED21AF2C28 /* MartianMono-NrLt.otf */; };
 		FADAPI02B293A4B701000001 /* Networking/FeatureAdoptionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADAPI01A293A4B701000001 /* Networking/FeatureAdoptionAPI.swift */; };
 		FADFIX0A1B293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADFIX0A0A293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift */; };
+		SB0610A1B293A4B7010000010 /* SystemBannerStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */; };
 		FADKEY02B293A4B701000001 /* Networking/FeatureAdoptionClientFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADKEY01A293A4B701000001 /* Networking/FeatureAdoptionClientFeature.swift */; };
 		FADLAY02B293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADLAY01A293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift */; };
 		FADLAY04D293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */; };
@@ -709,6 +713,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A3AC0B0A69EA4637B134D9A5 /* SystemBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerView.swift; sourceTree = "<group>"; };
+		E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerStore.swift; sourceTree = "<group>"; };
+		3C08EE69E64A48AE8B692E6A /* SystemBannerAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerAPI.swift; sourceTree = "<group>"; };
 		057A55B7EC424D69BA4BA244 /* TimerLiveActivityMetadataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityMetadataProvider.swift; sourceTree = "<group>"; };
 		064C0C1021D58AB32FC2DCF2 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		082DDFB9F64449A7BCF4D3FA /* WriteSyncState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WriteSyncState.swift; sourceTree = "<group>"; };
@@ -1144,6 +1151,7 @@
 		FAAA4DF54D6AD9C9C26DC444 /* FeatureAdoptionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionStore.swift; sourceTree = "<group>"; };
 		FADAPI01A293A4B701000001 /* Networking/FeatureAdoptionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/FeatureAdoptionAPI.swift; sourceTree = "<group>"; };
 		FADFIX0A0A293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionInstalledFlagTests.swift; sourceTree = "<group>"; };
+		SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerStoreTests.swift; sourceTree = "<group>"; };
 		FADKEY01A293A4B701000001 /* Networking/FeatureAdoptionClientFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/FeatureAdoptionClientFeature.swift; sourceTree = "<group>"; };
 		FADLAY01A293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionRingLabelLayout.swift; sourceTree = "<group>"; };
 		FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionRingLabelLayoutTests.swift; sourceTree = "<group>"; };
@@ -1505,6 +1513,7 @@
 				E5F60718293A4B7065B733F2 /* ScreenAwakeToggle.swift */,
 				E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */,
 				E5F60718293A4B707F3A30E0 /* TransientStatusBanner.swift */,
+				A3AC0B0A69EA4637B134D9A5 /* SystemBannerView.swift */,
 				REMINDERS0008AA0008BB08 /* RemindersListPickerView.swift */,
 				C011ECB100000001 /* CollectionsRootView.swift */,
 				C011ECB200000002 /* CollectionFolderView.swift */,
@@ -1700,6 +1709,7 @@
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
 				FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */,
 				FADFIX0A0A293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift */,
+				SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */,
 				B3TESTERR0020 /* ErrorLocalizationTests.swift */,
 				B3SYNCERR0020 /* SyncErrorCodeTests.swift */,
 				B3AUTHERR0020 /* AuthErrorLocalizationTests.swift */,
@@ -2045,6 +2055,8 @@
 				E5F60718293A4B7035E279C2 /* SharingAPI.swift */,
 				E5F60718293A4B70093D4CC7 /* AccountAPI.swift */,
 				FAAA4DF54D6AD9C9C26DC444 /* FeatureAdoptionStore.swift */,
+				E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */,
+				3C08EE69E64A48AE8B692E6A /* SystemBannerAPI.swift */,
 				E5F60718293A4B70A0E4855E /* AssistantAPI.swift */,
 				E5LLMPARSE293A4B70100001 /* RecipeLLMParseAPI.swift */,
 				A5VOC02293A4B7010000002 /* AssistantVoiceRecorder.swift */,
@@ -2731,6 +2743,8 @@
 				A140000D0000000000000000D /* GuideVideoPlayer.swift in Sources */,
 				A140011000000000000000011 /* FeatureFlags.swift in Sources */,
 				67A6550B36933C92D59DB2B9 /* FeatureAdoptionStore.swift in Sources */,
+				AC6A576E26314798BE3FBF1A /* SystemBannerStore.swift in Sources */,
+				1758D7142F1C4429B9A37584 /* SystemBannerAPI.swift in Sources */,
 				4CE1EBBF8B610A4B091090FF /* AuthView.swift in Sources */,
 				72BCE454FF7ECB782A54D4ED /* ContentView.swift in Sources */,
 				39CBF56DFACE248C54B1D988 /* ImageCacheService.swift in Sources */,
@@ -2928,6 +2942,7 @@
 				E5F60718293A4B70CC88F2B7 /* ScreenAwakeToggle.swift in Sources */,
 				E5F60718293A4B70321FB5DD /* ScreenAwakeStatusBanner.swift in Sources */,
 				E5F60718293A4B7005B62F9C /* TransientStatusBanner.swift in Sources */,
+				F1538D8095C24C9ABD330E36 /* SystemBannerView.swift in Sources */,
 				E5F60718293A4B701757B9DA /* ScreenAwakeController.swift in Sources */,
 				E5F60718293A4B703C4C8B66 /* TimerUtils.swift in Sources */,
 				E5F60718293A4B70DEADB002 /* SharingSettingsCache.swift in Sources */,
@@ -3067,6 +3082,7 @@
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
 				FADLAY04D293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift in Sources */,
 				FADFIX0A1B293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift in Sources */,
+				SB0610A1B293A4B7010000010 /* SystemBannerStoreTests.swift in Sources */,
 				B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */,
 				B3SYNCERR0010 /* SyncErrorCodeTests.swift in Sources */,
 				B3AUTHERR0010 /* AuthErrorLocalizationTests.swift in Sources */,

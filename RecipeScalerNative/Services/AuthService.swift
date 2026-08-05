@@ -453,6 +453,7 @@ class AuthService {
         apiClient.configure(userId: nil)
 
         AppContainer.shared?.featureAdoption.clearForLogout()
+        AppContainer.shared?.systemBanner.clearForLogout()
 
         // End Live Activities + wipe push-token cache on every wipe path
         // (cold-start `staleSession`, `handleAccountDeleted`, light revoke) —
@@ -778,6 +779,7 @@ class AuthService {
         apiClient.configure(userId: nil)
 
         AppContainer.shared?.featureAdoption.clearForLogout()
+        AppContainer.shared?.systemBanner.clearForLogout()
     }
 
     /// Spec 055: irreversibly delete the current account.

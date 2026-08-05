@@ -34,5 +34,6 @@ extension View {
             .environment(container.reminders)
             .environment(container.spotlight)
             .environment(container.featureAdoption)
+            .environment(container.systemBanner)
     }
 }

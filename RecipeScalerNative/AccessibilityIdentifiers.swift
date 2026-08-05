@@ -118,6 +118,8 @@ enum AccessibilityIdentifiers {
     static let screenAwakeBanner = "screen_awake_banner"
     static let transientStatusBanner = "transient_status_banner"
     static let transientStatusMessage = "transient_status_message"
+    static let systemBanner = "system_banner"
+    static let systemBannerDismiss = "system_banner_dismiss"
     static let shoppingCopyAsTextButton = "shopping_copy_as_text_button"
     static let recipeImageUpload = "recipe_image_upload"
     static let recipeTitleKeyboardDone = "recipe_title_keyboard_done"

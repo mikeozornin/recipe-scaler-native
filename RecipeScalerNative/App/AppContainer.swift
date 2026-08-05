@@ -73,6 +73,10 @@ final class AppContainer {
 
     let featureAdoption: FeatureAdoptionStore
 
+    // MARK: - System banner (spec 061)
+
+    let systemBanner: SystemBannerStore
+
     /// Holds the cyclic `TimerSyncService.sendTimerEvent ↔ YjsSyncService.emitTimerEvent`
     /// callback so neither service retains the other directly.
     private let timerEventBridge: TimerEventBridge
@@ -169,6 +173,10 @@ final class AppContainer {
         // Feature adoption store (spec 038). Cache is loaded lazily in
         // `bootstrap(userId:)` so the section renders instantly on first appear.
         self.featureAdoption = FeatureAdoptionStore()
+
+        // System banner store (spec 061). Refreshed once per session during
+        // bootstrap; never polls. Dismissal is persisted server-side.
+        self.systemBanner = SystemBannerStore()
 
         // Bridge the cyclic callback
         let bridge = TimerEventBridge()
@@ -318,6 +326,11 @@ final class AppContainer {
         //    renders from cache before any network resolves on this session.
         featureAdoption.loadFromCache()
 
+        // 0. System banner (spec 061). Synchronous cache load (no-op today).
+        //    Network refresh runs after APIClient is configured (step 1) so the
+        //    request carries Bearer / userId.
+        systemBanner.loadFromCache()
+
         // 0a. Keep AuthService in sync with the active session. On simulator
         //     DEBUG builds, `ContentView.effectiveUserId` returns a hardcoded
         //     `debugUserId` and feeds it directly to `bootstrap(userId:)`,
@@ -346,6 +359,9 @@ final class AppContainer {
             APIClient.shared.configure(authToken: nil)
         }
         APIClient.shared.configure(userId: userId)
+
+        // Spec 061: refresh after APIClient has Bearer / userId.
+        Task { await systemBanner.refresh() }
 
         // 1a. Mirror session to paired watch (token may have been set by migration).
         WatchCredentialsBridge.shared.publish(userId: userId, token: SharedAuthStore.token)
@@ -421,6 +437,7 @@ final class AppContainer {
         // Spec 030 B2: drop widget push registration on logout.
         await widgetPushRegistrar.unregister()
         featureAdoption.clearForLogout()
+        systemBanner.clearForLogout()
     }
 
     #if DEBUG
