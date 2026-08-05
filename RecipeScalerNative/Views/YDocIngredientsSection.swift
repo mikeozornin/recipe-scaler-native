@@ -969,7 +969,8 @@ private struct IngredientRowHeaderLabel: View {
     var body: some View {
         IngredientGridRow(
             ingredients: {
-                IngredientGridIngredientsColumn(leadingSlot: .empty) {
+                // No illustration slot — section headers align with the icon’s leading edge, not the name.
+                IngredientGridIngredientsColumn(leadingSlot: nil) {
                     Text(text)
                         .font(IngredientHeaderLabelStyle.font)
                         .textCase(.uppercase)
