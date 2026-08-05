@@ -590,7 +590,9 @@ struct YDocRecipeDetailView: View {
             assistantRecipeContext.setVisibleRecipeId(recipeId)
             applyStartInEditModeIfNeeded()
             applyStartDescriptionEditIfNeeded()
+            #if DEBUG
             scheduleDebugDescriptionEditorIfNeeded()
+            #endif
         }
         .overlay {
             DescriptionTimerPopoverOverlay(
