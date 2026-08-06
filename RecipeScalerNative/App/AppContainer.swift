@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import SwiftData
+import os
 import RecipeScalerCore
 
 /// Single source of truth for all app-level services.
@@ -21,11 +22,29 @@ final class AppContainer {
     /// from it because they cannot use `@Environment`. View code should prefer the
     /// `@Environment(AppContainer.self)` route injected at `WindowGroup`.
     ///
-    /// `nonisolated(unsafe)` because the value is written exactly once during app
-    /// startup on MainActor and never mutated afterward; reads from nonisolated
-    /// contexts (actors, AppIntents) are safe — they only dereference a stable
-    /// pointer to a fully-initialized object.
-    nonisolated(unsafe) static var shared: AppContainer?
+    /// Backed by `OSAllocatedUnfairLock` so reads from nonisolated contexts
+    /// (actors, AppIntents, APNs callbacks) are race-free even though they
+    /// happen off the MainActor. The value is written exactly once during app
+    /// startup and never mutated afterward, but the lock still protects
+    /// against the read/write race that `nonisolated(unsafe)` would allow
+    /// under Thread Sanitizer and on weak memory models.
+    nonisolated static var shared: AppContainer? {
+        sharedLock.withLock { $0 }
+    }
+
+    /// Internal setter kept nonisolated so `RecipeScalerNativeApp.init` (which is
+    /// MainActor) can install the value without hopping. The lock serializes
+    /// the write against any concurrent reader.
+    nonisolated static func setShared(_ container: AppContainer?) {
+        sharedLock.withLock { $0 = container }
+    }
+
+    /// Lock-protected storage. `OSAllocatedUnfairLock` is a value type that owns
+    /// its heap storage; the lock guards a single optional `AppContainer`
+    /// reference. Callers that dereference the returned container are
+    /// responsible for hopping to the MainActor before touching the
+    /// container's state.
+    private nonisolated static let sharedLock = OSAllocatedUnfairLock<AppContainer?>(initialState: nil)
 
     // MARK: - Foundation
 
@@ -184,7 +203,7 @@ final class AppContainer {
         self.timerEventBridge = bridge
 
         // Bind process-wide handle for AppIntents + non-SwiftUI callers.
-        Self.shared = self
+        Self.setShared(self)
 
         // Sync APIClient credentials from Keychain so Share/Action extensions
         // configuring the same client see the same identity at launch.
