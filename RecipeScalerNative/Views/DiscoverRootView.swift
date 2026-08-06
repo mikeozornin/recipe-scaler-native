@@ -8,69 +8,17 @@ import SwiftUI
 
 struct DiscoverRootView: View {
     @Binding var path: NavigationPath
-    @State private var model = DiscoverRootModel(api: .shared)
+    @Environment(\.apiClient) private var apiClient
+    @State private var model: DiscoverRootModel?
 
     var body: some View {
         NavigationStack(path: $path) {
             Group {
-                switch model.state {
-                case .idle, .loading:
+                if let model {
+                    DiscoverRootContent(model: model)
+                } else {
                     ProgressView()
                         .mobileTimerPanelBottomPadding()
-                case .failed(let message):
-                    ContentUnavailableView {
-                        AppEmptyState.label("discover.error", symbol: "wifi.exclamationmark")
-                    } description: {
-                        Text(message).appBody()
-                    }
-                    .mobileTimerPanelBottomPadding()
-                case .loaded(let data) where !data.collections.isEmpty || !data.profiles.isEmpty:
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 24) {
-                            if !data.collections.isEmpty {
-                                section(
-                                    titleKey: "discover.curated-collections",
-                                    items: data.collections
-                                ) { collection in
-                                    NavigationLink(
-                                        value: DiscoverRoute.collection(collection.slug)
-                                    ) {
-                                        DiscoverCollectionCard(collection: collection)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .accessibilityIdentifier(
-                                        AccessibilityIdentifiers.discoverCollectionCard
-                                    )
-                                }
-                            }
-                            if !data.profiles.isEmpty {
-                                section(
-                                    titleKey: "discover.featured-chefs",
-                                    items: data.profiles
-                                ) { profile in
-                                    NavigationLink(
-                                        value: DiscoverRoute.profile(profile.username)
-                                    ) {
-                                        DiscoverProfileCard(profile: profile)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .accessibilityIdentifier(
-                                        AccessibilityIdentifiers.discoverProfileCard
-                                    )
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 20)
-                        .mobileTimerPanelBottomPadding()
-                    }
-                case .loaded:
-                    ContentUnavailableView {
-                        AppEmptyState.label("discover.empty", symbol: "sparkles")
-                    } description: {
-                        Text("discover.empty-description").appBody()
-                    }
-                    .mobileTimerPanelBottomPadding()
                 }
             }
             .localizedNavigationTitle("discover.title")
@@ -88,9 +36,11 @@ struct DiscoverRootView: View {
                     DiscoverPublicProfileView(username: username)
                 }
             }
-            .task { await model.load() }
-            .refreshable { await model.load() }
-            .accessibilityIdentifier(AccessibilityIdentifiers.discoverRoot)
+            .task {
+                if model == nil {
+                    model = DiscoverRootModel(api: apiClient)
+                }
+            }
         }
     }
 
@@ -111,6 +61,96 @@ struct DiscoverRootView: View {
         }
     }
 
+}
+
+/// Renders the loaded discover root content. Extracted so the parent
+/// `DiscoverRootView` can construct the model from `@Environment(\.apiClient)`
+/// before any network call runs.
+private struct DiscoverRootContent: View {
+    let model: DiscoverRootModel
+
+    var body: some View {
+        Group {
+            switch model.state {
+            case .idle, .loading:
+                ProgressView()
+                    .mobileTimerPanelBottomPadding()
+            case .failed(let message):
+                ContentUnavailableView {
+                    AppEmptyState.label("discover.error", symbol: "wifi.exclamationmark")
+                } description: {
+                    Text(message).appBody()
+                }
+                .mobileTimerPanelBottomPadding()
+            case .loaded(let data) where !data.collections.isEmpty || !data.profiles.isEmpty:
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        if !data.collections.isEmpty {
+                            section(
+                                titleKey: "discover.curated-collections",
+                                items: data.collections
+                            ) { collection in
+                                NavigationLink(
+                                    value: DiscoverRoute.collection(collection.slug)
+                                ) {
+                                    DiscoverCollectionCard(collection: collection)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityIdentifier(
+                                    AccessibilityIdentifiers.discoverCollectionCard
+                                )
+                            }
+                        }
+                        if !data.profiles.isEmpty {
+                            section(
+                                titleKey: "discover.featured-chefs",
+                                items: data.profiles
+                            ) { profile in
+                                NavigationLink(
+                                    value: DiscoverRoute.profile(profile.username)
+                                ) {
+                                    DiscoverProfileCard(profile: profile)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityIdentifier(
+                                    AccessibilityIdentifiers.discoverProfileCard
+                                )
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 20)
+                    .mobileTimerPanelBottomPadding()
+                }
+            case .loaded:
+                ContentUnavailableView {
+                    AppEmptyState.label("discover.empty", symbol: "sparkles")
+                } description: {
+                    Text("discover.empty-description").appBody()
+                }
+                .mobileTimerPanelBottomPadding()
+            }
+        }
+        .task { await model.load() }
+        .refreshable { await model.load() }
+        .accessibilityIdentifier(AccessibilityIdentifiers.discoverRoot)
+    }
+
+    @ViewBuilder
+    private func section<Item: Identifiable, Content: View>(
+        titleKey: LocalizedStringKey,
+        items: [Item],
+        @ViewBuilder cell: @escaping (Item) -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            AppSectionHeader(titleKey)
+            VStack(spacing: 0) {
+                ForEach(items) { item in
+                    cell(item)
+                }
+            }
+        }
+    }
 }
 
 enum DiscoverRoute: Hashable {

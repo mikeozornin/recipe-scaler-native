@@ -1,4 +1,5 @@
 import SwiftUI
+import RecipeScalerCore
 
 // MARK: - AppContainer
 
@@ -13,6 +14,11 @@ extension EnvironmentValues {
     @Entry var timerManager: TimerManager? = nil
     @Entry var deepLinkRouter: DeepLinkRouter? = nil
     @Entry var assistantRecipeContext: AssistantRecipeContext? = nil
+    /// APIClient for feature views / view models that need direct REST access.
+    /// Defaults to `.shared` so previews and tests without an `AppContainer`
+    /// keep working; production wiring installs the container's client via
+    /// `.appEnvironment(_:)` (composition-root single source of truth).
+    @Entry var apiClient: APIClient = .shared
 }
 
 // MARK: - Convenience view extension
@@ -26,6 +32,7 @@ extension View {
             .environment(\.timerManager, container.timer)
             .environment(\.deepLinkRouter, container.deepLinkRouter)
             .environment(\.assistantRecipeContext, container.assistantRecipeContext)
+            .environment(\.apiClient, container.api)
             .environment(container.auth)
             .environment(container.timer)
             .environment(container.deepLinkRouter)

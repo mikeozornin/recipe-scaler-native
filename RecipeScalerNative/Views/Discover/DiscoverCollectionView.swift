@@ -9,15 +9,16 @@ import SwiftUI
 /// tokenized search, adaptive grid of recipe preview cards.
 struct DiscoverCollectionView: View {
     let slug: String
-    @State private var model = DiscoverCollectionModel(api: .shared)
+    @Environment(\.apiClient) private var apiClient
+    @State private var model: DiscoverCollectionModel?
     @State private var searchText = ""
     @State private var searchStore = DiscoverSearchStore<CuratedRecipeMetadataDTO>()
     @State private var searchTokens: [String] = []
 
     var body: some View {
         Group {
-            switch model.state {
-            case .idle, .loading:
+            switch model?.state {
+            case .idle, .loading, .none:
                 ProgressView(Bundle.currentLocalizedString("discover.collection.loading"))
             case .failed(let errorMessage):
                 ContentUnavailableView {
@@ -36,8 +37,11 @@ struct DiscoverCollectionView: View {
             prompt: Text("search.recipes")
         )
         .task {
-            await model.load(slug: slug)
-            if case .loaded(let collection) = model.state {
+            if model == nil {
+                model = DiscoverCollectionModel(api: apiClient)
+            }
+            await model?.load(slug: slug)
+            if case .loaded(let collection) = model?.state {
                 searchStore.setItems(DiscoverSearch.sortedByRecipeName(collection.recipes) { $0.name })
             }
         }

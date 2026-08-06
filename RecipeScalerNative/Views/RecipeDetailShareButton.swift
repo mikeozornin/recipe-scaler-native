@@ -44,14 +44,52 @@ struct RecipeDetailShareButton: View {
 
 private struct RecipeShareSheet: View {
     @Environment(YjsSyncService.self) private var syncService
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.apiClient) private var apiClient
 
     let recipeId: String
     let initialIsPublic: Bool
     let hasImage: Bool
     let hasSteps: Bool
 
-    @State private var model = RecipeShareModel(api: .shared)
+    @State private var model: RecipeShareModel?
+
+    var body: some View {
+        Group {
+            if let model {
+                RecipeShareSheetContent(
+                    model: model,
+                    recipeId: recipeId,
+                    initialIsPublic: initialIsPublic,
+                    hasImage: hasImage,
+                    hasSteps: hasSteps
+                )
+            } else {
+                NavigationStack {
+                    ProgressView()
+                }
+                .appOpaqueSheetPresentation(detents: [.medium, .large])
+            }
+        }
+        .task {
+            if model == nil {
+                let newModel = RecipeShareModel(api: apiClient)
+                await newModel.loadSettings(syncService: syncService)
+                model = newModel
+            }
+        }
+    }
+}
+
+private struct RecipeShareSheetContent: View {
+    @Environment(YjsSyncService.self) private var syncService
+    @Environment(\.dismiss) private var dismiss
+
+    let model: RecipeShareModel
+    let recipeId: String
+    let initialIsPublic: Bool
+    let hasImage: Bool
+    let hasSteps: Bool
+
     @State private var isPublic: Bool
     @State private var isUpdating = false
 
@@ -61,7 +99,8 @@ private struct RecipeShareSheet: View {
     @State private var showFileActivitySheet = false
     @State private var fileErrorMessage: LocalizedStringKey?
 
-    init(recipeId: String, initialIsPublic: Bool, hasImage: Bool, hasSteps: Bool) {
+    init(model: RecipeShareModel, recipeId: String, initialIsPublic: Bool, hasImage: Bool, hasSteps: Bool) {
+        self.model = model
         self.recipeId = recipeId
         self.initialIsPublic = initialIsPublic
         self.hasImage = hasImage
@@ -143,7 +182,6 @@ private struct RecipeShareSheet: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .appOpaqueSheetPresentation(detents: [.medium, .large])
-        .task { await model.loadSettings(syncService: syncService) }
         .sheet(isPresented: $showFileActivitySheet) {
             if let fileURL = fileExportURL {
                 ActivityShareSheet(activityItems: [fileURL])

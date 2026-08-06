@@ -14,15 +14,16 @@ import SwiftUI
 struct DiscoverPublicProfileView: View {
     let username: String
 
-    @State private var model = DiscoverPublicProfileModel(api: .shared)
+    @Environment(\.apiClient) private var apiClient
+    @State private var model: DiscoverPublicProfileModel?
     @State private var searchText = ""
     @State private var searchStore = DiscoverSearchStore<PublicRecipePreviewDTO>()
     @State private var searchTokens: [String] = []
 
     var body: some View {
         Group {
-            switch model.state {
-            case .idle, .loading:
+            switch model?.state {
+            case .idle, .loading, .none:
                 ProgressView(Bundle.currentLocalizedString("discover.loading"))
                     .mobileTimerPanelBottomPadding()
             case .failed(let errorMessage):
@@ -42,8 +43,11 @@ struct DiscoverPublicProfileView: View {
             prompt: Text("search.recipes")
         )
         .task {
-            await model.load(username: username)
-            if case .loaded(let response) = model.state {
+            if model == nil {
+                model = DiscoverPublicProfileModel(api: apiClient)
+            }
+            await model?.load(username: username)
+            if case .loaded(let response) = model?.state {
                 searchStore.setItems(DiscoverSearch.sortedByRecipeName(response.recipes) { $0.name })
             }
         }
