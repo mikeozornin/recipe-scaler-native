@@ -790,6 +790,6 @@ extension Color {
         .environment({
             let database = try! YrsDatabase()
             let store = YDocStore(dbQueue: database.dbQueue)
-            return YjsSyncService(store: store)
+            return YjsSyncService.makeForTesting(store: store)
         }())
 }

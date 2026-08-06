@@ -12,7 +12,7 @@ final class AppShellCoordinatorTests: XCTestCase {
 
     private func makeCoordinator() throws -> (AppShellCoordinator, DeepLinkRouter, YjsSyncService) {
         let store = try YDocStore.inMemory()
-        let sync = YjsSyncService(store: store)
+        let sync = YjsSyncService.makeForTesting(store: store)
         let router = DeepLinkRouter()
         let coordinator = AppShellCoordinator(syncService: sync, deepLinkRouter: router)
         return (coordinator, router, sync)

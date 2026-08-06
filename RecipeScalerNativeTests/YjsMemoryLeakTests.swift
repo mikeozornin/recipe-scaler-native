@@ -12,7 +12,7 @@ final class YjsMemoryLeakTests: XCTestCase {
 
     func testFastReopenDoesNotDropNewerSession() async throws {
         let store = try makeStubStore()
-        let sync = YjsSyncService(store: store)
+        let sync = YjsSyncService.makeForTesting(store: store)
 
         var oldBridge: DescriptionEditorBridge? = DescriptionEditorBridge(recipeId: "recipe-1", syncService: sync)
         oldBridge?.test_registerWithSyncService()
@@ -33,7 +33,7 @@ final class YjsMemoryLeakTests: XCTestCase {
 
     func testDescriptionEditorSessionLeaksClearedOnDeinit() async throws {
         let store = try makeStubStore()
-        let sync = YjsSyncService(store: store)
+        let sync = YjsSyncService.makeForTesting(store: store)
 
         // 1. Initially 0 sessions
         XCTAssertEqual(sync.test_descriptionEditorSessionsCount, 0)
@@ -57,7 +57,7 @@ final class YjsMemoryLeakTests: XCTestCase {
     
     func testTeardownClearsWireSnapshotTasksAndDocumentLoadTasks() async throws {
         let store = try makeStubStore()
-        let sync = YjsSyncService(store: store)
+        let sync = YjsSyncService.makeForTesting(store: store)
         
         // 1. Simulate adding a wire snapshot refresh task
         let dummyTask = Task {
@@ -103,7 +103,7 @@ final class YjsMemoryLeakTests: XCTestCase {
     @MainActor
     func testCancelPendingWorkForRecipeClearsAllFourEntries() async throws {
         let store = try makeStubStore()
-        let sync = YjsSyncService(store: store)
+        let sync = YjsSyncService.makeForTesting(store: store)
 
         // Arrange: populate all four per-recipe dicts for two recipeIds.
         let wireTaskA = Task { _ = try? await Task.sleep(for: .seconds(1)) }

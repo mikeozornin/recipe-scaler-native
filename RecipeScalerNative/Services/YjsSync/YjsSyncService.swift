@@ -230,29 +230,19 @@ final class YjsSyncService {
         markLocalDataLoadedIfTestingHost()
     }
 
-    /// Convenience for previews/tests that only need a YjsSyncService-shaped object
-    /// backed by stand-alone service instances. Production code goes through
-    /// `AppContainer` which builds the full dependency graph.
-    init(store: YDocStore) {
-        self.store = store
-        self.offlineQueue = OfflineWriteQueue(store: store)
-        self.documentManager = DocumentManager(store: store)
-        self.eventHandler = SyncEventHandler()
-        self.timerSync = TimerSyncService.shared
-        self.pushRegistration = PushRegistrationService.shared
-        self.recipeImage = RecipeImageService.shared
-        self.yjsMergeHelper = YjsMergeHelper.shared
-
-        if let existing = UserDefaults.standard.string(forKey: "deviceId") {
-            self.deviceId = existing
-        } else {
-            let newId = UUID().uuidString
-            UserDefaults.standard.set(newId, forKey: "deviceId")
-            self.deviceId = newId
-        }
-
-        wireEventHandler()
-        markLocalDataLoadedIfTestingHost()
+    /// Preview/test factory: builds a `YjsSyncService` with stand-alone
+    /// dependencies wired explicitly through the designated initializer.
+    /// Production code goes through `AppContainer`, which constructs the full
+    /// dependency graph. Use this in `#Preview` and XCTest instead of reaching
+    /// for service `.shared` singletons inside the initializer.
+    static func makeForTesting(store: YDocStore) -> YjsSyncService {
+        YjsSyncService(
+            store: store,
+            timerSync: TimerSyncService.shared,
+            pushRegistration: PushRegistrationService.shared,
+            recipeImage: RecipeImageService.shared,
+            yjsMergeHelper: YjsMergeHelper.shared
+        )
     }
 
 

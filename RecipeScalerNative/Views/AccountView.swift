@@ -921,7 +921,7 @@ private struct AccountSeedPhraseSheet: View {
 #if DEBUG
 #Preview {
     let store = try! YDocStore.inMemory()
-    let sync = YjsSyncService(store: store)
+    let sync = YjsSyncService.makeForTesting(store: store)
     let coordinator = AppShellCoordinator(syncService: sync, deepLinkRouter: DeepLinkRouter())
     return NavigationStack {
         AccountView()

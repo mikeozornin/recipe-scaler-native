@@ -14,7 +14,7 @@ final class ObservableMigrationTests: XCTestCase {
     /// neither `Observable` nor `ObservableObject` — its conformance was vestigial).
     func test_migratedTypes_conformToObservable() {
         let stubStore = makeStubStore()
-        let sync = YjsSyncService(store: stubStore)
+        let sync = YjsSyncService.makeForTesting(store: stubStore)
 
         XCTAssertTrue(isObservable(sync), "YjsSyncService must be @Observable")
         XCTAssertTrue(

@@ -16,7 +16,7 @@ final class RecipeFileImportCoordinatorTests: XCTestCase {
 
     private func makePreparedCoordinator() async throws -> AppShellCoordinator {
         let store = try YDocStore.inMemory()
-        let sync = YjsSyncService(store: store)
+        let sync = YjsSyncService.makeForTesting(store: store)
         await sync.test_setUserIdForOfflineTests("coordinator-test-user")
         let router = DeepLinkRouter()
         let shell = AppShellCoordinator(syncService: sync, deepLinkRouter: router)

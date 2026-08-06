@@ -237,7 +237,7 @@ final class YjsPayloadBytesTests: XCTestCase {
 final class YjsOfflineOutboxTests: XCTestCase {
     private func makeSync() throws -> (YjsSyncService, YDocStore) {
         let store = try YDocStore.inMemory()
-        let sync = YjsSyncService(store: store)
+        let sync = YjsSyncService.makeForTesting(store: store)
         return (sync, store)
     }
 
