@@ -8,7 +8,7 @@
 - Offline-first: приложение работает офлайн, кроме отдельных фич (например Discover).
 - Debug builds auto-login configured prod debug user — не полагайся на ручный ввод seed в рутинном тестировании. Seed phrase при необходимости: `breeze roast wink solar guess tongue nothing subway theme palace mask wrist`
 - **Store / App Review users** (отдельные от debug): [`store/fixtures/users.yaml`](../store/fixtures/users.yaml) — `ru`, `en`, `app-store-review`. Provision: `python3 scripts/store_users.py provision`.
-- DEBUG simulator auto-login injects `device_token` together with `debugUserId` (spec 041; legacy `x-user-id` disabled on prod). Override via launch env `DEBUG_DEVICE_TOKEN`. Credentials: `RecipeScalerNative/App/DebugSimulatorAutoLogin.swift`.
+- DEBUG simulator auto-login injects `device_token` together with `debugUserId` in `AuthService.init` (spec 041; legacy `x-user-id` disabled on prod). Override via launch env `DEBUG_DEVICE_TOKEN`. Credentials: `RecipeScalerNative/App/DebugSimulatorAutoLogin.swift`. Post-wipe recovery still re-exchanges via `AppContainer.bootstrap`.
 - Architecture/sync markdown (`sync.md` и т.п.) может быть устаревшим — сверяй с live code и web `yjs-client.ts` перед тем как считать источником правды.
 - **Shared contracts (Yjs, sync, auth, export, error codes):** `../recipe-scaler-web/specs/shared/` — SoT для wire; native `docs/YJS-SCHEMA.md` и contracts — pointers + platform notes.
 

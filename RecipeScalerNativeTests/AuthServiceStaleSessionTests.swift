@@ -137,4 +137,54 @@ final class AuthServiceStaleSessionTests: XCTestCase {
         XCTAssertFalse(service.isAuthenticated)
         XCTAssertNil(SharedAuthStore.userId)
     }
+
+    // MARK: - H3 DEBUG simulator auto-login
+
+    /// `AuthService.init` short-circuits under XCTest, so we exercise the same
+    /// helper that production `init` calls before Keychain restore.
+    func testDebugSimulatorAutoLoginOnLaunch_appliesDebugCreds() throws {
+        #if DEBUG
+        #if targetEnvironment(simulator)
+        guard DebugSimulatorAutoLogin.isEnabled else {
+            throw XCTSkip("DebugSimulatorAutoLogin disabled (DisableDebugAutoLogin / E2E override)")
+        }
+        let service = AuthService()
+        XCTAssertTrue(
+            service.applyDebugSimulatorAutoLoginOnLaunchIfNeeded(),
+            "helper must apply when DebugSimulatorAutoLogin.isEnabled"
+        )
+        XCTAssertEqual(service.userId, DebugSimulatorAutoLogin.userId)
+        XCTAssertEqual(service.token, DebugSimulatorAutoLogin.deviceToken)
+        XCTAssertTrue(service.isAuthenticated)
+        XCTAssertEqual(SharedAuthStore.userId, DebugSimulatorAutoLogin.userId)
+        XCTAssertEqual(SharedAuthStore.token, DebugSimulatorAutoLogin.deviceToken)
+        #else
+        throw XCTSkip("DEBUG simulator auto-login is simulator-only")
+        #endif
+        #else
+        throw XCTSkip("DEBUG simulator auto-login is DEBUG-only")
+        #endif
+    }
+
+    func testDebugSimulatorAutoLoginOnLaunch_prefersExistingStoreToken() throws {
+        #if DEBUG
+        #if targetEnvironment(simulator)
+        guard DebugSimulatorAutoLogin.isEnabled else {
+            throw XCTSkip("DebugSimulatorAutoLogin disabled (DisableDebugAutoLogin / E2E override)")
+        }
+        let storedToken = "existing-debug-store-token"
+        SharedAuthStore.userId = DebugSimulatorAutoLogin.userId
+        SharedAuthStore.token = storedToken
+
+        let service = AuthService()
+        XCTAssertTrue(service.applyDebugSimulatorAutoLoginOnLaunchIfNeeded())
+        XCTAssertEqual(service.token, storedToken)
+        XCTAssertEqual(SharedAuthStore.token, storedToken)
+        #else
+        throw XCTSkip("DEBUG simulator auto-login is simulator-only")
+        #endif
+        #else
+        throw XCTSkip("DEBUG simulator auto-login is DEBUG-only")
+        #endif
+    }
 }

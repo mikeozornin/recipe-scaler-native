@@ -276,6 +276,15 @@ class AuthService {
         // Idempotent and cheap; runs once per cold start.
         purgeLegacyUserDefaultsCredentials()
 
+        // Architecture review H3: apply DEBUG simulator auto-login here — before
+        // any other service reads `userId` — instead of waiting for
+        // `AppContainer.bootstrap`, which left a race window after Keychain restore.
+        #if DEBUG
+        if applyDebugSimulatorAutoLoginOnLaunchIfNeeded() {
+            return
+        }
+        #endif
+
         // Restore authentication state from Keychain
         restoreAuthenticationState()
     }
@@ -502,6 +511,39 @@ class AuthService {
     func applyDebugSimulatorSession(userId: String, deviceToken: String, seedPhrase: String) {
         applySession(userId: userId, deviceToken: deviceToken)
         try? saveSeedPhraseToKeychain(seedPhrase)
+    }
+
+    /// Synchronous cold-start inject for `DebugSimulatorAutoLogin` (architecture
+    /// review H3). Prefer an existing App Group token for the debug user, else
+    /// the launch-env / bundled token. Returns `true` when credentials were
+    /// applied so `init` can skip Keychain restore of a different session.
+    ///
+    /// Post-wipe recovery that needs an async seed exchange stays in
+    /// `AppContainer.applyDebugSimulatorAutoLoginCredentials(preferBundledToken: false)`.
+    @discardableResult
+    func applyDebugSimulatorAutoLoginOnLaunchIfNeeded() -> Bool {
+        guard DebugSimulatorAutoLogin.isEnabled else { return false }
+
+        let userId = DebugSimulatorAutoLogin.userId
+        let token: String
+        if let existing = SharedAuthStore.token,
+           !existing.isEmpty,
+           SharedAuthStore.userId == userId {
+            token = existing
+        } else {
+            token = DebugSimulatorAutoLogin.deviceToken
+        }
+
+        applyDebugSimulatorSession(
+            userId: userId,
+            deviceToken: token,
+            seedPhrase: DebugSimulatorAutoLogin.seedPhrase
+        )
+        AppLog.info(.app, "debug_autologin_credentials_injected", data: [
+            "userId": UserIdFormatter.redact(userId),
+            "phase": "auth_init",
+        ])
+        return true
     }
     #endif
 

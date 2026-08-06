@@ -312,13 +312,11 @@ final class AppContainer {
             // Skip stale-session health check for E2E — freshly-registered
             // user is guaranteed to exist on the server.
             didPerformStaleSessionHealthCheck = true
-        } else if DebugSimulatorAutoLogin.isEnabled {
-            // Spec 041: prod disabled legacy x-user-id for the debug user.
-            // Inject Bearer + userId before health check / sync (same shape as
-            // E2E overrides). Prefer launch-env token; on unauthorized wipe,
-            // re-exchange the documented debug seed.
-            await applyDebugSimulatorAutoLoginCredentials(preferBundledToken: true)
         }
+        // DEBUG simulator auto-login is applied in `AuthService.init` (H3) so
+        // credentials exist before bootstrap / other services read `userId`.
+        // Post-wipe recovery below still re-exchanges via
+        // `applyDebugSimulatorAutoLoginCredentials(preferBundledToken: false)`.
         #endif
 
         // Spec 054: before anything else, verify the stored user still exists
@@ -520,10 +518,10 @@ final class AppContainer {
     }
 
     #if DEBUG
-    /// Injects `DebugSimulatorAutoLogin` Bearer credentials the same way E2E
-    /// launch env does. When `preferBundledToken` is false (post-wipe recovery),
-    /// always re-exchanges the documented debug seed so a revoked bundled token
-    /// cannot leave the simulator stuck on legacy auth.
+    /// Post-wipe DEBUG simulator recovery: re-exchanges the documented debug
+    /// seed (or falls back to the bundled token) after a stale-session wipe.
+    /// Cold-start inject lives in `AuthService.applyDebugSimulatorAutoLoginOnLaunchIfNeeded`
+    /// so credentials exist before bootstrap (architecture review H3).
     private func applyDebugSimulatorAutoLoginCredentials(preferBundledToken: Bool) async {
         let userId = DebugSimulatorAutoLogin.userId
         let seed = DebugSimulatorAutoLogin.seedPhrase
@@ -561,6 +559,7 @@ final class AppContainer {
         )
         AppLog.info(.app, "debug_autologin_credentials_injected", data: [
             "userId": UserIdFormatter.redact(userId),
+            "phase": preferBundledToken ? "bootstrap" : "stale_wipe_recovery",
         ])
     }
     #endif

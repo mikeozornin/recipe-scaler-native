@@ -11,8 +11,8 @@ import Foundation
 /// 1. `DEBUG_DEVICE_TOKEN` or `E2E_OVERRIDE_DEVICE_TOKEN` launch env
 /// 2. Bundled fallback token (rotated via `/exchange-seed-for-token` when stale)
 ///
-/// Seed phrase is documented in `docs/PROJECT.md` and kept here so bootstrap
-/// can re-exchange if the bundled token is revoked.
+/// Seed phrase is documented in `docs/PROJECT.md` and kept here so AuthService
+/// / post-wipe bootstrap can re-exchange if the bundled token is revoked.
 enum DebugSimulatorAutoLogin {
     static let userId = "f088233a-cfed-4fa5-8284-daa2d1ab827c"
 
