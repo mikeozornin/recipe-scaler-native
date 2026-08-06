@@ -22,7 +22,7 @@
 | **Share / Action** | [025](../specs/025-share-extension/spec.md) | ✅ + Keychain Sharing / deep link fixes | App Group + Keychain на main/Share/Action | ✅ device smoke 2026-08-05 |
 | **Universal Links** | [059](../specs/059-universal-links/spec.md) | ✅ + AASA на prod | Associated Domains `applinks:recipe-scaler.ru` | ✅ device QA 2026-08-05 |
 | **watchOS timers** | [039](../specs/039-watchos-timers/spec.md) | ✅ companion v1 | App ID + App Group watch | ⏸️ нет Apple Watch у владельца — отложено |
-| **TestFlight / App Store** | — | — | Distribution profiles | ⬜ по готовности smoke |
+| **TestFlight / App Store** | [060](../specs/060-app-store-screenshots/spec.md) | ✅ screenshot pipeline + iPhone-only | Distribution profiles | ⬜ archive smoke; **v1 без Watch**, iPhone-only |
 | Associated Domains / iCloud / Sign in with Apple (прочее) | — | UL только | по необходимости | — |
 
 **Не блокер кода:** milestone «production push после Activity Charts / Live Activities» (DECISIONS 2026-06-08) **закрыт** — LA shipped; push capability включать и проверять сейчас.
@@ -160,9 +160,15 @@ Widget: `specs/030-timer-widget/quickstart.md`.
 
 Код companion v1 есть. Device QA на парных часах — когда появится железо или тестер с Watch. LA push с «другого устройства» уже проверен через веб (058).
 
-### P2 — TestFlight
+### P2 — TestFlight / первый store
 
 Сборка с production `aps-environment` + Distribution; smoke Share + push на чужом устройстве.
+
+v1 App Store:
+
+- iPhone-only (`TARGETED_DEVICE_FAMILY = 1`) — иначе ASC потребует iPad-скрины.
+- Не эмбедить Watch companion (039 device QA нет; кадры Watch не снимаем).
+- Скрины 6.9″: [store/README.md](../store/README.md).
 
 ---
 
@@ -180,6 +186,6 @@ Widget: `specs/030-timer-widget/quickstart.md`.
 - Смена Bundle ID → обновить этот файл и App IDs в портале.
 - Исторический список «что можно было без платного» — [`NATIVE-FEATURES-NO-PAID-ACCOUNT.md`](NATIVE-FEATURES-NO-PAID-ACCOUNT.md) (архив).
 
-**Связанные спеки**: `023`, `025`, `030`, `039`, `044`, `058`, `059`, `041` (bearer Keychain).
+**Связанные спеки**: `023`, `025`, `030`, `039`, `044`, `058`, `059`, `060`, `041` (bearer Keychain).
 
 **Дата фиксации**: 2026-06-06; обновлено **2026-08-05** (аккаунт активен; push/LA/widget/UL/watch в карте; убрано «после Activity Charts»).

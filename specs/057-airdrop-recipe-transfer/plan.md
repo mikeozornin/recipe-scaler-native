@@ -50,6 +50,8 @@
 
 `UTExportedTypeDeclarations` делает Recipe Scaler **владельцем** типа — iOS ставит приложение первым кандидатом в «Open in...». Стандартные `.json`/`.zip` оставляем в `supported` для back-compat, но в `CFBundleDocumentTypes` указываем **только** `ru.recipescaler.recipe` (Owner) — никакого `public.zip-archive` как document type, чтобы не перехватывать все зипы (SC-005).
 
+App Store требует рядом с `CFBundleDocumentTypes` ключ `LSSupportsOpeningDocumentsInPlace` или `UISupportsDocumentBrowser`. Импорт копирует security-scoped URL в tmp (`RecipeFileImportCoordinator`) и не редактирует исходный файл — поэтому `LSSupportsOpeningDocumentsInPlace = NO`.
+
 ---
 
 ## 2. Поддержка `.recipe` в детекторе и content-types
