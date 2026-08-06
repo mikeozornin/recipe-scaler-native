@@ -47,7 +47,7 @@ final class AppContainerTests: XCTestCase {
 
     func test_container_setsProcessWideSharedHandle() throws {
         let previous = AppContainer.shared
-        defer { AppContainer.shared = previous }
+        defer { AppContainer.setShared(previous) }
 
         let container = try makeContainer()
         XCTAssertTrue(AppContainer.shared === container)
@@ -89,7 +89,7 @@ final class AppContainerTests: XCTestCase {
 
     func test_sharedShim_resolvesToContainerInstance() throws {
         let previous = AppContainer.shared
-        defer { AppContainer.shared = previous }
+        defer { AppContainer.setShared(previous) }
 
         let container = try makeContainer()
         XCTAssertTrue(AuthService.shared === container.auth)

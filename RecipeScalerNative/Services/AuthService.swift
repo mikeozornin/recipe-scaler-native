@@ -151,6 +151,7 @@ enum SessionWipeReason: String, Sendable {
     case accountDeletedRest
     case lightRevoke
     case explicitDeleteAccount
+    case explicitLogout
 }
 
 /// Outcome of `exchange-seed-for-token` when recovering from a 401. Used so
@@ -223,6 +224,25 @@ class AuthService {
     var markFeatureAdoptionProvider: (FeatureAdoptionClientFeature) async throws -> Void = { feature in
         try await AccountAPI.markFeatureAdoption(feature)
     }
+
+    /// Spec 055 Phase R: container teardown bridge. Called by `wipeLocalSession`
+    /// and `performInvalidationTeardown` after local credentials are wiped —
+    /// performs sync.clearSessionForLogout + stopForLogout + Live Activity +
+    /// widget-push-token unregister through the composition root instead of
+    /// reaching back into `AppContainer.shared`.
+    ///
+    /// Set by `AppContainer.init`. `nil` in previews/tests that build an
+    /// `AuthService` standalone; in that case the wipe still clears local
+    /// state (Keychain, SharedAuthStore, APIClient config) and the container
+    /// teardown simply no-ops.
+    var performContainerTeardown: ((SessionWipeReason, String?, String?) async -> Void)?
+
+    /// Spec 038: returns the container's `FeatureAdoptionStore` for the
+    /// post-login `markFeatureInstalled` fire-and-forget POST. Indirected
+    /// through a closure so `registerAuto` / `loginWithSeed` no longer reach
+    /// into `AppContainer.shared`. `nil` in previews/tests — the POST is
+    /// skipped, matching the previous `if let` behavior.
+    var featureAdoptionStoreProvider: (() -> FeatureAdoptionStore?)?
 
     /// Spec 055 Phase R: re-entry guard. Multiple sources (socket `auth_error`,
     /// REST 401, race-induced double-fire) can call `handleAccountDeleted` in
@@ -338,17 +358,12 @@ class AuthService {
     /// re-check it (so internal delegation from REST → wipe is not blocked
     /// by the guard set at the top of `handleDeviceTokenInvalid`).
     private func performInvalidationTeardown(wipeReason: SessionWipeReason) async {
+        // `wipeLocalSession` captures credentials, wipes local state, and
+        // schedules the container teardown through the injected closure.
+        // `ContentView.onChange(isAuthenticated)` will also fire from the
+        // isAuthenticated flip and run its own clearSessionForLogout path —
+        // both sides are idempotent.
         wipeLocalSession(reason: wipeReason)
-
-        // `ContentView.onChange(isAuthenticated)` will fire from the flip
-        // above and run `clearSessionForLogout` + `stopForLogout`. We call
-        // them defensively here too so the state is consistent even if the
-        // SwiftUI environment hasn't observed the change yet (e.g. tests,
-        // extensions, app not in foreground).
-        if let container = AppContainer.shared {
-            await container.sync.clearSessionForLogout()
-            await container.stopForLogout()
-        }
     }
 
     /// REST 401 recovery (spec 055 US5 offline path).
@@ -452,22 +467,20 @@ class AuthService {
         apiClient.configure(authToken: nil)
         apiClient.configure(userId: nil)
 
-        AppContainer.shared?.featureAdoption.clearForLogout()
-        AppContainer.shared?.systemBanner.clearForLogout()
-
-        // End Live Activities + wipe push-token cache on every wipe path
-        // (cold-start `staleSession`, `handleAccountDeleted`, light revoke) —
-        // not just the explicit-logout path through `AppContainer.stopForLogout`.
-        Task { @MainActor in
-            if let bearerForUnregister, !bearerForUnregister.isEmpty {
-                APIClient.shared.configure(authToken: bearerForUnregister)
+        // Container-side teardown (Spec 055 Phase R): Live Activity end,
+        // widget-push unregister, sync.clearSessionForLogout, stopForLogout,
+        // featureAdoption/systemBanner clear. Reaches the composition root
+        // via the injected closure instead of `AppContainer.shared`, so
+        // AuthService has no inversion-of-control dependency. `nil` in
+        // previews/tests — local state is already wiped above.
+        if let performContainerTeardown {
+            Task { @MainActor in
+                await performContainerTeardown(
+                    reason,
+                    bearerForUnregister,
+                    userIdForUnregister
+                )
             }
-            if let userIdForUnregister, !userIdForUnregister.isEmpty {
-                APIClient.shared.configure(userId: userIdForUnregister)
-            }
-            await AppContainer.shared?.timerLiveActivityCoordinator.clearForLogout()
-            // Spec 030 B2: also drop widget push registration on account wipe.
-            await AppContainer.shared?.widgetPushRegistrar.unregister()
         }
     }
 
@@ -705,7 +718,7 @@ class AuthService {
         let deviceToken = data.deviceToken ?? ""
         applySession(userId: data.user.id, deviceToken: deviceToken.isEmpty ? nil : deviceToken)
 
-        if let featureAdoption = AppContainer.shared?.featureAdoption {
+        if let featureAdoption = featureAdoptionStoreProvider?() {
             markFeatureInstalled(featureAdoptionStore: featureAdoption)
         }
 
@@ -748,7 +761,7 @@ class AuthService {
         let deviceToken = data.deviceToken ?? ""
         applySession(userId: data.user.id, deviceToken: deviceToken.isEmpty ? nil : deviceToken)
 
-        if let featureAdoption = AppContainer.shared?.featureAdoption {
+        if let featureAdoption = featureAdoptionStoreProvider?() {
             markFeatureInstalled(featureAdoptionStore: featureAdoption)
         }
 
@@ -778,8 +791,16 @@ class AuthService {
         apiClient.configure(authToken: nil)
         apiClient.configure(userId: nil)
 
-        AppContainer.shared?.featureAdoption.clearForLogout()
-        AppContainer.shared?.systemBanner.clearForLogout()
+        // Container-side cleanup (featureAdoption / systemBanner clear) reaches
+        // the composition root through the injected closure instead of
+        // `AppContainer.shared`. `stopForLogout` (which the closure also calls)
+        // is invoked separately by `AccountSettingsViewModel.logout` — both
+        // sides are idempotent.
+        if let performContainerTeardown {
+            Task { @MainActor in
+                await performContainerTeardown(.explicitLogout, nil, nil)
+            }
+        }
     }
 
     /// Spec 055: irreversibly delete the current account.

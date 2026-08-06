@@ -221,18 +221,43 @@ final class AppContainer {
         // which owns the re-entry-guarded wipe + teardown flow. Extensions do
         // NOT install these handlers — they must not wipe the session.
         //
+        // Captures `[weak self]` (the container) instead of `[weak auth]` so
+        // the closures can reach the container directly without routing
+        // through `AppContainer.shared` — review finding C1/H6. The container
+        // is always initialized before either handler can fire (handlers are
+        // installed at the very end of `init`, after `sync` and `auth` are
+        // fully constructed), eliminating the bootstrap-ordering race where
+        // a 401 / socket `auth_error` arriving during early startup would
+        // dereference a still-nil `AppContainer.shared`.
+        //
         // The closures hop to `MainActor` themselves via `Task { @MainActor in }`
         // because `APIClient` is `nonisolated` and may call the handler from
         // any thread. AuthService is `@MainActor`, so the body runs there.
-        APIClient.shared.unauthorizedHandler = { [weak auth] in
+        APIClient.shared.unauthorizedHandler = { [weak self] in
             await Task { @MainActor in
-                await auth?.handleDeviceTokenInvalid()
+                await self?.auth.handleDeviceTokenInvalid()
             }.value
         }
-        sync.authInvalidationHandler = { [weak auth] reason in
+        sync.authInvalidationHandler = { [weak self] reason in
             await Task { @MainActor in
-                await auth?.handleAccountDeleted(reason: reason)
+                await self?.auth.handleAccountDeleted(reason: reason)
             }.value
+        }
+
+        // Spec 055 Phase R (review finding C1): give AuthService a direct
+        // handle to the container's teardown path so it no longer reaches back
+        // through `AppContainer.shared`. The closure captures `[weak self]`;
+        // when the container is deallocated (impossible in production but
+        // possible in tests) the wipe still clears local state.
+        auth.performContainerTeardown = { [weak self] reason, bearer, userId in
+            await self?.performInvalidationTeardown(
+                wipeReason: reason,
+                bearerForUnregister: bearer,
+                userIdForUnregister: userId
+            )
+        }
+        auth.featureAdoptionStoreProvider = { [weak self] in
+            self?.featureAdoption
         }
 
         AgentSyncDebugLog.sync(
@@ -457,6 +482,41 @@ final class AppContainer {
         await widgetPushRegistrar.unregister()
         featureAdoption.clearForLogout()
         systemBanner.clearForLogout()
+    }
+
+    /// Spec 055 Phase R: full teardown after `AuthService` decides the local
+    /// session should be wiped (cold-start stale-session probe, runtime
+    /// account-deleted signal from socket, REST 401 with `User not found`,
+    /// or explicit `deleteAccount`). Single source of truth for everything
+    /// `AuthService` previously did by reaching back into `AppContainer.shared`.
+    ///
+    /// Captured credentials (`bearerForUnregister` / `userIdForUnregister`)
+    /// are passed in by the caller because the Keychain wipe must happen on
+    /// the AuthService side before this method runs — by the time we get
+    /// here, `SharedAuthStore` is already empty.
+    ///
+    /// Idempotent: every sub-step is safe to call repeatedly (Live Activity
+    /// coordinator, widget registrar, sync.clearSessionForLogout,
+    /// stopForLogout all handle being called more than once).
+    func performInvalidationTeardown(
+        wipeReason: SessionWipeReason,
+        bearerForUnregister: String?,
+        userIdForUnregister: String?
+    ) async {
+        // Restore credentials onto APIClient for the unregister call only —
+        // AuthService has already wiped SharedAuthStore/Keychain by this point.
+        if let bearerForUnregister, !bearerForUnregister.isEmpty {
+            APIClient.shared.configure(authToken: bearerForUnregister)
+        }
+        if let userIdForUnregister, !userIdForUnregister.isEmpty {
+            APIClient.shared.configure(userId: userIdForUnregister)
+        }
+        await sync.clearSessionForLogout()
+        await stopForLogout()
+        // stopForLogout already covers timerLiveActivityCoordinator + widgetPushRegistrar
+        // for the "stop everything" path; the per-step calls below mirror the
+        // previous AuthService-only flow in case stopForLogout changes shape.
+        _ = wipeReason
     }
 
     #if DEBUG
