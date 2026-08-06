@@ -11545,7 +11545,7 @@
         }
       }
     },
-    "timer.siri.default-name" : {
+    "timer.intent.default-name" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11562,7 +11562,7 @@
         }
       }
     },
-    "timer.siri.dialog.hours-and-minutes" : {
+    "timer.intent.dialog.hours-and-minutes" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11579,7 +11579,7 @@
         }
       }
     },
-    "timer.siri.dialog.hours-only" : {
+    "timer.intent.dialog.hours-only" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11596,7 +11596,7 @@
         }
       }
     },
-    "timer.siri.dialog.minutes-only" : {
+    "timer.intent.dialog.minutes-only" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11613,7 +11613,7 @@
         }
       }
     },
-    "timer.siri.error.zero-duration" : {
+    "timer.intent.error.zero-duration" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11630,7 +11630,7 @@
         }
       }
     },
-    "timer.siri.hours.few" : {
+    "timer.intent.hours.few" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11647,7 +11647,7 @@
         }
       }
     },
-    "timer.siri.hours.many" : {
+    "timer.intent.hours.many" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11664,7 +11664,7 @@
         }
       }
     },
-    "timer.siri.hours.one" : {
+    "timer.intent.hours.one" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11681,7 +11681,7 @@
         }
       }
     },
-    "timer.siri.intent.description" : {
+    "timer.intent.intent.description" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11698,7 +11698,7 @@
         }
       }
     },
-    "timer.siri.intent.title" : {
+    "timer.intent.intent.title" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11715,7 +11715,7 @@
         }
       }
     },
-    "timer.siri.minutes.few" : {
+    "timer.intent.minutes.few" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11732,7 +11732,7 @@
         }
       }
     },
-    "timer.siri.minutes.many" : {
+    "timer.intent.minutes.many" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11749,7 +11749,7 @@
         }
       }
     },
-    "timer.siri.minutes.one" : {
+    "timer.intent.minutes.one" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11766,7 +11766,7 @@
         }
       }
     },
-    "timer.siri.parameter.hours.description" : {
+    "timer.intent.parameter.hours.description" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11783,7 +11783,7 @@
         }
       }
     },
-    "timer.siri.parameter.minutes.description" : {
+    "timer.intent.parameter.minutes.description" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11800,7 +11800,7 @@
         }
       }
     },
-    "timer.siri.parameter.name" : {
+    "timer.intent.parameter.name" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11817,7 +11817,7 @@
         }
       }
     },
-    "timer.siri.parameter.name.description" : {
+    "timer.intent.parameter.name.description" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11834,7 +11834,7 @@
         }
       }
     },
-    "timer.siri.preset-10min.description" : {
+    "timer.intent.preset-10min.description" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -11851,7 +11851,7 @@
         }
       }
     },
-    "timer.siri.preset-10min.title" : {
+    "timer.intent.preset-10min.title" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {

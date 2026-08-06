@@ -7,27 +7,33 @@ import AppIntents
 import RecipeScalerCore
 
 struct StartTimerIntent: AppIntent {
-    static var title: LocalizedStringResource = LocalizedStringResource("timer.siri.intent.title")
-    static var description = IntentDescription(LocalizedStringResource("timer.siri.intent.description"))
+    static var title: LocalizedStringResource = LocalizedStringResource(
+        "timer.intent.intent.title",
+        defaultValue: "Start a cooking timer"
+    )
+    static var description = IntentDescription(LocalizedStringResource(
+        "timer.intent.intent.description",
+        defaultValue: "Starts a countdown timer in Recipe Scaler."
+    ))
     static var openAppWhenRun: Bool = false
 
     @Parameter(
         title: LocalizedStringResource("timers.time-types.minutes"),
-        description: LocalizedStringResource("timer.siri.parameter.minutes.description"),
+        description: LocalizedStringResource("timer.intent.parameter.minutes.description"),
         default: 0
     )
     var minutes: Int
 
     @Parameter(
         title: LocalizedStringResource("timers.time-types.hours"),
-        description: LocalizedStringResource("timer.siri.parameter.hours.description"),
+        description: LocalizedStringResource("timer.intent.parameter.hours.description"),
         default: 0
     )
     var hours: Int
 
     @Parameter(
-        title: LocalizedStringResource("timer.siri.parameter.name"),
-        description: LocalizedStringResource("timer.siri.parameter.name.description"),
+        title: LocalizedStringResource("timer.intent.parameter.name"),
+        description: LocalizedStringResource("timer.intent.parameter.name.description"),
         default: ""
     )
     var name: String
@@ -48,7 +54,7 @@ struct StartTimerIntent: AppIntent {
         }
 
         let label = name.trimmingCharacters(in: .whitespaces).isEmpty
-            ? Bundle.currentLocalizedString("timer.siri.default-name")
+            ? Bundle.currentLocalizedString("timer.intent.default-name")
             : name
 
         await TimerManager.configureForIntentIfNeeded()
@@ -66,19 +72,19 @@ struct StartTimerIntent: AppIntent {
         switch (hours, minutes) {
         case (let h, 0) where h > 0:
             return String(
-                format: Bundle.currentLocalizedString("timer.siri.dialog.hours-only"),
-                Bundle.appPluralizedString(key: "timer.siri.hours", count: h)
+                format: Bundle.currentLocalizedString("timer.intent.dialog.hours-only"),
+                Bundle.appPluralizedString(key: "timer.intent.hours", count: h)
             )
         case (0, let m):
             return String(
-                format: Bundle.currentLocalizedString("timer.siri.dialog.minutes-only"),
-                Bundle.appPluralizedString(key: "timer.siri.minutes", count: m)
+                format: Bundle.currentLocalizedString("timer.intent.dialog.minutes-only"),
+                Bundle.appPluralizedString(key: "timer.intent.minutes", count: m)
             )
         default:
             return String(
-                format: Bundle.currentLocalizedString("timer.siri.dialog.hours-and-minutes"),
-                Bundle.appPluralizedString(key: "timer.siri.hours", count: hours),
-                Bundle.appPluralizedString(key: "timer.siri.minutes", count: minutes)
+                format: Bundle.currentLocalizedString("timer.intent.dialog.hours-and-minutes"),
+                Bundle.appPluralizedString(key: "timer.intent.hours", count: hours),
+                Bundle.appPluralizedString(key: "timer.intent.minutes", count: minutes)
             )
         }
     }
@@ -87,8 +93,14 @@ struct StartTimerIntent: AppIntent {
 /// Spotlight / Top Hit preset: fixed 10-minute timer. Must be a named `AppIntent` type —
 /// inline configured `StartTimerIntent()` in `AppShortcut` breaks `AppIntentsSSUTraining`.
 struct StartTenMinuteTimerIntent: AppIntent {
-    static var title: LocalizedStringResource = LocalizedStringResource("timer.siri.preset-10min.title")
-    static var description = IntentDescription(LocalizedStringResource("timer.siri.preset-10min.description"))
+    static var title: LocalizedStringResource = LocalizedStringResource(
+        "timer.intent.preset-10min.title",
+        defaultValue: "Start a 10-minute timer"
+    )
+    static var description = IntentDescription(LocalizedStringResource(
+        "timer.intent.preset-10min.description",
+        defaultValue: "Starts a 10-minute countdown timer in Recipe Scaler."
+    ))
     static var openAppWhenRun: Bool = false
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
@@ -101,6 +113,6 @@ struct StartTenMinuteTimerIntent: AppIntent {
 private enum TimerIntentError: Error, CustomLocalizedStringResourceConvertible {
     case zeroDuration
     var localizedStringResource: LocalizedStringResource {
-        LocalizedStringResource("timer.siri.error.zero-duration")
+        LocalizedStringResource("timer.intent.error.zero-duration")
     }
 }
