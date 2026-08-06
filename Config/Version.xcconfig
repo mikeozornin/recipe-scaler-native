@@ -1,0 +1,13 @@
+// Recipe Scaler — единый источник версии для всех таргетов.
+//
+// Organizer показывает CFBundleShortVersionString (CFBundleVersion).
+// Info.plist собирает short version как $(MARKETING_VERSION).$(CURRENT_PROJECT_VERSION),
+// поэтому архив виден как 1.0.5 (5), а не 1.0 (5).
+//
+// Перед Archive схема RecipeScalerNative вызывает scripts/bump-build-number.sh.
+// Вручную: bash scripts/bump-build-number.sh
+//
+// Новый релиз (1.1.x): поднять MARKETING_VERSION и сбросить CURRENT_PROJECT_VERSION.
+
+MARKETING_VERSION = 1.0
+CURRENT_PROJECT_VERSION = 5

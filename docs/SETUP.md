@@ -105,6 +105,19 @@ xcodebuild build -scheme RecipeScalerNative \
   -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
+### App version / Archive builds
+
+Версия задаётся в [`Config/Version.xcconfig`](../Config/Version.xcconfig):
+
+- `MARKETING_VERSION` — база (`1.0`)
+- `CURRENT_PROJECT_VERSION` — номер билда (`5`, `6`, …)
+
+В Organizer short version собирается как **1.0.5** (`$(MARKETING_VERSION).$(CURRENT_PROJECT_VERSION)`), а не «1.0 (5)».
+
+Перед **Product → Archive** схема `RecipeScalerNative` автоматически вызывает `scripts/bump-build-number.sh` (следующий архив станет `1.0.6`). Вручную: `bash scripts/bump-build-number.sh`. Отключить авто-bump: `RS_SKIP_BUILD_BUMP=1`.
+
+Новый релиз (например 1.1): поднять `MARKETING_VERSION`, сбросить `CURRENT_PROJECT_VERSION`.
+
 ## Phase 4: Tiptap WebView Bundle
 
 When reaching Phase 4 (description editing), build the Tiptap bundle:
