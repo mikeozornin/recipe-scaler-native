@@ -104,6 +104,21 @@ struct ContentView: View {
                         TimerNotificationSmokeTest.Launcher.launchIfNeeded(timerManager: container.timer)
                     }
                 }
+                if let container,
+                   DebugLaunchOptions.screenshotCapture
+                    || DebugLaunchOptions.screenshotTimerSeconds != nil
+                    || DebugLaunchOptions.screenshotShoppingSeed != nil {
+                    Task.detached { @MainActor in
+                        // Wait briefly so ActivityKit / LA auth is ready after cold launch.
+                        try? await Task.sleep(nanoseconds: 800_000_000)
+                        DebugLaunchOptions.applyScreenshotTimerIfNeeded(timerManager: container.timer)
+                        if DebugLaunchOptions.screenshotShoppingSeed != nil {
+                            await DebugLaunchOptions.applyScreenshotShoppingSeedIfNeeded(
+                                syncService: container.sync
+                            )
+                        }
+                    }
+                }
                 return
             }
             #else

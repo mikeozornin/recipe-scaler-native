@@ -89,10 +89,17 @@ struct RecipeListView: View {
         // Under XCTest/UI-test hosts the in-memory DB fallback is expected and
         // not actionable — the banner only confuses screenshot tests. Hide it
         // for those hosts; production users still see the real failure.
+        // Store screenshot mode (`-ScreenshotCapture=1`) likewise must not show
+        // recovery chrome on marketing frames.
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
             || ProcessInfo.processInfo.arguments.contains("ui-testing") {
             return false
         }
+        #if DEBUG
+        if DebugLaunchOptions.screenshotCapture {
+            return false
+        }
+        #endif
         return YrsDatabase.dbInitFailed
     }
 
@@ -467,11 +474,20 @@ struct RecipeListView: View {
 
     #if DEBUG
     private func openDebugRecipeIfNeeded() {
-        guard !didOpenDebugRecipe,
-              let recipeId = DebugLaunchOptions.openRecipeId,
-              syncService.collectionEntries.contains(where: { $0.id == recipeId && !$0.deleted }) else {
-            return
+        guard !didOpenDebugRecipe else { return }
+        let entries = syncService.collectionEntries.filter { !$0.deleted }
+        let recipeId: String?
+        if let explicitId = DebugLaunchOptions.openRecipeId,
+           entries.contains(where: { $0.id == explicitId }) {
+            recipeId = explicitId
+        } else if let name = DebugLaunchOptions.openRecipeName?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !name.isEmpty {
+            recipeId = entries.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame })?.id
+                ?? entries.first(where: { $0.name.localizedCaseInsensitiveContains(name) })?.id
+        } else {
+            recipeId = nil
         }
+        guard let recipeId else { return }
         didOpenDebugRecipe = true
         navigationPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
     }

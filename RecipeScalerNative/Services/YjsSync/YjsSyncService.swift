@@ -985,6 +985,11 @@ final class YjsSyncService {
         await refreshShoppingSnapshot()
     }
 
+    func replaceShoppingItems(_ items: [ShoppingListItem]) async throws {
+        try await documentManager.replaceShoppingItems(items)
+        await refreshShoppingSnapshot()
+    }
+
     func addRecipeToShoppingList(
         recipeId: String,
         recipeName: String,

@@ -7,6 +7,7 @@
 - Native app — здесь; web sources — `../recipe-scaler-web`; production API — `https://recipe-scaler.ru`.
 - Offline-first: приложение работает офлайн, кроме отдельных фич (например Discover).
 - Debug builds auto-login configured prod debug user — не полагайся на ручный ввод seed в рутинном тестировании. Seed phrase при необходимости: `breeze roast wink solar guess tongue nothing subway theme palace mask wrist`
+- **Store / App Review users** (отдельные от debug): [`store/fixtures/users.yaml`](../store/fixtures/users.yaml) — `ru`, `en`, `app-store-review`. Provision: `python3 scripts/store_users.py provision`.
 - DEBUG simulator auto-login injects `device_token` together with `debugUserId` (spec 041; legacy `x-user-id` disabled on prod). Override via launch env `DEBUG_DEVICE_TOKEN`. Credentials: `RecipeScalerNative/App/DebugSimulatorAutoLogin.swift`.
 - Architecture/sync markdown (`sync.md` и т.п.) может быть устаревшим — сверяй с live code и web `yjs-client.ts` перед тем как считать источником правды.
 - **Shared contracts (Yjs, sync, auth, export, error codes):** `../recipe-scaler-web/specs/shared/` — SoT для wire; native `docs/YJS-SCHEMA.md` и contracts — pointers + platform notes.
@@ -34,6 +35,7 @@
 
 - Paid Apple Developer Program ($99/yr): **active** (team `ZBPX4JYT24`). Portal + device smoke — [PAID-APPLE-DEVELOPER-REQUIRED.md](PAID-APPLE-DEVELOPER-REQUIRED.md). Timer push toggle registers APNs; silent push wakes widget timelines; Universal Links (`059`) + Share/Action (`025`) need device verification.
 - Share Extension + Action Extension targets exist for URL/text import (`specs/025-share-extension`); full on-device Share Sheet testing needs paid program + App Group provisioning.
+- **App Store screenshots** (raw 6.9″, ru/en × light/dark): [store/README.md](../store/README.md), spec [060](../specs/060-app-store-screenshots/spec.md). v1 store: iPhone-only, без Watch.
 
 ## Экспорт и импорт данных (native)
 

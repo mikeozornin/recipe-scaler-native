@@ -45,7 +45,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/034-architecture-dedup-truth/plan.md
+at specs/060-app-store-screenshots/plan.md
 <!-- SPECKIT END -->
 
 ## Learned User Preferences

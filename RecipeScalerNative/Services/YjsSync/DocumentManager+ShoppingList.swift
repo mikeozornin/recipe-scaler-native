@@ -120,6 +120,27 @@ extension DocumentManager {
         await deliverPendingShoppingUpdate()
     }
 
+    /// Replace the entire shopping list (store screenshot seed).
+    func replaceShoppingItems(_ newItems: [ShoppingListItem]) async throws {
+        let key = try await mutateShoppingItems { items, _, txn in
+            let count = items.length(txn: txn)
+            if count > 0 {
+                for index in stride(from: Int(count) - 1, through: 0, by: -1) {
+                    items.remove(at: UInt32(index), txn: txn)
+                }
+            }
+            for item in newItems {
+                let index = items.length(txn: txn)
+                items.insert(value: .map([]), at: index, txn: txn)
+                items.withMap(at: index, txn: txn) { map in
+                    writeShoppingItem(map, item: item, txn: txn)
+                }
+            }
+        }
+        await persistSnapshot(docKey: key)
+        await deliverPendingShoppingUpdate()
+    }
+
     // MARK: - Private
 
     @discardableResult

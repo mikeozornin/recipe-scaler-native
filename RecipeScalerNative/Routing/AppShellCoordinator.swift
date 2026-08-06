@@ -210,6 +210,18 @@ final class AppShellCoordinator {
 
     #if DEBUG
     func openDebugTabIfNeeded(_ tab: AppTab?) {
+        if let slug = DebugLaunchOptions.openDiscoverCollectionSlug, !slug.isEmpty {
+            selectedTab = .discover
+            discoverPath = NavigationPath()
+            discoverPath.append(DiscoverRoute.collection(slug))
+            return
+        }
+        if let username = DebugLaunchOptions.openDiscoverProfileUsername, !username.isEmpty {
+            selectedTab = .discover
+            discoverPath = NavigationPath()
+            discoverPath.append(DiscoverRoute.profile(username))
+            return
+        }
         guard let tab else { return }
         if tab == .importTab {
             selectedTab = .recipes

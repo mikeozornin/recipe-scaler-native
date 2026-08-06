@@ -65,5 +65,8 @@ scripts/node_modules/
 .playwright-mcp
 tmp
 .verify-screenshots
+.capture-screenshots.lock
+.capture-screenshots.lock.d/
+store/screenshots/iphone-6.9/**/*.png
 .test-fast-results.xcresult
 .test-fast.log

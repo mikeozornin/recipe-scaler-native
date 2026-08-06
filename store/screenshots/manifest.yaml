@@ -1,0 +1,48 @@
+deviceClass: iphone-6.9
+preferredSimulatorNames:
+  - iPhone Air
+  - iPhone 17 Pro Max
+acceptedPixelSizes:
+  - [1260, 2736]
+  - [1320, 2868]
+  - [1290, 2796]
+shots:
+  - { id: "01", slug: recipes, tab: recipes }
+  - { id: "02", slug: cooking, openRecipe: true, scale: 2, screenAwake: true, timerSeconds: 2700 }
+  - { id: "03", slug: discover }
+  - { id: "04", slug: shopping, tab: shopping }
+  - { id: "05", slug: assistant, assistantFixture: true }
+  - { id: "06", slug: widget, springboard: true }
+  - { id: "07", slug: live-activity, lockScreen: true, timerSeconds: 2700 }
+  - { id: "08", slug: push, timerSeconds: 4, waitForBanner: true }
+
+locales:
+  ru:
+    archive: store/fixtures/recipes-ru.zip
+    appleLanguages: ["ru"]
+    appLanguage: ru
+    appearances: [light, dark]
+    primaryRecipeName: Штрудель
+    timerName: "Штрудель в духовке"
+    assistantPrompt: "Соус свернулся. Как спасти пасту?"
+    discoverProfileUsername: mikeozornin-ru-scr
+    # Prefix "!" = purchased on the shopping shot.
+    shoppingItems:
+      - "Мука, 280 г — Штрудель"
+      - "Вишня, 1100 г — Штрудель"
+      - "!Творог — Сырники"
+      - "Филе лосося — Лохикейтто"
+  en:
+    archive: store/fixtures/recipes-en.zip
+    appleLanguages: ["en"]
+    appLanguage: en
+    appearances: [light, dark]
+    primaryRecipeName: Strudel
+    timerName: "Strudel in the oven"
+    assistantPrompt: "My sauce split. How can I save the pasta?"
+    discoverProfileUsername: mikeozornin-en-scr
+    shoppingItems:
+      - "Flour, 280 g — Strudel"
+      - "Cherries, 1100 g — Strudel"
+      - "!Farmer cheese — Syrniki"
+      - "Salmon fillet — Lohikeitto"

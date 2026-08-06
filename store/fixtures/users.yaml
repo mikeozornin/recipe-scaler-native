@@ -1,0 +1,37 @@
+# Dedicated Recipe Scaler accounts for screenshots and App Review.
+# Not personal identities. app-store-review seed is given to Apple.
+# Recreate (new accounts): python3 scripts/store_users.py provision --force
+apiBase: https://recipe-scaler.ru
+users:
+  ru:
+    role: screenshot
+    locale: ru
+    label: "Store screenshots RU"
+    userId: 55bb1494-cd32-4a5e-b539-f885ad5756e6
+    seedPhrase: "cool fork duty quick fork praise cook unfold holiday vanish pride mean"
+    deviceId: store-screenshot-ru
+    username: mikeozornin-ru-scr
+    archive: store/fixtures/recipes-ru.zip
+    createdAt: "2026-08-05T13:48:20Z"
+    notes: "Persistent screenshot library (Russian content). Public profile @mikeozornin-ru-scr."
+  en:
+    role: screenshot
+    locale: en
+    label: "Store screenshots EN"
+    userId: 7bd4583f-dffe-4d89-ad5d-e1c8284066e3
+    seedPhrase: "fun elegant copy employ mechanic trigger imitate mixture trend grid unfold health"
+    deviceId: store-screenshot-en
+    username: mikeozornin-en-scr
+    archive: store/fixtures/recipes-en.zip
+    createdAt: "2026-08-05T13:48:20Z"
+    notes: "Persistent screenshot library (English content). Public profile @mikeozornin-en-scr."
+  app-store-review:
+    role: app-store-review
+    locale: en
+    label: "App Store Review (EN library copy)"
+    userId: 90753920-4c95-49c1-8c11-12d5324d2ec7
+    seedPhrase: "want elbow air educate buzz artefact impulse illness surface history work announce"
+    deviceId: store-app-review
+    archive: store/fixtures/recipes-en.zip
+    createdAt: "2026-08-05T13:48:21Z"
+    notes: "Give this seed to App Review in ASC. Same EN fixture as screenshots, separate account."

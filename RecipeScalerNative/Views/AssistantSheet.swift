@@ -266,6 +266,12 @@ struct AssistantSheet: View {
     private func initialize() async {
         guard !hasTriedSessionRestore else { return }
         hasTriedSessionRestore = true
+        #if DEBUG
+        if DebugLaunchOptions.screenshotAssistantFixture {
+            applyScreenshotAssistantFixture()
+            return
+        }
+        #endif
         isBootstrapping = true
         defer { isBootstrapping = false }
 
@@ -287,6 +293,36 @@ struct AssistantSheet: View {
         }
         startNewChat()
     }
+
+    #if DEBUG
+    private func applyScreenshotAssistantFixture() {
+        let isEnglish = AppLanguagePreference.current == .en
+        let stamp = AssistantISO8601.parse("2026-04-12T10:00:00.000Z") ?? Date()
+        threadId = "about-assistant-thread"
+        messages = [
+            AssistantMessage(
+                id: "about-assistant-user-message",
+                role: "user",
+                text: isEnglish
+                    ? "My sauce split. How can I save the pasta?"
+                    : "Соус свернулся. Как спасти пасту?",
+                isStreaming: false,
+                metadata: nil,
+                createdAt: stamp
+            ),
+            AssistantMessage(
+                id: "about-assistant-reply",
+                role: "assistant",
+                text: isEnglish
+                    ? "Don't panic: you can usually bring the sauce back.\n\n1. Take the pan off the heat and let it rest for 20-30 seconds.\n2. Add 1-2 spoonfuls of warm pasta water and whisk quickly.\n3. If it still looks grainy, stir in a little cold butter.\n\nThen keep the sauce over low heat and do not let it boil."
+                    : "Спокойно: чаще всего соус можно вернуть.\n\n1. Сними сковороду с огня и дай ей постоять 20-30 секунд.\n2. Добавь 1-2 ложки теплой воды от пасты и энергично размешай.\n3. Если соус все еще зернистый, вмешай немного холодного сливочного масла.\n\nДальше держи соус на слабом огне и не давай ему кипеть.",
+                isStreaming: false,
+                metadata: nil,
+                createdAt: stamp
+            ),
+        ]
+    }
+    #endif
 
     private func startNewChat() {
         streamTask?.cancel()

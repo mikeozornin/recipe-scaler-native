@@ -546,6 +546,16 @@ struct YDocRecipeDetailView: View {
             }
             syncService.acknowledgeRecipeRemoved()
             await syncService.loadRecipe(recipeId: recipeId)
+            #if DEBUG
+            if let screenshotScale = DebugLaunchOptions.screenshotScaleFactor {
+                scaleFactor = screenshotScale
+                RecipeScaleStorage.saveScaleFactor(recipeId: recipeId, scaleFactor: screenshotScale)
+            }
+            if DebugLaunchOptions.screenshotScreenAwake {
+                isScreenAwakeActive = true
+                ScreenAwakeController.setActive(true)
+            }
+            #endif
         }
         .task(id: recipeIngredientsLazyResolveKey) {
             await runIngredientIllustrationLazyResolve()
@@ -564,8 +574,6 @@ struct YDocRecipeDetailView: View {
             applyStartInEditModeIfNeeded()
         }
         .onChange(of: recipe?.id) { _, _ in
-            #if DEBUG
-            #endif
             guard editViewModel?.isEditingTitleField != true else { return }
             if let recipe {
                 let vm = RecipeEditViewModel(recipe: recipe, syncService: syncService)
