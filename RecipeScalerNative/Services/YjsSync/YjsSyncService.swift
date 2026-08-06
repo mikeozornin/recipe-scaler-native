@@ -985,10 +985,14 @@ final class YjsSyncService {
         await refreshShoppingSnapshot()
     }
 
+    /// DEBUG-only re-export of the screenshot-seed shopping list replace.
+    /// See `DocumentManager.replaceShoppingItems` for the rationale.
+    #if DEBUG
     func replaceShoppingItems(_ items: [ShoppingListItem]) async throws {
         try await documentManager.replaceShoppingItems(items)
         await refreshShoppingSnapshot()
     }
+    #endif
 
     func addRecipeToShoppingList(
         recipeId: String,

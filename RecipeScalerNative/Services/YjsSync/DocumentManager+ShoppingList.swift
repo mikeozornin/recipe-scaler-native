@@ -121,6 +121,12 @@ extension DocumentManager {
     }
 
     /// Replace the entire shopping list (store screenshot seed).
+    ///
+    /// DEBUG-only: the single call site is `DebugLaunchOptions.applyScreenshotShoppingSeedIfNeeded`,
+    /// which is itself `#if DEBUG`-gated. Bypasses the normal CRDT-aware
+    /// mutation path that other shopping operations go through, so it must
+    /// not ship in Release.
+    #if DEBUG
     func replaceShoppingItems(_ newItems: [ShoppingListItem]) async throws {
         let key = try await mutateShoppingItems { items, _, txn in
             let count = items.length(txn: txn)
@@ -140,6 +146,7 @@ extension DocumentManager {
         await persistSnapshot(docKey: key)
         await deliverPendingShoppingUpdate()
     }
+    #endif
 
     // MARK: - Private
 

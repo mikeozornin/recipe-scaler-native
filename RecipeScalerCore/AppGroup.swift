@@ -21,7 +21,20 @@ public enum AppGroup {
     /// - `TimerLiveActivityActionQueue` (extension → app action bridge)
     /// - `TimerLiveActivityMetadataProvider` (recipe thumbnails)
     /// - `TimerSnapshotStore` (timer snapshot for HomeWidgetExtension)
+    /// - `pendingRecipeIdKey` (Share/Action extension → host recipe hand-off)
     public static let id = "group.ru.recipescaler.RecipeScaler"
+
+    /// Pending recipe id hand-off from Share/Action extensions to the host app.
+    ///
+    /// Written by `ShareView.openRecipeInHostApp()` when the user taps "Open"
+    /// after a successful import, and read by
+    /// `DeepLinkRouter.consumePendingRecipeId()` on the host side (App Group
+    /// first, then `UserDefaults.standard` as a legacy fallback).
+    ///
+    /// Canonical location: both the Share/Action extension targets and the
+    /// host app link against `RecipeScalerCore`, so this constant is the
+    /// single source of truth for the key string across module boundaries.
+    public static let pendingRecipeIdKey = "routing.pendingRecipeId"
 
     /// Convenience accessor for the shared `UserDefaults` suite.
     public static var userDefaults: UserDefaults? {

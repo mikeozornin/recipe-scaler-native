@@ -59,7 +59,13 @@ final class DeepLinkRouter {
 
     /// UserDefaults key for `recipe-scaler://recipe/{id}` links persisted
     /// by Share/Action extensions.
-    static let pendingRecipeIdKey = "routing.pendingRecipeId"
+    ///
+    /// Canonical definition lives in `RecipeScalerCore.AppGroup.pendingRecipeIdKey`
+    /// so both the extension targets (which cannot link the app target) and
+    /// the host reference the same symbol. Kept here as a re-export so the
+    /// existing call sites (`AppShellCoordinator`, tests) keep compiling
+    /// without churn.
+    static let pendingRecipeIdKey = AppGroup.pendingRecipeIdKey
 
     /// Last URL consumed by `handle(_:)` plus the wall-clock time it was
     /// routed. Guards against double delivery of the same Universal Link via

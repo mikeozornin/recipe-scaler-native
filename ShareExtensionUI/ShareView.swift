@@ -187,7 +187,7 @@ public struct ShareView: View {
         }
 
         // App Group backup when URL delivery races cold start / open fails.
-        AppGroup.userDefaults?.set(id, forKey: "routing.pendingRecipeId")
+        AppGroup.userDefaults?.set(id, forKey: AppGroup.pendingRecipeIdKey)
 
         ExtensionHostURLOpener.open(
             url,

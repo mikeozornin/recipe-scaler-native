@@ -3,8 +3,15 @@
 //  ShareExtensionUI
 //
 //  Share extensions cannot rely on NSExtensionContext.open (returns false).
-//  On iOS 18+, walk the responder chain to UIApplication.open(_:options:),
-//  then fall back to runtime UIApplication.sharedApplication.
+//  On iOS 18+, walk the responder chain to UIApplication.open(_:options:).
+//  When neither path succeeds, the App Group `routing.pendingRecipeId` slot
+//  written by `ShareView.openRecipeInHostApp()` carries the id to the host
+//  on its next launch via `DeepLinkRouter.consumePendingRecipeId()`.
+//
+//  Note: a runtime `UIApplication.sharedApplication` fallback via
+//  `NSSelectorFromString` / `perform(_:)` was considered and removed — it
+//  shows up in App Review's static binary analysis as private API usage and
+//  risks rejection under guideline 2.5.1.
 //
 
 import UIKit
@@ -13,7 +20,7 @@ enum ExtensionHostURLOpener {
     /// Attempts to open `url` in the containing app.
     /// 1) `NSExtensionContext.open` (Today / some Action hosts)
     /// 2) `UIApplication.open` via responder chain
-    /// 3) Runtime `sharedApplication` (Share on iOS 18+)
+    /// 3) Fall back to App Group IPC (host consumes on next launch)
     static func open(
         _ url: URL,
         extensionContext: NSExtensionContext?,
@@ -47,17 +54,10 @@ enum ExtensionHostURLOpener {
             current = candidate.next
         }
 
-        // UIApplication.shared is unavailable at compile time in extensions;
-        // resolve at runtime (common Share Extension pattern).
-        let sel = NSSelectorFromString("sharedApplication")
-        if let appType = NSClassFromString("UIApplication") as? NSObject.Type,
-           appType.responds(to: sel),
-           let unmanaged = appType.perform(sel),
-           let application = unmanaged.takeUnretainedValue() as? UIApplication {
-            application.open(url, options: [:], completionHandler: completion)
-            return
-        }
-
+        // No UIApplication in the responder chain. The App Group slot
+        // written by `ShareView.openRecipeInHostApp()` carries the recipe id
+        // to the host on its next launch — caller treats `false` as
+        // "complete the share request; id survives via App Group".
         completion(false)
     }
 }
