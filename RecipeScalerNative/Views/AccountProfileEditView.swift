@@ -152,7 +152,13 @@ struct AccountProfileEditView: View {
 #if DEBUG
 #Preview {
     NavigationStack {
-        AccountProfileEditView(viewModel: AccountSettingsViewModel())
+        AccountProfileEditView(
+            viewModel: AccountSettingsViewModel(
+                auth: AuthService(),
+                timer: TimerManager.shared,
+                performLogoutTeardown: {}
+            )
+        )
     }
 }
 #endif

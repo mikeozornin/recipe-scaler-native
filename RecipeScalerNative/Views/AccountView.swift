@@ -15,13 +15,38 @@ private enum AccountSheet: Identifiable {
 struct AccountView: View {
     @Environment(YjsSyncService.self) private var syncService
     @Environment(RemindersSyncService.self) private var remindersService
-    @Environment(AuthService.self) private var authService
     @Environment(FeatureAdoptionStore.self) private var featureAdoptionStore
-    @Environment(TimerManager.self) private var timerManager
     @Environment(AppShellCoordinator.self) private var coordinator
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Environment(\.locale) private var locale
-    @State private var viewModel = AccountSettingsViewModel()
+
+    /// Injected dependencies (architecture review C2). AccountView receives
+    /// `AuthService` and `TimerManager` explicitly so it can construct the
+    /// view model with the same dependencies, instead of reaching into
+    /// `AuthService.shared` / `TimerManager.shared` from inside the VM.
+    /// `AppShellView` resolves these from `@Environment`.
+    private let auth: AuthService
+    private let timer: TimerManager
+    @State private var viewModel: AccountSettingsViewModel
+
+    init(auth: AuthService, timer: TimerManager) {
+        self.auth = auth
+        self.timer = timer
+        let container = AppContainer.shared
+        _viewModel = State(initialValue: AccountSettingsViewModel(
+            auth: auth,
+            timer: timer,
+            performLogoutTeardown: {
+                // Read fresh at call time — the captured syncService may not
+                // outlive root-view churn, but AppContainer.shared is stable
+                // for the production lifetime of the app.
+                if let container {
+                    await container.sync.clearSessionForLogout()
+                    await container.stopForLogout()
+                }
+            }
+        ))
+    }
 
     @State private var showingLogoutConfirmation = false
     @State private var presentedSheet: AccountSheet?
@@ -103,7 +128,7 @@ struct AccountView: View {
                     telegramSection
                         .id(AccountViewSection.telegram.id)
                     dataSection
-                    if authService.isAuthenticated {
+                    if auth.isAuthenticated {
                         dangerZoneSection
                     }
 
@@ -119,7 +144,7 @@ struct AccountView: View {
                     logExportSection
 
                     if MobileTimerPanelListChrome.needsSpacer(
-                        timerManager: timerManager,
+                        timerManager: timer,
                         isCollapsed: mobileTimerPanelIsCollapsed
                     ) {
                         MobileTimerPanelListSpacerRow()
@@ -264,7 +289,7 @@ struct AccountView: View {
 
     @ViewBuilder
     private var legacyAuthBannerSection: some View {
-        if let userId = authService.userId {
+        if let userId = auth.userId {
             Section {
                 LegacyAuthBannerView(userId: userId, refreshTick: refreshTick)
             }
@@ -274,7 +299,7 @@ struct AccountView: View {
     @ViewBuilder
     private var accountSection: some View {
         Section {
-            if let userId = authService.userId {
+            if let userId = auth.userId {
                 HStack(spacing: 12) {
                     accountAvatar
                     Text(UserIdFormatter.format(userId))
@@ -924,7 +949,7 @@ private struct AccountSeedPhraseSheet: View {
     let sync = YjsSyncService.makeForTesting(store: store)
     let coordinator = AppShellCoordinator(syncService: sync, deepLinkRouter: DeepLinkRouter())
     return NavigationStack {
-        AccountView()
+        AccountView(auth: AuthService(), timer: TimerManager.shared)
             .environment(coordinator)
     }
 }

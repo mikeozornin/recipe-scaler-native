@@ -65,6 +65,7 @@ private struct AppTabBarLabel: View {
 struct AppShellView: View {
     @Bindable private var coordinator: AppShellCoordinator
     @Environment(YjsSyncService.self) private var syncService
+    @Environment(AuthService.self) private var authService
     @Environment(TimerManager.self) private var timerManager
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
@@ -304,7 +305,7 @@ struct AppShellView: View {
             .tag(AppTab.shopping)
             .accessibilityIdentifier(AccessibilityIdentifiers.tabShopping)
 
-            tabRoot(AccountView()) {
+            tabRoot(AccountView(auth: authService, timer: timerManager)) {
                 AppTabBarLabel(tab: .profile)
             }
             .tag(AppTab.profile)

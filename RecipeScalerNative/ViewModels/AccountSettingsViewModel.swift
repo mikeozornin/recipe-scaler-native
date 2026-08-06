@@ -37,6 +37,27 @@ final class AccountSettingsViewModel {
 
     private var nameSaveTask: Task<Void, Never>?
 
+    /// Injected dependencies (architecture review C2). Previously this view
+    /// model reached for `AuthService.shared`, `TimerManager.shared`, and
+    /// `AppContainer.shared` directly, which made it impossible to test or
+    /// preview without constructing the full app container.
+    private let auth: AuthService
+    private let timer: TimerManager
+    /// Container-side logout/account-delete teardown (sync.clearSessionForLogout +
+    /// stopForLogout + Live Activity + widget unregister). Captured as a closure
+    /// so the view model does not depend on `AppContainer.shared`.
+    private let performLogoutTeardown: () async -> Void
+
+    init(
+        auth: AuthService,
+        timer: TimerManager,
+        performLogoutTeardown: @escaping () async -> Void
+    ) {
+        self.auth = auth
+        self.timer = timer
+        self.performLogoutTeardown = performLogoutTeardown
+    }
+
     func bind(syncService: YjsSyncService) {
         isOnline = syncService.connectionState == .connected
     }
@@ -49,7 +70,7 @@ final class AccountSettingsViewModel {
         await refreshTimerNotificationState()
         refreshRemindersState()
 
-        guard AuthService.shared.userId != nil else { return }
+        guard auth.userId != nil else { return }
 
         do {
             async let profile = AccountAPI.fetchProfile()
@@ -214,7 +235,7 @@ final class AccountSettingsViewModel {
     }
 
     func refreshTimerNotificationState() async {
-        let status = await TimerManager.shared.notificationAuthorizationStatus()
+        let status = await timer.notificationAuthorizationStatus()
         timerNotificationsDenied = status == .denied
         timerNotificationsEnabled = TimerNotificationPreferences.isEnabled && status == .authorized
     }
@@ -226,7 +247,7 @@ final class AccountSettingsViewModel {
             return
         }
 
-        let status = await TimerManager.shared.notificationAuthorizationStatus()
+        let status = await timer.notificationAuthorizationStatus()
         if status == .denied {
             timerNotificationsDenied = true
             timerNotificationsEnabled = false
@@ -236,11 +257,11 @@ final class AccountSettingsViewModel {
 
         var granted = status == .authorized
         if status == .notDetermined {
-            granted = await TimerManager.shared.requestNotificationAuthorization()
+            granted = await timer.requestNotificationAuthorization()
         } else if granted {
             // Permission already granted — still request a device token so APNs
             // registration runs even when prefs were off or the token was never uploaded.
-            TimerManager.shared.registerForRemoteNotifications()
+            timer.registerForRemoteNotifications()
         }
 
         if granted {
@@ -250,7 +271,7 @@ final class AccountSettingsViewModel {
         } else {
             TimerNotificationPreferences.isEnabled = false
             timerNotificationsEnabled = false
-            let updatedStatus = await TimerManager.shared.notificationAuthorizationStatus()
+            let updatedStatus = await timer.notificationAuthorizationStatus()
             if updatedStatus == .denied {
                 timerNotificationsDenied = true
                 statusMessage = String(localized: "account.timer-notifications.denied")
@@ -334,16 +355,14 @@ final class AccountSettingsViewModel {
     }
 
     func logout(syncService: YjsSyncService) async {
-        if let userId = AuthService.shared.userId,
+        if let userId = auth.userId,
            let deviceId = UserDefaults.standard.string(forKey: "deviceId") {
             await AccountAPI.logoutDevice(userId: userId, deviceId: deviceId)
         }
         await syncService.clearSessionForLogout()
-        if let container = AppContainer.shared {
-            await container.stopForLogout()
-        }
+        await performLogoutTeardown()
         do {
-            try AuthService.shared.logout()
+            try auth.logout()
         } catch {
             setStatus(from: error)
         }
@@ -359,11 +378,9 @@ final class AccountSettingsViewModel {
     @discardableResult
     func deleteAccount(seedPhrase: String, syncService: YjsSyncService) async -> String? {
         do {
-            try await AuthService.shared.deleteAccount(seedPhrase: seedPhrase)
+            try await auth.deleteAccount(seedPhrase: seedPhrase)
             await syncService.clearSessionForLogout()
-            if let container = AppContainer.shared {
-                await container.stopForLogout()
-            }
+            await performLogoutTeardown()
             return nil
         } catch {
             setStatus(from: error)
