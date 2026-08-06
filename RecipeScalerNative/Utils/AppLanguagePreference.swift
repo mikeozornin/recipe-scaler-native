@@ -41,8 +41,8 @@ enum AppLanguagePreference: String, CaseIterable, Identifiable, Hashable {
 
     /// Switch the live language bundle override. Views that already captured strings
     /// (`String(localized:)` resolved at body-eval time) will refresh on the next
-    /// SwiftUI re-render — `ContentView` observes `UserDefaults.didChangeNotification`
-    /// and mutates `appLanguage`, which is enough to invalidate the tree.
+    /// SwiftUI re-render — `ContentView` reads the raw value via `@AppStorage`,
+    /// which invalidates the tree when the user-facing preference changes.
     static func apply(_ language: AppLanguagePreference) {
         Bundle.setLanguageOverride(language.rawValue)
     }

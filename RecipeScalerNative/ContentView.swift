@@ -7,10 +7,25 @@ import RecipeScalerCore
 struct ContentView: View {
     @Environment(\.appContainer) private var container: AppContainer?
     @State private var showSplash = true
-    @State private var appTheme = AppThemePreference.current
-    @State private var appLanguage = AppLanguagePreference.current
+    @AppStorage(AppThemePreference.storageKey) private var appThemeRaw: String = AppThemePreference.system.rawValue
+    @AppStorage(AppLanguagePreference.storageKey) private var appLanguageRaw: String?
     @Environment(\.scenePhase) private var scenePhase
     private let isUITesting = ProcessInfo.processInfo.arguments.contains("ui-testing")
+
+    private var appTheme: AppThemePreference {
+        AppThemePreference(rawValue: appThemeRaw) ?? .system
+    }
+
+    /// Resolves the effective language preference. `@AppStorage` returns `nil`
+    /// when the key has never been written — fall back to the system default
+    /// (Russian system → `.ru`, otherwise → `.en`) so the locale matches what
+    /// `AppLanguagePreference.bootstrap()` set up at launch.
+    private var appLanguage: AppLanguagePreference {
+        if let raw = appLanguageRaw, let value = AppLanguagePreference(rawValue: raw) {
+            return value
+        }
+        return AppLanguagePreference.current
+    }
 
     /// Debug: auto-authenticate on simulator. Debug-only — must never ship in
     /// Release. Guarded by `#if DEBUG` so the literal UUID is stripped from
@@ -134,23 +149,6 @@ struct ContentView: View {
         .environment(\.font, AppTypography.body)
         .preferredColorScheme(appTheme.colorScheme)
         .environment(\.locale, appLanguage.locale)
-        .onReceive(
-            NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
-                .receive(on: DispatchQueue.main)
-        ) { _ in
-            // Only mutate @State when theme/language actually changed. UserDefaults.didChangeNotification
-            // fires on every defaults write (sync layer writes constantly), and an unconditional
-            // reassignment thrashes the root view — re-creating the YjsSyncService and tearing down a
-            // live socket on a ~30s cadence.
-            let newTheme = AppThemePreference.current
-            if newTheme != appTheme {
-                appTheme = newTheme
-            }
-            let newLanguage = AppLanguagePreference.current
-            if newLanguage != appLanguage {
-                appLanguage = newLanguage
-            }
-        }
         #if !targetEnvironment(simulator)
         .onChange(of: authService?.isAuthenticated ?? false) { _, authenticated in
             guard let container else { return }
