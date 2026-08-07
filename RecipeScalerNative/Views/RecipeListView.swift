@@ -14,11 +14,6 @@ struct RecipeListView: View {
     @State private var searchStore = RecipeListSearchStore()
     /// Tokens derived from `searchText` once per change, not per render.
     @State private var searchTokens: [String] = []
-    /// Namespace for the iOS 26+ recipe list → detail zoom-morph transition.
-    /// Pre-iOS 26 is unused (modifiers are no-ops). Shared between row anchors
-    /// (`.recipeZoomTransitionSource`) and the detail destination
-    /// (`.recipeZoomTransitionDestination`).
-    @Namespace private var recipeZoomNamespace
 
     /// Persisted view mode: `nil` = default (collections).
     @AppStorage(RecipeFolderRoutes.viewModeStorageKey)
@@ -209,7 +204,6 @@ struct RecipeListView: View {
                         recipeId: recipeId,
                         startInEditMode: openInEditMode
                     )
-                    .recipeZoomTransitionDestination(recipeId: recipeId, in: recipeZoomNamespace)
                 }
             }
             #if DEBUG
@@ -401,8 +395,7 @@ struct RecipeListView: View {
                     content: RecipeRowEquatable(
                         data: item,
                         highlight: isSearching ? searchStore.highlights[item.id] : nil,
-                        allowsNetworkRefresh: allowsImageNetworkRefresh,
-                        zoomNamespace: recipeZoomNamespace
+                        allowsNetworkRefresh: allowsImageNetworkRefresh
                     )
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -636,14 +629,12 @@ private struct RecipeRowEquatable: View, Equatable {
     let data: RecipeRowData
     let highlight: RecipeRowHighlight?
     let allowsNetworkRefresh: Bool
-    let zoomNamespace: Namespace.ID?
 
     var body: some View {
         RecipeRow(
             data: data,
             highlight: highlight,
-            allowsNetworkRefresh: allowsNetworkRefresh,
-            zoomNamespace: zoomNamespace
+            allowsNetworkRefresh: allowsNetworkRefresh
         )
     }
 }
@@ -655,9 +646,6 @@ struct RecipeRow: View {
     /// inactive — the row renders a plain `Text` title.
     var highlight: RecipeRowHighlight? = nil
     var allowsNetworkRefresh: Bool = true
-    /// Optional namespace for the iOS 26+ zoom-morph transition into recipe
-    /// detail. `nil` disables the transition anchor (e.g. outside the main list).
-    var zoomNamespace: Namespace.ID? = nil
 
     private var hasThumbnail: Bool { data.hasThumbnail }
 
@@ -733,10 +721,6 @@ struct RecipeRow: View {
         )
         .frame(width: RecipeListMetrics.thumbnailSide, height: RecipeListMetrics.thumbnailSide)
         .clipped()
-        .modifier(RecipeRowZoomSourceModifier(
-            recipeId: data.id,
-            namespace: zoomNamespace
-        ))
     }
 }
 
