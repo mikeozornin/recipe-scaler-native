@@ -1029,6 +1029,23 @@
       ]
     },
     {
+      "id": "coffee-beans",
+      "category": "baking",
+      "labelRu": "Кофе в зёрнах",
+      "labelEn": "Coffee beans",
+      "aliasesRu": [
+        "кофе в зёрнах",
+        "кофейные зёрна",
+        "зёрна кофе",
+        "кофе зерновой"
+      ],
+      "aliasesEn": [
+        "coffee beans",
+        "whole coffee beans",
+        "roasted coffee beans"
+      ]
+    },
+    {
       "id": "ham",
       "category": "pork",
       "labelRu": "Ветчина варёная (нарезка)",
@@ -2175,6 +2192,24 @@
       "aliasesEn": [
         "ground chicken",
         "minced chicken"
+      ]
+    },
+    {
+      "id": "coffee-ground",
+      "category": "baking",
+      "labelRu": "Кофе молотый",
+      "labelEn": "Ground coffee",
+      "aliasesRu": [
+        "кофе",
+        "кофе молотый",
+        "молотый кофе",
+        "кофейный порошок"
+      ],
+      "aliasesEn": [
+        "coffee",
+        "ground coffee",
+        "coffee grounds",
+        "finely ground coffee"
       ]
     },
     {

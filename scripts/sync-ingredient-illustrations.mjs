@@ -23,6 +23,10 @@ const REGISTRY_PATH = path.join(
   WEB_ROOT,
   'recipe-scaler/src/data/ingredient-illustrations/registry.json',
 );
+const THUMBS_MANIFEST_PATH = path.join(
+  WEB_ROOT,
+  'recipe-scaler/src/data/ingredient-illustrations/thumbs-manifest.json',
+);
 const WEB_THUMBS_DIR = path.join(
   WEB_ROOT,
   'recipe-scaler/public/assets/illustrations/ingredients/web',
@@ -90,12 +94,42 @@ function ensureDir(dir) {
 
 const THUMB_EXTENSION = 'webp';
 
-function syncThumbs(readyIds) {
-  const missing = [];
+/**
+ * Web thumbs are cached as content-hashed, immutable files (`{id}-{hash}.webp`)
+ * since web commit 241552a7. The id → hash mapping lives in
+ * `thumbs-manifest.json` next to the registry. Native bundling strips the hash
+ * (`{id}.webp`) so the iOS image store can look thumbs up by ingredient id
+ * without a manifest dependency.
+ *
+ * Returns a map id → source filename. Entries missing from the manifest fall
+ * back to the legacy `{id}.webp` name (so the script keeps working on older
+ * web checkouts that did not yet hash their thumbs).
+ */
+function readWebThumbFilenames(readyIds) {
+  let manifest = null;
+  if (fs.existsSync(THUMBS_MANIFEST_PATH)) {
+    try {
+      manifest = JSON.parse(fs.readFileSync(THUMBS_MANIFEST_PATH, 'utf8'));
+    } catch (err) {
+      console.error(`Failed to parse ${THUMBS_MANIFEST_PATH}: ${err.message}`);
+      process.exit(1);
+    }
+  }
+  const entries = manifest?.entries ?? {};
+  const out = new Map();
   for (const id of readyIds) {
-    const src = path.join(WEB_THUMBS_DIR, `${id}.${THUMB_EXTENSION}`);
+    const hash = entries[id];
+    out.set(id, hash ? `${id}-${hash}.${THUMB_EXTENSION}` : `${id}.${THUMB_EXTENSION}`);
+  }
+  return out;
+}
+
+function syncThumbs(webFilenames) {
+  const missing = [];
+  for (const [id, srcName] of webFilenames) {
+    const src = path.join(WEB_THUMBS_DIR, srcName);
     if (!fs.existsSync(src)) {
-      missing.push(id);
+      missing.push(`${id} (looked for ${srcName})`);
       continue;
     }
     if (!CHECK_ONLY) {
@@ -142,7 +176,8 @@ function main() {
     ensureDir(NATIVE_THUMBS_DIR);
   }
 
-  const missing = syncThumbs(readyIds);
+  const webFilenames = readWebThumbFilenames(readyIds);
+  const missing = syncThumbs(webFilenames);
   if (!CHECK_ONLY) {
     const removedJpg = removeLegacyJpgThumbs();
     if (removedJpg > 0) {
