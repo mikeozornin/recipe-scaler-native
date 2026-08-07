@@ -393,7 +393,7 @@ struct YDocIngredientsEditSection: View {
                 )
                 .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
 
-                IngredientColumnHeaderRow(showsDragHandle: true, compactLayout: false)
+                IngredientColumnHeaderRow(showsDragHandle: true, compactLayout: false, showsScaledColumn: false)
                     .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
 
                 ingredientEditList
@@ -743,6 +743,8 @@ private struct IngredientColumnHeaderRow: View {
     var showsDragHandle: Bool = false
     /// When true, skip the marker slot (edit mode without row numbers).
     var compactLayout: Bool = false
+    /// Reserve scaled qty slot so «Qty» aligns with base amounts (view mode). Edit keeps one amount column.
+    var showsScaledColumn: Bool = true
 
     var body: some View {
         Group {
@@ -772,15 +774,14 @@ private struct IngredientColumnHeaderRow: View {
                             .appHeadline()
                             .foregroundStyle(.primary)
                     },
-                    scaledQty: { EmptyView() },
+                    scaledQty: { Color.clear },
                     trailing: { EmptyView() },
-                    showsScaledColumn: false
+                    showsScaledColumn: showsScaledColumn
                 )
             }
         }
-        .padding(.trailing, showsDragHandle
-            ? RecipeRowLayoutMetrics.editGridTrailingPadding
-            : RecipeRowLayoutMetrics.editRowQtyToReorderSpacing)
+        // Edit List steals trailing width for reorder; view mode matches list row insets (no extra pad).
+        .padding(.trailing, showsDragHandle ? RecipeRowLayoutMetrics.editGridTrailingPadding : 0)
         .frame(minHeight: RecipeRowLayoutMetrics.rowHeight)
     }
 }
@@ -918,8 +919,12 @@ private struct IngredientGridBaseQty<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        content()
-            .frame(width: RecipeRowLayoutMetrics.baseQtyColumnWidth, alignment: .trailing)
+        // Color.clear keeps width when content is EmptyView (EmptyView+.frame collapses to 0).
+        ZStack(alignment: .trailing) {
+            Color.clear
+            content()
+        }
+        .frame(width: RecipeRowLayoutMetrics.baseQtyColumnWidth, alignment: .trailing)
     }
 }
 
@@ -927,8 +932,12 @@ private struct IngredientGridScaledQty<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        content()
-            .frame(width: RecipeRowLayoutMetrics.scaledQtyColumnMinWidth, alignment: .trailing)
+        // Color.clear keeps width when content is EmptyView (EmptyView+.frame collapses to 0).
+        ZStack(alignment: .trailing) {
+            Color.clear
+            content()
+        }
+        .frame(width: RecipeRowLayoutMetrics.scaledQtyColumnMinWidth, alignment: .trailing)
     }
 }
 
