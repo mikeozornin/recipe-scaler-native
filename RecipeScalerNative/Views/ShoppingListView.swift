@@ -147,6 +147,7 @@ struct ShoppingListView: View {
                     }
                     .onDelete(perform: deleteToBuy)
                     addItemRow
+                        .shoppingListItemRowInsets()
                 }
             }
 
@@ -156,6 +157,7 @@ struct ShoppingListView: View {
                         .shoppingSectionLabelRow()
                     ForEach(purchased) { item in
                         shoppingRow(item, allowsInlineEdit: false, purchasePhase: nil)
+                            .shoppingListItemRowInsets()
                     }
                     .onDelete(perform: deletePurchased)
                 }
@@ -170,6 +172,7 @@ struct ShoppingListView: View {
         }
         .listStyle(.plain)
         .listSectionSpacing(0)
+        .environment(\.defaultMinListRowHeight, 1)
         .animation(.easeInOut(duration: ShoppingPurchaseTiming.exitSeconds), value: purchasePhases)
         .scrollContentBackground(.hidden)
         .background(Color(.systemGroupedBackground))
@@ -232,6 +235,7 @@ struct ShoppingListView: View {
             )
             .listRowBackground(Color.clear)
             addItemRow
+                .shoppingListItemRowInsets()
         }
     }
 
@@ -258,18 +262,20 @@ struct ShoppingListView: View {
         .frame(maxHeight: phase == .exiting ? 0 : nil, alignment: .top)
         .clipped()
         .allowsHitTesting(phase != .exiting)
+        .shoppingListItemRowInsets()
     }
 
     private func inlineEditRow(_ item: ShoppingListItem) -> some View {
-        HStack(spacing: 12) {
-            AppSymbol.image("circle")
-                .foregroundStyle(.secondary)
+        HStack(alignment: .center, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
+            shoppingRowMarker(systemName: "circle", foreground: .secondary)
             TextField(String(localized: "shopping.add.placeholder"), text: $inlineEditDraft)
                 .font(AppTypography.body)
+                .frame(height: RecipeRowLayoutMetrics.titleLineHeight)
                 .focused($focusedField, equals: .inline(item.id))
                 .submitLabel(.done)
                 .onSubmit { commitInlineEdit(itemId: item.id) }
         }
+        .ingredientListRowChrome()
         .onChange(of: focusedField) { _, newValue in
             if newValue != .inline(item.id) {
                 commitInlineEdit(itemId: item.id)
@@ -278,17 +284,17 @@ struct ShoppingListView: View {
     }
 
     private var addItemRow: some View {
-        HStack(spacing: 12) {
-            AppSymbol.image("plus")
-                .foregroundStyle(.secondary)
-                .frame(width: 24, height: 24)
+        HStack(alignment: .center, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
+            shoppingRowMarker(systemName: "plus", foreground: .secondary)
             TextField(String(localized: "shopping.add.placeholder"), text: $bottomDraft)
                 .font(AppTypography.body)
+                .frame(height: RecipeRowLayoutMetrics.titleLineHeight)
                 .focused($focusedField, equals: .bottom)
                 .submitLabel(.done)
                 .onSubmit { commitBottomDraft() }
                 .accessibilityIdentifier(AccessibilityIdentifiers.shoppingAddField)
         }
+        .ingredientListRowChrome()
         .onChange(of: focusedField) { _, newValue in
             if newValue != .bottom {
                 commitBottomDraft()
@@ -303,14 +309,16 @@ struct ShoppingListView: View {
         purchasePhase: ToBuyPurchasePhase?
     ) -> some View {
         let showChecked = item.purchased || purchasePhase == .staging || purchasePhase == .exiting
-        HStack(alignment: .top, spacing: 12) {
+        let hasRecipeSubtitle = !item.recipeName.isEmpty
+        HStack(alignment: hasRecipeSubtitle ? .top : .center, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
             Button {
                 handlePurchaseToggle(item: item, phase: purchasePhase)
             } label: {
-                AppSymbol.image(showChecked ? "checkmark.circle" : "circle")
-                    .foregroundStyle(Color.primary)
-                    .opacity(showChecked ? 0.5 : 1)
-                    .contentTransition(.symbolEffect(.replace))
+                shoppingRowMarker(
+                    systemName: showChecked ? "checkmark.circle" : "circle",
+                    foreground: Color.primary.opacity(showChecked ? 0.5 : 1)
+                )
+                .contentTransition(.symbolEffect(.replace))
             }
             .buttonStyle(.plain)
             .disabled(purchasePhase == .exiting)
@@ -320,11 +328,11 @@ struct ShoppingListView: View {
                     : String(localized: "shopping.mark-purchased")
             )
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: RecipeRowLayoutMetrics.searchSnippetSpacing) {
                 Text(item.label)
                     .appBody()
                     .strikethrough(showChecked)
-                if !item.recipeName.isEmpty {
+                if hasRecipeSubtitle {
                     Text(item.recipeName)
                         .appFootnote()
                         .foregroundStyle(.secondary)
@@ -332,6 +340,18 @@ struct ShoppingListView: View {
             }
             .opacity(showChecked ? 0.5 : 1)
         }
+        .ingredientListRowChrome()
+    }
+
+    /// Leading control rasterized at body size so UIImage-backed symbols don't inflate the row.
+    private func shoppingRowMarker(systemName: String, foreground: some ShapeStyle) -> some View {
+        AppSymbol.sizedImage(systemName, pointSize: RecipeRowLayoutMetrics.titleFontSize, weight: .semibold)
+            .foregroundStyle(foreground)
+            .frame(
+                width: RecipeRowLayoutMetrics.titleLineHeight,
+                height: RecipeRowLayoutMetrics.titleLineHeight,
+                alignment: .center
+            )
     }
 
     // MARK: - Actions
@@ -453,20 +473,26 @@ private extension View {
         .listRowBackground(Color.clear)
     }
 
-    /// Same spacing as `RecipeListSectionHeader.recipeListSectionHeaderRow()` below the search slot.
+    /// Section label above shopping rows. Bottom inset keeps the title off the white list block
+    /// (plain `List` does not add UITableView-style header↔content gap on its own).
     func shoppingSectionLabelRow() -> some View {
         fixedSize(horizontal: false, vertical: true)
             .listRowInsets(
                 EdgeInsets(
                     top: 8,
                     leading: RecipeRowLayoutMetrics.listHorizontalInset,
-                    bottom: 0,
+                    bottom: 8,
                     trailing: RecipeRowLayoutMetrics.listHorizontalInset
                 )
             )
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
             .environment(\.defaultMinListRowHeight, 1)
+    }
+
+    /// Match recipe-list row box model: zero vertical insets; chrome supplies the 44 pt height.
+    func shoppingListItemRowInsets() -> some View {
+        listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
     }
 }
 
