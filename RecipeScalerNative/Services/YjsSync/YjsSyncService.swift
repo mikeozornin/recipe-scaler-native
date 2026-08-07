@@ -24,7 +24,8 @@ final class YjsSyncService {
     /// to avoid rendering empty state during cold start.
     private(set) var isLocalDataLoaded = false
     private(set) var connectionState: ConnectionState = .disconnected
-    /// Polling-first matches PWA `websocket-service` and avoids Starscream direct-WSS hangs on iOS.
+    /// Polling-first: direct WebSocket (`forceWebsockets`) hangs ~8s on Starscream
+    /// then falls back anyway. Upgrade to WS still attempted after polling handshake.
     private(set) var connectionTransport: SyncConnectionTransport = .pollingAndWebsocket
     private(set) var writeSyncStates: [String: WriteSyncState] = [:]
     var syncErrorMessage: String?
@@ -76,9 +77,10 @@ final class YjsSyncService {
     /// FSM-step — иначе network-debounce отменяет watchdog при сетевом мерцании
     /// (регрессия, описанная в MIK-161).
     private var connectionStepTimer: Task<Void, Never>?
-    /// Debounce network-regain (400ms) перед `reconnectAfterNetworkRegained`.
-    /// Не зависит от `connectionStep`: сеть может вернуться в любом FSM-состоянии.
-    private var networkReconnectDebounceTask: Task<Void, Never>?
+    /// Serializes `sync_request` emits so Socket.IO polling does not batch multiple
+    /// large binary payloads (+ load_document) into one HTTP POST that fails with
+    /// `Error flushing waiting posts`.
+    private var syncEmitTail: Task<Bool, Never>?
     private var socketSessionId: UUID? {
         switch connectionStep {
         case .disconnected:
@@ -127,6 +129,8 @@ final class YjsSyncService {
     private var imageCacheObserversInstalled = false
     private var descriptionEditorSessions: [String: DescriptionEditorSession] = [:]
     private var networkPathMonitor: NWPathMonitor?
+    /// Debounce path flap → reconnect so brief NWPathMonitor blips don't tear down a healthy socket.
+    private var networkReconnectDebounceTask: Task<Void, Never>?
     private var wireSnapshotRefreshTasks: [String: Task<Void, Never>] = [:]
     private var documentLoadContinuations: [String: CheckedContinuation<Bool, Never>] = [:]
     private var documentLoadTasks: [String: Task<Bool, Never>] = [:]
@@ -1064,6 +1068,14 @@ final class YjsSyncService {
             unsyncedRecipeIds = []
         }
         self.userId = userId
+        // Cold start: `self.userId` was nil so the switch clear above is skipped, but
+        // SQLite may still hold another account's offline rows — purge them before drain.
+        if let purged = try? await offlineQueue.clearNotOwnedBy(userId: userId), purged > 0 {
+            AppLog.info(.sync, "offline_queue_purged_foreign", data: [
+                "removed": "\(purged)",
+            ])
+            logger.info("Purged \(purged) offline queue row(s) not owned by current user")
+        }
         await migratePlistSyncKeysIfNeeded(userId: userId)
         await loadUnsyncedRecipeIds()
         startNetworkMonitorIfNeeded()
@@ -1305,6 +1317,7 @@ final class YjsSyncService {
     private func teardownSocket() {
         clearInFlightOfflineTracking()
         transition(to: .disconnected)
+        syncEmitTail = nil
         socket?.disconnect()
         socket = nil
         manager = nil
@@ -1501,11 +1514,15 @@ final class YjsSyncService {
                 guard let self, self.isCurrentSocketSession(sessionId) else { return }
                 let msg = data.first.map { String(describing: $0) } ?? "unknown"
                 self.logger.error("Socket.IO error: \(msg)")
-                // Engine/transport errors are always transient here: infinite auto-reconnect retries
-                // them, and genuine fatal failures (auth) arrive via the dedicated `auth_error` event.
-                // The payload is a localized NSError description (e.g. "Сетевое соединение потеряно."),
-                // so matching against fixed English fragments misclassified them as fatal on non-English
-                // devices and surfaced a stuck "Offline" instead of a silent reconnect.
+                AppLog.info(.sync, "socket_error", data: [
+                    "error": String(msg.prefix(200)),
+                    "socketStatus": "\(self.socket?.status.rawValue ?? -1)",
+                    "connectionState": "\(self.connectionState)",
+                ])
+                // Engine/transport errors are transient: Socket.IO auto-reconnects.
+                // Demoting UI on every error (esp. polling long-poll timeouts) flaps
+                // offline ↔ online. Only leave `.connected` when the engine is gone.
+                guard self.socket?.status != .connected else { return }
                 self.isSocketAuthenticated = false
                 self.setConnectionState(.reconnecting, reason: "socket.error")
             }
@@ -1563,11 +1580,17 @@ final class YjsSyncService {
     }
 
     private func setConnectionState(_ state: ConnectionState, reason: String) {
+        if connectionState != state {
+            AppLog.info(.sync, "connection_state", data: [
+                "from": "\(connectionState)",
+                "to": "\(state)",
+                "reason": reason,
+            ])
+        }
         connectionState = state
         if !state.isConnected {
             reconcileStuckSyncingStates()
         }
-        _ = reason
     }
 
     private func emitAuth() {
@@ -1639,12 +1662,17 @@ final class YjsSyncService {
         setConnectionState(.connected, reason: "authenticated")
         if disconnectTimestamp != nil {
             Task {
+                // Let load/auth polling POSTs flush before large binary sync_requests.
+                try? await Task.sleep(nanoseconds: 600_000_000)
                 await syncPendingDocumentsAfterReconnect()
                 reloadStaleDocumentsAfterReconnect()
             }
         } else {
             loadCollectionDocument()
-            Task { await syncPendingDocumentsAfterReconnect() }
+            Task {
+                try? await Task.sleep(nanoseconds: 600_000_000)
+                await syncPendingDocumentsAfterReconnect()
+            }
         }
         timerSync.initializeAfterAuth()
         Task { await pushRegistration.registerIfNeeded() }
@@ -1913,15 +1941,41 @@ final class YjsSyncService {
         if let lastSyncedAt {
             payload["lastSyncedAt"] = lastSyncedAt
         }
-        socket?.emit("sync_request", payload)
         let target: String
         if documentKind == ShoppingListConstants.documentKind {
             target = "shoppingList"
         } else {
             target = recipeId == "collection" ? "collection" : recipeId
         }
-        logger.info("Emitted sync_request for \(target) (\(update.count) bytes)")
-        return true
+        let isBinary = payload["yjsUpdate"] is Data
+        let large = update.count > 32_768
+
+        // Serialize emits: polling batches waiting posts into one HTTP body. Two
+        // ~400KB binary sync_requests + load_document became a ~1.1MB POST that
+        // failed with `Error flushing waiting posts` and restarted the socket.
+        let previous = syncEmitTail
+        let task = Task<Bool, Never> { @MainActor in
+            _ = await previous?.value
+            guard self.socket?.status == .connected, self.isSocketAuthenticated else { return false }
+            if large {
+                try? await Task.sleep(nanoseconds: 400_000_000)
+                guard self.socket?.status == .connected, self.isSocketAuthenticated else { return false }
+            }
+            self.socket?.emit("sync_request", payload)
+            self.logger.info("Emitted sync_request for \(target) (\(update.count) bytes, binary=\(isBinary))")
+            AppLog.info(.sync, "sync_request_emitted", data: [
+                "target": target,
+                "bytes": "\(update.count)",
+                "binary": isBinary ? "1" : "0",
+            ])
+            if large {
+                // Allow the polling POST (base64 binary) to finish before the next large emit.
+                try? await Task.sleep(nanoseconds: 900_000_000)
+            }
+            return true
+        }
+        syncEmitTail = task
+        return await task.value
     }
 
     private func handleSyncConfirmed(recipeId: String, lastSyncedAt: String?) async {
@@ -1953,14 +2007,28 @@ final class YjsSyncService {
 
     private func drainOfflineQueue() async {
         guard canSendLiveSync() else { return }
+        guard let userId else { return }
         guard let entries = try? await offlineQueue.fetchAll(), !entries.isEmpty else { return }
 
         expireInFlightOfflineBatchesIfNeeded()
 
+        let ownedPrefix = "\(userId):"
         var byDocKey: [String: [OfflineSyncEntry]] = [:]
+        var foreignIds: [Int64] = []
         for entry in entries {
-            byDocKey[entry.docKey, default: []].append(entry)
+            if entry.docKey.hasPrefix(ownedPrefix) {
+                byDocKey[entry.docKey, default: []].append(entry)
+            } else if let id = entry.id {
+                foreignIds.append(id)
+            }
         }
+        if !foreignIds.isEmpty {
+            try? await offlineQueue.deleteEntries(ids: foreignIds)
+            AppLog.info(.sync, "offline_drain_dropped_foreign", data: [
+                "removed": "\(foreignIds.count)",
+            ])
+        }
+        guard !byDocKey.isEmpty else { return }
 
         for (docKey, docEntries) in byDocKey {
             if let inFlight = inFlightOfflineEntryIdsByDocKey[docKey], !inFlight.isEmpty {

@@ -29,6 +29,12 @@ actor OfflineWriteQueue {
         try await store.deleteAllOfflineQueue()
     }
 
+    /// Remove queue rows that belong to another account (docKey prefix ≠ current user).
+    @discardableResult
+    func clearNotOwnedBy(userId: String) async throws -> Int {
+        try await store.deleteOfflineQueueNotOwnedBy(userId: userId)
+    }
+
     func clear(forRecipeId recipeId: String) async throws {
         try await store.deleteOfflineQueue(forRecipeId: recipeId)
     }

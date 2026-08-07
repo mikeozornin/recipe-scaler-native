@@ -189,6 +189,19 @@ actor YDocStore {
         }
     }
 
+    /// Drop offline rows whose `docKey` is not scoped to `userId` (`{userId}:…`).
+    /// Cold start leaves `YjsSyncService.userId` nil, so account-switch clear is skipped
+    /// and a previous account's queue survives — draining both collections (~400KB each)
+    /// over polling then flaps the socket (`Error flushing waiting posts`).
+    func deleteOfflineQueueNotOwnedBy(userId: String) throws -> Int {
+        let prefix = "\(userId):"
+        return try dbQueue.write { db in
+            try OfflineSyncEntry
+                .filter(sql: "docKey NOT LIKE ?", arguments: ["\(prefix)%"])
+                .deleteAll(db)
+        }
+    }
+
     func deleteOfflineQueue(forRecipeId recipeId: String) throws {
         try dbQueue.write { db in
             try OfflineSyncEntry

@@ -48,6 +48,16 @@ struct AccountView: View {
         ))
     }
 
+    /// True only when sync is hard-down — not while connecting/reconnecting.
+    private var showsHardOfflineBanner: Bool {
+        switch syncService.connectionState {
+        case .disconnected, .error:
+            return true
+        case .connected, .connecting, .reconnecting:
+            return false
+        }
+    }
+
     @State private var showingLogoutConfirmation = false
     @State private var presentedSheet: AccountSheet?
     @State private var appLanguage: AppLanguagePreference = .current
@@ -102,7 +112,9 @@ struct AccountView: View {
         NavigationStack {
             ScrollViewReader { proxy in
                 List {
-                    if !viewModel.isOnline {
+                    // Banner only for hard offline — not while Socket.IO is reconnecting
+                    // (transient long-poll errors used to flap this section offline↔online).
+                    if showsHardOfflineBanner {
                         Section {
                             Label {
                                 Text("account.offline.alert")
@@ -351,7 +363,7 @@ struct AccountView: View {
     @ViewBuilder
     private var publicRecipesSection: some View {
         Section {
-            if !viewModel.isOnline {
+            if showsHardOfflineBanner {
                 Text("account.public-profile.offline")
                     .appBody()
                     .foregroundStyle(.secondary)
