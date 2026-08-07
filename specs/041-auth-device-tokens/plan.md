@@ -235,7 +235,7 @@
 ### E2E сценарии (gate фазы 6)
 
 - [ ] **E2E-1** (new user, zero state): register на web → `device_token` в localStorage → все запросы с Bearer → login на native с тем же seed → recipe через Share Extension → timer на watch → всё под Bearer.
-- [ ] **E2E-2** (web migration): залогиненный web-user обновляет страницу → `exchangeSeedForToken` тихо → запросы переходят на Bearer → `seed_phrase` **остаётся** в localStorage (F18.1). После миграции открыть Settings → Account → «Login on another device» → QR и фраза показываются (AC24).
+- [ ] **E2E-2** (web migration): залогиненный web-user обновляет страницу → `exchangeSeedForToken` тихо → запросы переходят на Bearer → `seed_phrase` **остаётся** в localStorage (F18.1). После миграции открыть Settings → Account → «Log in on another device» → QR и фраза показываются (AC24).
 - [ ] **E2E-3** (native migration): залогиненный native-user обновляет app → `restoreAuthenticationState` видит `userId` без token + есть seed → `exchangeSeedForToken` → token сохранён → запросы на Bearer.
 - [ ] **E2E-4** (token revoke / logout): logout на device A → устройство A получает 401 на следующем запросе; device B с тем же `user_id` (если есть) продолжает работать.
 - [ ] **E2E-5** (grace period end): device 1 мигрирует → cutoff установлен → баннер показывается на web + iOS (AC18) → имитируем `cutoff_at = NOW() - 1s` → device 2 с `x-user-id` получает 401 → экран входа.

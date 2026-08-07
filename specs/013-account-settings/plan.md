@@ -43,7 +43,7 @@
 | `settings-form-row` (label слева, control справа) | `LabeledContent` / строка `Form` | На узком экране допустим vertical layout |
 | Radix `Select` (~320px) | `Picker` в `Form` | Share mode, theme, language, nutrition |
 | Radix `Switch` | `Toggle` | Public profile, allow downloads, timer push |
-| Collapse «Login on another device» | `DisclosureGroup` или кнопка → `sheet` | Seed phrase + QR |
+| Collapse «Log in on another device» | `DisclosureGroup` или кнопка → `sheet` | Seed phrase + QR |
 | Collapse «Change account» | `sheet` / push: `TextEditor` + scan | `QRScannerView` уже есть |
 | `QRCodeDisplay` | QR через `CoreImage` + `Image` | Показ seed для входа на другом устройстве |
 | `QRScanner` modal | `.fullScreenCover` + `QRScannerView` | Автологин при 12 словах — как на вебе |
@@ -135,7 +135,7 @@ RecipeScalerNative/ViewModels/
 | Функция веб | iOS | API / сервисы |
 |-------------|-----|----------------|
 | Avatar + masked userId + logout | Header: avatar URL / generated, `UserIdFormatter`, logout | Расширенный `AuthService.logout` |
-| «Login on another device» | Sheet: seed (mono) + QR | Keychain; **LocalAuthentication** перед показом (FR-ACC-001) |
+| «Log in on another device» | Sheet: seed (mono) + QR | Keychain; **LocalAuthentication** перед показом (FR-ACC-001) |
 | «Change account» | Sheet: `TextEditor` + `QRScannerView` + Login | Существующий login + migrate Yjs |
 | Copy seed | Кнопка Copy → pasteboard | Только по явному действию (FR-ACC-002) |
 

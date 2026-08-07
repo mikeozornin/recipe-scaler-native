@@ -217,7 +217,7 @@ account, **so that** my data syncs across all devices.
    or scan a QR code, **Then** all my data syncs to the iOS device.
 3. **Given** I'm logged in, **When** I view Account settings, **Then** I can see my seed
    phrase (with biometric unlock), display name, and avatar.
-4. **Given** I'm logged in, **When** I choose "Logout", **Then** local data is cleared
+4. **Given** I'm logged in, **When** I choose "Log out", **Then** local data is cleared
    and the app resets to the onboarding flow.
 
 ---

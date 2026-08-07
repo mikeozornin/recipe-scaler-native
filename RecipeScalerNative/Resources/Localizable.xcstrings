@@ -2242,7 +2242,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Logout"
+            "value" : "Log out"
           }
         },
         "ru" : {
@@ -2259,7 +2259,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Are you sure you want to logout?"
+            "value" : "Are you sure you want to log out?"
           }
         },
         "ru" : {
@@ -2569,7 +2569,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your secret phrase for login on another device"
+            "value" : "Your secret phrase for logging in on another device"
           }
         },
         "ru" : {
@@ -4362,7 +4362,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Login"
+            "value" : "Log in"
           }
         },
         "ru" : {
@@ -4378,7 +4378,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Login on another device"
+            "value" : "Log in on another device"
           }
         },
         "ru" : {
@@ -4395,7 +4395,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Login failed"
+            "value" : "Couldn't log in"
           }
         },
         "ru" : {
@@ -4480,7 +4480,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "2. Press \"Login on another device\""
+            "value" : "2. Press \"Log in on another device\""
           }
         },
         "ru" : {
@@ -4497,7 +4497,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "3. Enter your seed phrase to login into your account"
+            "value" : "3. Enter your seed phrase to log in to your account"
           }
         },
         "ru" : {
@@ -8188,7 +8188,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Login"
+            "value" : "Log in"
           }
         },
         "ru" : {
