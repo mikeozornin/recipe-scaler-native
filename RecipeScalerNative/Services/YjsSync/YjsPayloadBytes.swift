@@ -1,7 +1,11 @@
 import Foundation
 
 /// Converts Socket.IO JSON payloads (`[UInt8]`, `[Int]`, `[Double]`, `[NSNumber]`, …) into binary Y.Doc data.
+///
+/// Outgoing sync emits should pass raw `Data` so Socket.IO sends a binary attachment
+/// (web parity). Prefer that over `array(from:)` — a JSON byte array inflates ~3–4× on the wire.
 enum YjsPayloadBytes {
+    /// Legacy / test helper: expand bytes to a JSON-friendly array. Do not use for large emits.
     static func array(from data: Data) -> [UInt8] {
         Array(data)
     }

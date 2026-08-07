@@ -1364,13 +1364,15 @@ final class YjsSyncService {
         hasRequestedShoppingLoad = false
         let serverURL = URL(string: Config.baseURL)!
         let deviceToken = SharedAuthStore.token
+        // Socket.IO-Client-Swift measures reconnectWait in *seconds* (defaults 10/30),
+        // not milliseconds — the web contract's "1000ms" maps to `1` here.
         var socketConfig: SocketIOClientConfiguration = [
             .log(false),
             .compress,
             .reconnects(true),
             .reconnectAttempts(-1),
-            .reconnectWait(1000),
-            .reconnectWaitMax(5000),
+            .reconnectWait(1),
+            .reconnectWaitMax(5),
         ]
         if connectionTransport == .websocketOnly {
             socketConfig.insert(.forceWebsockets(true))
@@ -1893,8 +1895,12 @@ final class YjsSyncService {
     ) async -> Bool {
         guard socket?.status == .connected, isSocketAuthenticated else { return false }
         let lastSyncedAt = try? await store.loadSnapshot(docKey: docKey)?.lastSyncedAt
+        // Send raw `Data` so Socket.IO attaches it as a binary frame (web parity:
+        // `Uint8Array`). A JSON `[UInt8]` array inflates ~3–4× and trips Engine.IO
+        // `maxPayload` (1 MB default) — the POST fails, the socket dies, UI flaps
+        // offline/reconnecting. Server already accepts Uint8Array | number[].
         var payload: [String: Any] = [
-            "yjsUpdate": YjsPayloadBytes.array(from: update),
+            "yjsUpdate": update,
         ]
         // Collection and shopping list sync match web: omit `recipeId` (server rejects it for shopping).
         let isShoppingList = documentKind == ShoppingListConstants.documentKind

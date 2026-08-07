@@ -30,8 +30,9 @@ Socket.IO события, используемые в Phase 2 (read-only). Фо�
 
 ### Reconnection Behavior
 
-- Socket.IO client configured with: `reconnects: true`, `reconnectAttempts: -1` (infinite), `reconnectWait: 1000ms`
+- Socket.IO client configured with: `reconnects: true`, `reconnectAttempts: -1` (infinite), `reconnectWait: 1s` / `reconnectWaitMax: 5s` (Socket.IO-Client-Swift uses **seconds**, not ms)
 - On reconnect: re-emit `auth`, then reload stale documents (those with `lastSyncedAt` older than reconnect time)
+- Outgoing `yjsUpdate` on native is Socket.IO **binary** (`Data` / `Uint8Array`), same as web — not a JSON number array (array form still accepted by the server for legacy)
 
 ### Client FSM (`ConnectionStep`)
 
