@@ -77,8 +77,8 @@ final class YjsSyncService {
     /// FSM-step — иначе network-debounce отменяет watchdog при сетевом мерцании
     /// (регрессия, описанная в MIK-161).
     private var connectionStepTimer: Task<Void, Never>?
-    /// Serializes `sync_request` emits so Socket.IO polling does not batch multiple
-    /// large binary payloads (+ load_document) into one HTTP POST that fails with
+    /// Serializes `sync_update` emits so Socket.IO polling does not batch multiple
+    /// large binary payloads (+ sync_step1) into one HTTP POST that fails with
     /// `Error flushing waiting posts`.
     private var syncEmitTail: Task<Bool, Never>?
     private var socketSessionId: UUID? {
@@ -102,6 +102,12 @@ final class YjsSyncService {
     private var didEmitAuthThisSession = false
     private var hasRequestedCollectionLoad = false
     private var hasRequestedShoppingLoad = false
+    /// Per-request `sync_step1` probe timers. If `sync_step2` does not arrive
+    /// within the window, fall back once to legacy `load_document` (web parity).
+    /// Intentionally **not** pinned forever to legacy — the next load retries
+    /// the new protocol first.
+    private var pendingSyncStep1Probes: [String: Task<Void, Never>] = [:]
+    private static let syncStep1ProbeWindowNs: UInt64 = 5_000_000_000
     private var recipeBatchLoadTask: Task<Void, Never>?
     private var recipeBatchLoadInFlight = false
     private var recipeBatchLoadCompleted = 0
@@ -488,8 +494,9 @@ final class YjsSyncService {
                 group.addTask { @MainActor in
                     await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
                         self.documentLoadContinuations[recipeId] = continuation
-                        self.socket?.emit("load_document", ["recipeId": recipeId])
-                        self.logger.info("Emitted load_document for merge \(recipeId)")
+                        let docKey = self.docKeyFor(recipeId: recipeId)
+                        self.emitSyncStep1(recipeId: recipeId, docKey: docKey, documentKind: nil)
+                        self.logger.info("Emitted sync_step1 for merge \(recipeId)")
                     }
                 }
                 group.addTask {
@@ -665,7 +672,7 @@ final class YjsSyncService {
                 clearInFlightOfflineTracking(forDocKey: docKey)
             }
             writeSyncStates[recipeId] = .syncing
-            await emitSyncRequest(recipeId: recipeId, update: state, docKey: docKey)
+            await emitSyncUpdate(recipeId: recipeId, update: state, docKey: docKey)
         } else {
             writeSyncStates[recipeId] = .queued
             guard await replaceOfflineQueueForRecipe(
@@ -1150,13 +1157,13 @@ final class YjsSyncService {
         if await hasUnsyncedLocalChanges(recipeId: recipeId) {
             await syncPendingDocumentsAfterReconnect(recipeIds: [recipeId])
             if await hasUnsyncedLocalChanges(recipeId: recipeId) {
-                logger.info("Skipping load_document for \(recipeId) — unsynced local changes")
+                logger.info("Skipping sync_step1 for \(recipeId) — unsynced local changes")
                 return
             }
         }
 
-        socket?.emit("load_document", ["recipeId": recipeId])
-        logger.info("Emitted load_document for recipe \(recipeId)")
+        emitSyncStep1(recipeId: recipeId, docKey: docKey, documentKind: nil)
+        logger.info("Emitted sync_step1 for recipe \(recipeId)")
     }
 
     /// After `POST /api/v2/recipes/:id/copy`: pull server recipe + collection, ensure
@@ -1343,6 +1350,7 @@ final class YjsSyncService {
             task.cancel()
         }
         documentLoadTasks.removeAll()
+        cancelAllSyncStep1Probes()
     }
 
     /// MIK-167: cancel and clear every per-recipe dict entry for one recipeId.
@@ -1362,6 +1370,7 @@ final class YjsSyncService {
         documentLoadTasks.removeValue(forKey: recipeId)?.cancel()
         wireSnapshotRefreshTasks.removeValue(forKey: recipeId)?.cancel()
         descriptionEditorSessions.removeValue(forKey: recipeId)
+        cancelSyncStep1Probe(recipeId: recipeId)
     }
 
     private func connectSocket() {
@@ -1662,7 +1671,7 @@ final class YjsSyncService {
         setConnectionState(.connected, reason: "authenticated")
         if disconnectTimestamp != nil {
             Task {
-                // Let load/auth polling POSTs flush before large binary sync_requests.
+                // Let load/auth polling POSTs flush before large binary sync_updates.
                 try? await Task.sleep(nanoseconds: 600_000_000)
                 await syncPendingDocumentsAfterReconnect()
                 reloadStaleDocumentsAfterReconnect()
@@ -1707,17 +1716,16 @@ final class YjsSyncService {
 
     private func loadCollectionDocument() {
         guard socket?.status == .connected else {
-            logger.warning("Skipping load_document — socket not connected")
+            logger.warning("Skipping sync_step1 (collection) — socket not connected")
             return
         }
         guard isSocketAuthenticated else {
-            logger.warning("Skipping load_document — socket not authenticated yet")
+            logger.warning("Skipping sync_step1 (collection) — socket not authenticated yet")
             return
         }
         guard !hasRequestedCollectionLoad else { return }
         hasRequestedCollectionLoad = true
-        socket?.emit("load_document", [:] as [String: Any])
-        logger.info("Emitted load_document for collection")
+        emitSyncStep1(recipeId: "collection", docKey: docKeyFor(recipeId: "collection"), documentKind: nil)
         loadShoppingDocument()
     }
 
@@ -1725,8 +1733,124 @@ final class YjsSyncService {
         guard socket?.status == .connected, isSocketAuthenticated else { return }
         guard !hasRequestedShoppingLoad else { return }
         hasRequestedShoppingLoad = true
-        socket?.emit("load_document", ["documentKind": ShoppingListConstants.documentKind])
-        logger.info("Emitted load_document for shopping list")
+        let shoppingDocKey = userId.map { Self.shoppingDocKey(userId: $0) }
+        emitSyncStep1(
+            recipeId: ShoppingListConstants.offlineRecipeId,
+            docKey: shoppingDocKey ?? "",
+            documentKind: ShoppingListConstants.documentKind
+        )
+    }
+
+    /// New primary load path (web parity). Sends the in-memory state vector;
+    /// the server replies with `sync_step2` containing only the missing ops.
+    /// `lastSyncedAt` is intentionally omitted — the new protocol does not
+    /// use it (web `yjs-client.ts` sync_step1 path does the same).
+    ///
+    /// - Parameter forceEmptyStateVector: when true, send an empty SV so the
+    ///   server returns the full canonical state (used by truncated-collection
+    ///   recovery — mirrors web `recoverCollectionFromServer`).
+    private func emitSyncStep1(
+        recipeId: String,
+        docKey: String,
+        documentKind: String?,
+        forceEmptyStateVector: Bool = false
+    ) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let sv: Data
+            if forceEmptyStateVector || docKey.isEmpty {
+                sv = Data()
+            } else {
+                sv = await self.documentManager.stateVectorForSync(key: docKey)
+            }
+            var payload: [String: Any] = ["stateVector": sv]
+            if recipeId != "collection" {
+                payload["recipeId"] = recipeId
+            }
+            if let documentKind {
+                payload["documentKind"] = documentKind
+            }
+            self.socket?.emit("sync_step1", payload)
+            self.logger.info("Emitted sync_step1 for \(recipeId) (\(sv.count) bytes sv)")
+            self.scheduleSyncStep1Probe(recipeId: recipeId, documentKind: documentKind)
+        }
+    }
+
+    private func syncStep1ProbeKey(recipeId: String, documentKind: String?) -> String {
+        if documentKind == ShoppingListConstants.documentKind {
+            return ShoppingListConstants.offlineRecipeId
+        }
+        return recipeId
+    }
+
+    /// Web-parity safety: if `sync_step2` never arrives (pre-protocol server or
+    /// dropped reply), fall back once to legacy `load_document`. Does **not**
+    /// pin the client to legacy permanently — subsequent loads still try
+    /// `sync_step1` first.
+    private func scheduleSyncStep1Probe(recipeId: String, documentKind: String?) {
+        let key = syncStep1ProbeKey(recipeId: recipeId, documentKind: documentKind)
+        pendingSyncStep1Probes[key]?.cancel()
+        pendingSyncStep1Probes[key] = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: Self.syncStep1ProbeWindowNs)
+            guard !Task.isCancelled, let self else { return }
+            self.pendingSyncStep1Probes.removeValue(forKey: key)
+            self.emitLegacyLoadDocument(recipeId: recipeId, documentKind: documentKind)
+        }
+    }
+
+    private func cancelSyncStep1Probe(recipeId: String, documentKind: String? = nil) {
+        let key = syncStep1ProbeKey(recipeId: recipeId, documentKind: documentKind)
+        pendingSyncStep1Probes.removeValue(forKey: key)?.cancel()
+    }
+
+    private func cancelAllSyncStep1Probes() {
+        for (_, task) in pendingSyncStep1Probes {
+            task.cancel()
+        }
+        pendingSyncStep1Probes.removeAll()
+    }
+
+    private func emitLegacyLoadDocument(recipeId: String, documentKind: String?) {
+        guard socket?.status == .connected, isSocketAuthenticated else { return }
+        if documentKind == ShoppingListConstants.documentKind {
+            socket?.emit("load_document", ["documentKind": ShoppingListConstants.documentKind])
+        } else if recipeId == "collection" {
+            socket?.emit("load_document", [:] as [String: Any])
+        } else {
+            socket?.emit("load_document", ["recipeId": recipeId])
+        }
+        logger.warning(
+            "sync_step1 probe timed out — falling back to load_document for \(recipeId)"
+        )
+    }
+
+    /// Spec 054 / web parity: hard-deletes + saturated SV poison the local
+    /// collection. Drop in-memory doc, SQLite snapshot, and queued collection
+    /// pushes, then `sync_step1` with an empty state vector so the server
+    /// sends the canonical collection.
+    private func recoverCollectionFromServer() async {
+        let docKey = docKeyFor(recipeId: "collection")
+        logger.warning(
+            "Recovering truncated collection — drop local state and empty-SV sync_step1"
+        )
+
+        clearInFlightOfflineTracking(forDocKey: docKey)
+        _ = await updateDebouncer.drainPendingBatch(recipeId: "collection")
+        try? await offlineQueue.clear(forRecipeId: "collection")
+        try? await store.deleteOfflineQueue(forDocKey: docKey)
+        try? await store.deleteSnapshot(docKey: docKey)
+        await documentManager.evictDoc(key: docKey)
+
+        cancelSyncStep1Probe(recipeId: "collection")
+        hasRequestedCollectionLoad = false
+        guard socket?.status == .connected, isSocketAuthenticated else { return }
+        hasRequestedCollectionLoad = true
+        emitSyncStep1(
+            recipeId: "collection",
+            docKey: docKey,
+            documentKind: nil,
+            forceEmptyStateVector: true
+        )
     }
 
     // MARK: - Event Handler Wiring
@@ -1741,6 +1865,12 @@ final class YjsSyncService {
         eventHandler.onDocumentsLoaded = { [weak self] documents in
             Task { @MainActor in
                 await self?.handleDocumentsLoaded(documents: documents)
+            }
+        }
+
+        eventHandler.onSyncStep2 = { [weak self] recipeId, missingUpdate, lastSyncedAt in
+            Task { @MainActor in
+                await self?.handleSyncStep2(recipeId: recipeId, missingUpdate: missingUpdate, lastSyncedAt: lastSyncedAt)
             }
         }
 
@@ -1883,7 +2013,7 @@ final class YjsSyncService {
 
         if canSendLiveSync() {
             writeSyncStates[recipeId] = .syncing
-            await emitSyncRequest(recipeId: recipeId, update: update, docKey: docKey)
+            await emitSyncUpdate(recipeId: recipeId, update: update, docKey: docKey)
             // Web parity: persist local state on every outbound attempt, not only on sync_confirmed.
             await documentManager.persistSnapshot(docKey: docKey)
         } else {
@@ -1898,7 +2028,7 @@ final class YjsSyncService {
         guard let userId else { return }
         let docKey = Self.shoppingDocKey(userId: userId)
         if socket?.status == .connected, isSocketAuthenticated {
-            await emitSyncRequest(
+            await emitSyncUpdate(
                 recipeId: ShoppingListConstants.offlineRecipeId,
                 update: update,
                 docKey: docKey,
@@ -1915,18 +2045,22 @@ final class YjsSyncService {
     }
 
     @discardableResult
-    private func emitSyncRequest(
+    private func emitSyncUpdate(
         recipeId: String,
         update: Data,
         docKey: String,
         documentKind: String? = nil
     ) async -> Bool {
         guard socket?.status == .connected, isSocketAuthenticated else { return false }
-        let lastSyncedAt = try? await store.loadSnapshot(docKey: docKey)?.lastSyncedAt
+        // New primary protocol: `sync_update` (web parity). The server applies
+        // the update immediately and persists; `lastSyncedAt` is intentionally
+        // omitted (legacy `sync_request` server path still accepts it for old
+        // web/PWA, but the new event does not need it).
+        //
         // Send raw `Data` so Socket.IO attaches it as a binary frame (web parity:
         // `Uint8Array`). A JSON `[UInt8]` array inflates ~3–4× and trips Engine.IO
         // `maxPayload` (1 MB default) — the POST fails, the socket dies, UI flaps
-        // offline/reconnecting. Server already accepts Uint8Array | number[].
+        // offline/reconnecting. Server accepts Uint8Array | number[].
         var payload: [String: Any] = [
             "yjsUpdate": update,
         ]
@@ -1938,9 +2072,6 @@ final class YjsSyncService {
         if let documentKind {
             payload["documentKind"] = documentKind
         }
-        if let lastSyncedAt {
-            payload["lastSyncedAt"] = lastSyncedAt
-        }
         let target: String
         if documentKind == ShoppingListConstants.documentKind {
             target = "shoppingList"
@@ -1951,7 +2082,7 @@ final class YjsSyncService {
         let large = update.count > 32_768
 
         // Serialize emits: polling batches waiting posts into one HTTP body. Two
-        // ~400KB binary sync_requests + load_document became a ~1.1MB POST that
+        // ~400KB binary sync_updates + sync_step1 became a ~1.1MB POST that
         // failed with `Error flushing waiting posts` and restarted the socket.
         let previous = syncEmitTail
         let task = Task<Bool, Never> { @MainActor in
@@ -1961,9 +2092,9 @@ final class YjsSyncService {
                 try? await Task.sleep(nanoseconds: 400_000_000)
                 guard self.socket?.status == .connected, self.isSocketAuthenticated else { return false }
             }
-            self.socket?.emit("sync_request", payload)
-            self.logger.info("Emitted sync_request for \(target) (\(update.count) bytes, binary=\(isBinary))")
-            AppLog.info(.sync, "sync_request_emitted", data: [
+            self.socket?.emit("sync_update", payload)
+            self.logger.info("Emitted sync_update for \(target) (\(update.count) bytes, binary=\(isBinary))")
+            AppLog.info(.sync, "sync_update_emitted", data: [
                 "target": target,
                 "bytes": "\(update.count)",
                 "binary": isBinary ? "1" : "0",
@@ -2056,7 +2187,7 @@ final class YjsSyncService {
             if recipeId != ShoppingListConstants.offlineRecipeId {
                 writeSyncStates[recipeId] = .syncing
             }
-            let emitted = await emitSyncRequest(
+            let emitted = await emitSyncUpdate(
                 recipeId: recipeId,
                 update: pushData,
                 docKey: docKey,
@@ -2095,7 +2226,7 @@ final class YjsSyncService {
                 queueEntries: []
             ), pushData.count > 2 else { continue }
             writeSyncStates[recipeId] = .syncing
-            await emitSyncRequest(recipeId: recipeId, update: pushData, docKey: docKey)
+            await emitSyncUpdate(recipeId: recipeId, update: pushData, docKey: docKey)
         }
     }
 
@@ -2172,7 +2303,7 @@ final class YjsSyncService {
             let documentKind = recipeId == ShoppingListConstants.offlineRecipeId
                 ? ShoppingListConstants.documentKind
                 : nil
-            await emitSyncRequest(
+            await emitSyncUpdate(
                 recipeId: recipeId,
                 update: localState,
                 docKey: docKey,
@@ -2201,6 +2332,12 @@ final class YjsSyncService {
         let docKey = docKeyFor(recipeId: recipeId)
         logger.info("document_loaded: \(UserIdFormatter.redactDocKey(docKey)), \(stateData.count) bytes")
         lastSuccessfulSyncAt = Date()
+        cancelSyncStep1Probe(
+            recipeId: recipeId,
+            documentKind: recipeId == ShoppingListConstants.offlineRecipeId
+                ? ShoppingListConstants.documentKind
+                : nil
+        )
 
         var mergeSucceeded = false
         do {
@@ -2218,6 +2355,81 @@ final class YjsSyncService {
         if isRecipeDocument(recipeId: recipeId) {
             if mergeSucceeded {
                 descriptionEditorSessions[recipeId]?.bridge?.applyRemoteUpdate(stateData)
+            }
+            completePendingDocumentLoad(recipeId: recipeId, merged: mergeSucceeded)
+        }
+
+        if recipeId == ShoppingListConstants.offlineRecipeId {
+            await refreshShoppingSnapshot()
+        } else if recipeId == "collection" {
+            await refreshCollectionEntries()
+        } else {
+            await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
+        }
+    }
+
+    /// `sync_step2` reply to our `sync_step1`. Contains only the ops the
+    /// client is missing relative to the state vector it sent — primary
+    /// load path going forward (web parity). When `missingUpdate` is empty
+    /// (`count <= 2`) and the local doc is already non-empty, the client is
+    /// already up to date and we no-op, just like web does.
+    private func handleSyncStep2(recipeId: String, missingUpdate: Data, lastSyncedAt: String?) async {
+        let docKey = docKeyFor(recipeId: recipeId)
+        logger.info("sync_step2: \(UserIdFormatter.redactDocKey(docKey)), \(missingUpdate.count) bytes")
+        lastSuccessfulSyncAt = Date()
+        cancelSyncStep1Probe(
+            recipeId: recipeId,
+            documentKind: recipeId == ShoppingListConstants.offlineRecipeId
+                ? ShoppingListConstants.documentKind
+                : nil
+        )
+
+        let serverSaysNothingNew = missingUpdate.count <= 2
+        let existingSnapshot = try? await store.loadSnapshot(docKey: docKey)
+        let localEmpty = existingSnapshot?.state.isEmpty ?? true
+
+        if serverSaysNothingNew && !localEmpty {
+            // Already in sync — no remote update to apply. Prefer in-memory
+            // encodeStateAsUpdate (includes unsynced local edits). Never rewrite
+            // with empty Data() from a second loadSnapshot that can race to nil.
+            if let lastSyncedAt {
+                if let doc = await documentManager.getDoc(key: docKey),
+                   let state = await doc.encodeStateAsUpdate(),
+                   !state.isEmpty {
+                    try? await store.saveSnapshot(docKey: docKey, state: state, lastSyncedAt: lastSyncedAt)
+                } else if let existing = existingSnapshot, !existing.state.isEmpty {
+                    try? await store.saveSnapshot(docKey: docKey, state: existing.state, lastSyncedAt: lastSyncedAt)
+                }
+            }
+            if isRecipeDocument(recipeId: recipeId) {
+                completePendingDocumentLoad(recipeId: recipeId, merged: true)
+            }
+            if recipeId == ShoppingListConstants.offlineRecipeId {
+                await refreshShoppingSnapshot()
+            } else if recipeId == "collection" {
+                await refreshCollectionEntries()
+            } else {
+                await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
+            }
+            return
+        }
+
+        var mergeSucceeded = false
+        do {
+            try await applyServerDocumentState(
+                recipeId: recipeId,
+                docKey: docKey,
+                stateData: missingUpdate,
+                lastSyncedAt: lastSyncedAt
+            )
+            mergeSucceeded = true
+        } catch {
+            logger.error("Failed to apply sync_step2 update for \(UserIdFormatter.redactDocKey(docKey)): \(error)")
+        }
+
+        if isRecipeDocument(recipeId: recipeId) {
+            if mergeSucceeded {
+                descriptionEditorSessions[recipeId]?.bridge?.applyRemoteUpdate(missingUpdate)
             }
             completePendingDocumentLoad(recipeId: recipeId, merged: mergeSucceeded)
         }
@@ -2766,13 +2978,12 @@ final class YjsSyncService {
             }
 
         case .truncatedCollection:
-            // Spec 054: server detected that the collection doc carries hard-deletes
-            // with a saturated state vector. Native client uses legacy `load_document`
-            // which always returns canonical state, so a plain reload is enough — no
-            // doc-drop/empty-SV handshake like the web client does. Do not surface as a
-            // user-facing error: this is an internal recovery signal.
-            clearInFlightOfflineTracking(forDocKey: docKeyFor(recipeId: "collection"))
-            reloadCollectionFromServer()
+            // Spec 054: server detected hard-deletes + saturated SV. After the
+            // Binary Yjs sync migration, plain reload via sync_step1 with the
+            // live SV no-ops. Mirror web: drop local collection state and
+            // re-handshake with an empty SV. Do not surface as a user-facing
+            // error — this is an internal recovery signal.
+            await recoverCollectionFromServer()
 
         case .generic:
             guard let recipeId else { return }
@@ -2793,7 +3004,8 @@ final class YjsSyncService {
         if recipeId == "collection" {
             reloadCollectionFromServer()
         } else {
-            socket?.emit("load_document", ["recipeId": recipeId])
+            let docKey = docKeyFor(recipeId: recipeId)
+            emitSyncStep1(recipeId: recipeId, docKey: docKey, documentKind: nil)
         }
     }
 
@@ -2825,7 +3037,8 @@ final class YjsSyncService {
         loadCollectionDocument()
 
         if let recipeId = activeRecipeId {
-            socket?.emit("load_document", ["recipeId": recipeId])
+            let docKey = docKeyFor(recipeId: recipeId)
+            emitSyncStep1(recipeId: recipeId, docKey: docKey, documentKind: nil)
         }
 
         _ = disconnectTimestamp

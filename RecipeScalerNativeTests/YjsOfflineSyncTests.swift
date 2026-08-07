@@ -231,6 +231,93 @@ final class YjsPayloadBytesTests: XCTestCase {
         let restored = YjsPayloadBytes.data(from: asInts)
         XCTAssertEqual(restored, original)
     }
+
+    func testAcceptsRawDataBinaryFrame() {
+        // New binary transport: server emits native Socket.IO binary frames
+        // (`Buffer` → `Data` on iOS). `YjsPayloadBytes.data(from:)` must pass
+        // raw `Data` through untouched so the migration from JSON number
+        // arrays is wire-compatible.
+        let original = Data([0, 1, 2, 255, 128, 42, 7, 0xfe, 0xff])
+        let restored = YjsPayloadBytes.data(from: original)
+        XCTAssertEqual(restored, original)
+    }
+
+    func testAcceptsDoubleArray() {
+        // Defensive: Socket.IO binary-as-JSON edge case where bytes surface as
+        // `[Double]`. Truncation must recover the original byte values.
+        let original = Data([0, 1, 255, 128, 42])
+        let asDoubles: [Double] = original.map { Double($0) }
+        let restored = YjsPayloadBytes.data(from: asDoubles)
+        XCTAssertEqual(restored, original)
+    }
+}
+
+@MainActor
+final class SyncEventHandlerSyncStep2Tests: XCTestCase {
+    func testParsesBinaryMissingUpdate() {
+        let handler = SyncEventHandler()
+        let missing = Data([0, 1, 2, 255, 42])
+        var received: (String, Data, String?)?
+        handler.onSyncStep2 = { recipeId, update, lastSyncedAt in
+            received = (recipeId, update, lastSyncedAt)
+        }
+
+        handler.test_handleSyncStep2([[
+            "recipeId": "recipe-abc",
+            "missingUpdate": missing,
+            "lastSyncedAt": "2026-08-08T00:00:00.000Z",
+        ] as [String: Any]])
+
+        XCTAssertEqual(received?.0, "recipe-abc")
+        XCTAssertEqual(received?.1, missing)
+        XCTAssertEqual(received?.2, "2026-08-08T00:00:00.000Z")
+    }
+
+    func testParsesLegacyNumberArrayMissingUpdate() {
+        let handler = SyncEventHandler()
+        let missing = Data([0, 1, 255, 128])
+        var received: Data?
+        handler.onSyncStep2 = { _, update, _ in
+            received = update
+        }
+
+        let asInts: [Int] = missing.map { Int($0) }
+        handler.test_handleSyncStep2([[
+            "recipeId": "recipe-xyz",
+            "missingUpdate": asInts,
+        ] as [String: Any]])
+
+        XCTAssertEqual(received, missing)
+    }
+
+    func testShoppingListDocumentKindMapsOfflineRecipeId() {
+        let handler = SyncEventHandler()
+        var receivedId: String?
+        handler.onSyncStep2 = { recipeId, _, _ in
+            receivedId = recipeId
+        }
+
+        handler.test_handleSyncStep2([[
+            "documentKind": ShoppingListConstants.documentKind,
+            "missingUpdate": Data([0, 0]),
+        ] as [String: Any]])
+
+        XCTAssertEqual(receivedId, ShoppingListConstants.offlineRecipeId)
+    }
+
+    func testOmittedRecipeIdMapsToCollection() {
+        let handler = SyncEventHandler()
+        var receivedId: String?
+        handler.onSyncStep2 = { recipeId, _, _ in
+            receivedId = recipeId
+        }
+
+        handler.test_handleSyncStep2([[
+            "missingUpdate": Data([0, 0]),
+        ] as [String: Any]])
+
+        XCTAssertEqual(receivedId, "collection")
+    }
 }
 
 @MainActor

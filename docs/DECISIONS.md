@@ -52,6 +52,18 @@ Chronological log of substantive choices (newest last).
 
 ---
 
+### 2026-08-07 — Native primary protocol = `sync_step1`/`sync_step2`/`sync_update` (binary)
+
+**Decision:** Native client uses the new Yjs Socket.IO protocol (`sync_step1` for state-vector diff load, `sync_update` for outbound edits) as the primary path, with raw `Data` binary frames for Yjs payloads. Server legacy events (`sync_request`, `load_document`, `document_loaded`) remain available as a fallback for old web/PWA builds; native no longer emits them on the primary path.
+
+**Rationale:** Switching from full-state `load_document` + `sync_request` to state-vector-diff (`sync_step1` → `sync_step2`) cuts over-the-wire bytes on load to the missing ops only, and binary `Data` frames eliminate the ~3–4× inflation that JSON `[UInt8]` arrays suffered (notably on Socket.IO polling, where binary attachments were base64-encoded anyway). `YjsPayloadBytes.data(from:)` still accepts both `Data` and legacy number-array forms, so the migration is wire-compatible with any server build.
+
+**Migration scope:** `SyncEventHandler.swift` (new `sync_step2` subscription + `onSyncStep2` callback), `YjsSyncService.swift` (`loadCollectionDocument`, `loadShoppingDocument`, recipe load path, recovery, reconnect — all switched to `emitSyncStep1`; push path is `emitSyncUpdate` → Socket.IO `sync_update`, `lastSyncedAt` dropped). `UpdateDebouncer` + `flushPendingEdits` on Done/`onDisappear`/`scenePhase` are unchanged and remain the client-side write debounce (no server-side write debounce by design — server writes immediately on receipt).
+
+**Follow-ups (2026-08-08):** (1) `truncatedCollection` recovery mirrors web — drop in-memory + SQLite collection state and re-handshake with an empty state vector (plain `sync_step1` with a saturated SV no-ops). (2) Per-request ~5s `sync_step1` probe falls back once to legacy `load_document` without permanently pinning native to legacy.
+
+---
+
 ### 2026-06-01 — Offline-first recipe images via API then disk cache
 
 **Decision:** Recipe images are downloaded through the API and persisted to a local disk cache so list and detail views work offline after first fetch (feature `003-recipe-image-offline-cache`).

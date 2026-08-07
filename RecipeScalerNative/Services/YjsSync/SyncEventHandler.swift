@@ -16,6 +16,11 @@ final class SyncEventHandler {
     /// Called when batch documents are loaded.
     var onDocumentsLoaded: ([(String, Data, String?)]) -> Void = { _ in }
 
+    /// Called when the server replies to `sync_step1` with the missing ops
+    /// relative to the state vector the client sent. New primary load path;
+    /// mirrors web `yjs-client.ts` `sync_step2` handler.
+    var onSyncStep2: ((String, Data, String?) -> Void)?
+
     /// Called when an incremental update arrives for a recipe.
     var onRecipeUpdated: ((String, Data) -> Void)?
 
@@ -48,6 +53,10 @@ final class SyncEventHandler {
 
         client.on("documents_loaded") { [weak self] data, _ in
             self?.handleDocumentsLoaded(data)
+        }
+
+        client.on("sync_step2") { [weak self] data, _ in
+            self?.handleSyncStep2(data)
         }
 
         client.on("recipe_updated") { [weak self] data, _ in
@@ -120,6 +129,39 @@ final class SyncEventHandler {
 
         AppLog.info(.sync, "documents_loaded: \(results.count) documents")
         onDocumentsLoaded(results)
+    }
+
+    #if DEBUG
+    /// Test seam: parse a synthetic Socket.IO `sync_step2` payload array.
+    func test_handleSyncStep2(_ data: [Any]) {
+        handleSyncStep2(data)
+    }
+    #endif
+
+    /// `sync_step2` reply to our `sync_step1`. Carries the missing ops
+    /// relative to the state vector we sent. Decode via `YjsPayloadBytes`
+    /// so binary `Data` frames and legacy JSON number arrays both work.
+    private func handleSyncStep2(_ data: [Any]) {
+        guard let payload = data.first as? [String: Any] else {
+            AppLog.error(.sync, "sync_step2: invalid payload format")
+            return
+        }
+
+        let documentKind = payload["documentKind"] as? String
+        let recipeId: String
+        if documentKind == ShoppingListConstants.documentKind {
+            recipeId = ShoppingListConstants.offlineRecipeId
+        } else {
+            recipeId = collectionRecipeId(from: payload["recipeId"])
+        }
+        guard let updateData = YjsPayloadBytes.data(from: payload["missingUpdate"]) else {
+            AppLog.error(.sync, "sync_step2: missing or invalid missingUpdate for \(recipeId)")
+            return
+        }
+        let lastSyncedAt = payload["lastSyncedAt"] as? String
+
+        AppLog.info(.sync, "sync_step2: \(recipeId), \(updateData.count) bytes")
+        onSyncStep2?(recipeId, updateData, lastSyncedAt)
     }
 
     private func handleRecipeUpdated(_ data: [Any]) {

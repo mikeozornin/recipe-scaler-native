@@ -46,8 +46,12 @@
 
 - **Silent register-auto** — намеренно отказались (см. развилка ниже).
   Потеря рецептов без объяснения хуже, чем один экран входа.
-- **Миграция нативки на modern `sync_step1`/`sync_step2` handshake** — отдельная
-  задача; сейчас нативка на legacy `load_document`, и этот spec это не меняет.
+- **Миграция нативки на modern `sync_step1`/`sync_step2` handshake** — выполнена
+  отдельным эпиком (Binary Yjs sync, 2026-08-07, см. `docs/DECISIONS.md`).
+  Нативка использует новый протокол как основной путь; per-request probe
+  (~5s) падает обратно на legacy `load_document` без постоянного pinning.
+  `truncatedCollection` recovery: drop local collection + empty-SV `sync_step1`
+  (как web), не plain reload с saturated SV.
 - **Active Sessions UI**, logout-on-revoke — covered spec 041.
 - **Web parity для collection-recovery** — в нативке не возникает тот же
   saturated-SV trap; в этой спеке только typed error code.
@@ -100,8 +104,9 @@
   `"sync.error.truncated-collection"`. `handleSyncError` для этого case:
   - Не показывать пользователю ошибку (collection recovery — внутренний
     процесс, не user-facing).
-  - Перевести коллекцию в режим reload: `hasRequestedCollectionLoad = false`
-    + `loadCollectionDocument()` (существующий `reloadCollectionFromServer`).
+  - Drop local collection (in-memory + SQLite snapshot + offline queue) и
+    `sync_step1` с пустым state vector (`recoverCollectionFromServer`) —
+    plain reload с saturated SV после Binary Yjs sync no-op'ит.
   - Не инкрементить unsynced-флаги.
 - **F8.** Локализованная строка `sync.error.truncated-collection` всё равно
   добавляется в `Localizable.xcstrings` (на случай если в будущем ветка
@@ -150,7 +155,7 @@
   возвращает `.truncatedCollection`.
 - [ ] AC6. `handleSyncError(.truncatedCollection, ...)` не устанавливает
   `syncErrorMessage` и не инкрементит unsynced-флаги; вызывает
-  `reloadCollectionFromServer()`.
+  `recoverCollectionFromServer()` (drop local + empty-SV `sync_step1`).
 - [ ] AC7. Локализованная строка `sync.error.truncated-collection` добавлена
   в `Localizable.xcstrings` (ru + en).
 - [ ] AC8. `xcodebuild build` green для основного target.

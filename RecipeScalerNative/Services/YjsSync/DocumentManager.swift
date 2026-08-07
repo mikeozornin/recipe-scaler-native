@@ -116,6 +116,16 @@ actor DocumentManager {
         return docs[key]
     }
 
+    /// State vector of the in-memory doc, or empty `Data()` if the doc is not
+    /// loaded. Used to compute `sync_step1.stateVector` without exposing the
+    /// internal `YrsDocument`.
+    func stateVectorForSync(key: String) async -> Data {
+        if let doc = docs[key], let sv = await doc.stateVector() {
+            return sv
+        }
+        return Data()
+    }
+
     func applyUpdate(key: String, data: Data, lastSyncedAt: String? = nil, suppressRecipeChangeNotification: Bool = false) async throws {
         let doc = try await getOrCreateDoc(key: key)
         if suppressRecipeChangeNotification, key.contains(":recipe:") {
