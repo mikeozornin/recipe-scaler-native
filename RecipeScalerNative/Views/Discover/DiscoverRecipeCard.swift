@@ -47,6 +47,7 @@ struct DiscoverRecipeCard: View {
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .contentShape(Rectangle())
     }
 
     @ViewBuilder
