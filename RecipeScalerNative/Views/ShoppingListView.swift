@@ -212,7 +212,9 @@ struct ShoppingListView: View {
                 .shoppingSectionLabelRow()
             VStack(spacing: 12) {
                 AppEmptyStateIllustration(
-                    asset: purchased.isEmpty ? .shoppingBasketEmpty : .shoppingBasketFull
+                    asset: purchased.isEmpty ? .shoppingBasketEmpty : .shoppingBasketFull,
+                    // Compact when Reminders tip sits above — otherwise add-item is clipped by the tab bar.
+                    size: showRemindersTip ? 156 : AppTypography.emptyStateIllustrationSize
                 )
                 Text(
                     purchased.isEmpty
@@ -223,7 +225,11 @@ struct ShoppingListView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             }
-            .frame(maxWidth: .infinity, minHeight: 348, alignment: .center)
+            .frame(
+                maxWidth: .infinity,
+                minHeight: showRemindersTip ? 236 : 348,
+                alignment: .center
+            )
             .listRowBackground(Color.clear)
             addItemRow
         }

@@ -15,15 +15,14 @@ enum EmptyStateIllustrationAsset: String {
 /// Pencil-soft empty-state art at `AppTypography.emptyStateIllustrationSize` (192 pt).
 struct AppEmptyStateIllustration: View {
     let asset: EmptyStateIllustrationAsset
+    /// Defaults to `AppTypography.emptyStateIllustrationSize`; pass a smaller size for compact layouts.
+    var size: CGFloat = AppTypography.emptyStateIllustrationSize
 
     var body: some View {
         Image(asset.rawValue)
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .frame(
-                width: AppTypography.emptyStateIllustrationSize,
-                height: AppTypography.emptyStateIllustrationSize
-            )
+            .frame(width: size, height: size)
             .accessibilityHidden(true)
     }
 }
