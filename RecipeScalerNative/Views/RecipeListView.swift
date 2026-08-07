@@ -299,17 +299,30 @@ struct RecipeListView: View {
                 .tag(RecipeFolderRoutes.ViewMode.collections)
             }
         } label: {
+            // Reserve max width of both titles so iOS 26 Liquid Glass nav bar
+            // does not clip the principal label while animating width changes.
             HStack(spacing: 6) {
-                Text(viewModeMenuTitleKey)
-                    .font(AppTypography.body)
-                    .foregroundStyle(Color.primary)
+                ZStack {
+                    Text("collections.view-flat")
+                        .font(AppTypography.body)
+                        .hidden()
+                    Text("collections.view-collections")
+                        .font(AppTypography.body)
+                        .hidden()
+                    Text(viewModeMenuTitleKey)
+                        .font(AppTypography.body)
+                        .foregroundStyle(Color.primary)
+                        .lineLimit(1)
+                }
                 Image(systemName: "chevron.down")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .frame(width: 20, height: 20)
                     .background(Color(.tertiarySystemFill), in: Circle())
             }
+            .fixedSize()
         }
+        .transaction { $0.animation = nil }
         .accessibilityLabel(Text("collections.title"))
     }
 
