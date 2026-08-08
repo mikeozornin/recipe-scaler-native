@@ -64,6 +64,16 @@ enum UIA {
     static let accountTelegramCopy = "account_telegram_copy"
     static let accountTelegramRefresh = "account_telegram_refresh"
     static let accountTimerNotificationsToggle = "account_timer_notifications_toggle"
+    static let accountTipsSection = "account_tips_section"
+    static let accountTipsMenu = "account_tips_menu"
+    static let accountTipsRetry = "account_tips_retry"
+    static let accountTipsRestore = "account_tips_restore"
+    static let accountTipsManage = "account_tips_manage"
+
+    static func accountTipPurchase(productID: String) -> String {
+        let slug = productID.replacingOccurrences(of: ".", with: "_")
+        return "account_tip_purchase_\(slug)"
+    }
 
     // MARK: - Account deletion (055)
     static let deleteAccountButton = "delete_account_button"

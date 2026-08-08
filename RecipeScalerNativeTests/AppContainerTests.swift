@@ -30,6 +30,7 @@ final class AppContainerTests: XCTestCase {
         XCTAssertNotNil(container.assistantRecipeContext)
         XCTAssertNotNil(container.deepLinkRouter)
         XCTAssertNotNil(container.timerLiveActivityCoordinator)
+        XCTAssertNotNil(container.tips)
 
         // Networked
         XCTAssertNotNil(container.auth)
@@ -101,5 +102,20 @@ final class AppContainerTests: XCTestCase {
         XCTAssertTrue(TimerSyncService.shared === container.timerSync)
         XCTAssertTrue(YjsMergeHelper.shared === container.yjsMergeHelper)
         XCTAssertTrue(AssistantRecipeContext.shared === container.assistantRecipeContext)
+    }
+
+    func test_tipProductCatalog_matchesAppStoreContract() {
+        XCTAssertEqual(
+            TipProductID.oneTime.map(\.rawValue),
+            [
+                "ru.recipescaler.tip.1",
+                "ru.recipescaler.tip.2",
+                "ru.recipescaler.tip.5",
+                "ru.recipescaler.tip.10"
+            ]
+        )
+        XCTAssertEqual(TipProductID.monthly.rawValue, "ru.recipescaler.support.monthly")
+        XCTAssertEqual(Set(TipProductID.oneTime).count, 4)
+        XCTAssertFalse(TipProductID.oneTime.contains(.monthly))
     }
 }

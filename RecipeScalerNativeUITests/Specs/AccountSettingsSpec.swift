@@ -39,6 +39,30 @@ final class AccountSettingsSpec: BaseTestCase {
         )
     }
 
+    func test_US4_tipsSectionVisible() {
+        Navigation.openTab(.profile, in: app)
+        _ = accountPage.awaitReady()
+
+        let tips = app.descendants(matching: .any)[UIA.accountTipsSection]
+        if !tips.waitForExistence(timeout: Wait.element) {
+            if app.scrollViews.firstMatch.exists {
+                app.scrollViews.firstMatch.swipeUp()
+            } else if app.collectionViews.firstMatch.exists {
+                app.collectionViews.firstMatch.swipeUp()
+            }
+        }
+
+        XCTAssertTrue(
+            tips.waitForExistence(timeout: Wait.element),
+            "account_tips_section not in UI — wire Tips into AccountView"
+        )
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)[UIA.accountTipsMenu].waitForExistence(timeout: Wait.element),
+            "account_tips_menu not in UI — tips should be opened as a submenu"
+        )
+    }
+
     // MARK: - Spec 055 — Account deletion
 
     /// UITest runner has no Localizable.xcstrings — system alert labels are EN.

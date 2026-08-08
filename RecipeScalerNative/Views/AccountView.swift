@@ -139,6 +139,7 @@ struct AccountView: View {
                         .id(AccountViewSection.reminders.id)
                     telegramSection
                         .id(AccountViewSection.telegram.id)
+                    AccountTipsSection()
                     dataSection
                     if auth.isAuthenticated {
                         dangerZoneSection

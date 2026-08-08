@@ -97,6 +97,13 @@ final class AppContainer {
 
     let systemBanner: SystemBannerStore
 
+    // MARK: - App Store support
+
+    /// StoreKit transactions belong to the Apple account, so this service is
+    /// intentionally app-scoped and is not cleared when the Recipe Scaler
+    /// account logs out.
+    let tips: TipPurchaseService
+
     /// Holds the cyclic `TimerSyncService.sendTimerEvent ↔ YjsSyncService.emitTimerEvent`
     /// callback so neither service retains the other directly.
     private let timerEventBridge: TimerEventBridge
@@ -200,6 +207,10 @@ final class AppContainer {
         // System banner store (spec 061). Refreshed once per session during
         // bootstrap; never polls. Dismissal is persisted server-side.
         self.systemBanner = SystemBannerStore()
+
+        // StoreKit support purchases are independent of the signed-in
+        // Recipe Scaler account and must survive account switching.
+        self.tips = TipPurchaseService()
 
         // Bridge the cyclic callback
         let bridge = TimerEventBridge()

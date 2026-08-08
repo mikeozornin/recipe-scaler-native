@@ -72,6 +72,7 @@
 		62AB0E221B7ED6F6F79F9259 /* YrsDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 918F51E10FCE4C23134D68CE /* YrsDocument.swift */; };
 		64694ACF1805F99D988C668A /* MartianGrotesk-StdxBd.otf in Resources */ = {isa = PBXBuildFile; fileRef = 5B607E48597DEC5368CA9640 /* MartianGrotesk-StdxBd.otf */; };
 		67A6550B36933C92D59DB2B9 /* FeatureAdoptionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAA4DF54D6AD9C9C26DC444 /* FeatureAdoptionStore.swift */; };
+		D1A100000000000000000001 /* TipPurchaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A100000000000000000002 /* TipPurchaseService.swift */; };
 		69260D31481836DE8DC2349C /* RecipeData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AF33ADA594B16A7C6F4A381 /* RecipeData.swift */; };
 		69CA5B8741F33C2F92CD0048 /* RecipeScalerNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296450B0B341AB25920D2100 /* RecipeScalerNativeApp.swift */; };
 		6BBC390F7AF94B5AA3A27468 /* TimerLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF518ADEDA245B099EC5C7E /* TimerLiveActivityIntents.swift */; };
@@ -373,6 +374,7 @@
 		E5F60718293A4B70443E17D7 /* ShoppingListReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B702F0A2841 /* ShoppingListReader.swift */; };
 		E5F60718293A4B7044C89B39 /* AssistantAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A0E4855E /* AssistantAPI.swift */; };
 		E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70344FA5B3 /* AccountView.swift */; };
+		D1A100000000000000000003 /* AccountTipsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A100000000000000000004 /* AccountTipsSection.swift */; };
 		E5F60718293A4B704B61748D /* DiscoverAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7011DA2DE4 /* DiscoverAPI.swift */; };
 		E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */; };
 		E5F60718293A4B7055FFBBCC /* DocumentManager+ShoppingList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */; };
@@ -1080,6 +1082,8 @@
 		E5F60718293A4B70309B38A2 /* DescriptionTimerPopoverState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionTimerPopoverState.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70322645C2 /* DiscoverPublicProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverPublicProfileView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70344FA5B3 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
+		D1A100000000000000000004 /* AccountTipsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountTipsSection.swift; sourceTree = "<group>"; };
+		D1A100000000000000000008 /* RecipeScalerTips.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = RecipeScalerTips.storekit; sourceTree = "<group>"; };
 		E5F60718293A4B7035E279C2 /* SharingAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingAPI.swift; sourceTree = "<group>"; };
 		E5F60718293A4B703691736C /* ShoppingListPlainText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListPlainText.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7040751435 /* ShoppingListFromRecipe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListFromRecipe.swift; sourceTree = "<group>"; };
@@ -1159,6 +1163,7 @@
 		F4E0F52196856ADAA6F5C473 /* TimerExampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerExampleView.swift; sourceTree = "<group>"; };
 		F58FAB09283CA8326C38419C /* HomeWidgetBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeWidgetBundle.swift; sourceTree = "<group>"; };
 		FAAA4DF54D6AD9C9C26DC444 /* FeatureAdoptionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionStore.swift; sourceTree = "<group>"; };
+		D1A100000000000000000002 /* TipPurchaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipPurchaseService.swift; sourceTree = "<group>"; };
 		FADAPI01A293A4B701000001 /* Networking/FeatureAdoptionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/FeatureAdoptionAPI.swift; sourceTree = "<group>"; };
 		FADFIX0A0A293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionInstalledFlagTests.swift; sourceTree = "<group>"; };
 		FADKEY01A293A4B701000001 /* Networking/FeatureAdoptionClientFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/FeatureAdoptionClientFeature.swift; sourceTree = "<group>"; };
@@ -1499,6 +1504,7 @@
 				E5F60718293A4B7017DF9B12 /* DiscoverRootView.swift */,
 				E5F60718293A4B701A1B2001 /* Discover */,
 				E5F60718293A4B70344FA5B3 /* AccountView.swift */,
+				D1A100000000000000000004 /* AccountTipsSection.swift */,
 				B041LGB002 /* LegacyAuthBannerView.swift */,
 				6DDA10FB70EB04235CF1A47E /* FeatureAdoptionDetailView.swift */,
 				A14000040000000000000004 /* FeatureAdoptionGuideView.swift */,
@@ -1540,6 +1546,7 @@
 		3EE100FD9182D08689E780CD = {
 			isa = PBXGroup;
 			children = (
+				D1A100000000000000000008 /* RecipeScalerTips.storekit */,
 				VRSNXCFG00010001BB000001 /* Config */,
 				874E7D0546814157A05786F4 /* RecipeScalerCore */,
 				F1A2B3C4D5E60718293A4B40 /* ShareExtensionUI */,
@@ -2075,6 +2082,7 @@
 				E5F60718293A4B7035E279C2 /* SharingAPI.swift */,
 				E5F60718293A4B70093D4CC7 /* AccountAPI.swift */,
 				FAAA4DF54D6AD9C9C26DC444 /* FeatureAdoptionStore.swift */,
+				D1A100000000000000000002 /* TipPurchaseService.swift */,
 				E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */,
 				3C08EE69E64A48AE8B692E6A /* SystemBannerAPI.swift */,
 				E5F60718293A4B70A0E4855E /* AssistantAPI.swift */,
@@ -2525,6 +2533,15 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					D48135388848E9FFF6A87142 = {
+						SystemCapabilities = {
+							com.apple.InAppPurchase = {
+								enabled = 1;
+							};
+						};
+					};
+				};
 			};
 			buildConfigurationList = 6A0BE2A80FD1FC0BF52DC1C5 /* Build configuration list for PBXProject "RecipeScalerNative" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -2772,6 +2789,7 @@
 				A140015000000000000000015 /* GuideMediaStudioView.swift in Sources */,
 				A140011000000000000000011 /* FeatureFlags.swift in Sources */,
 				67A6550B36933C92D59DB2B9 /* FeatureAdoptionStore.swift in Sources */,
+				D1A100000000000000000001 /* TipPurchaseService.swift in Sources */,
 				AC6A576E26314798BE3FBF1A /* SystemBannerStore.swift in Sources */,
 				1758D7142F1C4429B9A37584 /* SystemBannerAPI.swift in Sources */,
 				4CE1EBBF8B610A4B091090FF /* AuthView.swift in Sources */,
@@ -2950,6 +2968,7 @@
 				E5F60718293A4B708BB3E294 /* DiscoverRecipeCard.swift in Sources */,
 				E5F60718293A4B70A1B2C3D /* RecipeReader.swift in Sources */,
 				E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */,
+				D1A100000000000000000003 /* AccountTipsSection.swift in Sources */,
 				B041LGB001 /* LegacyAuthBannerView.swift in Sources */,
 				B041LGR001 /* LegacyAuthBannerReminder.swift in Sources */,
 				SRTIPPREF0001AA0001BB01 /* ShoppingRemindersTipPreferences.swift in Sources */,

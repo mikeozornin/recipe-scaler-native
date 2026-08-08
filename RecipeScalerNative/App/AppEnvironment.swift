@@ -44,5 +44,6 @@ extension View {
             .environment(container.spotlight)
             .environment(container.featureAdoption)
             .environment(container.systemBanner)
+            .environment(container.tips)
     }
 }

@@ -1,0 +1,159 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "D1A10000",
+  "products" : [
+    {
+      "displayPrice" : "1.00",
+      "familyShareable" : false,
+      "internalID" : "D1A10011",
+      "localizations" : [
+        {
+          "description" : "A one-time tip to support Recipe Scaler",
+          "displayName" : "Espresso",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Чаевые в поддержку Recipe Scaler",
+          "displayName" : "Эспрессо",
+          "locale" : "ru"
+        }
+      ],
+      "productID" : "ru.recipescaler.tip.1",
+      "referenceName" : "Espresso",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "2.00",
+      "familyShareable" : false,
+      "internalID" : "D1A10012",
+      "localizations" : [
+        {
+          "description" : "A one-time tip to support Recipe Scaler",
+          "displayName" : "Double espresso",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Чаевые в поддержку Recipe Scaler",
+          "displayName" : "Двойной эспрессо",
+          "locale" : "ru"
+        }
+      ],
+      "productID" : "ru.recipescaler.tip.2",
+      "referenceName" : "Double espresso",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "5.00",
+      "familyShareable" : false,
+      "internalID" : "D1A10015",
+      "localizations" : [
+        {
+          "description" : "A one-time tip to support Recipe Scaler",
+          "displayName" : "Specialty v60 cup",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Чаевые в поддержку Recipe Scaler",
+          "displayName" : "V60",
+          "locale" : "ru"
+        }
+      ],
+      "productID" : "ru.recipescaler.tip.5",
+      "referenceName" : "Specialty v60 cup",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "10.00",
+      "familyShareable" : false,
+      "internalID" : "D1A1001A",
+      "localizations" : [
+        {
+          "description" : "A one-time tip to support Recipe Scaler",
+          "displayName" : "Coffee and cheesecake pie",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Чаевые в поддержку Recipe Scaler",
+          "displayName" : "Кофе и чизкейк",
+          "locale" : "ru"
+        }
+      ],
+      "productID" : "ru.recipescaler.tip.10",
+      "referenceName" : "Coffee and cheesecake pie",
+      "type" : "Consumable"
+    }
+  ],
+  "subscriptionGroups" : [
+    {
+      "id" : "D1A10020",
+      "localizations" : [ ],
+      "name" : "Recipe Scaler Support",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "billingPlans" : [
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "commitmentDisplayPrice" : "1.00",
+              "displayPrice" : "1.00",
+              "internalID" : "D1A10022",
+              "isEnabled" : true
+            }
+          ],
+          "codeOffers" : [],
+          "displayPrice" : "1.00",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "D1A10021",
+          "introductoryOffers" : [],
+          "localizations" : [
+            {
+              "description" : "Support Recipe Scaler every month",
+              "displayName" : "Regular tip",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "Поддерживать Recipe Scaler каждый месяц",
+              "displayName" : "Регулярная поддержка",
+              "locale" : "ru"
+            }
+          ],
+          "productID" : "ru.recipescaler.support.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Regular tip",
+          "subscriptionGroupID" : "D1A10020",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : []
+        }
+      ]
+    }
+  ],
+  "nonRenewingSubscriptions" : [],
+  "subscriptionBundleGroups" : [],
+  "subscriptionSuiteGroups" : [],
+  "settings" : {
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "USA",
+    "_storeKitErrors" : [],
+    "_timeRate" : 0
+  },
+  "version" : {
+    "major" : 6,
+    "minor" : 3
+  }
+}
