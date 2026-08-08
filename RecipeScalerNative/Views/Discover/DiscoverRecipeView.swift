@@ -15,11 +15,13 @@ struct DiscoverRecipeView: View {
     let recipeId: String
     var allowRecipeDownloads: Bool = true
     var imageSource: DiscoverRecipeImageSource = .curatedDiscover
+    var returnContext: DiscoverRecipeReturnContext?
 
     @Environment(YjsSyncService.self) private var syncService
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.apiClient) private var apiClient
+    @Environment(\.discoverListState) private var discoverListState
     @AppStorage(NutritionSettings.globalEnabledKey) private var showNutritionGlobal = true
     @State private var model: DiscoverRecipeModel?
     @State private var scaleFactor: Double = 1
@@ -124,6 +126,12 @@ struct DiscoverRecipeView: View {
         .task {
             if model == nil {
                 model = DiscoverRecipeModel(api: apiClient)
+            }
+            if let returnContext {
+                discoverListState?.recordAnchor(
+                    recipeID: returnContext.recipeID,
+                    for: returnContext.scope
+                )
             }
             await model?.load(recipeId: recipeId)
         }

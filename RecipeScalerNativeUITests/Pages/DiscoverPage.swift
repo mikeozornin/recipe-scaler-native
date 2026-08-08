@@ -30,7 +30,12 @@ struct DiscoverPage: Page {
         app.descendants(matching: .any)[UIA.discoverProfileCard].firstMatch
     }
     var firstRecipeCard: XCUIElement {
-        app.descendants(matching: .any)[UIA.discoverRecipeCard].firstMatch
+        app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", UIA.discoverRecipeCardPrefix))
+            .firstMatch
+    }
+    func recipeCard(id: String) -> XCUIElement {
+        app.descendants(matching: .any)[UIA.discoverRecipeCard(id: id)]
     }
     var firstRecipeCloneButton: XCUIElement {
         app.buttons[UIA.discoverRecipeCloneButton].firstMatch

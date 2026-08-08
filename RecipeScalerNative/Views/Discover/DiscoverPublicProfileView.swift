@@ -15,10 +15,15 @@ struct DiscoverPublicProfileView: View {
     let username: String
 
     @Environment(\.apiClient) private var apiClient
+    @Environment(\.discoverListState) private var discoverListState
     @State private var model: DiscoverPublicProfileModel?
     @State private var searchText = ""
     @State private var searchStore = DiscoverSearchStore<PublicRecipePreviewDTO>()
     @State private var searchTokens: [String] = []
+
+    private var scope: DiscoverListScope {
+        .profile(username)
+    }
 
     var body: some View {
         Group {
@@ -42,11 +47,23 @@ struct DiscoverPublicProfileView: View {
             placement: .navigationBarDrawer(displayMode: .automatic),
             prompt: Text("search.recipes")
         )
-        .task {
+        .task(id: username) {
             if model == nil {
                 model = DiscoverPublicProfileModel(api: apiClient)
             }
-            await model?.load(username: username)
+            if let discoverListState {
+                let saved = discoverListState.state(for: scope)
+                if searchText != saved.searchText {
+                    searchText = saved.searchText
+                }
+            }
+            await model?.loadIfNeeded(username: username)
+            if case .loaded(let response) = model?.state {
+                searchStore.setItems(DiscoverSearch.sortedByRecipeName(response.recipes) { $0.name })
+            }
+        }
+        .refreshable {
+            await model?.refresh(username: username)
             if case .loaded(let response) = model?.state {
                 searchStore.setItems(DiscoverSearch.sortedByRecipeName(response.recipes) { $0.name })
             }
@@ -54,46 +71,91 @@ struct DiscoverPublicProfileView: View {
         .onChange(of: searchText) { _, query in
             searchTokens = DiscoverSearch.tokenize(query)
             searchStore.setQuery(query)
+            discoverListState?.updateSearchText(query, for: scope)
         }
     }
 
     @ViewBuilder
     private func content(for response: PublicProfileResponseDTO) -> some View {
         let filtered = searchStore.filteredSnapshot
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                header(for: response.profile)
-                if response.recipes.isEmpty {
-                    Text("discover.profile.no-recipes")
-                        .appBody()
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 40)
-                } else if filtered.isEmpty {
-                    Text("recipes.no-recipes")
-                        .appBody()
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 40)
-                } else {
-                    DiscoverRecipeCardGrid(items: filtered) { recipe in
-                        NavigationLink(
-                            value: DiscoverRoute.recipe(
-                                id: recipe.id,
-                                allowDownloads: response.profile.allowRecipeDownloads != false,
-                                imageSource: .publicRecipe
+        let filteredIDs = filtered.map(\.id)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    header(for: response.profile)
+                    if response.recipes.isEmpty {
+                        Text("discover.profile.no-recipes")
+                            .appBody()
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, 40)
+                    } else if filtered.isEmpty {
+                        Text("recipes.no-recipes")
+                            .appBody()
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, 40)
+                    } else {
+                        DiscoverRecipeCardGrid(items: filtered) { recipe in
+                            NavigationLink(
+                                value: DiscoverRoute.recipe(
+                                    id: recipe.id,
+                                    allowDownloads: response.profile.allowRecipeDownloads != false,
+                                    imageSource: .publicRecipe,
+                                    returnContext: DiscoverRecipeReturnContext(
+                                        scope: scope,
+                                        recipeID: recipe.id
+                                    )
+                                )
+                            ) {
+                                DiscoverRecipeCard(recipe: recipe, searchTokens: searchTokens)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier(
+                                AccessibilityIdentifiers.discoverRecipeCard(recipeID: recipe.id)
                             )
-                        ) {
-                            DiscoverRecipeCard(recipe: recipe, searchTokens: searchTokens)
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier(AccessibilityIdentifiers.discoverRecipeCard)
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 16)
+                .mobileTimerPanelBottomPadding()
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
-            .mobileTimerPanelBottomPadding()
+            .onAppear {
+                restoreAnchorIfNeeded(
+                    filtered: filtered,
+                    hasRecipes: !response.recipes.isEmpty,
+                    proxy: proxy
+                )
+            }
+            .onChange(of: filteredIDs) { _, _ in
+                restoreAnchorIfNeeded(
+                    filtered: filtered,
+                    hasRecipes: !response.recipes.isEmpty,
+                    proxy: proxy
+                )
+            }
+        }
+    }
+
+    private func restoreAnchorIfNeeded(
+        filtered: [PublicRecipePreviewDTO],
+        hasRecipes: Bool,
+        proxy: ScrollViewProxy
+    ) {
+        guard let anchorID = discoverListState?.anchor(for: scope) else {
+            return
+        }
+        if filtered.isEmpty, hasRecipes {
+            return
+        }
+        guard filtered.contains(where: { $0.id == anchorID }) else {
+            discoverListState?.clearAnchor(for: scope)
+            return
+        }
+        _ = discoverListState?.consumeAnchor(for: scope)
+        withAnimation(.easeInOut(duration: 0.2)) {
+            proxy.scrollTo(anchorID, anchor: .center)
         }
     }
 

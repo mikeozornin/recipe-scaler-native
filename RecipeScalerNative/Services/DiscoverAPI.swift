@@ -154,8 +154,11 @@ enum DiscoverAPI {
         return try APIClient.unwrapResponse(response, fallback: .discoverFetchFailed)
     }
 
-    static func fetchCollection(slug: String) async throws -> CollectionWithRecipesDTO {
-        let response: APIResponse<CollectionWithRecipesDTO> = try await APIClient.shared.requestJSON(
+    static func fetchCollection(
+        slug: String,
+        api: APIClient = .shared
+    ) async throws -> CollectionWithRecipesDTO {
+        let response: APIResponse<CollectionWithRecipesDTO> = try await api.requestJSON(
             path: "/api/discover/collections/\(slug)"
         )
         return try APIClient.unwrapResponse(response, fallback: .discoverCollectionFailed)
@@ -225,11 +228,14 @@ enum DiscoverAPI {
         return try APIClient.unwrapResponse(response, fallback: .discoverCopyFailed).recipeId
     }
 
-    static func fetchPublicProfile(username: String) async throws -> PublicProfileResponseDTO {
+    static func fetchPublicProfile(
+        username: String,
+        api: APIClient = .shared
+    ) async throws -> PublicProfileResponseDTO {
         let encoded = username.addingPercentEncoding(
             withAllowedCharacters: .urlPathAllowed
         ) ?? username
-        let request = try APIClient.shared.buildRequest(
+        let request = try api.buildRequest(
             path: "/api/users/public/\(encoded)",
             method: "GET",
             body: nil,

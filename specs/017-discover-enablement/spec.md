@@ -87,3 +87,21 @@ REST-слой Discover (`DiscoverAPI`) и экраны (`DiscoverRootView`, `Dis
 - `xcodebuild … build` → `** BUILD SUCCEEDED **` (exit 0).
 - `scripts/verify-discover-public.sh` → `VERIFIED discover-public` (exit 0).
 - `scripts/verify-all.sh` → `All 13 verifiers passed` (exit 0, 236 s) — regression чистый.
+
+## Regression: восстановление списка после рецепта
+
+**Когда** пользователь прокручивает curated collection или public profile,
+открывает рецепт и возвращается swipe back, **тогда** список сохраняет
+загруженный контент и возвращается к карточке, с которой был выполнен переход.
+
+Положительные инварианты:
+
+- повторный lifecycle destination не переводит уже загруженную модель в
+  initial `.loading`;
+- refresh оставляет предыдущие карточки видимыми до успешного ответа;
+- переход из карточки передаёт стабильный recipe ID как return anchor;
+- после возврата `ScrollViewReader` восстанавливает anchor, если он есть в
+  текущем отфильтрованном наборе;
+- изменение поискового запроса и logout очищают transient anchor state;
+- direct recipe deep links без return context продолжают открываться без
+  изменения маршрута.

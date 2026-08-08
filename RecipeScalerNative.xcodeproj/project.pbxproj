@@ -296,6 +296,9 @@
 		D4E5F6A7B8C9D0E1F2A3B4D2 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4D1 /* InfoPlist.xcstrings */; };
 		D5796382221C4D669FEB7155 /* SpotlightIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96ECDC1C61704BD8AF111FBD /* SpotlightIndexer.swift */; };
 		D5SS01B293A4B7010000002 /* DiscoverSearchStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5SS01A293A4B7010000001 /* DiscoverSearchStoreTests.swift */; };
+		D15C00000000000000000003 /* DiscoverListStateStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000004 /* DiscoverListStateStoreTests.swift */; };
+		D15C00000000000000000005 /* DiscoverCollectionModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000006 /* DiscoverCollectionModelTests.swift */; };
+		D15C00000000000000000007 /* DiscoverPublicProfileModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000008 /* DiscoverPublicProfileModelTests.swift */; };
 		D750066ACA5505A1A07A4780 /* Networking/WidgetPushTokenClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BE92D4F7D7D370A1E12BF5 /* Networking/WidgetPushTokenClient.swift */; };
 		D963C6002ACA43AE8B000E1D /* Config/Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CBCE9817864C1C8B333764 /* Config/Config.swift */; };
 		D9CE2453B71F439583814D83 /* TimerLiveActivityAccent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56565D99438548F29F16D7DE /* TimerLiveActivityAccent.swift */; };
@@ -497,6 +500,7 @@
 		MIK200005001 /* DiscoverCollectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = MIK200005002 /* DiscoverCollectionModel.swift */; };
 		MIK200006001 /* DiscoverPublicProfileModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = MIK200006002 /* DiscoverPublicProfileModel.swift */; };
 		MIK200007001 /* RecipeShareModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = MIK200007002 /* RecipeShareModel.swift */; };
+		D15C00000000000000000001 /* DiscoverListStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000002 /* DiscoverListStateStore.swift */; };
 		REMINDERS0001AA0001BB01 /* RemindersSyncPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0002AA0002BB02 /* RemindersSyncPreferences.swift */; };
 		REMINDERS0003AA0003BB03 /* RemindersMapStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0004AA0004BB04 /* RemindersMapStore.swift */; };
 		REMINDERS0005AA0005BB05 /* RemindersSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0006AA0006BB06 /* RemindersSyncService.swift */; };
@@ -988,6 +992,9 @@
 		D4E5F6A7B8C9D0E1F2A3B4D1 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		D5C0593B743DA50B2CB0DFF7 /* FeatureAdoptionItem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionItem.swift; sourceTree = "<group>"; };
 		D5SS01A293A4B7010000001 /* DiscoverSearchStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverSearchStoreTests.swift; sourceTree = "<group>"; };
+		D15C00000000000000000004 /* DiscoverListStateStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverListStateStoreTests.swift; sourceTree = "<group>"; };
+		D15C00000000000000000006 /* DiscoverCollectionModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverCollectionModelTests.swift; sourceTree = "<group>"; };
+		D15C00000000000000000008 /* DiscoverPublicProfileModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverPublicProfileModelTests.swift; sourceTree = "<group>"; };
 		D6293E6CF2D08DC5DEA259B6 /* WidgetPushRegistrarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPushRegistrarTests.swift; sourceTree = "<group>"; };
 		D731DFB5A563F7A7930800AF /* HomeWidgetExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = HomeWidgetExtension.entitlements; sourceTree = "<group>"; };
 		D8A2FBA494D4B821D6044FD7 /* ShoppingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingViewModel.swift; sourceTree = "<group>"; };
@@ -1185,6 +1192,7 @@
 		MIK200005002 /* DiscoverCollectionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverCollectionModel.swift; sourceTree = "<group>"; };
 		MIK200006002 /* DiscoverPublicProfileModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverPublicProfileModel.swift; sourceTree = "<group>"; };
 		MIK200007002 /* RecipeShareModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeShareModel.swift; sourceTree = "<group>"; };
+		D15C00000000000000000002 /* DiscoverListStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverListStateStore.swift; sourceTree = "<group>"; };
 		REMINDERS0002AA0002BB02 /* RemindersSyncPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersSyncPreferences.swift; sourceTree = "<group>"; };
 		REMINDERS0004AA0004BB04 /* RemindersMapStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersMapStore.swift; sourceTree = "<group>"; };
 		REMINDERS0006AA0006BB06 /* RemindersSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersSyncService.swift; sourceTree = "<group>"; };
@@ -1748,6 +1756,9 @@
 				ILL043F16 /* IngredientIllustrationBindingPersistenceTests.swift */,
 				E5F60718293A4B7000000095 /* RecipeSearchUtilsTests.swift */,
 				D5SS01A293A4B7010000001 /* DiscoverSearchStoreTests.swift */,
+				D15C00000000000000000004 /* DiscoverListStateStoreTests.swift */,
+				D15C00000000000000000006 /* DiscoverCollectionModelTests.swift */,
+				D15C00000000000000000008 /* DiscoverPublicProfileModelTests.swift */,
 				A5MD058293A4B7010000005 /* AssistantMarkdownRendererTests.swift */,
 				A5TH068293A4B7010000006 /* AssistantThreadSearchTests.swift */,
 				A5PA01A293A4B7010000007 /* AssistantPendingActionTests.swift */,
@@ -2003,6 +2014,7 @@
 				F0D3000000000000000A0007 /* FolderDisplayName.swift */,
 				F0D3000000000000000A0009 /* RecipeFolderRoutes.swift */,
 				E5F60718293A4B7019BAC15E /* DiscoverSearch.swift */,
+				D15C00000000000000000002 /* DiscoverListStateStore.swift */,
 				MIK200001002 /* LoadState.swift */,
 				MIK200002002 /* DiscoverImageURLs.swift */,
 				A140012000000000000000012 /* FeatureFlags.swift */,
@@ -2837,6 +2849,7 @@
 				MIK200005001 /* DiscoverCollectionModel.swift in Sources */,
 				MIK200006001 /* DiscoverPublicProfileModel.swift in Sources */,
 				MIK200007001 /* RecipeShareModel.swift in Sources */,
+				D15C00000000000000000001 /* DiscoverListStateStore.swift in Sources */,
 				ILL043C06 /* IngredientIllustrationImageStore.swift in Sources */,
 				ILL043C14 /* IngredientIllustrationLazyResolve.swift in Sources */,
 				ILL043C07 /* IngredientBowlIcon.swift in Sources */,
@@ -3126,6 +3139,9 @@
 				B3APPTEST03B293A4B70100001 /* YjsMemoryLeakTests.swift in Sources */,
 				7F2675404F75AD0EC794F971 /* RecipeSearchUtilsTests.swift in Sources */,
 				D5SS01B293A4B7010000002 /* DiscoverSearchStoreTests.swift in Sources */,
+				D15C00000000000000000003 /* DiscoverListStateStoreTests.swift in Sources */,
+				D15C00000000000000000005 /* DiscoverCollectionModelTests.swift in Sources */,
+				D15C00000000000000000007 /* DiscoverPublicProfileModelTests.swift in Sources */,
 				F3445BCB3A10712298441A5C /* AssistantMarkdownRendererTests.swift in Sources */,
 				98043B5A4C25AAF27D48104E /* AssistantThreadSearchTests.swift in Sources */,
 				A5PA01B293A4B7010000008 /* AssistantPendingActionTests.swift in Sources */,

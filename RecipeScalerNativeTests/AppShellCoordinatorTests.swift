@@ -10,11 +10,17 @@ import XCTest
 @MainActor
 final class AppShellCoordinatorTests: XCTestCase {
 
-    private func makeCoordinator() throws -> (AppShellCoordinator, DeepLinkRouter, YjsSyncService) {
+    private func makeCoordinator(
+        discoverListState: DiscoverListStateStore? = nil
+    ) throws -> (AppShellCoordinator, DeepLinkRouter, YjsSyncService) {
         let store = try YDocStore.inMemory()
         let sync = YjsSyncService.makeForTesting(store: store)
         let router = DeepLinkRouter()
-        let coordinator = AppShellCoordinator(syncService: sync, deepLinkRouter: router)
+        let coordinator = AppShellCoordinator(
+            syncService: sync,
+            deepLinkRouter: router,
+            discoverListState: discoverListState
+        )
         return (coordinator, router, sync)
     }
 
@@ -166,6 +172,22 @@ final class AppShellCoordinatorTests: XCTestCase {
         coordinator.handleTabSelection(.recipes)
 
         XCTAssertTrue(coordinator.recipesPath.isEmpty)
+    }
+
+    func test_reTapDiscoverClearsDiscoverListState() throws {
+        let discoverListState = DiscoverListStateStore()
+        discoverListState.recordAnchor(
+            recipeID: "recipe-1",
+            for: .collection("weeknight")
+        )
+        let (coordinator, _, _) = try makeCoordinator(discoverListState: discoverListState)
+        coordinator.selectedTab = .discover
+        coordinator.discoverPath.append(DiscoverRoute.collection("weeknight"))
+
+        coordinator.handleTabSelection(.discover)
+
+        XCTAssertTrue(coordinator.discoverPath.isEmpty)
+        XCTAssertNil(discoverListState.anchor(for: .collection("weeknight")))
     }
 
     func test_resetShellStateForLogout_clearsPathsAndImport() throws {

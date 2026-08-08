@@ -17,6 +17,7 @@ struct ImportPresentation: Identifiable {
 final class AppShellCoordinator {
     private let syncService: YjsSyncService
     private let deepLinkRouter: DeepLinkRouter
+    private let discoverListState: DiscoverListStateStore?
 
     /// Spec 057 — silent importer for incoming `.recipe` files via AirDrop /
     /// Files / Mail. Injected by `AppContainer` so test doubles can be passed
@@ -43,11 +44,13 @@ final class AppShellCoordinator {
     init(
         syncService: YjsSyncService,
         deepLinkRouter: DeepLinkRouter,
-        fileImportCoordinator: RecipeFileImportCoordinator? = nil
+        fileImportCoordinator: RecipeFileImportCoordinator? = nil,
+        discoverListState: DiscoverListStateStore? = nil
     ) {
         self.syncService = syncService
         self.deepLinkRouter = deepLinkRouter
         self.fileImportCoordinator = fileImportCoordinator
+        self.discoverListState = discoverListState
     }
 
     // MARK: - Tab selection
@@ -140,11 +143,13 @@ final class AppShellCoordinator {
             deepLinkRouter.clear()
         case .openPublicProfile(let username):
             selectedTab = .discover
+            discoverListState?.clearAll()
             discoverPath = NavigationPath()
             discoverPath.append(DiscoverRoute.profile(username))
             deepLinkRouter.clear()
         case .openPublicRecipe(let recipeId, let username):
             selectedTab = .discover
+            discoverListState?.clearAll()
             discoverPath = NavigationPath()
             discoverPath.append(DiscoverRoute.profile(username))
             discoverPath.append(
@@ -157,15 +162,18 @@ final class AppShellCoordinator {
             deepLinkRouter.clear()
         case .openDiscover:
             selectedTab = .discover
+            discoverListState?.clearAll()
             discoverPath = NavigationPath()
             deepLinkRouter.clear()
         case .openDiscoverCollection(let slug):
             selectedTab = .discover
+            discoverListState?.clearAll()
             discoverPath = NavigationPath()
             discoverPath.append(DiscoverRoute.collection(slug))
             deepLinkRouter.clear()
         case .openDiscoverRecipe(let recipeId):
             selectedTab = .discover
+            discoverListState?.clearAll()
             discoverPath = NavigationPath()
             discoverPath.append(
                 DiscoverRoute.recipe(
@@ -237,6 +245,7 @@ final class AppShellCoordinator {
         importPresentation = nil
         pendingSpotlightRecipeId = nil
         pendingRemindersSetup = false
+        discoverListState?.clearAll()
         selectedTab = .recipes
         recipesPath = NavigationPath()
         discoverPath = NavigationPath()
@@ -251,7 +260,10 @@ final class AppShellCoordinator {
     private func resetNestedNavigation(for tab: AppTab) {
         switch tab {
         case .discover:
-            if !discoverPath.isEmpty { discoverPath = NavigationPath() }
+            if !discoverPath.isEmpty {
+                discoverPath = NavigationPath()
+                discoverListState?.clearAll()
+            }
         case .recipes:
             if !recipesPath.isEmpty { recipesPath = NavigationPath() }
         case .shopping:

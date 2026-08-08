@@ -30,10 +30,15 @@ enum AccessibilityIdentifiers {
     static let discoverProfileCard = "discover_profile_card"
     static let discoverProfileHeader = "discover_profile_header"
     static let discoverRecipeCard = "discover_recipe_card"
+    static let discoverRecipeCardPrefix = "discover_recipe_card_"
     static let discoverRecipeCloneButton = "discover_recipe_clone_button"
     static let discoverCollectionSearchField = "discover_collection_search_field"
     static let discoverProfileSearchField = "discover_profile_search_field"
     static let discoverServingsStepper = "discover_servings_stepper"
+
+    static func discoverRecipeCard(recipeID: String) -> String {
+        "\(discoverRecipeCardPrefix)\(recipeID)"
+    }
     static let shoppingList = "shopping_list"
     static let shoppingAddField = "shopping_add_field"
     static let shoppingShareButton = "shopping_share_button"

@@ -6,6 +6,11 @@
 import RecipeScalerCore
 import SwiftUI
 
+struct DiscoverRecipeReturnContext: Hashable, Sendable {
+    let scope: DiscoverListScope
+    let recipeID: String
+}
+
 struct DiscoverRootView: View {
     @Binding var path: NavigationPath
     @Environment(\.apiClient) private var apiClient
@@ -26,11 +31,12 @@ struct DiscoverRootView: View {
                 switch route {
                 case .collection(let slug):
                     DiscoverCollectionView(slug: slug)
-                case .recipe(let id, let allowDownloads, let imageSource):
+                case .recipe(let id, let allowDownloads, let imageSource, let returnContext):
                     DiscoverRecipeView(
                         recipeId: id,
                         allowRecipeDownloads: allowDownloads,
-                        imageSource: imageSource
+                        imageSource: imageSource,
+                        returnContext: returnContext
                     )
                 case .profile(let username):
                     DiscoverPublicProfileView(username: username)
@@ -158,7 +164,8 @@ enum DiscoverRoute: Hashable {
     case recipe(
         id: String,
         allowDownloads: Bool = true,
-        imageSource: DiscoverRecipeImageSource = .curatedDiscover
+        imageSource: DiscoverRecipeImageSource = .curatedDiscover,
+        returnContext: DiscoverRecipeReturnContext? = nil
     )
     case profile(String)
 }

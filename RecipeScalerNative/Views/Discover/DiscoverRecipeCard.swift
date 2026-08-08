@@ -126,6 +126,7 @@ struct DiscoverRecipeCardGrid<Item: Identifiable, Content: View>: View {
                     ForEach(rows[rowIndex]) { item in
                         content(item)
                             .frame(maxWidth: .infinity)
+                            .id(item.id)
                     }
                     if rows[rowIndex].count < columnCount {
                         ForEach(0 ..< (columnCount - rows[rowIndex].count), id: \.self) { _ in

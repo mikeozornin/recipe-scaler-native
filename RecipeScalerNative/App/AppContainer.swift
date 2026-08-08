@@ -59,6 +59,7 @@ final class AppContainer {
     let yjsMergeHelper: YjsMergeHelper
     let assistantRecipeContext: AssistantRecipeContext
     let deepLinkRouter: DeepLinkRouter
+    let discoverListState: DiscoverListStateStore
     /// Tab + nested navigation state; lives on the container so theme/locale root updates
     /// do not recreate paths when `AppShellView` is torn down.
     let shellCoordinator: AppShellCoordinator
@@ -138,6 +139,8 @@ final class AppContainer {
         self.yjsMergeHelper = YjsMergeHelper()
         self.assistantRecipeContext = AssistantRecipeContext()
         self.deepLinkRouter = DeepLinkRouter()
+        let discoverListState = DiscoverListStateStore()
+        self.discoverListState = discoverListState
         let liveActivityPushRegistrar = LiveActivityPushRegistrar()
         self.liveActivityPushRegistrar = liveActivityPushRegistrar
         self.timerLiveActivityCoordinator = TimerLiveActivityCoordinator(
@@ -178,7 +181,8 @@ final class AppContainer {
         self.shellCoordinator = AppShellCoordinator(
             syncService: sync,
             deepLinkRouter: deepLinkRouter,
-            fileImportCoordinator: nil
+            fileImportCoordinator: nil,
+            discoverListState: discoverListState
         )
 
         // Spec 057: silent `.recipe` importer for AirDrop / Files / Mail.
@@ -361,6 +365,7 @@ final class AppContainer {
         let isSameUser = previousUserId == userId
         if !isSameUser, previousUserId != nil {
             shellCoordinator.resetShellStateForLogout()
+            discoverListState.clearAll()
         }
         bootstrappedUserId = userId
 
@@ -470,6 +475,7 @@ final class AppContainer {
     func stopForLogout() async {
         resetBootstrapAfterLogout()
         shellCoordinator.resetShellStateForLogout()
+        discoverListState.clearAll()
         sync.stop()
         spotlight.stop()
         await spotlight.clearAll()

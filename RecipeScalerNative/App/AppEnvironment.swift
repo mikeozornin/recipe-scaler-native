@@ -14,6 +14,7 @@ extension EnvironmentValues {
     @Entry var timerManager: TimerManager? = nil
     @Entry var deepLinkRouter: DeepLinkRouter? = nil
     @Entry var assistantRecipeContext: AssistantRecipeContext? = nil
+    @Entry var discoverListState: DiscoverListStateStore? = nil
     /// APIClient for feature views / view models that need direct REST access.
     /// Defaults to `.shared` so previews and tests without an `AppContainer`
     /// keep working; production wiring installs the container's client via
@@ -32,6 +33,7 @@ extension View {
             .environment(\.timerManager, container.timer)
             .environment(\.deepLinkRouter, container.deepLinkRouter)
             .environment(\.assistantRecipeContext, container.assistantRecipeContext)
+            .environment(\.discoverListState, container.discoverListState)
             .environment(\.apiClient, container.api)
             .environment(container.auth)
             .environment(container.timer)
