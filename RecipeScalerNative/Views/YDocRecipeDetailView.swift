@@ -1246,8 +1246,8 @@ private struct RecipeEditHeaderBindable: View {
     var onEditingActiveChanged: (Bool) -> Void
     @Environment(\.locale) private var locale
 
-    private var titleUIFont: UIFont {
-        AppTypography.uiFont(AppFonts.display, size: AppTypography.recipeTitleSize)
+    private var titleFont: Font {
+        AppTypography.display(AppTypography.recipeTitleSize)
     }
 
     private var titlePlaceholder: String {
@@ -1264,7 +1264,7 @@ private struct RecipeEditHeaderBindable: View {
                     requestInitialFocus: requestInitialFocus,
                     commitTitleNonce: commitTitleNonce,
                     placeholder: titlePlaceholder,
-                    font: titleUIFont,
+                    font: titleFont,
                     onBlur: onTitleBlur,
                     onEditingActiveChanged: onEditingActiveChanged
                 )

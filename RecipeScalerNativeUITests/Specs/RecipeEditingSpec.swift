@@ -94,4 +94,73 @@ final class RecipeEditingSpec: BaseTestCase {
             "App crashed or stuck after saving edit mode"
         )
     }
+
+    @MainActor
+    func test_US3_titleGrowsFromSingleLineToMultiline() async throws {
+        Navigation.openTab(.recipes, in: app)
+        let list = recipeListPage.awaitReady()
+        let name = "A \(UUID().uuidString.prefix(4))"
+        let created = try await seedOrSkip("createRecipe") {
+            try await seedClient.createRecipe(name: name)
+        }
+
+        list.openAllRecipesIfNeeded()
+        let row = list.recipeRow(id: created.id)
+        XCTAssertTrue(
+            row.waitForExistence(timeout: Wait.syncRoundTrip),
+            "Seeded recipe \(name) did not appear in list within sync round-trip"
+        )
+        row.tap()
+        XCTAssertTrue(
+            recipeDetailPage.ingredientsSection.waitForExistence(timeout: Wait.firstPaint),
+            "Ingredients section missing on title-growth detail"
+        )
+        recipeDetailPage.tapEdit()
+
+        let titleField = recipeDetailPage.titleField
+        XCTAssertTrue(
+            titleField.waitForExistence(timeout: Wait.element),
+            "Native recipe title field missing in edit mode"
+        )
+
+        let initialHeight = titleField.frame.height
+        XCTAssertLessThan(
+            initialHeight,
+            60,
+            "Title-growth fixture must start as a single-line title"
+        )
+        titleField.tap()
+        let longTitle = "Очень длинное название рецепта для проверки автоматического переноса текста"
+        titleField.typeText(longTitle)
+
+        let grew = NSPredicate { _, _ in titleField.frame.height > initialHeight + 10 }
+        let growthExpectation = XCTNSPredicateExpectation(predicate: grew, object: nil)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [growthExpectation], timeout: Wait.element),
+            .completed,
+            "Title field did not grow from one line after entering long text"
+        )
+        XCTAssertGreaterThan(
+            titleField.frame.height,
+            initialHeight + 10,
+            "Title field must expose multiple lines instead of internally scrolling"
+        )
+        XCTAssertTrue(
+            String(describing: titleField.value).contains(longTitle),
+            "Title field does not expose the complete typed value"
+        )
+
+        recipeDetailPage.tapDone()
+        XCTAssertTrue(
+            recipeDetailPage.editButton.waitForExistence(timeout: Wait.firstPaint),
+            "App did not leave edit mode after saving grown title"
+        )
+        let persistedTitle = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", longTitle)
+        ).firstMatch
+        XCTAssertTrue(
+            persistedTitle.waitForExistence(timeout: Wait.firstPaint),
+            "Saved multiline title was not rendered after leaving edit mode"
+        )
+    }
 }

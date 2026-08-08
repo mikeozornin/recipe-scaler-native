@@ -12,6 +12,7 @@ struct RecipeDetailPage: Page {
 
     var menuButton: XCUIElement { app.buttons[UIA.recipeDetailMenu] }
     var editButton: XCUIElement { app.buttons[UIA.recipeDetailEdit] }
+    var titleField: XCUIElement { app.textFields[UIA.recipeTitleField] }
     var ingredientsSection: XCUIElement { app.descendants(matching: .any)[UIA.ingredientsSection] }
     var stepsSection: XCUIElement { app.descendants(matching: .any)[UIA.stepsSection] }
     var newIngredientRow: XCUIElement { app.descendants(matching: .any)[UIA.recipeEditNewIngredientRow] }

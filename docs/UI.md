@@ -89,6 +89,10 @@ AppChromeAppearance.systemActionColor     // Color   — .label на iOS 26+, ac
 
 Кастомная панель над клавиатурой — `ToolbarItemGroup(placement: .keyboard)`. Стили кнопок — `AppToolbarStyle` + `.appToolbarIconButton()` / `.appToolbarTextButton()`.
 
+### Auto-growing multiline fields
+
+Для короткого пользовательского текста, который должен переноситься и расти по высоте без внутренней прокрутки, используй нативный `TextField` с `axis: .vertical`, открытым диапазоном строк и `.fixedSize(horizontal: false, vertical: true)`. Фиксированный `TextEditor` для такого сценария не подходит: при ограниченной высоте он начинает прокручиваться внутри себя.
+
 #### Отступы между кнопками
 
 SwiftUI не добавляет зазор между соседними icon-кнопками в одной группе. Между **соседними кнопками слева** (например, `chevron.up` и `chevron.down`) — **8 pt**:

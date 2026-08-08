@@ -111,6 +111,7 @@ enum AccessibilityIdentifiers {
     static let recipeDetailMenu = "recipe_detail_menu"
     static let recipeDetailEdit = "recipe_detail_edit"
     static let recipeDetailDone = "recipe_detail_done"
+    static let recipeTitleField = "recipe_title_field"
     static let recipeDetailMenuAddAllToShopping = "recipe_detail_menu_add_all_to_shopping"
     static let ingredientSwipeAddToShopping = "ingredient_swipe_add_to_shopping"
     static let importSubmitButton = "import_submit_button"
