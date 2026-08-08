@@ -8,7 +8,7 @@
 ```bash
 xcodebuild \
   -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' \
   build
 ```
 

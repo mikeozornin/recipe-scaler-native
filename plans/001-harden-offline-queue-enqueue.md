@@ -74,8 +74,8 @@ Repo conventions:
 
 | Purpose   | Command                  | Expected on success |
 |-----------|--------------------------|---------------------|
-| Build     | `xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build` | exit 0, no errors |
-| Tests     | `xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16 Pro' test` | all pass, including new tests |
+| Build     | `xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' build` | exit 0, no errors |
+| Tests     | `xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' test` | all pass, including new tests |
 
 ## Scope
 

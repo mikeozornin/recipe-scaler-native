@@ -102,7 +102,7 @@ Cmd+R
 
 # Or command line
 xcodebuild build -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,name=iPhone 16'
+  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5'
 ```
 
 ### App version / Archive builds
@@ -218,17 +218,17 @@ rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim
 ## Testing
 
 ```bash
-# Build (simulator)
+# Build (simulator) — pin by UDID (iPhone 17 + Watch / iOS 26.3). Do not use OS=18.x.
 xcodebuild -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
+  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' build
 
 # Unit tests (if test target is in scheme)
 xcodebuild test -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5'
 
 # UI tests
 xcodebuild test -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' \
   -only-testing:RecipeScalerNativeUITests
 ```
 

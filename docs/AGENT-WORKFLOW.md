@@ -30,7 +30,7 @@ xcodebuild -scheme RecipeScalerNative \
   build
 ```
 
-`<UDID>` — из `xcrun simctl list devices available` (например iPhone 17 + Watch на iOS 26.3). Имя без OS часто не резолвится — предпочитай `id=`. Не указывай `OS=18.x`: рантаймы 18.4/18.6 удалены, иначе Xcode может снова их скачать. При ошибках — исправить и пересобрать. После build — проверки из раздела «Agent loop» (тесты / существующий `scripts/verify-*.sh`, если есть).
+`<UDID>` — из `xcrun simctl list devices available` (канонический: `EFC65E55-4F28-4C21-B489-D9733D2BE6B5` = iPhone 17 + Watch / iOS 26.3). Имя без OS часто не резолвится — предпочитай `id=`. **Запрещено** `OS=18.x` / `name=iPhone 16…` без `id=`: Xcode скачает рантаймы 18.4/18.6 заново. При ошибках — исправить и пересобрать. После build — проверки из раздела «Agent loop» (тесты / существующий `scripts/verify-*.sh`, если есть).
 
 ## XCTest
 

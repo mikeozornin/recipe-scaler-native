@@ -89,7 +89,7 @@ entry (`Домашнее мороженое.crumb`) проверяет это п
 # Быстрый прогон (parser + detector + XmlFragment, без test host stall):
 xcodebuild test-without-building \
   -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' \
   -only-testing:RecipeScalerNativeTests/PaprikaRecipeParserTests \
   -only-testing:RecipeScalerNativeTests/CroutonRecipeParserTests \
   -only-testing:RecipeScalerNativeTests/ThirdPartyFormatDetectorTests \

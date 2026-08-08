@@ -163,7 +163,7 @@ Runtime (`IngredientIllustrationCatalog`) грузит все три файла 
 
 | Действие | Команда |
 |----------|---------|
-| Build | `xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16' build` (см. [docs/AGENT-WORKFLOW.md](../../docs/AGENT-WORKFLOW.md)) |
+| Build | `xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' build` (см. [docs/AGENT-WORKFLOW.md](../../docs/AGENT-WORKFLOW.md)) |
 | Unit tests | `bash scripts/test-fast.sh` или targeted `RecipeScalerNativeTests` |
 | Layout | `bash scripts/audit-ui-layout.sh specs/043-ingredient-illustrations` |
 | Sync check | `bash scripts/sync-ingredient-illustrations.sh --check` |

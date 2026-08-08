@@ -136,7 +136,7 @@ codesign -d --entitlements :- path/to/RecipeScalerNative.app/PlugIns/ShareExtens
 
 ```bash
 xcodebuild -scheme RecipeScalerNative \
-    -destination 'platform=iOS Simulator,name=iPhone 16' \
+    -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' \
     build
 ```
 
@@ -252,7 +252,7 @@ xcrun simctl openurl booted recipe-scaler://recipe/test-recipe-id
 ```bash
 xcodebuild test \
     -scheme RecipeScalerNative \
-    -destination 'platform=iOS Simulator,name=iPhone 16' \
+    -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' \
     -only-testing:RecipeScalerNativeTests/DeepLinkRouterTests
 ```
 
@@ -269,7 +269,7 @@ xcodebuild test \
 ```bash
 xcodebuild test \
     -scheme RecipeScalerNative \
-    -destination 'platform=iOS Simulator,name=iPhone 16' \
+    -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' \
     -only-testing:RecipeScalerNativeTests/LocalizationConsistencyTests
 ```
 

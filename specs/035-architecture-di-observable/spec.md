@@ -99,10 +99,10 @@ UI не меняется. Layout-аудит **не требуется** — бэ
 ## Verify
 
 ```bash
-xcodebuild build -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6'
+xcodebuild build -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5'
 xcodebuild build -scheme ShareExtension -destination 'generic/platform=iOS Simulator'
 xcodebuild build -scheme ActionExtension -destination 'generic/platform=iOS Simulator'
-xcodebuild test -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6'
+xcodebuild test -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5'
 ```
 
 По `.agents/skills/fix-until-green/SKILL.md`: до 5 итераций fix → build → test. Верdict `VERIFIED` / `NOT VERIFIED` / `INCONCLUSIVE` с evidence (команда + exit code).

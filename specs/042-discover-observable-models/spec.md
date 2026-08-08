@@ -33,7 +33,7 @@
 ## Verify
 
 ```bash
-xcodebuild build -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6'
-xcodebuild test -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6'
+xcodebuild build -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5'
+xcodebuild test -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5'
 rg "DiscoverAPI|AccountAPI" RecipeScalerNative/Views/
 ```

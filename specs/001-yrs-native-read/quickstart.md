@@ -64,7 +64,7 @@ cp -R /tmp/yrs-framework/YrsXCFramework.xcframework Frameworks/
 xcodebuild build \
   -project RecipeScalerNative.xcodeproj \
   -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,name=iPhone 16'
+  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5'
 
 # Или через Xcode: Cmd+B
 ```
@@ -97,7 +97,7 @@ module YrsC {
 xcodebuild test \
   -project RecipeScalerNative.xcodeproj \
   -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,name=iPhone 16'
+  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5'
 ```
 
 ### Проверка паритета списка рецептов (FR-019–FR-021)

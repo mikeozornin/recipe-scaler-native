@@ -65,8 +65,8 @@ Repo conventions:
 |-----------|--------------------------|---------------------|
 | Resolve   | `swift package resolve`  | exit 0, `Package.resolved` updated |
 | Build SPM | `swift build`            | exit 0 for the targets Package.swift describes |
-| Xcode     | `xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build` | exit 0 |
-| Tests     | `xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16 Pro' test` | all pass |
+| Xcode     | `xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' build` | exit 0 |
+| Tests     | `xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' test` | all pass |
 
 ## Scope
 
@@ -137,7 +137,7 @@ Expected: exit 0. If `swift build` fails because `Package.swift` cannot represen
 
 Run:
 ```bash
-xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
+xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' build
 ```
 
 Expected: exit 0.
@@ -148,7 +148,7 @@ Expected: exit 0.
 
 Run:
 ```bash
-xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16 Pro' test
+xcodebuild -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' test
 ```
 
 Expected: all pass.

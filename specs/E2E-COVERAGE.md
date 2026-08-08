@@ -127,16 +127,16 @@ RecipeScalerNativeUITests/
 ## Запуск
 
 ```bash
-# Полный прогон
+# Полный прогон (iPhone 17 + Watch / iOS 26.3 — см. docs/AGENT-WORKFLOW.md)
 xcodebuild test \
   -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' \
   -only-testing:RecipeScalerNativeUITests
 
 # Один spec
 xcodebuild test \
   -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' \
   -only-testing:RecipeScalerNativeUITests/AppShellNavigationSpec
 ```
 

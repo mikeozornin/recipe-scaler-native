@@ -112,10 +112,10 @@
 ## Phase E — Fix-until-green
 
 ```bash
-xcodebuild build -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6'
+xcodebuild build -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5'
 xcodebuild build -scheme ShareExtension -destination 'generic/platform=iOS Simulator'
 xcodebuild build -scheme ActionExtension -destination 'generic/platform=iOS Simulator'
-xcodebuild test -scheme RecipeScalerNative -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6'
+xcodebuild test -scheme RecipeScalerNative -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5'
 ```
 
 ## Оценка объёма
