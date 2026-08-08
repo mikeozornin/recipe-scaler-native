@@ -34,14 +34,26 @@ struct CollectionFolderView: View {
     }
 
     private var displayName: String {
+        folderPresentation.displayName
+    }
+
+    private var folderPresentation: FolderDisplayNamePresentation {
         if isVirtual {
             if folderId == CollectionVirtualFolders.allRecipesFolderId {
-                return Bundle.currentLocalizedString("collections.all-recipes")
+                return FolderDisplayNamePresentation(
+                    leadingEmoji: nil,
+                    displayName: Bundle.currentLocalizedString("collections.all-recipes")
+                )
             }
-            return Bundle.currentLocalizedString("collections.uncategorized")
+            return FolderDisplayNamePresentation(
+                leadingEmoji: nil,
+                displayName: Bundle.currentLocalizedString("collections.uncategorized")
+            )
         }
-        guard let folder = activeFolder else { return "" }
-        return FolderDisplayName.displayName(forStoredName: folder.name)
+        guard let folder = activeFolder else {
+            return FolderDisplayNamePresentation(leadingEmoji: nil, displayName: "")
+        }
+        return FolderDisplayName.presentation(forStoredName: folder.name)
     }
 
     /// Recipes for this folder, respecting the folder's membership rules.
@@ -162,6 +174,7 @@ struct CollectionFolderView: View {
             editingName: $editingName,
             editingColor: $editingColor,
             displayName: displayName,
+            leadingEmoji: folderPresentation.leadingEmoji,
             isNameFieldFocused: $isNameFieldFocused,
             onCommit: commitRename,
             onCancel: cancelRename
@@ -542,6 +555,7 @@ private struct FolderNavigationTitleModifier: ViewModifier {
     @Binding var editingName: String
     @Binding var editingColor: Color
     let displayName: String
+    let leadingEmoji: String?
     @Binding var isNameFieldFocused: Bool
     let onCommit: () -> Void
     let onCancel: () -> Void
@@ -580,6 +594,17 @@ private struct FolderNavigationTitleModifier: ViewModifier {
                     ToolbarItem(placement: .confirmationAction) {
                         Button(String(localized: "collections.done")) {
                             onCommit()
+                        }
+                    }
+                } else if let leadingEmoji {
+                    ToolbarItem(placement: .principal) {
+                        HStack(spacing: 6) {
+                            Text(leadingEmoji)
+                                .font(AppTypography.body)
+                                .fixedSize()
+                            Text(displayName)
+                                .appBody()
+                                .lineLimit(1)
                         }
                     }
                 }

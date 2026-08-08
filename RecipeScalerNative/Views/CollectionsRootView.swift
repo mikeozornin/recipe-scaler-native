@@ -69,9 +69,11 @@ struct CollectionsRootView: View {
 
             ForEach(sortedFolders, id: \.id) { folder in
                 let count = syncService.collectionIndex.countByFolder[folder.id] ?? 0
+                let presentation = FolderDisplayName.presentation(forStoredName: folder.name)
                 collectionRow(
                     folderId: folder.id,
-                    title: FolderDisplayName.displayName(forStoredName: folder.name),
+                    title: presentation.displayName,
+                    leadingEmoji: presentation.leadingEmoji,
                     icon: RecipeFolderConstants.folderIconName(recipeCount: count),
                     count: count
                 )
@@ -137,9 +139,11 @@ struct CollectionsRootView: View {
 
                 // User folders
                 ForEach(sortedFolders, id: \.id) { folder in
+                    let presentation = FolderDisplayName.presentation(forStoredName: folder.name)
                     folderGridTile(
                         folderId: folder.id,
-                        title: FolderDisplayName.displayName(forStoredName: folder.name),
+                        title: presentation.displayName,
+                        leadingEmoji: presentation.leadingEmoji,
                         count: syncService.collectionIndex.countByFolder[folder.id] ?? 0,
                         folder: folder
                     )
@@ -189,6 +193,7 @@ struct CollectionsRootView: View {
     private func folderGridTile(
         folderId: String,
         title: String,
+        leadingEmoji: String? = nil,
         count: Int = 0,
         folder: RecipeFolder? = nil
     ) -> some View {
@@ -198,6 +203,7 @@ struct CollectionsRootView: View {
             folderGridTileContent(
                 icon: RecipeFolderConstants.folderIconName(recipeCount: count),
                 iconColor: RecipeAccentColor.folderIconColor(folderId: folderId, folder: folder),
+                leadingEmoji: leadingEmoji,
                 title: title,
                 count: count
             )
@@ -213,14 +219,22 @@ struct CollectionsRootView: View {
     private func folderGridTileContent(
         icon: String,
         iconColor: Color,
+        leadingEmoji: String?,
         title: String,
         count: Int
     ) -> some View {
         VStack(spacing: CollectionGridTileMetrics.iconToTextSpacing) {
-            Image(systemName: icon)
-                .font(.system(size: 44))
-                .foregroundStyle(iconColor)
-                .frame(height: CollectionGridTileMetrics.iconHeight)
+            if let leadingEmoji {
+                Text(leadingEmoji)
+                    .font(.system(size: 44))
+                    .fixedSize()
+                    .frame(height: CollectionGridTileMetrics.iconHeight)
+            } else {
+                Image(systemName: icon)
+                    .font(.system(size: 44))
+                    .foregroundStyle(iconColor)
+                    .frame(height: CollectionGridTileMetrics.iconHeight)
+            }
 
             VStack(spacing: CollectionGridTileMetrics.labelSpacing) {
                 Text(title)
@@ -310,6 +324,7 @@ struct CollectionsRootView: View {
     private func collectionRow(
         folderId: String,
         title: String,
+        leadingEmoji: String? = nil,
         icon: String,
         count: Int
     ) -> some View {
@@ -319,14 +334,25 @@ struct CollectionsRootView: View {
             navigationPath.append(RecipesRoute.folder(folderId))
         } label: {
             HStack(spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
-                AppSymbol.image(icon)
-                    .font(.system(size: RecipeRowLayoutMetrics.titleFontSize))
-                    .foregroundStyle(RecipeAccentColor.folderIconColor(folderId: folderId, folder: folder))
-                    .frame(
-                        width: RecipeRowLayoutMetrics.markerSlotWidth,
-                        height: RecipeRowLayoutMetrics.titleLineHeight,
-                        alignment: .center
-                    )
+                if let leadingEmoji {
+                    Text(leadingEmoji)
+                        .font(.system(size: RecipeRowLayoutMetrics.titleFontSize))
+                        .fixedSize()
+                        .frame(
+                            width: RecipeRowLayoutMetrics.markerSlotWidth,
+                            height: RecipeRowLayoutMetrics.titleLineHeight,
+                            alignment: .center
+                        )
+                } else {
+                    AppSymbol.image(icon)
+                        .font(.system(size: RecipeRowLayoutMetrics.titleFontSize))
+                        .foregroundStyle(RecipeAccentColor.folderIconColor(folderId: folderId, folder: folder))
+                        .frame(
+                            width: RecipeRowLayoutMetrics.markerSlotWidth,
+                            height: RecipeRowLayoutMetrics.titleLineHeight,
+                            alignment: .center
+                        )
+                }
 
                 Text(title)
                     .appBody()

@@ -1306,6 +1306,39 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertEqual(FolderDisplayName.displayName(forStoredName: "  Spices  "), "Spices")
     }
 
+    func testFolderDisplayPresentationSeparatesLeadingEmojiAndCleansLabel() {
+        XCTAssertEqual(
+            FolderDisplayName.presentation(forStoredName: "🍕 Pizza"),
+            FolderDisplayNamePresentation(leadingEmoji: "🍕", displayName: "Pizza")
+        )
+        XCTAssertEqual(
+            FolderDisplayName.presentation(forStoredName: "  👨‍👩‍👧 Family"),
+            FolderDisplayNamePresentation(leadingEmoji: "👨‍👩‍👧", displayName: "Family")
+        )
+    }
+
+    func testFolderDisplayPresentationSupportsFlagsKeycapsAndEmojiOnlyNames() {
+        XCTAssertEqual(
+            FolderDisplayName.presentation(forStoredName: "🇺🇸 Road trips"),
+            FolderDisplayNamePresentation(leadingEmoji: "🇺🇸", displayName: "Road trips")
+        )
+        XCTAssertEqual(
+            FolderDisplayName.presentation(forStoredName: "1️⃣ Recipes"),
+            FolderDisplayNamePresentation(leadingEmoji: "1️⃣", displayName: "Recipes")
+        )
+        XCTAssertEqual(
+            FolderDisplayName.presentation(forStoredName: "Road 🍰 trips"),
+            FolderDisplayNamePresentation(leadingEmoji: nil, displayName: "Road 🍰 trips")
+        )
+        XCTAssertEqual(
+            FolderDisplayName.presentation(forStoredName: "🍕"),
+            FolderDisplayNamePresentation(
+                leadingEmoji: "🍕",
+                displayName: String(localized: "recipes.no-title")
+            )
+        )
+    }
+
     func testRecipeFolderRoutesShouldUseFolderRecipePathMatchesWeb() {
         let flat = RecipeFolderRoutes.ViewMode.flat
         let collections = RecipeFolderRoutes.ViewMode.collections

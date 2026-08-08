@@ -28,6 +28,13 @@ struct ManageCollectionRecipesSheet: View {
         return FolderDisplayName.displayName(forStoredName: folder.name)
     }
 
+    private var folderPresentation: FolderDisplayNamePresentation {
+        guard let folder else {
+            return FolderDisplayNamePresentation(leadingEmoji: nil, displayName: "")
+        }
+        return FolderDisplayName.presentation(forStoredName: folder.name)
+    }
+
     /// All live recipes sorted for display.
     private var allRecipes: [CollectionEntry] {
         syncService.collectionIndex.live
@@ -96,6 +103,20 @@ struct ManageCollectionRecipesSheet: View {
             .searchable(text: $searchText, prompt: Text("search.recipes"))
             .navigationTitle(Text(verbatim: folderDisplayName))
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if let leadingEmoji = folderPresentation.leadingEmoji {
+                    ToolbarItem(placement: .principal) {
+                        HStack(spacing: 6) {
+                            Text(leadingEmoji)
+                                .font(AppTypography.body)
+                                .fixedSize()
+                            Text(folderPresentation.displayName)
+                                .appBody()
+                                .lineLimit(1)
+                        }
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "collections.done")) {

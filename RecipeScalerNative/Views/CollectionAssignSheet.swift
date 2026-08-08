@@ -38,11 +38,17 @@ struct CollectionAssignSheet: View {
                     }
 
                     ForEach(sortedFolders, id: \.id) { folder in
+                        let presentation = FolderDisplayName.presentation(forStoredName: folder.name)
                         Button {
                             toggleFolder(folder.id)
                         } label: {
                             HStack {
-                                Text(FolderDisplayName.displayName(forStoredName: folder.name))
+                                if let leadingEmoji = presentation.leadingEmoji {
+                                    Text(leadingEmoji)
+                                        .font(AppTypography.body)
+                                        .fixedSize()
+                                }
+                                Text(presentation.displayName)
                                     .appBody()
                                     .foregroundColor(.primary)
                                     .lineLimit(1)

@@ -6,6 +6,21 @@
 **Зависимости**: `008-collection-mutations` (индекс рецептов, pin/delete/create), `007-app-shell-navigation`  
 **Эталон**: [NATIVE_APP_COLLECTIONS.md](../../recipe-scaler-web/llm/NATIVE_APP_COLLECTIONS.md), веб `recipe-list.tsx`, `collections-view.tsx`, `use-yjs-sync` (folder writes)
 
+## Контракт отображения имени коллекции
+
+`folders[].name` хранится и синхронизируется без изменений, включая ведущую
+эмодзи. Native использует `RecipeTitleEmoji` и
+`FolderDisplayName.presentation(forStoredName:)`, чтобы получить:
+
+- `leadingEmoji` — отдельный marker для иконки строки, плитки и заголовка;
+- `displayName` — имя без ведущей эмодзи или локализованный
+  `recipes.no-title`, если после очистки имя пустое.
+
+Пробелы перед ведущей эмодзи игнорируются; ZWJ-последовательности, флаги и
+keycap считаются одним marker. Эмодзи внутри и в конце имени не удаляется.
+Сортировка использует очищенное имя и затем `id`. Rename редактирует raw name,
+поэтому сохранённая эмодзи не теряется.
+
 ## Аудит реализации (2026-06-15)
 
 | Область | Статус |
