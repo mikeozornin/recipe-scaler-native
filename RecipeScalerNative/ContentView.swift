@@ -195,33 +195,46 @@ struct ContentView: View {
 
     @ViewBuilder
     private func appShell(container: AppContainer) -> some View {
-        AppShellView(coordinator: container.shellCoordinator)
-            .task(id: effectiveUserId) {
-                #if DEBUG
-                if ShoppingSmokeTest.shouldRun { return }
-                AgentSyncDebugLog.sync(
-                    location: "ContentView.swift:appShell",
-                    message: "app_shell_start",
-                    data: ["userId": UserIdFormatter.redact(effectiveUserId)]
-                )
-                #endif
-                if let userId = effectiveUserId {
-                    await container.bootstrap(userId: userId)
-                } else {
-                    container.sync.stop()
-                    container.spotlight.stop()
-                    await container.spotlight.clearAll()
-                }
+        Group {
+            #if DEBUG
+            if let sceneId = DebugLaunchOptions.openGuideMediaScene {
+                GuideMediaStudioView(sceneId: sceneId)
+            } else {
+                AppShellView(coordinator: container.shellCoordinator)
             }
-            .onChange(of: container.sync.collectionEntries) { _, entries in
-                ShortcutItemsUpdater.update(from: entries)
-                RecipeSnapshotStore.save(entries)
-                TimerLiveActivityMetadataProvider.recipeNameLookup = { recipeId in
-                    entries.first(where: { $0.id == recipeId && !$0.deleted })?.name
-                }
-                container.timer.refreshLiveActivities()
-                container.shellCoordinator.resolvePendingSpotlightRecipe(in: entries)
+            #else
+            AppShellView(coordinator: container.shellCoordinator)
+            #endif
+        }
+        .task(id: effectiveUserId) {
+            #if DEBUG
+            if ShoppingSmokeTest.shouldRun { return }
+            AgentSyncDebugLog.sync(
+                location: "ContentView.swift:appShell",
+                message: "app_shell_start",
+                data: ["userId": UserIdFormatter.redact(effectiveUserId)]
+            )
+            #endif
+            #if DEBUG
+            if DebugLaunchOptions.openGuideMediaScene != nil { return }
+            #endif
+            if let userId = effectiveUserId {
+                await container.bootstrap(userId: userId)
+            } else {
+                container.sync.stop()
+                container.spotlight.stop()
+                await container.spotlight.clearAll()
             }
+        }
+        .onChange(of: container.sync.collectionEntries) { _, entries in
+            ShortcutItemsUpdater.update(from: entries)
+            RecipeSnapshotStore.save(entries)
+            TimerLiveActivityMetadataProvider.recipeNameLookup = { recipeId in
+                entries.first(where: { $0.id == recipeId && !$0.deleted })?.name
+            }
+            container.timer.refreshLiveActivities()
+            container.shellCoordinator.resolvePendingSpotlightRecipe(in: entries)
+        }
     }
 }
 

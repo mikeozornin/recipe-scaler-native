@@ -11,7 +11,7 @@
 
 2. **`feature-adoption-service.ts`** — в `server/src/services/`.
    - `mark(userId: string, feature: FeatureKey): Promise<void>` — `INSERT ... ON CONFLICT DO NOTHING`, логирует warning при ошибке.
-   - `getReport(userId: string): Promise<FeatureAdoptionReport>` — один SELECT, маппинг в 10 булей (missing → false).
+   - `getReport(userId: string): Promise<FeatureAdoptionReport>` — один SELECT, маппинг в 11 булей (missing → false).
    - `FEATURE_KEYS` const + `FeatureKey` type.
 
 3. **`POST /api/users/me/feature-adoption`** — в `routes/users.ts`. Body schema: `{ feature: z.enum(FEATURE_KEYS) }`. Idempotent insert.
@@ -30,15 +30,15 @@
    - При загрузке recipe doc: подписаться на `recipe` Y.Map поле `isPublic`. При первом `=== true` → `mark(userId, 'shared_recipe')`, снять подписку.
    - Все ошибки — лог warning, снять подписку (не death loop).
 
-7. **Backfill скрипт** — `server/scripts/backfill-feature-adoption.ts`. Two-phase. Параметры `--apply`, `--only-sql`, `--limit N`. Логирует прогресс каждые 100 пользователей.
+7. **Backfill скрипт** — `server/scripts/backfill-feature-adoption.ts`. Two-phase. Параметры `--apply`, `--only-sql`, `--only-emoji`, `--limit N`. Логирует прогресс каждые 100 пользователей.
 
-8. **Unit-тесты** для `feature-adoption-service.ts`: мокаем `supabase`, проверяем `mark` (idempotent), `getReport` (10 ключей, missing → false). Интеграционный тест для endpoints (401 без auth, 200 с auth, 400 на невалидный feature).
+8. **Unit-тесты** для `feature-adoption-service.ts`: мокаем `supabase`, проверяем `mark` (idempotent), `getReport` (11 ключей, missing → false). Интеграционный тест для endpoints (401 без auth, 200 с auth, 400 на невалидный feature).
 
 ### Фаза B — Native UI
 
-9. **`FeatureAdoptionItem` enum** — `RecipeScalerNative/Models/FeatureAdoptionItem.swift`. CaseIterable, 10 кейсов, каждый знает свой i18n-ключ и raw value (feature key string).
+9. **`FeatureAdoptionItem` enum** — `RecipeScalerNative/Models/FeatureAdoptionItem.swift`. CaseIterable, 11 кейсов, каждый знает свой i18n-ключ и raw value (feature key string).
 
-10. **`AccountAPI.fetchFeatureAdoption()`** + DTO `FeatureAdoptionReportDTO` — расширение `AccountAPI.swift`. Возвращает `FeatureAdoptionReportDTO` с 10 optional Bool полями; геттер `value(for:)` возвращает `false` если nil.
+10. **`AccountAPI.fetchFeatureAdoption()`** + DTO `FeatureAdoptionReportDTO` — расширение `AccountAPI.swift`. Возвращает `FeatureAdoptionReportDTO` с 11 optional Bool полями; геттер `value(for:)` возвращает `false` если nil.
 
 11. **`FeatureAdoptionAPI.markFeatureAdoption(_:)`** в `RecipeScalerCore` + обёртка в `AccountAPI` — для `installed_native_app` (iPhone) и `installed_watch_app` (watch).
 
@@ -65,7 +65,7 @@
 
 ### Фаза C — i18n и тесты
 
-17. **`Localizable.xcstrings`** — 10 ключей `account.feature-adoption.item.*` + `account.feature-adoption.title` (RU/EN).
+17. **`Localizable.xcstrings`** — 11 ключей `account.feature-adoption.item.*` + `account.feature-adoption.title` (RU/EN).
 
 18. **`LocalizationConsistencyTests`** — добавить новые ключи в проверку en+ru.
 

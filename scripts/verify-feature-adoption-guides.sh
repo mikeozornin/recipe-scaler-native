@@ -34,6 +34,8 @@ rg -q 'struct GuideExampleCarousel' RecipeScalerNative/Views/GuideExampleCarouse
 rg -q 'struct GuideVideoPlayer' RecipeScalerNative/Views/GuideVideoPlayer.swift
 rg -q 'struct GuideAssetPlaceholder' RecipeScalerNative/Views/GuideAssetPlaceholder.swift
 rg -q 'GuideAssetResolver' RecipeScalerNative/Utils/GuideAssetResolver.swift
+rg -q 'GuideMediaStudioView' RecipeScalerNative/Views/GuideMediaStudioView.swift
+rg -q 'OpenGuideMediaScene' RecipeScalerNative/Utils/DebugLaunchOptions.swift
 rg -q 'FeatureAdoptionAppCtaHandler' RecipeScalerNative/Utils/FeatureAdoptionGuideCta.swift
 rg -q 'FeatureAdoptionProfileScrollCtaHandler' RecipeScalerNative/Utils/FeatureAdoptionGuideCta.swift
 rg -q 'NavigationLink' RecipeScalerNative/Views/FeatureAdoptionDetailView.swift
@@ -44,6 +46,8 @@ rg -q 'makeFeatureAdoptionAppCtaHandler' RecipeScalerNative/Views/AppShellView.s
 # can never override AppShellView's app-level handler.
 rg -q 'featureAdoptionAppCta' RecipeScalerNative/Utils/FeatureAdoptionGuideCta.swift
 rg -q 'featureAdoptionProfileScrollCta' RecipeScalerNative/Utils/FeatureAdoptionGuideCta.swift
+python3 -m json.tool specs/040-feature-adoption-guides/guide-media-manifest.json >/dev/null
+rg -q 'FeatureAdoptionGuideContentTests' RecipeScalerNativeTests/FeatureAdoptionGuideContentTests.swift
 
 # Every guide item must have a why + at least one how step in xcstrings.
 I18N_FILE="RecipeScalerNative/Resources/Localizable.xcstrings"
@@ -64,6 +68,10 @@ for item in created_recipe used_shopping_list imported_recipe created_collection
 done
 
 echo "  all guide items have why + how + ru/en translations"
+
+# Generated-media contract is validated even when capture output is not present
+# in a clean checkout.
+bash "$ROOT/scripts/validate-feature-adoption-media.sh"
 
 # --- Build + launch ---
 

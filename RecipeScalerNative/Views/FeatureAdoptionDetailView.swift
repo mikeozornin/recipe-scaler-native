@@ -190,9 +190,37 @@ private struct FeatureAdoptionRow: View {
 
 // MARK: - Previews
 
+private func previewReport(
+    installedNativeApp: Bool,
+    installedWatchApp: Bool = false,
+    importedRecipe: Bool,
+    createdRecipe: Bool,
+    createdCollection: Bool,
+    sharedRecipe: Bool,
+    connectedTelegram: Bool,
+    connectedMcpAssistant: Bool,
+    sentAssistantMessage: Bool,
+    usedShoppingList: Bool,
+    namedWithEmoji: Bool
+) -> FeatureAdoptionReport {
+    var report = FeatureAdoptionReport()
+    report.installedNativeApp = installedNativeApp
+    report.installedWatchApp = installedWatchApp
+    report.importedRecipe = importedRecipe
+    report.createdRecipe = createdRecipe
+    report.createdCollection = createdCollection
+    report.sharedRecipe = sharedRecipe
+    report.connectedTelegram = connectedTelegram
+    report.connectedMcpAssistant = connectedMcpAssistant
+    report.sentAssistantMessage = sentAssistantMessage
+    report.usedShoppingList = usedShoppingList
+    report.namedWithEmoji = namedWithEmoji
+    return report
+}
+
 #Preview("All done") {
     let store = FeatureAdoptionStore()
-    store.report = FeatureAdoptionReport(
+    store.report = previewReport(
         installedNativeApp: true,
         installedWatchApp: true,
         importedRecipe: true,
@@ -202,7 +230,8 @@ private struct FeatureAdoptionRow: View {
         connectedTelegram: true,
         connectedMcpAssistant: true,
         sentAssistantMessage: true,
-        usedShoppingList: true
+        usedShoppingList: true,
+        namedWithEmoji: true
     )
     return NavigationStack {
         FeatureAdoptionDetailView()
@@ -212,7 +241,7 @@ private struct FeatureAdoptionRow: View {
 
 #Preview("Partial") {
     let store = FeatureAdoptionStore()
-    store.report = FeatureAdoptionReport(
+    store.report = previewReport(
         installedNativeApp: false,
         importedRecipe: true,
         createdRecipe: true,
@@ -221,7 +250,8 @@ private struct FeatureAdoptionRow: View {
         connectedTelegram: false,
         connectedMcpAssistant: false,
         sentAssistantMessage: true,
-        usedShoppingList: false
+        usedShoppingList: false,
+        namedWithEmoji: false
     )
     return NavigationStack {
         FeatureAdoptionDetailView()
@@ -239,8 +269,8 @@ private struct FeatureAdoptionRow: View {
 
 #Preview("Wide digits") {
     VStack(spacing: 24) {
-        FeatureAdoptionProgressRing(completed: 9, total: 10)
-        FeatureAdoptionProgressRing(completed: 10, total: 10)
+        FeatureAdoptionProgressRing(completed: 9, total: 11)
+        FeatureAdoptionProgressRing(completed: 10, total: 11)
         FeatureAdoptionProgressRing(completed: 99, total: 99)
     }
     .padding()
@@ -248,8 +278,8 @@ private struct FeatureAdoptionRow: View {
 
 #Preview("Wide digits RU") {
     VStack(spacing: 24) {
-        FeatureAdoptionProgressRing(completed: 9, total: 10)
-        FeatureAdoptionProgressRing(completed: 10, total: 10)
+        FeatureAdoptionProgressRing(completed: 9, total: 11)
+        FeatureAdoptionProgressRing(completed: 10, total: 11)
     }
     .padding()
     .environment(\.locale, Locale(identifier: "ru"))

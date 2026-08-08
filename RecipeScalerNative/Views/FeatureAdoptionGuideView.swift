@@ -36,6 +36,8 @@ struct FeatureAdoptionGuideView: View {
                     GuideVideoPlayer(resourceName: videoResourceName)
                 }
 
+                stepMediaBlock
+
                 howBlock
 
                 if let exampleImages = content.exampleImages, !exampleImages.isEmpty {
@@ -103,6 +105,24 @@ struct FeatureAdoptionGuideView: View {
     }
 
     @ViewBuilder
+    private var stepMediaBlock: some View {
+        if !content.screenshotAssetNames.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(content.screenshotAssetNames, id: \.self) { assetName in
+                    if let image = GuideAssetResolver.image(forBaseName: assetName) {
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    } else {
+                        GuideAssetPlaceholder(name: assetName)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
     private func ctaButton(titleKey: LocalizedStringKey) -> some View {
         Button {
             handleCTA(content.primaryCTA)
@@ -148,27 +168,14 @@ struct FeatureAdoptionGuideView: View {
 // MARK: - Previews
 
 #Preview("Done + CTA", traits: .fixedLayout(width: 390, height: 844)) {
-    let store = FeatureAdoptionStore()
-    store.report = FeatureAdoptionReport(
-        installedNativeApp: true,
-        importedRecipe: true,
-        createdRecipe: true,
-        createdCollection: true,
-        sharedRecipe: true,
-        connectedTelegram: true,
-        connectedMcpAssistant: true,
-        sentAssistantMessage: true,
-        usedShoppingList: true
-    )
-    return NavigationStack {
+    NavigationStack {
         FeatureAdoptionGuideView(item: .importedRecipe)
-            .environment(store)
     }
 }
 
 #Preview("Pending + no CTA", traits: .fixedLayout(width: 390, height: 844)) {
     let store = FeatureAdoptionStore()
-    return NavigationStack {
+    NavigationStack {
         FeatureAdoptionGuideView(item: .usedShoppingList)
             .environment(store)
     }

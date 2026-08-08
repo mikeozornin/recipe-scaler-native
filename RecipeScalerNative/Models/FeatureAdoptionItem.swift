@@ -17,6 +17,7 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
     case usedShoppingList = "used_shopping_list"
     case importedRecipe = "imported_recipe"
     case createdCollection = "created_collection"
+    case namedWithEmoji = "named_with_emoji"
     case sentAssistantMessage = "sent_assistant_message"
     case connectedTelegram = "connected_telegram"
     case connectedMcpAssistant = "connected_mcp_assistant"
@@ -39,6 +40,7 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
         case .connectedTelegram: return "account.feature-adoption.item.connected_telegram"
         case .connectedMcpAssistant: return "account.feature-adoption.item.connected_mcp_assistant"
         case .sharedRecipe: return "account.feature-adoption.item.shared_recipe"
+        case .namedWithEmoji: return "account.feature-adoption.item.named_with_emoji"
         }
     }
 
@@ -55,14 +57,16 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
         case .connectedTelegram: return "account.feature-adoption.item.connected_telegram.footnote"
         case .connectedMcpAssistant: return "account.feature-adoption.item.connected_mcp_assistant.footnote"
         case .sharedRecipe: return "account.feature-adoption.item.shared_recipe.footnote"
+        case .namedWithEmoji: return "account.feature-adoption.item.named_with_emoji.footnote"
         }
     }
 
     /// Spec 040 — whether tapping this row opens a guide screen.
-    /// Both `installed*` flags are completed by definition and have no guide.
+    /// Installation and emoji-name flags are completed by definition and have
+    /// no guide.
     var isGuideAvailable: Bool {
         switch self {
-        case .installedNativeApp, .installedWatchApp:
+        case .installedNativeApp, .installedWatchApp, .namedWithEmoji:
             return false
         default:
             return true
@@ -78,13 +82,13 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
     ///   an empty screen.
     var guideContent: FeatureAdoptionGuideContent {
         switch self {
-        case .installedNativeApp, .installedWatchApp:
+        case .installedNativeApp, .installedWatchApp, .namedWithEmoji:
             fatalError("FeatureAdoptionItem.guideContent called for \(rawValue); isGuideAvailable is false")
         case .createdRecipe:
             return FeatureAdoptionGuideContent(
                 item: self,
                 videoResourceName: nil,
-                screenshotAssetNames: [],
+                screenshotAssetNames: ["guide_created_recipe_creation_map"],
                 exampleImages: nil,
                 carouselHintKey: nil,
                 primaryCTA: nil
@@ -93,7 +97,10 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
             return FeatureAdoptionGuideContent(
                 item: self,
                 videoResourceName: nil,
-                screenshotAssetNames: [],
+                screenshotAssetNames: [
+                    "guide_used_shopping_list_shopping_list",
+                    "guide_used_shopping_list_reminders_instruction"
+                ],
                 exampleImages: nil,
                 carouselHintKey: nil,
                 primaryCTA: nil
@@ -102,7 +109,11 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
             return FeatureAdoptionGuideContent(
                 item: self,
                 videoResourceName: "guide_imported_recipe_video",
-                screenshotAssetNames: [],
+                screenshotAssetNames: [
+                    "guide_imported_recipe_share_instruction",
+                    "guide_imported_recipe_import_text",
+                    "guide_imported_recipe_import_photo"
+                ],
                 exampleImages: nil,
                 carouselHintKey: nil,
                 primaryCTA: .openImportTab
@@ -111,7 +122,7 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
             return FeatureAdoptionGuideContent(
                 item: self,
                 videoResourceName: nil,
-                screenshotAssetNames: [],
+                screenshotAssetNames: ["guide_created_collection_collections"],
                 exampleImages: nil,
                 carouselHintKey: nil,
                 primaryCTA: nil
@@ -120,7 +131,7 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
             return FeatureAdoptionGuideContent(
                 item: self,
                 videoResourceName: nil,
-                screenshotAssetNames: [],
+                screenshotAssetNames: ["guide_sent_assistant_message_assistant_fixture"],
                 exampleImages: [
                     GuideExampleImage(
                         assetName: "guide_sent_assistant_message_ex_01",
@@ -133,6 +144,14 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
                     GuideExampleImage(
                         assetName: "guide_sent_assistant_message_ex_03",
                         accessibilityLabelKey: "account.feature-adoption.guide.sent_assistant_message.example.3.accessibility-label"
+                    ),
+                    GuideExampleImage(
+                        assetName: "guide_sent_assistant_message_ex_04",
+                        accessibilityLabelKey: "account.feature-adoption.guide.sent_assistant_message.example.4.accessibility-label"
+                    ),
+                    GuideExampleImage(
+                        assetName: "guide_sent_assistant_message_ex_05",
+                        accessibilityLabelKey: "account.feature-adoption.guide.sent_assistant_message.example.5.accessibility-label"
                     )
                 ],
                 carouselHintKey: "account.feature-adoption.guide.sent_assistant_message.carousel-hint",
@@ -142,7 +161,10 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
             return FeatureAdoptionGuideContent(
                 item: self,
                 videoResourceName: "guide_connected_telegram_video",
-                screenshotAssetNames: [],
+                screenshotAssetNames: [
+                    "guide_connected_telegram_connection_code",
+                    "guide_connected_telegram_instruction"
+                ],
                 exampleImages: nil,
                 carouselHintKey: nil,
                 primaryCTA: .openProfileTelegram
@@ -151,7 +173,9 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
             return FeatureAdoptionGuideContent(
                 item: self,
                 videoResourceName: nil,
-                screenshotAssetNames: [],
+                screenshotAssetNames: [
+                    "guide_connected_mcp_assistant_connector_instruction"
+                ],
                 exampleImages: [
                     GuideExampleImage(
                         assetName: "guide_connected_mcp_assistant_ex_01",
@@ -160,6 +184,10 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
                     GuideExampleImage(
                         assetName: "guide_connected_mcp_assistant_ex_02",
                         accessibilityLabelKey: "account.feature-adoption.guide.connected_mcp_assistant.example.2.accessibility-label"
+                    ),
+                    GuideExampleImage(
+                        assetName: "guide_connected_mcp_assistant_ex_03",
+                        accessibilityLabelKey: "account.feature-adoption.guide.connected_mcp_assistant.example.3.accessibility-label"
                     )
                 ],
                 carouselHintKey: "account.feature-adoption.guide.connected_mcp_assistant.carousel-hint",
@@ -169,7 +197,10 @@ enum FeatureAdoptionItem: String, CaseIterable, Sendable {
             return FeatureAdoptionGuideContent(
                 item: self,
                 videoResourceName: nil,
-                screenshotAssetNames: [],
+                screenshotAssetNames: [
+                    "guide_shared_recipe_public_profile",
+                    "guide_shared_recipe_share_instruction"
+                ],
                 exampleImages: nil,
                 carouselHintKey: nil,
                 primaryCTA: .openProfilePublicSettings

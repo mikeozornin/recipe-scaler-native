@@ -10,6 +10,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 source "$ROOT/scripts/sim-verify-lib.sh"
+source "$ROOT/scripts/sim-capture-lib.sh"
 
 API_BASE="${E2E_API_BASE:-https://recipe-scaler.ru}"
 OUT_ROOT="$ROOT/store/screenshots/iphone-6.9"
@@ -142,41 +143,7 @@ any_shot_wanted() {
 }
 
 resolve_sim() {
-  local json name udid
-  json="$(xcrun simctl list devices available -j)"
-  for name in "iPhone Air" "iPhone 17 Pro Max" "iPhone 16 Pro Max"; do
-    udid="$(python3 - "$json" "$name" <<'PY'
-import json, sys
-data = json.loads(sys.argv[1])
-want = sys.argv[2]
-for runtime, devices in data.get("devices", {}).items():
-    for dev in devices:
-        if dev.get("name") == want and dev.get("isAvailable", True):
-            print(dev["udid"])
-            raise SystemExit
-PY
-)"
-    if [[ -n "$udid" ]]; then
-      SIM_ID="$udid"
-      echo "== Simulator: $name ($SIM_ID) =="
-      return 0
-    fi
-  done
-
-  echo "== Creating iPhone Air simulator =="
-  local runtime
-  runtime="$(xcrun simctl list runtimes -j | python3 - <<'PY'
-import json, sys
-data = json.load(sys.stdin)
-runtimes = [r for r in data.get("runtimes", []) if r.get("platform") == "iOS" and r.get("isAvailable", True)]
-runtimes.sort(key=lambda r: r.get("identifier", ""), reverse=True)
-if not runtimes:
-    raise SystemExit("no iOS simulator runtime")
-print(runtimes[0]["identifier"])
-PY
-)"
-  SIM_ID="$(xcrun simctl create "iPhone Air" "com.apple.CoreSimulator.SimDeviceType.iPhone-Air" "$runtime")"
-  echo "== Simulator: iPhone Air ($SIM_ID, $runtime) =="
+  capture_resolve_sim
 }
 
 login_store_user() {
@@ -184,19 +151,7 @@ login_store_user() {
 }
 
 override_status_bar() {
-  # Plain "9:41" drives the in-app status bar. Lock Screen large clock on current
-  # runtimes ignores overrides (wall clock) — known Simulator limitation.
-  xcrun simctl status_bar "$SIM_ID" clear >/dev/null 2>&1 || true
-  xcrun simctl status_bar "$SIM_ID" override \
-    --time "$STATUS_TIME" \
-    --dataNetwork wifi \
-    --wifiMode active \
-    --wifiBars 3 \
-    --cellularMode active \
-    --cellularBars 4 \
-    --batteryState charged \
-    --batteryLevel 100 \
-    --operatorName '' >/dev/null
+  CAPTURE_STATUS_TIME="$STATUS_TIME" capture_override_status_bar
 }
 
 grant_capture_permissions() {
@@ -365,7 +320,7 @@ PY
 }
 
 set_appearance() {
-  xcrun simctl ui "$SIM_ID" appearance "$1" >/dev/null
+  capture_set_appearance "$1"
 }
 
 launch_capture() {

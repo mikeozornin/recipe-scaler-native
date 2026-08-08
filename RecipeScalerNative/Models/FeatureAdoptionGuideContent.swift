@@ -50,6 +50,57 @@ struct FeatureAdoptionGuideContent: Equatable {
     /// Primary CTA. `nil` = no button (e.g. `used_shopping_list`).
     let primaryCTA: GuideCTA?
 
+    /// Generated scene ids used by the DEBUG Media Studio and capture manifest.
+    /// The guide view may render these assets when they are bundled; scene
+    /// generation itself remains outside the production content model.
+    var mediaSceneIds: [String] {
+        switch item {
+        case .createdRecipe:
+            return ["created_recipe.creation-map"]
+        case .usedShoppingList:
+            return [
+                "used_shopping_list.shopping-list",
+                "used_shopping_list.reminders-instruction"
+            ]
+        case .importedRecipe:
+            return [
+                "imported_recipe.share-instruction",
+                "imported_recipe.import-text",
+                "imported_recipe.import-photo"
+            ]
+        case .createdCollection:
+            return ["created_collection.collections"]
+        case .sentAssistantMessage:
+            return [
+                "sent_assistant_message.assistant-fixture",
+                "sent_assistant_message.example-01",
+                "sent_assistant_message.example-02",
+                "sent_assistant_message.example-03",
+                "sent_assistant_message.example-04",
+                "sent_assistant_message.example-05"
+            ]
+        case .connectedTelegram:
+            return [
+                "connected_telegram.connection-code",
+                "connected_telegram.instruction"
+            ]
+        case .connectedMcpAssistant:
+            return [
+                "connected_mcp_assistant.connector-instruction",
+                "connected_mcp_assistant.external-assistant",
+                "connected_mcp_assistant.shopping-command",
+                "connected_mcp_assistant.save-command"
+            ]
+        case .sharedRecipe:
+            return [
+                "shared_recipe.public-profile",
+                "shared_recipe.share-instruction"
+            ]
+        case .installedNativeApp, .installedWatchApp, .namedWithEmoji:
+            return []
+        }
+    }
+
     /// Why this feature matters.
     var whyKey: LocalizedStringKey {
         switch item {
@@ -69,7 +120,7 @@ struct FeatureAdoptionGuideContent: Equatable {
             return "account.feature-adoption.guide.connected_mcp_assistant.why"
         case .sharedRecipe:
             return "account.feature-adoption.guide.shared_recipe.why"
-        case .installedNativeApp, .installedWatchApp:
+        case .installedNativeApp, .installedWatchApp, .namedWithEmoji:
             fatalError("FeatureAdoptionGuideContent.whyKey unreachable for \(item.rawValue)")
         }
     }
@@ -128,7 +179,7 @@ struct FeatureAdoptionGuideContent: Equatable {
                 "account.feature-adoption.guide.shared_recipe.how.2",
                 "account.feature-adoption.guide.shared_recipe.how.3"
             ]
-        case .installedNativeApp, .installedWatchApp:
+        case .installedNativeApp, .installedWatchApp, .namedWithEmoji:
             fatalError("FeatureAdoptionGuideContent.howStepKeys unreachable for \(item.rawValue)")
         }
     }
@@ -136,7 +187,7 @@ struct FeatureAdoptionGuideContent: Equatable {
     /// Primary CTA button title (pending state).
     var ctaTitleKey: LocalizedStringKey? {
         switch item {
-        case .usedShoppingList, .createdCollection, .createdRecipe:
+        case .installedNativeApp, .installedWatchApp, .usedShoppingList, .createdCollection, .createdRecipe, .namedWithEmoji:
             return nil
         case .importedRecipe:
             return "account.feature-adoption.guide.imported_recipe.cta"
@@ -148,15 +199,13 @@ struct FeatureAdoptionGuideContent: Equatable {
             return "account.feature-adoption.guide.connected_mcp_assistant.cta"
         case .sharedRecipe:
             return "account.feature-adoption.guide.shared_recipe.cta"
-        case .installedNativeApp, .installedWatchApp:
-            fatalError("FeatureAdoptionGuideContent.ctaTitleKey unreachable for \(item.rawValue)")
         }
     }
 
     /// Primary CTA button title (done state — re-open / revisit).
     var ctaDoneTitleKey: LocalizedStringKey? {
         switch item {
-        case .usedShoppingList, .createdCollection, .createdRecipe:
+        case .installedNativeApp, .installedWatchApp, .usedShoppingList, .createdCollection, .createdRecipe, .namedWithEmoji:
             return nil
         case .importedRecipe:
             return "account.feature-adoption.guide.imported_recipe.cta-done"
@@ -168,8 +217,6 @@ struct FeatureAdoptionGuideContent: Equatable {
             return "account.feature-adoption.guide.connected_mcp_assistant.cta"
         case .sharedRecipe:
             return "account.feature-adoption.guide.shared_recipe.cta-done"
-        case .installedNativeApp, .installedWatchApp:
-            fatalError("FeatureAdoptionGuideContent.ctaDoneTitleKey unreachable for \(item.rawValue)")
         }
     }
 }

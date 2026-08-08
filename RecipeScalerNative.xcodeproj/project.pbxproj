@@ -170,6 +170,8 @@
 		A140000B0000000000000000B /* GuideExampleCarousel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A140000C0000000000000000C /* GuideExampleCarousel.swift */; };
 		A140000D0000000000000000D /* GuideVideoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A140000E0000000000000000E /* GuideVideoPlayer.swift */; };
 		A140011000000000000000011 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = A140012000000000000000012 /* FeatureFlags.swift */; };
+		A140015000000000000000015 /* GuideMediaStudioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A140016000000000000000016 /* GuideMediaStudioView.swift */; };
+		A140019000000000000000019 /* FeatureAdoptionGuideContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14001A00000000000000001A /* FeatureAdoptionGuideContentTests.swift */; };
 		A1B2C3D4E5F60718293A4B5D /* UserIdFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* UserIdFormatter.swift */; };
 		A1B2C3D4E5F60718293A4B63 /* OfflineWriteQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B62 /* OfflineWriteQueue.swift */; };
 		A1B2C3D4E5F60718293A4C02 /* AppShellCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4C01 /* AppShellCoordinator.swift */; };
@@ -877,6 +879,8 @@
 		A140000C0000000000000000C /* GuideExampleCarousel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GuideExampleCarousel.swift; sourceTree = "<group>"; };
 		A140000E0000000000000000E /* GuideVideoPlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GuideVideoPlayer.swift; sourceTree = "<group>"; };
 		A140012000000000000000012 /* FeatureFlags.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
+		A140016000000000000000016 /* GuideMediaStudioView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GuideMediaStudioView.swift; sourceTree = "<group>"; };
+		A14001A00000000000000001A /* FeatureAdoptionGuideContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionGuideContentTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5C /* UserIdFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserIdFormatter.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B62 /* OfflineWriteQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineWriteQueue.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4C01 /* AppShellCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellCoordinator.swift; sourceTree = "<group>"; };
@@ -1501,6 +1505,7 @@
 				A14000060000000000000006 /* GuideAssetPlaceholder.swift */,
 				A140000C0000000000000000C /* GuideExampleCarousel.swift */,
 				A140000E0000000000000000E /* GuideVideoPlayer.swift */,
+				A140016000000000000000016 /* GuideMediaStudioView.swift */,
 				A029031000202 /* DataManagementView.swift */,
 				A029031000203 /* FractionProgressView.swift */,
 				E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */,
@@ -1711,6 +1716,7 @@
 			children = (
 				94F6EEB0522CF5E6241A73B1 /* Info.plist */,
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
+				A14001A00000000000000001A /* FeatureAdoptionGuideContentTests.swift */,
 				A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */,
 				A05700000201 /* UTTypeRecipeScalerTests.swift */,
 				A05700000202 /* NativeFormatDetectorTests.swift */,
@@ -2763,6 +2769,7 @@
 				A14000090000000000000009 /* GuideAssetResolver.swift in Sources */,
 				A140000B0000000000000000B /* GuideExampleCarousel.swift in Sources */,
 				A140000D0000000000000000D /* GuideVideoPlayer.swift in Sources */,
+				A140015000000000000000015 /* GuideMediaStudioView.swift in Sources */,
 				A140011000000000000000011 /* FeatureFlags.swift in Sources */,
 				67A6550B36933C92D59DB2B9 /* FeatureAdoptionStore.swift in Sources */,
 				AC6A576E26314798BE3FBF1A /* SystemBannerStore.swift in Sources */,
@@ -3104,6 +3111,7 @@
 				SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */,
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
 				FADLAY04D293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift in Sources */,
+				A140019000000000000000019 /* FeatureAdoptionGuideContentTests.swift in Sources */,
 				FADFIX0A1B293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift in Sources */,
 				SB0610A1B293A4B7010000010 /* SystemBannerStoreTests.swift in Sources */,
 				B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */,

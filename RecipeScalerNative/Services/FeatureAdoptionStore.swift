@@ -5,7 +5,7 @@
 
 import Foundation
 
-/// Value-type snapshot of the 10 feature-adoption flags (spec 038).
+/// Value-type snapshot of the 11 feature-adoption flags (spec 038).
 /// Persisted as a JSON blob under the `feature-adoption-cache` UserDefaults key
 /// so the section renders instantly from cache before the network resolves.
 struct FeatureAdoptionReport: Codable, Sendable, Equatable {
@@ -19,8 +19,66 @@ struct FeatureAdoptionReport: Codable, Sendable, Equatable {
     var connectedMcpAssistant: Bool = false
     var sentAssistantMessage: Bool = false
     var usedShoppingList: Bool = false
+    var namedWithEmoji: Bool = false
 
     static let empty = FeatureAdoptionReport()
+
+    init(
+        installedNativeApp: Bool = false,
+        installedWatchApp: Bool = false,
+        importedRecipe: Bool = false,
+        createdRecipe: Bool = false,
+        createdCollection: Bool = false,
+        sharedRecipe: Bool = false,
+        connectedTelegram: Bool = false,
+        connectedMcpAssistant: Bool = false,
+        sentAssistantMessage: Bool = false,
+        usedShoppingList: Bool = false,
+        namedWithEmoji: Bool = false
+    ) {
+        self.installedNativeApp = installedNativeApp
+        self.installedWatchApp = installedWatchApp
+        self.importedRecipe = importedRecipe
+        self.createdRecipe = createdRecipe
+        self.createdCollection = createdCollection
+        self.sharedRecipe = sharedRecipe
+        self.connectedTelegram = connectedTelegram
+        self.connectedMcpAssistant = connectedMcpAssistant
+        self.sentAssistantMessage = sentAssistantMessage
+        self.usedShoppingList = usedShoppingList
+        self.namedWithEmoji = namedWithEmoji
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case installedNativeApp
+        case installedWatchApp
+        case importedRecipe
+        case createdRecipe
+        case createdCollection
+        case sharedRecipe
+        case connectedTelegram
+        case connectedMcpAssistant
+        case sentAssistantMessage
+        case usedShoppingList
+        case namedWithEmoji
+    }
+
+    /// Keeps caches written before the 11th flag readable after the contract
+    /// grows. Missing keys are false, while present legacy values are retained.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        installedNativeApp = try container.decodeIfPresent(Bool.self, forKey: .installedNativeApp) ?? false
+        installedWatchApp = try container.decodeIfPresent(Bool.self, forKey: .installedWatchApp) ?? false
+        importedRecipe = try container.decodeIfPresent(Bool.self, forKey: .importedRecipe) ?? false
+        createdRecipe = try container.decodeIfPresent(Bool.self, forKey: .createdRecipe) ?? false
+        createdCollection = try container.decodeIfPresent(Bool.self, forKey: .createdCollection) ?? false
+        sharedRecipe = try container.decodeIfPresent(Bool.self, forKey: .sharedRecipe) ?? false
+        connectedTelegram = try container.decodeIfPresent(Bool.self, forKey: .connectedTelegram) ?? false
+        connectedMcpAssistant = try container.decodeIfPresent(Bool.self, forKey: .connectedMcpAssistant) ?? false
+        sentAssistantMessage = try container.decodeIfPresent(Bool.self, forKey: .sentAssistantMessage) ?? false
+        usedShoppingList = try container.decodeIfPresent(Bool.self, forKey: .usedShoppingList) ?? false
+        namedWithEmoji = try container.decodeIfPresent(Bool.self, forKey: .namedWithEmoji) ?? false
+    }
 }
 
 /// Holds the live feature-adoption report for the current user.
@@ -57,6 +115,7 @@ final class FeatureAdoptionStore {
         case .connectedMcpAssistant: return report.connectedMcpAssistant
         case .sentAssistantMessage: return report.sentAssistantMessage
         case .usedShoppingList: return report.usedShoppingList
+        case .namedWithEmoji: return report.namedWithEmoji
         }
     }
 
@@ -83,7 +142,8 @@ final class FeatureAdoptionStore {
                 connectedTelegram: dto.connectedTelegram ?? false,
                 connectedMcpAssistant: dto.connectedMcpAssistant ?? false,
                 sentAssistantMessage: dto.sentAssistantMessage ?? false,
-                usedShoppingList: dto.usedShoppingList ?? false
+                usedShoppingList: dto.usedShoppingList ?? false,
+                namedWithEmoji: dto.namedWithEmoji ?? false
             )
             persist()
         } catch {

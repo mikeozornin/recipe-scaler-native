@@ -49,7 +49,7 @@ enum UserExistsResult: Sendable {
     case transient
 }
 
-/// Feature-adoption report (spec 038). All 10 keys are always present in the
+/// Feature-adoption report (spec 038). All 11 keys are always present in the
 /// server payload; each is modeled as `Bool?` and treated as `false` when nil
 /// via `value(for:)`. Snake_case JSON keys map to camelCase Swift properties.
 struct FeatureAdoptionReportDTO: Decodable, Sendable {
@@ -63,6 +63,7 @@ struct FeatureAdoptionReportDTO: Decodable, Sendable {
     let connectedMcpAssistant: Bool?
     let sentAssistantMessage: Bool?
     let usedShoppingList: Bool?
+    let namedWithEmoji: Bool?
 
     enum CodingKeys: String, CodingKey {
         case installedNativeApp = "installed_native_app"
@@ -75,6 +76,7 @@ struct FeatureAdoptionReportDTO: Decodable, Sendable {
         case connectedMcpAssistant = "connected_mcp_assistant"
         case sentAssistantMessage = "sent_assistant_message"
         case usedShoppingList = "used_shopping_list"
+        case namedWithEmoji = "named_with_emoji"
     }
 
     func value(for item: FeatureAdoptionItem) -> Bool {
@@ -89,6 +91,7 @@ struct FeatureAdoptionReportDTO: Decodable, Sendable {
         case .connectedMcpAssistant: return connectedMcpAssistant ?? false
         case .sentAssistantMessage: return sentAssistantMessage ?? false
         case .usedShoppingList: return usedShoppingList ?? false
+        case .namedWithEmoji: return namedWithEmoji ?? false
         }
     }
 }

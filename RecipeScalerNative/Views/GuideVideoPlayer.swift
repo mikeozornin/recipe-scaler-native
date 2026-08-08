@@ -60,7 +60,7 @@ struct GuideVideoPlayer: View {
     /// removes the notification observer even if `onDisappear` is skipped.
     private func configurePlayerIfNeeded() {
         guard player == nil else { return }
-        guard let url = Bundle.main.url(forResource: resourceName, withExtension: "mp4") else {
+        guard let url = GuideAssetResolver.videoURL(forResourceName: resourceName) else {
             player = nil
             return
         }

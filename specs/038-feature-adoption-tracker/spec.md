@@ -10,7 +10,7 @@
 
 В приложении есть много фич, которые пользователь не сразу обнаруживает: импорт рецепта, ассистент, коллекции, Telegram, MCP, список покупок. Раздел «Насколько вы освоили Recipe Scaler» в секции аккаунта показывает галочки по сделанным действиям и мягко подсвечивает, что ещё осталось попробовать.
 
-Список действий зафиксирован продуктом (10 пунктов). Расширение списка — через добавление новых feature-ключей, без миграций (только данные).
+Список действий зафиксирован продуктом (11 пунктов). Расширение списка — через добавление новых feature-ключей, без миграций (только данные).
 
 ### Архитектурное решение (после аудита БД)
 
@@ -28,11 +28,11 @@
 
 ## Цель
 
-Раздел вверху Profile с 10 чек-поинтами. Состояние синхронизируется между устройствами (не CRDT — простой read на холодном старте + pull-to-refresh). Сервер — единый источник правды через `user_feature_adoption` таблицу.
+Раздел вверху Profile с 11 чек-поинтами. Состояние синхронизируется между устройствами (не CRDT — простой read на холодном старте + pull-to-refresh). Сервер — единый источник правды через `user_feature_adoption` таблицу.
 
 ## Пользовательские сценарии
 
-### Список отслеживаемых действий (10 пунктов)
+### Список отслеживаемых действий (11 пунктов)
 
 | Feature key | Заголовок (i18n) | Когда засчитывается | Кто пишет в таблицу |
 |-------------|------------------|---------------------|---------------------|
@@ -46,10 +46,11 @@
 | `connected_telegram` | «Подключен Телеграм» | `telegram_connections` запись существует | Server event в telegram connect handler |
 | `connected_mcp_assistant` | «Подключен внешний ассистент» | Хотя бы один `oauth_access_tokens` для пользователя (любой, включая истекшие — TTL 1 час, иначе флаг не засчитывался бы через час после подключения) | Server event в mcp-auth-service при issueToken |
 | `shared_recipe` | «Пошарен рецепт» | Хотя бы один рецепт с `isPublic=true` в Y.Map | Server-side Yjs listener на recipe doc |
+| `named_with_emoji` | «Назвали рецепт или коллекцию с эмодзи» | После успешного сохранения текущего названия рецепта или активной папки с ведущим эмодзи | Server-side Yjs save path; backfill для текущих документов |
 
 ### US1 — Просмотр раздела (P1)
 
-**Когда** пользователь открывает вкладку Profile, **тогда** в секции «Аккаунт» (между данными аккаунта и публичными профилями) видна строка-ссылка с заголовком `account.feature-adoption.title` и счётчиком `N / 10`. На экране детализации — многострочный заголовок в контенте (без обрезки в navigation bar), кольцевой прогресс `N из M` и список строк со статусными галочками (`checkmark` primary при выполнено, `circle` secondary при невыполнено). Под каждой строкой — onboarding-подпись footnote (`.appFootnote()`, secondary color) для контекста.
+**Когда** пользователь открывает вкладку Profile, **тогда** в секции «Аккаунт» (между данными аккаунта и публичными профилями) видна строка-ссылка с заголовком `account.feature-adoption.title` и счётчиком `N / 11`. На экране детализации — многострочный заголовок в контенте (без обрезки в navigation bar), кольцевой прогресс `N из M` и список строк со статусными галочками (`checkmark` primary при выполнено, `circle` secondary при невыполнено). Под каждой строкой — onboarding-подпись footnote (`.appFootnote()`, secondary color) для контекста.
 
 ### US2 — Синхронизация между устройствами (P1)
 
@@ -77,6 +78,7 @@
 - SQL-deriveable флагов (`created_recipe`, `connected_telegram`, `connected_mcp_assistant`, `sent_assistant_message`) — одним пакетом через `INSERT ... SELECT`.
 - Yjs-derived флагов (`imported_recipe`, `created_collection`, `shared_recipe`, `used_shopping_list`) — итеративно через `yjsService` по каждому пользователю (медленно, но разово).
 - `installed_native_app` и `installed_watch_app` — **не backfill'ятся** (client-only; флаги появляются при первом входе в нативку / первом открытии watch app с сессией).
+- `named_with_emoji` — backfill'ится по текущим названиям в recipe/collection Yjs-документах; историю удалённых названий не восстанавливаем.
 
 ## Требования
 
@@ -84,7 +86,7 @@
 
 #### FR-038-N1 — Размещение в Profile
 
-Строка-ссылка в `AccountView` внутри секции аккаунта (под seed phrase, над публичными профилями), ведёт в `FeatureAdoptionDetailView` со списком `FeatureAdoptionRow`, генерируемых из `FeatureAdoptionItem` enum (CaseIterable, 10 кейсов). На экране детализации — только navigation title, без дублирующего заголовка секции и без footer-счётчика.
+Строка-ссылка в `AccountView` внутри секции аккаунта (под seed phrase, над публичными профилями), ведёт в `FeatureAdoptionDetailView` со списком `FeatureAdoptionRow`, генерируемых из `FeatureAdoptionItem` enum (CaseIterable, 11 кейсов). На экране детализации — только navigation title, без дублирующего заголовка секции и без footer-счётчика.
 
 #### FR-038-N2 — Cache
 
@@ -114,7 +116,7 @@
 
 #### FR-038-N5 — i18n
 
-Все 10 заголовков + onboarding footnote — в `Localizable.xcstrings` (RU/EN). Префикс ключей: `account.feature-adoption.item.*` (заголовки) и `account.feature-adoption.item.*.footnote` (подписи). Плюс заголовок раздела `account.feature-adoption.title`. Без хардкода в SwiftUI.
+Все 11 заголовков + onboarding footnote — в `Localizable.xcstrings` (RU/EN). Префикс ключей: `account.feature-adoption.item.*` (заголовки) и `account.feature-adoption.item.*.footnote` (подписи). Плюс заголовок раздела `account.feature-adoption.title`. Без хардкода в SwiftUI.
 
 #### FR-038-N6 — `installed_watch_app` trigger (watchOS)
 
@@ -166,7 +168,7 @@ CREATE INDEX IF NOT EXISTS idx_user_feature_adoption_user
 }
 ```
 
-Все 9 ключей присутствуют всегда. Логика — один `SELECT feature FROM user_feature_adoption WHERE user_id=$1`, маппинг в 9 булей. Никаких JOIN, никаких read-pass на лету.
+Все 11 ключей присутствуют всегда. Логика — один `SELECT feature FROM user_feature_adoption WHERE user_id=$1`, маппинг в 11 булей. Никаких JOIN, никаких read-pass на лету.
 
 **Headers**: `Cache-Control: private, max-age=60`.
 
@@ -280,12 +282,12 @@ for (const user of allUserIds) {
 
 - **Веб-UI**: раздел только в native iOS приложении. Backend готов обслуживать любые клиенты, но в `recipe-scaler-web` UI не добавляется.
 - Аналитика событий (количество, временные ряды) — только булевы флаги.
-- Расширение списка за пределы 9 пунктов — следующая итерация.
+- Расширение списка за пределы 11 пунктов — следующая итерация.
 - Push-уведомления о новых доступных действиях.
 - Gamification (уровни, награды, проценты).
 - Client-side optimistic update после локального действия (например, после импорта рецепта в этой же сессии галочка становится активной без pull-to-refresh) — следующий spec, если UX потребует. Сейчас единственный optimistic update — `installed_native_app` (FR-038-N4).
 - Live update через Socket.IO (событие `feature_adoption_updated`) — overkill для v1.
-- UI для скрытия/сворачивания раздела — пользователь всегда видит 9 пунктов.
+- UI для скрытия/сворачивания раздела — пользователь всегда видит 11 пунктов.
 
 ## Критерии успеха
 
@@ -295,10 +297,11 @@ for (const user of allUserIds) {
 - **SC-004**: После отправки первого сообщения ассистенту и pull-to-refresh `sent_assistant_message` выполнена.
 - **SC-005**: После backfill скрипта (запуск в prod) ≥95% активных пользователей имеют корректно проставленные SQL-deriveable флаги (`created_recipe`, `connected_telegram`, `connected_mcp_assistant`, `sent_assistant_message`).
 - **SC-006**: Офлайн: раздел показывается из кэша, нет ошибки, нет индикатора.
-- **SC-007**: Серверный endpoint возвращает ровно 8 ключей, без раскрытия userId, timestamps или других приватных данных.
+- **SC-007**: Серверный endpoint возвращает ровно 11 ключей, без раскрытия userId, timestamps или других приватных данных.
 - **SC-008**: `POST /feature-adoption` idempotent — 5 последовательных запросов с тем же feature не создают 5 записей.
-- **SC-009**: Все 8 заголовков локализованы (RU/EN), нет хардкода в SwiftUI.
+- **SC-009**: Все 11 заголовков локализованы (RU/EN), нет хардкода в SwiftUI.
 - **SC-010**: После включения share у рецепта через веб-клиент и загрузки этого doc сервером (например, при следующем sync) → live listener проставляет `shared_recipe=true` без запуска backfill.
+- **SC-011**: После успешного сохранения рецепта или активной коллекции с ведущим эмодзи `named_with_emoji=true`; удалённые папки и названия без ведущего эмодзи флаг не создают.
 
 ## Артефакты
 

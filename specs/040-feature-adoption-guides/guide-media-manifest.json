@@ -1,0 +1,245 @@
+{
+  "version": "1.0",
+  "schema": "recipe-scaler.feature-adoption-guide-media",
+  "device": {
+    "preferredSimulatorNames": [
+      "iPhone Air",
+      "iPhone 17 Pro Max",
+      "iPhone 16 Pro Max"
+    ],
+    "acceptedPixelSizes": [
+      [1260, 2736],
+      [1320, 2868],
+      [1290, 2796]
+    ],
+    "portraitAspectRatio": 0.461538
+  },
+  "locales": ["ru", "en"],
+  "appearances": ["light", "dark"],
+  "sceneKinds": [
+    "real_app",
+    "instruction_card",
+    "external_assistant_mock"
+  ],
+  "scenes": [
+    {
+      "id": "imported_recipe.share-instruction",
+      "item": "imported_recipe",
+      "kind": "instruction_card",
+      "launchScene": "imported_recipe.share-instruction",
+      "assetBaseName": "guide_imported_recipe_share_instruction",
+      "titleKey": "account.feature-adoption.item.imported_recipe",
+      "durationSeconds": 4
+    },
+    {
+      "id": "imported_recipe.import-text",
+      "item": "imported_recipe",
+      "kind": "real_app",
+      "launchScene": "imported_recipe.import-text",
+      "assetBaseName": "guide_imported_recipe_import_text",
+      "titleKey": "account.feature-adoption.item.imported_recipe",
+      "durationSeconds": 4
+    },
+    {
+      "id": "imported_recipe.import-photo",
+      "item": "imported_recipe",
+      "kind": "real_app",
+      "launchScene": "imported_recipe.import-photo",
+      "assetBaseName": "guide_imported_recipe_import_photo",
+      "titleKey": "account.feature-adoption.item.imported_recipe",
+      "durationSeconds": 4
+    },
+    {
+      "id": "used_shopping_list.shopping-list",
+      "item": "used_shopping_list",
+      "kind": "real_app",
+      "launchScene": "used_shopping_list.shopping-list",
+      "assetBaseName": "guide_used_shopping_list_shopping_list",
+      "titleKey": "account.feature-adoption.item.used_shopping_list",
+      "durationSeconds": 4
+    },
+    {
+      "id": "used_shopping_list.reminders-instruction",
+      "item": "used_shopping_list",
+      "kind": "instruction_card",
+      "launchScene": "used_shopping_list.reminders-instruction",
+      "assetBaseName": "guide_used_shopping_list_reminders_instruction",
+      "titleKey": "account.feature-adoption.item.used_shopping_list",
+      "durationSeconds": 4
+    },
+    {
+      "id": "sent_assistant_message.assistant-fixture",
+      "item": "sent_assistant_message",
+      "kind": "real_app",
+      "launchScene": "sent_assistant_message.assistant-fixture",
+      "assetBaseName": "guide_sent_assistant_message_assistant_fixture",
+      "titleKey": "account.feature-adoption.item.sent_assistant_message",
+      "durationSeconds": 5
+    },
+    {
+      "id": "sent_assistant_message.example-01",
+      "item": "sent_assistant_message",
+      "kind": "real_app",
+      "launchScene": "sent_assistant_message.example-01",
+      "assetBaseName": "guide_sent_assistant_message_ex_01",
+      "titleKey": "account.feature-adoption.item.sent_assistant_message",
+      "durationSeconds": 4
+    },
+    {
+      "id": "sent_assistant_message.example-02",
+      "item": "sent_assistant_message",
+      "kind": "real_app",
+      "launchScene": "sent_assistant_message.example-02",
+      "assetBaseName": "guide_sent_assistant_message_ex_02",
+      "titleKey": "account.feature-adoption.item.sent_assistant_message",
+      "durationSeconds": 4
+    },
+    {
+      "id": "sent_assistant_message.example-03",
+      "item": "sent_assistant_message",
+      "kind": "real_app",
+      "launchScene": "sent_assistant_message.example-03",
+      "assetBaseName": "guide_sent_assistant_message_ex_03",
+      "titleKey": "account.feature-adoption.item.sent_assistant_message",
+      "durationSeconds": 4
+    },
+    {
+      "id": "sent_assistant_message.example-04",
+      "item": "sent_assistant_message",
+      "kind": "real_app",
+      "launchScene": "sent_assistant_message.example-04",
+      "assetBaseName": "guide_sent_assistant_message_ex_04",
+      "titleKey": "account.feature-adoption.item.sent_assistant_message",
+      "durationSeconds": 4
+    },
+    {
+      "id": "sent_assistant_message.example-05",
+      "item": "sent_assistant_message",
+      "kind": "real_app",
+      "launchScene": "sent_assistant_message.example-05",
+      "assetBaseName": "guide_sent_assistant_message_ex_05",
+      "titleKey": "account.feature-adoption.item.sent_assistant_message",
+      "durationSeconds": 4
+    },
+    {
+      "id": "connected_telegram.connection-code",
+      "item": "connected_telegram",
+      "kind": "real_app",
+      "launchScene": "connected_telegram.connection-code",
+      "assetBaseName": "guide_connected_telegram_connection_code",
+      "titleKey": "account.feature-adoption.item.connected_telegram",
+      "durationSeconds": 4
+    },
+    {
+      "id": "connected_telegram.instruction",
+      "item": "connected_telegram",
+      "kind": "instruction_card",
+      "launchScene": "connected_telegram.instruction",
+      "assetBaseName": "guide_connected_telegram_instruction",
+      "titleKey": "account.feature-adoption.item.connected_telegram",
+      "durationSeconds": 4
+    },
+    {
+      "id": "connected_mcp_assistant.connector-instruction",
+      "item": "connected_mcp_assistant",
+      "kind": "instruction_card",
+      "launchScene": "connected_mcp_assistant.connector-instruction",
+      "assetBaseName": "guide_connected_mcp_assistant_connector_instruction",
+      "titleKey": "account.feature-adoption.item.connected_mcp_assistant",
+      "durationSeconds": 4
+    },
+    {
+      "id": "connected_mcp_assistant.external-assistant",
+      "item": "connected_mcp_assistant",
+      "kind": "external_assistant_mock",
+      "launchScene": "connected_mcp_assistant.external-assistant",
+      "assetBaseName": "guide_connected_mcp_assistant_ex_01",
+      "titleKey": "account.feature-adoption.item.connected_mcp_assistant",
+      "durationSeconds": 4
+    },
+    {
+      "id": "connected_mcp_assistant.shopping-command",
+      "item": "connected_mcp_assistant",
+      "kind": "external_assistant_mock",
+      "launchScene": "connected_mcp_assistant.shopping-command",
+      "assetBaseName": "guide_connected_mcp_assistant_ex_02",
+      "titleKey": "account.feature-adoption.item.connected_mcp_assistant",
+      "durationSeconds": 4
+    },
+    {
+      "id": "connected_mcp_assistant.save-command",
+      "item": "connected_mcp_assistant",
+      "kind": "external_assistant_mock",
+      "launchScene": "connected_mcp_assistant.save-command",
+      "assetBaseName": "guide_connected_mcp_assistant_ex_03",
+      "titleKey": "account.feature-adoption.item.connected_mcp_assistant",
+      "durationSeconds": 4
+    },
+    {
+      "id": "created_collection.collections",
+      "item": "created_collection",
+      "kind": "real_app",
+      "launchScene": "created_collection.collections",
+      "assetBaseName": "guide_created_collection_collections",
+      "titleKey": "account.feature-adoption.item.created_collection",
+      "durationSeconds": 4
+    },
+    {
+      "id": "shared_recipe.public-profile",
+      "item": "shared_recipe",
+      "kind": "real_app",
+      "launchScene": "shared_recipe.public-profile",
+      "assetBaseName": "guide_shared_recipe_public_profile",
+      "titleKey": "account.feature-adoption.item.shared_recipe",
+      "durationSeconds": 4
+    },
+    {
+      "id": "shared_recipe.share-instruction",
+      "item": "shared_recipe",
+      "kind": "instruction_card",
+      "launchScene": "shared_recipe.share-instruction",
+      "assetBaseName": "guide_shared_recipe_share_instruction",
+      "titleKey": "account.feature-adoption.item.shared_recipe",
+      "durationSeconds": 4
+    },
+    {
+      "id": "created_recipe.creation-map",
+      "item": "created_recipe",
+      "kind": "instruction_card",
+      "launchScene": "created_recipe.creation-map",
+      "assetBaseName": "guide_created_recipe_creation_map",
+      "titleKey": "account.feature-adoption.item.created_recipe",
+      "durationSeconds": 4
+    }
+  ],
+  "videos": [
+    {
+      "id": "imported_recipe.walkthrough",
+      "item": "imported_recipe",
+      "launchScene": "imported_recipe.walkthrough",
+      "output": "guide_imported_recipe_video.mp4",
+      "durationSeconds": 12,
+      "frameRate": 30,
+      "codec": "h264"
+    },
+    {
+      "id": "connected_telegram.walkthrough",
+      "item": "connected_telegram",
+      "launchScene": "connected_telegram.walkthrough",
+      "output": "guide_connected_telegram_video.mp4",
+      "durationSeconds": 12,
+      "frameRate": 30,
+      "codec": "h264"
+    }
+  ],
+  "assetNaming": {
+    "localizedThemeOrder": [
+      "<base>_<locale>_<appearance>",
+      "<base>_<locale>",
+      "<base>_<appearance>",
+      "<base>"
+    ],
+    "videoDirectory": "RecipeScalerNative/Resources/GuideVideos",
+    "assetCatalog": "RecipeScalerNative/Assets.xcassets/GuideMedia"
+  }
+}

@@ -29,6 +29,7 @@ enum DebugLaunchOptions {
             || screenshotCapture
             || screenshotTimerSeconds != nil
             || screenshotShoppingSeed != nil
+            || openGuideMediaScene != nil
     }
 
     /// `-ScreenshotCapture=1` — store screenshot mode (hide system banner chrome).
@@ -54,6 +55,18 @@ enum DebugLaunchOptions {
     /// `-ScreenshotAssistantFixture=1` — injects about-media troubleshooting chat (no live LLM).
     static var screenshotAssistantFixture: Bool {
         boolFlag("ScreenshotAssistantFixture")
+    }
+
+    /// `-OpenGuideMediaScene=<scene-id>` — opens one deterministic DEBUG
+    /// scene for localized guide screenshot/video capture.
+    static var openGuideMediaScene: String? {
+        stringValue("OpenGuideMediaScene")
+    }
+
+    /// `-GuideMediaSequence=<sequence-id>` — names a generated walkthrough
+    /// sequence. The capture script owns timing; the app only selects content.
+    static var guideMediaSequence: String? {
+        stringValue("GuideMediaSequence")
     }
 
     /// `-MobileTimerPanelExpanded=1` — timer panel starts expanded (verify scripts).

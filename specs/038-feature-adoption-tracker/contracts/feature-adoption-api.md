@@ -6,11 +6,11 @@
 
 ### `GET /api/users/me/feature-adoption`
 
-Возвращает отчёт по 10 флагам для текущего пользователя.
+Возвращает отчёт по 11 флагам для текущего пользователя.
 
 **Auth**: `requireUserId` (owner-only).
 
-**Реализация**: один `SELECT feature FROM user_feature_adoption WHERE user_id=$1`, маппинг в 10 булей. Никаких JOIN с другими таблицами, никаких live-вычислений.
+**Реализация**: один `SELECT feature FROM user_feature_adoption WHERE user_id=$1`, маппинг в 11 булей. Никаких JOIN с другими таблицами, никаких live-вычислений.
 
 **Response 200:**
 
@@ -27,7 +27,8 @@
     "connected_telegram": true,
     "connected_mcp_assistant": false,
     "sent_assistant_message": false,
-    "used_shopping_list": false
+    "used_shopping_list": false,
+    "named_with_emoji": false
   }
 }
 ```
@@ -36,7 +37,7 @@
 - `Cache-Control: private, max-age=60`
 
 **Гарантии**:
-- Все 10 ключей всегда присутствуют в `data`.
+- Все 11 ключей всегда присутствуют в `data`.
 - Значения — только `boolean`, никаких timestamp/counters.
 - Сервер никогда не раскрывает `userId` в ответе.
 
@@ -54,7 +55,7 @@
 }
 ```
 
-Schema (zod): `{ feature: z.enum(FEATURE_KEYS) }` — любой из 10 канонических ключей. Клиенты шлют только client-reported флаги: `installed_native_app` (iPhone) и `installed_watch_app` (watchOS); остальные проставляются серверными live events.
+Schema (zod): `{ feature: z.enum(FEATURE_KEYS) }` — любой из 11 канонических ключей. Клиенты шлют только client-reported флаги: `installed_native_app` (iPhone) и `installed_watch_app` (watchOS); остальные проставляются серверными live events.
 
 **Response 200:**
 
@@ -87,6 +88,7 @@ Schema (zod): `{ feature: z.enum(FEATURE_KEYS) }` — любой из 10 кан�
 | `connected_telegram` | Server event: `telegram-service.connectUser` | После `INSERT INTO telegram_connections` |
 | `connected_mcp_assistant` | Server event: `mcp-auth-service.issueTokens` | После `INSERT INTO oauth_access_tokens` |
 | `sent_assistant_message` | Server event: `assistant-service.respond`/`respondStream` | После сохранения user-сообщения |
+| `named_with_emoji` | Yjs save path | После успешного сохранения рецепта или активной папки с ведущим эмодзи; текущие документы покрываются backfill |
 
 Все серверные writes — через helper `featureAdoptionService.mark(userId, feature)`: тонкая обёртка над `INSERT ... ON CONFLICT (user_id, feature) DO NOTHING`. Fire-and-forget, ошибка не валирует бизнес-операцию.
 
@@ -95,11 +97,12 @@ Schema (zod): `{ feature: z.enum(FEATURE_KEYS) }` — любой из 10 кан�
 `server/scripts/backfill-feature-adoption.ts`. Запуск:
 
 ```bash
-NODE_ENV=production bun server/scripts/backfill-feature-adoption.ts --env .env.prod [--apply] [--only-sql] [--limit N]
+NODE_ENV=production bun server/scripts/backfill-feature-adoption.ts --env .env.prod [--apply] [--only-sql] [--only-emoji] [--limit N]
 ```
 
 - Без `--apply` — dry run, только отчёт.
 - `--only-sql` — только SQL-deriveable флаги (Phase 1), пропустить Yjs (Phase 2).
+- `--only-emoji` — только `named_with_emoji` по текущим названиям рецептов и активных папок.
 - `--limit N` — только первые N пользователей (для smoke).
 
 **Phase 1 — SQL-deriveable** (один пакет INSERT'ов):
@@ -208,6 +211,7 @@ export const FEATURE_KEYS = [
   'connected_mcp_assistant',
   'sent_assistant_message',
   'used_shopping_list',
+  'named_with_emoji',
 ] as const;
 
 export type FeatureKey = typeof FEATURE_KEYS[number];
@@ -235,13 +239,13 @@ sequenceDiagram
     User->>Cache: read feature-adoption-cache (sync)
     User->>User: render section from cache
     User->>API: GET /feature-adoption (.task)
-    API-->>User: { 10 booleans }
+    API-->>User: { 11 booleans }
     User->>Cache: write cache
     User->>User: re-render section
 
     Note over User: Pull-to-refresh
     User->>API: GET /feature-adoption
-    API-->>User: { 10 booleans }
+    API-->>User: { 11 booleans }
     User->>Cache: write cache
 ```
 
