@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "schema": "recipe-scaler.e2e-skip-budget",
+  "profiles": [
+    {
+      "name": "loopback",
+      "appliesWhen": "E2E_API_BASE host is 127.0.0.1 or localhost",
+      "executedMinimum": 1,
+      "skipBudget": 0,
+      "allowedReasons": [],
+      "notes": "Loopback backend is assumed healthy. Any register/seed failure is a hard failure, not an XCTSkip."
+    },
+    {
+      "name": "prod-exploratory",
+      "appliesWhen": "E2E_API_BASE host is recipe-scaler.ru",
+      "executedMinimum": 1,
+      "skipBudget": 0,
+      "allowedReasons": [
+        "register-auto-unavailable",
+        "seed-endpoint-404",
+        "capability-permission-denied"
+      ],
+      "notes": "Prod E2E is a non-blocking diagnostic. Skips require a reason code; budget 0 means any skip in a blocking lane fails. Use this profile only in an opt-in nightly lane, not a PR gate."
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "feature": "NNN-feature-name",
+  "layoutHash": "<sha256 prefix of layout.md contents>",
+  "reviewerType": "human",
+  "reviewer": "<person>",
+  "verifiedAt": "YYYY-MM-DD",
+  "evidencePath": "layout-review.md",
+  "notes": "Per docs/agents/VERIFICATION.md and docs/UI-LAYOUT-FROM-FIGMA.md: review-agent verdict does NOT count as human acceptance."
+}
