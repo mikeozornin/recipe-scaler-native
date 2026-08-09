@@ -6,7 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-: "${SIM_ID:=EFC65E55-4F28-4C21-B489-D9733D2BE6B5}"
+: "${SIM_ID:=$("$ROOT/scripts/resolve-simulator.sh")}"
 : "${MAX_TEST_SECONDS:=30}"
 DESTINATION="platform=iOS Simulator,id=$SIM_ID"
 RESULT_BUNDLE="${RESULT_BUNDLE:-$ROOT/.test-fast-results.xcresult}"
@@ -20,19 +20,36 @@ xcodebuild build-for-testing \
   -destination "$DESTINATION" \
   -configuration Debug
 
+echo "== quarantine manifest =="
+python3 "$ROOT/scripts/check-test-quarantine.py" "$ROOT/scripts/test-quarantine.json"
+
 echo "== test-without-building (unit tests only) =="
-# SnapshotTests are excluded because they crash the test host on missing
-# `.environmentObject(AuthService/YjsSyncService)` (pre-existing, unrelated
-# to the rest of the suite). Run them separately via `verify-all.sh`.
+# Suites are skipped only through `scripts/test-quarantine.json` (bounded,
+# owner + expiry + exitCriteria). Direct `-skip-testing` without manifest
+# entry is forbidden for suite exclusions.
+QUARANTINE_TARGETS=(-skip-testing:RecipeScalerNativeUITests)
+while IFS= read -r line; do
+  [[ -n "$line" ]] && QUARANTINE_TARGETS+=("-skip-testing:${line}")
+done < <(python3 - "$ROOT/scripts/test-quarantine.json" <<'PY'
+import json, sys
+from pathlib import Path
+data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+for entry in data.get("suites", []):
+    print(f"{entry['target']}/{entry['class']}")
+PY
+)
+printf '%s\n' "Quarantined suites: ${QUARANTINE_TARGETS[*]}"
+
 set +e
+set -o pipefail
 xcodebuild test-without-building \
   -scheme RecipeScalerNative \
   -destination "$DESTINATION" \
   -resultBundlePath "$RESULT_BUNDLE" \
-  -skip-testing:RecipeScalerNativeUITests \
-  -skip-testing:RecipeScalerNativeTests/SnapshotTests \
+  "${QUARANTINE_TARGETS[@]}" \
   2>&1 | tee "$LOG_FILE"
 test_exit=${PIPESTATUS[0]}
+set +o pipefail
 set -e
 
 if grep -qE '\*\* TEST FAILED \*\*|TEST BUILD FAILED' "$LOG_FILE"; then
@@ -60,5 +77,10 @@ if [[ -n "$slow_tests" ]]; then
   exit 1
 fi
 
-executed="$(grep -E 'Executed [0-9]+ test' "$LOG_FILE" | tail -1 || true)"
-echo "VERIFIED test-fast ($executed, max ${MAX_TEST_SECONDS}s per case)"
+executed_line="$(grep -E 'Executed [0-9]+ test' "$LOG_FILE" | tail -1 || true)"
+executed_count="$(printf '%s\n' "$executed_line" | sed -nE 's/.*Executed ([0-9]+) test.*/\1/p' | tail -1)"
+if [[ -z "$executed_count" || "$executed_count" -le 0 ]]; then
+  echo "FAILED: zero tests executed (false-green)" >&2
+  exit 1
+fi
+echo "VERIFIED test-fast ($executed_line, max ${MAX_TEST_SECONDS}s per case)"

@@ -12,7 +12,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-: "${SIM_ID:=EFC65E55-4F28-4C21-B489-D9733D2BE6B5}"
+: "${SIM_ID:=$("$ROOT/scripts/resolve-simulator.sh")}"
 
 echo "== 1. Static checks =="
 

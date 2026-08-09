@@ -101,8 +101,9 @@ static let baseURL = "https://your-server.com"
 Cmd+R
 
 # Or command line
+SIM_ID="$(bash scripts/resolve-simulator.sh)"
 xcodebuild build -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5'
+  -destination "platform=iOS Simulator,id=$SIM_ID"
 ```
 
 ### App version / Archive builds
@@ -218,17 +219,18 @@ rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim
 ## Testing
 
 ```bash
-# Build (simulator) — pin by UDID (iPhone 17 + Watch / iOS 26.3). Do not use OS=18.x.
+# Build (simulator) — resolve UDID dynamically; do not hardcode a machine-specific id.
+SIM_ID="$(bash scripts/resolve-simulator.sh)"
 xcodebuild -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' build
+  -destination "platform=iOS Simulator,id=$SIM_ID" build
 
 # Unit tests (if test target is in scheme)
 xcodebuild test -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5'
+  -destination "platform=iOS Simulator,id=$SIM_ID"
 
 # UI tests
 xcodebuild test -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' \
+  -destination "platform=iOS Simulator,id=$SIM_ID" \
   -only-testing:RecipeScalerNativeUITests
 ```
 

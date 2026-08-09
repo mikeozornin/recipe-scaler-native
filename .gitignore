@@ -70,3 +70,7 @@ tmp
 store/screenshots/iphone-6.9/**/*.png
 .test-fast-results.xcresult
 .test-fast.log
+
+# Python
+__pycache__/
+*.py[cod]

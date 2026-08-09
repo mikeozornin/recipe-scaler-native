@@ -579,6 +579,8 @@
 		UITFF472A397240D658C9 /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = UIT2DCFE4D99B71C8461E /* TestData.swift */; };
 		WATCHFAD02B293A4B70100001 /* Services/WatchFeatureAdoptionReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = WATCHFAD01A293A4B70100001 /* Services/WatchFeatureAdoptionReporter.swift */; };
 		YJSOFF01A293A4B701000001 /* YjsOfflineSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */; };
+		ATGATE01A293A4B701000001 /* AsyncTestGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ATGATE01A293A4B701000002 /* AsyncTestGate.swift */; };
+		NOEXTN01A293A4B701000001 /* NoExternalNetworkURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOEXTN01A293A4B701000002 /* NoExternalNetworkURLProtocol.swift */; };
 		YRSDOC01A293A4B701000001 /* YrsDocument+TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */; };
 /* End PBXBuildFile section */
 
@@ -1276,6 +1278,8 @@
 		VRSNXCFG00010002BB000002 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		WATCHFAD01A293A4B70100001 /* Services/WatchFeatureAdoptionReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchFeatureAdoptionReporter.swift; sourceTree = "<group>"; };
 		YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsOfflineSyncTests.swift; sourceTree = "<group>"; };
+		ATGATE01A293A4B701000002 /* AsyncTestGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncTestGate.swift; sourceTree = "<group>"; };
+		NOEXTN01A293A4B701000002 /* NoExternalNetworkURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoExternalNetworkURLProtocol.swift; sourceTree = "<group>"; };
 		YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "YrsDocument+TestSupport.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -1800,6 +1804,8 @@
 				A029031000306 /* NativeImportImageSelectionTests.swift */,
 				YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */,
 				YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */,
+				ATGATE01A293A4B701000002 /* AsyncTestGate.swift */,
+				NOEXTN01A293A4B701000002 /* NoExternalNetworkURLProtocol.swift */,
 				A027027000117 /* Fixtures */,
 			);
 			path = RecipeScalerNativeTests;
@@ -3197,6 +3203,8 @@
 				A029031000316 /* NativeImportImageSelectionTests.swift in Sources */,
 				YRSDOC01A293A4B701000001 /* YrsDocument+TestSupport.swift in Sources */,
 				YJSOFF01A293A4B701000001 /* YjsOfflineSyncTests.swift in Sources */,
+				ATGATE01A293A4B701000001 /* AsyncTestGate.swift in Sources */,
+				NOEXTN01A293A4B701000001 /* NoExternalNetworkURLProtocol.swift in Sources */,
 				ILL043C11 /* IngredientIllustrationCatalogTests.swift in Sources */,
 				ILL043C15 /* IngredientIllustrationNameMatcherTests.swift in Sources */,
 				ILL043C16 /* IngredientIllustrationBindingPersistenceTests.swift in Sources */,

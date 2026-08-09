@@ -19,7 +19,7 @@ cd "$ROOT"
 PROJECT="RecipeScalerNative.xcodeproj"
 IOS_SCHEME="RecipeScalerNative"
 WATCH_SCHEME="RecipeScalerNativeWatch"
-IOS_DEST="${IOS_DEST:-platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5}"
+IOS_DEST="${IOS_DEST:-platform=iOS Simulator,id=$("$ROOT/scripts/resolve-simulator.sh")}"
 WATCH_DEST="${WATCH_DEST:-platform=watchOS Simulator,name=Apple Watch Series 11 (46mm)}"
 DERIVED_DATA="${DERIVED_DATA:-/tmp/verify-watch-timers-derived-data}"
 

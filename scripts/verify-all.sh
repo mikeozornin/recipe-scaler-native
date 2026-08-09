@@ -5,6 +5,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# Self-tests first: fail closed before spending time on simulator work.
+bash "$ROOT/scripts/tests/test-sim-verify-lib.sh"
+bash "$ROOT/scripts/tests/test-verify-all-lock.sh"
+
 # One shared Debug build for the whole pipeline.
 VERIFY_SKIP_BUILD=0 "$ROOT/scripts/build-for-verify.sh"
 export VERIFY_SKIP_BUILD=1
@@ -33,18 +37,35 @@ scripts=(
   verify-recipe-image-upload.sh
 )
 
-SIM_LOCK="$ROOT/.verify-sim.lock"
-mkdir -p "$(dirname "$SIM_LOCK")"
-touch "$SIM_LOCK"
+# Portable atomic-directory lock (no flock dependency). mkdir is atomic.
+SIM_LOCK_DIR="$ROOT/.verify-sim.lock.d"
+cleanup_lock() {
+  rm -rf "$SIM_LOCK_DIR"
+}
+trap cleanup_lock EXIT
+
+acquire_lock() {
+  local waited=0
+  while ! mkdir "$SIM_LOCK_DIR" 2>/dev/null; do
+    if (( waited >= 600 )); then
+      echo "FAILED: could not acquire simulator lock within 600s" >&2
+      return 1
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+  printf '%s\n' "$$" > "$SIM_LOCK_DIR/pid"
+}
 
 failed=()
 for s in "${scripts[@]}"; do
   echo ""
   echo "======== $s ========"
-  # Simulator scripts share one device — serialize launches, but reuse the cached build.
-  if ! flock -w 600 "$SIM_LOCK" "./scripts/$s"; then
+  acquire_lock
+  if ! "./scripts/$s"; then
     failed+=("$s")
   fi
+  cleanup_lock
 done
 
 echo ""

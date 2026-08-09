@@ -166,21 +166,33 @@ if ($cm) {
 }
 
 if (-not $PlanPath) {
-    # Discover plan.md exactly one level deep (specs/<feature>/plan.md),
-    # matching the bash glob specs/*/plan.md. Wrap in try/catch so access errors under
-    # $ErrorActionPreference = 'Stop' don't abort the script.
-    try {
-        $specsDir = Join-Path $ProjectRoot 'specs'
-        $candidate = Get-ChildItem -Path $specsDir -Directory -ErrorAction SilentlyContinue |
-            ForEach-Object { Get-Item -LiteralPath (Join-Path $_.FullName 'plan.md') -ErrorAction SilentlyContinue } |
-            Where-Object { $_ } |
-            Sort-Object LastWriteTime -Descending |
-            Select-Object -First 1
-        if ($candidate) {
-            $PlanPath = [System.IO.Path]::GetRelativePath($ProjectRoot, $candidate.FullName).Replace('\','/')
+    # Active plan must be explicit: -PlanPath, SPECIFY_PLAN / SPECIFY_FEATURE,
+    # or .specify/feature.json. Never infer from mtime.
+    if ($env:SPECIFY_PLAN) {
+        $PlanPath = $env:SPECIFY_PLAN
+    } elseif ($env:SPECIFY_FEATURE) {
+        $PlanPath = "specs/$($env:SPECIFY_FEATURE)/plan.md"
+    } else {
+        $featureJson = Join-Path $ProjectRoot '.specify/feature.json'
+        if (Test-Path -LiteralPath $featureJson) {
+            try {
+                $featureData = Get-Content -LiteralPath $featureJson -Raw | ConvertFrom-Json
+                $featureId = $featureData.feature
+                if (-not $featureId) { $featureId = $featureData.id }
+                if ($featureId) {
+                    $PlanPath = "specs/$featureId/plan.md"
+                }
+            } catch {
+                # Non-fatal
+            }
         }
-    } catch {
-        # Non-fatal: continue without a plan path.
+    }
+    if ($PlanPath) {
+        $absPlan = Join-Path $ProjectRoot $PlanPath
+        if (-not (Test-Path -LiteralPath $absPlan)) {
+            Write-Error "agent-context: plan not found: $PlanPath"
+            exit 1
+        }
     }
 }
 
@@ -195,6 +207,8 @@ $lines = @($MarkerStart,
            'shell commands, and other important information, read the current plan')
 if ($PlanPath) {
     $lines += "at $PlanPath"
+} else {
+    $lines += 'from the explicitly selected feature context. Do not infer a current plan from file modification time.'
 }
 $lines += $MarkerEnd
 $Section = ($lines -join "`n") + "`n"

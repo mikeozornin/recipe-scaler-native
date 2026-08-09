@@ -4,6 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+: "${SIM_ID:=$("$ROOT/scripts/resolve-simulator.sh")}"
 
 PASS=0
 FAIL=0
@@ -20,7 +21,7 @@ check() {
 
 echo "== Build =="
 xcodebuild -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' \
+  -destination "platform=iOS Simulator,id=$SIM_ID" \
   build 2>&1 | tail -3
 
 echo ""

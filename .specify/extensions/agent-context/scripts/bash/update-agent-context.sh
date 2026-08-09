@@ -120,26 +120,28 @@ unset _cf_parts _seg
 [[ -z "$MARKER_START" ]] && MARKER_START="$DEFAULT_START"
 [[ -z "$MARKER_END"   ]] && MARKER_END="$DEFAULT_END"
 
-PLAN_PATH="${1:-}"
-if [[ -z "$PLAN_PATH" ]]; then
-  # Pick the most recently modified plan.md one level deep (specs/<feature>/plan.md).
-  # Use find + sort by modification time to avoid ls/head fragility with
-  # spaces in paths or SIGPIPE from pipefail.
-  _plan_abs="$("$_python" - "$PROJECT_ROOT" <<'PY'
-import sys, os
+# Active plan must be explicit: argv[1], SPECIFY_FEATURE / SPECIFY_PLAN, or
+# .specify/feature.json. Never infer "current plan" from mtime.
+PLAN_PATH="${1:-${SPECIFY_PLAN:-}}"
+FEATURE_ID="${SPECIFY_FEATURE:-}"
+if [[ -z "$PLAN_PATH" && -z "$FEATURE_ID" && -f "$PROJECT_ROOT/.specify/feature.json" ]]; then
+  FEATURE_ID="$("$_python" - "$PROJECT_ROOT/.specify/feature.json" <<'PY'
+import json, sys
 from pathlib import Path
-specs = Path(sys.argv[1]) / "specs"
-plans = sorted(
-    specs.glob("*/plan.md"),
-    key=lambda p: p.stat().st_mtime,
-    reverse=True,
-)
-print(plans[0] if plans else "")
+try:
+    data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+except Exception:
+    data = {}
+print(data.get("feature") or data.get("id") or "")
 PY
 )"
-  if [[ -n "$_plan_abs" ]]; then
-    PLAN_PATH="${_plan_abs#"$PROJECT_ROOT/"}"
-  fi
+fi
+if [[ -z "$PLAN_PATH" && -n "$FEATURE_ID" ]]; then
+  PLAN_PATH="specs/$FEATURE_ID/plan.md"
+fi
+if [[ -n "$PLAN_PATH" && ! -f "$PROJECT_ROOT/$PLAN_PATH" ]]; then
+  echo "agent-context: plan not found: $PLAN_PATH" >&2
+  exit 1
 fi
 
 CTX_PATH="$PROJECT_ROOT/$CONTEXT_FILE"
@@ -154,6 +156,8 @@ trap 'rm -f "$TMP_SECTION"' EXIT
   echo "shell commands, and other important information, read the current plan"
   if [[ -n "$PLAN_PATH" ]]; then
     echo "at $PLAN_PATH"
+  else
+    echo "from the explicitly selected feature context. Do not infer a current plan from file modification time."
   fi
   echo "$MARKER_END"
 } > "$TMP_SECTION"

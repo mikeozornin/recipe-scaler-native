@@ -84,8 +84,15 @@ DEBUG-ветке или в edge-case (Double за пределами Int64, nil-
 
 - **DEBUG auto-login** — после `bootstrap(userId: debugId)` состояние консистентно:
   `AuthService.shared.userId != nil`, sync видит тот же UUID, что и UI.
-- **Clamping для Double→Int** — никогда не использовать `Int(doubleValue)` напрямую;
-  только `Int(clamping: Int64(doubleValue))`. Тест на Double за пределами Int64.
+- **Clamping для Double→Int** — никогда не использовать `Int(doubleValue)` напрямую и
+  не `Int(clamping: Int64(doubleValue))` (внутренний `Int64(doubleValue)` сам trap-ится
+  на NaN/Infinity/overflow). Только `Int(clampingFinite:)`, `Int64(clampingFinite:)`
+  или `Int(exactlySafe:)` из `RecipeScalerNative/Utils/SafeIntCasts.swift`. Тесты на NaN,
+  Infinity и Double за пределами Int64 обязательны.
+- **Async lifecycle / teardown / contracts** — project-wide правила и тестовые
+  примитивы: [docs/agents/ASYNC-LIFECYCLE.md](./agents/ASYNC-LIFECYCLE.md),
+  `RecipeScalerNativeTests/AsyncTestGate.swift`,
+  `RecipeScalerNativeTests/NoExternalNetworkURLProtocol.swift`.
 - **`!` в view-коде** — запрещено вне `#Preview` / тестов. Линтер на `!` после
   optional-выражения — в планах (MIK-188 контейнер).
 - **Empty / nil / 0 / very-long** — для каждой view-фичи проверять матрицу

@@ -42,12 +42,12 @@ enum AsyncTestGate {
     static func runOverlapping<A, B>(
         operationA: @escaping (Gate) async throws -> A,
         operationB: @escaping () async throws -> B
-    ) async rethrows -> (A, B) {
+    ) async throws -> (A, B) {
         let gate = Gate()
         async let aValue = operationA(gate)
         await Task.yield()
         let bValue = try await operationB()
         let a = try await aValue
-        return (a, b)
+        return (a, bValue)
     }
 }

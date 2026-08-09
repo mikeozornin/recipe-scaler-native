@@ -4,7 +4,7 @@ Status: normative
 Applies when: план или код добавляет/меняет `Task`, callback, continuation,
 stream subscription, queued operation, socket handler, observer, persisted state,
 cross-process IPC slot, server contract, custom decoder/encoder или resource pipeline.
-Canonical source: этот файл + `specs/_template/overrides/plan-template.md`.
+Canonical source: этот файл + `.specify/templates/overrides/plan-template.md`.
 Owner: arch (recipe-scaler-native).
 Last verified: 2026-08-09.
 

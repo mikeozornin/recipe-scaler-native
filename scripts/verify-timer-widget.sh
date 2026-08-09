@@ -16,7 +16,7 @@ cd "$ROOT"
 PROJECT="RecipeScalerNative.xcodeproj"
 SCHEME="RecipeScalerNative"
 # Pin by UDID — only iOS 26.3 runtime is installed (no 18.x).
-: "${SIM_ID:=EFC65E55-4F28-4C21-B489-D9733D2BE6B5}"
+: "${SIM_ID:=$("$ROOT/scripts/resolve-simulator.sh")}"
 DESTINATION="platform=iOS Simulator,id=$SIM_ID"
 
 if [[ ! -d "$PROJECT" ]]; then

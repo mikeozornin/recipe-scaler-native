@@ -1,5 +1,10 @@
 # Architecture — Recipe Scaler Native iOS
 
+Status: normative (architecture overview)
+Canonical source for sync protocol events: `docs/DECISIONS.md` (2026-08-07) + `specs/001-yrs-native-read/contracts/sync-protocol.md`.
+Primary wire path: `sync_step1` → `sync_step2`, outbound `sync_update`. Legacy events below are fallback/compat only.
+Last verified: 2026-08-09.
+
 ## Target Architecture
 
 **CRDT-first, offline-capable iOS app** with real-time sync via existing backend.

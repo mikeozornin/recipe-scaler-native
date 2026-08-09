@@ -26,7 +26,7 @@ Native read from Y.Doc via yrs + Socket.IO. No editing mutations yet.
 - [x] `YrsXCFramework.xcframework` build script (`scripts/build-yrs-xcframework.sh`)
 - [x] Swift wrapper: `YrsDocument`, `YrsMap`, `YrsArray`, `YrsText`, `YrsValue`, `YrsObserver`
 - [x] `YjsSyncService` + `SyncEventHandler` + `DocumentManager`
-- [x] Socket.IO: `auth`, `load_document`, `document_loaded`, `collection_updated`, `recipe_updated`, `sync_error`
+- [x] Socket.IO primary path: `sync_step1` → `sync_step2`, outbound `sync_update` (binary); legacy `load_document` / `sync_request` only as fallback (see `docs/DECISIONS.md` 2026-08-07)
 - [x] Collection list from `Y.Array('recipes')`
 - [x] Recipe detail from `Y.Map('recipe')` (v1/v2/v3 read paths)
 - [x] GRDB SQLite snapshots (`ydoc_snapshots.sqlite`)
@@ -47,7 +47,7 @@ Edit v3 recipe fields (except description) through yrs mutations, debounced sync
 - [x] `RecipeEditPolicy` — v3-only writes; v1/v2 read-only + `RecipeLegacyBanner`
 - [x] yrs write API: `YrsInput`, `YrsMap`/`YrsArray` mutations, `YrsDocument` local updates
 - [x] `DocumentManager` — name, servings, color, ingredient CRUD, nutrition map
-- [x] `UpdateDebouncer` (~1 s) + `sync_request` / `sync_confirmed`
+- [x] `UpdateDebouncer` (~1 s) + primary `sync_update` / ack path (legacy `sync_request` / `sync_confirmed` fallback only)
 - [x] SQLite `offline_sync_queue` + `OfflineWriteQueue`; drain on reconnect; purge on user change
 - [x] UI: `YDocRecipeDetailView` edit mode, `RecipeEditToolbar`, `IngredientEditSheet`
 - [x] `sync_error` → localized alerts; tombstone removes recipe and pops navigation

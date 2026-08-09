@@ -14,6 +14,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+: "${SIM_ID:=$("$ROOT/scripts/resolve-simulator.sh")}"
 WEB_ROOT="$ROOT/../recipe-scaler-web/recipe-scaler"
 
 # Ensure yjs is installed
@@ -29,7 +30,7 @@ echo "== Step 1: Create yrs-encoded state via XCTest =="
 cd "$ROOT"
 xcodebuild build-for-testing \
   -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,id=EFC65E55-4F28-4C21-B489-D9733D2BE6B5' \
+  -destination "platform=iOS Simulator,id=$SIM_ID" \
   -configuration Debug \
   2>&1 | tail -3
 

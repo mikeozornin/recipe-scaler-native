@@ -40,7 +40,7 @@ flowchart TB
 - **yrs** (Rust) — CRDT engine, binary-compatible with Yjs 13.6.30 on server
 - **SwiftUI** — all UI except rich text description
 - **WKWebView + Tiptap** — description editing only (custom nodes: TimerNode, IngredientNode)
-- **Socket.IO** — same events as web client (`sync_request`, `load_document`, `recipe_updated`, etc.)
+- **Socket.IO** — primary: `sync_step1` → `sync_step2`, outbound `sync_update` (binary). Legacy `sync_request` / `load_document` are fallback only; see [docs/DECISIONS.md](docs/DECISIONS.md) (2026-08-07).
 
 Detailed architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 

@@ -3,9 +3,11 @@
 # Builds the app and runs the ThirdParty* XCTest suite.
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
 cd "$(dirname "$0")/.."
 
-DEST_ID="${XCODE_DEST_ID:-EFC65E55-4F28-4C21-B489-D9733D2BE6B5}"
+DEST_ID="${XCODE_DEST_ID:-$("$ROOT/scripts/resolve-simulator.sh")}"
 
 echo "==> Building RecipeScalerNative (Debug)"
 xcodebuild \

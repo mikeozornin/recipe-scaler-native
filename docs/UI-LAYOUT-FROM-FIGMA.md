@@ -24,9 +24,18 @@
 |------|-----------|------------|
 | [layout.md](../specs/_template/layout.md) | Агент (черновик) → **ты ревьюишь** | Дерево вёрстки, токены, матрица состояний, SwiftUI-заметки |
 | `layout-audit.json` | Агент вместе с layout.md | Машиночитаемые проверки для `scripts/audit-ui-layout.sh` |
+| `layout-acceptance.json` | Человек после ревью `layout.md` | Human acceptance (hash + reviewer + verifiedAt). Шаблон: `specs/_template/layout-acceptance.json` |
 | `plan.md` | Ссылка на оба файла | Порядок: layout **до** tasks на view |
 
-Шаблоны: [specs/_template/layout.md](../specs/_template/layout.md), [specs/_template/layout-audit.json](../specs/_template/layout-audit.json).
+Шаблоны: [specs/_template/layout.md](../specs/_template/layout.md), [specs/_template/layout-audit.json](../specs/_template/layout-audit.json), [specs/_template/layout-acceptance.json](../specs/_template/layout-acceptance.json).
+
+Вердикты `audit-ui-layout` (см. [agents/VERIFICATION.md](./agents/VERIFICATION.md)):
+
+- `STATIC PASS` — machine checks зелёные; human acceptance ещё pending
+- `VERIFIED` — static + matching `layout-acceptance.json` (`reviewerType=human`)
+- `FAILED` — static fail, или `LAYOUT_AUDIT_STRICT=1` / `--strict` при pending acceptance
+
+**Нельзя** трактовать `STATIC PASS` как «макет принят человеком».
 
 ---
 

@@ -3,10 +3,10 @@
 # Source: source "$(dirname "$0")/sim-verify-lib.sh"
 
 ROOT="${ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-: "${SIM_ID:=EFC65E55-4F28-4C21-B489-D9733D2BE6B5}"
+: "${SIM_ID:=$("$ROOT/scripts/resolve-simulator.sh")}"
 
 BUNDLE_ID="ru.recipescaler.RecipeScaler"
-VERIFY_BUILD_STAMP="${VERIFY_BUILD_STAMP:-$ROOT/.verify-build-stamp}"
+VERIFY_BUILD_MANIFEST="${VERIFY_BUILD_MANIFEST:-$ROOT/.verify-build-manifest.json}"
 
 # Stale EagerLinking TBD stubs for watchsimulator omit x86_64 (or arm64) and break
 # RecipeScalerNativeWatch link when building the iPhone scheme. Safe to delete — Xcode
@@ -26,30 +26,15 @@ sim_build() {
   sim_ensure_built "$@"
 }
 
-# Idempotent Debug build. Skips when:
-# - VERIFY_SKIP_BUILD=1 and the app bundle already exists, or
-# - the stamp file is newer than any Swift source under RecipeScalerNative/.
+# Build Debug and record the inputs that produced the app bundle.
+#
+# Xcode already performs incremental compilation. The old external stamp was
+# unsafe because it only compared Swift source mtimes and could reuse an app
+# after project, resource, package, or entitlement changes. Reuse is now
+# opt-in and requires a matching build manifest.
 sim_ensure_built() {
-  if [[ "${VERIFY_SKIP_BUILD:-0}" == "1" ]]; then
-    if sim_resolve_app 2>/dev/null; then
-      echo "== Build Debug (skipped — VERIFY_SKIP_BUILD=1) =="
-      return 0
-    fi
-  fi
-
-  local newest_source
-  newest_source="$(find "$ROOT/RecipeScalerNative" "$ROOT/RecipeScalerCore" "$ROOT/RecipeScalerNativeWatch" \
-    -name '*.swift' -print0 2>/dev/null \
-    | xargs -0 stat -f '%m %N' 2>/dev/null \
-    | sort -rn | head -1 | cut -d' ' -f1 || echo 0)"
-  local stamp_mtime=0
-  if [[ -f "$VERIFY_BUILD_STAMP" ]]; then
-    stamp_mtime="$(stat -f '%m' "$VERIFY_BUILD_STAMP" 2>/dev/null || echo 0)"
-  fi
-
-  if sim_resolve_app 2>/dev/null \
-    && [[ "$stamp_mtime" -ge "$newest_source" ]]; then
-    echo "== Build Debug (skipped — app up to date) =="
+  if [[ "${VERIFY_SKIP_BUILD:-0}" == "1" ]] && sim_build_manifest_matches; then
+    echo "== Build Debug (skipped — matching build manifest) =="
     return 0
   fi
 
@@ -59,7 +44,129 @@ sim_ensure_built() {
     -destination "platform=iOS Simulator,id=$SIM_ID" \
     -configuration Debug \
     build "$@"
-  touch "$VERIFY_BUILD_STAMP"
+  sim_write_build_manifest
+}
+
+sim_build_inputs() {
+  local -a paths=(
+    "$ROOT/RecipeScalerNative"
+    "$ROOT/RecipeScalerCore"
+    "$ROOT/RecipeScalerNativeWatch"
+    "$ROOT/HomeWidgetExtension"
+    "$ROOT/ShareExtensionUI"
+    "$ROOT/ActionExtension"
+    "$ROOT/RecipeScalerNative.xcodeproj/project.pbxproj"
+    "$ROOT/RecipeScalerNative.xcodeproj/xcshareddata"
+    "$ROOT/Package.swift"
+    "$ROOT/Package.resolved"
+  )
+  printf '%s\0' "${paths[@]}" | while IFS= read -r -d '' path; do
+    [[ -e "$path" ]] && printf '%s\0' "$path"
+  done
+}
+
+sim_build_fingerprint() {
+  python3 - "$ROOT" "$SIM_ID" <<'PY'
+import hashlib
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+simulator_id = sys.argv[2]
+paths = [
+    root / "RecipeScalerNative",
+    root / "RecipeScalerCore",
+    root / "RecipeScalerNativeWatch",
+    root / "HomeWidgetExtension",
+    root / "ShareExtensionUI",
+    root / "ActionExtension",
+    root / "RecipeScalerNative.xcodeproj" / "project.pbxproj",
+    root / "RecipeScalerNative.xcodeproj" / "xcshareddata",
+    root / "Package.swift",
+    root / "Package.resolved",
+]
+
+files: list[Path] = []
+for path in paths:
+    if path.is_file():
+        files.append(path)
+    elif path.is_dir():
+        files.extend(
+            candidate
+            for candidate in path.rglob("*")
+            if candidate.is_file()
+            and "DerivedData" not in candidate.parts
+            and ".git" not in candidate.parts
+        )
+
+digest = hashlib.sha256()
+for path in sorted(set(files)):
+    digest.update(str(path.relative_to(root)).encode())
+    digest.update(b"\0")
+    try:
+        digest.update(hashlib.sha256(path.read_bytes()).digest())
+    except OSError:
+        digest.update(b"<unreadable>")
+
+for command in (["xcodebuild", "-version"], ["xcrun", "simctl", "list", "runtimes"]):
+    try:
+        output = subprocess.check_output(command, stderr=subprocess.DEVNULL)
+    except (OSError, subprocess.CalledProcessError):
+        output = b""
+    digest.update(b"\0")
+    digest.update(output)
+
+digest.update(f"scheme=RecipeScalerNative\nconfiguration=Debug\ndestination={simulator_id}\n".encode())
+print(digest.hexdigest())
+PY
+}
+
+sim_write_build_manifest() {
+  sim_resolve_app || return 1
+  local fingerprint
+  fingerprint="$(sim_build_fingerprint)"
+  local app_path="$APP"
+  python3 - "$VERIFY_BUILD_MANIFEST" "$fingerprint" "$SIM_ID" "$app_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+manifest_path, fingerprint, simulator_id, app_path = sys.argv[1:]
+payload = {
+    "fingerprint": fingerprint,
+    "simulatorId": simulator_id,
+    "scheme": "RecipeScalerNative",
+    "configuration": "Debug",
+    "appPath": app_path,
+}
+Path(manifest_path).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
+sim_build_manifest_matches() {
+  [[ -f "$VERIFY_BUILD_MANIFEST" ]] || return 1
+  sim_resolve_app >/dev/null 2>&1 || return 1
+  local expected
+  expected="$(sim_build_fingerprint)"
+  python3 - "$VERIFY_BUILD_MANIFEST" "$expected" "$SIM_ID" "$APP" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path, expected, simulator_id, app_path = sys.argv[1:]
+try:
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError):
+    raise SystemExit(1)
+if data.get("fingerprint") != expected:
+    raise SystemExit(1)
+if data.get("simulatorId") != simulator_id:
+    raise SystemExit(1)
+if data.get("appPath") != app_path or not Path(app_path).is_dir():
+    raise SystemExit(1)
+PY
 }
 
 sim_resolve_app() {
@@ -78,8 +185,8 @@ sim_resolve_app() {
   if [[ -n "$products" && -n "$name" ]]; then
     APP="$products/$name"
   fi
-  if [[ ! -d "${APP:-}" ]]; then
-    APP="${DERIVED:-$HOME/Library/Developer/Xcode/DerivedData/RecipeScalerNative-diymkplxrwchdvgvqkoehouiygur}/Build/Products/Debug-iphonesimulator/RecipeScalerNative.app"
+  if [[ ! -d "${APP:-}" && -n "${DERIVED:-}" ]]; then
+    APP="$DERIVED/Build/Products/Debug-iphonesimulator/RecipeScalerNative.app"
   fi
   if [[ ! -d "$APP" ]]; then
     echo "App bundle not found (set APP or DERIVED)" >&2
@@ -160,7 +267,7 @@ sim_screenshot() {
   echo "$shot"
 }
 
-# Wait until the app emits a readiness marker in the debug log, or fall back to sleep.
+# Wait until the current launch emits a readiness marker in the debug log.
 # Markers (any match): app_shell_start, container_constructed, contentview_init
 sim_wait_ready() {
   local timeout_seconds="${1:-12}"
@@ -177,5 +284,6 @@ sim_wait_ready() {
   done
 
   sim_pull_debug_log || true
-  return 0
+  echo "Timed out waiting for app readiness marker after ${timeout_seconds}s" >&2
+  return 1
 }

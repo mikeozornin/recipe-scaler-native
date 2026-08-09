@@ -24,22 +24,33 @@
 
 После изменений в Swift/Xcode **агент обязан сам прогнать сборку** и убедиться, что проект компилируется, прежде чем считать задачу выполненной. Не проси пользователя проверить compile, если сборку можно запустить локально.
 
+Симулятор выбирай через `scripts/resolve-simulator.sh` (или явный `SIM_ID=`).
+Не хардкодь UDID машины в скриптах/доках как единственный путь.
+
 ```bash
+SIM_ID="$(bash scripts/resolve-simulator.sh)"
 xcodebuild -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,id=<UDID>' \
+  -destination "platform=iOS Simulator,id=$SIM_ID" \
   build
 ```
 
-`<UDID>` — из `xcrun simctl list devices available` (канонический: `EFC65E55-4F28-4C21-B489-D9733D2BE6B5` = iPhone 17 + Watch / iOS 26.3). Имя без OS часто не резолвится — предпочитай `id=`. **Запрещено** `OS=18.x` / `name=iPhone 16…` без `id=`: Xcode скачает рантаймы 18.4/18.6 заново. При ошибках — исправить и пересобрать. После build — проверки из раздела «Agent loop» (тесты / существующий `scripts/verify-*.sh`, если есть).
+Имя без OS часто не резолвится — предпочитай `id=`. **Запрещено** `OS=18.x` /
+`name=iPhone 16…` без `id=`: Xcode скачает рантаймы 18.4/18.6 заново. При ошибках —
+исправить и пересобрать. После build — проверки из раздела «Agent loop» (тесты /
+существующий `scripts/verify-*.sh`, если есть). Контракт verify-скриптов —
+[agents/VERIFICATION.md](./agents/VERIFICATION.md).
+
+Быстрые policy-gates без симулятора: `bash scripts/policy-check.sh`.
 
 ## XCTest
 
 ```bash
+SIM_ID="$(bash scripts/resolve-simulator.sh)"
 xcodebuild build-for-testing -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,id=<UDID>'
+  -destination "platform=iOS Simulator,id=$SIM_ID"
 
 xcodebuild test-without-building -scheme RecipeScalerNative \
-  -destination 'platform=iOS Simulator,id=<UDID>' \
+  -destination "platform=iOS Simulator,id=$SIM_ID" \
   -only-testing:RecipeScalerNativeTests/MyTests
 ```
 

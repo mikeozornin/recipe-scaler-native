@@ -48,7 +48,7 @@ final class NoExternalNetworkURLProtocol: URLProtocol {
         if let host, Self.allowedLoopbackHosts.contains(host) {
             // Loopback requests are left to a real or stubbed transport; we do
             // not synthesise a response here. The test owns the next hop.
-            client?.URLProtocol(self, didFailWithError: URLError(.cannotConnectToHost))
+            client?.urlProtocol(self, didFailWithError: URLError(.cannotConnectToHost))
         } else {
             let error: NSError = Self.failureHandler.flatMap { $0(url ?? URL(string: "about:blank")!) }
                 ?? NSError(
@@ -58,7 +58,7 @@ final class NoExternalNetworkURLProtocol: URLProtocol {
                         NSLocalizedDescriptionKey: "Unexpected external network request in test: \(url?.absoluteString ?? "<nil>")",
                     ]
                 )
-            client?.URLProtocol(self, didFailWithError: error)
+            client?.urlProtocol(self, didFailWithError: error)
         }
     }
 
