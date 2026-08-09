@@ -17,12 +17,12 @@ struct YDocSnapshot: Codable, FetchableRecord, MutablePersistableRecord {
 
 /// Per-recipe sync flag stored in SQLite (MIK-128).
 ///
-/// Replaces the old `unsyncedRecipeIds:{userId}` plist key. `recipeId` is the bare
-/// recipe id (without the `{userId}:recipe:` prefix) — same shape used by
-/// `YjsSyncService.unsyncedRecipeIds` before the migration.
+/// Replaces the old `unsyncedRecipeIds:{userId}` plist key. Both account and
+/// recipe identity are persisted so flags cannot cross an account switch.
 struct RecipeSyncState: Codable, FetchableRecord, MutablePersistableRecord {
     static let databaseTableName = "recipe_sync_state"
 
+    var userId: String
     var recipeId: String
     var unsynced: Bool
 }
@@ -107,8 +107,8 @@ actor YDocStore {
 
     /// Upsert the unsynced flag for a recipe. Called from
     /// `YjsSyncService.markRecipeUnsynced` / `markRecipeSynced`.
-    func setRecipeUnsynced(recipeId: String, unsynced: Bool) throws {
-        var state = RecipeSyncState(recipeId: recipeId, unsynced: unsynced)
+    func setRecipeUnsynced(userId: String, recipeId: String, unsynced: Bool) throws {
+        var state = RecipeSyncState(userId: userId, recipeId: recipeId, unsynced: unsynced)
         try dbQueue.write { db in
             try state.save(db)
         }
@@ -116,11 +116,12 @@ actor YDocStore {
 
     /// Recipe ids with `unsynced = 1`. Replaces the old plist array
     /// `unsyncedRecipeIds:{userId}`.
-    func loadUnsyncedRecipeIds() throws -> Set<String> {
+    func loadUnsyncedRecipeIds(userId: String) throws -> Set<String> {
         try dbQueue.read { db in
             let ids = try String.fetchAll(
                 db,
-                sql: "SELECT recipeId FROM recipe_sync_state WHERE unsynced = 1"
+                sql: "SELECT recipeId FROM recipe_sync_state WHERE userId = ? AND unsynced = 1",
+                arguments: [userId]
             )
             return Set(ids)
         }
@@ -128,9 +129,12 @@ actor YDocStore {
 
     /// Remove a single recipe's sync-state row. Called when the recipe is deleted
     /// locally so the table doesn't accumulate orphan rows.
-    func deleteRecipeSyncState(recipeId: String) throws {
+    func deleteRecipeSyncState(userId: String, recipeId: String) throws {
         try dbQueue.write { db in
-            _ = try RecipeSyncState.deleteOne(db, key: recipeId)
+            _ = try db.execute(
+                sql: "DELETE FROM recipe_sync_state WHERE userId = ? AND recipeId = ?",
+                arguments: [userId, recipeId]
+            )
         }
     }
 

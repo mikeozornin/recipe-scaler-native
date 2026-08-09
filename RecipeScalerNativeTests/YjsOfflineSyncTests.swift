@@ -322,12 +322,15 @@ final class SyncEventHandlerSyncStep2Tests: XCTestCase {
     func testParsesCollectionSummaryFromSyncStep2() {
         let handler = SyncEventHandler()
         var receivedSummary: CollectionSyncSummary?
-        handler.onSyncStep2WithContext = { _, _, _, _, summary in
+        var receivedRequestId: String?
+        handler.onSyncStep2WithContext = { _, _, _, _, summary, requestId in
             receivedSummary = summary
+            receivedRequestId = requestId
         }
 
         handler.test_handleSyncStep2([[
             "missingUpdate": Data([0, 0]),
+            "requestId": "recovery-request-1",
             "collectionSummary": [
                 "live": 2,
                 "deleted": 1,
@@ -340,6 +343,28 @@ final class SyncEventHandlerSyncStep2Tests: XCTestCase {
         XCTAssertEqual(receivedSummary?.deletedCount, 1)
         XCTAssertEqual(receivedSummary?.totalCount, 3)
         XCTAssertEqual(receivedSummary?.liveRecipeIds, Set(["recipe-a", "recipe-b"]))
+        XCTAssertEqual(receivedRequestId, "recovery-request-1")
+    }
+
+    func testRejectsMalformedPresentCollectionSummaryInsteadOfTreatingItAsOmitted() {
+        let handler = SyncEventHandler()
+        var receivedSummary = false
+        var receivedError: SyncErrorCode?
+        handler.onSyncStep2WithContext = { _, _, _, _, _, _ in
+            receivedSummary = true
+        }
+        handler.onSyncError = { _, code, _, recipeId in
+            guard recipeId == "collection" else { return }
+            receivedError = code
+        }
+
+        handler.test_handleSyncStep2([[
+            "missingUpdate": Data([0, 0]),
+            "collectionSummary": "not-an-object",
+        ] as [String: Any]])
+
+        XCTAssertFalse(receivedSummary)
+        XCTAssertEqual(receivedError, .generic)
     }
 }
 
@@ -551,6 +576,233 @@ final class YjsOfflineOutboxTests: XCTestCase {
 
         let missing = try await offline.fetch(forRecipeId: "recipe-missing")
         XCTAssertTrue(missing.isEmpty)
+    }
+}
+
+/// Session-isolation regression tests for the Harden Yjs Sync plan.
+///
+/// These tests exercise the immutable `(sessionId, userId, client)` context
+/// without a live socket: a DEBUG-only test seam fakes an authenticated
+/// session, and stale vs current behavior is observed via the same handler
+/// entry points Socket.IO would call.
+@MainActor
+final class YjsSessionIsolationTests: XCTestCase {
+    private func makeSync() throws -> YjsSyncService {
+        let store = try YDocStore.inMemory()
+        return YjsSyncService.makeForTesting(store: store)
+    }
+
+    // MARK: - Stale `sync_step2` cannot modify the current account
+
+    func testStaleSyncStep2FromPreviousAccountDoesNotApply() async throws {
+        let sync = try makeSync()
+        let accountA = sync.test_simulateAuthenticatedSession(userId: "account-a")
+        let accountB = sync.test_simulateAuthenticatedSession(userId: "account-b")
+
+        // A stale collection response from account A arrives after rotation.
+        // Handler must reject it because the context is no longer current.
+        let summary = CollectionSyncSummary(
+            liveCount: 1,
+            deletedCount: 0,
+            totalCount: 1,
+            liveRecipeIds: ["recipe-a"]
+        )
+        await sync.test_invokeSyncStep2(
+            context: accountA,
+            recipeId: "collection",
+            missingUpdate: Data([0, 0]),
+            collectionSummary: summary
+        )
+
+        // Account B must remain current; A must not have mutated state.
+        XCTAssertFalse(sync.test_isCurrentSession(accountA))
+        XCTAssertTrue(sync.test_isCurrentSession(accountB))
+        XCTAssertEqual(sync.currentUserId, "account-b")
+        // Stale response must not have been able to mark the gate ready.
+        XCTAssertNotEqual(sync.test_collectionHandshakeState, "ready")
+    }
+
+    // MARK: - Same-account reconnect keeps the session current
+
+    func testSameAccountReconnectProducesDistinctButOwnedSession() async throws {
+        let sync = try makeSync()
+        let first = sync.test_simulateAuthenticatedSession(userId: "user-x")
+        XCTAssertTrue(sync.test_isCurrentSession(first))
+
+        // A reconnect for the same account creates a different session.
+        let second = sync.test_simulateAuthenticatedSession(userId: "user-x")
+        XCTAssertFalse(sync.test_isCurrentSession(first))
+        XCTAssertTrue(sync.test_isCurrentSession(second))
+        XCTAssertEqual(first.userId, second.userId)
+        XCTAssertNotEqual(first.sessionId, second.sessionId)
+    }
+
+    // MARK: - Collection gate blocks writes until handshake is ready
+
+    func testCollectionGateBlocksDrainBeforeHandshakeReady() async throws {
+        let sync = try makeSync()
+        _ = sync.test_simulateAuthenticatedSession(userId: "user-c")
+        let collectionDocKey = sync.test_docKeyFor(recipeId: "collection", userId: "user-c")
+        try await sync.test_offlineQueue.enqueue(
+            docKey: collectionDocKey,
+            recipeId: "collection",
+            yjsUpdate: Data([2, 1, 0, 5])
+        )
+
+        // Gate is still `idle`/`handshaking` after authentication; collection
+        // writes must be skipped, not emitted.
+        XCTAssertFalse(sync.test_canSendCollectionSync())
+        await sync.test_drainOfflineQueue()
+
+        let remaining = try await sync.test_offlineQueue.fetchAll()
+        XCTAssertTrue(remaining.contains { $0.recipeId == "collection" })
+    }
+
+    // MARK: - Healthy handshake marks collection ready
+
+    func testHealthyHandshakeMarksCollectionReady() async throws {
+        let sync = try makeSync()
+        let context = sync.test_simulateAuthenticatedSession(userId: "user-h")
+
+        // Empty local + empty canonical summary → no truncation → gate ready.
+        let summary = CollectionSyncSummary(
+            liveCount: 0,
+            deletedCount: 0,
+            totalCount: 0,
+            liveRecipeIds: []
+        )
+        await sync.test_invokeSyncStep2(
+            context: context,
+            recipeId: "collection",
+            missingUpdate: Data([0, 0]),
+            collectionSummary: summary
+        )
+
+        XCTAssertEqual(sync.test_collectionHandshakeState, "ready")
+        XCTAssertTrue(sync.test_canSendCollectionSync())
+    }
+
+    // MARK: - Truncation triggers recovery
+
+    func testMissingCanonicalLiveIdTriggersRecovery() async throws {
+        let sync = try makeSync()
+        let context = sync.test_simulateAuthenticatedSession(userId: "user-t")
+
+        // Make `collectionIsTruncated` deterministically report truncation by
+        // stubbing the local structure via the DEBUG fixture hook.
+        let collectionDocKey = sync.test_docKeyFor(recipeId: "collection", userId: "user-t")
+        try await sync.test_overwriteCollectionStructureForTests(
+            docKey: collectionDocKey,
+            structure: .init(liveRecipeIds: ["recipe-survivor"], deletedRecipeIds: [])
+        )
+        sync.test_setCollectionHandshakeReady()
+
+        let summary = CollectionSyncSummary(
+            liveCount: 2,
+            deletedCount: 0,
+            totalCount: 2,
+            liveRecipeIds: ["recipe-survivor", "recipe-missing"]
+        )
+        await sync.test_invokeSyncStep2(
+            context: context,
+            recipeId: "collection",
+            missingUpdate: Data([0, 0]),
+            collectionSummary: summary
+        )
+
+        XCTAssertEqual(sync.test_collectionHandshakeState, "recovering")
+        XCTAssertFalse(sync.test_canSendCollectionSync())
+    }
+
+    func testLateCollectionSyncStep2WithWrongRequestIdDoesNotCompleteRecovery() async throws {
+        let sync = try makeSync()
+        let context = sync.test_simulateAuthenticatedSession(userId: "user-correlation")
+        let collectionDocKey = sync.test_docKeyFor(recipeId: "collection", userId: "user-correlation")
+        try await sync.test_overwriteCollectionStructureForTests(
+            docKey: collectionDocKey,
+            structure: .init(liveRecipeIds: [], deletedRecipeIds: [])
+        )
+        sync.test_setCollectionRecoveryAwaitingResponse(requestId: "recovery-current")
+
+        let summary = CollectionSyncSummary(
+            liveCount: 0,
+            deletedCount: 0,
+            totalCount: 0,
+            liveRecipeIds: []
+        )
+        await sync.test_invokeSyncStep2(
+            context: context,
+            recipeId: "collection",
+            missingUpdate: Data([0, 0]),
+            collectionSummary: summary,
+            requestId: "recovery-stale"
+        )
+
+        XCTAssertEqual(sync.test_collectionHandshakeState, "recovering")
+        XCTAssertFalse(sync.test_canSendCollectionSync())
+
+        await sync.test_invokeSyncStep2(
+            context: context,
+            recipeId: "collection",
+            missingUpdate: Data([0, 0]),
+            collectionSummary: summary,
+            requestId: "recovery-current"
+        )
+
+        XCTAssertEqual(sync.test_collectionHandshakeState, "ready")
+    }
+
+    // MARK: - Tombstone does not trigger recovery
+
+    func testTombstoneDoesNotTriggerRecovery() async throws {
+        let sync = try makeSync()
+        let context = sync.test_simulateAuthenticatedSession(userId: "user-ts")
+
+        let collectionDocKey = sync.test_docKeyFor(recipeId: "collection", userId: "user-ts")
+        try await sync.test_overwriteCollectionStructureForTests(
+            docKey: collectionDocKey,
+            structure: .init(
+                liveRecipeIds: ["recipe-live"],
+                deletedRecipeIds: ["recipe-tombstoned"]
+            )
+        )
+        sync.test_setCollectionHandshakeReady()
+
+        let summary = CollectionSyncSummary(
+            liveCount: 1,
+            deletedCount: 1,
+            totalCount: 2,
+            liveRecipeIds: ["recipe-live"]
+        )
+        await sync.test_invokeSyncStep2(
+            context: context,
+            recipeId: "collection",
+            missingUpdate: Data([0, 0]),
+            collectionSummary: summary
+        )
+
+        // Tombstone is physically present, so no recovery; gate flips to ready.
+        XCTAssertEqual(sync.test_collectionHandshakeState, "ready")
+    }
+
+    // MARK: - Recipe queue rows are unaffected by collection gating
+
+    func testRecipeQueueSurvivesCollectionGate() async throws {
+        let sync = try makeSync()
+        _ = sync.test_simulateAuthenticatedSession(userId: "user-r")
+        let recipeDocKey = sync.test_docKeyFor(recipeId: "recipe-r", userId: "user-r")
+        let recipeUpdate = Data([2, 1, 0, 9])
+
+        try await sync.test_offlineQueue.enqueue(
+            docKey: recipeDocKey,
+            recipeId: "recipe-r",
+            yjsUpdate: recipeUpdate
+        )
+        // Collection gate is still closed, but the recipe row must persist.
+        XCTAssertFalse(sync.test_canSendCollectionSync())
+
+        let rows = try await sync.test_offlineQueue.fetchAll()
+        XCTAssertTrue(rows.contains { $0.recipeId == "recipe-r" })
     }
 }
 

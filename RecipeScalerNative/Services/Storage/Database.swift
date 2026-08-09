@@ -120,6 +120,20 @@ final class YrsDatabase {
             }
         }
 
+        // MIK-128 follow-up: the original table omitted userId, so a flag
+        // could leak across account switches. Old rows cannot be attributed
+        // safely; discard them and recreate the table with an account-scoped
+        // composite key. Offline queue/snapshots remain the durable edit path.
+        migrator.registerMigration("v6_scope_recipe_sync_state_by_user") { db in
+            try db.drop(table: "recipe_sync_state")
+            try db.create(table: "recipe_sync_state") { t in
+                t.column("userId", .text).notNull()
+                t.column("recipeId", .text).notNull()
+                t.column("unsynced", .boolean).notNull().defaults(to: false)
+                t.primaryKey(["userId", "recipeId"])
+            }
+        }
+
         try migrator.migrate(dbQueue)
     }
 }

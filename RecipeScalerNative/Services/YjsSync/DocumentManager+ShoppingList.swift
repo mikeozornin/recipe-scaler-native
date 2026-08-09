@@ -158,7 +158,11 @@ extension DocumentManager {
             throw RecipeEditError.documentNotLoaded
         }
         let key = shoppingDocKey(userId: userId)
+        guard let context = updateContext(docKey: key, recipeId: nil) else {
+            throw RecipeEditError.documentNotLoaded
+        }
         let doc = try await getOrCreateDoc(key: key)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
         try await doc.withWriteTransaction { _, txn in
             guard let rootBranch = ytype_get(txn, ShoppingListConstants.rootMapKey) else {
                 throw RecipeEditError.documentNotLoaded
@@ -169,7 +173,8 @@ extension DocumentManager {
             let meta = try shoppingMetaMap(root: root, txn: txn)
             try body(items, meta, txn)
         }
-        onShoppingChanged?()
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
+        onShoppingChanged?(context)
         return key
     }
 
@@ -236,6 +241,7 @@ extension DocumentManager {
         guard let handler = onLocalShoppingUpdate,
               let userId = getCurrentUserId() else { return }
         let key = shoppingDocKey(userId: userId)
+        guard let context = updateContext(docKey: key, recipeId: nil) else { return }
         guard let doc = getDoc(key: key) else { return }
         var update = await doc.consumePendingLocalUpdates()
         if update == nil || update?.isEmpty == true {
@@ -243,6 +249,6 @@ extension DocumentManager {
         }
         guard let update, !update.isEmpty else { return }
         // Do not await: handler hops to @MainActor YjsSyncService while caller may be blocked on this actor.
-        Task { await handler(update) }
+        Task { await handler(context, update) }
     }
 }

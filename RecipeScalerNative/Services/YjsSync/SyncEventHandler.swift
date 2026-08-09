@@ -72,7 +72,7 @@ final class SyncEventHandler {
     /// relative to the state vector the client sent. New primary load path;
     /// mirrors web `yjs-client.ts` `sync_step2` handler.
     ///
-    var onSyncStep2WithContext: ((SyncSocketSessionContext, String, Data, String?, CollectionSyncSummary?) -> Void)?
+    var onSyncStep2WithContext: ((SyncSocketSessionContext, String, Data, String?, CollectionSyncSummary?, String?) -> Void)?
     #if DEBUG
     /// Legacy test seam. Production wiring must use the context-bearing callback.
     var onSyncStep2: ((String, Data, String?) -> Void)?
@@ -219,16 +219,29 @@ final class SyncEventHandler {
             return
         }
         let lastSyncedAt = payload["lastSyncedAt"] as? String
+        let requestId = payload["requestId"] as? String
         let collectionSummary: CollectionSyncSummary?
-        if recipeId == "collection",
-           let rawSummary = payload["collectionSummary"] as? [String: Any] {
-            collectionSummary = Self.parseCollectionSummary(rawSummary)
+        if recipeId == "collection" {
+            if let rawValue = payload["collectionSummary"] {
+                guard let rawSummary = rawValue as? [String: Any],
+                      let parsedSummary = Self.parseCollectionSummary(rawSummary) else {
+                    AppLog.error(.sync, "sync_step2: invalid collectionSummary")
+                    onSyncError?(context, .generic, "Invalid collection sync summary", "collection")
+                    return
+                }
+                collectionSummary = parsedSummary
+            } else {
+                // Older servers omit this additive field. Keep the legacy
+                // path available, but never treat a malformed present field
+                // as if the server had omitted it.
+                collectionSummary = nil
+            }
         } else {
             collectionSummary = nil
         }
         AppLog.info(.sync, "sync_step2: \(recipeId), \(updateData.count) bytes")
         if let onSyncStep2WithContext {
-            onSyncStep2WithContext(context, recipeId, updateData, lastSyncedAt, collectionSummary)
+            onSyncStep2WithContext(context, recipeId, updateData, lastSyncedAt, collectionSummary, requestId)
         } else {
             #if DEBUG
             onSyncStep2?(recipeId, updateData, lastSyncedAt)
@@ -332,7 +345,10 @@ final class SyncEventHandler {
               let ids = payload["liveRecipeIds"] as? [String],
               liveCount >= 0,
               deletedCount >= 0,
-              totalCount == liveCount + deletedCount else {
+              totalCount == liveCount + deletedCount,
+              ids.count == liveCount,
+              Set(ids).count == ids.count,
+              ids.allSatisfy({ !$0.isEmpty }) else {
             return nil
         }
 

@@ -3,7 +3,7 @@ import XCTest
 @testable import RecipeScalerNative
 
 /// MIK-128: per-recipe sync flags (`unsynced`) moved from `UserDefaults.standard` into
-/// the SQLite table `recipe_sync_state`. These tests pin down the v5 migration, the
+/// the SQLite table `recipe_sync_state`. These tests pin down the v6 migration, the
 /// CRUD API on `YDocStore`, and the fact that `deleteAll()` (used on logout) wipes the
 /// new table alongside `ydoc_snapshots`.
 final class RecipeSyncStateStoreTests: XCTestCase {
@@ -12,7 +12,10 @@ final class RecipeSyncStateStoreTests: XCTestCase {
         try YDocStore.inMemory()
     }
 
-    // MARK: - Schema / migration v5
+    private let userA = "user-a"
+    private let userB = "user-b"
+
+    // MARK: - Schema / migration v6
 
     func testMigrationV5CreatesRecipeSyncStateTable() throws {
         let store = try makeStore()
@@ -23,45 +26,45 @@ final class RecipeSyncStateStoreTests: XCTestCase {
     func testMigrationV5HasUnsyncedColumn() throws {
         let store = try makeStore()
         let columns = try store.test_columnsOfRecipeSyncState()
-        XCTAssertEqual(columns, ["recipeId", "unsynced"])
+        XCTAssertEqual(columns, ["userId", "recipeId", "unsynced"])
     }
 
     // MARK: - Round-trip
 
     func testSetRecipeUnsyncedThenLoad() async throws {
         let store = try makeStore()
-        try await store.setRecipeUnsynced(recipeId: "r1", unsynced: true)
-        try await store.setRecipeUnsynced(recipeId: "r2", unsynced: true)
-        try await store.setRecipeUnsynced(recipeId: "r3", unsynced: false)
+        try await store.setRecipeUnsynced(userId: userA, recipeId: "r1", unsynced: true)
+        try await store.setRecipeUnsynced(userId: userA, recipeId: "r2", unsynced: true)
+        try await store.setRecipeUnsynced(userId: userA, recipeId: "r3", unsynced: false)
 
-        let unsynced = try await store.loadUnsyncedRecipeIds()
+        let unsynced = try await store.loadUnsyncedRecipeIds(userId: userA)
         XCTAssertEqual(unsynced, Set(["r1", "r2"]))
     }
 
     func testSetRecipeUnsyncedIsIdempotentUpsert() async throws {
         let store = try makeStore()
-        try await store.setRecipeUnsynced(recipeId: "r1", unsynced: true)
-        try await store.setRecipeUnsynced(recipeId: "r1", unsynced: true)
+        try await store.setRecipeUnsynced(userId: userA, recipeId: "r1", unsynced: true)
+        try await store.setRecipeUnsynced(userId: userA, recipeId: "r1", unsynced: true)
 
-        let unsynced = try await store.loadUnsyncedRecipeIds()
+        let unsynced = try await store.loadUnsyncedRecipeIds(userId: userA)
         XCTAssertEqual(unsynced, Set(["r1"]))
     }
 
     func testSetRecipeUnsyncedThenClear() async throws {
         let store = try makeStore()
-        try await store.setRecipeUnsynced(recipeId: "r1", unsynced: true)
-        try await store.setRecipeUnsynced(recipeId: "r1", unsynced: false)
+        try await store.setRecipeUnsynced(userId: userA, recipeId: "r1", unsynced: true)
+        try await store.setRecipeUnsynced(userId: userA, recipeId: "r1", unsynced: false)
 
-        let unsynced = try await store.loadUnsyncedRecipeIds()
+        let unsynced = try await store.loadUnsyncedRecipeIds(userId: userA)
         XCTAssertTrue(unsynced.isEmpty)
     }
 
     func testDeleteRecipeSyncState() async throws {
         let store = try makeStore()
-        try await store.setRecipeUnsynced(recipeId: "r1", unsynced: true)
-        try await store.deleteRecipeSyncState(recipeId: "r1")
+        try await store.setRecipeUnsynced(userId: userA, recipeId: "r1", unsynced: true)
+        try await store.deleteRecipeSyncState(userId: userA, recipeId: "r1")
 
-        let unsynced = try await store.loadUnsyncedRecipeIds()
+        let unsynced = try await store.loadUnsyncedRecipeIds(userId: userA)
         XCTAssertTrue(unsynced.isEmpty)
     }
 
@@ -69,12 +72,12 @@ final class RecipeSyncStateStoreTests: XCTestCase {
 
     func testDeleteAllWipesRecipeSyncState() async throws {
         let store = try makeStore()
-        try await store.setRecipeUnsynced(recipeId: "r1", unsynced: true)
-        try await store.setRecipeUnsynced(recipeId: "r2", unsynced: true)
+        try await store.setRecipeUnsynced(userId: userA, recipeId: "r1", unsynced: true)
+        try await store.setRecipeUnsynced(userId: userA, recipeId: "r2", unsynced: true)
 
         try await store.deleteAll()
 
-        let unsynced = try await store.loadUnsyncedRecipeIds()
+        let unsynced = try await store.loadUnsyncedRecipeIds(userId: userA)
         XCTAssertTrue(unsynced.isEmpty)
     }
 
@@ -82,20 +85,35 @@ final class RecipeSyncStateStoreTests: XCTestCase {
         let store = try makeStore()
         let docKey = "user:recipe:r1"
         try await store.saveSnapshot(docKey: docKey, state: Data([1, 2, 3]), lastSyncedAt: nil)
-        try await store.setRecipeUnsynced(recipeId: "r1", unsynced: true)
+        try await store.setRecipeUnsynced(userId: userA, recipeId: "r1", unsynced: true)
 
         try await store.deleteAll()
 
         let snapshot = try await store.loadSnapshot(docKey: docKey)
         XCTAssertNil(snapshot)
-        let unsynced = try await store.loadUnsyncedRecipeIds()
+        let unsynced = try await store.loadUnsyncedRecipeIds(userId: userA)
         XCTAssertTrue(unsynced.isEmpty)
     }
 
     func testLoadUnsyncedRecipeIdsOnEmptyStore() async throws {
         let store = try makeStore()
-        let unsynced = try await store.loadUnsyncedRecipeIds()
+        let unsynced = try await store.loadUnsyncedRecipeIds(userId: userA)
         XCTAssertTrue(unsynced.isEmpty)
+    }
+
+    func testUnsyncedFlagsAreAccountScoped() async throws {
+        let store = try makeStore()
+        try await store.setRecipeUnsynced(userId: userA, recipeId: "same-recipe", unsynced: true)
+        try await store.setRecipeUnsynced(userId: userB, recipeId: "other-recipe", unsynced: true)
+
+        XCTAssertEqual(
+            try await store.loadUnsyncedRecipeIds(userId: userA),
+            Set(["same-recipe"])
+        )
+        XCTAssertEqual(
+            try await store.loadUnsyncedRecipeIds(userId: userB),
+            Set(["other-recipe"])
+        )
     }
 }
 

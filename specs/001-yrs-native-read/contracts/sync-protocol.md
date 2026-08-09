@@ -61,6 +61,50 @@ iOS-клиент, помимо public `ConnectionState` (привязанног�
   context is discarded after every suspension and cannot derive a document key
   from the current account.
 
+## Modern State-Vector Handshake
+
+The shared `sync_step1` / `sync_step2` protocol is the primary load path. The
+legacy `load_document` events remain a compatibility fallback when a server
+does not answer the probe.
+
+### `sync_step1` (Client → Server)
+
+```json
+{
+  "recipeId": "recipe UUID — omitted for collection",
+  "documentKind": "shoppingList — present only for the shopping list",
+  "stateVector": "binary Yjs state vector",
+  "requestId": "opaque correlation id — present on recovery probes"
+}
+```
+
+### `sync_step2` (Server → Client)
+
+```json
+{
+  "recipeId": "recipe UUID — omitted for collection",
+  "documentKind": "shoppingList — present only for the shopping list",
+  "missingUpdate": "binary Yjs update",
+  "lastSyncedAt": "ISO 8601 timestamp",
+  "requestId": "echoed when present in sync_step1",
+  "collectionSummary": {
+    "live": 2,
+    "deleted": 1,
+    "total": 3,
+    "liveRecipeIds": ["recipe UUID"]
+  }
+}
+```
+
+`collectionSummary` is additive and is sent only for the collection. `live`
+and `deleted` count the physical collection entries, `total` is their sum, and
+`liveRecipeIds` contains active ids only. Native compares those ids with both
+live and tombstoned local entries. A missing canonical live id triggers
+collection recovery: discard the collection snapshot and collection queue,
+then issue a new `sync_step1` with an empty state vector. A server that omits
+the optional summary is still supported; native does not make a destructive
+local decision and relies on the server's typed `truncated_collection` guard.
+
 ## Document Loading
 
 ### Load Single Document

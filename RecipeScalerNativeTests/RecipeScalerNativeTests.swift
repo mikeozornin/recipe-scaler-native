@@ -657,8 +657,8 @@ final class RecipeScalerNativeTests: XCTestCase {
         // handler on a detached Task, so the test must poll for its effect rather
         // than assume synchronous delivery.
         let holder = SyncUpdateHolder()
-        await manager.setLocalUpdateHandler { rid, update in
-            holder.record(recipeId: rid, update: update)
+        await manager.setLocalUpdateHandler { context, update in
+            holder.record(recipeId: context.recipeId ?? "", update: update)
         }
 
         let recipeId = try await manager.createRecipe(name: "Local sync")

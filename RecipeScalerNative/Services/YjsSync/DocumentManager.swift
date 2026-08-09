@@ -3,6 +3,16 @@ import OSLog
 import RecipeScalerCore
 import YrsC
 
+/// Immutable identity attached to work leaving a local Y.Doc. It remains
+/// valid across a same-account reconnect, but is rejected after an account
+/// switch or logout.
+struct DocumentUpdateContext: Sendable, Equatable {
+    let sessionId: UUID
+    let userId: String
+    let docKey: String
+    let recipeId: String?
+}
+
 /// Manages Y.Doc instances and provides parsed domain models from CRDT data.
 ///
 /// Thread-safe via actor isolation. Each Y.Doc is identified by its document key
@@ -27,13 +37,14 @@ actor DocumentManager {
     }
     #endif
 
-    private var onCollectionChanged: (@Sendable () -> Void)?
-    private var onRecipeChanged: (@Sendable (String) -> Void)?
-    var onShoppingChanged: (@Sendable () -> Void)?
-    private var onLocalRecipeUpdate: (@Sendable (String, Data) async -> Void)?
-    private var onDescriptionYjsUpdate: (@Sendable (String, Data) async -> Void)?
-    var onLocalShoppingUpdate: (@Sendable (Data) async -> Void)?
+    private var onCollectionChanged: (@Sendable (DocumentUpdateContext) -> Void)?
+    private var onRecipeChanged: (@Sendable (DocumentUpdateContext, String) -> Void)?
+    var onShoppingChanged: (@Sendable (DocumentUpdateContext) -> Void)?
+    private var onLocalRecipeUpdate: (@Sendable (DocumentUpdateContext, Data) async -> Void)?
+    private var onDescriptionYjsUpdate: (@Sendable (DocumentUpdateContext, Data) async -> Void)?
+    var onLocalShoppingUpdate: (@Sendable (DocumentUpdateContext, Data) async -> Void)?
     private var currentUserId: String?
+    private var currentSessionId = UUID()
     private var suppressRecipeObserverDepth = 0
     /// Debounced SQLite persist for hot description-editor paths (avoid per-keystroke full encode).
     private var snapshotPersistTasks: [String: Task<Void, Never>] = [:]
@@ -51,24 +62,24 @@ actor DocumentManager {
     }
 
     func setChangeHandlers(
-        onCollectionChanged: @escaping @Sendable () -> Void,
-        onRecipeChanged: @escaping @Sendable (String) -> Void
+        onCollectionChanged: @escaping @Sendable (DocumentUpdateContext) -> Void,
+        onRecipeChanged: @escaping @Sendable (DocumentUpdateContext, String) -> Void
     ) {
         self.onCollectionChanged = onCollectionChanged
         self.onRecipeChanged = onRecipeChanged
     }
 
-    func setLocalUpdateHandler(_ handler: @escaping @Sendable (String, Data) async -> Void) {
+    func setLocalUpdateHandler(_ handler: @escaping @Sendable (DocumentUpdateContext, Data) async -> Void) {
         onLocalRecipeUpdate = handler
     }
 
-    func setDescriptionYjsUpdateHandler(_ handler: @escaping @Sendable (String, Data) async -> Void) {
+    func setDescriptionYjsUpdateHandler(_ handler: @escaping @Sendable (DocumentUpdateContext, Data) async -> Void) {
         onDescriptionYjsUpdate = handler
     }
 
     func setShoppingHandlers(
-        onChanged: @escaping @Sendable () -> Void,
-        onLocalUpdate: @escaping @Sendable (Data) async -> Void
+        onChanged: @escaping @Sendable (DocumentUpdateContext) -> Void,
+        onLocalUpdate: @escaping @Sendable (DocumentUpdateContext, Data) async -> Void
     ) {
         onShoppingChanged = onChanged
         onLocalShoppingUpdate = onLocalUpdate
@@ -240,8 +251,9 @@ actor DocumentManager {
         var totalCount: Int { liveCount + deletedCount }
     }
 
-    func readCollectionStructure() async throws -> CollectionStructure {
-        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+    func readCollectionStructure(docKey: String? = nil) async throws -> CollectionStructure {
+        let key = docKey ?? currentCollectionKey
+        let doc = try await getOrCreateDoc(key: key)
         return try await doc.withReadTransaction { _, txn in
             guard let arrayBranch = ytype_get(txn, "recipes") else {
                 return CollectionStructure(liveRecipeIds: [], deletedRecipeIds: [])
@@ -430,9 +442,40 @@ actor DocumentManager {
 
     private var currentCollectionKey: String = ""
 
-    func setUserId(_ userId: String) {
+    func setSession(userId: String, sessionId: UUID) {
         self.currentUserId = userId
+        self.currentSessionId = sessionId
         self.currentCollectionKey = "\(userId):collection"
+    }
+
+    func setUserId(_ userId: String) {
+        if currentUserId != userId {
+            currentSessionId = UUID()
+        }
+        setSession(userId: userId, sessionId: currentSessionId)
+    }
+
+    func updateContext(docKey: String, recipeId: String?) -> DocumentUpdateContext? {
+        guard let currentUserId else { return nil }
+        return DocumentUpdateContext(
+            sessionId: currentSessionId,
+            userId: currentUserId,
+            docKey: docKey,
+            recipeId: recipeId
+        )
+    }
+
+    /// A mutation may suspend while loading a Y.Doc or persisting a snapshot.
+    /// Never let that old operation resume into a later account/session, even
+    /// when the user switches away and back to the same account.
+    func isCurrentContext(_ context: DocumentUpdateContext) -> Bool {
+        guard currentUserId == context.userId, currentSessionId == context.sessionId else {
+            return false
+        }
+        if context.recipeId == "collection" {
+            return currentCollectionKey == context.docKey
+        }
+        return true
     }
 
     func clearOfflineQueueForAccountSwitch() async {
@@ -441,10 +484,15 @@ actor DocumentManager {
 
     /// Drop in-memory docs after logout or account switch.
     func resetSession() {
+        for task in snapshotPersistTasks.values {
+            task.cancel()
+        }
+        snapshotPersistTasks.removeAll()
         docs.removeAll()
         observerTokens.removeAll()
         currentUserId = nil
         currentCollectionKey = ""
+        currentSessionId = UUID()
     }
 
     // MARK: - Recipe writes (Phase 3, v3 only)
@@ -580,8 +628,11 @@ actor DocumentManager {
         _ body: (inout CollectionEntryWriter) throws -> Void
     ) async throws {
         guard !currentCollectionKey.isEmpty else { return }
+        let key = currentCollectionKey
+        guard let context = updateContext(docKey: key, recipeId: "collection") else { return }
         let now = touchedAt ?? Self.isoTimestamp()
-        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        let doc = try await getOrCreateDoc(key: key)
+        guard isCurrentContext(context) else { return }
         try await doc.withWriteTransaction { _, txn in
             guard let arrayBranch = ytype_get(txn, "recipes") else { return }
             let array = YrsArray(branch: arrayBranch)
@@ -600,7 +651,8 @@ actor DocumentManager {
                 }
             }
         }
-        await persistAndDeliver(recipeId: "collection", docKey: currentCollectionKey)
+        guard isCurrentContext(context) else { return }
+        await persistAndDeliver(recipeId: "collection", docKey: key, context: context)
     }
 
     /// Merge queued offline Yjs updates into loaded docs and persist (restart before reconnect).
@@ -647,9 +699,16 @@ actor DocumentManager {
     ///
     /// Also invalidates the HTML serialization cache for this docKey — after a
     /// mutation the state vector changes and any cached HTML is stale.
-    private func persistAndDeliver(recipeId: String, docKey: String) async {
-        guard let doc = docs[docKey] else { return }
+    private func persistAndDeliver(
+        recipeId: String,
+        docKey: String,
+        context: DocumentUpdateContext? = nil
+    ) async {
+        guard let capturedContext = context ?? updateContext(docKey: docKey, recipeId: recipeId),
+              isCurrentContext(capturedContext),
+              let doc = docs[docKey] else { return }
         _ = await doc.consumePendingLocalUpdates()
+        guard isCurrentContext(capturedContext) else { return }
         guard let state = await doc.encodeStateAsUpdate(), !state.isEmpty else {
             Self.logger.warning("No local Yjs update to sync for \(UserIdFormatter.redactDocKey(docKey))")
             return
@@ -658,14 +717,15 @@ actor DocumentManager {
         htmlCache.removeValue(forKey: docKey)
         plainTextCache.removeValue(forKey: docKey)
         let lastSyncedAt = try? await store.loadSnapshot(docKey: docKey)?.lastSyncedAt
+        guard isCurrentContext(capturedContext) else { return }
         do {
             try await store.saveSnapshot(docKey: docKey, state: state, lastSyncedAt: lastSyncedAt)
         } catch {
             Self.logger.warning("Failed to persist snapshot for \(UserIdFormatter.redactDocKey(docKey)): \(error)")
         }
-        guard let handler = onLocalRecipeUpdate else { return }
+        guard isCurrentContext(capturedContext), let handler = onLocalRecipeUpdate else { return }
         // Do not await: handler hops to @MainActor YjsSyncService while caller may be blocked on this actor.
-        Task { await handler(recipeId, state) }
+        Task { await handler(capturedContext, state) }
     }
 
     /// Schedule a debounced snapshot write (coalesces rapid description-editor keystrokes).
@@ -729,6 +789,10 @@ actor DocumentManager {
     @discardableResult
     func createFolder(name: String, color: String? = nil) async throws -> String {
         guard !currentCollectionKey.isEmpty else { throw RecipeEditError.documentNotLoaded }
+        let key = currentCollectionKey
+        guard let context = updateContext(docKey: key, recipeId: "collection") else {
+            throw RecipeEditError.documentNotLoaded
+        }
         let id = UUID().uuidString
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let storedName = trimmedName.isEmpty
@@ -740,7 +804,8 @@ actor DocumentManager {
             : RecipeFolderConstants.defaultFolderColor
         let now = Self.isoTimestamp()
 
-        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        let doc = try await getOrCreateDoc(key: key)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
         try await doc.withWriteTransaction { rawDoc, txn in
             let array: YrsArray
             if let branch = ytype_get(txn, RecipeFolderConstants.foldersArrayKey) {
@@ -771,7 +836,8 @@ actor DocumentManager {
                 throw RecipeEditError.documentNotLoaded
             }
         }
-        await persistAndDeliver(recipeId: "collection", docKey: currentCollectionKey)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
+        await persistAndDeliver(recipeId: "collection", docKey: key, context: context)
         return id
     }
 
@@ -819,8 +885,13 @@ actor DocumentManager {
     /// Recipes themselves are untouched — only membership.
     func deleteFolder(id: String) async throws {
         guard !currentCollectionKey.isEmpty else { throw RecipeEditError.documentNotLoaded }
+        let key = currentCollectionKey
+        guard let context = updateContext(docKey: key, recipeId: "collection") else {
+            throw RecipeEditError.documentNotLoaded
+        }
         let now = Self.isoTimestamp()
-        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        let doc = try await getOrCreateDoc(key: key)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
         try await doc.withWriteTransaction { rawDoc, txn in
             guard let foldersBranch = ytype_get(txn, RecipeFolderConstants.foldersArrayKey) else { return }
             let foldersArray = YrsArray(branch: foldersBranch)
@@ -858,16 +929,23 @@ actor DocumentManager {
                 }
             }
         }
-        await persistAndDeliver(recipeId: "collection", docKey: currentCollectionKey)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
+        await persistAndDeliver(recipeId: "collection", docKey: key, context: context)
     }
 
     /// Replace the set of folders a recipe belongs to.
     /// Validates ids against active folders, dedupes, and removes the key when empty.
     func setRecipeFolders(recipeId: String, folderIds: [String]) async throws {
         guard !currentCollectionKey.isEmpty else { throw RecipeEditError.documentNotLoaded }
-        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        let key = currentCollectionKey
+        guard let context = updateContext(docKey: key, recipeId: "collection") else {
+            throw RecipeEditError.documentNotLoaded
+        }
+        let doc = try await getOrCreateDoc(key: key)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
         // Validate ids against active folders before the write transaction.
         let activeFolderIds = try await activeFolderIdSet()
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
         let validIds = Self.normalizeFolderIds(folderIds, activeFolderIds: activeFolderIds)
         let now = Self.isoTimestamp()
 
@@ -887,7 +965,8 @@ actor DocumentManager {
                 break
             }
         }
-        await persistAndDeliver(recipeId: "collection", docKey: currentCollectionKey)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
+        await persistAndDeliver(recipeId: "collection", docKey: key, context: context)
     }
 
     /// Set of active (non-deleted) folder ids — used to validate `folderIds` writes.
@@ -914,8 +993,13 @@ actor DocumentManager {
     /// Find a folder Y.Map by id (including soft-deleted) and run `body` on it.
     private func mutateFolderEntry(id: String, _ body: (inout FolderEntryWriter) throws -> Void) async throws {
         guard !currentCollectionKey.isEmpty else { throw RecipeEditError.documentNotLoaded }
+        let key = currentCollectionKey
+        guard let context = updateContext(docKey: key, recipeId: "collection") else {
+            throw RecipeEditError.documentNotLoaded
+        }
         let now = Self.isoTimestamp()
-        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        let doc = try await getOrCreateDoc(key: key)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
         try await doc.withWriteTransaction { _, txn in
             guard let arrayBranch = ytype_get(txn, RecipeFolderConstants.foldersArrayKey) else { return }
             let array = YrsArray(branch: arrayBranch)
@@ -933,7 +1017,8 @@ actor DocumentManager {
                 break
             }
         }
-        await persistAndDeliver(recipeId: "collection", docKey: currentCollectionKey)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
+        await persistAndDeliver(recipeId: "collection", docKey: key, context: context)
     }
 
     /// Parse a folder Y.Map into `RecipeFolder`. Returns nil when the entry
@@ -970,6 +1055,10 @@ actor DocumentManager {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let displayName = trimmedName.isEmpty ? Bundle.currentLocalizedString("recipe.create.new") : trimmedName
         let normalizedColor = RecipeAccentColor.normalizedStored(color)
+        let recipeKey = "\(userId):recipe:\(recipeId)"
+        guard let recipeContext = updateContext(docKey: recipeKey, recipeId: recipeId) else {
+            throw RecipeEditError.documentNotLoaded
+        }
 
         try await appendCollectionEntryIfNotExists(
             recipeId: recipeId,
@@ -977,10 +1066,12 @@ actor DocumentManager {
             color: normalizedColor,
             updatedAt: touchedAt
         )
+        guard isCurrentContext(recipeContext) else { throw RecipeEditError.documentNotLoaded }
 
-        let recipeKey = "\(userId):recipe:\(recipeId)"
         let doc = try await getOrCreateDoc(key: recipeKey)
+        guard isCurrentContext(recipeContext) else { throw RecipeEditError.documentNotLoaded }
         await doc.ensureRecipeCreateRoots()
+        guard isCurrentContext(recipeContext) else { throw RecipeEditError.documentNotLoaded }
         try await doc.withWriteTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else {
                 throw RecipeEditError.documentNotLoaded
@@ -996,7 +1087,8 @@ actor DocumentManager {
             map.insert(key: "ingredients", value: .yarray([]), txn: txn)
             map.insert(key: "isPublic", value: .bool(false), txn: txn)
         }
-        await deliverPendingLocalUpdate(recipeId: recipeId)
+        guard isCurrentContext(recipeContext) else { throw RecipeEditError.documentNotLoaded }
+        await deliverPendingLocalUpdate(recipeId: recipeId, context: recipeContext)
         return recipeId
     }
 
@@ -1060,7 +1152,11 @@ actor DocumentManager {
         if let desc = draft.description, !desc.isEmpty {
             guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
             let key = "\(userId):recipe:\(recipeId)"
+            guard let context = updateContext(docKey: key, recipeId: recipeId) else {
+                throw RecipeEditError.documentNotLoaded
+            }
             let doc = try await getOrCreateDoc(key: key)
+            guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
             let document = RecipeDescriptionParser.parse(desc)
             try await doc.withWriteTransaction { _, txn in
                 if let fragment = doc.xmlFragment(txn: txn, name: "description") {
@@ -1071,7 +1167,8 @@ actor DocumentManager {
                     )
                 }
             }
-            await persistAndDeliver(recipeId: recipeId, docKey: key)
+            guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
+            await persistAndDeliver(recipeId: recipeId, docKey: key, context: context)
         }
 
         // Add ingredients (batched: single write-txn + single renumber pass + single persist/deliver)
@@ -1182,7 +1279,11 @@ actor DocumentManager {
         if !localizedDescriptionBlocks.isEmpty {
             guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
             let key = "\(userId):recipe:\(recipeId)"
+            guard let context = updateContext(docKey: key, recipeId: recipeId) else {
+                throw RecipeEditError.documentNotLoaded
+            }
             let doc = try await getOrCreateDoc(key: key)
+            guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
             try await doc.withWriteTransaction { _, txn in
                 if let fragment = doc.xmlFragment(txn: txn, name: "description") {
                     DescriptionXmlFragmentWriter.apply(
@@ -1192,7 +1293,8 @@ actor DocumentManager {
                     )
                 }
             }
-            await persistAndDeliver(recipeId: recipeId, docKey: key)
+            guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
+            await persistAndDeliver(recipeId: recipeId, docKey: key, context: context)
         }
 
         return recipeId
@@ -1205,7 +1307,10 @@ actor DocumentManager {
         updatedAt: String
     ) async throws {
         guard !currentCollectionKey.isEmpty else { return }
-        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        let key = currentCollectionKey
+        guard let context = updateContext(docKey: key, recipeId: "collection") else { return }
+        let doc = try await getOrCreateDoc(key: key)
+        guard isCurrentContext(context) else { return }
         try await doc.withWriteTransaction { rawDoc, txn in
             let array: YrsArray
             if let branch = ytype_get(txn, RecipeFolderConstants.recipesArrayKey) {
@@ -1236,7 +1341,8 @@ actor DocumentManager {
                 throw RecipeEditError.documentNotLoaded
             }
         }
-        await deliverPendingLocalUpdate(recipeId: "collection")
+        guard isCurrentContext(context) else { return }
+        await deliverPendingLocalUpdate(recipeId: "collection", context: context)
     }
 
     func updateNutrition(
@@ -1263,12 +1369,17 @@ actor DocumentManager {
     ) async throws {
         guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
         let key = "\(userId):recipe:\(recipeId)"
+        guard let context = updateContext(docKey: key, recipeId: recipeId) else {
+            throw RecipeEditError.documentNotLoaded
+        }
         let doc = try await getOrCreateDoc(key: key)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
 
         let version = try await doc.withReadTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return nil as String? }
             return YrsMap(branch: mapBranch).string(key: "version", txn: txn)
         }
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
         guard RecipeEditPolicy.canEdit(version: version) else {
             throw RecipeEditError.legacyFormatReadOnly
         }
@@ -1286,7 +1397,8 @@ actor DocumentManager {
             writer.map.insert(key: "updatedAt", value: .string(now), txn: txn)
         }
 
-        await persistAndDeliver(recipeId: recipeId, docKey: key)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
+        await persistAndDeliver(recipeId: recipeId, docKey: key, context: context)
     }
 
     /// Writes a recipe metadata field (e.g. `isPublic`) without the v3-only edit gate.
@@ -1298,7 +1410,11 @@ actor DocumentManager {
     ) async throws {
         guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
         let key = "\(userId):recipe:\(recipeId)"
+        guard let context = updateContext(docKey: key, recipeId: recipeId) else {
+            throw RecipeEditError.documentNotLoaded
+        }
         let doc = try await getOrCreateDoc(key: key)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
 
         suppressRecipeObserverDepth += 1
         defer { suppressRecipeObserverDepth -= 1 }
@@ -1313,7 +1429,8 @@ actor DocumentManager {
             writer.map.insert(key: "updatedAt", value: .string(now), txn: txn)
         }
 
-        await persistAndDeliver(recipeId: recipeId, docKey: key)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
+        await persistAndDeliver(recipeId: recipeId, docKey: key, context: context)
     }
 
     // MARK: - Description editor (006)
@@ -1338,12 +1455,17 @@ actor DocumentManager {
         guard !update.isEmpty else { return }
         guard let userId = currentUserId else { throw RecipeEditError.documentNotLoaded }
         let key = "\(userId):recipe:\(recipeId)"
+        guard let context = updateContext(docKey: key, recipeId: recipeId) else {
+            throw RecipeEditError.documentNotLoaded
+        }
         let doc = try await getOrCreateDoc(key: key)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
 
         let version = try await doc.withReadTransaction { _, txn in
             guard let mapBranch = ytype_get(txn, "recipe") else { return nil as String? }
             return YrsMap(branch: mapBranch).string(key: "version", txn: txn)
         }
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
         guard RecipeEditPolicy.canEdit(version: version) else {
             throw RecipeEditError.legacyFormatReadOnly
         }
@@ -1377,6 +1499,7 @@ actor DocumentManager {
             plainTextCache.removeValue(forKey: key)
             throw error
         }
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
         // Description was just mutated; cached HTML/plain text for this recipe is stale.
         htmlCache.removeValue(forKey: key)
         plainTextCache.removeValue(forKey: key)
@@ -1386,8 +1509,10 @@ actor DocumentManager {
 
         _ = await doc.consumePendingLocalUpdates()
         // Forward yjs wire bytes from WebView — yrs re-encode breaks web XmlFragment parsing.
-        if forwardToSync {
-            await onDescriptionYjsUpdate?(recipeId, update)
+        if forwardToSync,
+           isCurrentContext(context),
+           let handler = onDescriptionYjsUpdate {
+            await handler(context, update)
         }
     }
 
@@ -1404,43 +1529,58 @@ actor DocumentManager {
         return (try? await store.loadSnapshot(docKey: key))?.state.count ?? 0
     }
 
-    private func deliverPendingLocalUpdate(recipeId: String) async {
-        guard let handler = onLocalRecipeUpdate,
-              let userId = currentUserId else { return }
-        let key: String
-        if recipeId == "collection" {
-            key = currentCollectionKey
+    private func deliverPendingLocalUpdate(
+        recipeId: String,
+        context: DocumentUpdateContext? = nil
+    ) async {
+        guard let handler = onLocalRecipeUpdate else { return }
+        let capturedContext: DocumentUpdateContext
+        if let context {
+            capturedContext = context
         } else {
-            key = "\(userId):recipe:\(recipeId)"
+            guard let userId = currentUserId else { return }
+            let key = recipeId == "collection"
+                ? currentCollectionKey
+                : "\(userId):recipe:\(recipeId)"
+            guard let currentContext = updateContext(docKey: key, recipeId: recipeId) else { return }
+            capturedContext = currentContext
         }
-        guard let doc = docs[key] else { return }
+        guard isCurrentContext(capturedContext), let doc = docs[capturedContext.docKey] else { return }
         _ = await doc.consumePendingLocalUpdates()
+        guard isCurrentContext(capturedContext) else { return }
         let encodePayload = await doc.encodeStateAsUpdate()
         guard let update = encodePayload, !update.isEmpty else {
-            Self.logger.warning("No local Yjs update to sync for \(UserIdFormatter.redactDocKey(key))")
+            Self.logger.warning("No local Yjs update to sync for \(UserIdFormatter.redactDocKey(capturedContext.docKey))")
             return
         }
         // Do not await: handler hops to @MainActor YjsSyncService while caller may be blocked on this actor.
-        Task { await handler(recipeId, update) }
+        guard isCurrentContext(capturedContext) else { return }
+        Task { await handler(capturedContext, update) }
     }
 
-    private func notifyRecipeChangedIfNeeded(recipeId: String) {
+    private func notifyRecipeChangedIfNeeded(
+        context: DocumentUpdateContext,
+        recipeId: String
+    ) {
         guard suppressRecipeObserverDepth == 0 else { return }
-        onRecipeChanged?(recipeId)
+        onRecipeChanged?(context, recipeId)
     }
 
     private func installObservers(key: String, doc: YrsDocument) async {
         observerTokens.removeValue(forKey: key)
 
-        if key.hasSuffix(":collection"), let handler = onCollectionChanged {
+        if key.hasSuffix(":collection"),
+           let handler = onCollectionChanged,
+           let context = updateContext(docKey: key, recipeId: "collection") {
             var tokens: [YrsObserverToken] = []
+            let contextHandler: @Sendable () -> Void = { handler(context) }
             // Deep-observe `recipes` (008) so pin/delete/name/folderIds changes fire.
-            if let token = try? await doc.addDeepObserver(rootKey: RecipeFolderConstants.recipesArrayKey, handler: handler) {
+            if let token = try? await doc.addDeepObserver(rootKey: RecipeFolderConstants.recipesArrayKey, handler: contextHandler) {
                 tokens.append(token)
             }
             // Also deep-observe `folders` (026) so rename/delete/create without
             // touching recipe entries still refreshes the UI.
-            if let token = try? await doc.addDeepObserver(rootKey: RecipeFolderConstants.foldersArrayKey, handler: handler) {
+            if let token = try? await doc.addDeepObserver(rootKey: RecipeFolderConstants.foldersArrayKey, handler: contextHandler) {
                 tokens.append(token)
             }
             if !tokens.isEmpty {
@@ -1449,24 +1589,28 @@ actor DocumentManager {
             return
         }
 
-        if key.hasSuffix(":shoppingList"), let handler = onShoppingChanged {
-            if let token = try? await doc.addDeepObserver(rootKey: ShoppingListConstants.rootMapKey, handler: handler) {
+        if key.hasSuffix(":shoppingList"),
+           let handler = onShoppingChanged,
+           let context = updateContext(docKey: key, recipeId: nil) {
+            let contextHandler: @Sendable () -> Void = { handler(context) }
+            if let token = try? await doc.addDeepObserver(rootKey: ShoppingListConstants.rootMapKey, handler: contextHandler) {
                 observerTokens[key] = [token]
             }
             return
         }
 
         guard let recipeId = recipeId(fromDocKey: key) else { return }
+        guard let context = updateContext(docKey: key, recipeId: recipeId) else { return }
         let recipeHandler: @Sendable () -> Void = {
-            Task { await self.handleRecipeObserverFire(recipeId: recipeId) }
+            Task { await self.handleRecipeObserverFire(context: context, recipeId: recipeId) }
         }
         if let token = try? await doc.addDeepObserver(rootKey: "recipe", handler: recipeHandler) {
             observerTokens[key] = [token]
         }
     }
 
-    private func handleRecipeObserverFire(recipeId: String) {
-        notifyRecipeChangedIfNeeded(recipeId: recipeId)
+    private func handleRecipeObserverFire(context: DocumentUpdateContext, recipeId: String) {
+        notifyRecipeChangedIfNeeded(context: context, recipeId: recipeId)
     }
 
     private func recipeId(fromDocKey key: String) -> String? {
