@@ -64,6 +64,22 @@ Chronological log of substantive choices (newest last).
 
 ---
 
+### 2026-08-09 — Native Yjs work is session-scoped
+
+**Decision:** Every native Yjs socket callback, delayed handshake/probe, serialized
+`sync_update`, debounce batch, queue drain, acknowledgement, and recovery task carries
+an immutable `(sessionId, userId, originating client)` context. The context is checked
+after every suspension and immediately before persistence or emission. Document keys are
+derived from the captured user, never from mutable current session state.
+
+**Rationale:** Reconnect and account-switch races previously allowed delayed work from
+one authenticated socket to resume against a replacement socket. Collection payloads
+do not carry a user id, so checking only connection status could corrupt another
+account's collection. Same-account reconnects preserve account-scoped local edits while
+invalidating session-scoped wire operations.
+
+---
+
 ### 2026-06-01 — Offline-first recipe images via API then disk cache
 
 **Decision:** Recipe images are downloaded through the API and persisted to a local disk cache so list and detail views work offline after first fetch (feature `003-recipe-image-offline-cache`).

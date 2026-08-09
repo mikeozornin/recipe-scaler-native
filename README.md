@@ -91,8 +91,7 @@ Project principles and quality gates: [.specify/memory/constitution.md](.specify
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — target architecture, data flow, sync protocol
 - [docs/YJS-SCHEMA.md](docs/YJS-SCHEMA.md) — exact Y.Doc structure, keys, types
-- [docs/ADD_SPM_PACKAGES.md](docs/ADD_SPM_PACKAGES.md) — SPM dependency setup
-- [docs/SETUP.md](docs/SETUP.md) — build and run instructions
+- [docs/SETUP.md](docs/SETUP.md) — SPM dependency setup and build instructions
 - [RecipeScalerNative/PROJECT_STATUS.md](RecipeScalerNative/PROJECT_STATUS.md) — current status
 
 ## License

@@ -28,7 +28,7 @@ flowchart TB
   YSS --> YRS
   YSS --> STORE
   YRS -->|observeDeep| UI
-  YSS <-->|binary updates via sync_request| SIO
+  YSS <-->|session-scoped binary sync_step1/2 + sync_update| SIO
   SIO --> YJS_S --> DB
   WV <-->|[UInt8] updates| YSS
   WV --> YJS_WV
@@ -109,6 +109,9 @@ Swift service that mirrors `yjs-client.ts` from the web app.
 - Offline queue: store updates when disconnected, drain on reconnect
 - Load documents via `load_document` / `load_documents`
 - Track `lastSyncedAt` for each document
+- Bind socket callbacks and delayed wire work to an immutable session/user/client
+  context; stale work is discarded after reconnect or account switch.
+- Hold collection writes until the collection handshake/recovery reaches `ready`.
 
 **Document keys (same as web):**
 - `{userId}:collection` — recipe metadata, tombstones, order

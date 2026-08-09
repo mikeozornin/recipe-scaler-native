@@ -56,6 +56,10 @@ iOS-клиент, помимо public `ConnectionState` (привязанног�
 - `socketSessionId` (UUID) закреплён за одной попыткой подключения; все callback-и
   socket-а должны фильтроваться через `isCurrentSocketSession(_:)`, чтобы stale-сессия
   не перезатёрла состояние свежей.
+- Native also binds each callback and delayed outbound task to the immutable
+  `(sessionId, userId, client)` context. A task or response from an older
+  context is discarded after every suspension and cannot derive a document key
+  from the current account.
 
 ## Document Loading
 

@@ -318,6 +318,29 @@ final class SyncEventHandlerSyncStep2Tests: XCTestCase {
 
         XCTAssertEqual(receivedId, "collection")
     }
+
+    func testParsesCollectionSummaryFromSyncStep2() {
+        let handler = SyncEventHandler()
+        var receivedSummary: CollectionSyncSummary?
+        handler.onSyncStep2WithContext = { _, _, _, _, summary in
+            receivedSummary = summary
+        }
+
+        handler.test_handleSyncStep2([[
+            "missingUpdate": Data([0, 0]),
+            "collectionSummary": [
+                "live": 2,
+                "deleted": 1,
+                "total": 3,
+                "liveRecipeIds": ["recipe-a", "recipe-b"],
+            ],
+        ] as [String: Any]])
+
+        XCTAssertEqual(receivedSummary?.liveCount, 2)
+        XCTAssertEqual(receivedSummary?.deletedCount, 1)
+        XCTAssertEqual(receivedSummary?.totalCount, 3)
+        XCTAssertEqual(receivedSummary?.liveRecipeIds, Set(["recipe-a", "recipe-b"]))
+    }
 }
 
 @MainActor
@@ -342,6 +365,19 @@ final class YjsOfflineOutboxTests: XCTestCase {
         XCTAssertEqual(remaining.count, 1)
         XCTAssertEqual(remaining.first?.yjsUpdate, update)
         XCTAssertTrue(sync.test_inFlightEntryIds(forDocKey: docKey).isEmpty)
+    }
+
+    func testAccountScopedDocKeyDoesNotFollowCurrentAccount() async throws {
+        let (sync, _) = try makeSync()
+        await sync.test_setUserIdForOfflineTests("account-b")
+        XCTAssertEqual(
+            sync.test_docKeyFor(recipeId: "recipe-a", userId: "account-a"),
+            "account-a:recipe:recipe-a"
+        )
+        XCTAssertNotEqual(
+            sync.test_docKeyFor(recipeId: "recipe-a"),
+            "account-a:recipe:recipe-a"
+        )
     }
 
     func testSyncConfirmedDeletesOnlyInFlightBatch() async throws {

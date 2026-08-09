@@ -2,6 +2,58 @@ import Foundation
 
 import SocketIO
 
+struct CollectionSyncSummary: Equatable, Sendable {
+    let liveCount: Int
+    let deletedCount: Int
+    let totalCount: Int
+    let liveRecipeIds: Set<String>
+}
+
+struct SyncSocketSessionContext: Equatable, @unchecked Sendable {
+    let sessionId: UUID
+    let userId: String
+    let clientIdentifier: ObjectIdentifier
+
+    init(sessionId: UUID, userId: String, client: SocketIOClient) {
+        self.init(
+            sessionId: sessionId,
+            userId: userId,
+            clientIdentifier: ObjectIdentifier(client)
+        )
+    }
+
+    init(
+        sessionId: UUID,
+        userId: String,
+        clientIdentifier: ObjectIdentifier
+    ) {
+        self.sessionId = sessionId
+        self.userId = userId
+        self.clientIdentifier = clientIdentifier
+    }
+
+    static func == (lhs: SyncSocketSessionContext, rhs: SyncSocketSessionContext) -> Bool {
+        lhs.sessionId == rhs.sessionId
+            && lhs.userId == rhs.userId
+            && lhs.clientIdentifier == rhs.clientIdentifier
+    }
+
+    #if DEBUG
+    static let testValue: SyncSocketSessionContext = {
+        let marker = SyncSocketSessionTestMarker()
+        return SyncSocketSessionContext(
+            sessionId: UUID(),
+            userId: "test-user",
+            clientIdentifier: ObjectIdentifier(marker)
+        )
+    }()
+    #endif
+}
+
+#if DEBUG
+private final class SyncSocketSessionTestMarker {}
+#endif
+
 /// Handles all Socket.IO events for Y.Doc synchronization.
 ///
 /// Parses incoming events, converts binary payloads, and delegates
@@ -11,24 +63,29 @@ final class SyncEventHandler {
     // MARK: - Callbacks (set by YjsSyncService)
 
     /// Called when a full document state is loaded from the server.
-    var onDocumentLoaded: ((String, Data, String?) -> Void)?
+    var onDocumentLoaded: ((SyncSocketSessionContext, String, Data, String?) -> Void)?
 
     /// Called when batch documents are loaded.
-    var onDocumentsLoaded: ([(String, Data, String?)]) -> Void = { _ in }
+    var onDocumentsLoaded: (SyncSocketSessionContext, [(String, Data, String?)]) -> Void = { _, _ in }
 
     /// Called when the server replies to `sync_step1` with the missing ops
     /// relative to the state vector the client sent. New primary load path;
     /// mirrors web `yjs-client.ts` `sync_step2` handler.
+    ///
+    var onSyncStep2WithContext: ((SyncSocketSessionContext, String, Data, String?, CollectionSyncSummary?) -> Void)?
+    #if DEBUG
+    /// Legacy test seam. Production wiring must use the context-bearing callback.
     var onSyncStep2: ((String, Data, String?) -> Void)?
+    #endif
 
     /// Called when an incremental update arrives for a recipe.
-    var onRecipeUpdated: ((String, Data) -> Void)?
+    var onRecipeUpdated: ((SyncSocketSessionContext, String, Data) -> Void)?
 
     /// Called when an incremental update arrives for the collection.
-    var onCollectionUpdated: ((Data) -> Void)?
+    var onCollectionUpdated: ((SyncSocketSessionContext, Data) -> Void)?
 
     /// Called when an incremental update arrives for the shopping list.
-    var onShoppingListUpdated: ((Data) -> Void)?
+    var onShoppingListUpdated: ((SyncSocketSessionContext, Data) -> Void)?
 
     /// Called on sync error.
     ///
@@ -38,51 +95,54 @@ final class SyncEventHandler {
     ///   - `message`: raw `payload["error"]` string (kept for logging only —
     ///     never reaches the UI directly).
     ///   - `recipeId`: optional related recipe id.
-    var onSyncError: ((SyncErrorCode, String, String?) -> Void)?
+    var onSyncError: ((SyncSocketSessionContext, SyncErrorCode, String, String?) -> Void)?
 
     /// Called when sync is confirmed (recipeId, lastSyncedAt).
-    var onSyncConfirmed: ((String, String?) -> Void)?
+    var onSyncConfirmed: ((SyncSocketSessionContext, String, String?) -> Void)?
 
     // MARK: - Event Registration
 
     /// Register all Socket.IO event handlers on the given client.
-    func registerHandlers(on client: SocketIOClient) {
+    ///
+    /// The context is captured by every callback so an old Socket.IO client
+    /// cannot be mistaken for the current session after reconnect/account switch.
+    func registerHandlers(on client: SocketIOClient, context: SyncSocketSessionContext) {
         client.on("document_loaded") { [weak self] data, _ in
-            self?.handleDocumentLoaded(data)
+            self?.handleDocumentLoaded(data, context: context)
         }
 
         client.on("documents_loaded") { [weak self] data, _ in
-            self?.handleDocumentsLoaded(data)
+            self?.handleDocumentsLoaded(data, context: context)
         }
 
         client.on("sync_step2") { [weak self] data, _ in
-            self?.handleSyncStep2(data)
+            self?.handleSyncStep2(data, context: context)
         }
 
         client.on("recipe_updated") { [weak self] data, _ in
-            self?.handleRecipeUpdated(data)
+            self?.handleRecipeUpdated(data, context: context)
         }
 
         client.on("collection_updated") { [weak self] data, _ in
-            self?.handleCollectionUpdated(data)
+            self?.handleCollectionUpdated(data, context: context)
         }
 
         client.on("shopping_list_updated") { [weak self] data, _ in
-            self?.handleShoppingListUpdated(data)
+            self?.handleShoppingListUpdated(data, context: context)
         }
 
         client.on("sync_confirmed") { [weak self] data, _ in
-            self?.handleSyncConfirmed(data)
+            self?.handleSyncConfirmed(data, context: context)
         }
 
         client.on("sync_error") { [weak self] data, _ in
-            self?.handleSyncError(data)
+            self?.handleSyncError(data, context: context)
         }
     }
 
     // MARK: - Handlers
 
-    private func handleDocumentLoaded(_ data: [Any]) {
+    private func handleDocumentLoaded(_ data: [Any], context: SyncSocketSessionContext) {
         guard let payload = data.first as? [String: Any] else {
             AppLog.error(.sync, "document_loaded: invalid payload format")
             return
@@ -106,10 +166,10 @@ final class SyncEventHandler {
         if recipeId == "collection" {
             AppLog.info(.sync, "collection document_loaded: \(stateData.count) bytes")
         }
-        onDocumentLoaded?(recipeId, stateData, lastSyncedAt)
+        onDocumentLoaded?(context, recipeId, stateData, lastSyncedAt)
     }
 
-    private func handleDocumentsLoaded(_ data: [Any]) {
+    private func handleDocumentsLoaded(_ data: [Any], context: SyncSocketSessionContext) {
         guard let payload = data.first as? [String: Any],
               let documents = payload["documents"] as? [[String: Any]] else {
             AppLog.error(.sync, "documents_loaded: invalid payload format")
@@ -128,20 +188,20 @@ final class SyncEventHandler {
         }
 
         AppLog.info(.sync, "documents_loaded: \(results.count) documents")
-        onDocumentsLoaded(results)
+        onDocumentsLoaded(context, results)
     }
 
     #if DEBUG
     /// Test seam: parse a synthetic Socket.IO `sync_step2` payload array.
-    func test_handleSyncStep2(_ data: [Any]) {
-        handleSyncStep2(data)
+    func test_handleSyncStep2(_ data: [Any], context: SyncSocketSessionContext = .testValue) {
+        handleSyncStep2(data, context: context)
     }
     #endif
 
     /// `sync_step2` reply to our `sync_step1`. Carries the missing ops
     /// relative to the state vector we sent. Decode via `YjsPayloadBytes`
     /// so binary `Data` frames and legacy JSON number arrays both work.
-    private func handleSyncStep2(_ data: [Any]) {
+    private func handleSyncStep2(_ data: [Any], context: SyncSocketSessionContext) {
         guard let payload = data.first as? [String: Any] else {
             AppLog.error(.sync, "sync_step2: invalid payload format")
             return
@@ -159,12 +219,24 @@ final class SyncEventHandler {
             return
         }
         let lastSyncedAt = payload["lastSyncedAt"] as? String
-
+        let collectionSummary: CollectionSyncSummary?
+        if recipeId == "collection",
+           let rawSummary = payload["collectionSummary"] as? [String: Any] {
+            collectionSummary = Self.parseCollectionSummary(rawSummary)
+        } else {
+            collectionSummary = nil
+        }
         AppLog.info(.sync, "sync_step2: \(recipeId), \(updateData.count) bytes")
-        onSyncStep2?(recipeId, updateData, lastSyncedAt)
+        if let onSyncStep2WithContext {
+            onSyncStep2WithContext(context, recipeId, updateData, lastSyncedAt, collectionSummary)
+        } else {
+            #if DEBUG
+            onSyncStep2?(recipeId, updateData, lastSyncedAt)
+            #endif
+        }
     }
 
-    private func handleRecipeUpdated(_ data: [Any]) {
+    private func handleRecipeUpdated(_ data: [Any], context: SyncSocketSessionContext) {
         guard let payload = data.first as? [String: Any] else {
             AppLog.error(.sync, "recipe_updated: invalid payload format")
             return
@@ -177,10 +249,10 @@ final class SyncEventHandler {
         }
 
         AppLog.debug(.sync, "recipe_updated: \(recipeId), \(updateData.count) bytes")
-        onRecipeUpdated?(recipeId, updateData)
+        onRecipeUpdated?(context, recipeId, updateData)
     }
 
-    private func handleCollectionUpdated(_ data: [Any]) {
+    private func handleCollectionUpdated(_ data: [Any], context: SyncSocketSessionContext) {
         guard let payload = data.first as? [String: Any] else {
             AppLog.error(.sync, "collection_updated: invalid payload format")
             return
@@ -192,10 +264,10 @@ final class SyncEventHandler {
         }
 
         AppLog.debug(.sync, "collection_updated: \(updateData.count) bytes")
-        onCollectionUpdated?(updateData)
+        onCollectionUpdated?(context, updateData)
     }
 
-    private func handleShoppingListUpdated(_ data: [Any]) {
+    private func handleShoppingListUpdated(_ data: [Any], context: SyncSocketSessionContext) {
         guard let payload = data.first as? [String: Any] else {
             AppLog.error(.sync, "shopping_list_updated: invalid payload format")
             return
@@ -207,24 +279,24 @@ final class SyncEventHandler {
         }
 
         AppLog.debug(.sync, "shopping_list_updated: \(updateData.count) bytes")
-        onShoppingListUpdated?(updateData)
+        onShoppingListUpdated?(context, updateData)
     }
 
-    private func handleSyncConfirmed(_ data: [Any]) {
+    private func handleSyncConfirmed(_ data: [Any], context: SyncSocketSessionContext) {
         guard let payload = data.first as? [String: Any] else { return }
         let documentKind = payload["documentKind"] as? String
         let recipeId: String
         if documentKind == ShoppingListConstants.documentKind {
             recipeId = ShoppingListConstants.offlineRecipeId
         } else {
-            recipeId = payload["recipeId"] as? String ?? "unknown"
+            recipeId = collectionRecipeId(from: payload["recipeId"])
         }
         let lastSyncedAt = payload["lastSyncedAt"] as? String
         AppLog.debug(.sync, "sync_confirmed: \(recipeId)")
-        onSyncConfirmed?(recipeId, lastSyncedAt)
+        onSyncConfirmed?(context, recipeId, lastSyncedAt)
     }
 
-    private func handleSyncError(_ data: [Any]) {
+    private func handleSyncError(_ data: [Any], context: SyncSocketSessionContext) {
         guard let payload = data.first as? [String: Any] else {
             AppLog.error(.sync, "sync_error: invalid payload format")
             return
@@ -240,7 +312,36 @@ final class SyncEventHandler {
             "message": AppLog.sanitizeForLog(message),
             "recipeId": UserIdFormatter.redactRecipeId(recipeId)
         ])
-        onSyncError?(code, message, recipeId)
+        onSyncError?(context, code, message, recipeId)
+    }
+
+    private static func parseCollectionSummary(_ payload: [String: Any]) -> CollectionSyncSummary? {
+        func integer(_ key: String) -> Int? {
+            if let value = payload[key] as? Int {
+                return value
+            }
+            if let value = payload[key] as? NSNumber {
+                return value.intValue
+            }
+            return nil
+        }
+
+        guard let liveCount = integer("live"),
+              let deletedCount = integer("deleted"),
+              let totalCount = integer("total"),
+              let ids = payload["liveRecipeIds"] as? [String],
+              liveCount >= 0,
+              deletedCount >= 0,
+              totalCount == liveCount + deletedCount else {
+            return nil
+        }
+
+        return CollectionSyncSummary(
+            liveCount: liveCount,
+            deletedCount: deletedCount,
+            totalCount: totalCount,
+            liveRecipeIds: Set(ids)
+        )
     }
 
     /// Web sends `recipeId: undefined` for the collection; server may omit the field or send null.

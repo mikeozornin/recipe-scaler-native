@@ -231,6 +231,36 @@ actor DocumentManager {
         return entries
     }
 
+    struct CollectionStructure: Equatable, Sendable {
+        let liveRecipeIds: Set<String>
+        let deletedRecipeIds: Set<String>
+
+        var liveCount: Int { liveRecipeIds.count }
+        var deletedCount: Int { deletedRecipeIds.count }
+        var totalCount: Int { liveCount + deletedCount }
+    }
+
+    func readCollectionStructure() async throws -> CollectionStructure {
+        let doc = try await getOrCreateDoc(key: currentCollectionKey)
+        return try await doc.withReadTransaction { _, txn in
+            guard let arrayBranch = ytype_get(txn, "recipes") else {
+                return CollectionStructure(liveRecipeIds: [], deletedRecipeIds: [])
+            }
+            let array = YrsArray(branch: arrayBranch)
+            var live: Set<String> = []
+            var deleted: Set<String> = []
+            try array.forEachMap(txn: txn) { map in
+                guard let id = map.scalarString(key: "id", txn: txn), !id.isEmpty else { return }
+                if map.bool(key: "deleted", txn: txn) == true {
+                    deleted.insert(id)
+                } else {
+                    live.insert(id)
+                }
+            }
+            return CollectionStructure(liveRecipeIds: live, deletedRecipeIds: deleted)
+        }
+    }
+
     // ─── Recipe Reading ──────────────────────────────────────────────────
 
     func readRecipeData(recipeId: String, userId: String) async throws -> RecipeData? {
@@ -574,9 +604,16 @@ actor DocumentManager {
     }
 
     /// Merge queued offline Yjs updates into loaded docs and persist (restart before reconnect).
-    func applyOfflineQueueToLocalDocs() async {
+    func applyOfflineQueueToLocalDocs(userId: String? = nil) async {
         guard let entries = try? await store.fetchOfflineQueue(), !entries.isEmpty else { return }
-        let sorted = entries.sorted { $0.createdAt < $1.createdAt }
+        let ownedEntries: [OfflineSyncEntry]
+        if let userId {
+            let prefix = "\(userId):"
+            ownedEntries = entries.filter { $0.docKey.hasPrefix(prefix) }
+        } else {
+            ownedEntries = entries
+        }
+        let sorted = ownedEntries.sorted { $0.createdAt < $1.createdAt }
         for entry in sorted {
             do {
                 try await applyUpdate(
