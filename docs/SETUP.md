@@ -15,7 +15,7 @@
 
 yrs is the CRDT engine (Rust). It compiles as an XCFramework that Swift calls via C FFI (`libyrs.h`).
 
-The build script pins a specific [y-crdt](https://github.com/y-crdt/y-crdt) release via `Y_CRDT_REF` in [`scripts/build-yrs-xcframework.sh`](../scripts/build-yrs-xcframework.sh) (currently `v0.26.0`). Each rebuild writes `Frameworks/YrsXCFramework.xcframework/VERSION.txt` with tag, commit SHA, and crate versions.
+The build script pins a specific [y-crdt](https://github.com/y-crdt/y-crdt) release via `Y_CRDT_REF` in [`scripts/build-yrs-xcframework.sh`](../scripts/build-yrs-xcframework.sh) (currently `v0.27.3`). Each rebuild writes `Frameworks/YrsXCFramework.xcframework/VERSION.txt` with tag, commit SHA, and crate versions.
 
 ```bash
 # Install Rust toolchain

@@ -33,7 +33,7 @@ LIB_NAME="libyrs.a"
 FRAMEWORK_NAME="YrsXCFramework.xcframework"
 HEADER_NAME="libyrs.h"
 # Pinned y-crdt release — bump deliberately; rebuild XCFramework + commit VERSION.txt.
-Y_CRDT_REF="v0.26.0"
+Y_CRDT_REF="v0.27.3"
 
 # iOS targets
 DEVICE_TARGET="aarch64-apple-ios"

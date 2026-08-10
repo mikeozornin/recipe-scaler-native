@@ -1,11 +1,9 @@
-tag: v0.26.0
-commit: 5238955513138fb10db67fe6547745fc9df557a5
-built-at: 2026-06-01T00:00:00Z
-yffi-version: 0.26.0
-yrs-version: 0.26.0
+tag: v0.27.3
+commit: ac476a47ecc68be26e8c5b48a4be035773636d3a
+built-at: 2026-08-10T13:19:42Z
+yffi-version: 0.27.3
+yrs-version: 0.27.3
 
 # Rust merge/diff helpers are linked into libyrs.a (verify: nm libyrs.a | rg merge_updates_v1)
 # but are not exported through yffi C ABI (libyrs.h). Native Y.mergeUpdates parity requires a
 # yffi shim — see review finding #6 (WKWebView merge on main thread).
-# NOTE: built-at reflects the pre-pin binary commit date; rebuild via scripts/build-yrs-xcframework.sh
-# to refresh artifacts and timestamps after bumping Y_CRDT_REF.
