@@ -5,62 +5,9 @@
 
 import RecipeScalerCore
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
-
-enum AppTab: String, CaseIterable, Hashable {
-    case discover
-    case importTab
-    case recipes
-    case shopping
-    case profile
-
-    var title: LocalizedStringKey {
-        switch self {
-        case .discover: "discover.nav.discover"
-        case .importTab: "discover.nav.import"
-        case .recipes: "discover.nav.my-recipes"
-        case .shopping: "discover.nav.shopping"
-        case .profile: "discover.nav.profile"
-        }
-    }
-
-    /// Outline SF Symbol for `tabItem`. UITabBar draws the filled variant on the selected tab.
-    /// Do not use `.fill` here — some glyphs (e.g. `square.and.arrow.down.fill`) do not exist and break tab icons.
-    var tabBarSymbol: String {
-        switch self {
-        case .discover: "globe"
-        case .importTab: "square.and.arrow.down"
-        case .recipes: "book"
-        case .shopping: "cart"
-        case .profile: "person"
-        }
-    }
-
-    /// Accessibility identifier applied to the `AppTabBarLabel` (the actual
-    /// tab-bar button), so XCUITest can target `tab_discover` etc. directly.
-    /// The modifier on `tabRoot(...)` in `tabView` does NOT propagate to the
-    /// UITabBarButton — it lands on an inner container — so we attach it here
-    /// on the label view instead.
-    var accessibilityId: String {
-        switch self {
-        case .discover: AccessibilityIdentifiers.tabDiscover
-        case .importTab: AccessibilityIdentifiers.tabImport
-        case .recipes: AccessibilityIdentifiers.tabRecipes
-        case .shopping: AccessibilityIdentifiers.tabShopping
-        case .profile: AccessibilityIdentifiers.tabProfile
-        }
-    }
-}
-
-struct AppTabBarLabel: View {
-    let tab: AppTab
-
-    var body: some View {
-        Label(tab.title, systemImage: tab.tabBarSymbol)
-            .font(AppTypography.tabBar)
-            .accessibilityIdentifier(tab.accessibilityId)
-    }
-}
+#endif
 
 struct AppShellView: View {
     @Bindable private var coordinator: AppShellCoordinator
@@ -254,6 +201,10 @@ struct AppShellView: View {
         }
         .onAppear {
             RecipeImageDiskCache.migrateFromCachesIfNeeded()
+            coordinator.setRegularLayout(
+                layoutMode == .regular,
+                entries: syncService.collectionEntries
+            )
             // Spec 059 fix: on cold launch iOS delivers the Universal Link URL
             // during splash, before `AppShellView` mounts. `onChange(pending)`
             // cannot observe a value that was already set, so a queued link
@@ -262,10 +213,12 @@ struct AppShellView: View {
             if let link = deepLinkRouter.pending {
                 coordinator.handleDeepLink(link)
             }
-            coordinator.usesRegularRecipeSplit = layoutMode == .regular
         }
         .onChange(of: layoutMode) { _, mode in
-            coordinator.usesRegularRecipeSplit = mode == .regular
+            coordinator.setRegularLayout(
+                mode == .regular,
+                entries: syncService.collectionEntries
+            )
         }
         #if DEBUG
         .onAppear {

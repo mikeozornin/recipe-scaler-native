@@ -1,6 +1,8 @@
 import Foundation
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// Recipe search toolkit: tokenization, field matching, snippets, highlighting.
 ///
@@ -277,6 +279,7 @@ enum RecipeSearchUtils {
         return snippet
     }
 
+    #if canImport(UIKit)
     // MARK: - Highlighting (Mail.app-style yellow background)
 
     static var highlightBackgroundColor: UIColor {
@@ -397,6 +400,7 @@ enum RecipeSearchUtils {
         }
         return merged
     }
+    #endif
 
     // MARK: - Normalized ↔ original index mapping
 

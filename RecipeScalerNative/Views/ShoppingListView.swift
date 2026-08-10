@@ -158,6 +158,9 @@ struct ShoppingListView: View {
                     ForEach(purchased) { item in
                         shoppingRow(item, allowsInlineEdit: false, purchasePhase: nil)
                             .shoppingListItemRowInsets()
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                shoppingDeleteAction(for: item)
+                            }
                     }
                     .onDelete(perform: deletePurchased)
                 }
@@ -263,6 +266,9 @@ struct ShoppingListView: View {
         .clipped()
         .allowsHitTesting(phase != .exiting)
         .shoppingListItemRowInsets()
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            shoppingDeleteAction(for: item)
+        }
     }
 
     private func inlineEditRow(_ item: ShoppingListItem) -> some View {
@@ -341,6 +347,16 @@ struct ShoppingListView: View {
             .opacity(showChecked ? 0.5 : 1)
         }
         .ingredientListRowChrome()
+        .accessibilityIdentifier(AccessibilityIdentifiers.shoppingItem(id: item.id))
+    }
+
+    private func shoppingDeleteAction(for item: ShoppingListItem) -> some View {
+        Button(role: .destructive) {
+            delete(item: item)
+        } label: {
+            Label("recipe.list.delete", systemImage: "trash")
+        }
+        .accessibilityIdentifier(AccessibilityIdentifiers.shoppingItemDelete(id: item.id))
     }
 
     /// Leading control rasterized at body size so UIImage-backed symbols don't inflate the row.
@@ -445,14 +461,18 @@ struct ShoppingListView: View {
 
     private func delete(items: [ShoppingListItem], at offsets: IndexSet) {
         for index in offsets {
-            let id = items[index].id
-            purchasePhases.removeValue(forKey: id)
-            if inlineEditItemId == id {
-                inlineEditItemId = nil
-            }
-            Task {
-                await runShoppingMutation { try await syncService.removeShoppingItem(id: id) }
-            }
+            delete(item: items[index])
+        }
+    }
+
+    private func delete(item: ShoppingListItem) {
+        let id = item.id
+        purchasePhases.removeValue(forKey: id)
+        if inlineEditItemId == id {
+            inlineEditItemId = nil
+        }
+        Task {
+            await runShoppingMutation { try await syncService.removeShoppingItem(id: id) }
         }
     }
 }

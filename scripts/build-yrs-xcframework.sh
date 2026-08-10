@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 #
 # build-yrs-xcframework.sh
-# Builds yrs (y-crdt) C FFI library as an XCFramework for iOS.
+# Builds yrs (y-crdt) C FFI library as an XCFramework for iOS and macOS.
 #
 # Prerequisites:
 #   - Rust toolchain: rustup install stable
-#   - iOS targets: rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+#   - Apple targets: rustup target add aarch64-apple-ios aarch64-apple-ios-sim \
+#       x86_64-apple-ios aarch64-apple-darwin x86_64-apple-darwin
 #   - Xcode 16.0+ with command line tools
 #
 # Usage:
@@ -40,6 +41,10 @@ DEVICE_TARGET="aarch64-apple-ios"
 SIM_ARM64_TARGET="aarch64-apple-ios-sim"
 SIM_X86_TARGET="x86_64-apple-ios"
 
+# macOS targets
+MAC_ARM64_TARGET="aarch64-apple-darwin"
+MAC_X86_TARGET="x86_64-apple-darwin"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -59,7 +64,12 @@ command -v cargo >/dev/null 2>&1 || error "cargo not found."
 command -v xcodebuild >/dev/null 2>&1 || error "xcodebuild not found. Install Xcode."
 command -v lipo >/dev/null 2>&1 || error "lipo not found. Install Xcode command line tools."
 
-for target in "$DEVICE_TARGET" "$SIM_ARM64_TARGET" "$SIM_X86_TARGET"; do
+for target in \
+    "$DEVICE_TARGET" \
+    "$SIM_ARM64_TARGET" \
+    "$SIM_X86_TARGET" \
+    "$MAC_ARM64_TARGET" \
+    "$MAC_X86_TARGET"; do
     if ! rustup target list --installed | grep -q "$target"; then
         error "Rust target '$target' not installed. Run: rustup target add $target"
     fi
@@ -117,6 +127,12 @@ cargo build -p "$YFFI_CRATE" --release --target "$SIM_ARM64_TARGET" --target-dir
 info "Building for $SIM_X86_TARGET (iOS simulator - Intel)..."
 cargo build -p "$YFFI_CRATE" --release --target "$SIM_X86_TARGET" --target-dir "$BUILD_DIR" --manifest-path "$Y_CRDT_DIR/Cargo.toml"
 
+info "Building for $MAC_ARM64_TARGET (macOS - Apple Silicon)..."
+cargo build -p "$YFFI_CRATE" --release --target "$MAC_ARM64_TARGET" --target-dir "$BUILD_DIR" --manifest-path "$Y_CRDT_DIR/Cargo.toml"
+
+info "Building for $MAC_X86_TARGET (macOS - Intel)..."
+cargo build -p "$YFFI_CRATE" --release --target "$MAC_X86_TARGET" --target-dir "$BUILD_DIR" --manifest-path "$Y_CRDT_DIR/Cargo.toml"
+
 # ─── Create universal simulator library ──────────────────────────────────────
 
 SIM_UNIVERSAL_DIR="$BUILD_DIR/apple-ios-simulator/release"
@@ -127,6 +143,15 @@ lipo -create \
     "$BUILD_DIR/$SIM_ARM64_TARGET/release/$LIB_NAME" \
     "$BUILD_DIR/$SIM_X86_TARGET/release/$LIB_NAME" \
     -output "$SIM_UNIVERSAL_DIR/$LIB_NAME"
+
+MAC_UNIVERSAL_DIR="$BUILD_DIR/apple-macos-universal/release"
+mkdir -p "$MAC_UNIVERSAL_DIR"
+
+info "Creating universal macOS library (arm64 + x86_64)..."
+lipo -create \
+    "$BUILD_DIR/$MAC_ARM64_TARGET/release/$LIB_NAME" \
+    "$BUILD_DIR/$MAC_X86_TARGET/release/$LIB_NAME" \
+    -output "$MAC_UNIVERSAL_DIR/$LIB_NAME"
 
 # ─── Create XCFramework ──────────────────────────────────────────────────────
 
@@ -141,6 +166,8 @@ xcodebuild -create-xcframework \
     -library "$BUILD_DIR/$DEVICE_TARGET/release/$LIB_NAME" \
     -headers "$HEADER_DIR" \
     -library "$SIM_UNIVERSAL_DIR/$LIB_NAME" \
+    -headers "$HEADER_DIR" \
+    -library "$MAC_UNIVERSAL_DIR/$LIB_NAME" \
     -headers "$HEADER_DIR" \
     -output "$XCFRAMEWORK_PATH"
 
@@ -178,7 +205,8 @@ EOF
     echo "  1. Add $XCFRAMEWORK_PATH to Xcode project"
     echo "  2. Set 'Embed & Sign' in target settings"
     echo "  3. Import as: import YrsC"
-    echo "  4. Commit Frameworks/YrsXCFramework.xcframework + VERSION.txt after rebuild"
+    echo "  4. Verify iOS and macOS slices with: plutil -p $XCFRAMEWORK_PATH/Info.plist"
+    echo "  5. Commit Frameworks/YrsXCFramework.xcframework + VERSION.txt after rebuild"
 else
     error "Failed to create XCFramework at $XCFRAMEWORK_PATH"
 fi

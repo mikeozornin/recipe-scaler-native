@@ -1,0 +1,155 @@
+{
+  "feature": "062-mac-ipad-layout",
+  "layout_doc": "layout.md",
+  "figma": {
+    "file_key": null,
+    "frames": [],
+    "note": "Layout проектируется по Apple HIG/SwiftUI и web behavior parity; Figma-макета для этой feature нет."
+  },
+  "required_files": [
+    "RecipeScalerMac/RecipeScalerMacApp.swift",
+    "RecipeScalerMac/Views/MacRecipeListView.swift",
+    "RecipeScalerMac/Views/MacRecipeDetailView.swift",
+    "RecipeScalerMac/Views/MacRecipeDescriptionView.swift",
+    "RecipeScalerNative/Views/AdaptiveAppShell/RegularAppShell.swift",
+    "RecipeScalerNative/Views/AdaptiveAppShell/AppSidebarView.swift",
+    "RecipeScalerNative/Views/AdaptiveAppShell/RecipesSplitColumns.swift",
+    "RecipeScalerNative/ViewModels/InteractionProfile.swift",
+    "RecipeScalerMac/Views/MacSurfaceViews.swift"
+  ],
+  "must_contain": [
+    {
+      "id": "regular-navigation-split",
+      "description": "Regular shell uses the native NavigationSplitView pattern",
+      "pattern": "NavigationSplitView",
+      "paths": ["RecipeScalerNative/Views/AdaptiveAppShell/RegularAppShell.swift"]
+    },
+    {
+      "id": "system-sidebar",
+      "description": "Sidebar is a system sidebar list, not an icon-only web rail",
+      "pattern": "listStyle\\(\\.sidebar\\)",
+      "paths": ["RecipeScalerNative/Views/AdaptiveAppShell/AppSidebarView.swift"]
+    },
+    {
+      "id": "mac-window-group",
+      "description": "Mac has a native WindowGroup entry point",
+      "pattern": "WindowGroup",
+      "paths": ["RecipeScalerMac/RecipeScalerMacApp.swift"]
+    },
+    {
+      "id": "mac-window-min-size",
+      "description": "Mac window declares a usable default and minimum size for sidebar/list/detail",
+      "pattern": "defaultSize|minimumWidth|minSize",
+      "paths": ["RecipeScalerMac/RecipeScalerMacApp.swift"]
+    },
+    {
+      "id": "mac-sidebar-commands",
+      "description": "Mac exposes native sidebar/menu commands",
+      "pattern": "SidebarCommands|CommandMenu",
+      "paths": ["RecipeScalerMac/RecipeScalerMacApp.swift"]
+    },
+    {
+      "id": "mac-swipe-actions",
+      "description": "Mac recipe rows expose iOS-style swipeActions for quick actions",
+      "pattern": "\\.swipeActions",
+      "paths": ["RecipeScalerMac/Views/MacRecipeListView.swift"]
+    },
+    {
+      "id": "mac-context-menu",
+      "description": "Mac recipe rows expose the full action set from a context menu",
+      "pattern": "contextMenu",
+      "paths": ["RecipeScalerMac/Views/MacRecipeListView.swift"]
+    },
+    {
+      "id": "mac-action-accessibility",
+      "description": "Mac pointer actions expose stable accessibility labels and identifiers",
+      "pattern": "accessibilityLabel|recipeRowDelete|shoppingItemDelete",
+      "paths": ["RecipeScalerMac/Views/MacRecipeListView.swift", "RecipeScalerMac/Views/MacSurfaceViews.swift"]
+    },
+    {
+      "id": "mac-assistant-keyboard-send",
+      "description": "Mac assistant can submit from the keyboard",
+      "pattern": "keyboardShortcut",
+      "paths": ["RecipeScalerMac/Views/MacSurfaceViews.swift"]
+    },
+    {
+      "id": "mac-import-keyboard-alias",
+      "description": "Mac Import exposes the mnemonic keyboard alias",
+      "pattern": "keyboardShortcut",
+      "paths": ["RecipeScalerMac/RecipeScalerMacApp.swift"]
+    },
+    {
+      "id": "mac-detail-inner-split",
+      "description": "Mac detail uses a native inner split for ingredients and instructions",
+      "pattern": "HSplitView",
+      "paths": ["RecipeScalerMac/Views/MacRecipeDetailView.swift"]
+    },
+    {
+      "id": "mac-description-parser",
+      "description": "Mac detail renders shared recipe markup instead of displaying source HTML",
+      "pattern": "RecipeDescriptionParser\\.parse|OpenURLAction",
+      "paths": ["RecipeScalerMac/Views/MacRecipeDescriptionView.swift"]
+    },
+    {
+      "id": "mac-framework-rpath",
+      "description": "Embedded RecipeScalerCore is loadable from the native Mac app bundle",
+      "pattern": "@executable_path/\\.\\./Frameworks",
+      "paths": ["RecipeScalerNative.xcodeproj/project.pbxproj"]
+    },
+    {
+      "id": "mac-regular-surfaces",
+      "description": "Mac regular shell contains native Discover, Shopping, and Profile surfaces",
+      "pattern": "struct MacDiscoverView|struct MacShoppingListView|struct MacProfileView",
+      "paths": ["RecipeScalerMac/Views/MacSurfaceViews.swift"]
+    },
+    {
+      "id": "interaction-profile-platform-boundary",
+      "description": "Pointer profile is isolated to macOS while iPhone/iPad stay touch",
+      "pattern": "case pointer|os\\(macOS\\)|case touch",
+      "paths": ["RecipeScalerNative/ViewModels/InteractionProfile.swift"]
+    },
+    {
+      "id": "regular-shell-ui-contract",
+      "description": "iPad regular shell has a deterministic UI-test contract",
+      "pattern": "AdaptiveShellLocalSmokeSpec|RegularRecipesShellSpec|ForceLayout=wide",
+      "paths": ["RecipeScalerNativeUITests/Specs/AppShellNavigationSpec.swift"]
+    },
+    {
+      "id": "mac-yrs-slice",
+      "description": "Repository XCFramework manifest contains a macOS Yrs slice",
+      "pattern": "macos-arm64_x86_64",
+      "paths": ["Frameworks/YrsXCFramework.xcframework/Info.plist"]
+    }
+  ],
+  "must_not_contain": [
+    {
+      "id": "mac-no-bottom-tab-chrome",
+      "description": "Mac entry point must not instantiate the compact TabView shell",
+      "pattern": "CompactAppShell|TabView",
+      "paths": ["RecipeScalerMac"]
+    }
+  ],
+  "previews": [],
+  "acceptance_claims": [
+    {
+      "id": "ipad-regular-touch-profile",
+      "description": "iPad regular keeps touch affordances, exposes row actions by finger swipe, and does not reveal hover-only row actions",
+      "manual": true
+    },
+    {
+      "id": "ipad-stage-manager-transition",
+      "description": "A narrow iPad or Stage Manager window uses system column collapse and preserves recipe/folder state across compact↔regular transitions",
+      "manual": true
+    },
+    {
+      "id": "mac-three-column-window",
+      "description": "A real Mac default and minimum window show sidebar, recipe list and selected detail without overflow; the detail split falls back correctly when narrowed",
+      "manual": true
+    },
+    {
+      "id": "selection-and-actions",
+      "description": "Selecting, pinning, adding to shopping and deleting a recipe preserve the same result on Mac and iOS, with pointer actions and accessibility labels discoverable",
+      "manual": true
+    }
+  ]
+}

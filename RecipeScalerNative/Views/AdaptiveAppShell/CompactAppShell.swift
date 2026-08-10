@@ -35,7 +35,24 @@ struct CompactAppShell: View {
                 .tag(AppTab.importTab)
                 .accessibilityIdentifier(AccessibilityIdentifiers.tabImport)
 
-            tabRoot(RecipeListView(navigationPath: $coordinator.recipesPath)) {
+            tabRoot(
+                RecipeListView(
+                    navigationPath: $coordinator.recipesPath,
+                    onRecipeSelectionChanged: { recipeId, folderContext in
+                        if let recipeId {
+                            coordinator.noteCompactRecipeSelection(
+                                recipeId,
+                                folderContext: folderContext
+                            )
+                        } else {
+                            coordinator.clearCompactRecipeSelection()
+                        }
+                    },
+                    onFolderSelectionChanged: { folderId in
+                        coordinator.noteCompactFolderSelection(folderId)
+                    }
+                )
+            ) {
                 AppTabBarLabel(tab: .recipes)
             }
             .tag(AppTab.recipes)

@@ -150,7 +150,15 @@ public enum SharedAuthStore {
 }
 
 public enum AuthClientMetadata {
-    public static let nativePlatform = "ios-native"
+    public static let nativePlatform: String = {
+        #if os(macOS)
+        return "macos-native"
+        #elseif os(watchOS)
+        return watchPlatform
+        #else
+        return "ios-native"
+        #endif
+    }()
     public static let watchPlatform = "ios-watch"
 
     public static func appVersion() -> String? {

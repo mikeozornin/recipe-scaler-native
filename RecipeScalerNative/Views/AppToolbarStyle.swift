@@ -13,19 +13,29 @@ enum AppToolbarStyle {
 
     /// iOS 26 Liquid Glass toolbar pills hug label bounds; pre-26 toolbar chrome adds trailing inset.
     private static var labeledIconTrailingPadding: CGFloat {
+        #if os(macOS)
+        return 0
+        #else
         if #available(iOS 26.0, *) {
             return iconButtonPadding
         }
         return 0
+        #endif
     }
 
     @ViewBuilder
     static func icon(_ systemName: String) -> some View {
+        #if os(macOS)
+        AppSymbol.toolbarImage(systemName)
+            .frame(width: iconSide, height: iconSide)
+            .foregroundStyle(.primary)
+        #else
         AppSymbol.toolbarImage(systemName)
             .resizable()
             .scaledToFit()
             .frame(width: iconSide, height: iconSide)
             .foregroundStyle(AppChromeAppearance.systemActionColor)
+        #endif
     }
 
     @ViewBuilder

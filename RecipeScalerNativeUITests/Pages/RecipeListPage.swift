@@ -30,14 +30,17 @@ struct RecipeListPage: Page {
 
     /// First recipe row (any id). Use for "tap any recipe" scenarios.
     var firstRecipeRow: XCUIElement {
-        app.buttons.matching(
+        app.descendants(matching: .any).matching(
             NSPredicate(format: "identifier BEGINSWITH %@", UIA.recipeRowPrefix)
         ).firstMatch
     }
 
     /// Specific recipe row by id (after REST seeding).
     func recipeRow(id: String) -> XCUIElement {
-        app.buttons[UIA.recipeRow(id: id)]
+        // Wide iPad selection uses an onTapGesture-backed accessibility
+        // element rather than a Button; compact navigation uses a Button.
+        // Query the stable identifier across both roles.
+        app.descendants(matching: .any)[UIA.recipeRow(id: id)].firstMatch
     }
 
     /// True if at least one recipe row is showing.

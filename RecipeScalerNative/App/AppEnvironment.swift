@@ -29,6 +29,10 @@ extension View {
     func appEnvironment(_ container: AppContainer) -> some View {
         self
             .environment(\.appContainer, container)
+            // Commands and any view using `@Environment(AppContainer.self)`
+            // need the observable container itself, not only the individual
+            // service keys below.
+            .environment(container)
             .environment(\.authService, container.auth)
             .environment(\.timerManager, container.timer)
             .environment(\.deepLinkRouter, container.deepLinkRouter)
@@ -40,10 +44,12 @@ extension View {
             .environment(container.deepLinkRouter)
             .environment(container.assistantRecipeContext)
             .environment(container.sync)
+            #if !os(macOS)
             .environment(container.reminders)
             .environment(container.spotlight)
             .environment(container.featureAdoption)
             .environment(container.systemBanner)
             .environment(container.tips)
+            #endif
     }
 }

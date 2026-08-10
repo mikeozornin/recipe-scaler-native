@@ -86,9 +86,11 @@ actor YrsDocument {
     private var updateObserverBoxRef: UpdateObserverBox?
 
     /// Recipe editing docs: skip GC so yrs does not emit `Skip` structures that y-prosemirror (yjs 13) cannot read.
+    /// y-crdt v0.26 exposes this as the typed `skip_gc` option (older binaries
+    /// used the packed `flags` field).
     private static func createDocument() throws -> UnsafeMutablePointer<YDoc> {
         var opts = yoptions()
-        opts.flags |= UInt8(Y_SKIP_GC)
+        opts.skip_gc = 1
         guard let d = ydoc_new_with_options(opts) else {
             AppLog.error(.document, "yrs_null_pointer", data: ["context": "ydoc_new_with_options"])
             throw YrsError.nullPointer(context: "ydoc_new_with_options")

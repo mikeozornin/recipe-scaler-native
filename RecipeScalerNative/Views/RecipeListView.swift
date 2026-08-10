@@ -6,6 +6,8 @@ struct RecipeListView: View {
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
+    var onRecipeSelectionChanged: ((String?, String?) -> Void)?
+    var onFolderSelectionChanged: ((String?) -> Void)?
     /// Non-nil in a regular-width shell, where selection drives the detail column
     /// instead of pushing a navigation destination.
     var wideSelectedRecipeId: Binding<String?>?
@@ -28,10 +30,14 @@ struct RecipeListView: View {
 
     init(
         navigationPath: Binding<NavigationPath> = .constant(NavigationPath()),
-        wideSelectedRecipeId: Binding<String?>? = nil
+        wideSelectedRecipeId: Binding<String?>? = nil,
+        onRecipeSelectionChanged: ((String?, String?) -> Void)? = nil,
+        onFolderSelectionChanged: ((String?) -> Void)? = nil
     ) {
         _navigationPath = navigationPath
         self.wideSelectedRecipeId = wideSelectedRecipeId
+        self.onRecipeSelectionChanged = onRecipeSelectionChanged
+        self.onFolderSelectionChanged = onFolderSelectionChanged
     }
 
     private var usesWideRecipeSelection: Bool {
@@ -118,7 +124,10 @@ struct RecipeListView: View {
 
                 Group {
                 if showsCollectionsRoot {
-                    CollectionsRootView(navigationPath: $navigationPath)
+                    CollectionsRootView(
+                        navigationPath: $navigationPath,
+                        onFolderSelectionChanged: onFolderSelectionChanged
+                    )
                 } else if !isUITestingHost && !syncService.isLocalDataLoaded
                             || (!isUITestingHost
                                 && syncService.connectionState == .connecting
@@ -208,13 +217,18 @@ struct RecipeListView: View {
                 case .folder(let folderId):
                     CollectionFolderView(
                         folderId: folderId,
-                        navigationPath: $navigationPath
+                        navigationPath: $navigationPath,
+                        onRecipeSelectionChanged: onRecipeSelectionChanged,
+                        wideSelectedRecipeId: wideSelectedRecipeId
                     )
-                case .recipe(let recipeId, _, let openInEditMode):
+                case .recipe(let recipeId, let folderContext, let openInEditMode):
                     YDocRecipeDetailView(
                         recipeId: recipeId,
                         startInEditMode: openInEditMode
                     )
+                    .onAppear {
+                        onRecipeSelectionChanged?(recipeId, folderContext)
+                    }
                 }
             }
             #if DEBUG
@@ -241,6 +255,13 @@ struct RecipeListView: View {
                     .disabled(isCreatingRecipe)
                     .accessibilityLabel("recipes.add-button")
                     .accessibilityIdentifier(AccessibilityIdentifiers.recipeListAdd)
+                }
+            }
+            .onChange(of: navigationPath.count) { oldCount, newCount in
+                guard newCount < oldCount else { return }
+                onRecipeSelectionChanged?(nil, nil)
+                if newCount == 0 {
+                    onFolderSelectionChanged?(nil)
                 }
             }
             .sheet(item: $presentedSheet) { sheet in
@@ -393,6 +414,7 @@ struct RecipeListView: View {
             if let wideSelectedRecipeId {
                 wideSelectedRecipeId.wrappedValue = recipeId
             } else {
+                onRecipeSelectionChanged?(recipeId, folderId)
                 navigationPath.append(
                     RecipesRoute.recipe(
                         recipeId: recipeId,
@@ -448,6 +470,11 @@ struct RecipeListView: View {
                         }
                         .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
                         .opacity(0.01)
+                        .simultaneousGesture(
+                            TapGesture().onEnded {
+                                onRecipeSelectionChanged?(item.id, nil)
+                            }
+                        )
                     }
                 }
             }
@@ -459,6 +486,9 @@ struct RecipeListView: View {
             .buttonStyle(.plain)
             .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
             .accessibilityIdentifier(AccessibilityIdentifiers.recipeRow(id: item.id))
+            .accessibilityAddTraits(
+                wideSelectedRecipeId?.wrappedValue == item.id ? .isSelected : []
+            )
             .swipeActions(edge: .leading, allowsFullSwipe: false) {
                 Button {
                     Task { await addRecipeToShopping(item) }
@@ -469,6 +499,7 @@ struct RecipeListView: View {
                     )
                 }
                 .tint(.green)
+                .accessibilityIdentifier(AccessibilityIdentifiers.recipeRowShopping(id: item.id))
 
                 Button {
                     presentedSheet = .assign(recipeId: item.id, recipeName: item.displayName)
@@ -479,6 +510,7 @@ struct RecipeListView: View {
                     )
                 }
                 .tint(.orange)
+                .accessibilityIdentifier(AccessibilityIdentifiers.recipeRowAssign(id: item.id))
 
                 Button {
                     Task { await togglePin(for: item) }
@@ -489,11 +521,12 @@ struct RecipeListView: View {
                                 ? String(localized: "recipe.list.unpin")
                                 : String(localized: "recipe.list.pin")
                         )
-                    } icon: {
+                } icon: {
                         AppSymbol.image(item.isPinned ? "pin.slash" : "pin")
                     }
                 }
                 .tint(.blue)
+                .accessibilityIdentifier(AccessibilityIdentifiers.recipeRowPin(id: item.id))
             }
             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                 Button {
@@ -502,6 +535,7 @@ struct RecipeListView: View {
                     AppLabel.make(String(localized: "recipe.list.delete"), symbol: "trash")
                 }
                 .tint(.red)
+                .accessibilityIdentifier(AccessibilityIdentifiers.recipeRowDelete(id: item.id))
             }
             .task(id: item.id) {
                 guard item.hasThumbnail,
@@ -535,6 +569,7 @@ struct RecipeListView: View {
         if let wideSelectedRecipeId {
             wideSelectedRecipeId.wrappedValue = recipeId
         } else {
+            onRecipeSelectionChanged?(recipeId, nil)
             navigationPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
         }
     }

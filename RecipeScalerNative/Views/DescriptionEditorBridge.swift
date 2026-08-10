@@ -8,6 +8,8 @@
 import Foundation
 import SwiftUI
 
+#if !os(macOS)
+
 final class DescriptionEditorDeinitCleaner: @unchecked Sendable {
     private let recipeId: String
     private weak var syncService: YjsSyncService?
@@ -430,3 +432,22 @@ final class DescriptionEditorBridge {
         )
     }
 }
+
+#else
+
+/// macOS keeps the sync-service editor contract without embedding the iOS
+/// WKWebView editor. Native Mac recipe editing will provide its own surface.
+@MainActor
+final class DescriptionEditorBridge {
+    let recipeId: String
+
+    init(recipeId: String, syncService: YjsSyncService) {
+        self.recipeId = recipeId
+    }
+
+    func flushEditorEdits() async {}
+
+    func applyRemoteUpdate(_ update: Data) {}
+}
+
+#endif

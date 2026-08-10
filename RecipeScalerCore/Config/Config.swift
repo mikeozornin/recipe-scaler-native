@@ -43,6 +43,24 @@ public enum Config {
         return "wss://recipe-scaler.ru"
     }
 
+    /// Local loopback E2E runs use HTTP long-polling for Socket.IO. The iOS
+    /// Simulator can reach the host's REST endpoint, but its insecure
+    /// `ws://` upgrade is rejected by ATS even when local networking is
+    /// enabled. This flag is DEBUG-only by construction; Release builds can
+    /// never redirect the sync transport to a loopback server.
+    public static var isLoopbackE2EOverride: Bool {
+        #if DEBUG
+        guard let url = URL(string: baseURL),
+              let host = url.host?.lowercased(),
+              url.scheme == "http" else {
+            return false
+        }
+        return host == "127.0.0.1" || host == "localhost"
+        #else
+        return false
+        #endif
+    }
+
     /// Hosts accepted for Universal Links (spec 059). Derived from `baseURL`
     /// so DEBUG `E2E_OVERRIDE_API_BASE` exercises the UL parser against a
     /// local backend, and any domain change in one place propagates here too.

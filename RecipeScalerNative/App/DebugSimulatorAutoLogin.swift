@@ -1,7 +1,11 @@
 import Foundation
 
 #if DEBUG
-/// Simulator-only DEBUG auto-login against the shared prod debug user.
+/// DEBUG auto-login against the shared prod debug user.
+///
+/// iOS enables this for Simulator builds. Native macOS enables it only when
+/// launched with `-DebugMacAutoLogin=1`, so a normal Mac launch still exposes
+/// the explicit auth screen.
 ///
 /// After legacy `x-user-id` cutoff (spec 041), auto-login must inject a
 /// `device_token` alongside `userId` — same pattern as E2E launch env
@@ -35,6 +39,8 @@ enum DebugSimulatorAutoLogin {
             return false
         }
         return true
+        #elseif os(macOS)
+        return ProcessInfo.processInfo.arguments.contains("-DebugMacAutoLogin=1")
         #else
         return false
         #endif

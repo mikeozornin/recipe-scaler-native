@@ -50,7 +50,7 @@ class BaseTestCase: XCTestCase {
         // Seed before launch when subclass needs it (hydrate tests).
         try await prepareBeforeLaunch()
 
-        let apiBase = E2EConfig.apiBaseURL.absoluteString
+        let apiBase = E2EConfig.apiBaseString
         let wsBase: String = {
             if apiBase.hasPrefix("https://") {
                 return "wss://" + String(apiBase.dropFirst("https://".count))

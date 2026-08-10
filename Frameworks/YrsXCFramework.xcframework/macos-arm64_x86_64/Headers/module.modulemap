@@ -1,0 +1,4 @@
+module YrsC {
+    header "libyrs.h"
+    export *
+}

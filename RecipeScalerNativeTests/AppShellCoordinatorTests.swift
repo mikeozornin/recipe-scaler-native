@@ -46,6 +46,105 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.selectedTab, .recipes)
     }
 
+    func test_regularLayoutTransition_preservesRecipeAndFolderAcrossModes() throws {
+        let (coordinator, _, sync) = try makeCoordinator()
+        let syncIdentity = ObjectIdentifier(sync)
+        let recipeId = "11111111-2222-3333-4444-555555555555"
+        let folderId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        let entry = CollectionEntry(
+            id: recipeId,
+            name: "Test",
+            color: "#3b82f6",
+            imageUrl: nil,
+            updatedAt: "2026-06-01T10:00:00Z",
+            deleted: false,
+            isPinned: false,
+            folderIds: [folderId]
+        )
+
+        coordinator.noteCompactFolderSelection(folderId)
+        coordinator.noteCompactRecipeSelection(recipeId, folderContext: folderId)
+        coordinator.setRegularLayout(true, entries: [entry])
+
+        XCTAssertTrue(coordinator.usesRegularRecipeSplit)
+        XCTAssertEqual(coordinator.wideRecipesState.selectedRecipeId, recipeId)
+        XCTAssertEqual(coordinator.wideRecipesState.activeFolderId, folderId)
+        // The folder remains drilled into the list column; the recipe itself
+        // moves from the compact pushed detail into the regular detail column.
+        XCTAssertEqual(coordinator.recipesPath.count, 1)
+
+        coordinator.setRegularLayout(false, entries: [entry])
+
+        XCTAssertFalse(coordinator.usesRegularRecipeSplit)
+        XCTAssertEqual(coordinator.recipesPath.count, 2)
+        XCTAssertEqual(
+            ObjectIdentifier(sync),
+            syncIdentity,
+            "Layout transitions must keep the injected sync service identity"
+        )
+    }
+
+    func test_wideSplit_autoSelectsFirstRecipeWithinActiveFolder() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        let folderId = "folder-a"
+        let outside = CollectionEntry(
+            id: "outside",
+            name: "A outside",
+            color: "#000000",
+            imageUrl: nil,
+            updatedAt: "2026-06-01T10:00:00Z",
+            deleted: false,
+            isPinned: false,
+            folderIds: ["folder-b"]
+        )
+        let inside = CollectionEntry(
+            id: "inside",
+            name: "B inside",
+            color: "#000000",
+            imageUrl: nil,
+            updatedAt: "2026-06-01T10:00:00Z",
+            deleted: false,
+            isPinned: false,
+            folderIds: [folderId]
+        )
+
+        coordinator.usesRegularRecipeSplit = true
+        coordinator.openFolderInWideSplit(folderId)
+        coordinator.autoSelectFirstRecipeInWideSplitIfNeeded(entries: [outside, inside])
+
+        XCTAssertEqual(coordinator.wideRecipesState.activeFolderId, folderId)
+        XCTAssertEqual(coordinator.wideRecipesState.selectedRecipeId, inside.id)
+    }
+
+    func test_regularLayout_restoresPersistedVirtualFolderRoute() throws {
+        let key = "layout.last-recipes-route"
+        let prior = UserDefaults.standard.object(forKey: key)
+        defer {
+            if let prior {
+                UserDefaults.standard.set(prior, forKey: key)
+            } else {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+
+        UserDefaults.standard.set("/folder/all", forKey: key)
+        let (coordinator, _, _) = try makeCoordinator()
+        let entry = CollectionEntry(
+            id: "recipe-1",
+            name: "Recipe",
+            color: "#000000",
+            imageUrl: nil,
+            updatedAt: "2026-06-01T10:00:00Z",
+            deleted: false,
+            isPinned: false
+        )
+
+        coordinator.setRegularLayout(true, entries: [entry])
+
+        XCTAssertEqual(coordinator.wideRecipesState.activeFolderId, CollectionVirtualFolders.allRecipesFolderId)
+        XCTAssertEqual(coordinator.wideRecipesState.selectedRecipeId, entry.id)
+    }
+
     func test_doubleImportTap_refreshesPresentationId() throws {
         let (coordinator, _, _) = try makeCoordinator()
 
@@ -174,6 +273,20 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.selectedTab, .recipes)
         XCTAssertFalse(coordinator.recipesPath.isEmpty)
         XCTAssertNotNil(message)
+    }
+
+    func test_completeImport_inRegularSplit_selectsImportedRecipeWithoutPath() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.usesRegularRecipeSplit = true
+        coordinator.importPresentation = ImportPresentation()
+
+        let recipeId = "11111111-2222-3333-4444-555555555555"
+        _ = coordinator.completeImport(
+            ImportRecipesResult(recipeIds: [recipeId], importedCount: 1)
+        )
+
+        XCTAssertEqual(coordinator.wideRecipesState.selectedRecipeId, recipeId)
+        XCTAssertTrue(coordinator.recipesPath.isEmpty)
     }
 
     func test_reTapCurrentTab_resetsNestedNavigation() throws {

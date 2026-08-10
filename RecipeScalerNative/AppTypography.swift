@@ -4,10 +4,28 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
+
+#if canImport(UIKit)
+typealias AppPlatformFont = UIFont
+#else
+typealias AppPlatformFont = NSFont
+#endif
 
 /// Martian text styles aligned with iOS Dynamic Type default metrics (Large).
+///
+/// macOS keeps the Martian family but inherits native system metrics: every
+/// semantic size resolves to the Apple HIG macOS default (13/11/17/19/26 pt),
+/// and typography helpers drop custom line spacing, tracking, casing and
+/// foreground-style overrides so `Section` headers, body text and footnotes
+/// read like a first-party Mac app. iOS keeps its tuned 16/13/20/22/28 pt
+/// rhythm with line spacing and section-header casing intact.
 enum AppTypography {
+    #if !os(macOS)
     static let bodySize: CGFloat = 16
     static let subheadlineSize: CGFloat = 15
     static let footnoteSize: CGFloat = 13
@@ -19,13 +37,34 @@ enum AppTypography {
     static let authTitleSize: CGFloat = 30
     static let splashTitleSize: CGFloat = 24
     static let tabBarSize: CGFloat = 10
+    #else
+    // macOS HIG system-equivalent metrics. Only the point sizes change; the
+    // Martian family + weight mapping from `AppFonts` stays the same.
+    static let bodySize: CGFloat = 13
+    static let subheadlineSize: CGFloat = 11
+    static let footnoteSize: CGFloat = 11
+    static let compactSize: CGFloat = 11
+    static let calloutSize: CGFloat = 12
+    static let title3Size: CGFloat = 17
+    static let title2Size: CGFloat = 19
+    static let recipeTitleSize: CGFloat = 26
+    static let authTitleSize: CGFloat = 26
+    static let splashTitleSize: CGFloat = 22
+    static let tabBarSize: CGFloat = 13
+    #endif
     /// Decorative SF Symbol in `ContentUnavailableView` and other empty states.
     static let emptyStateIconSize: CGFloat = 48
     /// Raster empty-state illustrations (synced from web); 192 pt with @3x 576 px assets.
     static let emptyStateIllustrationSize: CGFloat = 192
 
+    #if !os(macOS)
     static let bodyLineSpacing: CGFloat = 4
     static let footnoteLineSpacing: CGFloat = 2
+    #else
+    // macOS uses native default line spacing — no custom value applied.
+    static let bodyLineSpacing: CGFloat = 0
+    static let footnoteLineSpacing: CGFloat = 0
+    #endif
 
     static var body: Font { sans(bodySize) }
     static var subheadline: Font { sans(subheadlineSize) }
@@ -42,11 +81,11 @@ enum AppTypography {
     static var footnoteSemibold: Font { sansMedium(footnoteSize) }
     static var monoFootnoteDigits: Font { mono(footnoteSize).monospacedDigit() }
 
-    static var bodyUIFont: UIFont { uiFont(AppFonts.sans, size: bodySize) }
-    static var sansMediumBodyUIFont: UIFont { uiFont(AppFonts.sansMedium, size: bodySize) }
-    static var displayLargeTitleUIFont: UIFont { uiFont(AppFonts.display, size: 34) }
-    static var tabBarUIFont: UIFont { uiFont(AppFonts.sans, size: tabBarSize) }
-    static var footnoteUIFont: UIFont { uiFont(AppFonts.sans, size: footnoteSize) }
+    static var bodyUIFont: AppPlatformFont { uiFont(AppFonts.sans, size: bodySize) }
+    static var sansMediumBodyUIFont: AppPlatformFont { uiFont(AppFonts.sansMedium, size: bodySize) }
+    static var displayLargeTitleUIFont: AppPlatformFont { uiFont(AppFonts.display, size: 34) }
+    static var tabBarUIFont: AppPlatformFont { uiFont(AppFonts.sans, size: tabBarSize) }
+    static var footnoteUIFont: AppPlatformFont { uiFont(AppFonts.sans, size: footnoteSize) }
 
     static func sans(_ size: CGFloat) -> Font { Font(uiFont(AppFonts.sans, size: size)) }
     static func sansMedium(_ size: CGFloat) -> Font {
@@ -64,12 +103,12 @@ enum AppTypography {
         _ name: String,
         size: CGFloat,
         fallbackFamily: String = AppFonts.sans
-    ) -> UIFont {
+    ) -> AppPlatformFont {
         // Ensure bundled Martian faces are registered with CoreText before any lookup.
-        // UIAppFonts registration from Info.plist is lazy and can race with the first
-        // ContentView.body evaluation (.environment(\.font, AppTypography.body)).
+        // Registration from Info.plist is lazy and can race with the first root view.
         AppFonts.registerBundledFontsIfNeeded()
 
+        #if canImport(UIKit)
         func resolve(_ face: String) -> UIFont? {
             UIFont(name: face, size: size)
                 ?? AppFonts.postScriptName(for: face).flatMap { UIFont(name: $0, size: size) }
@@ -79,50 +118,107 @@ enum AppTypography {
             ?? resolve(fallbackFamily)
             ?? resolve(AppFonts.sans)
             ?? .systemFont(ofSize: size)
+        #else
+        func resolve(_ face: String) -> NSFont? {
+            NSFont(name: face, size: size)
+                ?? AppFonts.postScriptName(for: face).flatMap { NSFont(name: $0, size: size) }
+        }
+
+        return resolve(name)
+            ?? resolve(fallbackFamily)
+            ?? resolve(AppFonts.sans)
+            ?? .systemFont(ofSize: size)
+        #endif
+    }
+}
+
+/// Platform-neutral surfaces for shared shell views.
+enum AppSurface {
+    static var background: Color {
+        #if canImport(UIKit)
+        return Color(.systemBackground)
+        #else
+        return Color(nsColor: .windowBackgroundColor)
+        #endif
     }
 }
 
 extension View {
-    /// Default text (16 pt Martian Grotesk) for List/Form and unstyled `Text`.
+    /// Default text (Martian body) for List/Form and unstyled `Text`.
     func appListBodyTypography() -> some View {
         font(AppTypography.body)
     }
 
     /// Body size + line spacing for `TextField` and other controls that must match `.appBody()` height.
     func appBodyFieldTypography() -> some View {
+        #if os(macOS)
+        // macOS uses native default line spacing; only the Martian family is kept.
+        font(AppTypography.body)
+        #else
         font(AppTypography.body)
             .lineSpacing(AppTypography.bodyLineSpacing)
+        #endif
     }
 }
 
 extension Text {
     func appBody() -> some View {
+        #if os(macOS)
+        self.font(AppTypography.body)
+        #else
         self
             .font(AppTypography.body)
             .lineSpacing(AppTypography.bodyLineSpacing)
+        #endif
     }
 
     func appFootnote() -> some View {
+        #if os(macOS)
+        // macOS: drop the `.secondary` foreground style that the iOS helper
+        // bakes in — consumers set semantic colors explicitly where needed.
+        self.font(AppTypography.footnote)
+        #else
         self
             .font(AppTypography.footnote)
             .lineSpacing(AppTypography.footnoteLineSpacing)
+        #endif
     }
 
     /// Semibold 16 pt body (headline) with standard body line spacing.
     func appHeadline() -> some View {
+        #if os(macOS)
+        self.font(AppTypography.headline)
+        #else
         self
             .font(AppTypography.headline)
             .lineSpacing(AppTypography.bodyLineSpacing)
+        #endif
     }
 
     /// Body typography that survives `.textSelection(.enabled)` (selection resets `.custom` fonts).
     func appBodySelectable(multilineTextAlignment: TextAlignment = .leading) -> some View {
-        self
+        #if os(macOS)
+        // macOS: keep text selectable with the Martian body font, but let the
+        // consumer own the foreground style and use native line spacing.
+        return self
+            .multilineTextAlignment(multilineTextAlignment)
+            .textSelection(.enabled)
+            .font(AppTypography.body)
+        #elseif canImport(UIKit)
+        return self
             .foregroundStyle(.primary)
             .multilineTextAlignment(multilineTextAlignment)
             .textSelection(.enabled)
             .font(Font(AppTypography.bodyUIFont))
             .lineSpacing(AppTypography.bodyLineSpacing)
+        #else
+        return self
+            .foregroundStyle(.primary)
+            .multilineTextAlignment(multilineTextAlignment)
+            .textSelection(.enabled)
+            .font(AppTypography.body)
+            .lineSpacing(AppTypography.bodyLineSpacing)
+        #endif
     }
 }
 
@@ -138,7 +234,11 @@ struct AppSectionHeader: View {
     var body: some View {
         Text(title)
             .font(AppTypography.footnote)
+            #if canImport(UIKit)
             .foregroundStyle(Color(.secondaryLabel))
+            #else
+            .foregroundStyle(.secondary)
+            #endif
             .tracking(Self.usesUpperCase ? AppSectionHeader.letterSpacing : 0)
             .textCase(Self.usesUpperCase ? .uppercase : nil)
     }
@@ -150,8 +250,12 @@ struct AppSectionHeader: View {
     /// iOS < 26 keeps legacy ALL CAPS + tracking 0.8. Single `#available` source of truth
     /// for section header casing — view-файлы используют этот token, а не свой `#available`.
     static var usesUpperCase: Bool {
+        #if os(iOS)
         if #available(iOS 26.0, *) { return false }
         return true
+        #else
+        return false
+        #endif
     }
 }
 
@@ -174,6 +278,7 @@ struct AppSectionHeaderSpacer: View {
     }
 }
 
+#if canImport(UIKit)
 enum AppChromeAppearance {
     static func configure() {
         configureNavigationBar()
@@ -304,3 +409,10 @@ enum AppChromeAppearance {
             AppTypography.bodyUIFont
     }
 }
+#else
+/// macOS owns its toolbar and navigation chrome; UIKit appearance proxies do not apply.
+enum AppChromeAppearance {
+    static func configure() {}
+    static var systemActionColor: Color { .accentColor }
+}
+#endif

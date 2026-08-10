@@ -7,49 +7,82 @@
 
 import SwiftUI
 
+/// System-style macOS / iPadOS sidebar.
+///
+/// The rows use `List(selection:)` + system `Label` + `.tag()` so the platform
+/// owns the sidebar chrome and typography: translucency, hover, system
+/// selection accent, full keyboard navigation (arrow keys + Return) and the
+/// correct sidebar-row font metrics. Earlier revisions drew the selection pill,
+/// forced a 44 pt mobile row height and overrode the label with `.appBody()`,
+/// which made the sidebar read as an iOS cell list instead of a native
+/// Mail/Settings surface.
+///
+/// Import and Assistant are action rows, not destinations: they never mutate
+/// `selectedTab` and stay outside the selection binding. They are reachable
+/// from every regular surface so the user does not have to switch tabs first.
 struct AppSidebarView: View {
     @Bindable var coordinator: AppShellCoordinator
+    @Binding var showAssistant: Bool
 
-    private static let navigableTabs: [AppTab] = [
-        .discover, .importTab, .recipes, .shopping, .profile,
-    ]
+    private var selectionBinding: Binding<AppTab?> {
+        Binding(
+            get: { coordinator.selectedTab },
+            set: { newValue in
+                guard let newValue else { return }
+                coordinator.handleSidebarSelection(newValue)
+            }
+        )
+    }
 
     var body: some View {
-        List {
-            ForEach(Self.navigableTabs, id: \.self) { tab in
+        List(selection: selectionBinding) {
+            Section {
+                sidebarLabel(.discover)
+                    .tag(AppTab.discover)
+                    .accessibilityIdentifier(sidebarAccessibilityId(.discover))
+                sidebarLabel(.recipes)
+                    .tag(AppTab.recipes)
+                    .accessibilityIdentifier(sidebarAccessibilityId(.recipes))
+                sidebarLabel(.shopping)
+                    .tag(AppTab.shopping)
+                    .accessibilityIdentifier(sidebarAccessibilityId(.shopping))
+            }
+
+            Section {
+                // Import is an action, not a destination: it never mutates
+                // `selectedTab` and therefore stays outside the selection
+                // binding. The system still renders it as a sidebar row.
                 Button {
-                    if tab == .importTab {
-                        coordinator.presentImport()
-                    } else {
-                        coordinator.handleSidebarSelection(tab)
-                    }
+                    coordinator.presentImport()
                 } label: {
-                    Label {
-                        Text(tab.title)
-                            .appBody()
-                    } icon: {
-                        Image(systemName: tab.tabBarSymbol)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                    .contentShape(Rectangle())
+                    sidebarLabel(.importTab)
                 }
-                .buttonStyle(.borderless)
-                .listRowBackground(rowBackground(tab))
-                .accessibilityIdentifier(sidebarAccessibilityId(tab))
-                .accessibilityAddTraits(tab == coordinator.selectedTab && tab != .importTab ? .isSelected : [])
+                .buttonStyle(.plain)
+                .accessibilityIdentifier(sidebarAccessibilityId(.importTab))
+
+                #if os(macOS)
+                // Mac sidebar owns generic assistant launch so the chat is
+                // reachable from every surface. iPad keeps assistant on the
+                // toolbar / FAB and is intentionally not changed here.
+                Button {
+                    showAssistant = true
+                } label: {
+                    Label("assistant.title", systemImage: "sparkles")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier(AccessibilityIdentifiers.assistantToolbarButton)
+                #endif
+
+                sidebarLabel(.profile)
+                    .tag(AppTab.profile)
+                    .accessibilityIdentifier(sidebarAccessibilityId(.profile))
             }
         }
         .listStyle(.sidebar)
     }
 
-    @ViewBuilder
-    private func rowBackground(_ tab: AppTab) -> some View {
-        if tab == coordinator.selectedTab, tab != .importTab {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.accentColor.opacity(0.15))
-        } else {
-            Color.clear
-        }
+    private func sidebarLabel(_ tab: AppTab) -> Label<Text, Image> {
+        Label(tab.title, systemImage: tab.tabBarSymbol)
     }
 
     private func sidebarAccessibilityId(_ tab: AppTab) -> String {

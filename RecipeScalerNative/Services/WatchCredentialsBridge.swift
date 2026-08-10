@@ -8,9 +8,12 @@
 //
 
 import Foundation
+#if canImport(WatchConnectivity)
 import WatchConnectivity
+#endif
 import RecipeScalerCore
 
+#if canImport(WatchConnectivity)
 final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
     static let shared = WatchCredentialsBridge()
 
@@ -166,3 +169,16 @@ final class WatchCredentialsBridge: NSObject, WCSessionDelegate {
     }
     #endif
 }
+#else
+/// macOS does not host the watch companion lifecycle. Keep the same façade so
+/// shared auth/timer services do not grow platform-specific call sites.
+final class WatchCredentialsBridge {
+    static let shared = WatchCredentialsBridge()
+
+    func activate() {}
+    func publish(userId: String, token: String?) {}
+    func publish(userId: String) {}
+    func publishTimersChanged() {}
+    func purge() {}
+}
+#endif

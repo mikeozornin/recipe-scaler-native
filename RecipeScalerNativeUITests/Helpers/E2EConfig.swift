@@ -17,13 +17,40 @@ enum E2EConfig {
     /// CI cannot silently leak bearer tokens in cleartext to an arbitrary
     /// host. See review finding High #6.
     static var apiBaseURL: URL {
-        if let raw = ProcessInfo.processInfo.environment["E2E_API_BASE"],
-           let url = URL(string: raw), !raw.isEmpty {
+        if let configured = ProcessInfo.processInfo.environment["E2E_API_BASE"],
+           !configured.isEmpty {
+            let raw = normalizedAPIBase(configured)
+            guard let url = URL(string: raw) else {
+                fatalError("E2E_API_BASE is not a valid URL: \(raw)")
+            }
             validateScheme(url, raw: raw)
             return url
         }
         // Default for local E2E: same host the simulator can reach.
         return URL(string: "http://127.0.0.1:3001")!
+    }
+
+    /// Preserve the exact configured string when injecting it into the app.
+    /// Foundation's URL round-trip can normalize a loopback HTTP override in
+    /// an XCTest host; the app must receive the original `http://` transport
+    /// spelling so its URL parser sees a host and can enable polling.
+    static var apiBaseString: String {
+        if let raw = ProcessInfo.processInfo.environment["E2E_API_BASE"],
+           !raw.isEmpty {
+            _ = apiBaseURL
+            return normalizedAPIBase(raw)
+        }
+        return apiBaseURL.absoluteString
+    }
+
+    /// xcodebuild's XCTest environment parser can collapse `http://` to
+    /// `http:/` for loopback values. Restore the scheme before URL validation
+    /// and before injecting the value into the app under test.
+    private static func normalizedAPIBase(_ raw: String) -> String {
+        guard raw.hasPrefix("http:/"), !raw.hasPrefix("http://") else {
+            return raw
+        }
+        return "http://" + String(raw.dropFirst("http:/".count))
     }
 
     /// True when the active backend is loopback (`127.0.0.1` / `localhost`).

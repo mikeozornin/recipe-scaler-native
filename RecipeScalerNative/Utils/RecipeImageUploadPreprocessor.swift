@@ -3,6 +3,21 @@
 //  RecipeScalerNative
 //
 
+#if os(macOS)
+import Foundation
+
+struct RecipeImageUploadPayload: Sendable {
+    let data: Data
+    let fileName: String
+    let mimeType: String
+}
+
+enum RecipeImageUploadPreprocessor {
+    static func payloadForUpload(from data: Data) async -> RecipeImageUploadPayload? {
+        nil
+    }
+}
+#else
 import ImageIO
 import UIKit
 import UniformTypeIdentifiers
@@ -13,7 +28,6 @@ struct RecipeImageUploadPayload: Sendable {
     let fileName: String
     let mimeType: String
 }
-
 /// HEIC/WebP passthrough (≤10 MB) → re-encoded WebP (if available) → JPEG fallback.
 enum RecipeImageUploadPreprocessor {
     static let maxUploadBytes = 10_000_000
@@ -221,3 +235,4 @@ enum RecipeImageUploadPreprocessor {
         }
     }
 }
+#endif

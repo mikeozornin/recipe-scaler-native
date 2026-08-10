@@ -1,5 +1,9 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 
 /// Maps recipe accent strings (oklch / hex) to SwiftUI `Color` and back for `ColorPicker`.
 enum RecipeAccentColor {
@@ -13,6 +17,7 @@ enum RecipeAccentColor {
         "oklch(0.62 0.20 320)": (0.82, 0.35, 0.88),
     ]
 
+    #if canImport(UIKit)
     static func uiColor(from stored: String) -> UIColor {
         let trimmed = stored.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { return uiColor(from: defaultStored) }
@@ -24,9 +29,31 @@ enum RecipeAccentColor {
         }
         return UIColor(red: 0.45, green: 0.35, blue: 0.95, alpha: 1)
     }
+    #else
+    static func nsColor(from stored: String) -> NSColor {
+        let trimmed = stored.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return nsColor(from: defaultStored) }
+        if let rgb = knownOklch[trimmed] {
+            return NSColor(
+                calibratedRed: rgb.r,
+                green: rgb.g,
+                blue: rgb.b,
+                alpha: 1
+            )
+        }
+        if trimmed.hasPrefix("#"), let parsed = NSColor(hex: trimmed) {
+            return parsed
+        }
+        return NSColor(calibratedRed: 0.45, green: 0.35, blue: 0.95, alpha: 1)
+    }
+    #endif
 
     static func color(from stored: String) -> Color {
+        #if canImport(UIKit)
         Color(uiColor(from: stored))
+        #else
+        Color(nsColor: nsColor(from: stored))
+        #endif
     }
 
     /// User folders use their accent; virtual collections use the default label color.
@@ -38,6 +65,7 @@ enum RecipeAccentColor {
     }
 
     /// Safe sRGB hex for Y.Doc (ColorPicker colors may be non-RGB).
+    #if canImport(UIKit)
     static func storedValue(from color: Color) -> String {
         let ui = UIColor(color)
         if let rgb = ui.cgColor.converted(
@@ -59,6 +87,12 @@ enum RecipeAccentColor {
         }
         return normalizedStored(defaultStored)
     }
+    #else
+    static func storedValue(from color: Color) -> String {
+        _ = color
+        return normalizedStored(defaultStored)
+    }
+    #endif
 
     static func normalizedStored(_ value: String) -> String {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -68,6 +102,7 @@ enum RecipeAccentColor {
     }
 }
 
+#if canImport(UIKit)
 private extension UIColor {
     convenience init?(hex: String) {
         var hex = hex.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -79,3 +114,16 @@ private extension UIColor {
         self.init(red: r, green: g, blue: b, alpha: 1)
     }
 }
+#else
+private extension NSColor {
+    convenience init?(hex: String) {
+        var hex = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if hex.hasPrefix("#") { hex.removeFirst() }
+        guard hex.count == 6, let value = UInt64(hex, radix: 16) else { return nil }
+        let r = CGFloat((value >> 16) & 0xFF) / 255
+        let g = CGFloat((value >> 8) & 0xFF) / 255
+        let b = CGFloat(value & 0xFF) / 255
+        self.init(calibratedRed: r, green: g, blue: b, alpha: 1)
+    }
+}
+#endif

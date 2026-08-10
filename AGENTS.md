@@ -45,7 +45,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-from the explicitly selected feature context. Do not infer a current plan from file modification time.
+at specs/062-mac-ipad-layout/plan.md
 <!-- SPECKIT END -->
 
 ## Learned User Preferences

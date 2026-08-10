@@ -4,7 +4,6 @@
 //
 
 import Foundation
-import UIKit
 
 extension NSAttributedString.Key {
     /// Timer span payload (encoded `rs-timer` URL). Not `.link` — avoids blue underline styling.

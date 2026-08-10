@@ -8,20 +8,6 @@ import PhotosUI
 import UniformTypeIdentifiers
 import RecipeScalerCore
 
-struct ImportRecipesResult {
-    let recipeIds: [String]
-    let importedCount: Int
-
-    init(recipeIds: [String], importedCount: Int? = nil) {
-        self.recipeIds = recipeIds
-        self.importedCount = importedCount ?? recipeIds.count
-    }
-
-    var primaryRecipeId: String? {
-        recipeIds.count == 1 ? recipeIds.first : nil
-    }
-}
-
 struct ImportRecipeSheet: View {
     let onImport: (ImportRecipesResult) -> Void
     @Environment(\.dismiss) private var dismiss

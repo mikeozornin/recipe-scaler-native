@@ -4,6 +4,210 @@ import SwiftData
 import os
 import RecipeScalerCore
 
+#if os(macOS)
+/// macOS composition root.
+///
+/// The object is still `AppContainer` (not a second container): the target
+/// omits iOS-only extensions, Live Activities and widget/reminder chrome while
+/// keeping the same auth, Yjs, image-cache, timer-sync and shell lifecycles.
+@MainActor
+@Observable
+final class AppContainer {
+    nonisolated static var shared: AppContainer? {
+        sharedLock.withLock { $0 }
+    }
+
+    nonisolated static func setShared(_ container: AppContainer?) {
+        sharedLock.withLock { $0 = container }
+    }
+
+    private nonisolated static let sharedLock = OSAllocatedUnfairLock<AppContainer?>(initialState: nil)
+
+    let database: YrsDatabase
+    let store: YDocStore
+    let mapStore: RemindersMapStore
+
+    let imageCache: ImageCacheService
+    let publicImageCache: PublicImageCacheService
+    let yjsMergeHelper: YjsMergeHelper
+    let assistantRecipeContext: AssistantRecipeContext
+    let deepLinkRouter: DeepLinkRouter
+    let discoverListState: DiscoverListStateStore
+    let shellCoordinator: AppShellCoordinator
+
+    let auth: AuthService
+    let pushSchedule: PushScheduleService
+    let pushRegistration: PushRegistrationService
+    let timerSync: TimerSyncService
+    let timer: TimerManager
+    let recipeImage: RecipeImageService
+    let api: APIClient = .shared
+    let sync: YjsSyncService
+
+    private let timerEventBridge: TimerEventBridge
+    private var bootstrappedUserId: String?
+
+    init(modelContext: ModelContext) throws {
+        let database: YrsDatabase
+        let isTestingHost = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || ProcessInfo.processInfo.arguments.contains("ui-testing")
+        if isTestingHost {
+            database = try YrsDatabase.makeInMemoryForTesting()
+        } else {
+            do {
+                database = try YrsDatabase()
+            } catch {
+                YrsDatabase.logInitFailure(error)
+                database = try YrsDatabase.makeInMemoryFallback()
+            }
+        }
+        self.database = database
+        self.store = YDocStore(dbQueue: database.dbQueue)
+        self.mapStore = RemindersMapStore(dbQueue: database.dbQueue)
+
+        let imageCache = ImageCacheService()
+        self.imageCache = imageCache
+        let publicImageCache = PublicImageCacheService()
+        self.publicImageCache = publicImageCache
+        let yjsMergeHelper = YjsMergeHelper()
+        self.yjsMergeHelper = yjsMergeHelper
+        self.assistantRecipeContext = AssistantRecipeContext()
+        let deepLinkRouter = DeepLinkRouter()
+        self.deepLinkRouter = deepLinkRouter
+        let discoverListState = DiscoverListStateStore()
+        self.discoverListState = discoverListState
+
+        let auth = AuthService()
+        self.auth = auth
+        let pushSchedule = PushScheduleService()
+        self.pushSchedule = pushSchedule
+        let pushRegistration = PushRegistrationService(auth: auth)
+        self.pushRegistration = pushRegistration
+        let timerSync = TimerSyncService()
+        self.timerSync = timerSync
+        let timer = TimerManager(timerSync: timerSync, modelContext: modelContext)
+        self.timer = timer
+        let recipeImage = RecipeImageService(
+            imageCache: imageCache,
+            publicImageCache: publicImageCache
+        )
+        self.recipeImage = recipeImage
+
+        let sync = YjsSyncService(
+            store: store,
+            timerSync: timerSync,
+            pushRegistration: pushRegistration,
+            recipeImage: recipeImage,
+            yjsMergeHelper: yjsMergeHelper
+        )
+        self.sync = sync
+        self.shellCoordinator = AppShellCoordinator(
+            syncService: sync,
+            deepLinkRouter: deepLinkRouter,
+            fileImportCoordinator: nil,
+            discoverListState: discoverListState
+        )
+
+        let fileImportCoordinator = RecipeFileImportCoordinator(syncService: sync)
+        fileImportCoordinator.shellCoordinator = shellCoordinator
+        shellCoordinator.fileImportCoordinator = fileImportCoordinator
+
+        let bridge = TimerEventBridge()
+        bridge.install(sync: sync, timerSync: timerSync)
+        self.timerEventBridge = bridge
+
+        Self.setShared(self)
+        if let sharedUserId = SharedAuthStore.userId {
+            if let token = SharedAuthStore.token, !token.isEmpty {
+                api.configure(authToken: token)
+            }
+            api.configure(userId: sharedUserId)
+        }
+
+        APIClient.shared.unauthorizedHandler = { [weak self] in
+            await Task { @MainActor in
+                await self?.auth.handleDeviceTokenInvalid()
+            }.value
+        }
+        sync.authInvalidationHandler = { [weak self] reason in
+            await Task { @MainActor in
+                await self?.auth.handleAccountDeleted(reason: reason)
+            }.value
+        }
+        auth.performContainerTeardown = { [weak self] reason, bearer, userId in
+            await self?.performInvalidationTeardown(
+                wipeReason: reason,
+                bearerForUnregister: bearer,
+                userIdForUnregister: userId
+            )
+        }
+    }
+
+    func bootstrap(userId: String) async {
+        let isTestingHost = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || ProcessInfo.processInfo.arguments.contains("ui-testing")
+        if isTestingHost { return }
+
+        let isSameUser = bootstrappedUserId == userId
+        if !isSameUser, bootstrappedUserId != nil {
+            shellCoordinator.resetShellStateForLogout()
+            discoverListState.clearAll()
+        }
+        bootstrappedUserId = userId
+
+        if auth.userId == nil {
+            auth.userId = userId
+            auth.isAuthenticated = true
+        }
+        SharedAuthStore.userId = userId
+        await auth.ensureDeviceTokenMigratedIfNeeded()
+        api.configure(authToken: SharedAuthStore.token ?? auth.token)
+        api.configure(userId: userId)
+        timerSync.configure(
+            userId: userId,
+            deviceId: TimerSyncService.storedDeviceId(),
+            timerManager: timer
+        )
+
+        // Keep the image cache lifecycle in the composition root on macOS too.
+        // `YjsSyncService.start` intentionally no longer installs observers.
+        sync.installImageCacheObserversIfNeeded()
+
+        if isSameUser {
+            await sync.resumeSession(userId: userId)
+        } else {
+            await sync.start(userId: userId)
+        }
+    }
+
+    func resetBootstrapAfterLogout() {
+        bootstrappedUserId = nil
+    }
+
+    func stopForLogout() async {
+        resetBootstrapAfterLogout()
+        shellCoordinator.resetShellStateForLogout()
+        discoverListState.clearAll()
+        await sync.clearSessionForLogout()
+        sync.stop()
+    }
+
+    func performInvalidationTeardown(
+        wipeReason: SessionWipeReason,
+        bearerForUnregister: String?,
+        userIdForUnregister: String?
+    ) async {
+        _ = wipeReason
+        if let bearerForUnregister, !bearerForUnregister.isEmpty {
+            api.configure(authToken: bearerForUnregister)
+        }
+        if let userIdForUnregister, !userIdForUnregister.isEmpty {
+            api.configure(userId: userIdForUnregister)
+        }
+        await stopForLogout()
+    }
+}
+#else
 /// Single source of truth for all app-level services.
 ///
 /// Built once in `RecipeScalerNativeApp.init`. Services are constructed in dependency
@@ -581,3 +785,4 @@ final class AppContainer {
     }
     #endif
 }
+#endif

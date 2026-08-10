@@ -11,6 +11,8 @@ struct CollectionFolderView: View {
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
+    var onRecipeSelectionChanged: ((String?, String?) -> Void)? = nil
+    var wideSelectedRecipeId: Binding<String?>? = nil
 
     @State private var isEditingName = false
     @State private var editingName = ""
@@ -361,13 +363,18 @@ struct CollectionFolderView: View {
                 }
             }
 
-            navigationPath.append(
-                RecipesRoute.recipe(
-                    recipeId: recipeId,
-                    folderContext: folderId,
-                    openInEditMode: true
+            if let wideSelectedRecipeId {
+                wideSelectedRecipeId.wrappedValue = recipeId
+            } else {
+                onRecipeSelectionChanged?(recipeId, folderId)
+                navigationPath.append(
+                    RecipesRoute.recipe(
+                        recipeId: recipeId,
+                        folderContext: folderId,
+                        openInEditMode: true
+                    )
                 )
-            )
+            }
         } catch {
             presentedAlert = .error(UserFacingAPIError.message(for: error))
         }
@@ -465,32 +472,56 @@ struct CollectionFolderView: View {
 
     @ViewBuilder
     private func recipeRowView(for item: RecipeRowData) -> some View {
+        let folderContext = RecipeFolderRoutes.shouldUseFolderRecipePath(
+            activeFolderId: folderId,
+            viewMode: .collections,
+            recipeFolderIds: syncService.collectionEntries
+                .first { $0.id == item.id }?.folderIds
+        ) ? folderId : nil
         let route = RecipesRoute.recipe(
             recipeId: item.id,
-            folderContext: RecipeFolderRoutes.shouldUseFolderRecipePath(
-                activeFolderId: folderId,
-                viewMode: .collections,
-                recipeFolderIds: syncService.collectionEntries
-                    .first { $0.id == item.id }?.folderIds
-            ) ? folderId : nil
+            folderContext: folderContext
         )
-        ZStack(alignment: .leading) {
-            RecipeRow(
-                data: item,
-                highlight: isSearching ? searchStore.highlights[item.id] : nil,
-                allowsNetworkRefresh: allowsImageNetworkRefresh
-            )
-            .frame(maxWidth: .infinity, alignment: .leading)
+        Group {
+            if let wideSelectedRecipeId {
+                RecipeRow(
+                    data: item,
+                    highlight: isSearching ? searchStore.highlights[item.id] : nil,
+                    allowsNetworkRefresh: allowsImageNetworkRefresh
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    wideSelectedRecipeId.wrappedValue = item.id
+                }
+            } else {
+                ZStack(alignment: .leading) {
+                    RecipeRow(
+                        data: item,
+                        highlight: isSearching ? searchStore.highlights[item.id] : nil,
+                        allowsNetworkRefresh: allowsImageNetworkRefresh
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-            NavigationLink(value: route) {
-                Color.clear
+                    NavigationLink(value: route) {
+                        Color.clear
+                    }
+                    .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
+                    .opacity(0.01)
+                    .simultaneousGesture(
+                        TapGesture().onEnded {
+                            onRecipeSelectionChanged?(item.id, folderContext)
+                        }
+                    )
+                }
             }
-            .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
-            .opacity(0.01)
         }
         .buttonStyle(.plain)
         .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
         .accessibilityIdentifier(AccessibilityIdentifiers.recipeRow(id: item.id))
+        .accessibilityAddTraits(
+            wideSelectedRecipeId?.wrappedValue == item.id ? .isSelected : []
+        )
         .swipeActions(edge: .leading, allowsFullSwipe: false) {
             Button {
                 Task { await addRecipeToShopping(item) }
@@ -501,6 +532,7 @@ struct CollectionFolderView: View {
                 )
             }
             .tint(.green)
+            .accessibilityIdentifier(AccessibilityIdentifiers.recipeRowShopping(id: item.id))
 
             Button {
                 presentedSheet = .assign(recipeId: item.id, recipeName: item.displayName)
@@ -511,6 +543,7 @@ struct CollectionFolderView: View {
                 )
             }
             .tint(.orange)
+            .accessibilityIdentifier(AccessibilityIdentifiers.recipeRowAssign(id: item.id))
 
             Button {
                 Task { await togglePin(for: item) }
@@ -521,11 +554,12 @@ struct CollectionFolderView: View {
                             ? String(localized: "recipe.list.unpin")
                             : String(localized: "recipe.list.pin")
                     )
-                } icon: {
+            } icon: {
                     AppSymbol.image(item.isPinned ? "pin.slash" : "pin")
                 }
             }
             .tint(.blue)
+            .accessibilityIdentifier(AccessibilityIdentifiers.recipeRowPin(id: item.id))
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button {
@@ -534,6 +568,7 @@ struct CollectionFolderView: View {
                 AppLabel.make(String(localized: "recipe.list.delete"), symbol: "trash")
             }
             .tint(.red)
+            .accessibilityIdentifier(AccessibilityIdentifiers.recipeRowDelete(id: item.id))
         }
         .task(id: item.id) {
             guard item.hasThumbnail,

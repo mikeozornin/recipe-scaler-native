@@ -25,6 +25,13 @@ enum UIA {
     static let tabShopping = "tab_shopping"
     static let tabProfile = "tab_profile"
 
+    // Regular shell sidebar (iPad wide / native Mac parity).
+    static let sidebarDiscover = "sidebar_discover"
+    static let sidebarImport = "sidebar_import"
+    static let sidebarRecipes = "sidebar_recipes"
+    static let sidebarShopping = "sidebar_shopping"
+    static let sidebarProfile = "sidebar_profile"
+
     // MARK: - Discover (011/017)
     static let discoverRoot = "discover_root"
     static let discoverCollectionCard = "discover_collection_card"
@@ -45,6 +52,8 @@ enum UIA {
     static let shoppingList = "shopping_list"
     static let shoppingAddField = "shopping_add_field"
     static let shoppingShareButton = "shopping_share_button"
+    static let shoppingItemPrefix = "shopping_item_"
+    static let shoppingItemDeletePrefix = "shopping_item_delete_"
     static let shoppingRemindersTip = "shopping_reminders_tip"
     static let shoppingRemindersTipEnable = "shopping_reminders_tip_enable"
     static let shoppingRemindersTipDismiss = "shopping_reminders_tip_dismiss"
@@ -83,6 +92,7 @@ enum UIA {
     static let deleteAccountError = "delete_account_error"
 
     // MARK: - Assistant (015/021)
+    static let assistantToolbarButton = "assistant_toolbar_button"
     static let assistantFab = "assistant_fab"
     static let assistantSheet = "assistant_sheet"
     static let assistantComposerShell = "assistant_composer_shell"
@@ -112,6 +122,10 @@ enum UIA {
     static let recipeList = "recipe_list"
     static let recipeListAdd = "recipe_list_add"
     static let recipeRowPrefix = "recipe_row_"
+    static let recipeRowAssignPrefix = "recipe_row_assign_"
+    static let recipeRowShoppingPrefix = "recipe_row_shopping_"
+    static let recipeRowPinPrefix = "recipe_row_pin_"
+    static let recipeRowDeletePrefix = "recipe_row_delete_"
     static let profileButton = "profile_button"
     static let scaleMinusButton = "scale_minus_button"
     static let scalePlusButton = "scale_plus_button"
@@ -186,5 +200,29 @@ enum UIA {
 
     static func recipeRow(id: String) -> String {
         "\(recipeRowPrefix)\(id)"
+    }
+
+    static func recipeRowAssign(id: String) -> String {
+        "\(recipeRowAssignPrefix)\(id)"
+    }
+
+    static func recipeRowShopping(id: String) -> String {
+        "\(recipeRowShoppingPrefix)\(id)"
+    }
+
+    static func recipeRowPin(id: String) -> String {
+        "\(recipeRowPinPrefix)\(id)"
+    }
+
+    static func recipeRowDelete(id: String) -> String {
+        "\(recipeRowDeletePrefix)\(id)"
+    }
+
+    static func shoppingItem(id: String) -> String {
+        "\(shoppingItemPrefix)\(id)"
+    }
+
+    static func shoppingItemDelete(id: String) -> String {
+        "\(shoppingItemDeletePrefix)\(id)"
     }
 }

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Resolve a usable iPhone simulator without depending on one machine-specific UDID.
+# Resolve a usable iOS simulator without depending on one machine-specific UDID.
 #
 # Usage:
 #   SIM_ID=<udid> bash scripts/resolve-simulator.sh
+#   SIM_DEVICE_FAMILY=ipad bash scripts/resolve-simulator.sh
 #   bash scripts/resolve-simulator.sh
 #
 # The explicit SIM_ID override is intentionally checked first so CI and paired
@@ -21,6 +22,7 @@ python3 - "$ROOT" <<'PY'
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -44,15 +46,26 @@ except (OSError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
     print(f"Unable to enumerate available iOS simulators: {exc}", file=sys.stderr)
     raise SystemExit(1)
 
+family = os.environ.get("SIM_DEVICE_FAMILY", "iphone").strip().lower()
+if family not in {"iphone", "ipad", "any"}:
+    print(
+        "SIM_DEVICE_FAMILY must be one of: iphone, ipad, any",
+        file=sys.stderr,
+    )
+    raise SystemExit(2)
+
 candidates: list[tuple[int, tuple[int, ...], str, str, str]] = []
 for runtime, runtime_devices in devices.items():
-    if not runtime.lower().startswith("com.apple.coreSimulator.simruntime.ios"):
+    if not runtime.lower().startswith("com.apple.coresimulator.simruntime.ios"):
         continue
     for device in runtime_devices:
         if device.get("isAvailable") is False:
             continue
         name = str(device.get("name", ""))
-        if "iphone" not in name.lower():
+        name_lower = name.lower()
+        if family == "iphone" and "iphone" not in name_lower:
+            continue
+        if family == "ipad" and "ipad" not in name_lower:
             continue
         udid = str(device.get("udid", ""))
         if not udid:
@@ -62,7 +75,7 @@ for runtime, runtime_devices in devices.items():
 
 if not candidates:
     print(
-        "No available iPhone simulator found. Set SIM_ID explicitly or install an iOS runtime.",
+        f"No available {family} simulator found. Set SIM_ID explicitly or install an iOS runtime.",
         file=sys.stderr,
     )
     raise SystemExit(1)

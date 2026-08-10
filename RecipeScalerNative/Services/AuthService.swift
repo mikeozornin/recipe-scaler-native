@@ -251,7 +251,18 @@ class AuthService {
     /// `account_deleted` audits.
     private var isHandlingAccountInvalidation = false
 
-    private let keychain = Keychain(service: "com.recipescaler.native")
+    private let keychain: Keychain = {
+        #if os(macOS)
+        // Mac target must declare `keychain-access-groups` in entitlements
+        // (see RecipeScalerMac.entitlements) — same group as SharedAuthStore.
+        return Keychain(
+            service: "com.recipescaler.native",
+            accessGroup: SharedAuthStore.sharedKeychainAccessGroup
+        )
+        #else
+        return Keychain(service: "com.recipescaler.native")
+        #endif
+    }()
     private let seedPhraseKey = "seedPhrase"
 
     private var apiClient: APIClient {

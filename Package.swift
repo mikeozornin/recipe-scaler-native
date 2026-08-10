@@ -7,7 +7,8 @@ let package = Package(
     name: "RecipeScalerNative",
     defaultLocalization: "en",
     platforms: [
-        .iOS(.v17)
+        .iOS(.v17),
+        .macOS(.v14)
     ],
     products: [
         .library(
@@ -35,6 +36,9 @@ let package = Package(
 
         // SQLite storage for Y.Doc snapshots
         .package(url: "https://github.com/groue/GRDB.swift", from: "7.0.0"),
+
+        // ZIP import/export used by RecipeScalerCore native formats.
+        .package(url: "https://github.com/weichsel/ZIPFoundation.git", from: "0.9.19"),
     ],
     targets: [
         // Binary module YrsC (libyrs FFI).
@@ -49,7 +53,9 @@ let package = Package(
         // import, auth, snapshots). Only depends on system frameworks.
         .target(
             name: "RecipeScalerCore",
-            dependencies: [],
+            dependencies: [
+                .product(name: "ZIPFoundation", package: "ZIPFoundation"),
+            ],
             path: "RecipeScalerCore",
             exclude: [
                 ".DS_Store",

@@ -41,6 +41,8 @@ final class AppShellCoordinator {
     var discoverPath = NavigationPath()
     var shoppingPath = NavigationPath()
     var wideRecipesState = WideRecipesState()
+    private(set) var lastSelectedRecipeId: String?
+    private(set) var lastActiveFolderId: String?
     /// Set by `AdaptiveAppShell` when regular layout is active (recipe split selection).
     var usesRegularRecipeSplit = false
     private(set) var pendingSpotlightRecipeId: String?
@@ -122,21 +124,140 @@ final class AppShellCoordinator {
 
     func selectRecipeInWideSplit(_ recipeId: String?) {
         wideRecipesState.selectedRecipeId = recipeId
+        lastSelectedRecipeId = recipeId
     }
 
     func openFolderInWideSplit(_ folderId: String?) {
+        if wideRecipesState.activeFolderId != folderId {
+            wideRecipesState.selectedRecipeId = nil
+            lastSelectedRecipeId = nil
+        }
         wideRecipesState.activeFolderId = folderId
+        lastActiveFolderId = folderId
+        LayoutPreferencesStore.lastRecipesRoute = folderId.map { "/folder/\($0)" } ?? "/"
+        if usesRegularRecipeSplit {
+            autoSelectFirstRecipeInWideSplitIfNeeded(entries: syncService.collectionEntries)
+        }
+    }
+
+    /// Keeps the compact navigation stack and the regular split selection in
+    /// sync. Compact iOS views own `NavigationPath`, while regular iPad/Mac
+    /// views own `WideRecipesState`; this bridge is the single transition
+    /// point between the two representations.
+    func setRegularLayout(_ isRegular: Bool, entries: [CollectionEntry]) {
+        guard usesRegularRecipeSplit != isRegular else {
+            if isRegular {
+                if wideRecipesState.activeFolderId == nil, lastActiveFolderId == nil {
+                    restorePersistedWideFolderIfNeeded()
+                    wideRecipesState.activeFolderId = lastActiveFolderId
+                }
+                autoSelectFirstRecipeInWideSplitIfNeeded(entries: entries)
+            }
+            return
+        }
+
+        if isRegular {
+            usesRegularRecipeSplit = true
+            // The compact stack owns its pushed detail. Once the system gives
+            // us a regular split, that detail must move to the third column;
+            // retain only the folder route in the list column.
+            recipesPath = NavigationPath()
+            if wideRecipesState.activeFolderId == nil, lastActiveFolderId == nil {
+                restorePersistedWideFolderIfNeeded()
+            }
+            wideRecipesState.activeFolderId = lastActiveFolderId
+            if let activeFolderId = wideRecipesState.activeFolderId {
+                recipesPath.append(RecipesRoute.folder(activeFolderId))
+            }
+            if wideRecipesState.selectedRecipeId == nil,
+               let lastSelectedRecipeId,
+               entries.contains(where: { $0.id == lastSelectedRecipeId && !$0.deleted }) {
+                wideRecipesState.selectedRecipeId = lastSelectedRecipeId
+            }
+            autoSelectFirstRecipeInWideSplitIfNeeded(entries: entries)
+        } else {
+            recipesPath = NavigationPath()
+            if let activeFolderId = wideRecipesState.activeFolderId {
+                recipesPath.append(RecipesRoute.folder(activeFolderId))
+            }
+            if let selectedRecipeId = wideRecipesState.selectedRecipeId {
+                lastSelectedRecipeId = selectedRecipeId
+                recipesPath.append(
+                    RecipesRoute.recipe(
+                        recipeId: selectedRecipeId,
+                        folderContext: wideRecipesState.activeFolderId
+                    )
+                )
+            }
+            usesRegularRecipeSplit = false
+        }
+    }
+
+    /// Called by compact recipe rows/detail destinations. Keeping this state
+    /// outside the view lets a regular transition restore the same recipe
+    /// rather than auto-selecting a different first row.
+    func noteCompactRecipeSelection(
+        _ recipeId: String,
+        folderContext: String?
+    ) {
+        lastSelectedRecipeId = recipeId
+        lastActiveFolderId = folderContext
+        wideRecipesState.selectedRecipeId = recipeId
+        wideRecipesState.activeFolderId = folderContext
+    }
+
+    func clearCompactRecipeSelection() {
+        lastSelectedRecipeId = nil
+        wideRecipesState.selectedRecipeId = nil
+    }
+
+    func noteCompactFolderSelection(_ folderId: String?) {
+        lastActiveFolderId = folderId
+        wideRecipesState.activeFolderId = folderId
+        LayoutPreferencesStore.lastRecipesRoute = folderId.map { "/folder/\($0)" } ?? "/"
     }
 
     func autoSelectFirstRecipeInWideSplitIfNeeded(entries: [CollectionEntry]) {
         guard usesRegularRecipeSplit, selectedTab == .recipes else { return }
-        guard wideRecipesState.selectedRecipeId == nil else { return }
-        let sorted = RecipeTitleEmoji.sortCollectionEntries(entries).filter { !$0.deleted }
+        let scopedEntries: [CollectionEntry]
+        switch wideRecipesState.activeFolderId {
+        case CollectionVirtualFolders.allRecipesFolderId, nil:
+            scopedEntries = entries
+        case CollectionVirtualFolders.uncategorizedFolderId:
+            scopedEntries = entries.filter { $0.folderIds.isEmpty }
+        case let folderId?:
+            scopedEntries = entries.filter { $0.folderIds.contains(folderId) }
+        }
+
+        let liveEntries = scopedEntries.filter { !$0.deleted }
+        if let selectedRecipeId = wideRecipesState.selectedRecipeId,
+           liveEntries.contains(where: { $0.id == selectedRecipeId }) {
+            return
+        }
+
+        wideRecipesState.selectedRecipeId = nil
+        let sorted = RecipeTitleEmoji.sortCollectionEntries(liveEntries)
         guard let first = sorted.first else { return }
         wideRecipesState.selectedRecipeId = first.id
+        lastSelectedRecipeId = first.id
+    }
+
+    func restorePersistedWideFolderIfNeeded() {
+        let route = LayoutPreferencesStore.lastRecipesRoute
+        guard route.hasPrefix("/folder/") else { return }
+        let folderId = String(route.dropFirst("/folder/".count))
+        guard RecipeFolderRoutes.isValidFolderId(
+            folderId,
+            userFolderIds: syncService.folders.map(\.id)
+        ) else {
+            return
+        }
+        lastActiveFolderId = folderId
+        wideRecipesState.activeFolderId = folderId
     }
 
     func openRecipeDetail(recipeId: String) {
+        lastSelectedRecipeId = recipeId
         if usesRegularRecipeSplit {
             wideRecipesState.selectedRecipeId = recipeId
         } else {
@@ -289,6 +410,9 @@ final class AppShellCoordinator {
         recipesPath = NavigationPath()
         discoverPath = NavigationPath()
         shoppingPath = NavigationPath()
+        wideRecipesState = WideRecipesState()
+        lastSelectedRecipeId = nil
+        lastActiveFolderId = nil
         deepLinkRouter.clear()
         UserDefaults.standard.removeObject(forKey: DeepLinkRouter.pendingRecipeIdKey)
         AppGroup.userDefaults?.removeObject(forKey: DeepLinkRouter.pendingRecipeIdKey)
@@ -306,8 +430,11 @@ final class AppShellCoordinator {
         case .recipes:
             if !recipesPath.isEmpty {
                 recipesPath = NavigationPath()
+                clearCompactRecipeSelection()
+                noteCompactFolderSelection(nil)
             } else if usesRegularRecipeSplit, wideRecipesState.selectedRecipeId != nil {
-                wideRecipesState.selectedRecipeId = nil
+                selectRecipeInWideSplit(nil)
+                openFolderInWideSplit(nil)
             }
         case .shopping:
             if !shoppingPath.isEmpty { shoppingPath = NavigationPath() }

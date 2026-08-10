@@ -3,6 +3,224 @@
 //  RecipeScalerNative
 //
 
+#if os(macOS)
+import Foundation
+import SwiftData
+import RecipeScalerCore
+
+/// macOS timer façade.
+///
+/// Live Activities, background-task scheduling and APNs registration belong to
+/// the iOS target. The timer model and cross-device queue remain shared so the
+/// regular shell can expose the same timer state without importing iOS chrome.
+@MainActor
+@Observable
+final class TimerManager {
+    static var shared: TimerManager {
+        if let container = AppContainer.shared {
+            return container.timer
+        }
+        return Standalone
+    }
+
+    private static let Standalone: TimerManager = {
+        let sync = TimerSyncService.shared
+        return TimerManager(
+            timerSync: sync,
+            modelContext: ModelContext(RecipeScalerMacApp.sharedModelContainer)
+        )
+    }()
+
+    private(set) var timers: [RecipeTimer] = []
+    private(set) var activeTimers: [RecipeTimer] = []
+    private(set) var suppressPanelSafeAreaInset = false
+
+    private let timerSync: TimerSyncService
+    private let modelContext: ModelContext?
+
+    init(timerSync: TimerSyncService, modelContext: ModelContext?) {
+        self.timerSync = timerSync
+        self.modelContext = modelContext
+        timerSync.timerManager = self
+        loadTimers()
+    }
+
+    func setSuppressPanelSafeAreaInset(_ suppress: Bool) {
+        suppressPanelSafeAreaInset = suppress
+    }
+
+    func replaceTimersFromServer(_ serverTimers: [RecipeTimer]) {
+        timers = serverTimers
+        refreshPanelTimers()
+        persistAll()
+    }
+
+    @discardableResult
+    func createTimer(
+        name: String,
+        duration: TimeInterval,
+        type: RecipeTimer.TimerType = .minutes,
+        recipeId: String? = nil,
+        recipeDisplayName: String? = nil
+    ) -> RecipeTimer {
+        let timer = RecipeTimer(
+            name: name,
+            duration: duration,
+            type: type,
+            recipeId: recipeId,
+            recipeDisplayName: recipeDisplayName
+        )
+        insert(timer)
+        timerSync.enqueue(
+            type: .timerCreated,
+            timerId: timer.id,
+            payload: timerSync.timerCreatedPayload(for: timer)
+        )
+        return timer
+    }
+
+    @discardableResult
+    func createAndStartTimer(
+        name: String,
+        duration: TimeInterval,
+        type: RecipeTimer.TimerType = .minutes,
+        recipeId: String? = nil,
+        recipeDisplayName: String? = nil
+    ) -> RecipeTimer {
+        let timer = RecipeTimer(
+            name: name,
+            duration: duration,
+            type: type,
+            recipeId: recipeId,
+            recipeDisplayName: recipeDisplayName
+        )
+        timer.start()
+        insert(timer)
+        timerSync.enqueue(
+            type: .timerCreated,
+            timerId: timer.id,
+            payload: timerSync.timerCreatedPayload(for: timer)
+        )
+        persist(timer)
+        refreshPanelTimers()
+        return timer
+    }
+
+    func startTimer(id: String) {
+        guard let timer = timers.first(where: { $0.id == id }), !timer.isRunning else { return }
+        timer.start()
+        persist(timer)
+        refreshPanelTimers()
+        enqueue(.timerStarted, timer: timer, extra: ["endTime": millis(timer.endTime) as Any])
+    }
+
+    func pauseTimer(id: String) {
+        guard let timer = timers.first(where: { $0.id == id }) else { return }
+        timer.pause()
+        persist(timer)
+        refreshPanelTimers()
+        enqueue(.timerPaused, timer: timer, extra: ["remaining": timer.remainingTime as Any])
+    }
+
+    func resumeTimer(id: String) {
+        guard let timer = timers.first(where: { $0.id == id }) else { return }
+        timer.resume()
+        persist(timer)
+        refreshPanelTimers()
+        enqueue(.timerResumed, timer: timer, extra: ["endTime": millis(timer.endTime) as Any])
+    }
+
+    func deleteTimer(id: String) {
+        guard let index = timers.firstIndex(where: { $0.id == id }) else { return }
+        let timer = timers.remove(at: index)
+        modelContext?.delete(timer)
+        try? modelContext?.save()
+        refreshPanelTimers()
+        enqueue(.timerDeleted, timer: timer)
+    }
+
+    func timer(id: String) -> RecipeTimer? {
+        timers.first { $0.id == id }
+    }
+
+    func upsertTimerFromSync(_ timer: RecipeTimer) {
+        if let index = timers.firstIndex(where: { $0.id == timer.id }) {
+            timers[index] = timer
+        } else {
+            modelContext?.insert(timer)
+            timers.append(timer)
+        }
+        persist(timer)
+        refreshPanelTimers()
+    }
+
+    func removeTimerFromSync(id: String) {
+        guard let index = timers.firstIndex(where: { $0.id == id }) else { return }
+        let timer = timers.remove(at: index)
+        modelContext?.delete(timer)
+        try? modelContext?.save()
+        refreshPanelTimers()
+    }
+
+    func ensureUpdateLoopRunning() {}
+    func stopUpdateLoopIfIdle() {}
+
+    /// iOS-only lifecycle hooks remain no-ops on macOS.
+    func beginForegroundRemoteRefresh() {}
+    func endForegroundRemoteRefresh() {}
+    func refreshLiveActivities() {}
+
+    private func loadTimers() {
+        guard let modelContext else { return }
+        let descriptor = FetchDescriptor<RecipeTimer>(predicate: #Predicate { !$0.hasCompleted })
+        timers = (try? modelContext.fetch(descriptor)) ?? []
+        refreshPanelTimers()
+    }
+
+    private func insert(_ timer: RecipeTimer) {
+        modelContext?.insert(timer)
+        timers.append(timer)
+        refreshPanelTimers()
+        persist(timer)
+    }
+
+    private func persist(_ timer: RecipeTimer) {
+        timer.lastUpdated = Date()
+        try? modelContext?.save()
+    }
+
+    private func persistAll() {
+        try? modelContext?.save()
+    }
+
+    private func enqueue(
+        _ type: SyncedTimerEventType,
+        timer: RecipeTimer,
+        extra: [String: Any] = [:]
+    ) {
+        var payload: [String: Any]
+        switch type {
+        case .timerCreated:
+            payload = timerSync.timerCreatedPayload(for: timer)
+        case .timerStarted, .timerResumed, .timerPaused, .timerDeleted:
+            payload = ["type": type.rawValue, "timerId": timer.id]
+        }
+        for (key, value) in extra {
+            payload[key] = value
+        }
+        timerSync.enqueue(type: type, timerId: timer.id, payload: payload)
+    }
+
+    private func millis(_ date: Date?) -> Int64? {
+        guard let date else { return nil }
+        return Int64(date.timeIntervalSince1970 * 1000)
+    }
+
+    private func refreshPanelTimers() {
+        activeTimers = timers.filter { !$0.hasCompleted }
+    }
+}
+#else
 import Foundation
 import UIKit
 import UserNotifications
@@ -967,3 +1185,4 @@ extension TimerManager: UNUserNotificationCenterDelegate {
         completionHandler()
     }
 }
+#endif

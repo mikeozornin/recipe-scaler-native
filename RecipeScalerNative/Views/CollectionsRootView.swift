@@ -10,6 +10,7 @@ struct CollectionsRootView: View {
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
+    var onFolderSelectionChanged: ((String?) -> Void)? = nil
 
     @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)
     private var layoutRaw: String = RecipeFolderRoutes.defaultCollectionsRootLayout.rawValue
@@ -198,6 +199,7 @@ struct CollectionsRootView: View {
         folder: RecipeFolder? = nil
     ) -> some View {
         Button {
+            onFolderSelectionChanged?(folderId)
             navigationPath.append(RecipesRoute.folder(folderId))
         } label: {
             folderGridTileContent(
@@ -331,6 +333,7 @@ struct CollectionsRootView: View {
         let folder = syncService.folders.first { $0.id == folderId }
 
         Button {
+            onFolderSelectionChanged?(folderId)
             navigationPath.append(RecipesRoute.folder(folderId))
         } label: {
             HStack(spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {

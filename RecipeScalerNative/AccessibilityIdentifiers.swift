@@ -109,8 +109,18 @@ enum AccessibilityIdentifiers {
     }
 
     static let recipeList = "recipe_list"
+    static let recipeListViewMode = "recipe_list_view_mode"
     static let recipeListAdd = "recipe_list_add"
     static let recipeRowPrefix = "recipe_row_"
+    static let recipeDetailActions = "recipe_detail_actions"
+    static let recipeDetailTitleEdit = "recipe_detail_title_edit"
+    static let recipeRowAssignPrefix = "recipe_row_assign_"
+    static let recipeRowShoppingPrefix = "recipe_row_shopping_"
+    static let recipeRowPinPrefix = "recipe_row_pin_"
+    static let recipeRowDeletePrefix = "recipe_row_delete_"
+    static let shoppingItemPrefix = "shopping_item_"
+    static let shoppingItemTogglePrefix = "shopping_item_toggle_"
+    static let shoppingItemDeletePrefix = "shopping_item_delete_"
     static let profileButton = "profile_button"
     static let scaleMinusButton = "scale_minus_button"
     static let scalePlusButton = "scale_plus_button"
@@ -194,5 +204,33 @@ enum AccessibilityIdentifiers {
 
     static func recipeRow(id: String) -> String {
         "\(recipeRowPrefix)\(id)"
+    }
+
+    static func recipeRowAssign(id: String) -> String {
+        "\(recipeRowAssignPrefix)\(id)"
+    }
+
+    static func recipeRowShopping(id: String) -> String {
+        "\(recipeRowShoppingPrefix)\(id)"
+    }
+
+    static func recipeRowPin(id: String) -> String {
+        "\(recipeRowPinPrefix)\(id)"
+    }
+
+    static func recipeRowDelete(id: String) -> String {
+        "\(recipeRowDeletePrefix)\(id)"
+    }
+
+    static func shoppingItem(id: String) -> String {
+        "\(shoppingItemPrefix)\(id)"
+    }
+
+    static func shoppingItemToggle(id: String) -> String {
+        "\(shoppingItemTogglePrefix)\(id)"
+    }
+
+    static func shoppingItemDelete(id: String) -> String {
+        "\(shoppingItemDeletePrefix)\(id)"
     }
 }

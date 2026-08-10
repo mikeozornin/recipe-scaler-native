@@ -1,8 +1,11 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// SF Symbols with consistent semibold weight across the app.
 enum AppSymbol {
+#if canImport(UIKit)
     private static let configuration = UIImage.SymbolConfiguration(weight: .semibold)
     private static let toolbarConfiguration = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
     /// Timer panel controls — footnote-scale SF Symbols (~17 pt).
@@ -46,6 +49,35 @@ enum AppSymbol {
         return Image(uiImage: uiImage)
             .renderingMode(.template)
     }
+#else
+    static func image(_ systemName: String) -> Image {
+        Image(systemName: systemName)
+    }
+
+    /// macOS uses SwiftUI's symbol metrics instead of UIKit's UIImage configuration.
+    static func toolbarImage(_ systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 20, weight: .semibold))
+    }
+
+    static func compactControlImage(_ systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 17, weight: .semibold))
+    }
+
+    static func emptyStateImage(_ systemName: String) -> Image {
+        Image(systemName: systemName)
+    }
+
+    static func sizedImage(
+        _ systemName: String,
+        pointSize: CGFloat,
+        weight: Font.Weight = .regular
+    ) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: pointSize, weight: weight))
+    }
+#endif
 }
 
 enum AppLabel {

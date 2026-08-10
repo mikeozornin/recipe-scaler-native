@@ -68,7 +68,11 @@
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
-		<string>$(RS_ALLOWS_LOCAL_NETWORKING)</string>
+#if RS_ALLOW_LOCAL_NETWORKING
+		<true/>
+#else
+		<false/>
+#endif
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Recipe Scaler uses the camera to scan QR codes to log in with your seed phrase.</string>

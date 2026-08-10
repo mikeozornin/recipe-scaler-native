@@ -6,11 +6,6 @@
 import RecipeScalerCore
 import SwiftUI
 
-struct DiscoverRecipeReturnContext: Hashable, Sendable {
-    let scope: DiscoverListScope
-    let recipeID: String
-}
-
 struct DiscoverRootView: View {
     @Binding var path: NavigationPath
     @Environment(\.apiClient) private var apiClient
@@ -157,17 +152,6 @@ private struct DiscoverRootContent: View {
             }
         }
     }
-}
-
-enum DiscoverRoute: Hashable {
-    case collection(String)
-    case recipe(
-        id: String,
-        allowDownloads: Bool = true,
-        imageSource: DiscoverRecipeImageSource = .curatedDiscover,
-        returnContext: DiscoverRecipeReturnContext? = nil
-    )
-    case profile(String)
 }
 
 /// Curated collection preview card (web `CollectionCard` + cover on the right).

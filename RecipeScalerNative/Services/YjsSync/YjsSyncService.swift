@@ -1833,6 +1833,12 @@ final class YjsSyncService {
             .reconnectWait(1),
             .reconnectWaitMax(5),
         ]
+        if Config.isLoopbackE2EOverride {
+            // The simulator's ATS policy rejects the insecure ws:// upgrade
+            // used by the local fixture server. HTTP polling exercises the
+            // same Socket.IO/Yjs handshake without weakening Release builds.
+            socketConfig.insert(.forcePolling(true))
+        }
         if connectionTransport == .websocketOnly {
             socketConfig.insert(.forceWebsockets(true))
         }
