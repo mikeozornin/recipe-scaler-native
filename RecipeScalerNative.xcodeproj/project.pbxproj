@@ -690,7 +690,6 @@
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
 			files = (
-				1D624A656C3A4FAF9496BDB0 /* RecipeScalerNativeWatch.app in Embed Watch App */,
 			);
 			name = "Embed Watch App";
 			runOnlyForDeploymentPostprocessing = 0;
