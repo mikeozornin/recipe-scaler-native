@@ -10845,6 +10845,40 @@
         }
       }
     },
+    "recipes.split.select-recipe.description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a recipe from the list to view it here."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите рецепт в списке, чтобы открыть его здесь."
+          }
+        }
+      }
+    },
+    "recipes.split.select-recipe.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a Recipe"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите рецепт"
+          }
+        }
+      }
+    },
     "Scale": {
       "extractionState": "manual",
       "localizations": {

@@ -385,6 +385,8 @@
 		E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */; };
 		E5F60718293A4B7055FFBBCC /* DocumentManager+ShoppingList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */; };
 		E5F60718293A4B705777B4EE /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A5EF6DCE /* AppShellView.swift */; };
+		AB0630001000000100000001 /* AppSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0630001000000200000001 /* AppSidebarView.swift */; };
+		AB0630001000000100000002 /* AdaptiveColumnWidthModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0630001000000200000002 /* AdaptiveColumnWidthModifier.swift */; };
 		E5F60718293A4B7058D1A50A /* AccountOptionLabels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70E32FCAE0 /* AccountOptionLabels.swift */; };
 		E5F60718293A4B7061726B18 /* TelegramConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70CD30E492 /* TelegramConnectionView.swift */; };
 		E5F60718293A4B7069A26F71 /* AccountCheckmarkSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */; };
@@ -1118,6 +1120,8 @@
 		E5F60718293A4B70A1TBR002 /* AppToolbarStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppToolbarStyle.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A32A1501 /* ShoppingListData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListData.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A5EF6DCE /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
+		AB0630001000000200000001 /* AppSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSidebarView.swift; sourceTree = "<group>"; };
+		AB0630001000000200000002 /* AdaptiveColumnWidthModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveColumnWidthModifier.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A8935C5F /* DiscoverRecipePreviewImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverRecipePreviewImage.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70AAV00001 /* AuthAvatarImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthAvatarImage.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70ACE01234 /* AccountProfileEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountProfileEditView.swift; sourceTree = "<group>"; };
@@ -1512,6 +1516,8 @@
 				75EE8CD517E8068E7ECBF4A2 /* SplashView.swift */,
 				F4E0F52196856ADAA6F5C473 /* TimerExampleView.swift */,
 				E5F60718293A4B70A5EF6DCE /* AppShellView.swift */,
+				AB0630001000000200000001 /* AppSidebarView.swift */,
+				AB0630001000000200000002 /* AdaptiveColumnWidthModifier.swift */,
 				E5F60718293A4B700A5738C7 /* ShoppingListView.swift */,
 				E5F60718293A4B7060097EA7 /* ImportRecipeSheet.swift */,
 				E5F60718293A4B70A1SEG002 /* AppSegmentedControl.swift */,
@@ -2979,6 +2985,8 @@
 				E5F60718293A4B70D7CEFCAD /* AssistantModels.swift in Sources */,
 				E5F60718293A4B70811A7C4D /* TelegramAPI.swift in Sources */,
 				E5F60718293A4B705777B4EE /* AppShellView.swift in Sources */,
+				AB0630001000000100000001 /* AppSidebarView.swift in Sources */,
+				AB0630001000000100000002 /* AdaptiveColumnWidthModifier.swift in Sources */,
 				E5F60718293A4B7078685F7E /* ShoppingListView.swift in Sources */,
 				E5F60718293A4B70CD074276 /* ImportRecipeSheet.swift in Sources */,
 				E5F60718293A4B70A1SEG001 /* AppSegmentedControl.swift in Sources */,
@@ -3559,7 +3567,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -3795,7 +3803,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler;
 				RS_ALLOWS_LOCAL_NETWORKING = YES;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};

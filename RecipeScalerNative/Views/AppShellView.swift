@@ -69,12 +69,14 @@ struct AppShellView: View {
     @Environment(TimerManager.self) private var timerManager
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showAssistant = false
     @State private var assistantContextRecipeId: String?
     @State private var transientStatusMessage: String?
     @State private var transientStatusDismissTask: Task<Void, Never>?
     @State private var mobileTimerPanelCollapsed = true
     @State private var tabBarTopOffsetFromLayoutBottom: CGFloat = 0
+    @State private var sidebarVisibility: NavigationSplitViewVisibility = .all
     @Namespace private var mobileTimerPanelChevronNamespace
 
     init(coordinator: AppShellCoordinator) {
@@ -97,6 +99,10 @@ struct AppShellView: View {
             timerCount: timerManager.timers.count,
             isExpanded: !mobileTimerPanelCollapsed
         )
+        if horizontalSizeClass == .regular {
+            // Spec 063 — iPad has no tab bar; FAB sits above the floating timer.
+            return timerHeight + AssistantFabStyle.margin
+        }
         let tabBarOffset = tabBarTopOffsetFromLayoutBottom > 0
             ? tabBarTopOffsetFromLayoutBottom
             : Self.fallbackTabBarTopOffsetFromLayoutBottom
@@ -124,8 +130,12 @@ struct AppShellView: View {
             },
             openImport: {
                 Task { @MainActor in
-                    coordinator.selectedTab = .importTab
-                    coordinator.presentImport()
+                    // Spec 063 — `handleSidebarSelection`/`handleTabSelection`
+                    // already routes Import as a sentinel (presents sheet +
+                    // early return). Writing `.importTab` directly would show
+                    // an empty detail column on iPad until `completeImport`
+                    // rewrites it.
+                    coordinator.handleSidebarSelection(.importTab)
                 }
             },
             openSafari: { url in
@@ -137,36 +147,39 @@ struct AppShellView: View {
     }
 
     var body: some View {
-        tabView
-            .environment(coordinator)
-            .environment(
-                \.featureAdoptionAppCta,
-                makeFeatureAdoptionAppCtaHandler()
-            )
-            .background {
-                TabBarTopOffsetReader(offsetFromLayoutBottom: $tabBarTopOffsetFromLayoutBottom)
+        Group {
+            if horizontalSizeClass == .regular {
+                regularBody
+            } else {
+                compactBody
             }
-            .overlay(alignment: .bottom) {
-                if let transientStatusMessage {
-                    TransientStatusBanner(message: transientStatusMessage)
-                        .frame(maxWidth: .infinity)
-                        .padding(.bottom, 72)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+        .environment(coordinator)
+        .environment(
+            \.featureAdoptionAppCta,
+            makeFeatureAdoptionAppCtaHandler()
+        )
+        .overlay(alignment: .bottom) {
+            if let transientStatusMessage {
+                TransientStatusBanner(message: transientStatusMessage)
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 72)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: transientStatusMessage != nil)
+        .sheet(item: $coordinator.importPresentation) { _ in
+            ImportRecipeSheet { result in
+                if let message = coordinator.completeImport(result) {
+                    postTransientStatus(message)
                 }
             }
-            .animation(.easeInOut(duration: 0.25), value: transientStatusMessage != nil)
-            .sheet(item: $coordinator.importPresentation) { _ in
-                ImportRecipeSheet { result in
-                    if let message = coordinator.completeImport(result) {
-                        postTransientStatus(message)
-                    }
-                }
-            }
-            .onChange(of: coordinator.pendingFileImportToast) { _, newValue in
-                guard let newValue else { return }
-                postTransientStatus(newValue)
-                coordinator.pendingFileImportToast = nil
-            }
+        }
+        .onChange(of: coordinator.pendingFileImportToast) { _, newValue in
+            guard let newValue else { return }
+            postTransientStatus(newValue)
+            coordinator.pendingFileImportToast = nil
+        }
         .onChange(of: showAssistant) { _, isOpen in
             assistantRecipeContext.isAssistantSheetOpen = isOpen
         }
@@ -248,6 +261,67 @@ struct AppShellView: View {
             coordinator.consumePendingRecipeIdIfNeeded()
         }
         #endif
+    }
+
+    // MARK: - Compact (iPhone)
+
+    /// Existing `TabView` shell, untouched. Selected when
+    /// `horizontalSizeClass == .compact`.
+    @ViewBuilder
+    private var compactBody: some View {
+        tabView
+            .background {
+                TabBarTopOffsetReader(offsetFromLayoutBottom: $tabBarTopOffsetFromLayoutBottom)
+            }
+    }
+
+    // MARK: - Regular (iPad) — Spec 063
+
+    /// `NavigationSplitView` shell for iPad. Sidebar (`AppSidebarView`) +
+    /// detail column hosting the selected section's root view inside its own
+    /// `NavigationStack(path:)` — same root views the iPhone tabs use.
+    @ViewBuilder
+    private var regularBody: some View {
+        NavigationSplitView(columnVisibility: $sidebarVisibility) {
+            AppSidebarView(coordinator: coordinator)
+        } detail: {
+            regularDetailColumn
+                .environment(\.mobileTimerPanelIsCollapsed, mobileTimerPanelCollapsed)
+                .environment(\.mobileTimerPanelFloatingOverlay, true)
+                .overlay(alignment: .bottom) {
+                    if showsFloatingMobileTimerPanel {
+                        mobileTimerPanel
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .animation(MobileTimerPanelLayout.toggleAnimation, value: mobileTimerPanelCollapsed)
+                .animation(MobileTimerPanelLayout.toggleAnimation, value: timerManager.activeTimers.isEmpty)
+        }
+        .navigationSplitViewStyle(.balanced)
+    }
+
+    /// Spec 063 FR-IPAD-009 — floating panel ignores edit-mode suppress.
+    private var showsFloatingMobileTimerPanel: Bool {
+        !timerManager.activeTimers.isEmpty
+    }
+
+    @ViewBuilder
+    private var regularDetailColumn: some View {
+        switch coordinator.selectedTab {
+        case .discover:
+            DiscoverRootView(path: $coordinator.discoverPath)
+        case .importTab:
+            // Sentinel: `handleSidebarSelection` rewrites this to `.recipes`
+            // and presents the import sheet. Defensive fallback renders the
+            // recipes root so the detail column is never empty.
+            RecipeListView(navigationPath: $coordinator.recipesPath)
+        case .recipes:
+            RecipeListView(navigationPath: $coordinator.recipesPath)
+        case .shopping:
+            ShoppingListView(path: $coordinator.shoppingPath)
+        case .profile:
+            AccountView(auth: authService, timer: timerManager)
+        }
     }
 
     private var mobileTimerPanel: some View {

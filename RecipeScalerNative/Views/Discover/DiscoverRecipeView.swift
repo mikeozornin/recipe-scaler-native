@@ -89,6 +89,7 @@ struct DiscoverRecipeView: View {
                         }
                     }
                     .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
+                    .recipeDetailColumnWidth
                 } else if case .loading = model?.state {
                     ProgressView(Bundle.currentLocalizedString("discover.recipe.loading"))
                         .frame(maxWidth: .infinity)

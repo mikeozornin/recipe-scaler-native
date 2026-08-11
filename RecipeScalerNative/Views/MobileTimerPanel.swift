@@ -470,10 +470,21 @@ private struct MobileTimerPanelIsCollapsedKey: EnvironmentKey {
     static let defaultValue = true
 }
 
+private struct MobileTimerPanelFloatingOverlayKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
 extension EnvironmentValues {
     var mobileTimerPanelIsCollapsed: Bool {
         get { self[MobileTimerPanelIsCollapsedKey.self] }
         set { self[MobileTimerPanelIsCollapsedKey.self] = newValue }
+    }
+
+    /// Spec 063 — iPad floating overlay (not `tabViewBottomAccessory` / tab-root inset).
+    /// When true, scroll/list chrome always reserves the panel height while timers run.
+    var mobileTimerPanelFloatingOverlay: Bool {
+        get { self[MobileTimerPanelFloatingOverlayKey.self] }
+        set { self[MobileTimerPanelFloatingOverlayKey.self] = newValue }
     }
 }
 
@@ -481,6 +492,7 @@ extension EnvironmentValues {
 struct MobileTimerPanelBottomPaddingModifier: ViewModifier {
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var isCollapsed
+    @Environment(\.mobileTimerPanelFloatingOverlay) private var floatingOverlay
 
     /// When `true`, this modifier contributes no bottom padding (e.g. while editing,
     /// another bottom inset is already active). Must be passed explicitly (not via env)
@@ -489,6 +501,13 @@ struct MobileTimerPanelBottomPaddingModifier: ViewModifier {
 
     private var height: CGFloat {
         guard !suppress else { return 0 }
+        if floatingOverlay {
+            guard !timerManager.suppressPanelSafeAreaInset else { return 0 }
+            return MobileTimerPanelLayout.height(
+                timerCount: timerManager.activeTimers.count,
+                isExpanded: !isCollapsed
+            )
+        }
         return MobileTimerPanelLayout.manualBottomPaddingHeight(
             timerCount: timerManager.activeTimers.count,
             isExpanded: !isCollapsed,
@@ -513,9 +532,17 @@ extension View {
 struct MobileTimerPanelListSpacerRow: View {
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var isCollapsed
+    @Environment(\.mobileTimerPanelFloatingOverlay) private var floatingOverlay
 
     private var height: CGFloat {
-        MobileTimerPanelLayout.listSpacerHeight(
+        if floatingOverlay {
+            guard !timerManager.suppressPanelSafeAreaInset else { return 0 }
+            return MobileTimerPanelLayout.height(
+                timerCount: timerManager.activeTimers.count,
+                isExpanded: !isCollapsed
+            )
+        }
+        return MobileTimerPanelLayout.listSpacerHeight(
             timerCount: timerManager.activeTimers.count,
             isExpanded: !isCollapsed,
             suppressPanel: timerManager.suppressPanelSafeAreaInset
@@ -534,8 +561,16 @@ struct MobileTimerPanelListSpacerRow: View {
 
 enum MobileTimerPanelListChrome {
     @MainActor
-    static func needsSpacer(timerManager: TimerManager, isCollapsed: Bool) -> Bool {
-        MobileTimerPanelLayout.needsListSpacerRow(
+    static func needsSpacer(
+        timerManager: TimerManager,
+        isCollapsed: Bool,
+        floatingOverlay: Bool = false
+    ) -> Bool {
+        if floatingOverlay {
+            return !timerManager.suppressPanelSafeAreaInset
+                && !timerManager.activeTimers.isEmpty
+        }
+        return MobileTimerPanelLayout.needsListSpacerRow(
             timerCount: timerManager.activeTimers.count,
             isExpanded: !isCollapsed,
             suppressPanel: timerManager.suppressPanelSafeAreaInset

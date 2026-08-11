@@ -67,6 +67,16 @@ final class AppShellCoordinator {
         }
     }
 
+    /// Spec 063 — iPad sidebar selection. Same semantics as `handleTabSelection`:
+    /// `.importTab` is a sentinel that presents the import sheet and never
+    /// becomes the active column; any other tap either resets the column's
+    /// navigation stack (re-tap on active section) or switches the selection.
+    /// Kept as a separate entry point so iPad callers read naturally and tests
+    /// can evolve independently of the iPhone tab bar contract.
+    func handleSidebarSelection(_ newTab: AppTab) {
+        handleTabSelection(newTab)
+    }
+
     func presentImport() {
         importPresentation = ImportPresentation()
     }

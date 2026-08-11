@@ -20,6 +20,7 @@ struct ShoppingListView: View {
     @Environment(TimerManager.self) private var timerManager
     @Environment(AppShellCoordinator.self) private var coordinator
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
+    @Environment(\.mobileTimerPanelFloatingOverlay) private var mobileTimerPanelFloatingOverlay
     @Binding var path: NavigationPath
     @State private var bottomDraft = ""
     @State private var inlineEditItemId: String?
@@ -165,7 +166,8 @@ struct ShoppingListView: View {
 
             if MobileTimerPanelListChrome.needsSpacer(
                 timerManager: timerManager,
-                isCollapsed: mobileTimerPanelIsCollapsed
+                isCollapsed: mobileTimerPanelIsCollapsed,
+                floatingOverlay: mobileTimerPanelFloatingOverlay
             ) {
                 MobileTimerPanelListSpacerRow()
             }

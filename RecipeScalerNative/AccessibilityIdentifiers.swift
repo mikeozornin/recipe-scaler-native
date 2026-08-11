@@ -22,6 +22,16 @@ enum AccessibilityIdentifiers {
     static let tabRecipes = "tab_recipes"
     static let tabShopping = "tab_shopping"
     static let tabProfile = "tab_profile"
+
+    // MARK: - Sidebar (spec 063, iPad only)
+    // Distinct from tab_* IDs so iPad UITests can target sidebar rows
+    // without colliding with iPhone tab-bar buttons.
+    static let sidebarDiscover = "sidebar_discover"
+    static let sidebarImport = "sidebar_import"
+    static let sidebarRecipes = "sidebar_recipes"
+    static let sidebarShopping = "sidebar_shopping"
+    static let sidebarProfile = "sidebar_profile"
+
     static let discoverRoot = "discover_root"
 
     // MARK: - Discover (017)
@@ -103,6 +113,8 @@ enum AccessibilityIdentifiers {
 
     static let recipeList = "recipe_list"
     static let recipeListAdd = "recipe_list_add"
+    /// iPad Recipes split detail empty state (`FR-IPAD-004`).
+    static let recipesSplitPlaceholder = "recipes_split_placeholder"
     static let recipeRowPrefix = "recipe_row_"
     static let profileButton = "profile_button"
     static let scaleMinusButton = "scale_minus_button"

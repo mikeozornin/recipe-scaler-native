@@ -18,6 +18,7 @@ struct AccountView: View {
     @Environment(FeatureAdoptionStore.self) private var featureAdoptionStore
     @Environment(AppShellCoordinator.self) private var coordinator
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
+    @Environment(\.mobileTimerPanelFloatingOverlay) private var mobileTimerPanelFloatingOverlay
     @Environment(\.locale) private var locale
 
     /// Injected dependencies (architecture review C2). AccountView receives
@@ -158,7 +159,8 @@ struct AccountView: View {
 
                     if MobileTimerPanelListChrome.needsSpacer(
                         timerManager: timer,
-                        isCollapsed: mobileTimerPanelIsCollapsed
+                        isCollapsed: mobileTimerPanelIsCollapsed,
+                        floatingOverlay: mobileTimerPanelFloatingOverlay
                     ) {
                         MobileTimerPanelListSpacerRow()
                     }
@@ -166,6 +168,7 @@ struct AccountView: View {
                 .localizedNavigationTitle("account.title")
                 .listSectionSpacing(12)
                 .appListBodyTypography()
+                .accountColumnWidth
                 .environment(
                     \.featureAdoptionProfileScrollCta,
                     makeProfileScrollCtaHandler(proxy: proxy)

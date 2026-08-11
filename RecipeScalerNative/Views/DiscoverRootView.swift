@@ -50,23 +50,6 @@ struct DiscoverRootView: View {
         }
     }
 
-    /// Vertical list of rows, one card per line (web parity on mobile).
-    @ViewBuilder
-    private func section<Item: Identifiable, Content: View>(
-        titleKey: LocalizedStringKey,
-        items: [Item],
-        @ViewBuilder cell: @escaping (Item) -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            AppSectionHeader(titleKey)
-            VStack(spacing: 0) {
-                ForEach(items) { item in
-                    cell(item)
-                }
-            }
-        }
-    }
-
 }
 
 /// Renders the loaded discover root content. Extracted so the parent
@@ -74,6 +57,7 @@ struct DiscoverRootView: View {
 /// before any network call runs.
 private struct DiscoverRootContent: View {
     let model: DiscoverRootModel
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var body: some View {
         Group {
@@ -92,7 +76,7 @@ private struct DiscoverRootContent: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         if !data.collections.isEmpty {
-                            section(
+                            gridSection(
                                 titleKey: "discover.curated-collections",
                                 items: data.collections
                             ) { collection in
@@ -108,7 +92,7 @@ private struct DiscoverRootContent: View {
                             }
                         }
                         if !data.profiles.isEmpty {
-                            section(
+                            gridSection(
                                 titleKey: "discover.featured-chefs",
                                 items: data.profiles
                             ) { profile in
@@ -143,16 +127,25 @@ private struct DiscoverRootContent: View {
     }
 
     @ViewBuilder
-    private func section<Item: Identifiable, Content: View>(
+    private func gridSection<Item: Identifiable, Content: View>(
         titleKey: LocalizedStringKey,
         items: [Item],
         @ViewBuilder cell: @escaping (Item) -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             AppSectionHeader(titleKey)
-            VStack(spacing: 0) {
-                ForEach(items) { item in
+            if horizontalSizeClass == .regular {
+                // Spec 063 — iPad multi-column (web `.card-grid` parity).
+                DiscoverRecipeCardGrid(items: items) { item in
                     cell(item)
+                }
+            } else {
+                // iPhone — single-column VStack (web mobile parity), unchanged
+                // behavior before spec 063.
+                VStack(spacing: 0) {
+                    ForEach(items) { item in
+                        cell(item)
+                    }
                 }
             }
         }

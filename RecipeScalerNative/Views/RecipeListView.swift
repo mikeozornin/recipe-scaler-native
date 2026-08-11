@@ -5,6 +5,8 @@ struct RecipeListView: View {
     @Environment(YjsSyncService.self) private var syncService
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
+    @Environment(\.mobileTimerPanelFloatingOverlay) private var mobileTimerPanelFloatingOverlay
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Binding var navigationPath: NavigationPath
     @State private var searchText = ""
     @State private var presentedSheet: RecipeListSheet?
@@ -14,6 +16,10 @@ struct RecipeListView: View {
     @State private var searchStore = RecipeListSearchStore()
     /// Tokens derived from `searchText` once per change, not per render.
     @State private var searchTokens: [String] = []
+    /// iPad Recipes master-detail: recipe shown in the trailing column.
+    @State private var splitSelectedRecipeId: String?
+    @State private var splitSelectedOpenInEditMode = false
+    @State private var recipesSplitColumnVisibility = NavigationSplitViewVisibility.all
 
     /// Persisted view mode: `nil` = default (collections).
     @AppStorage(RecipeFolderRoutes.viewModeStorageKey)
@@ -99,6 +105,28 @@ struct RecipeListView: View {
     }
 
     var body: some View {
+        // Capture at this level: nested NavigationSplitView master columns report
+        // `.compact` even on iPad, so destinations must not re-read size class.
+        let useSplitDetail = horizontalSizeClass == .regular
+        Group {
+            if useSplitDetail {
+                NavigationSplitView(columnVisibility: $recipesSplitColumnVisibility) {
+                    recipesNavigationStack(useSplitDetail: true)
+                } detail: {
+                    recipesSplitDetail
+                }
+                .navigationSplitViewStyle(.balanced)
+                .onAppear {
+                    // US2: keep list + detail simultaneous in portrait and landscape.
+                    recipesSplitColumnVisibility = .all
+                }
+            } else {
+                recipesNavigationStack(useSplitDetail: false)
+            }
+        }
+    }
+
+    private func recipesNavigationStack(useSplitDetail: Bool) -> some View {
         NavigationStack(path: $navigationPath) {
             VStack(spacing: 0) {
                 if showsDatabaseInitFailedBanner {
@@ -167,7 +195,8 @@ struct RecipeListView: View {
 
                         if MobileTimerPanelListChrome.needsSpacer(
                             timerManager: timerManager,
-                            isCollapsed: mobileTimerPanelIsCollapsed
+                            isCollapsed: mobileTimerPanelIsCollapsed,
+                            floatingOverlay: mobileTimerPanelFloatingOverlay
                         ) {
                             MobileTimerPanelListSpacerRow()
                         }
@@ -193,18 +222,7 @@ struct RecipeListView: View {
             .navigationBarTitleDisplayMode(.inline)
             .appListBodyTypography()
             .navigationDestination(for: RecipesRoute.self) { route in
-                switch route {
-                case .folder(let folderId):
-                    CollectionFolderView(
-                        folderId: folderId,
-                        navigationPath: $navigationPath
-                    )
-                case .recipe(let recipeId, _, let openInEditMode):
-                    YDocRecipeDetailView(
-                        recipeId: recipeId,
-                        startInEditMode: openInEditMode
-                    )
-                }
+                recipesDestination(for: route, useSplitDetail: useSplitDetail)
             }
             #if DEBUG
             .onChange(of: syncService.collectionEntries.count) { _, _ in
@@ -264,6 +282,65 @@ struct RecipeListView: View {
                 }
             }
 
+        }
+    }
+
+    @ViewBuilder
+    private func recipesDestination(for route: RecipesRoute, useSplitDetail: Bool) -> some View {
+        switch route {
+        case .folder(let folderId):
+            CollectionFolderView(
+                folderId: folderId,
+                navigationPath: $navigationPath
+            )
+        case .recipe(let recipeId, _, let openInEditMode):
+            if useSplitDetail {
+                // Capture selection into the split detail column, then pop so the
+                // master stack stays on the list / folder (Mail-style).
+                // Use a tiny visible frame — zero-size clear views may skip onAppear.
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityHidden(true)
+                    .task(id: recipeId) {
+                        presentRecipeInSplit(recipeId: recipeId, openInEditMode: openInEditMode)
+                    }
+            } else {
+                YDocRecipeDetailView(
+                    recipeId: recipeId,
+                    startInEditMode: openInEditMode
+                )
+            }
+        }
+    }
+
+    private func presentRecipeInSplit(recipeId: String, openInEditMode: Bool) {
+        splitSelectedRecipeId = recipeId
+        splitSelectedOpenInEditMode = openInEditMode
+        Task { @MainActor in
+            guard !navigationPath.isEmpty else { return }
+            navigationPath.removeLast()
+        }
+    }
+
+    @ViewBuilder
+    private var recipesSplitDetail: some View {
+        NavigationStack {
+            if let recipeId = splitSelectedRecipeId {
+                YDocRecipeDetailView(
+                    recipeId: recipeId,
+                    startInEditMode: splitSelectedOpenInEditMode
+                )
+                .id(recipeId)
+            } else {
+                ContentUnavailableView {
+                    AppEmptyState.label("recipes.split.select-recipe.title", symbol: "book")
+                } description: {
+                    Text("recipes.split.select-recipe.description")
+                        .appBody()
+                }
+                .font(AppTypography.body)
+                .accessibilityIdentifier(AccessibilityIdentifiers.recipesSplitPlaceholder)
+            }
         }
     }
 
@@ -495,7 +572,12 @@ struct RecipeListView: View {
         }
         guard let recipeId else { return }
         didOpenDebugRecipe = true
-        navigationPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
+        // Nested split master columns report `.compact`; use root size class.
+        if horizontalSizeClass == .regular {
+            presentRecipeInSplit(recipeId: recipeId, openInEditMode: false)
+        } else {
+            navigationPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
+        }
     }
     #endif
 }

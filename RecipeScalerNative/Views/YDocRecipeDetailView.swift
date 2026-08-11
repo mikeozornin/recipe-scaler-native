@@ -13,6 +13,7 @@ struct YDocRecipeDetailView: View {
     @Environment(\.appContainer) private var appContainer
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     /// UI-only scale (web `recipe-scale:{id}` in localStorage). Not written to Y.Doc.
     @State private var scaleFactor: Double = 1
     @AppStorage(NutritionSettings.globalEnabledKey) private var showNutritionGlobal = true
@@ -312,6 +313,7 @@ struct YDocRecipeDetailView: View {
                     }
                 }
                 .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
+                .recipeDetailColumnWidth
             }
             .padding(.bottom, descriptionEditorScrollBottomInset)
         }
@@ -464,10 +466,11 @@ struct YDocRecipeDetailView: View {
             dismissRecipeTitleKeyboard = true
         }
         .onChange(of: isEditing) { _, editing in
-            timerManager.setSuppressPanelSafeAreaInset(editing)
+            // Spec 063 — floating iPad panel stays visible; suppress is iPhone-only.
+            timerManager.setSuppressPanelSafeAreaInset(editing && horizontalSizeClass != .regular)
         }
         .onAppear {
-            timerManager.setSuppressPanelSafeAreaInset(isEditing)
+            timerManager.setSuppressPanelSafeAreaInset(isEditing && horizontalSizeClass != .regular)
         }
         .onReceive(
             NotificationCenter.default.publisher(
