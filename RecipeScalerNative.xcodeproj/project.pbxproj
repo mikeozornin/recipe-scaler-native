@@ -102,6 +102,10 @@
 		922A2B3A3550913CA9886250 /* WidgetSilentPushHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCCF9006265F5B2697622906 /* WidgetSilentPushHandler.swift */; };
 		95DD7E548A202A1047110394 /* FeatureAdoptionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DDA10FB70EB04235CF1A47E /* FeatureAdoptionDetailView.swift */; };
 		960FBC69B3B84454A444F025 /* Views/SettingsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB815A7AAADF4189BC529973 /* Views/SettingsRow.swift */; };
+		062WATCH001A293A4B701000A1 /* Services/WatchExpiryNotificationsPrefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062WATCH001F293A4B701000A0 /* Services/WatchExpiryNotificationsPrefs.swift */; };
+		062WATCH002A293A4B701000A1 /* Services/WatchExpiryNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062WATCH002F293A4B701000A0 /* Services/WatchExpiryNotificationScheduler.swift */; };
+		062WATCH003A293A4B701000A1 /* Views/WatchSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062WATCH003F293A4B701000A0 /* Views/WatchSettingsView.swift */; };
+		062WATCH004A293A4B701000A1 /* App/WatchNotificationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062WATCH004F293A4B701000A0 /* App/WatchNotificationDelegate.swift */; };
 		96DDAC9E8733509BF08272F4 /* MartianGrotesk-NrLt.otf in Resources */ = {isa = PBXBuildFile; fileRef = EB452B44E6C61233D3482133 /* MartianGrotesk-NrLt.otf */; };
 		98043B5A4C25AAF27D48104E /* AssistantThreadSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5TH068293A4B7010000006 /* AssistantThreadSearchTests.swift */; };
 		982960F83D64336767544729 /* WidgetTimerLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B65555D56665D8687D4FEAF /* WidgetTimerLayout.swift */; };
@@ -247,6 +251,7 @@
 		B3TIMEWIDGET01B293A4B70100001 /* TimerWidgetTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */; };
 		B3TORD01B293A4B701000002 /* TimerOrdering.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TORD01A293A4B701000001 /* TimerOrdering.swift */; };
 		B3TORD02B293A4B701000002 /* TimerOrderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TORD02A293A4B701000001 /* TimerOrderingTests.swift */; };
+		062TEST001A293A4B701000A1 /* WatchExpiryNotificationSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062TEST001F293A4B701000A0 /* WatchExpiryNotificationSchedulerTests.swift */; };
 		B3TPAL01B293A4B701000002 /* TimerPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TPAL01A293A4B701000001 /* TimerPaletteTests.swift */; };
 		B3TSPATCH01B293A4B70100001 /* TimerSnapshotDocumentPatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TSPATCH01A293A4B70100001 /* TimerSnapshotDocumentPatcher.swift */; };
 		B3UIDFMT02B293A4B70100002 /* UserIdFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3UIDFMT02A293A4B70100001 /* UserIdFormatterTests.swift */; };
@@ -303,6 +308,7 @@
 		D15C00000000000000000005 /* DiscoverCollectionModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000006 /* DiscoverCollectionModelTests.swift */; };
 		D15C00000000000000000007 /* DiscoverPublicProfileModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000008 /* DiscoverPublicProfileModelTests.swift */; };
 		D750066ACA5505A1A07A4780 /* Networking/WidgetPushTokenClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BE92D4F7D7D370A1E12BF5 /* Networking/WidgetPushTokenClient.swift */; };
+		062CORE001A293A4B701000A1 /* Networking/WatchExpiryNotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062CORE001F293A4B701000A0 /* Networking/WatchExpiryNotificationPlanner.swift */; };
 		D963C6002ACA43AE8B000E1D /* Config/Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CBCE9817864C1C8B333764 /* Config/Config.swift */; };
 		D9CE2453B71F439583814D83 /* TimerLiveActivityAccent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56565D99438548F29F16D7DE /* TimerLiveActivityAccent.swift */; };
 		DB2344F39F6C4D9E970E5D07 /* RecipeScalerCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E05920822F344D9691E82401 /* RecipeScalerCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -690,6 +696,7 @@
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
 			files = (
+				1D624A656C3A4FAF9496BDB0 /* RecipeScalerNativeWatch.app in Embed Watch App */,
 			);
 			name = "Embed Watch App";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -769,6 +776,7 @@
 		450283E26C9249C5858DFCEF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		46BF5AD0548A4829A7C387F9 /* Services/WatchCredentialsBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchCredentialsBridge.swift; sourceTree = "<group>"; };
 		47BE92D4F7D7D370A1E12BF5 /* Networking/WidgetPushTokenClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/WidgetPushTokenClient.swift; sourceTree = "<group>"; };
+		062CORE001F293A4B701000A0 /* Networking/WatchExpiryNotificationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/WatchExpiryNotificationPlanner.swift; sourceTree = "<group>"; };
 		480DCDACDCA0402582631501 /* RecipeLegacyBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeLegacyBanner.swift; sourceTree = "<group>"; };
 		48F07333AE4345FD8D008AA4 /* Views/NotAuthorizedStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/NotAuthorizedStateView.swift; sourceTree = "<group>"; };
 		4B5D272EB4ED4555A30CD3B2 /* RecipeEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEditViewModel.swift; sourceTree = "<group>"; };
@@ -961,6 +969,7 @@
 		B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerWidgetTimelineTests.swift; sourceTree = "<group>"; };
 		B3TORD01A293A4B701000001 /* TimerOrdering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerOrdering.swift; sourceTree = "<group>"; };
 		B3TORD02A293A4B701000001 /* TimerOrderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerOrderingTests.swift; sourceTree = "<group>"; };
+		062TEST001F293A4B701000A0 /* WatchExpiryNotificationSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchExpiryNotificationSchedulerTests.swift; sourceTree = "<group>"; };
 		B3TPAL01A293A4B701000001 /* TimerPaletteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPaletteTests.swift; sourceTree = "<group>"; };
 		B3TSPATCH01A293A4B70100001 /* TimerSnapshotDocumentPatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSnapshotDocumentPatcher.swift; sourceTree = "<group>"; };
 		B3UIDFMT02A293A4B70100001 /* UserIdFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserIdFormatterTests.swift; sourceTree = "<group>"; };
@@ -1172,6 +1181,10 @@
 		FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionRingLabelLayoutTests.swift; sourceTree = "<group>"; };
 		FAF82F83AFCF4454AA71B812 /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
 		FB815A7AAADF4189BC529973 /* Views/SettingsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/SettingsRow.swift; sourceTree = "<group>"; };
+		062WATCH001F293A4B701000A0 /* Services/WatchExpiryNotificationsPrefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchExpiryNotificationsPrefs.swift; sourceTree = "<group>"; };
+		062WATCH002F293A4B701000A0 /* Services/WatchExpiryNotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchExpiryNotificationScheduler.swift; sourceTree = "<group>"; };
+		062WATCH003F293A4B701000A0 /* Views/WatchSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/WatchSettingsView.swift; sourceTree = "<group>"; };
+		062WATCH004F293A4B701000A0 /* App/WatchNotificationDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/WatchNotificationDelegate.swift; sourceTree = "<group>"; };
 		FBED86F57850D8012BF9D4BD /* RecipeScalerNativeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RecipeScalerNativeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FD3DE42F47CA47F4BC49DCBC /* YrsInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YrsInput.swift; sourceTree = "<group>"; };
 		FEA658D7E63AC1DAEBDA6361 /* MartianGrotesk-NrMd.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MartianGrotesk-NrMd.otf"; sourceTree = "<group>"; };
@@ -1692,6 +1705,7 @@
 				FADKEY01A293A4B701000001 /* Networking/FeatureAdoptionClientFeature.swift */,
 				72C0961D8B504667B05C4AB4 /* Networking/ServerActiveTimer.swift */,
 				47BE92D4F7D7D370A1E12BF5 /* Networking/WidgetPushTokenClient.swift */,
+				062CORE001F293A4B701000A0 /* Networking/WatchExpiryNotificationPlanner.swift */,
 				69F9BFE990A641C6A64D4CFC /* Networking/ServerErrorCode.swift */,
 				5A55A1B2000000000000007D /* Networking/AuthRevocationConstants.swift */,
 				DA95C7943B584B11A547EB85 /* Import/RecipeImportAPI.swift */,
@@ -1751,6 +1765,7 @@
 				B3WATCHREM01A293A4B70100001 /* ServerActiveTimerRemainingTests.swift */,
 				B3TPAL01A293A4B701000001 /* TimerPaletteTests.swift */,
 				B3TORD02A293A4B701000001 /* TimerOrderingTests.swift */,
+				062TEST001F293A4B701000A0 /* WatchExpiryNotificationSchedulerTests.swift */,
 				B3ATPR02A293A4B701000001 /* ActiveTimerPresentationTests.swift */,
 				B3KCA01A293A4B701000001 /* SharedAuthStoreTests.swift */,
 				F33225776134280B7CD7FECE /* TimerSnapshotServerMappingTests.swift */,
@@ -1927,17 +1942,21 @@
 			isa = PBXGroup;
 			children = (
 				8B27909779534A788A97A54D /* App/RecipeScalerNativeWatchApp.swift */,
+				062WATCH004F293A4B701000A0 /* App/WatchNotificationDelegate.swift */,
 				1DCF8C86EAE34546B5F18B38 /* Services/WatchCredentialsStore.swift */,
 				46BF5AD0548A4829A7C387F9 /* Services/WatchCredentialsBridge.swift */,
 				AEF0BA379A0541E7A602633D /* Services/WatchTimerService.swift */,
 				WATCHFAD01A293A4B70100001 /* Services/WatchFeatureAdoptionReporter.swift */,
 				C9C8EF72AC8C4D5B906502B7 /* Services/WatchTimer.swift */,
+				062WATCH001F293A4B701000A0 /* Services/WatchExpiryNotificationsPrefs.swift */,
+				062WATCH002F293A4B701000A0 /* Services/WatchExpiryNotificationScheduler.swift */,
 				14F80D392681406AA341801C /* Haptics/WatchHaptics.swift */,
 				321225950E8643E9A02C4CA6 /* Views/WatchTimerLayout.swift */,
 				5E839A2DA9F0412BB2AD9538 /* Views/TimerListViewModel.swift */,
 				DDD0E475D09241E9BE80A18E /* Views/TimerListView.swift */,
 				A3E905C3C326440BBA62742C /* Views/TimerRow.swift */,
 				FB815A7AAADF4189BC529973 /* Views/SettingsRow.swift */,
+				062WATCH003F293A4B701000A0 /* Views/WatchSettingsView.swift */,
 				0DE37FE421F74BCDAC651EE4 /* Views/EmptyStateView.swift */,
 				B3WATCHST01A293A4B70100001 /* Views/WatchStateScreenLayout.swift */,
 				BE6D843ADE13401381B6AFA4 /* Views/ErrorStateView.swift */,
@@ -2710,6 +2729,7 @@
 				ILL043C13 /* IngredientIllustrationNameMatcher.swift in Sources */,
 				082B9A25B01040469E077B58 /* Auth/SharedAuthStore.swift in Sources */,
 				D750066ACA5505A1A07A4780 /* Networking/WidgetPushTokenClient.swift in Sources */,
+				062CORE001A293A4B701000A1 /* Networking/WatchExpiryNotificationPlanner.swift in Sources */,
 				70062F0B35A42FD9810D0B8B /* Auth/SharedDeviceId.swift in Sources */,
 				D963C6002ACA43AE8B000E1D /* Config/Config.swift in Sources */,
 				1BAEE2C386A5454CB68D9C8B /* Networking/APIClient.swift in Sources */,
@@ -3091,16 +3111,20 @@
 				2E78895F06BE488B972621DF /* Services/WatchTimerService.swift in Sources */,
 				WATCHFAD02B293A4B70100001 /* Services/WatchFeatureAdoptionReporter.swift in Sources */,
 				11F36940A7114E969A0F066F /* Services/WatchTimer.swift in Sources */,
+				062WATCH001A293A4B701000A1 /* Services/WatchExpiryNotificationsPrefs.swift in Sources */,
+				062WATCH002A293A4B701000A1 /* Services/WatchExpiryNotificationScheduler.swift in Sources */,
 				4E83476823C74D84AEB17BEA /* Haptics/WatchHaptics.swift in Sources */,
 				8066F637AAB1476EBAB96224 /* Views/WatchTimerLayout.swift in Sources */,
 				7794A6B8D8F443B5B98FC046 /* Views/TimerListViewModel.swift in Sources */,
 				126EE49222CD4A93BE7F127C /* Views/TimerListView.swift in Sources */,
 				C0B5C7F0D6AE48A4AFA52C5A /* Views/TimerRow.swift in Sources */,
 				960FBC69B3B84454A444F025 /* Views/SettingsRow.swift in Sources */,
+				062WATCH003A293A4B701000A1 /* Views/WatchSettingsView.swift in Sources */,
 				4FBE77ED005346C1B55E4485 /* Views/EmptyStateView.swift in Sources */,
 				B3WATCHST02B293A4B70100001 /* Views/WatchStateScreenLayout.swift in Sources */,
 				E677325CF8FA4370A2B7EB6D /* Views/ErrorStateView.swift in Sources */,
 				707D54FE171149CA97F0B654 /* Views/NotAuthorizedStateView.swift in Sources */,
+				062WATCH004A293A4B701000A1 /* App/WatchNotificationDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3153,6 +3177,7 @@
 				B3WATCHREM02B293A4B70100001 /* ServerActiveTimerRemainingTests.swift in Sources */,
 				B3TPAL01B293A4B701000002 /* TimerPaletteTests.swift in Sources */,
 				B3TORD02B293A4B701000002 /* TimerOrderingTests.swift in Sources */,
+				062TEST001A293A4B701000A1 /* WatchExpiryNotificationSchedulerTests.swift in Sources */,
 				B3ATPR02B293A4B701000002 /* ActiveTimerPresentationTests.swift in Sources */,
 				B3KCA01B293A4B701000001 /* SharedAuthStoreTests.swift in Sources */,
 				56D2D60C90B84D3045B59723 /* TimerSnapshotServerMappingTests.swift in Sources */,
@@ -3372,7 +3397,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -3398,7 +3423,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -3514,7 +3539,7 @@
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator watchos watchsimulator";
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2,4";
+				TARGETED_DEVICE_FAMILY = "1,4";
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
 			};
 			name = Release;
@@ -3534,7 +3559,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -3559,7 +3584,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -3584,7 +3609,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -3670,7 +3695,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScalerTests;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RecipeScalerNative.app/RecipeScalerNative";
 				VALIDATE_PRODUCT = YES;
 			};
@@ -3693,7 +3718,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScalerTests;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RecipeScalerNative.app/RecipeScalerNative";
 			};
 			name = Debug;
@@ -3718,7 +3743,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -3770,7 +3795,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler;
 				RS_ALLOWS_LOCAL_NETWORKING = YES;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -3795,7 +3820,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -3822,7 +3847,7 @@
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator watchos watchsimulator";
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2,4";
+				TARGETED_DEVICE_FAMILY = "1,4";
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
 			};
 			name = Debug;
@@ -3847,7 +3872,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -3873,7 +3898,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -3899,7 +3924,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -3924,7 +3949,7 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -3944,7 +3969,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScalerUITests;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_TARGET_NAME = RecipeScalerNative;
 			};
 			name = Debug;
@@ -3965,7 +3990,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScalerUITests;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_TARGET_NAME = RecipeScalerNative;
 				VALIDATE_PRODUCT = YES;
 			};

@@ -17,18 +17,20 @@ struct TimerListView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        Group {
-            switch viewModel.state {
-            case .idle, .loading:
-                loadingView
-            case .loaded(let timers):
-                loadedList(timers: timers)
-            case .empty:
-                EmptyStateView()
-            case .error:
-                ErrorStateView()
-            case .notAuthorized:
-                NotAuthorizedStateView()
+        NavigationStack {
+            Group {
+                switch viewModel.state {
+                case .idle, .loading:
+                    loadingView
+                case .loaded(let timers):
+                    loadedList(timers: timers)
+                case .empty:
+                    EmptyStateView()
+                case .error:
+                    ErrorStateView()
+                case .notAuthorized:
+                    NotAuthorizedStateView()
+                }
             }
         }
         .task {

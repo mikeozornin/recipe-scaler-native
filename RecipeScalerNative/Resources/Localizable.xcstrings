@@ -13288,13 +13288,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reserved for future features"
+            "value": "Open settings"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Зарезервировано для будущих функций"
+            "value": "Открыть настройки"
           }
         }
       }
@@ -13311,6 +13311,108 @@
           "stringUnit": {
             "state": "translated",
             "value": "Настройки"
+          }
+        }
+      }
+    },
+    "watch.timer.settings.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Настройки"
+          }
+        }
+      }
+    },
+    "watch.timer.settings.expiry-toggle.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haptics on completion"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вибрация при окончании"
+          }
+        }
+      }
+    },
+    "watch.timer.settings.expiry-toggle.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vibrate when a timer expires"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вибрировать при окончании таймера"
+          }
+        }
+      }
+    },
+    "watch.timer.settings.notifications-disabled.footnote": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To re-enable, open Watch Settings → Notifications → Recipe Scaler."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы включить, откройте «Настройки часов» → «Уведомления» → Recipe Scaler."
+          }
+        }
+      }
+    },
+    "watch.timer.notification.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer completed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Таймер завершён"
+          }
+        }
+      }
+    },
+    "watch.timer.notification.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go and check what you're cooking"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверьте, что вы готовите"
           }
         }
       }

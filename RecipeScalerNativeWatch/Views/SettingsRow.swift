@@ -3,15 +3,15 @@
 //  RecipeScalerNativeWatch Watch App
 //
 //  Spec 039 — Settings button shown at the bottom of every state's List.
-//  Reserved for future functionality — tap is a no-op with a light haptic.
+//  Spec 062 — opens WatchSettingsView (toggle for haptics on completion).
 //
 
 import SwiftUI
 
 struct SettingsRow: View {
     var body: some View {
-        Button {
-            WatchHaptics.click()
+        NavigationLink {
+            WatchSettingsView()
         } label: {
             Label(
                 LocalizedStringKey("watch.timer.settings.label"),
@@ -26,6 +26,8 @@ struct SettingsRow: View {
 }
 
 #Preview {
-    SettingsRow()
-        .frame(width: 179)
+    NavigationStack {
+        SettingsRow()
+            .frame(width: 179)
+    }
 }

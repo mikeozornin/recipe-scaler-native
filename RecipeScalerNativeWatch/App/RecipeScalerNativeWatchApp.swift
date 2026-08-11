@@ -10,12 +10,15 @@
 import SwiftUI
 import WatchConnectivity
 import RecipeScalerCore
+import UserNotifications
 
 @main
 struct RecipeScalerNativeWatchApp: App {
     @StateObject private var viewModel = TimerListViewModel()
+    private static let notificationDelegate = WatchNotificationDelegate()
 
     init() {
+        WatchExpiryNotificationsPrefs.registerDefaults()
         if let userId = WatchCredentialsStore.userId {
             if let token = WatchCredentialsStore.token, !token.isEmpty {
                 APIClient.shared.configure(authToken: token)
@@ -24,6 +27,8 @@ struct RecipeScalerNativeWatchApp: App {
         }
         // Activate WCSession to receive userId updates from iPhone.
         WatchCredentialsBridge.shared.activate()
+        // Foreground suppression of watch-timer-* UNNotification delivery.
+        UNUserNotificationCenter.current().delegate = Self.notificationDelegate
     }
 
     var body: some Scene {
