@@ -61,6 +61,32 @@ final class AccountSettingsSpec: BaseTestCase {
             app.descendants(matching: .any)[UIA.accountTipsMenu].waitForExistence(timeout: Wait.element),
             "account_tips_menu not in UI — tips should be opened as a submenu"
         )
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)[UIA.accountFeedbackMenu].waitForExistence(timeout: Wait.element),
+            "account_feedback_menu not in UI — Share your feedback should be the second tips row"
+        )
+    }
+
+    func test_065_feedbackScreenOpens() {
+        Navigation.openTab(.profile, in: app)
+        _ = accountPage.awaitReady()
+
+        var menu = app.descendants(matching: .any)[UIA.accountFeedbackMenu]
+        if !menu.waitForExistence(timeout: Wait.element) {
+            if app.scrollViews.firstMatch.exists {
+                app.scrollViews.firstMatch.swipeUp()
+            } else if app.collectionViews.firstMatch.exists {
+                app.collectionViews.firstMatch.swipeUp()
+            }
+            menu = app.descendants(matching: .any)[UIA.accountFeedbackMenu]
+        }
+        XCTAssertTrue(menu.waitForExistence(timeout: Wait.element))
+        menu.tap()
+        XCTAssertTrue(
+            app.textViews[UIA.accountFeedbackEditor].waitForExistence(timeout: Wait.element),
+            "feedback editor did not open"
+        )
     }
 
     // MARK: - Spec 055 — Account deletion

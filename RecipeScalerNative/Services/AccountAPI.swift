@@ -196,6 +196,44 @@ enum AccountAPI {
         )
     }
 
+    /// Spec 065: `POST /api/feedback` — text plus optional files, no stored id.
+    static func submitFeedback(
+        message: String,
+        files: [(fileName: String, data: Data, mimeType: String)]
+    ) async throws {
+        var headers: [String: String] = [
+            "X-App-Language": AppLanguagePreference.current.rawValue
+        ]
+        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+            headers["X-App-Version"] = version
+        }
+        let raw = try await APIClient.shared.uploadMultipart(
+            path: "/api/feedback",
+            fields: ["message": message],
+            fieldName: "files",
+            files: files,
+            extraHeaders: headers
+        )
+        struct Payload: Decodable {
+            let success: Bool
+            let error: String?
+        }
+        let payload: Payload
+        do {
+            payload = try JSONDecoder().decode(Payload.self, from: raw)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+        guard payload.success else {
+            throw APIError.serverError(
+                code: ServerErrorCode.from(
+                    serverValue: payload.error,
+                    fallback: .accountFeedbackSendFailed
+                )
+            )
+        }
+    }
+
     static func fetchUserSettings() async throws -> UserSettingsDTO {
         let response: APIResponse<UserSettingsDTO> = try await APIClient.shared.requestJSON(
             path: "/api/settings"

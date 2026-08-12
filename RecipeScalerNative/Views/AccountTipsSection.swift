@@ -19,6 +19,16 @@ struct AccountTipsSection: View {
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.accountTipsMenu)
             .tint(.primary)
+
+            NavigationLink {
+                AccountFeedbackView()
+            } label: {
+                Text("account.feedback.menu")
+                    .appBody()
+                    .foregroundStyle(.primary)
+            }
+            .accessibilityIdentifier(AccessibilityIdentifiers.accountFeedbackMenu)
+            .tint(.primary)
         } header: {
             AppSectionHeader("account.section.tips")
         }

@@ -71,7 +71,7 @@ struct AppShellView: View {
     @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
     @State private var showAssistant = false
     @State private var assistantContextRecipeId: String?
-    @State private var transientStatusMessage: String?
+    @State private var transientStatus: TransientStatusPayload?
     @State private var transientStatusDismissTask: Task<Void, Never>?
     @State private var mobileTimerPanelCollapsed = true
     @State private var tabBarTopOffsetFromLayoutBottom: CGFloat = 0
@@ -154,14 +154,17 @@ struct AppShellView: View {
             }
             .heroPhotoZoomOverlay(heroPhotoZoomSession.context)
             .overlay(alignment: .bottom) {
-                if let transientStatusMessage {
-                    TransientStatusBanner(message: transientStatusMessage)
+                if let transientStatus {
+                    TransientStatusBanner(
+                        message: transientStatus.message,
+                        symbolName: transientStatus.symbolName
+                    )
                         .frame(maxWidth: .infinity)
                         .padding(.bottom, 72)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .animation(.easeInOut(duration: 0.25), value: transientStatusMessage != nil)
+            .animation(.easeInOut(duration: 0.25), value: transientStatus != nil)
             .sheet(item: $coordinator.importPresentation) { _ in
                 ImportRecipeSheet { result in
                     if let message = coordinator.completeImport(result) {
@@ -199,12 +202,20 @@ struct AppShellView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .shoppingStatusMessage)) { notification in
-            guard let message = notification.object as? String, !message.isEmpty else { return }
+            let payload: TransientStatusPayload?
+            if let typed = notification.object as? TransientStatusPayload {
+                payload = typed
+            } else if let message = notification.object as? String, !message.isEmpty {
+                payload = TransientStatusPayload(message: message)
+            } else {
+                payload = nil
+            }
+            guard let payload, !payload.message.isEmpty else { return }
             transientStatusDismissTask?.cancel()
             withAnimation(.easeInOut(duration: 0.25)) {
-                transientStatusMessage = message
+                transientStatus = payload
             }
-            let shownMessage = message
+            let shown = payload
             transientStatusDismissTask = Task { @MainActor in
                 do {
                     try await Task.sleep(nanoseconds: 3_000_000_000)
@@ -213,8 +224,8 @@ struct AppShellView: View {
                 }
                 guard !Task.isCancelled else { return }
                 withAnimation(.easeInOut(duration: 0.25)) {
-                    if transientStatusMessage == shownMessage {
-                        transientStatusMessage = nil
+                    if transientStatus == shown {
+                        transientStatus = nil
                     }
                 }
             }

@@ -382,6 +382,8 @@
 		E5F60718293A4B7044C89B39 /* AssistantAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A0E4855E /* AssistantAPI.swift */; };
 		E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70344FA5B3 /* AccountView.swift */; };
 		D1A100000000000000000003 /* AccountTipsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A100000000000000000004 /* AccountTipsSection.swift */; };
+		FB065VW00000000000000003 /* AccountFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB065VW00000000000000004 /* AccountFeedbackView.swift */; };
+		FB065MD00000000000000003 /* AccountFeedbackModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB065MD00000000000000004 /* AccountFeedbackModel.swift */; };
 		E5F60718293A4B704B61748D /* DiscoverAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7011DA2DE4 /* DiscoverAPI.swift */; };
 		E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */; };
 		E5F60718293A4B7055FFBBCC /* DocumentManager+ShoppingList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */; };
@@ -523,6 +525,7 @@
 		SCTA00002AA000200000002 /* ShortcutItemsUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */; };
 		SRTIPPREF0001AA0001BB01 /* ShoppingRemindersTipPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRTIPPREF0002AA0002BB02 /* ShoppingRemindersTipPreferences.swift */; };
 		SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */; };
+		FB065TS00000000000000003 /* AccountFeedbackSubmitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB065TS00000000000000004 /* AccountFeedbackSubmitTests.swift */; };
 		TP14SAFE01A293A4B70100001 /* SafeIntCasts.swift in Sources */ = {isa = PBXBuildFile; fileRef = TP14SAFE01A293A4B70100002 /* SafeIntCasts.swift */; };
 		UIT018898C9CB55D28DA5 /* AuthPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = UIT960324BAA0FDC8FD99 /* AuthPage.swift */; };
 		UIT093A852449B362733F /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = UIT2F7824BE9658F66419 /* Errors.swift */; };
@@ -1095,6 +1098,8 @@
 		E5F60718293A4B70322645C2 /* DiscoverPublicProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverPublicProfileView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70344FA5B3 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
 		D1A100000000000000000004 /* AccountTipsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountTipsSection.swift; sourceTree = "<group>"; };
+		FB065VW00000000000000004 /* AccountFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountFeedbackView.swift; sourceTree = "<group>"; };
+		FB065MD00000000000000004 /* AccountFeedbackModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountFeedbackModel.swift; sourceTree = "<group>"; };
 		D1A100000000000000000008 /* RecipeScalerTips.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = RecipeScalerTips.storekit; sourceTree = "<group>"; };
 		E5F60718293A4B7035E279C2 /* SharingAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingAPI.swift; sourceTree = "<group>"; };
 		E5F60718293A4B703691736C /* ShoppingListPlainText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListPlainText.swift; sourceTree = "<group>"; };
@@ -1229,6 +1234,7 @@
 		SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutItemsUpdater.swift; sourceTree = "<group>"; };
 		SRTIPPREF0002AA0002BB02 /* ShoppingRemindersTipPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingRemindersTipPreferences.swift; sourceTree = "<group>"; };
 		SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingRemindersTipPreferencesTests.swift; sourceTree = "<group>"; };
+		FB065TS00000000000000004 /* AccountFeedbackSubmitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountFeedbackSubmitTests.swift; sourceTree = "<group>"; };
 		TP14SAFE01A293A4B70100002 /* SafeIntCasts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeIntCasts.swift; sourceTree = "<group>"; };
 		UIT00DC9B186ADBD3C32D /* ImportPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPage.swift; sourceTree = "<group>"; };
 		UIT042788CF0A93FC75C3 /* DiscoverEnablementSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverEnablementSpec.swift; sourceTree = "<group>"; };
@@ -1524,6 +1530,7 @@
 				E5F60718293A4B701A1B2001 /* Discover */,
 				E5F60718293A4B70344FA5B3 /* AccountView.swift */,
 				D1A100000000000000000004 /* AccountTipsSection.swift */,
+				FB065VW00000000000000004 /* AccountFeedbackView.swift */,
 				B041LGB002 /* LegacyAuthBannerView.swift */,
 				6DDA10FB70EB04235CF1A47E /* FeatureAdoptionDetailView.swift */,
 				A14000040000000000000004 /* FeatureAdoptionGuideView.swift */,
@@ -1749,6 +1756,7 @@
 				A05700000202 /* NativeFormatDetectorTests.swift */,
 				A05700000203 /* RecipeFileImportCoordinatorTests.swift */,
 				SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */,
+				FB065TS00000000000000004 /* AccountFeedbackSubmitTests.swift */,
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
 				FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */,
 				FADFIX0A0A293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift */,
@@ -1932,6 +1940,7 @@
 			children = (
 				MIK200008000 /* Discover */,
 				E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */,
+				FB065MD00000000000000004 /* AccountFeedbackModel.swift */,
 				E5F60718293A4B7000000093 /* RecipeListSearchStore.swift */,
 				DD2201AABB000200000002 /* RecipeDetailViewModel.swift */,
 				4B5D272EB4ED4555A30CD3B2 /* RecipeEditViewModel.swift */,
@@ -2998,6 +3007,7 @@
 				E5F60718293A4B70A1B2C3D /* RecipeReader.swift in Sources */,
 				E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */,
 				D1A100000000000000000003 /* AccountTipsSection.swift in Sources */,
+				FB065VW00000000000000003 /* AccountFeedbackView.swift in Sources */,
 				B041LGB001 /* LegacyAuthBannerView.swift in Sources */,
 				B041LGR001 /* LegacyAuthBannerReminder.swift in Sources */,
 				SRTIPPREF0001AA0001BB01 /* ShoppingRemindersTipPreferences.swift in Sources */,
@@ -3029,6 +3039,7 @@
 				E5F60718293A4B703037711D /* DescriptionTimerPopoverState.swift in Sources */,
 				E5F60718293A4B7002D26536 /* RecipeDescriptionTimerReference.swift in Sources */,
 				E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */,
+				FB065MD00000000000000003 /* AccountFeedbackModel.swift in Sources */,
 				E5F60718293A4B70F68BDA71 /* AppThemePreference.swift in Sources */,
 				E5F60718293A4B70E6687EC7 /* AppLanguagePreference.swift in Sources */,
 				E5F60718293A4B70E6687EC8 /* Bundle+Language.swift in Sources */,
@@ -3161,6 +3172,7 @@
 				A05700000210 /* NativeFormatDetectorTests.swift in Sources */,
 				A05700000220 /* RecipeFileImportCoordinatorTests.swift in Sources */,
 				SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */,
+				FB065TS00000000000000003 /* AccountFeedbackSubmitTests.swift in Sources */,
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
 				FADLAY04D293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift in Sources */,
 				A140019000000000000000019 /* FeatureAdoptionGuideContentTests.swift in Sources */,

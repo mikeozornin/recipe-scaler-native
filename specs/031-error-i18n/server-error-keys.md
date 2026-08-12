@@ -57,6 +57,10 @@
 | `POST /api/assistant/threads/:id/respond-stream` | http error | `"assistant.stream.http-error"` (уже OK) | `assistant.stream.http-error` |
 | `POST /api/assistant/transcribe` | audio too long | `"assistant.voice-error.too-long"` (уже OK) | `assistant.voice-error.too-long` |
 | `POST /api/assistant/transcribe` | transcription | `"assistant.voice-error.transcription"` (уже OK) | `assistant.voice-error.transcription` |
+| `POST /api/feedback` | send failed | — | `account.feedback.send-failed` |
+| `POST /api/feedback` | rate limited | — | `account.feedback.rate-limited` |
+| `POST /api/feedback` | invalid message | — | `account.feedback.invalid` |
+| `POST /api/feedback` | file too large | — | `account.feedback.too-large` |
 
 ## Совместимость
 

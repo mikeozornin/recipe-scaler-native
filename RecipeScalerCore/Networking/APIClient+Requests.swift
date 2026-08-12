@@ -51,20 +51,51 @@ extension APIClient {
         fieldName: String,
         files: [(fileName: String, data: Data, mimeType: String)]
     ) async throws -> Data {
+        try await uploadMultipart(
+            path: path,
+            fields: [:],
+            fieldName: fieldName,
+            files: files
+        )
+    }
+
+    /// Multipart POST with optional text fields plus files under `fieldName`.
+    public func uploadMultipart(
+        path: String,
+        fields: [String: String],
+        fieldName: String,
+        files: [(fileName: String, data: Data, mimeType: String)],
+        extraHeaders: [String: String] = [:]
+    ) async throws -> Data {
         let boundary = "Boundary-\(UUID().uuidString)"
+        var headers = extraHeaders
+        headers["Content-Type"] = "multipart/form-data; boundary=\(boundary)"
         var request = try buildRequest(
             path: path,
             method: "POST",
             body: nil,
-            headers: ["Content-Type": "multipart/form-data; boundary=\(boundary)"]
+            headers: headers
         )
         var body = Data()
         let crlf = "\r\n"
         let boundaryLine = "--\(boundary)\r\n".data(using: .utf8)!
-        for file in files {
+        for (name, value) in fields {
             body.append(boundaryLine)
             body.append(
-                "Content-Disposition: form-data; name=\"\(fieldName)\"; filename=\"\(file.fileName)\"\r\n"
+                "Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n"
+                    .data(using: .utf8)!
+            )
+            body.append(value.data(using: .utf8) ?? Data())
+            body.append(crlf.data(using: .utf8)!)
+        }
+        for file in files {
+            let safeName = file.fileName
+                .replacingOccurrences(of: "\"", with: "_")
+                .replacingOccurrences(of: "\r", with: "")
+                .replacingOccurrences(of: "\n", with: "")
+            body.append(boundaryLine)
+            body.append(
+                "Content-Disposition: form-data; name=\"\(fieldName)\"; filename=\"\(safeName)\"\r\n"
                     .data(using: .utf8)!
             )
             body.append("Content-Type: \(file.mimeType)\r\n\r\n".data(using: .utf8)!)

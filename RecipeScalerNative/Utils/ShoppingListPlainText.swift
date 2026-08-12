@@ -88,9 +88,17 @@ enum ShoppingListPlainText {
     }
 }
 
+struct TransientStatusPayload: Equatable {
+    let message: String
+    var symbolName: String = "cart.badge.plus"
+}
+
 enum ShoppingFeedback {
-    static func postStatus(_ message: String) {
-        NotificationCenter.default.post(name: .shoppingStatusMessage, object: message)
+    static func postStatus(_ message: String, symbolName: String = "cart.badge.plus") {
+        NotificationCenter.default.post(
+            name: .shoppingStatusMessage,
+            object: TransientStatusPayload(message: message, symbolName: symbolName)
+        )
         #if DEBUG
         writeVerifyRecord(message)
         #endif

@@ -10,6 +10,7 @@ struct TransientStatusBanner: View {
     @Environment(\.colorScheme) private var colorScheme
 
     let message: String
+    var symbolName: String = "cart.badge.plus"
 
     /// Matches swipe «add to shopping» actions (`.tint(.green)`).
     private var bannerFill: Color { .green }
@@ -25,7 +26,7 @@ struct TransientStatusBanner: View {
     @ViewBuilder
     private func bannerContent(compact: Bool) -> some View {
         HStack(alignment: compact ? .center : .top, spacing: 10) {
-            AppSymbol.image("cart.badge.plus")
+            AppSymbol.image(symbolName)
                 .font(AppTypography.iconSize(AppTypography.bodySize))
             if compact {
                 Text(message)

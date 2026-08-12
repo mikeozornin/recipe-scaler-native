@@ -31,6 +31,10 @@ public enum ServerErrorCode: String, Sendable, Equatable, CaseIterable {
     case accountSharingLoadFailed = "account.sharing.load-failed"
     case accountSharingUpdateFailed = "account.sharing.update-failed"
     case accountSettingsLoadFailed = "account.settings.load-failed"
+    case accountFeedbackSendFailed = "account.feedback.send-failed"
+    case accountFeedbackRateLimited = "account.feedback.rate-limited"
+    case accountFeedbackInvalid = "account.feedback.invalid"
+    case accountFeedbackTooLarge = "account.feedback.too-large"
 
     // discover.*
     case discoverFetchFailed = "discover.fetch-failed"

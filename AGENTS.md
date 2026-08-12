@@ -45,7 +45,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-from the explicitly selected feature context. Do not infer a current plan from file modification time.
+from [specs/065-share-feedback/plan.md](specs/065-share-feedback/plan.md).
 <!-- SPECKIT END -->
 
 ## Learned User Preferences

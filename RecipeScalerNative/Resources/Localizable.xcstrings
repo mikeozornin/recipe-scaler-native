@@ -3049,6 +3049,104 @@
         }
       }
     },
+    "account.feedback.attach": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Attach" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Приложить" } }
+      }
+    },
+    "account.feedback.attach-files": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Files" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Файлы" } }
+      }
+    },
+    "account.feedback.attach-photos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Photo Library" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Медиатека" } }
+      }
+    },
+    "account.feedback.invalid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Write a short message before sending." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Напишите короткое сообщение перед отправкой." } }
+      }
+    },
+    "account.feedback.max-files": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You can attach up to 5 files." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Можно приложить не больше 5 файлов." } }
+      }
+    },
+    "account.feedback.menu": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Share your feedback" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Оставить отзыв" } }
+      }
+    },
+    "account.feedback.placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "What should we know?" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Что нам стоит знать?" } }
+      }
+    },
+    "account.feedback.rate-limited": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Please wait a minute before sending again." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Подождите минуту перед следующей отправкой." } }
+      }
+    },
+    "account.feedback.remove-file": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remove file" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Убрать файл" } }
+      }
+    },
+    "account.feedback.send": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Send" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Отправить" } }
+      }
+    },
+    "account.feedback.send-failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn’t send your feedback. Try again." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Не получилось отправить отзыв. Попробуйте ещё раз." } }
+      }
+    },
+    "account.feedback.sent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Thanks — we got your feedback." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Спасибо, отзыв получен." } }
+      }
+    },
+    "account.feedback.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Feedback" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Отзыв" } }
+      }
+    },
+    "account.feedback.too-large": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "A file is larger than 10 MB." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Файл больше 10 МБ." } }
+      }
+    },
     "account.language.en": {
       "extractionState": "stale",
       "localizations": {

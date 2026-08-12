@@ -61,6 +61,15 @@ enum AccessibilityIdentifiers {
     static let accountTipsRetry = "account_tips_retry"
     static let accountTipsRestore = "account_tips_restore"
     static let accountTipsManage = "account_tips_manage"
+    static let accountFeedbackMenu = "account_feedback_menu"
+    static let accountFeedbackEditor = "account_feedback_editor"
+    static let accountFeedbackAttach = "account_feedback_attach"
+    static let accountFeedbackSend = "account_feedback_send"
+    static let accountFeedbackError = "account_feedback_error"
+
+    static func accountFeedbackAttachment(index: Int) -> String {
+        "account_feedback_attachment_\(index)"
+    }
 
     static func accountTipPurchase(productID: String) -> String {
         let slug = productID.replacingOccurrences(of: ".", with: "_")
