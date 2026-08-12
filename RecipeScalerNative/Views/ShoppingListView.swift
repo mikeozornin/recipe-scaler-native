@@ -174,6 +174,8 @@ struct ShoppingListView: View {
         .listSectionSpacing(0)
         .environment(\.defaultMinListRowHeight, 1)
         .animation(.easeInOut(duration: ShoppingPurchaseTiming.exitSeconds), value: purchasePhases)
+        .animation(.easeInOut(duration: ShoppingPurchaseTiming.exitSeconds), value: shoppingModel.sortedToBuy)
+        .animation(.easeInOut(duration: ShoppingPurchaseTiming.exitSeconds), value: shoppingModel.sortedPurchased)
         .scrollContentBackground(.hidden)
         .background(Color(.systemGroupedBackground))
     }
@@ -259,8 +261,6 @@ struct ShoppingListView: View {
             }
         }
         .opacity(phase == .exiting ? 0 : 1)
-        .frame(maxHeight: phase == .exiting ? 0 : nil, alignment: .top)
-        .clipped()
         .allowsHitTesting(phase != .exiting)
         .shoppingListItemRowInsets()
     }
@@ -341,6 +341,19 @@ struct ShoppingListView: View {
             .opacity(showChecked ? 0.5 : 1)
         }
         .ingredientListRowChrome()
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button {
+                handlePurchaseToggle(item: item, phase: purchasePhase)
+            } label: {
+                Label(
+                    showChecked
+                        ? String(localized: "shopping.mark-not-purchased")
+                        : String(localized: "shopping.mark-purchased"),
+                    systemImage: showChecked ? "circle" : "checkmark.circle"
+                )
+            }
+            .tint(.green)
+        }
     }
 
     /// Leading control rasterized at body size so UIImage-backed symbols don't inflate the row.

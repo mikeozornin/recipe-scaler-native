@@ -83,4 +83,73 @@ PY
 sim_wait_ready 1
 TOAST_SHOT="$(sim_screenshot "$SHOT_DIR" "shopping-toast-after-copy")"
 echo "Toast screenshot: $TOAST_SHOT"
+
+echo "== Leading swipe → toggle purchased =="
+# Pre-swipe baseline: shopping tab with at least one item in «Купить».
+sim_terminate
+sim_launch -SkipSplash=1 -OpenTab=shopping
+sim_wait_ready 6
+BEFORE_SWIPE_SHOT="$(sim_screenshot "$SHOT_DIR" "shopping-swipe-before")"
+echo "Pre-swipe screenshot: $BEFORE_SWIPE_SHOT"
+
+# Swipe right-to-left from the leading edge of the first shopping row.
+# Uses CGEvent drag (same mechanism as scripts/capture-app-store-screenshots.sh).
+# Y is near the top of the shopping list (below the sort segmented control).
+SWIPE_RESULT="$(
+  SWIPE_Y="${SHOPPING_SWIPE_Y:-220}" \
+  SWIPE_START_X="${SHOPPING_SWIPE_START_X:-12}" \
+  SWIPE_END_X="${SHOPPING_SWIPE_END_X:-300}" \
+  swift - <<'SWIFT'
+import CoreGraphics
+import Foundation
+
+let env = ProcessInfo.processInfo.environment
+guard let y = Double(env["SWIPE_Y"] ?? ""),
+      let startX = Double(env["SWIPE_START_X"] ?? ""),
+      let endX = Double(env["SWIPE_END_X"] ?? "") else {
+  fputs("missing swipe coordinates\n", stderr); exit(1)
+}
+
+func post(_ type: CGEventType, _ x: Double, _ y: Double) {
+  let p = CGPoint(x: x, y: y)
+  if let e = CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: p, mouseButton: .left) {
+    e.post(tap: .cghidEventTap)
+  }
+}
+
+post(.leftMouseDown, startX, y)
+Thread.sleep(forTimeInterval: 0.05)
+let steps = 18
+for i in 1...steps {
+  let t = Double(i) / Double(steps)
+  post(.leftMouseDragged, startX + (endX - startX) * t, y)
+  Thread.sleep(forTimeInterval: 0.012)
+}
+Thread.sleep(forTimeInterval: 0.05)
+post(.leftMouseUp, endX, y)
+print("ok")
+SWIFT
+)"
+
+if [[ "$SWIPE_RESULT" != "ok" ]]; then
+  echo "FAIL: leading swipe did not complete (swift helper error)" >&2
+  exit 1
+fi
+
+# Allow staging (~1s) + exit animation (~0.4s) to settle, then capture the result.
+sleep 2
+AFTER_SWIPE_SHOT="$(sim_screenshot "$SHOT_DIR" "shopping-swipe-after")"
+echo "Post-swipe screenshot: $AFTER_SWIPE_SHOT"
+
+# Observational assert: the two screenshots must differ — leading-swipe toggle
+# visually changes the row layout (item moves to «Куплено», strikethrough appears).
+BEFORE_SIZE=$(stat -f%z "$BEFORE_SWIPE_SHOT" 2>/dev/null || stat -c%s "$BEFORE_SWIPE_SHOT")
+AFTER_SIZE=$(stat -f%z "$AFTER_SWIPE_SHOT" 2>/dev/null || stat -c%s "$AFTER_SWIPE_SHOT")
+if [[ "$BEFORE_SIZE" == "$AFTER_SIZE" ]]; then
+  echo "FAIL: before/after swipe screenshots identical (size=$BEFORE_SIZE) — swipe likely did not toggle the item" >&2
+  exit 1
+fi
+echo "OK leading-swipe screenshots differ (before=$BEFORE_SIZE after=$AFTER_SIZE)"
+echo "Manual inspect recommended: diff '$BEFORE_SWIPE_SHOT' '$AFTER_SWIPE_SHOT'"
+
 echo "VERIFIED shopping-list-ui-polish"
