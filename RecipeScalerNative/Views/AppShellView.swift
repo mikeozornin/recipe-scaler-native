@@ -77,6 +77,11 @@ struct AppShellView: View {
     @State private var tabBarTopOffsetFromLayoutBottom: CGFloat = 0
     @Namespace private var mobileTimerPanelChevronNamespace
 
+    /// Глобальный zoom-session для hero-фотографий (spec 064). `@State` +
+    /// не-Observable holder, чтобы pinch/scroll ticks не пересобирали TabView.
+    /// Overlay и сам hero подписаны на `context` через `@ObservedObject`.
+    @State private var heroPhotoZoomSession = HeroPhotoZoomSession()
+
     init(coordinator: AppShellCoordinator) {
         _coordinator = Bindable(wrappedValue: coordinator)
     }
@@ -143,9 +148,11 @@ struct AppShellView: View {
                 \.featureAdoptionAppCta,
                 makeFeatureAdoptionAppCtaHandler()
             )
+            .environment(\.heroPhotoZoomContext, heroPhotoZoomSession.context)
             .background {
                 TabBarTopOffsetReader(offsetFromLayoutBottom: $tabBarTopOffsetFromLayoutBottom)
             }
+            .heroPhotoZoomOverlay(heroPhotoZoomSession.context)
             .overlay(alignment: .bottom) {
                 if let transientStatusMessage {
                     TransientStatusBanner(message: transientStatusMessage)

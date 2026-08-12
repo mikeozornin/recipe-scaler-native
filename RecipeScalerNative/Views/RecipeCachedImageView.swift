@@ -19,6 +19,9 @@ struct RecipeCachedImageView: View {
     /// Recipe detail hero: full width, `object-cover` in aspect-ratio box (web `RecipeImageUpload` + `edgeToEdge`).
     var fullWidthHero: Bool = false
     var maxHeight: CGFloat?
+    /// Inline pinch-to-zoom на hero-фото (spec 064). `false` отключает жест — например, в edit-mode.
+    /// По умолчанию включён только когда `fullWidthHero` и фото уже декодировано.
+    var pinchZoomEnabled: Bool = true
 
     @State private var uiImage: UIImage?
 
@@ -108,6 +111,10 @@ struct RecipeCachedImageView: View {
         .aspectRatio(heroAspectRatio, contentMode: .fill)
         .frame(maxHeight: cap)
         .clipped()
+        // Inline pinch-to-zoom (spec 064). Подавляется в edit-mode (`pinchZoomEnabled: !isEditing`)
+        // и пока фото грузится (`uiImage == nil`). Зум-картинка рисуется корневым overlay
+        // в AppShellView поверх tab bar / nav bar.
+        .heroPhotoPinchZoom(isEnabled: pinchZoomEnabled && uiImage != nil, uiImage: uiImage)
     }
 
     private func reloadImage() async {

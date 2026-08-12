@@ -51,7 +51,10 @@ struct RecipeDetailImageSection: View {
                 allowsNetworkRefresh: allowsNetworkRefresh,
                 layoutAspectRatio: imageAspectRatio,
                 fullWidthHero: true,
-                maxHeight: 400
+                maxHeight: 400,
+                // Pinch-to-zoom отключён в edit-mode (spec 064 FR-012): строго off,
+                // чтобы не конкурировать с delete-button и upload-progress overlay.
+                pinchZoomEnabled: !isEditing
             )
 
             if isEditing, allowsNetworkRefresh {

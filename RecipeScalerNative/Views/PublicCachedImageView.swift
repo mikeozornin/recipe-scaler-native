@@ -71,6 +71,9 @@ struct PublicCachedImageView: View {
         .aspectRatio(heroAspectRatio, contentMode: .fill)
         .frame(maxHeight: cap)
         .clipped()
+        // Inline pinch-to-zoom (spec 064). Подавляется пока фото грузится (`uiImage == nil`).
+        // Зум-картинка рисуется корневым overlay в AppShellView поверх tab bar / nav bar.
+        .heroPhotoPinchZoom(isEnabled: uiImage != nil, uiImage: uiImage)
     }
 
     private var heroAspectRatio: CGFloat {
