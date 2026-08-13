@@ -39,6 +39,12 @@ struct ImportRecipeSheet: View {
     @State private var showFileImporter = false
     @State private var fileImportProgress: (completed: Int, total: Int, messageKey: String)?
     @State private var importTask: Task<Void, Never>?
+    /// Guards `onChange(of: mode)` against wiping `errorMessage`/`photoWarning`/
+    /// `fileImportProgress` on system-driven mode changes (offline auto-fallback).
+    /// The wipe is intended only for user-initiated tab switches, where stale
+    /// errors from a different mode would be misleading. Set to `true` before a
+    /// system-driven `mode =` assignment, reset on the next runloop pass.
+    @State private var isSystemModeChange = false
 
     enum ImportMode: String, CaseIterable {
         case text, photo, file
@@ -48,16 +54,28 @@ struct ImportRecipeSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("import.mode-accessibility", selection: $mode) {
-                        Text("import.tab-text").tag(ImportMode.text)
-                        Text("import.tab-photo").tag(ImportMode.photo)
-                        Text("import.tab-file").tag(ImportMode.file)
-                    }
-                    .pickerStyle(.segmented)
+                    AppSegmentedControl(segments: [
+                        .init(value: .text, title: "import.tab-text", isDisabled: !isOnline),
+                        .init(value: .photo, title: "import.tab-photo", isDisabled: !isOnline),
+                        .init(value: .file, title: "import.tab-file")
+                    ], selection: $mode)
                     .accessibilityLabel(Text("import.mode-accessibility"))
                 }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+
+                if showsOfflineBanner {
+                    Section {
+                        Label {
+                            Text("import.offline-banner")
+                                .appBody()
+                                .foregroundStyle(.secondary)
+                        } icon: {
+                            AppSymbol.image("wifi.slash")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
 
                 switch mode {
                 case .text:
@@ -137,9 +155,25 @@ struct ImportRecipeSheet: View {
             }
             .onAppear { resetState() }
             .onChange(of: mode) { _, _ in
+                // Only wipe transient state on user-initiated tab switches.
+                // System-driven fallback (offline auto-switch in
+                // `applySystemMode`) sets `isSystemModeChange` to skip this,
+                // so connectivity flaps don't wipe errors the user is reading.
+                guard !isSystemModeChange else { return }
                 errorMessage = nil
                 photoWarning = nil
                 fileImportProgress = nil
+            }
+            .onChange(of: isOnline) { _, online in
+                // Auto-fall-back to `.file` if the selected text/photo segment
+                // became disabled while offline (can't leave a disabled segment
+                // selected). Online, leave the user's current mode alone — we
+                // do NOT auto-restore the previous mode, by design: once the
+                // user has been moved to `.file`, switching back automatically
+                // would be surprising.
+                if !online, mode != .file {
+                    applySystemMode(.file)
+                }
             }
             .onDisappear {
                 importTask?.cancel()
@@ -358,14 +392,63 @@ struct ImportRecipeSheet: View {
         }
     }
 
+    /// UI-gating: optimistic. A device that is connecting/reconnecting is
+    /// shown as online (segments enabled, no banner) because that's the
+    /// visually honest state during the normal 1–3s cold-launch window —
+    /// `SyncStatusSheet` shows a spinner, not `wifi.slash`, in these states.
+    /// Matches the contract used for `submit()`'s pre-check below.
     private var isOnline: Bool {
-        syncService.connectionState == .connected
+        switch syncService.connectionState {
+        case .connected, .connecting, .reconnecting:
+            return true
+        case .disconnected, .error:
+            return false
+        }
+    }
+
+    /// Service-gating: strict. Used only where we actually need a live socket
+    /// to push recipes to the server (NativeExportImportService /
+    /// ThirdPartyRecipeImportService). Those services already have a
+    /// `waitForConnection(timeout:)` grace window when passed `false`, so being
+    /// strict here lets them decide whether to wait or fall back to offline-skip.
+    private var isConnectedStrict: Bool {
+        syncService.connectionState.isConnected
+    }
+
+    /// Instant offline banner under the segmented control. Shown whenever the
+    /// device is offline regardless of selected mode — text/photo segments are
+    /// already disabled, file import still works. Auto-fallback to `.file`
+    /// (see `onChange(of: isOnline)` / `resetState()`) must NOT hide the
+    /// banner, otherwise the user loses the offline signal.
+    /// Spec 066 intentionally excludes ImportRecipeSheet from the debounced
+    /// `OfflineBannerGate` — feature-gating here stays instant.
+    private var showsOfflineBanner: Bool {
+        !isOnline
+    }
+
+    /// Set `mode` from a system-driven path (offline auto-fallback,
+    /// cold-open default). Sets `isSystemModeChange` so `onChange(of: mode)`
+    /// skips its wipe of `errorMessage` / `photoWarning` / `fileImportProgress`
+    /// — those are user-visible state and must survive connectivity flaps.
+    /// The flag resets on the next runloop pass so a subsequent user-initiated
+    /// tap on a segment still wipes as expected.
+    private func applySystemMode(_ newMode: ImportMode) {
+        guard mode != newMode else { return }
+        isSystemModeChange = true
+        mode = newMode
+        Task { @MainActor in
+            isSystemModeChange = false
+        }
     }
 
     @MainActor
     private func submit() async {
         if mode != .file {
-            guard isOnline else {
+            // Use strict connectivity here, not the optimistic `isOnline`:
+            // pressing Submit is an explicit user action, and the safety net
+            // should catch a not-yet-established connection before we attempt
+            // a network call that will fail with a less specific error.
+            guard isConnectedStrict else {
                 errorMessage = Bundle.currentLocalizedString("import.offline-unavailable")
                 return
             }
@@ -424,7 +507,7 @@ struct ImportRecipeSheet: View {
                     let nativeService = NativeExportImportService(syncService: syncService)
                     let nativeResult = try await nativeService.importFile(
                         url: fileURL,
-                        isOnline: isOnline
+                        isOnline: isConnectedStrict
                     ) { completed, total in
                         Task { @MainActor in
                             fileImportProgress = (
@@ -456,7 +539,7 @@ struct ImportRecipeSheet: View {
                 let service = ThirdPartyRecipeImportService(syncService: syncService)
                 let importResult = try await service.importFile(
                     url: fileURL,
-                    isOnline: isOnline
+                    isOnline: isConnectedStrict
                 ) { completed, total in
                     Task { @MainActor in
                         fileImportProgress = (
@@ -525,7 +608,16 @@ struct ImportRecipeSheet: View {
     }
 
     private func resetState() {
-        mode = .text
+        // Offline cold-open: text/photo segments are disabled, start on `.file`
+        // so the user lands on an enabled segment (can't leave `.text` selected
+        // when its segment is disabled — UI would show a dimmed, unselectable tab).
+        // Route through `applySystemMode` to skip the `onChange(of: mode)` wipe
+        // (irrelevant here since we wipe everything below, but keeps the
+        // no-wipe-on-system-change invariant uniform).
+        let targetMode: ImportMode = isOnline ? .text : .file
+        if mode != targetMode {
+            applySystemMode(targetMode)
+        }
         bodyText = ""
         photoItems = []
         photoPreviews = []
