@@ -77,7 +77,14 @@ struct CollectionAssignSheet: View {
             .toolbar {
                 if isCreatingNew && isNewFieldFocused {
                     ToolbarItemGroup(placement: .keyboard) {
+                        Button(String(localized: "common.cancel")) {
+                            cancelNewFolder()
+                        }
+                        .appToolbarTextButton()
+                        .disabled(isSavingFolder)
+
                         Spacer()
+
                         Button(String(localized: "collections.create")) {
                             commitNewFolder()
                         }
@@ -228,6 +235,15 @@ struct CollectionAssignSheet: View {
                 isCreatingNew = false
                 newFolderName = ""
             }
+        }
+    }
+
+    private func cancelNewFolder() {
+        guard !isSavingFolder else { return }
+        isNewFieldFocused = false
+        withAnimation(.easeInOut(duration: 0.15)) {
+            isCreatingNew = false
+            newFolderName = ""
         }
     }
 }
