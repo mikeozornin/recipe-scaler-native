@@ -4910,13 +4910,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The assistant is only available online."
+            "value": "The assistant is only available online"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ассистент доступен только при подключении к интернету."
+            "value": "Ассистент доступен только при подключении к интернету"
           }
         }
       }

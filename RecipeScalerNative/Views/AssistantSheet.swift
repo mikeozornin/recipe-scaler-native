@@ -41,8 +41,8 @@ struct AssistantSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                messageList
                 if isOnline {
+                    messageList
                     AssistantComposer(
                         text: $input,
                         attachments: $attachments,
@@ -55,13 +55,14 @@ struct AssistantSheet: View {
                     .padding(.top, 6)
                     .padding(.bottom, 12)
                 } else {
-                    Text("assistant.offline.description")
-                        .appFootnote()
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 14)
-                        .accessibilityIdentifier(AccessibilityIdentifiers.assistantOfflineFootnote)
+                    ContentUnavailableView {
+                        AppEmptyState.label("assistant.error-unavailable", symbol: "wifi.slash")
+                    } description: {
+                        Text("assistant.offline.description")
+                            .appBody()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .accessibilityIdentifier(AccessibilityIdentifiers.assistantOfflineFootnote)
                 }
             }
             .background(Color(.systemBackground))
@@ -111,6 +112,9 @@ struct AssistantSheet: View {
             }
             .errorAlert(title: "assistant.error-unavailable", message: $loadError)
             .task { await initialize() }
+            .onChange(of: isOnline) { _, connected in
+                if connected { Task { await initialize() } }
+            }
             .onChange(of: showHistorySheet) { _, isOpen in
                 if isOpen {
                     Task { await refreshThreadsList() }
@@ -265,6 +269,10 @@ struct AssistantSheet: View {
     /// Mirrors web `buildInitialSelection` + `useAssistantChat` bootstrap.
     private func initialize() async {
         guard !hasTriedSessionRestore else { return }
+        // While offline, show the offline state instead of a network bootstrap spinner.
+        // `hasTriedSessionRestore` stays false so the bootstrap runs once the connection
+        // comes back (see `.onChange(of: isOnline)`).
+        guard isOnline else { return }
         hasTriedSessionRestore = true
         #if DEBUG
         if DebugLaunchOptions.screenshotAssistantFixture {
