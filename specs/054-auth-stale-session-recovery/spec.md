@@ -1,6 +1,6 @@
 # Спецификация: Auth stale-session recovery + sync_error.truncated_collection
 
-**Дата**: 2026-07-16
+**Дата**: 2026-07-16 (правка порядка probe: 2026-08-13)
 **Статус**: 🟡 В работе
 **Связанные коммиты web**: `c953b9ff` (auth 404 session clear), `2c7e081f` (collection self-heal)
 
@@ -35,10 +35,10 @@
 
 ## Цель
 
-1. При обнаружении на cold start, что сохранённый пользователь больше не
-   существует на сервере — полностью зачищать локальную сессию и показывать
-   `AuthView` для повторного входа (silent register-auto **не** делаем —
-   пользователь должен осознанно выбрать: новый аккаунт или вход с seed).
+1. На cold start сразу показывать локальные рецепты. Если сохранённый
+   пользователь больше не существует на сервере — после фонового health-check
+   полностью зачищать локальную сессию и показывать `AuthView` (silent
+   register-auto **не** делаем).
 2. Добавить `truncated_collection` в `SyncErrorCode` как typed case, чтобы
    обработка шла по явной ветке вместо generic-fallback.
 
@@ -62,15 +62,25 @@
   вариантов silent-register-auto / show-AuthView / alert-then-AuthView).
   Обоснование: silent-create-new-user теряет все рецепты пользователя без
   объяснения; явный экран входа даёт выбор.
+- **Порядок health-check vs локальные снимки** (2026-08-13): probe **не**
+  блокирует `sync.start`. Ранний вариант ждал `GET /api/settings` до старта
+  sync (чтобы не поднять сокет с мёртвой сессией). В авиарежиме это давало
+  ~60 с «Loading recipes…» при живых офлайн-данных. Выбрано: сразу грузить
+  SQLite, probe в фоне; при 404/401 — wipe + container teardown (сокет, если
+  успел подняться, останавливается). Transient (сеть/таймаут) сессию не трогает.
 
 ## User stories
 
 1. Пользователь открывает app после серверного cutover / удаления аккаунта →
-   app не зависает на пустом списке рецептов, а через короткий health-check
-   обнаруживает 404 → зачищает локальные credentials → показывает `AuthView`.
-2. Пользователь видит `AuthView`, выбирает «Создать новый аккаунт» или входит
+   локальный список может мелькнуть из кэша, затем health-check получает 404 →
+   зачищаются локальные credentials → `AuthView`.
+2. Пользователь открывает app в авиарежиме (офлайн cold start) → список
+   рецептов показывается из локальных Yjs-снимков сразу, без ожидания
+   сетевого таймаута. Health-check в фоне завершается `.transient`, сессия
+   сохраняется.
+3. Пользователь видит `AuthView`, выбирает «Создать новый аккаунт» или входит
    с seed phrase с другого устройства → sync поднимается заново.
-3. Пользователь с урезанной локальной коллекцией (edge case при будущей
+4. Пользователь с урезанной локальной коллекцией (edge case при будущей
    миграции на modern handshake) → сервер эмитит `truncated_collection` →
    нативка переходит в typed-ветку `SyncErrorCode.truncatedCollection` →
    перезагружает коллекцию через `load_document` (legacy path) без ошибок в UI.
@@ -80,26 +90,35 @@
 ### Функциональные
 
 - **F1.** На cold start, после `AuthService.restoreAuthenticationState`, если
-  есть сохранённый `userId` — выполнить health-check `GET /api/settings`.
-  Запрос должен идти **до** старта sync/timer/socket (чтобы не поднять
-  обречённую на 401 сессию).
+  есть сохранённый `userId` — `AppContainer.bootstrap(userId:)` планирует
+  health-check `GET /api/settings` **в фоне** (`scheduleStaleSessionHealthCheckIfNeeded`)
+  и **не** `await` его до `sync.start` / `loadLocalSnapshots()`. Список рецептов
+  (`isLocalDataLoaded`) не зависит от этого HTTP. При подтверждённом 404/401
+  `performStaleSessionHealthCheck` делает wipe; container teardown останавливает
+  sync/socket, если они уже стартовали. Probe одноразовый на процесс
+  (`didPerformStaleSessionHealthCheck`); отменяется на logout.
 - **F2.** При 404 на `GET /api/settings`:
   - Очистить `SharedAuthStore` (`userId`, `token`).
   - Удалить seed phrase из app-local Keychain.
   - Сбросить `AuthService.userId`, `.token`, `.isAuthenticated`.
   - Сбросить `APIClient.shared` auth config.
   - Уведомить watch через `WatchCredentialsBridge.shared.purge()`.
+  - Вызвать container teardown (`clearSessionForLogout` + `stopForLogout`).
   - Не вызывать server-side logout (user уже не существует).
 - **F3.** При 5xx / network error на health-check — **не** зачищать сессию,
-  продолжить загрузку с сохранённым userId (временный сбой сервера не должен
-  выкидывать пользователя).
+  продолжить работу с сохранённым userId и уже загруженными локальными снимками
+  (временный сбой / авиарежим не должен выкидывать пользователя).
 - **F4.** При 401 на health-check — то же поведение, что при 404 (токен
   отозван, но пользователь может существовать; без seed восстановить нельзя
   → показать AuthView, чтобы пользователь мог войти с другого устройства).
-- **F5.** Health-check не блокирует UI дольше 5 секунд; при таймауте —
-  продолжить загрузку с сохранённым userId (soft-fail).
-- **F6.** DEBUG simulator с auto-login (`debugUserId`) пропускает health-check
-  — девайс разработки не должен ловить 404 при отладке на несуществующем ID.
+- **F5.** Health-check **не блокирует** UI: spinner «Loading recipes…» снимается
+  после локальных снимков, даже если probe ещё висит на `URLSession`. Таймаут /
+  сеть → `.transient` (F3). Отдельный 5-секундный client timeout для этого
+  запроса не требуется для perceived launch.
+- **F6.** E2E (`E2E_OVERRIDE_USER_ID` + token) **пропускает** probe (свежий
+  пользователь). DEBUG simulator auto-login probe **не** пропускает: при wipe
+  на симуляторе (не XCTest) credentials реинжектятся и bootstrap перезапускается,
+  потому что `ContentView` на симуляторе не показывает `AuthView`.
 - **F7.** `SyncErrorCode` добавляет case `truncatedCollection` с rawValue
   `"sync.error.truncated-collection"`. `handleSyncError` для этого case:
   - Не показывать пользователю ошибку (collection recovery — внутренний
@@ -114,20 +133,21 @@
 
 ### Нефункциональные
 
-- **N1.** Health-check — единственный дополнительный сетевой запрос на cold
-  start. Не должен ощутимо увеличивать perceived launch time (таргет < 500 ms
-  в нормальных условиях, soft-fail на 5s).
+- **N1.** Health-check не входит в критический путь first paint списка рецептов.
+  Perceived launch = время `loadLocalSnapshots()`, не RTT `/api/settings`.
 - **N2.** Все лог-сообщения используют `AppLog.info(.app, ...)` с event-name
   dot-style (`stale_session_detected`, `stale_session_cleared`,
-  `health_check_timeout`, `health_check_network_error`). Никаких PII в логах.
-- **N3.** Тесты: unit-тест на 404 → состояние сброшено; unit-тест на 5xx →
-  состояние сохранено; unit-тест на таймаут → состояние сохранено.
+  `stale_session_check_ok`). Никаких PII в логах.
+- **N3.** Тесты: 404 → wipe; 5xx/network → keep; планирование probe не ждёт
+  завершения HTTP (`AppContainerTests`).
 
 ## Downstream consumers (изменяемое состояние)
 
 - `AuthService.userId`, `.token`, `.isAuthenticated` — читают: `ContentView`
   (`isAuthenticated`, `effectiveUserId`), `AccountSettingsViewModel`,
   `WatchCredentialsBridge`, extensions через `SharedAuthStore`.
+- `YjsSyncService.isLocalDataLoaded` / `collectionEntries` — читают
+  `RecipeListView`, `CollectionsRootView` (spinner vs список). Не ждут probe.
 - `SharedAuthStore` — читают: extensions (Share, Action), watch app, AppIntents,
   `APIClient.shared` (cross-process sync при launch).
 - `SyncErrorCode.truncatedCollection` — читает только `handleSyncError` в
@@ -138,19 +158,21 @@
 | Эффект функции / API | Инвариант | Где проверять |
 |---------------------|----------|---------------|
 | Health-check 404 → wipe | После вызова `SharedAuthStore.userId == nil`, `SharedAuthStore.token == nil`, `AuthService.isAuthenticated == false` | `AuthServiceStaleSessionTests` |
-| Health-check 5xx → keep | После вызова `SharedAuthStore.userId` сохранён, `AuthService.isAuthenticated == true` | `AuthServiceStaleSessionTests` |
-| Health-check timeout → keep | После 5s таймаута состояние не изменилось | `AuthServiceStaleSessionTests` |
+| Health-check 5xx / network → keep | После вызова `SharedAuthStore.userId` сохранён, `AuthService.isAuthenticated == true` | `AuthServiceStaleSessionTests` |
+| Schedule probe не блокирует caller | После `scheduleStaleSessionHealthCheckIfNeeded` сессия ещё жива, пока висящий probe не завершён | `AppContainerTests` |
+| Фоновый 404 → wipe | После resume probe `.userMissing` сессия зачищена | `AppContainerTests` |
 | `truncated_collection` в sync_error | `SyncErrorCode.from(code: "sync.error.truncated-collection") == .truncatedCollection` | `SyncErrorCodeTests` |
 
 ## Acceptance criteria
 
 - [ ] AC1. На cold start с сохранённым `userId`, который не существует на
   сервере (404 на `/api/settings`), `AuthService` полностью зачищает
-  сессию и `isAuthenticated == false`.
-- [ ] AC2. На 5xx / network error сессия сохраняется, sync стартует с
-  сохранённым userId.
-- [ ] AC3. На таймауте health-check (>5s) сессия сохраняется.
-- [ ] AC4. DEBUG simulator с `debugUserId` не делает health-check.
+  сессию и `isAuthenticated == false` (после завершения фонового probe).
+- [ ] AC2. На 5xx / network error / авиарежим сессия сохраняется; локальные
+  рецепты уже показаны (sync стартовал, не дожидаясь probe).
+- [ ] AC3. Висящий / долгий health-check не держит UI на `recipe.list.loading`.
+- [ ] AC4. E2E override пропускает probe. DEBUG simulator при wipe
+  реинжектит auto-login credentials (вне XCTest).
 - [ ] AC5. `SyncErrorCode.from(code: "sync.error.truncated-collection")`
   возвращает `.truncatedCollection`.
 - [ ] AC6. `handleSyncError(.truncatedCollection, ...)` не устанавливает
@@ -168,11 +190,12 @@
   возвращает 404 только для несуществующего user; для системных ошибок это 5xx.
   Дополнительно: health-check идёт после того, как socket уже мог подключиться;
   если сервер вернул 5xx — не выкидываем.
-- **R2.** Race condition: health-check + параллельный socket connect. Если
-  socket успел подключиться с валидным токеном до завершения health-check —
-  очистка сессии оставит socket в зависшем состоянии. **Mitigation**:
-  health-check выполняется **до** `sync.start` в `AppContainer.bootstrap`,
-  сокет ещё не поднят.
+- **R2.** Race: probe ещё идёт, а `sync.start` уже поднял сокет. При 404/401
+  wipe должен остановить уже живой sync, иначе останется сессия на экране и
+  сокет с мёртвым токеном. **Mitigation**: `wipeLocalSession` вызывает
+  `performInvalidationTeardown` (sync stop + `stopForLogout`); task probe
+  отменяется на logout; после `await` сверяется `expectedUserId` /
+  `Task.isCancelled`, чтобы поздний 404 не стёр уже другую сессию.
 - **R3.** Добавление `truncatedCollection` ломает `Switch SyncErrorCode` в
   других местах. **Mitigation**: exhaustive switch в Swift форсирует
   coverage на этапе компиляции.

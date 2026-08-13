@@ -122,6 +122,10 @@ final class AppContainer {
     /// once per cold start, not on every `bootstrap(userId:)` re-entry.
     private var didPerformStaleSessionHealthCheck = false
 
+    /// Background `/api/settings` probe. Cancelled on logout so a late 404
+    /// cannot wipe a session that the user already replaced.
+    private var staleSessionHealthCheckTask: Task<Void, Never>?
+
     // MARK: - Construction
 
     init(modelContext: ModelContext) throws {
@@ -344,35 +348,11 @@ final class AppContainer {
         // `applyDebugSimulatorAutoLoginCredentials(preferBundledToken: false)`.
         #endif
 
-        // Spec 054: before anything else, verify the stored user still exists
-        // on the server. If `/api/settings` 404s, wipe local credentials and
-        // bail out — `ContentView` will fall back to `AuthView` because
-        // `auth.isAuthenticated == false`. Runs once per cold start.
-        if !didPerformStaleSessionHealthCheck {
-            didPerformStaleSessionHealthCheck = true
-            await auth.performStaleSessionHealthCheck()
-            if !auth.isAuthenticated {
-                // Wipe rewrote auth state. On device, stop here so ContentView
-                // shows AuthView and the next login re-enters bootstrap.
-                //
-                // Simulator DEBUG auto-login forces `ContentView.isAuthenticated`
-                // and a hardcoded `debugUserId`, so AuthView never appears and
-                // `.task(id:)` does not re-fire after wipe. Re-inject Bearer via
-                // seed exchange, then fall through so sync.start binds the user.
-                #if DEBUG
-                if DebugSimulatorAutoLogin.isEnabled {
-                    AppLog.info(.app, "stale_session_sim_debug_continue", data: [
-                        "userId": UserIdFormatter.redact(userId)
-                    ])
-                    await applyDebugSimulatorAutoLoginCredentials(preferBundledToken: false)
-                } else {
-                    return
-                }
-                #else
-                return
-                #endif
-            }
-        }
+        // Spec 054: verify the stored user still exists on the server, but do
+        // not block local SQLite / recipe list on the HTTP round-trip (offline
+        // cold start otherwise waits the full `URLSession.shared` timeout).
+        // 404/401 still wipe via `performStaleSessionHealthCheck` → AuthView.
+        scheduleStaleSessionHealthCheckIfNeeded(expectedUserId: userId)
 
         // Spec 059 fix: do NOT reset shell navigation state on the very first
         // bootstrap of a process. On cold launch with a Universal Link, iOS
@@ -488,8 +468,46 @@ final class AppContainer {
     /// Clears bootstrap bookkeeping so the next login runs full `sync.start`, not `resumeSession`.
     func resetBootstrapAfterLogout() {
         bootstrappedUserId = nil
+        staleSessionHealthCheckTask?.cancel()
+        staleSessionHealthCheckTask = nil
         // Spec 054: a fresh login after a wipe should re-probe on next bootstrap.
         didPerformStaleSessionHealthCheck = false
+    }
+
+    /// Spec 054: cold-start existence probe. Fire-and-forget so `sync.start`
+    /// can load local snapshots immediately. Identity is captured as
+    /// `expectedUserId`; after the await we ignore the result if that user
+    /// is no longer the active session (logout / account switch).
+    func scheduleStaleSessionHealthCheckIfNeeded(expectedUserId: String) {
+        guard !didPerformStaleSessionHealthCheck else { return }
+        didPerformStaleSessionHealthCheck = true
+        staleSessionHealthCheckTask?.cancel()
+        staleSessionHealthCheckTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.auth.performStaleSessionHealthCheck()
+            guard !Task.isCancelled else { return }
+
+            if self.auth.isAuthenticated {
+                guard self.auth.userId == expectedUserId else { return }
+                return
+            }
+
+            // Wipe already ran inside the health check (teardown stops sync).
+            // Simulator DEBUG auto-login never shows AuthView, so re-inject
+            // Bearer and re-enter bootstrap for the same debug user.
+            #if DEBUG
+            let isTestingHost = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+                || ProcessInfo.processInfo.arguments.contains("ui-testing")
+            if DebugSimulatorAutoLogin.isEnabled, !isTestingHost {
+                AppLog.info(.app, "stale_session_sim_debug_continue", data: [
+                    "userId": UserIdFormatter.redact(expectedUserId)
+                ])
+                await self.applyDebugSimulatorAutoLoginCredentials(preferBundledToken: false)
+                guard !Task.isCancelled else { return }
+                await self.bootstrap(userId: expectedUserId)
+            }
+            #endif
+        }
     }
 
     /// Stop sync + clear local state on logout (formerly `ContentView.onChange(of: authService.isAuthenticated)`).

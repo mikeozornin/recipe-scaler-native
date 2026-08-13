@@ -70,20 +70,24 @@
 |------|----------|
 | `RecipeScalerNative/Services/AuthService.swift` | Изменён: добавить `performStaleSessionHealthCheck()` + вызвать из `restoreAuthenticationState` |
 | `RecipeScalerNative/Services/AccountAPI.swift` | Изменён: добавить `checkUserExists() async -> UserExistsResult` (без throws, возвращает enum) |
-| `RecipeScalerNative/App/AppContainer.swift` | Изменён: вызывать health-check до `sync.start` в `bootstrap(userId:)` |
+| `RecipeScalerNative/App/AppContainer.swift` | Изменён: `scheduleStaleSessionHealthCheckIfNeeded` в фоне из `bootstrap`; не await до `sync.start` |
 
 ### Downstream consumers
 
 - [x] **SwiftUI views** — `ContentView` (`isAuthenticated`, `effectiveUserId`)
       при `isAuthenticated == false` показывает `AuthView` автоматически.
+      `RecipeListView` / `CollectionsRootView` читают `isLocalDataLoaded`,
+      который выставляется `loadLocalSnapshots()`, не probe.
 - [x] **Cross-process consumers** — `SharedAuthStore.clear()` инвалидирует
       userId для extensions/watch; `WatchCredentialsBridge.shared.purge()`
       уведомит watch.
-- [x] **Sync boundaries** — health-check идёт **до** `sync.start`, поэтому
-      socket ещё не поднят; race отсутствует.
+- [x] **Sync boundaries** — probe параллелен `sync.start`. При 404/401 wipe
+      зовёт `performInvalidationTeardown` (stop socket). Transient — сокет
+      может ретраить в офлайне, список уже из SQLite.
 - [x] **Persisted state** — Keychain (seed phrase), SharedAuthStore (userId,
       token) — оба чистятся теми же API, что и `logout()` (без server call).
-- [x] **Tests / verify-скрипты** — добавить `AuthServiceStaleSessionTests`.
+- [x] **Tests / verify-скрипты** — `AuthServiceStaleSessionTests`,
+      `AppContainerTests` (schedule не блокирует; фоновый 404 → wipe).
 
 ### Positive invariants
 
@@ -91,26 +95,26 @@
 |---------------------|----------|---------------|
 | Health-check 404 | `SharedAuthStore.userId == nil` после вызова | `AuthServiceStaleSessionTests` |
 | Health-check 5xx | `SharedAuthStore.userId` сохранён | `AuthServiceStaleSessionTests` |
-| Health-check timeout | `SharedAuthStore.userId` сохранён | `AuthServiceStaleSessionTests` |
-| DEBUG simulator | Health-check не вызывается (пропущен) | `AuthServiceStaleSessionTests` |
+| Schedule не ждёт probe | сессия жива, пока continuation не resume | `AppContainerTests` |
+| Фоновый `.userMissing` | wipe после resume | `AppContainerTests` |
 
 ### Note
 
-Используем существующий `APIClient.shared.requestJSON` с коротким timeout
-через `URLSession.configuration.timeoutIntervalForRequest = 5`. Это означает
-отдельный URL session или copy конфигурации; в `AppURLSession.shared` можно
-временно поднять timeout, либо сделать health-check через
-`performAuthRequest` (там используется `AppURLSession.shared`).
+Используем `AccountAPI.checkUserExists` через `APIClient.shared.requestJSON`
+(`URLSession.shared`). 404 → `.userMissing`, 401/403 → `.unauthorized`,
+5xx / network / timeout → `.transient`. Wipe только на `.userMissing` /
+`.unauthorized`. Probe **не** стоит на критическом пути UI: `bootstrap`
+планирует Task и сразу идёт в `sync.start` → `loadLocalSnapshots()`.
 
-Вариант **B (выбран)**: добавить `checkUserExists` в `AccountAPI` через
-`APIClient.shared.requestJSON`, перехватить `APIError.httpError(404)` и
-вернуть `.userMissing`. Для 5xx вернуть `.transient`. Для 401 вернуть
-`.unauthorized`. Для network error / timeout — `.transient`. На уровне
-`AuthService` только `.userMissing` / `.unauthorized` триггерят wipe.
+DEBUG simulator: probe выполняется; при wipe (не XCTest) — re-inject
+auto-login + повторный `bootstrap`. E2E override выставляет
+`didPerformStaleSessionHealthCheck` и skip.
 
-Race с DEBUG auto-login: `ContentView.effectiveUserId` на симуляторе возвращает
-`debugUserId`, минуя Keychain. Health-check должен detecting DEBUG simulator
-через `#if targetEnvironment(simulator)` + `XCTestConfigurationFilePath` gate.
+### Async lifecycle (probe)
+
+| Операция | Captured identity | Re-check после await | Cancellation owner | Stale completion test |
+|----------|-------------------|---------------------|-------------------|-----------------------|
+| `staleSessionHealthCheckTask` | `expectedUserId` | `Task.isCancelled`; если ещё authenticated — `auth.userId == expectedUserId` | `resetBootstrapAfterLogout` / `stopForLogout` | `AppContainerTests` (hanging probe + late wipe) |
 
 ---
 
@@ -170,6 +174,6 @@ Race с DEBUG auto-login: `ContentView.effectiveUserId` на симулятор�
 
 - `xcodebuild build` — scheme `RecipeScalerNative`, все green
 - `xcodebuild test` — `SyncErrorCodeTests`, `AuthServiceStaleSessionTests`,
-  все green
+  `AppContainerTests`, все green
 - `bash scripts/lint-i18n.sh` — все green
 - (verify-ui-smoke не нужен — UI не меняется, AuthView уже существует)

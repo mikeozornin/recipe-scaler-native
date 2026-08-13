@@ -1,6 +1,30 @@
 import SwiftData
 import XCTest
+import RecipeScalerCore
 @testable import RecipeScalerNative
+
+/// Lets a test resume a hanging `checkUserExistsProvider` after asserting
+/// that `scheduleStaleSessionHealthCheckIfNeeded` did not wait on it.
+@MainActor
+private final class ProbeGate {
+    private var continuation: CheckedContinuation<UserExistsResult, Never>?
+    private var result: UserExistsResult?
+
+    func wait() async -> UserExistsResult {
+        if let result {
+            return result
+        }
+        return await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+
+    func resume(_ result: UserExistsResult) {
+        self.result = result
+        continuation?.resume(returning: result)
+        continuation = nil
+    }
+}
 
 /// Verifies the AppContainer composition root (review #27):
 /// - All 12 singleton-backed services are constructed and reachable.
@@ -70,6 +94,70 @@ final class AppContainerTests: XCTestCase {
 
         await container.bootstrap(userId: first)
         await container.bootstrap(userId: second)
+    }
+
+    func test_staleSessionHealthCheck_doesNotWaitForProbe() async throws {
+        let container = try makeContainer()
+        applySession(on: container.auth, userId: "user-from-keychain")
+
+        let gate = ProbeGate()
+        container.auth.checkUserExistsProvider = {
+            _ = await gate.wait()
+            return .transient
+        }
+
+        container.scheduleStaleSessionHealthCheckIfNeeded(expectedUserId: "user-from-keychain")
+
+        XCTAssertTrue(
+            container.auth.isAuthenticated,
+            "caller must return before the hanging probe finishes so local recipes can load"
+        )
+        XCTAssertEqual(container.auth.userId, "user-from-keychain")
+
+        gate.resume(.transient)
+        for _ in 0..<50 {
+            if container.auth.isAuthenticated { break }
+            await Task.yield()
+        }
+        XCTAssertTrue(container.auth.isAuthenticated)
+    }
+
+    func test_staleSessionHealthCheck_userMissing_wipesAfterProbe() async throws {
+        let container = try makeContainer()
+        applySession(on: container.auth, userId: "user-from-keychain")
+
+        let gate = ProbeGate()
+        container.auth.checkUserExistsProvider = {
+            _ = await gate.wait()
+            return .userMissing
+        }
+
+        container.scheduleStaleSessionHealthCheckIfNeeded(expectedUserId: "user-from-keychain")
+        XCTAssertTrue(container.auth.isAuthenticated, "must keep the session until the probe resolves")
+
+        gate.resume(.userMissing)
+        var wiped = false
+        for _ in 0..<50 {
+            if !container.auth.isAuthenticated {
+                wiped = true
+                break
+            }
+            await Task.yield()
+        }
+
+        XCTAssertTrue(
+            wiped,
+            "confirmed 404 must wipe so AuthView is shown"
+        )
+        XCTAssertNil(SharedAuthStore.userId)
+    }
+
+    private func applySession(on auth: AuthService, userId: String) {
+        SharedAuthStore.userId = userId
+        SharedAuthStore.token = "device-token-from-keychain"
+        auth.userId = userId
+        auth.token = "device-token-from-keychain"
+        auth.isAuthenticated = true
     }
 
     func test_stopForLogout_resetsShellCoordinator() async throws {

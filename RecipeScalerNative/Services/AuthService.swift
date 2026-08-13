@@ -299,13 +299,14 @@ class AuthService {
         if restoredToken == nil {
             Task { await ensureDeviceTokenMigratedIfNeeded() }
         }
-        // Spec 054: stale-session health-check is awaited from
-        // `AppContainer.bootstrap(userId:)` BEFORE `sync.start`, so a stale
-        // user is wiped before any socket/timer tries to authenticate with it.
+        // Spec 054: stale-session health-check is scheduled from
+        // `AppContainer.bootstrap(userId:)` in the background so local
+        // snapshots can load immediately. A confirmed 404/401 still wipes
+        // the session (socket teardown follows via container teardown).
     }
 
-    /// Spec 054: cold-start probe. Idempotent; safe to call from
-    /// `AppContainer.bootstrap(userId:)`.
+    /// Spec 054: cold-start probe. Idempotent; scheduled (not awaited) from
+    /// `AppContainer.bootstrap(userId:)` so offline launch is not blocked.
     ///
     /// On `.userMissing` or `.unauthorized` the local session is fully wiped
     /// (Keychain seed, SharedAuthStore, APIClient, watch) and the UI falls

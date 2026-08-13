@@ -20,8 +20,8 @@ Generated 2026-07-16. Задачи зависимостями упорядоче
 - [ ] T2.3 В `AuthService` добавить свойство `userSettingsProbe: UserSettingsProbing` (default = AccountAPI), для тест-инъекции
 - [ ] T2.4 Добавить метод `performStaleSessionHealthCheck() async` — вызывает `userSettingsProbe.checkUserExists()`, при `.userMissing`/`.unauthorized` → `wipeLocalSession()`
 - [ ] T2.5 Добавить приватный метод `wipeLocalSession()` — повторяет `logout()` без server call и без throw (Keychain + SharedAuthStore.clear + WatchCredentialsBridge.purge + reset published props + APIClient.reset)
-- [ ] T2.6 Вызывать `performStaleSessionHealthCheck()` из `restoreAuthenticationState` (через `Task`) **только при наличии сохранённого userId и только вне XCTest/simulator-debug**
-- [ ] T2.7 В `AppContainer.bootstrap(userId:)` добавить await `auth.performStaleSessionHealthCheck()` **до** шага 5 (`sync.start`); при возврате `isAuthenticated == false` — ранний return без старта sync
+- [ ] T2.6 ~~Вызывать probe из `restoreAuthenticationState`~~ — не делаем; единственная точка — `AppContainer.bootstrap` (фон).
+- [x] T2.7 В `AppContainer.bootstrap(userId:)` планировать `performStaleSessionHealthCheck()` **в фоне** (не блокировать `sync.start` / локальные снимки); при 404/401 — wipe + teardown.
 
 ## Phase 3: i18n
 
@@ -34,6 +34,7 @@ Generated 2026-07-16. Задачи зависимостями упорядоче
 - [ ] T4.3 Тест: health-check `.unauthorized` → тот же wipe
 - [ ] T4.4 Тест: health-check `.transient` → `isAuthenticated == true`, состояние сохранено
 - [ ] T4.5 Тест: health-check `.exists` → `isAuthenticated == true`, состояние сохранено
+- [x] T4.6 `AppContainerTests`: schedule probe не блокирует caller; фоновый `.userMissing` → wipe
 
 ## Phase 5: Build & verify
 
