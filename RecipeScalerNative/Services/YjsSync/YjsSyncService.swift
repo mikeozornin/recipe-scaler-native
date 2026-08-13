@@ -1664,6 +1664,15 @@ final class YjsSyncService {
 
     var currentDeviceId: String { deviceId }
 
+    /// Public projection of the private NWPathMonitor flag (`isNetworkReachable`).
+    /// Spec 066 FR-001: retained for future consumers. **Not** used by
+    /// `OfflineBannerGate` — on some devices airplane mode never reports
+    /// `.unsatisfied`. The gate reads `!connectionState.isConnected` (FR-007).
+    ///
+    /// Named `networkReachable` (without the `is` prefix) to avoid shadowing
+    /// the private backing var `isNetworkReachable`; the two coexist on this type.
+    var networkReachable: Bool { isNetworkReachable }
+
     /// Stop synchronization and clean up.
     func stop() {
         logger.info("Stopping YjsSync")

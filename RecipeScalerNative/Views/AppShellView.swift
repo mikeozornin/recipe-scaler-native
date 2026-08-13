@@ -69,6 +69,8 @@ struct AppShellView: View {
     @Environment(TimerManager.self) private var timerManager
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
+    @Environment(OfflineBannerGate.self) private var offlineGate
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showAssistant = false
     @State private var assistantContextRecipeId: String?
     @State private var transientStatus: TransientStatusPayload?
@@ -84,6 +86,24 @@ struct AppShellView: View {
 
     init(coordinator: AppShellCoordinator) {
         _coordinator = Bindable(wrappedValue: coordinator)
+    }
+
+    /// Spec 066 — ignore connection flaps while backgrounded; reset so lock
+    /// time does not expire the banner delay (US1).
+    private func applyOfflineBannerGate(for phase: ScenePhase) {
+        switch phase {
+        case .background:
+            offlineGate.update(isNotConnected: false)
+        case .active:
+            applyOfflineBannerGate(isNotConnected: !syncService.connectionState.isConnected)
+        default:
+            break
+        }
+    }
+
+    private func applyOfflineBannerGate(isNotConnected: Bool) {
+        guard scenePhase == .active else { return }
+        offlineGate.update(isNotConnected: isNotConnected)
     }
 
     private var mobileTimerPanelCollapsedBinding: Binding<Bool> {
@@ -237,6 +257,25 @@ struct AppShellView: View {
             guard let link else { return }
             coordinator.handleDeepLink(link)
         }
+        // Spec 066 — single writer for offline banner debounce.
+        // Feature-gating views (AssistantSheet, disabled buttons, image refresh)
+        // continue to read `connectionState.isConnected` directly (instant);
+        // only status banners read `offlineGate` (debounced).
+        //
+        // Signal: `!connectionState.isConnected` (not NWPathMonitor). Airplane
+        // mode oscillates connecting ↔ reconnecting without `.connected`; those
+        // states must keep the arm running. Hide only on `.connected`.
+        //
+        // Background time must not count (US1): lock → `.disconnected` would
+        // otherwise expire the 3s timer while the phone is locked, then flash
+        // banners until reconnect. Reset on `.background`, ignore connection
+        // updates until `.active`, then re-arm with a fresh window.
+        .onChange(of: syncService.connectionState) { _, newState in
+            applyOfflineBannerGate(isNotConnected: !newState.isConnected)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            applyOfflineBannerGate(for: phase)
+        }
         .onAppear {
             RecipeImageDiskCache.migrateFromCachesIfNeeded()
             // Spec 059 fix: on cold launch iOS delivers the Universal Link URL
@@ -247,6 +286,10 @@ struct AppShellView: View {
             if let link = deepLinkRouter.pending {
                 coordinator.handleDeepLink(link)
             }
+            // Spec 066 — arm gate from the current state; `onChange` above does
+            // not fire for a value already set before this view mounted (cold
+            // start already offline), so without this the banner would never appear.
+            applyOfflineBannerGate(for: scenePhase)
         }
         #if DEBUG
         .onAppear {

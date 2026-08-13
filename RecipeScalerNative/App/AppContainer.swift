@@ -97,6 +97,13 @@ final class AppContainer {
 
     let systemBanner: SystemBannerStore
 
+    // MARK: - Offline banner debounce (spec 066)
+
+    /// UI-derived состояние: показывает status-баннеры только после 3с непрерывного
+    /// `!connectionState.isConnected` **на переднем плане**. Не привязан к аккаунту,
+    /// не чистится при logout (состояние пересчитается из `connectionState` через onChange).
+    let offlineGate: OfflineBannerGate
+
     // MARK: - App Store support
 
     /// StoreKit transactions belong to the Apple account, so this service is
@@ -207,6 +214,9 @@ final class AppContainer {
         // System banner store (spec 061). Refreshed once per session during
         // bootstrap; never polls. Dismissal is persisted server-side.
         self.systemBanner = SystemBannerStore()
+
+        // Spec 066 — debounced offline banner gate.
+        self.offlineGate = OfflineBannerGate()
 
         // StoreKit support purchases are independent of the signed-in
         // Recipe Scaler account and must survive account switching.

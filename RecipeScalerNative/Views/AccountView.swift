@@ -19,6 +19,7 @@ struct AccountView: View {
     @Environment(AppShellCoordinator.self) private var coordinator
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Environment(\.locale) private var locale
+    @Environment(OfflineBannerGate.self) private var offlineGate
 
     /// Injected dependencies (architecture review C2). AccountView receives
     /// `AuthService` and `TimerManager` explicitly so it can construct the
@@ -46,16 +47,6 @@ struct AccountView: View {
                 }
             }
         ))
-    }
-
-    /// True only when sync is hard-down — not while connecting/reconnecting.
-    private var showsHardOfflineBanner: Bool {
-        switch syncService.connectionState {
-        case .disconnected, .error:
-            return true
-        case .connected, .connecting, .reconnecting:
-            return false
-        }
     }
 
     @State private var showingLogoutConfirmation = false
@@ -112,9 +103,9 @@ struct AccountView: View {
         NavigationStack {
             ScrollViewReader { proxy in
                 List {
-                    // Banner only for hard offline — not while Socket.IO is reconnecting
-                    // (transient long-poll errors used to flap this section offline↔online).
-                    if showsHardOfflineBanner {
+                    // Banner gated by OfflineBannerGate (spec 066) — 3s debounce
+                    // prevents flashing on phone unlock / transient flaps.
+                    if offlineGate.isVisible {
                         Section {
                             Label {
                                 Text("account.offline.alert")
@@ -364,7 +355,7 @@ struct AccountView: View {
     @ViewBuilder
     private var publicRecipesSection: some View {
         Section {
-            if showsHardOfflineBanner {
+            if offlineGate.isVisible {
                 Text("account.public-profile.offline")
                     .appBody()
                     .foregroundStyle(.secondary)

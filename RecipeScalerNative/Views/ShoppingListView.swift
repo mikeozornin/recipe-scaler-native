@@ -555,6 +555,7 @@ private struct ShoppingRemindersTipBanner: View {
 private struct ShoppingListShareSheet: View {
     @Environment(YjsSyncService.self) private var syncService
     @Environment(ShoppingViewModel.self) private var shoppingModel
+    @Environment(OfflineBannerGate.self) private var offlineGate
     @Environment(\.dismiss) private var dismiss
 
     let isOnline: Bool
@@ -579,7 +580,9 @@ private struct ShoppingListShareSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                if !isOnline {
+                // Status banner gated by OfflineBannerGate (spec 066) — 3s debounce.
+                // `isOnline` below (disabled buttons) intentionally stays instant.
+                if offlineGate.isVisible {
                     Section {
                         Text("account.offline.alert")
                             .appBody()

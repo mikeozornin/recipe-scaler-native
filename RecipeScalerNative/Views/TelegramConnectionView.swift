@@ -16,6 +16,7 @@ struct TelegramConnectionView: View {
     let refreshTick: Int
     let onStatusChange: (Bool) -> Void
 
+    @Environment(OfflineBannerGate.self) private var offlineGate
     @State private var isConnected = false
     @State private var telegramUsername: String?
     @State private var isLoading = false
@@ -26,7 +27,9 @@ struct TelegramConnectionView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if !isOnline {
+            // Status banner gated by OfflineBannerGate (spec 066) — 3s debounce.
+            // `isOnline` below (disabled buttons) intentionally stays instant.
+            if offlineGate.isVisible {
                 Text("account.public-profile.offline")
                     .appBody()
                     .foregroundStyle(.secondary)
