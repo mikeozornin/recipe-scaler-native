@@ -2506,7 +2506,9 @@
 				B723C003B318C8956FF9B79E /* Frameworks */,
 				27380E66AD33499FA150A543 /* Embed Frameworks */,
 				D91A88FEF44E45399F512C8A /* Embed App Extensions */,
-				63B9A08D5525466B9A9458A0 /* Embed Watch App */,
+				// TODO(060-G2): «Embed Watch App» временно снята — store v1 без Watch.
+				// Вернуть при включении watchOS в релиз (specs/060-app-store-screenshots/spec.md G2).
+				// 63B9A08D5525466B9A9458A0 /* Embed Watch App */,
 			);
 			buildRules = (
 			);
