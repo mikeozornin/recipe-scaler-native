@@ -41,6 +41,22 @@ struct AccountTipsSection: View {
 struct AccountTipsView: View {
     @Environment(TipPurchaseService.self) private var tips
     @State private var isManageSubscriptionsPresented = false
+    @State private var legalLink: LegalLink?
+
+    private enum LegalLink: String, Identifiable {
+        case terms, privacy
+
+        var id: String { rawValue }
+
+        var url: URL {
+            switch self {
+            case .terms:
+                return PublicURLBuilder.termsOfUseURL
+            case .privacy:
+                return PublicURLBuilder.privacyURL
+            }
+        }
+    }
 
     var body: some View {
         storeKitList
@@ -52,6 +68,11 @@ struct AccountTipsView: View {
             await tips.loadProducts()
         }
         .manageSubscriptionsSheet(isPresented: $isManageSubscriptionsPresented)
+        .sheet(item: $legalLink) { link in
+            InAppSafariView(url: link.url)
+                .ignoresSafeArea()
+                .appOpaqueSheetPresentationPlain()
+        }
     }
 
     private var storeKitList: some View {
@@ -60,11 +81,13 @@ struct AccountTipsView: View {
                 loadingSection
             } else if tips.products.isEmpty {
                 unavailableSection
+                legalSection
             } else {
                 oneTimeTipsSection
                 monthlySection
                 subscriptionActionsSection
                 statusSection
+                legalSection
             }
         }
     }
@@ -186,6 +209,35 @@ struct AccountTipsView: View {
                     .appFootnote()
                     .foregroundStyle(.red)
             }
+        }
+    }
+
+    /// Guideline 3.1.2(c): functional Terms of Use (EULA) and Privacy Policy
+    /// links must be part of the purchase flow itself, not only in metadata.
+    /// The screen root applies `.tint(.primary)`, which also overrides
+    /// `Color.accentColor` resolution inside this subtree — so use the
+    /// concrete system blue (app default accent) instead of a semantic color.
+    private var legalSection: some View {
+        Section {
+            Button {
+                legalLink = .terms
+            } label: {
+                Text("account.tips.legal.terms")
+                    .appBody()
+                    .foregroundStyle(Color(uiColor: .systemBlue))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier(AccessibilityIdentifiers.accountTipsTermsLink)
+
+            Button {
+                legalLink = .privacy
+            } label: {
+                Text("account.tips.legal.privacy")
+                    .appBody()
+                    .foregroundStyle(Color(uiColor: .systemBlue))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier(AccessibilityIdentifiers.accountTipsPrivacyLink)
         }
     }
 

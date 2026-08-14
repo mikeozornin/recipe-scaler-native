@@ -40,4 +40,11 @@ enum PublicURLBuilder {
     static var privacyURL: URL {
         URL(string: "\(Config.baseURL)/#/privacy?lang=\(AppLanguagePreference.current.rawValue)")!
     }
+
+    /// Apple's Standard EULA used as the app Terms of Use (App Store Connect
+    /// License Agreement selects the standard license). Required next to the
+    /// purchase flow per guideline 3.1.2(c).
+    static let termsOfUseURL = URL(
+        string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+    )!
 }

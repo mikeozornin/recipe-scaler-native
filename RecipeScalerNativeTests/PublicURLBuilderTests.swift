@@ -47,4 +47,13 @@ final class PublicURLBuilderTests: XCTestCase {
         XCTAssertTrue(about.hasPrefix("https://"), about)
         XCTAssertTrue(privacy.hasPrefix("https://"), privacy)
     }
+
+    func testTermsOfUseURLIsAppleStandardEULA() {
+        let terms = PublicURLBuilder.termsOfUseURL.absoluteString
+
+        XCTAssertEqual(
+            terms,
+            "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+        )
+    }
 }

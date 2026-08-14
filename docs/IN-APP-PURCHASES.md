@@ -33,3 +33,18 @@
 Цена и период подписки отображаются StoreKit в формате текущей витрины App
 Store. После сохранения локализаций продуктам нужно дать время появиться в
 Sandbox.
+
+## Legal-ссылки (guideline 3.1.2(c))
+
+В экране покупок (`AccountTipsView`) и в футере профиля обязаны быть
+функциональные ссылки:
+
+- **Terms of Use (EULA)** — стандартная EULA Apple:
+  `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
+  (`PublicURLBuilder.termsOfUseURL`). В App Store Connect выбрана Apple's
+  Standard License Agreement, ссылка на EULA также продублирована в описании.
+- **Privacy Policy** — `PublicURLBuilder.privacyURL` (HashRouter-страница веба).
+  В ASC поле Privacy Policy URL = `https://recipe-scaler.ru/privacy`.
+
+Ссылки открываются in-app (`InAppSafariView`). При ответе на ревью Apple
+просит screen recording, где видно обе ссылки и открытие каждой.

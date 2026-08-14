@@ -7,7 +7,7 @@ import LocalAuthentication
 import SwiftUI
 
 private enum AccountSheet: Identifiable {
-    case seed, about, privacy
+    case seed, about, privacy, terms
 
     var id: Self { self }
 }
@@ -188,6 +188,10 @@ struct AccountView: View {
                             .appOpaqueSheetPresentationPlain()
                     case .privacy:
                         InAppSafariView(url: PublicURLBuilder.privacyURL)
+                            .ignoresSafeArea()
+                            .appOpaqueSheetPresentationPlain()
+                    case .terms:
+                        InAppSafariView(url: PublicURLBuilder.termsOfUseURL)
                             .ignoresSafeArea()
                             .appOpaqueSheetPresentationPlain()
                     }
@@ -737,6 +741,15 @@ struct AccountView: View {
                 presentedSheet = .privacy
             } label: {
                 Text("privacy.link")
+                    .appBody()
+                    .foregroundStyle(.tint)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Button {
+                presentedSheet = .terms
+            } label: {
+                Text("terms.link")
                     .appBody()
                     .foregroundStyle(.tint)
                     .frame(maxWidth: .infinity, alignment: .leading)
