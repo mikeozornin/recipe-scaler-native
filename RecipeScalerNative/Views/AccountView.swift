@@ -130,7 +130,9 @@ struct AccountView: View {
                         .id(AccountViewSection.reminders.id)
                     telegramSection
                         .id(AccountViewSection.telegram.id)
-                    AccountTipsSection()
+                    // TODO(payments): секция tips временно скрыта (2026-08-14);
+                    // feedback перенесён в footerSection над About.
+                    // AccountTipsSection()
                     dataSection
                     if auth.isAuthenticated {
                         dangerZoneSection
@@ -728,6 +730,14 @@ struct AccountView: View {
     @ViewBuilder
     private var footerSection: some View {
         Section {
+            NavigationLink {
+                AccountFeedbackView()
+            } label: {
+                Text("account.feedback.menu")
+                    .appBody()
+            }
+            .accessibilityIdentifier(AccessibilityIdentifiers.accountFeedbackMenu)
+
             Button {
                 presentedSheet = .about
             } label: {

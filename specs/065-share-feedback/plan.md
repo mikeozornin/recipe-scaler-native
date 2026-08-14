@@ -11,7 +11,7 @@
 ## Границы
 
 - **В scope**:
-  - Native: второй ряд в Support Recipe Scaler, `AccountFeedbackView`, multipart-клиент, i18n, параметризация иконки зелёного тоста.
+  - Native: второй ряд в Support Recipe Scaler (каноническое положение; **временно** (2026-08-14) ряд перенесён в `footerSection` профиля над About, пока tips скрыты — см. заметку в [spec.md](./spec.md)), `AccountFeedbackView`, multipart-клиент, i18n, параметризация иконки зелёного тоста.
   - Server (`recipe-scaler-web`): `POST /api/feedback`, rate limit 1/мин/user, forward в `MODERATION_ABUSE_ALERT_CHAT_ID`, без хранения и без moderation.
 - **Вне scope**:
   - Web-форма, камера, persist черновика, debug-log auto-attach, Watch/extensions, БД/S3.
@@ -153,7 +153,7 @@ Single-flight: `isSubmitting` ставится до первого await, сни
 - Native build: `SIM_ID="$(bash scripts/resolve-simulator.sh)"` + `xcodebuild -scheme RecipeScalerNative -destination "platform=iOS Simulator,id=$SIM_ID" build` — exit 0.
 - Native tests: `AccountFeedbackSubmitTests`, `LocalizationConsistencyTests`.
 - `bash scripts/lint-i18n.sh` — без новых предупреждений.
-- Ручная: Profile → Support Recipe Scaler → Share your feedback → текст → Send → тост + пустая форма; Attach photos/files; офлайн Send disabled.
+- Ручная: Profile → Share your feedback (временно в footer над About) → текст → Send → тост + пустая форма; Attach photos/files; офлайн Send disabled.
 - Expected evidence: vitest + xcodebuild exit 0.
 
 ## Rollback / maintenance
@@ -166,7 +166,9 @@ Single-flight: `isSubmitting` ставится до первого await, сни
 
 ## UI (native)
 
-Секция — тот же `Section` в [AccountTipsSection.swift](../../RecipeScalerNative/Views/AccountTipsSection.swift):
+> **Временно (2026-08-14)**: пока tips скрыты (`TODO(payments)`), NavigationLink фидбека живёт в `AccountView.footerSection` над About. Ниже — каноничное положение для возврата.
+
+Каноническое положение — тот же `Section` в [AccountTipsSection.swift](../../RecipeScalerNative/Views/AccountTipsSection.swift):
 
 1. существующий NavigationLink «Send a tip»
 2. новый NavigationLink → `AccountFeedbackView`

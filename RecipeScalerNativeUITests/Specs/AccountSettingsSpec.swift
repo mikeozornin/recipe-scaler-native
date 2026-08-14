@@ -39,6 +39,9 @@ final class AccountSettingsSpec: BaseTestCase {
         )
     }
 
+    // TODO(payments): tips временно скрыты (2026-08-14) — ассерты для
+    // account_tips_menu и заголовка секции закомментированы до возврата оплат.
+    // Проверка фидбека остаётся живой.
     func test_US4_tipsSectionVisible() {
         Navigation.openTab(.profile, in: app)
         _ = accountPage.awaitReady()
@@ -52,19 +55,19 @@ final class AccountSettingsSpec: BaseTestCase {
             }
         }
 
-        XCTAssertTrue(
-            tips.waitForExistence(timeout: Wait.element),
-            "account_tips_section not in UI — wire Tips into AccountView"
-        )
+        // XCTAssertTrue(
+        //     tips.waitForExistence(timeout: Wait.element),
+        //     "account_tips_section not in UI — wire Tips into AccountView"
+        // )
 
-        XCTAssertTrue(
-            app.descendants(matching: .any)[UIA.accountTipsMenu].waitForExistence(timeout: Wait.element),
-            "account_tips_menu not in UI — tips should be opened as a submenu"
-        )
+        // XCTAssertTrue(
+        //     app.descendants(matching: .any)[UIA.accountTipsMenu].waitForExistence(timeout: Wait.element),
+        //     "account_tips_menu not in UI — tips should be opened as a submenu"
+        // )
 
         XCTAssertTrue(
             app.descendants(matching: .any)[UIA.accountFeedbackMenu].waitForExistence(timeout: Wait.element),
-            "account_feedback_menu not in UI — Share your feedback should be the second tips row"
+            "account_feedback_menu not in UI — Share your feedback should remain visible while tips are hidden"
         )
     }
 

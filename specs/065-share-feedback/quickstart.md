@@ -7,7 +7,7 @@
 
 ### Native
 
-- `RecipeScalerNative/Views/AccountTipsSection.swift` — второй ряд секции.
+- `RecipeScalerNative/Views/AccountTipsSection.swift` — второй ряд секции (канонично; временно ряд в `AccountView.footerSection`).
 - `RecipeScalerNative/Views/AccountFeedbackView.swift` — форма.
 - `RecipeScalerNative/Services/AccountAPI.swift` — `submitFeedback`.
 - `RecipeScalerCore/Networking/APIClient+Requests.swift` — multipart + text fields.
@@ -37,7 +37,7 @@ bash scripts/lint-i18n.sh
 
 ### Ручной сценарий
 
-1. Profile → секция Support Recipe Scaler → два пункта.
+1. Profile → Share your feedback (временно в footer над About — tips скрыты; канонично секция Support Recipe Scaler с двумя пунктами).
 2. Share your feedback → ввести текст → Send.
 3. Зелёный тост, поле пустое, экран не закрылся.
 4. Attach → Photo Library и/или Files → имена в списке → Send.

@@ -4,15 +4,19 @@
 **Дата**: 2026-08-13
 **Статус**: Draft
 **Canonical API spec**: [`../recipe-scaler-web/specs/065-share-feedback/spec.md`](../../../recipe-scaler-web/specs/065-share-feedback/spec.md) — wire-контракт `POST /api/feedback`, Telegram, rate limit, отсутствие хранения/модерации. Здесь — native UI, клиент и i18n.
-**Зависимости**: секция Support Recipe Scaler ([AccountTipsSection.swift](../../RecipeScalerNative/Views/AccountTipsSection.swift)), `APIClient.uploadMultipart`, `TransientStatusBanner` / `ShoppingFeedback.postStatus`, auth (`requireUserId` на сервере), ops Telegram (`MODERATION_ABUSE_ALERT_CHAT_ID`, spec 063).
+**Зависимости**: ~~секция Support Recipe Scaler ([AccountTipsSection.swift](../../RecipeScalerNative/Views/AccountTipsSection.swift))~~ footer-секция профиля (см. «Временное изменение»), `APIClient.uploadMultipart`, `TransientStatusBanner` / `ShoppingFeedback.postStatus`, auth (`requireUserId` на сервере), ops Telegram (`MODERATION_ABUSE_ALERT_CHAT_ID`, spec 063).
+
+> **⚠️ Временное изменение (2026-08-14, `TODO(payments)`)** — tips и вся секция Support Recipe Scaler скрыты до возврата оплат: вызов `AccountTipsSection()` в `AccountView` закомментирован, `TipPurchaseService` и StoreKit-код не тронуты. Ряд «Share your feedback» временно перенесён в `footerSection` профиля (над About). При возврате tips: раскомментировать `AccountTipsSection()` в `AccountView`, вернуть NavigationLink фидбека в `AccountTipsSection.swift` и откатить правки позиций в этой спеке.
 
 ## Контекст и мотивация
 
 В профиле уже есть секция **Support Recipe Scaler** с одним пунктом «Send a tip». Нужен второй пункт — отправить отзыв с текстом и файлами (скриншоты, логи, что угодно). Отзыв уходит на сервер и сразу в тот же Telegram-чат, куда приходят алерты модерации. Файлы не хранятся и не прогоняются через защиту изображений.
 
+> **Временное изменение (2026-08-14)**: пока tips скрыты, пункт фидбека размещён в footer-секции профиля над About, а не в секции Support Recipe Scaler. Каноничное положение — вернуться к нему при возврате оплат.
+
 ## Цель
 
-1. Второй ряд в секции Support Recipe Scaler: **Share your feedback**.
+1. ~~Второй ряд в секции Support Recipe Scaler~~ **Временно (см. шапку)**: ряд в footer-секции профиля над About: **Share your feedback**.
 2. Вложенный экран (NavigationLink, не sheet): textarea + аттачи (галерея / файлы) + Send.
 3. Успешная отправка: форма очищается, экран остаётся открытым, зелёный тост «спасибо».
 4. Клиент шлёт `POST /api/feedback` (multipart). Сервер форвардит в Telegram и отбрасывает буферы.
@@ -43,7 +47,7 @@
 
 **Входит:**
 
-- Второй `NavigationLink` в той же `Section`, что «Send a tip».
+- ~~Второй `NavigationLink` в той же `Section`, что «Send a tip»~~ **Временно (2026-08-14)**: `NavigationLink` в `footerSection` профиля, над About (tips скрыты — см. шапку).
 - Экран `AccountFeedbackView`: `TextEditor`, Attach, список выбранных файлов с удалением, Send в toolbar.
 - Attach → `confirmationDialog`: Photo Library (`PhotosPicker`) и Files (`.fileImporter`).
 - Лимиты на клиенте зеркалят сервер: текст 1–4000 символов; до 5 файлов; до 10 MB каждый.
@@ -60,7 +64,7 @@
 
 ### User Story 1 — Написать отзыв без файлов (P1)
 
-Пользователь открывает Profile → Support Recipe Scaler → Share your feedback. Пишет текст, нажимает Send. После успеха поля пустые, виден зелёный тост, он остаётся на том же экране и может написать ещё один отзыв позже.
+Пользователь открывает Profile → Share your feedback (временно в footer над About — см. шапку). Пишет текст, нажимает Send. После успеха поля пустые, виден зелёный тост, он остаётся на том же экране и может написать ещё один отзыв позже.
 
 **Почему приоритет**: основной путь; аттачи опциональны.
 
@@ -68,7 +72,7 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** секция Support Recipe Scaler, **When** пользователь смотрит список, **Then** видит два пункта: Send a tip и Share your feedback.
+1. **Given** профиль, **When** пользователь смотрит список, **Then** видит пункт Share your feedback (временно — в footer над About; канонично — в секции Support Recipe Scaler под Send a tip).
 2. **Given** Share your feedback, **When** тап по ряду, **Then** открывается вложенный экран с полем текста, кнопкой Attach и Send.
 3. **Given** непустой текст и онлайн, **When** Send, **Then** запрос уходит, после 2xx форма пустая, зелёный тост, экран не закрывается.
 4. **Given** пустой или whitespace-only текст, **When** пользователь смотрит Send, **Then** Send disabled, запроса нет.
@@ -112,7 +116,7 @@
 
 ### Edge Cases
 
-- **Не авторизован**: ряд можно показать (секция tips всегда на профиле), Send disabled; запроса нет.
+- **Не авторизован**: ряд можно показать (footer профиля виден всегда; канонично — секция tips), Send disabled; запроса нет.
 - **Уход с экрана во время Send**: Task отменяется; поздний 2xx не очищает уже другой экран и не показывает тост чужому состоянию (re-check identity после await).
 - **Logout / смена аккаунта во время Send**: результат отбрасывается; in-memory аттачи не переживают teardown.
 - **Пустые аттачи**: валидно; уходит только текст.
@@ -134,7 +138,7 @@
 
 ### Функциональные требования
 
-- **FR-001**: В секции Support Recipe Scaler ДОЛЖЕН быть второй пункт Share your feedback (`account.feedback.menu`), первым остаётся Send a tip.
+- **FR-001**: В профиле ДОЛЖЕН быть пункт Share your feedback (`account.feedback.menu`). Канонично — второй ряд в секции Support Recipe Scaler; **временно** (2026-08-14) — в footer над About.
 - **FR-002**: Пункт ДОЛЖЕН открывать вложенный экран через NavigationLink (не sheet).
 - **FR-003**: Экран ДОЛЖЕН содержать многострочное поле текста с плейсхолдером (`account.feedback.placeholder`).
 - **FR-004**: Attach ДОЛЖЕН открывать `confirmationDialog` с Photo Library и Files; камеры нет.
@@ -160,7 +164,7 @@
 
 ## Downstream consumers
 
-- **SwiftUI views**: `AccountTipsSection` (второй ряд), новый `AccountFeedbackView`; `TransientStatusBanner` / `AppShellView` (иконка тоста).
+- **SwiftUI views**: `AccountTipsSection` (каноничное положение ряда; **временно** — `AccountView.footerSection`), новый `AccountFeedbackView`; `TransientStatusBanner` / `AppShellView` (иконка тоста).
 - **Cross-process**: N/A — только основной app target.
 - **Sync boundaries**: новый REST `POST /api/feedback` (web server). Yjs/CRDT не меняются.
 - **Persisted state**: N/A — черновик не пишется в SQLite/UserDefaults/Keychain.
@@ -170,7 +174,7 @@
 
 | Observable effect | Положительный инвариант | Test/verifier ID |
 |-------------------|-------------------------|------------------|
-| Открыть Support Recipe Scaler | Видны два ряда: tip и feedback | UITest page object |
+| Открыть профиль | Виден ряд feedback (временно — footer над About; канонично — секция Support Recipe Scaler) | UITest `account_feedback_menu` |
 | Send с текстом, 2xx | Форма пустая, зелёный тост с checkmark, экран открыт | UITest / ручная проверка |
 | Send офлайн | Send disabled, запроса нет | unit / ручная |
 | Второй Send в ту же минуту | 429, форма цела, локализованная ошибка | server test + ручная |
@@ -192,7 +196,7 @@ Submit — единственный async путь: `Task` на Send, captured `
 
 ## Критерии успеха *(обязательно)*
 
-- **SC-001**: Пользователь находит Share your feedback в Support Recipe Scaler и открывает форму за один тап.
+- **SC-001**: Пользователь находит Share your feedback в профиле (временно — footer над About) и открывает форму за один тап.
 - **SC-002**: Пользователь отправляет текстовый отзыв и сразу видит подтверждение (зелёный тост), не теряя экран.
 - **SC-003**: Пользователь может приложить скриншоты и файлы (суммарно до 5) к тому же отзыву.
 - **SC-004**: При ошибке отправки текст и файлы остаются, пользователь может повторить.
