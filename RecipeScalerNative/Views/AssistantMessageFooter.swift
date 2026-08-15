@@ -87,6 +87,126 @@ enum AssistantMessageFooterPresentation {
     }
 }
 
+// MARK: - Attachment display resolution (web `resolveAttachmentRecipeDisplay` parity)
+
+/// Collection-derived name/color maps for attachment chips on persisted messages
+/// (web `attachableRecipeNameById` / `attachableRecipeColorById` in assistant-sheet.tsx).
+struct AssistantAttachableRecipeLookups: Equatable, Sendable {
+    let nameById: [String: String]
+    let colorById: [String: String]
+
+    static let empty = AssistantAttachableRecipeLookups(nameById: [:], colorById: [:])
+
+    /// Single-pass build. Empty / whitespace recipe names map to `recipes.no-title`
+    /// (web: `recipe.name || t('recipes.no-title')`). Only non-empty colors are stored.
+    static func build(from entries: [CollectionEntry]) -> AssistantAttachableRecipeLookups {
+        let untitled = Bundle.currentLocalizedString("recipes.no-title")
+        var nameById: [String: String] = [:]
+        var colorById: [String: String] = [:]
+        nameById.reserveCapacity(entries.count * 2)
+        colorById.reserveCapacity(entries.count * 2)
+
+        for entry in entries {
+            let trimmedName = entry.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let displayName = trimmedName.isEmpty ? untitled : trimmedName
+            nameById[entry.id] = displayName
+            nameById[entry.id.lowercased()] = displayName
+
+            let trimmedColor = entry.color.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedColor.isEmpty else { continue }
+            colorById[entry.id] = trimmedColor
+            colorById[entry.id.lowercased()] = trimmedColor
+        }
+
+        return AssistantAttachableRecipeLookups(nameById: nameById, colorById: colorById)
+    }
+}
+
+/// Resolves the chip payload for an attachment: metadata name/color first, then a
+/// collection fallback (case-insensitive by id), then recipeId as the last resort.
+/// Empty / whitespace strings are treated as missing (JS `||` parity).
+enum AssistantAttachmentChipResolver {
+    static func resolve(
+        _ attachment: AssistantRecipeAttachment,
+        fallbackNameById: [String: String] = [:],
+        fallbackColorById: [String: String] = [:]
+    ) -> (id: String, name: String, color: String?) {
+        let normalizedId = attachment.recipeId.lowercased()
+        let fallbackName = nonEmpty(
+            fallbackNameById[attachment.recipeId] ?? fallbackNameById[normalizedId]
+        )
+        let fallbackColor = nonEmpty(
+            fallbackColorById[attachment.recipeId] ?? fallbackColorById[normalizedId]
+        )
+        let metadataName = nonEmpty(attachment.recipeName)
+        let metadataColor = nonEmpty(attachment.recipeColor)
+
+        return (
+            id: attachment.recipeId,
+            name: metadataName ?? fallbackName ?? attachment.recipeId,
+            color: metadataColor ?? fallbackColor
+        )
+    }
+
+    private static func nonEmpty(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+}
+
+/// Web parity (`assistant-message-list.tsx:userMessageShowsOnlyRecipeAttachmentChips`):
+/// a user message renders chips-only (no text) when the text is empty or is exactly the
+/// single attachment's recipeId (widget recipe submit).
+enum AssistantUserBubblePresentation {
+    static func showsAttachmentChipsOnly(message: AssistantMessage) -> Bool {
+        guard message.role == "user",
+              let attachments = message.metadata?.attachments,
+              !attachments.isEmpty else {
+            return false
+        }
+        let trimmed = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return true
+        }
+        if attachments.count == 1,
+           let first = attachments.first,
+           trimmed == first.recipeId {
+            return true
+        }
+        return false
+    }
+}
+
+// MARK: - Attachment chip (read-only; mirrors web `AssistantRecipeChipDisplay`)
+
+/// Read-only recipe pill shown on sent user messages — wraps shared chip primitives
+/// from `AssistantAttachmentChip.swift` without the remove button.
+struct AssistantAttachmentChipDisplayView: View {
+    let attachment: AssistantRecipeAttachment
+    let fallbackNameById: [String: String]
+    let fallbackColorById: [String: String]
+
+    private var display: (id: String, name: String, color: String?) {
+        AssistantAttachmentChipResolver.resolve(
+            attachment,
+            fallbackNameById: fallbackNameById,
+            fallbackColorById: fallbackColorById
+        )
+    }
+
+    var body: some View {
+        let split = AssistantRecipeChipDisplay.split(display.name)
+        HStack(spacing: 6) {
+            AssistantAttachmentChipLeading(emoji: split.emoji, colorHex: display.color)
+            Text(split.displayName)
+                .lineLimit(1)
+        }
+        .assistantAttachmentChipChrome()
+        .accessibilityIdentifier(AccessibilityIdentifiers.assistantMessageAttachmentChip(recipeId: display.id))
+    }
+}
+
 // MARK: - Timestamp + copy row (mirrors web `assistant-message-list.tsx` footer; always visible on mobile)
 
 enum AssistantMessageTimestampFormatter {
@@ -124,9 +244,26 @@ enum AssistantMessageTimestampFormatter {
 }
 
 enum AssistantMessageCopyText {
-    static func text(for message: AssistantMessage) -> String {
+    static func text(
+        for message: AssistantMessage,
+        fallbackRecipeNameById: [String: String] = [:]
+    ) -> String {
         guard message.role == "user" else {
             return message.text
+        }
+
+        // Web parity (`assistant-message-list.tsx:getUserMessageCopyText`): chips-only
+        // messages copy as a comma-joined list of resolved recipe names.
+        if AssistantUserBubblePresentation.showsAttachmentChipsOnly(message: message),
+           let attachments = message.metadata?.attachments {
+            return attachments
+                .map { attachment in
+                    AssistantAttachmentChipResolver.resolve(
+                        attachment,
+                        fallbackNameById: fallbackRecipeNameById
+                    ).name
+                }
+                .joined(separator: ", ")
         }
 
         // Web parity (`assistant-message-list.tsx:getResolvedUserMessageText`): if this user message
@@ -136,40 +273,14 @@ enum AssistantMessageCopyText {
             return resolved
         }
 
-        let attachments = message.metadata?.attachments ?? []
-        guard !attachments.isEmpty else {
-            return message.text
-        }
-
-        let trimmed = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            return attachments
-                .map { attachment in
-                    let name = attachment.recipeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                    return name.isEmpty ? attachment.recipeId : name
-                }
-                .joined(separator: ", ")
-        }
-
-        if attachments.count == 1,
-           let first = attachments.first,
-           trimmed == first.recipeId {
-            let name = first.recipeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            return name.isEmpty ? first.recipeId : name
-        }
-
         return message.text
     }
 
     /// Mirrors web `getResolvedUserMessageText` — returns a non-nil label when the user message
     /// was produced by tapping a confirmation widget (server marks it with `actionResolution.source == "widget"`).
     private static func resolvedWidgetActionText(for message: AssistantMessage) -> String? {
-        let metadata = message.metadata
-        let pendingAction = metadata?.pendingAction
-        let resolution = metadata?.actionResolution
-        guard let metadata,
-              let pendingAction = metadata.pendingAction,
-              let resolution = metadata.actionResolution,
+        guard let pendingAction = message.metadata?.pendingAction,
+              let resolution = message.metadata?.actionResolution,
               resolution.source == "widget",
               resolution.pendingActionId == pendingAction.id else {
             return nil
@@ -196,6 +307,7 @@ enum AssistantMessageValueNormalizer {
 struct AssistantMessageMetaRow: View {
     let message: AssistantMessage
     let isUser: Bool
+    var fallbackRecipeNameById: [String: String] = [:]
 
     @Environment(\.locale) private var locale
     @State private var isCopied = false
@@ -203,7 +315,9 @@ struct AssistantMessageMetaRow: View {
     private static let copyButtonSize: CGFloat = 28
     private static let copyIconFont = Font.system(size: 14)
 
-    private var copyText: String { AssistantMessageCopyText.text(for: message) }
+    private var copyText: String {
+        AssistantMessageCopyText.text(for: message, fallbackRecipeNameById: fallbackRecipeNameById)
+    }
     private var canCopy: Bool {
         !copyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -467,8 +581,14 @@ struct AssistantFollowUpsView: View {
 
 // MARK: - FlowLayout (minimal wrap layout for quick replies)
 
+enum FlowLayoutAlignment {
+    case leading
+    case trailing
+}
+
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8
+    var alignment: FlowLayoutAlignment = .leading
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let maxWidth = proposal.width ?? .infinity
@@ -477,37 +597,57 @@ struct FlowLayout: Layout {
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let arrangement = arrange(subviews: subviews, maxWidth: bounds.width)
-        for (subview, frame) in zip(subviews, arrangement.frames) {
-            subview.place(
-                at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
-                proposal: ProposedViewSize(width: frame.width, height: frame.height)
-            )
+        var index = 0
+        for row in arrangement.rows {
+            // Row width without the trailing spacing so trailing rows hug the right edge.
+            let rowWidth = row.last.map { $0.maxX } ?? 0
+            let rowOffset: CGFloat = alignment == .trailing ? max(0, bounds.width - rowWidth) : 0
+            for frame in row {
+                subviews[index].place(
+                    at: CGPoint(x: bounds.minX + rowOffset + frame.minX, y: bounds.minY + frame.minY),
+                    proposal: ProposedViewSize(width: frame.width, height: frame.height)
+                )
+                index += 1
+            }
         }
     }
 
     private struct Arrangement {
-        var frames: [CGRect]
+        var rows: [[CGRect]]
         var bounds: CGSize
     }
 
     private func arrange(subviews: Subviews, maxWidth: CGFloat) -> Arrangement {
+        var rows: [[CGRect]] = []
+        var currentRow: [CGRect] = []
         var x: CGFloat = 0
         var y: CGFloat = 0
         var rowHeight: CGFloat = 0
-        var frames: [CGRect] = []
-        var totalWidth: CGFloat = 0
+        var maxRowWidth: CGFloat = 0
+
         for subview in subviews {
             let size = subview.sizeThatFits(.unspecified)
             if x + size.width > maxWidth && x > 0 {
+                maxRowWidth = max(maxRowWidth, x - spacing)
+                rows.append(currentRow)
+                currentRow = []
                 x = 0
                 y += rowHeight + spacing
                 rowHeight = 0
             }
-            frames.append(CGRect(x: x, y: y, width: size.width, height: size.height))
+            currentRow.append(CGRect(x: x, y: y, width: size.width, height: size.height))
             x += size.width + spacing
             rowHeight = max(rowHeight, size.height)
-            totalWidth = max(totalWidth, x)
         }
-        return Arrangement(frames: frames, bounds: CGSize(width: totalWidth, height: y + rowHeight))
+
+        if !currentRow.isEmpty {
+            maxRowWidth = max(maxRowWidth, x - spacing)
+            rows.append(currentRow)
+        }
+
+        // Absolute coordinates: the last frame's maxY is the full content height
+        // (no trailing spacing after the final row).
+        let height = rows.last?.last?.maxY ?? 0
+        return Arrangement(rows: rows, bounds: CGSize(width: maxRowWidth, height: height))
     }
 }

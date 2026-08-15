@@ -293,6 +293,218 @@ final class AssistantPendingActionTests: XCTestCase {
         XCTAssertEqual(AssistantMessageCopyText.text(for: message), "Борщ")
     }
 
+    // MARK: - Chips-only presentation (web `userMessageShowsOnlyRecipeAttachmentChips` parity)
+
+    func testChipsOnlyWhenUserTextIsEmptyAndAttachmentsPresent() {
+        let message = AssistantMessage(
+            id: "user-chips-1",
+            role: "user",
+            text: "   ",
+            isStreaming: false,
+            metadata: AssistantMessageMetadata(
+                attachments: [
+                    AssistantRecipeAttachment(recipeId: "id-1", recipeName: "Борщ", recipeColor: nil),
+                    AssistantRecipeAttachment(recipeId: "id-2", recipeName: "Паста", recipeColor: nil)
+                ],
+                interactiveWidget: nil,
+                pendingAction: nil,
+                actionResolution: nil,
+                followUpSuggestions: nil
+            ),
+            createdAt: Date()
+        )
+
+        XCTAssertTrue(AssistantUserBubblePresentation.showsAttachmentChipsOnly(message: message))
+        XCTAssertEqual(AssistantMessageCopyText.text(for: message), "Борщ, Паста")
+    }
+
+    func testChipsOnlyWhenUserTextEqualsSingleRecipeId() {
+        let message = AssistantMessage(
+            id: "user-chips-2",
+            role: "user",
+            text: "a33df68f-b657-47f6-825d-da5ee5c2972a",
+            isStreaming: false,
+            metadata: AssistantMessageMetadata(
+                attachments: [
+                    AssistantRecipeAttachment(
+                        recipeId: "a33df68f-b657-47f6-825d-da5ee5c2972a",
+                        recipeName: "Борщ",
+                        recipeColor: nil
+                    )
+                ],
+                interactiveWidget: nil,
+                pendingAction: nil,
+                actionResolution: nil,
+                followUpSuggestions: nil
+            ),
+            createdAt: Date()
+        )
+
+        XCTAssertTrue(AssistantUserBubblePresentation.showsAttachmentChipsOnly(message: message))
+        XCTAssertEqual(AssistantMessageCopyText.text(for: message), "Борщ")
+    }
+
+    func testNotChipsOnlyWhenUserTextIsRealQuestion() {
+        let message = AssistantMessage(
+            id: "user-chips-3",
+            role: "user",
+            text: "Как удвоить этот рецепт?",
+            isStreaming: false,
+            metadata: AssistantMessageMetadata(
+                attachments: [
+                    AssistantRecipeAttachment(recipeId: "id-1", recipeName: "Борщ", recipeColor: nil)
+                ],
+                interactiveWidget: nil,
+                pendingAction: nil,
+                actionResolution: nil,
+                followUpSuggestions: nil
+            ),
+            createdAt: Date()
+        )
+
+        XCTAssertFalse(AssistantUserBubblePresentation.showsAttachmentChipsOnly(message: message))
+        XCTAssertEqual(AssistantMessageCopyText.text(for: message), "Как удвоить этот рецепт?")
+    }
+
+    func testNotChipsOnlyForAssistantMessages() {
+        let message = AssistantMessage(
+            id: "assistant-chips-4",
+            role: "assistant",
+            text: "",
+            isStreaming: false,
+            metadata: AssistantMessageMetadata(
+                attachments: [
+                    AssistantRecipeAttachment(recipeId: "id-1", recipeName: "Борщ", recipeColor: nil)
+                ],
+                interactiveWidget: nil,
+                pendingAction: nil,
+                actionResolution: nil,
+                followUpSuggestions: nil
+            ),
+            createdAt: Date()
+        )
+
+        XCTAssertFalse(AssistantUserBubblePresentation.showsAttachmentChipsOnly(message: message))
+    }
+
+    // MARK: - Attachment chip resolver (web `resolveAttachmentRecipeDisplay` parity)
+
+    func testResolverPrefersMetadataNameAndColor() {
+        let attachment = AssistantRecipeAttachment(recipeId: "id-1", recipeName: "Борщ", recipeColor: "#FF0000")
+        let display = AssistantAttachmentChipResolver.resolve(
+            attachment,
+            fallbackNameById: ["id-1": "Другой"],
+            fallbackColorById: ["id-1": "#00FF00"]
+        )
+
+        XCTAssertEqual(display.name, "Борщ")
+        XCTAssertEqual(display.color, "#FF0000")
+    }
+
+    func testResolverFallsBackToCollectionByNameIgnoringCase() {
+        let attachment = AssistantRecipeAttachment(
+            recipeId: "CE78C4CC-E292-462B-B548-7EFDCB036AC1",
+            recipeName: nil,
+            recipeColor: nil
+        )
+        let display = AssistantAttachmentChipResolver.resolve(
+            attachment,
+            fallbackNameById: ["ce78c4cc-e292-462b-b548-7efdcb036ac1": "To delete"],
+            fallbackColorById: ["ce78c4cc-e292-462b-b548-7efdcb036ac1": "#00FF00"]
+        )
+
+        XCTAssertEqual(display.name, "To delete")
+        XCTAssertEqual(display.color, "#00FF00")
+    }
+
+    func testResolverTreatsWhitespaceOnlyNameAsMissing() {
+        let attachment = AssistantRecipeAttachment(recipeId: "id-9", recipeName: "   ", recipeColor: nil)
+        let display = AssistantAttachmentChipResolver.resolve(
+            attachment,
+            fallbackNameById: ["id-9": "Паста"],
+            fallbackColorById: [:]
+        )
+
+        XCTAssertEqual(display.name, "Паста")
+    }
+
+    func testResolverTreatsEmptyFallbackAsMissingAndUsesRecipeId() {
+        let attachment = AssistantRecipeAttachment(recipeId: "id-empty", recipeName: nil, recipeColor: "   ")
+        let display = AssistantAttachmentChipResolver.resolve(
+            attachment,
+            fallbackNameById: ["id-empty": ""],
+            fallbackColorById: ["id-empty": "   "]
+        )
+
+        XCTAssertEqual(display.name, "id-empty")
+        XCTAssertNil(display.color)
+    }
+
+    func testResolverFallsBackToRecipeIdWhenNothingElseKnown() {
+        let attachment = AssistantRecipeAttachment(recipeId: "id-42", recipeName: nil, recipeColor: nil)
+        let display = AssistantAttachmentChipResolver.resolve(attachment)
+
+        XCTAssertEqual(display.name, "id-42")
+        XCTAssertNil(display.color)
+    }
+
+    func testLookupsMapEmptyNameToNoTitleAndOmitEmptyColor() {
+        let untitled = Bundle.currentLocalizedString("recipes.no-title")
+        let entries = [
+            CollectionEntry(
+                id: "ID-1",
+                name: "   ",
+                color: "",
+                imageUrl: nil,
+                updatedAt: "2026-01-01T00:00:00.000Z",
+                deleted: false,
+                isPinned: false
+            ),
+            CollectionEntry(
+                id: "id-2",
+                name: "Паста",
+                color: "#00FF00",
+                imageUrl: nil,
+                updatedAt: "2026-01-01T00:00:00.000Z",
+                deleted: false,
+                isPinned: false
+            ),
+        ]
+        let lookups = AssistantAttachableRecipeLookups.build(from: entries)
+
+        XCTAssertEqual(lookups.nameById["ID-1"], untitled)
+        XCTAssertEqual(lookups.nameById["id-1"], untitled)
+        XCTAssertEqual(lookups.nameById["id-2"], "Паста")
+        XCTAssertNil(lookups.colorById["ID-1"])
+        XCTAssertNil(lookups.colorById["id-1"])
+        XCTAssertEqual(lookups.colorById["id-2"], "#00FF00")
+    }
+
+    func testCopyTextUsesFallbackNamesForChipsOnlyMessages() {
+        let message = AssistantMessage(
+            id: "user-chips-5",
+            role: "user",
+            text: "",
+            isStreaming: false,
+            metadata: AssistantMessageMetadata(
+                attachments: [
+                    AssistantRecipeAttachment(recipeId: "ID-A", recipeName: nil, recipeColor: nil),
+                    AssistantRecipeAttachment(recipeId: "id-b", recipeName: "Паста", recipeColor: nil)
+                ],
+                interactiveWidget: nil,
+                pendingAction: nil,
+                actionResolution: nil,
+                followUpSuggestions: nil
+            ),
+            createdAt: Date()
+        )
+
+        XCTAssertEqual(
+            AssistantMessageCopyText.text(for: message, fallbackRecipeNameById: ["id-a": "Борщ"]),
+            "Борщ, Паста"
+        )
+    }
+
     // MARK: - Stream final payload decoding
 
     func testStreamFinalUserMessageRefDecodesMetadataWithActionResolution() throws {

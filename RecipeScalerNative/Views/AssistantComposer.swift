@@ -446,21 +446,7 @@ enum AssistantInputPlaceholder {
     }
 }
 
-// MARK: - Attachment chip
-
-private struct AssistantAttachmentChipLabel: View {
-    let attachment: AssistantRecipeAttachment
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(Color(hex: attachment.recipeColor ?? "") ?? .accentColor)
-                .frame(width: 8, height: 8)
-            Text(attachment.recipeName ?? attachment.recipeId)
-                .lineLimit(1)
-        }
-    }
-}
+// MARK: - Attachment chip (composer removable wrapper)
 
 private struct AssistantAttachmentChip: View {
     let attachment: AssistantRecipeAttachment
@@ -478,16 +464,6 @@ private struct AssistantAttachmentChip: View {
             .accessibilityLabel(Text("assistant.remove-attached-recipe"))
         }
         .assistantAttachmentChipChrome()
-    }
-}
-
-private extension View {
-    func assistantAttachmentChipChrome() -> some View {
-        font(Font(AppTypography.footnoteUIFont))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color.secondary.opacity(0.12))
-            .clipShape(Capsule())
     }
 }
 

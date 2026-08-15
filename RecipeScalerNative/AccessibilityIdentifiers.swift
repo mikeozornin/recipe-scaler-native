@@ -108,6 +108,10 @@ enum AccessibilityIdentifiers {
         "assistant_thread_item_\(threadId)"
     }
 
+    static func assistantMessageAttachmentChip(recipeId: String) -> String {
+        "assistant_message_attachment_chip_\(recipeId)"
+    }
+
     static func assistantThreadDeleteButton(threadId: String) -> String {
         "assistant_thread_delete_button_\(threadId)"
     }

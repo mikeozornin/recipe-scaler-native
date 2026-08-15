@@ -374,6 +374,7 @@
 		E5F60718293A4B7018FB5571 /* AssistantMessageFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B706CC8B6CE /* AssistantMessageFooter.swift */; };
 		E5F60718293A4B70267CA7BD /* ShoppingListData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A32A1501 /* ShoppingListData.swift */; };
 		E5F60718293A4B702B6FFEC2 /* AssistantComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70220BC4FC /* AssistantComposer.swift */; };
+		A5ATCH18293A4B7010000001 /* AssistantAttachmentChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ATCH18293A4B7010000002 /* AssistantAttachmentChip.swift */; };
 		E5F60718293A4B703037711D /* DescriptionTimerPopoverState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70309B38A2 /* DescriptionTimerPopoverState.swift */; };
 		E5F60718293A4B70321FB5DD /* ScreenAwakeStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */; };
 		E5F60718293A4B70374F8F19 /* SeedQRCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70F25813BA /* SeedQRCodeView.swift */; };
@@ -1094,6 +1095,7 @@
 		E5F60718293A4B70219947AF /* ShoppingListConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListConstants.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountCheckmarkSelectionView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70220BC4FC /* AssistantComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantComposer.swift; sourceTree = "<group>"; };
+		A5ATCH18293A4B7010000002 /* AssistantAttachmentChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantAttachmentChip.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7024E554ED /* ShoppingSmokeTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingSmokeTest.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7024E554FD /* TimerNotificationSmokeTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerNotificationSmokeTest.swift; sourceTree = "<group>"; };
 		E5F60718293A4B702F0A2841 /* ShoppingListReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListReader.swift; sourceTree = "<group>"; };
@@ -1553,6 +1555,7 @@
 				A5TH028293A4B7010000002 /* AssistantThreadListSheet.swift */,
 				A5MD048293A4B7010000004 /* AssistantMarkdownText.swift */,
 				E5F60718293A4B706CC8B6CE /* AssistantMessageFooter.swift */,
+				A5ATCH18293A4B7010000002 /* AssistantAttachmentChip.swift */,
 				A5VLM02293A4B7010000002 /* AssistantVoiceLevelMeter.swift */,
 				E5F60718293A4B70220BC4FC /* AssistantComposer.swift */,
 				E5F60718293A4B70E374EEFC /* MobileTimerPanel.swift */,
@@ -3030,6 +3033,7 @@
 				MDCC01B293A4B70100000001 /* MarkdownCache.swift in Sources */,
 				A5MD038293A4B7010000003 /* AssistantMarkdownText.swift in Sources */,
 				E5F60718293A4B7018FB5571 /* AssistantMessageFooter.swift in Sources */,
+				A5ATCH18293A4B7010000001 /* AssistantAttachmentChip.swift in Sources */,
 				E5F60718293A4B702B6FFEC2 /* AssistantComposer.swift in Sources */,
 				E5F60718293A4B70E66E63B1 /* MobileTimerPanel.swift in Sources */,
 				E5F60718293A4B70B3900847 /* RecipeDetailActionsMenu.swift in Sources */,

@@ -142,11 +142,15 @@ struct AssistantSheet: View {
     // MARK: - Message list
 
     private var messageList: some View {
-        ScrollView {
+        // Build once per body pass (not per bubble). Streaming deltas re-render the
+        // sheet; recomputing these maps inside each message was O(visible × collection).
+        // `collectionEntries` is already filtered to non-deleted entries.
+        let lookups = AssistantAttachableRecipeLookups.build(from: syncService.collectionEntries)
+        return ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
                 ForEach(messages) { message in
                     let isLast = message.id == messages.last?.id
-                    messageBubble(for: message, isLast: isLast)
+                    messageBubble(for: message, isLast: isLast, lookups: lookups)
                 }
             }
             .padding(14)
@@ -169,7 +173,11 @@ struct AssistantSheet: View {
     }
 
     @ViewBuilder
-    private func messageBubble(for message: AssistantMessage, isLast: Bool) -> some View {
+    private func messageBubble(
+        for message: AssistantMessage,
+        isLast: Bool,
+        lookups: AssistantAttachableRecipeLookups
+    ) -> some View {
         let isUser = message.role == "user"
         let showMeta = shouldShowMessageMeta(for: message)
         let followUps = AssistantMessageFollowUps.suggestions(
@@ -177,7 +185,7 @@ struct AssistantSheet: View {
             isLastMessage: isLast,
             isSending: isSending
         )
-        let bubble = messageBubbleBody(for: message, isLast: isLast, isUser: isUser)
+        let bubble = messageBubbleBody(for: message, isLast: isLast, isUser: isUser, lookups: lookups)
 
         VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
             Group {
@@ -203,7 +211,11 @@ struct AssistantSheet: View {
             .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
 
             if showMeta {
-                AssistantMessageMetaRow(message: message, isUser: isUser)
+                AssistantMessageMetaRow(
+                    message: message,
+                    isUser: isUser,
+                    fallbackRecipeNameById: lookups.nameById
+                )
             }
 
             if !followUps.isEmpty {
@@ -230,13 +242,38 @@ struct AssistantSheet: View {
     }
 
     @ViewBuilder
-    private func messageBubbleBody(for message: AssistantMessage, isLast: Bool, isUser: Bool) -> some View {
+    private func messageBubbleBody(
+        for message: AssistantMessage,
+        isLast: Bool,
+        isUser: Bool,
+        lookups: AssistantAttachableRecipeLookups
+    ) -> some View {
+        let attachments = isUser ? (message.metadata?.attachments ?? []) : []
+        let chipsOnly = isUser && AssistantUserBubblePresentation.showsAttachmentChipsOnly(message: message)
         VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
             if isUser {
                 // Web parity: user-bubble shows the friendlier resolved text (e.g. "Удалить"
                 // instead of "confirm_delete") for messages that resolved a pending action.
-                Text(AssistantMessageCopyText.text(for: message))
-                    .appBodySelectable(multilineTextAlignment: .trailing)
+                // Attachments render as read-only recipe chips below the text — or instead of
+                // the text when it is empty / equals the recipeId (widget recipe submit).
+                if !chipsOnly {
+                    let displayText = AssistantMessageCopyText.text(for: message)
+                    if !displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text(displayText)
+                            .appBodySelectable(multilineTextAlignment: .trailing)
+                    }
+                }
+                if !attachments.isEmpty {
+                    FlowLayout(spacing: 8, alignment: .trailing) {
+                        ForEach(attachments) { attachment in
+                            AssistantAttachmentChipDisplayView(
+                                attachment: attachment,
+                                fallbackNameById: lookups.nameById,
+                                fallbackColorById: lookups.colorById
+                            )
+                        }
+                    }
+                }
             } else if message.text.isEmpty && message.isStreaming {
                 Text(verbatim: streamingPlaceholder(for: message, isLast: isLast))
                     .appBodySelectable(multilineTextAlignment: .leading)
