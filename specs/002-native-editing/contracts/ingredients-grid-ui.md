@@ -37,7 +37,8 @@
 
 | Слот | Ширина | Содержимое |
 |------|--------|------------|
-| Маркер | 22 pt | Номер строки (1, 2, …), «+» для новой строки, пусто для заголовка-разделителя |
+| Маркер (view) | 22 pt | Номер строки (1, 2, …), пусто для заголовка-разделителя |
+| Leading control (edit) | `editListDeleteControlSlotWidth` — 26 pt | SF Symbol `minus.circle.fill` (строки ингредиентов) / `plus` (новая строка) в общем frame; символ 22 pt, слот 26 pt |
 | Название | `flex-1` | Имя; под ним (если включено питание) строка КБЖУ **в той же колонке**, не с отступом под всю строку |
 | Базовое qty | `originalQtyColumnWidth` | Моноширинный текст/поле, **primary**, выравнивание **по правому краю** колонки |
 | Scaled qty | `scaledQtyColumnWidth` | Моноширинный текст/поле, цвет **accent рецепта**, выравнивание **по правому краю** |
@@ -75,7 +76,7 @@
 | Имя | Inline `TextField`, многострочный при необходимости |
 | Базовое qty | Inline `TextField`, primary, правая колонка |
 | Scaled qty | **Только preview** (accent), пересчёт от черновика base и `viewServings` / scale в edit-контексте |
-| Новая строка | Маркер «+», name + base + scaled preview, кнопка submit справа (в колонке reorder) |
+| Новая строка | Маркер — SF Symbol `plus` в общем leading control-слоте (26 pt), name + base + scaled preview, кнопка submit справа (в колонке reorder) |
 | КБЖУ | Под именем в той же `VStack`; tap → sheet редактирования nutrition |
 
 ### Удаление ингредиента
@@ -140,4 +141,5 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-08-26 | Edit-режим: общий leading control-слот 26 pt (`editListDeleteControlSlotWidth`) для минуса и плюса вместо маркера 22 pt + optical inset; плюс — SF Symbol. Выравнивает «Name» новой строки с текстом ингредиентов |
 | 2026-06-04 | Первая версия: итог обсуждения parity ingredients grid (две колонки qty, заголовки, swipe, List reorder, scale в view, ширины, KBJU) |

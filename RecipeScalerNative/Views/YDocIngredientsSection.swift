@@ -565,17 +565,11 @@ struct YDocIngredientsEditSection: View {
             .opacity(isDeleteRevealed ? 1 : 0)
 
             HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.editListDeleteToContentSpacing) {
-                Button {
+                IngredientEditListLeadingControl(action: {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         deleteRevealRowId = isDeleteRevealed ? nil : ingredientId
                     }
-                } label: {
-                    Image(systemName: "minus.circle.fill")
-                        .font(.system(size: RecipeRowLayoutMetrics.editListDeleteControlSize))
-                        .foregroundStyle(.red)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("edit.ingredient.delete"))
+                })
 
                 editRow(for: row)
             }
@@ -750,29 +744,21 @@ private struct IngredientColumnHeaderRow: View {
         Group {
             if compactLayout {
                 HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.gridIngredientsToQtySpacing) {
-                    Text("recipes.ingredient-header")
-                        .appHeadline()
-                        .foregroundStyle(.primary)
+                    ingredientColumnHeaderLabel("recipes.ingredient-header")
                         .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Text("recipes.qty-header")
-                        .appHeadline()
-                        .foregroundStyle(.primary)
-                        .frame(width: RecipeRowLayoutMetrics.baseQtyColumnWidth, alignment: .trailing)
+                    ingredientColumnHeaderLabel("recipes.qty-header")
+                        .frame(width: RecipeRowLayoutMetrics.baseQtyColumnWidth, alignment: .topTrailing)
                 }
             } else {
                 IngredientGridRow(
                     ingredients: {
                         IngredientGridIngredientsColumn(leadingSlot: nil) {
-                            Text("recipes.ingredient-header")
-                                .appHeadline()
-                                .foregroundStyle(.primary)
+                            ingredientColumnHeaderLabel("recipes.ingredient-header")
                         }
                     },
                     baseQty: {
-                        Text("recipes.qty-header")
-                            .appHeadline()
-                            .foregroundStyle(.primary)
+                        ingredientColumnHeaderLabel("recipes.qty-header")
                     },
                     scaledQty: { Color.clear },
                     trailing: { EmptyView() },
@@ -782,7 +768,13 @@ private struct IngredientColumnHeaderRow: View {
         }
         // Edit List steals trailing width for reorder; view mode matches list row insets (no extra pad).
         .padding(.trailing, showsDragHandle ? RecipeRowLayoutMetrics.editGridTrailingPadding : 0)
-        .frame(minHeight: RecipeRowLayoutMetrics.rowHeight)
+    }
+
+    private func ingredientColumnHeaderLabel(_ key: LocalizedStringKey) -> some View {
+        Text(key)
+            .appHeadline()
+            .foregroundStyle(.primary)
+            .frame(height: RecipeRowLayoutMetrics.ingredientBodyLineHeight, alignment: .top)
     }
 }
 
@@ -920,11 +912,12 @@ private struct IngredientGridBaseQty<Content: View>: View {
 
     var body: some View {
         // Color.clear keeps width when content is EmptyView (EmptyView+.frame collapses to 0).
-        ZStack(alignment: .trailing) {
+        // topTrailing: qty labels must share Ingredient’s top edge (not vertical center in 44 pt rows).
+        ZStack(alignment: .topTrailing) {
             Color.clear
             content()
         }
-        .frame(width: RecipeRowLayoutMetrics.baseQtyColumnWidth, alignment: .trailing)
+        .frame(width: RecipeRowLayoutMetrics.baseQtyColumnWidth, alignment: .topTrailing)
     }
 }
 
@@ -933,11 +926,11 @@ private struct IngredientGridScaledQty<Content: View>: View {
 
     var body: some View {
         // Color.clear keeps width when content is EmptyView (EmptyView+.frame collapses to 0).
-        ZStack(alignment: .trailing) {
+        ZStack(alignment: .topTrailing) {
             Color.clear
             content()
         }
-        .frame(width: RecipeRowLayoutMetrics.scaledQtyColumnMinWidth, alignment: .trailing)
+        .frame(width: RecipeRowLayoutMetrics.scaledQtyColumnMinWidth, alignment: .topTrailing)
     }
 }
 
@@ -1181,6 +1174,37 @@ private struct IngredientEditRowChrome: ViewModifier {
     }
 }
 
+/// Shared leading slot for edit-list rows: delete minus in edit rows, decorative
+/// plus in the new-ingredient row. One fixed frame keeps Name fields aligned.
+private struct IngredientEditListLeadingControl: View {
+    /// nil renders the decorative plus indicator.
+    let action: (() -> Void)?
+
+    private var slotFrame: some View {
+        Image(systemName: action == nil ? "plus" : "minus.circle.fill")
+            .font(.system(size: RecipeRowLayoutMetrics.editListDeleteControlSize))
+            .foregroundStyle(action == nil ? Color.secondary : Color.red)
+            .frame(
+                width: RecipeRowLayoutMetrics.editListDeleteControlSlotWidth,
+                height: RecipeRowLayoutMetrics.ingredientBodyLineHeight,
+                alignment: .center
+            )
+    }
+
+    var body: some View {
+        if let action {
+            Button(action: action) {
+                slotFrame
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("edit.ingredient.delete"))
+        } else {
+            slotFrame
+                .accessibilityHidden(true)
+        }
+    }
+}
+
 private struct YDocNewIngredientRow: View {
     let baseServings: Int
     @Binding var name: String
@@ -1195,14 +1219,7 @@ private struct YDocNewIngredientRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.editListDeleteToContentSpacing) {
-            Text("+")
-                .appBody()
-                .foregroundStyle(.secondary)
-                .frame(
-                    width: RecipeRowLayoutMetrics.editListDeleteControlSize,
-                    height: RecipeRowLayoutMetrics.ingredientBodyLineHeight,
-                    alignment: .center
-                )
+            IngredientEditListLeadingControl(action: nil)
 
             IngredientGridRow(
                 ingredients: {
@@ -1211,7 +1228,6 @@ private struct YDocNewIngredientRow: View {
                             placeholderKey: "edit.ingredient.name",
                             text: $name
                         )
-                        .padding(.leading, RecipeRowLayoutMetrics.editListNewRowNameLeadingInset)
                         .focused(focusedField, equals: .newName)
                     }
                 },

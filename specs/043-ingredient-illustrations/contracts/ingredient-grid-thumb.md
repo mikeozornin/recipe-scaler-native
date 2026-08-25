@@ -15,7 +15,7 @@
 |--------|--------|------------|
 | Обычный ингредиент (view/edit) | **40 pt** | Thumb или Bowl |
 | Заголовок / separator (`isHeaderRow`) | **40 pt** | Пусто (spacer), без номера |
-| Новая строка (edit, «+») | **40 pt** | Символ «+» (как сегодня), не thumb |
+| Новая строка (edit, «+») | **40 pt** | Пустой thumb-слот (`.empty`); символ «+» живёт в **отдельном leading control-слоте 26 pt слева** от thumb-слота (`editListDeleteControlSlotWidth`, SF Symbol `plus`), на одной оси с минусом edit-строк |
 
 Константа: `RecipeRowLayoutMetrics.illustrationSlotWidth` (или `IngredientIllustrationLayoutMetrics.displaySlotPt`).
 
@@ -63,6 +63,7 @@ Gap между слотом и именем: сохранить `ingredientMarke
 
 - [ ] Колоночный заголовок «Ингредиент»: **без** пустого 40 pt; leading совпадает с leading thumb
 - [ ] `isHeaderRow` / separator: выравнивание имени с обычными строками (пустой 40 pt слева)
+- [ ] Новая строка (edit): Name-поле по левому краю совпадает с текстом ингредиентов; «+» в одной колонке с минусом
 - [ ] Dark mode: белый фон thumb читаем
 - [ ] 10+ строк: горизонтальный скролл **не** появляется
 - [ ] VoiceOver: имя ингредиента один раз; edit thumb — отдельный label «выбрать иконку»
