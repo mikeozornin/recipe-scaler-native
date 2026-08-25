@@ -1594,3 +1594,17 @@ private final class PublicImageCacheTestURLProtocol: URLProtocol {
 
     override func stopLoading() {}
 }
+
+final class DescriptionEditorScrollInsetTests: XCTestCase {
+    func testContentBottomPaddingEqualsBarClearancePlusBreathingRoomWhenFormattingBarShown() {
+        XCTAssertEqual(
+            DescriptionFormattingBarLayoutMetrics.contentBottomPadding(showsFormattingBar: true),
+            DescriptionFormattingBarLayoutMetrics.scrollClearanceHeight
+                + DescriptionFormattingBarLayoutMetrics.contentBottomBreathingRoom
+        )
+        XCTAssertEqual(
+            DescriptionFormattingBarLayoutMetrics.contentBottomPadding(showsFormattingBar: false),
+            0
+        )
+    }
+}

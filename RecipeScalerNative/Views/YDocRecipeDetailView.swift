@@ -1,5 +1,6 @@
 import SwiftUI
 import RecipeScalerCore
+import WebKit
 
 /// Recipe detail backed by Y.Doc via `YjsSyncService`.
 struct YDocRecipeDetailView: View {
@@ -152,17 +153,28 @@ struct YDocRecipeDetailView: View {
         )
     }
 
-    /// Cancels duplicate keyboard scroll inset while `safeAreaInset` formatting bar is active.
-    private var descriptionEditorKeyboardCompensation: CGFloat {
-        guard isEditing, descriptionChrome.isFocused, keyboardOverlapHeight > 0 else { return 0 }
-        return -keyboardOverlapHeight
+    private func scrollDescriptionEditorAboveKeyboard(using scrollProxy: ScrollViewProxy) {
+        guard isEditing, descriptionChrome.isFocused else { return }
+        // SwiftUI `scrollTo` often no-ops while keyboard/safe-area is churning
+        // (offset stays put). UIKit scrollRectToVisible respects adjustedContentInset
+        // from the formatting-bar safeAreaInset + keyboard.
+        if DescriptionEditorScrollAnchor.scrollEditorBottomIntoView() {
+            return
+        }
+        withAnimation(.easeOut(duration: 0.25)) {
+            scrollProxy.scrollTo("recipe_instructions", anchor: .bottom)
+        }
     }
 
-    /// Pulls scroll content up when UIKit still applies keyboard safe-area inset
-    /// (WKWebView focus). `safeAreaInset` for the formatting bar already reserves
-    /// bar height — do not add `scrollClearanceHeight` on top (double gap on focus).
+    /// Document padding under the editor (bar clearance + breathing room).
+    /// Keyboard overlap must not be added here — that renders a keyboard-tall
+    /// hole. Scroll extent under the keyboard comes from the formatting bar's
+    /// `safeAreaInset` while the ScrollView ignores keyboard safe area.
     private var descriptionEditorScrollBottomInset: CGFloat {
-        descriptionEditorKeyboardCompensation
+        guard isEditing else { return 0 }
+        return DescriptionFormattingBarLayoutMetrics.contentBottomPadding(
+            showsFormattingBar: descriptionChrome.showsFormattingBar
+        )
     }
 
     var body: some View {
@@ -320,6 +332,20 @@ struct YDocRecipeDetailView: View {
             descriptionTimerPopover = nil
         }
         .contentMargins(.horizontal, 0, for: .scrollContent)
+        .onChange(of: descriptionChrome.isFocused) { _, focused in
+            guard focused else { return }
+            // Defer past the focus/safe-area pass so the WKWebView is in hierarchy.
+            DispatchQueue.main.async {
+                scrollDescriptionEditorAboveKeyboard(using: scrollProxy)
+            }
+        }
+        .onChange(of: keyboardOverlapHeight) { _, overlap in
+            guard overlap > 0, descriptionChrome.isFocused else { return }
+            // Keyboard animation ~0.25s; scroll after inset has settled.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                scrollDescriptionEditorAboveKeyboard(using: scrollProxy)
+            }
+        }
         #if DEBUG
         .onChange(of: recipe?.description) { _, description in
             guard description != nil,
@@ -1309,6 +1335,62 @@ private struct DescriptionEditorScrollKeyboardPolicy: ViewModifier {
             ignoresKeyboardSafeArea ? .keyboard : SafeAreaRegions(),
             edges: .bottom
         )
+    }
+}
+
+/// Scrolls the inline description WKWebView so its bottom sits in the visible
+/// band above the formatting bar / keyboard. Used because SwiftUI `ScrollViewProxy`
+/// is unreliable during keyboard frame changes.
+///
+/// Scroll *extent* under the keyboard is owned by the formatting bar's
+/// `safeAreaInset` (bar sits above the keyboard while the ScrollView uses
+/// `ignoresSafeArea(.keyboard)`). This helper only moves `contentOffset`.
+private enum DescriptionEditorScrollAnchor {
+    @MainActor
+    static func scrollEditorBottomIntoView() -> Bool {
+        guard let window = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow),
+              let webView = findWebView(in: window),
+              let scrollView = detailScrollView(containing: webView)
+        else { return false }
+
+        let editorRect = webView.convert(webView.bounds, to: scrollView)
+        guard editorRect.height > 0, editorRect.width > 0 else { return false }
+
+        // Reveal the last ~min(240, editor) pt plus breathing room below the
+        // WebView (document padding). Without the extra height, scrollRectToVisible
+        // pins the editor flush to the bar and the padding never shows.
+        let sliceHeight = min(240, editorRect.height)
+        let breathing = DescriptionFormattingBarLayoutMetrics.contentBottomBreathingRoom
+        let bottomSlice = CGRect(
+            x: editorRect.minX,
+            y: editorRect.maxY - sliceHeight,
+            width: editorRect.width,
+            height: sliceHeight + breathing
+        )
+        scrollView.scrollRectToVisible(bottomSlice, animated: true)
+        return true
+    }
+
+    private static func findWebView(in view: UIView) -> WKWebView? {
+        if let web = view as? WKWebView { return web }
+        for sub in view.subviews {
+            if let found = findWebView(in: sub) { return found }
+        }
+        return nil
+    }
+
+    private static func detailScrollView(containing webView: WKWebView) -> UIScrollView? {
+        var ancestor: UIView? = webView.superview
+        while let current = ancestor {
+            if let scroll = current as? UIScrollView, scroll !== webView.scrollView {
+                return scroll
+            }
+            ancestor = current.superview
+        }
+        return nil
     }
 }
 

@@ -10,6 +10,23 @@ import SwiftUI
 enum DescriptionFormattingBarLayoutMetrics {
     /// Bottom scroll clearance while the bar is shown in `safeAreaInset`.
     static let scrollClearanceHeight: CGFloat = 52
+
+    /// Extra gap between the last description line and the formatting bar.
+    static let contentBottomBreathingRoom: CGFloat = 16
+
+    /// Padding glued to the description document while the formatting bar is
+    /// visible. Must **not** include keyboard overlap: that renders a
+    /// keyboard-tall hole under the last line.
+    ///
+    /// Keyboard scroll *extent* is not owned here. With
+    /// `ignoresSafeArea(.keyboard)` on the detail ScrollView, the bar's
+    /// `safeAreaInset` sits above the keyboard and grows
+    /// `adjustedContentInset.bottom` by ~keyboard + bar. Do not write raw
+    /// `UIScrollView.contentInset` for the keyboard — SwiftUI clears it.
+    static func contentBottomPadding(showsFormattingBar: Bool) -> CGFloat {
+        guard showsFormattingBar else { return 0 }
+        return scrollClearanceHeight + contentBottomBreathingRoom
+    }
 }
 
 struct DescriptionFormattingBar: View {
