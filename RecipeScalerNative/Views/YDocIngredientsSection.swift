@@ -1206,7 +1206,7 @@ private struct YDocNewIngredientRow: View {
 
             IngredientGridRow(
                 ingredients: {
-                    IngredientGridIngredientsColumn(leadingSlot: .plusLabel) {
+                    IngredientGridIngredientsColumn(leadingSlot: .empty) {
                         ExpandingIngredientNameField(
                             placeholderKey: "edit.ingredient.name",
                             text: $name
