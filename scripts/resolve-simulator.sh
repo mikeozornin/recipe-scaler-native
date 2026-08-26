@@ -46,7 +46,7 @@ except (OSError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
 
 candidates: list[tuple[int, tuple[int, ...], str, str, str]] = []
 for runtime, runtime_devices in devices.items():
-    if not runtime.lower().startswith("com.apple.coreSimulator.simruntime.ios"):
+    if not runtime.lower().startswith("com.apple.coresimulator.simruntime.ios"):
         continue
     for device in runtime_devices:
         if device.get("isAvailable") is False:

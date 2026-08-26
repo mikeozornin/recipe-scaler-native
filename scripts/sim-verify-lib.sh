@@ -287,3 +287,63 @@ sim_wait_ready() {
   echo "Timed out waiting for app readiness marker after ${timeout_seconds}s" >&2
   return 1
 }
+
+# Wait until debug launch opened the target recipe (collection sync + navigation).
+sim_wait_recipe_open() {
+  local timeout_seconds="${1:-45}"
+  local log="${LOG_FILE:-$ROOT/.debug-session.ndjson}"
+  local deadline=$((SECONDS + timeout_seconds))
+  local markers='readRecipeData_done|description_html_ready|description_editor_content_height|"message":"contentHeight"'
+
+  while (( SECONDS < deadline )); do
+    sim_pull_debug_log 2>/dev/null || true
+    if [[ -f "$log" ]] && grep -qE "$markers" "$log" 2>/dev/null; then
+      return 0
+    fi
+    sleep 0.5
+  done
+
+  sim_pull_debug_log || true
+  echo "Timed out waiting for recipe open after ${timeout_seconds}s" >&2
+  return 1
+}
+
+# Wait until inline description editor reports content height (verify scripts).
+sim_wait_description_editor() {
+  local timeout_seconds="${1:-45}"
+  local log="${LOG_FILE:-$ROOT/.debug-session.ndjson}"
+  local deadline=$((SECONDS + timeout_seconds))
+  local markers='description_editor_content_height|description_editor_ready|description_editor_init|"message":"contentHeight"'
+
+  while (( SECONDS < deadline )); do
+    sim_pull_debug_log 2>/dev/null || true
+    if [[ -f "$log" ]] && grep -qE "$markers" "$log" 2>/dev/null; then
+      return 0
+    fi
+    sleep 0.5
+  done
+
+  sim_pull_debug_log || true
+  echo "Timed out waiting for description editor after ${timeout_seconds}s" >&2
+  return 1
+}
+
+# Wait until NDJSON contains a log message substring (pulls debug log each poll).
+sim_wait_log_line() {
+  local needle="$1"
+  local timeout_seconds="${2:-20}"
+  local log="${LOG_FILE:-$ROOT/.debug-session.ndjson}"
+  local deadline=$((SECONDS + timeout_seconds))
+
+  while (( SECONDS < deadline )); do
+    sim_pull_debug_log 2>/dev/null || true
+    if [[ -f "$log" ]] && grep -qF "$needle" "$log" 2>/dev/null; then
+      return 0
+    fi
+    sleep 0.5
+  done
+
+  sim_pull_debug_log || true
+  echo "Timed out waiting for log line '$needle' after ${timeout_seconds}s" >&2
+  return 1
+}

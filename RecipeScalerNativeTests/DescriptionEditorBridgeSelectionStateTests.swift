@@ -11,6 +11,23 @@ import XCTest
 @MainActor
 final class DescriptionEditorBridgeSelectionStateTests: XCTestCase {
 
+    // MARK: - Caret rect parsing
+
+    func test_parseCaretRect_validPayload() {
+        let rect = DescriptionEditorWebView.Coordinator.parseCaretRect([
+            "x": 12.5,
+            "y": 480,
+            "width": 2,
+            "height": 24,
+        ])
+        XCTAssertEqual(rect, CGRect(x: 12.5, y: 480, width: 2, height: 24))
+    }
+
+    func test_parseCaretRect_rejectsMissingOrZeroSize() {
+        XCTAssertNil(DescriptionEditorWebView.Coordinator.parseCaretRect(nil))
+        XCTAssertNil(DescriptionEditorWebView.Coordinator.parseCaretRect(["x": 1, "y": 2, "width": 0, "height": 24]))
+    }
+
     // MARK: - Defaults
 
     func test_emptyDictionary_returnsAllInactiveState() {

@@ -18,14 +18,26 @@ enum DescriptionFormattingBarLayoutMetrics {
     /// visible. Must **not** include keyboard overlap: that renders a
     /// keyboard-tall hole under the last line.
     ///
-    /// Keyboard scroll *extent* is not owned here. With
-    /// `ignoresSafeArea(.keyboard)` on the detail ScrollView, the bar's
-    /// `safeAreaInset` sits above the keyboard and grows
-    /// `adjustedContentInset.bottom` by ~keyboard + bar. Do not write raw
-    /// `UIScrollView.contentInset` for the keyboard — SwiftUI clears it.
+    /// Keyboard scroll extent is owned by system keyboard avoidance plus the
+    /// bar's `safeAreaInset` (detail ScrollView does **not** ignore the
+    /// keyboard safe area). Do not write raw `UIScrollView.contentInset` for
+    /// the keyboard — SwiftUI clears it.
     static func contentBottomPadding(showsFormattingBar: Bool) -> CGFloat {
         guard showsFormattingBar else { return 0 }
         return scrollClearanceHeight + contentBottomBreathingRoom
+    }
+
+    /// Offset that pins `focusMaxY` to the bottom of the visible band above
+    /// `adjustedContentInset.bottom` (keyboard + formatting bar).
+    ///
+    /// Do **not** subtract `insetTop` from the visible height here — that
+    /// double-counts the top inset and leaves a hole under the caret.
+    static func bottomPinnedContentOffset(
+        focusMaxY: CGFloat,
+        boundsHeight: CGFloat,
+        insetBottom: CGFloat
+    ) -> CGFloat {
+        focusMaxY - (boundsHeight - insetBottom)
     }
 }
 

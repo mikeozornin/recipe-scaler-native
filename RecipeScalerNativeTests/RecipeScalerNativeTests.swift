@@ -1607,4 +1607,67 @@ final class DescriptionEditorScrollInsetTests: XCTestCase {
             0
         )
     }
+
+    func testBottomPinnedContentOffsetDoesNotDoubleCountTopInset() {
+        // Device-shaped numbers from debug-session 8: pinning caret/editor bottom
+        // must use (bounds - insetBottom), not (bounds - insetTop - insetBottom).
+        let focusMaxY: CGFloat = 2479
+        let boundsHeight: CGFloat = 912
+        let insetBottom: CGFloat = 397
+        XCTAssertEqual(
+            DescriptionFormattingBarLayoutMetrics.bottomPinnedContentOffset(
+                focusMaxY: focusMaxY,
+                boundsHeight: boundsHeight,
+                insetBottom: insetBottom
+            ),
+            1964,
+            accuracy: 0.01
+        )
+        // Wrong formula (subtracting a ~122pt top inset) would yield ~2086 and
+        // leave a ~120pt hole under the last line.
+        let wrongVisibleHeight = boundsHeight - 122 - insetBottom
+        XCTAssertNotEqual(
+            focusMaxY - wrongVisibleHeight,
+            DescriptionFormattingBarLayoutMetrics.bottomPinnedContentOffset(
+                focusMaxY: focusMaxY,
+                boundsHeight: boundsHeight,
+                insetBottom: insetBottom
+            ),
+            accuracy: 0.01
+        )
+    }
+
+    @MainActor
+    func testContentHeightPaintedBottomStoredSeparately() throws {
+        let db = try YrsDatabase.makeInMemoryFallback()
+        let store = YDocStore(dbQueue: db.dbQueue)
+        let sync = YjsSyncService.makeForTesting(store: store)
+        let bridge = DescriptionEditorBridge(recipeId: "short-recipe", syncService: sync)
+
+        bridge.handleWebMessage([
+            "type": "contentHeight",
+            "height": 80,
+            "paintedBottom": 72,
+            "scrollHeight": 400,
+        ])
+
+        XCTAssertEqual(bridge.contentHeight, 80, accuracy: 0.01)
+        XCTAssertEqual(bridge.paintedContentBottom, 72, accuracy: 0.01)
+    }
+
+    @MainActor
+    func testContentHeightMissingPaintedBottomFallsBackToHeight() throws {
+        let db = try YrsDatabase.makeInMemoryFallback()
+        let store = YDocStore(dbQueue: db.dbQueue)
+        let sync = YjsSyncService.makeForTesting(store: store)
+        let bridge = DescriptionEditorBridge(recipeId: "short-recipe", syncService: sync)
+
+        bridge.handleWebMessage([
+            "type": "contentHeight",
+            "height": 64,
+        ])
+
+        XCTAssertEqual(bridge.contentHeight, 64, accuracy: 0.01)
+        XCTAssertEqual(bridge.paintedContentBottom, 64, accuracy: 0.01)
+    }
 }
