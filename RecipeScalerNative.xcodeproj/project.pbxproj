@@ -181,6 +181,7 @@
 		A1B2C3D4E5F60718293A4B63 /* OfflineWriteQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B62 /* OfflineWriteQueue.swift */; };
 		A1B2C3D4E5F60718293A4C02 /* AppShellCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4C01 /* AppShellCoordinator.swift */; };
 		A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */; };
+		VKSTOR001A2B3C4D5E6F70801 /* VkusvillSettingsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = VKSTOR001A2B3C4D5E6F70800 /* VkusvillSettingsStoreTests.swift */; };
 		A1B2C3D4E5F64789AABBCC02 /* TimerLiveActivityLinearProgressStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F64789AABBCC01 /* TimerLiveActivityLinearProgressStyle.swift */; };
 		A1B2C3D4E5F64789AABBCC03 /* TimerLiveActivityLinearProgressStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F64789AABBCC01 /* TimerLiveActivityLinearProgressStyle.swift */; };
 		A1TYPOG1A2B3C4D5E6F7080902 /* AppTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1TYPOG1A2B3C4D5E6F7080901 /* AppTypography.swift */; };
@@ -903,6 +904,7 @@
 		A1B2C3D4E5F60718293A4B62 /* OfflineWriteQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineWriteQueue.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4C01 /* AppShellCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellCoordinator.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellCoordinatorTests.swift; sourceTree = "<group>"; };
+		VKSTOR001A2B3C4D5E6F70800 /* VkusvillSettingsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VkusvillSettingsStoreTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F64789AABBCC01 /* TimerLiveActivityLinearProgressStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityLinearProgressStyle.swift; sourceTree = "<group>"; };
 		A1TYPOG1A2B3C4D5E6F7080901 /* AppTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTypography.swift; sourceTree = "<group>"; };
 		A3497363D26FF94F419BA85F /* Auth/SharedDeviceId.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/SharedDeviceId.swift; sourceTree = "<group>"; };
@@ -1759,6 +1761,7 @@
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
 				A14001A00000000000000001A /* FeatureAdoptionGuideContentTests.swift */,
 				A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */,
+				VKSTOR001A2B3C4D5E6F70800 /* VkusvillSettingsStoreTests.swift */,
 				A05700000201 /* UTTypeRecipeScalerTests.swift */,
 				A05700000202 /* NativeFormatDetectorTests.swift */,
 				A05700000203 /* RecipeFileImportCoordinatorTests.swift */,
@@ -3181,6 +3184,7 @@
 			files = (
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
 				A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */,
+				VKSTOR001A2B3C4D5E6F70801 /* VkusvillSettingsStoreTests.swift in Sources */,
 				A05700000200 /* UTTypeRecipeScalerTests.swift in Sources */,
 				A05700000210 /* NativeFormatDetectorTests.swift in Sources */,
 				A05700000220 /* RecipeFileImportCoordinatorTests.swift in Sources */,

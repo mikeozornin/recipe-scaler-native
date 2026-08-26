@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "–" : {
 
     },
@@ -3391,23 +3394,6 @@
         }
       }
     },
-    "account.tips.loading" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading support options…"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Загружаем варианты поддержки…"
-          }
-        }
-      }
-    },
     "account.tips.legal.privacy" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3438,6 +3424,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Условия использования (EULA)"
+          }
+        }
+      }
+    },
+    "account.tips.loading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading support options…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загружаем варианты поддержки…"
           }
         }
       }
@@ -10074,23 +10077,6 @@
         }
       }
     },
-    "terms.link" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Terms of Use (EULA)"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Условия использования (EULA)"
-          }
-        }
-      }
-    },
     "qr-scanner.cancel" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11687,7 +11673,6 @@
       }
     },
     "shopping.share-button" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12687,6 +12672,23 @@
         }
       }
     },
+    "terms.link" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms of Use (EULA)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Условия использования (EULA)"
+          }
+        }
+      }
+    },
     "The camera couldn't be accessed. It might be in use by another app." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13515,6 +13517,88 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Повторить"
+          }
+        }
+      }
+    },
+    "vkusvill.assistant-prompt" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Build a Vkusvill cart from my shopping list"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Собери корзину во Вкусвилле из моего списка покупок"
+          }
+        }
+      }
+    },
+    "vkusvill.buy-button" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy at Vkusvill"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Купить во Вкусвилле"
+          }
+        }
+      }
+    },
+    "vkusvill.offline" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable offline"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недоступно офлайн"
+          }
+        }
+      }
+    },
+    "vkusvill.settings-title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vkusvill"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкусвилл"
+          }
+        }
+      }
+    },
+    "vkusvill.settings-toggle-title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to Vkusvill"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключение ко Вкусвиллу"
           }
         }
       }

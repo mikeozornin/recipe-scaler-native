@@ -43,6 +43,7 @@ final class AccountSettingsViewModel {
     /// preview without constructing the full app container.
     private let auth: AuthService
     private let timer: TimerManager
+    private let vkusvillSettings: VkusvillSettingsStore
     /// Container-side logout/account-delete teardown (sync.clearSessionForLogout +
     /// stopForLogout + Live Activity + widget unregister). Captured as a closure
     /// so the view model does not depend on `AppContainer.shared`.
@@ -51,10 +52,12 @@ final class AccountSettingsViewModel {
     init(
         auth: AuthService,
         timer: TimerManager,
+        vkusvillSettings: VkusvillSettingsStore,
         performLogoutTeardown: @escaping () async -> Void
     ) {
         self.auth = auth
         self.timer = timer
+        self.vkusvillSettings = vkusvillSettings
         self.performLogoutTeardown = performLogoutTeardown
     }
 
@@ -70,15 +73,24 @@ final class AccountSettingsViewModel {
         await refreshTimerNotificationState()
         refreshRemindersState()
 
-        guard auth.userId != nil else { return }
+        guard let userId = auth.userId, !userId.isEmpty else {
+            vkusvillSettings.clearForLogout()
+            return
+        }
+
+        // Keep the shared Vkusvill state on the same account and lifecycle as
+        // Profile. The store owns loading/error state so the toggle cannot race
+        // a direct best-effort settings fetch below.
+        await vkusvillSettings.refresh(userId: userId, isOnline: isOnline)
+        guard auth.userId == userId else { return }
 
         do {
             async let profile = AccountAPI.fetchProfile()
             async let sharing = AccountAPI.fetchSharingSettings()
-            let settings = try? await AccountAPI.fetchUserSettings()
 
             let profileData = try await profile
             let sharingData = try await sharing
+            guard auth.userId == userId else { return }
 
             displayName = profileData.name ?? ""
             if let urlString = profileData.avatarUrl {
@@ -101,12 +113,16 @@ final class AccountSettingsViewModel {
                 username: username ?? ""
             )
 
-            if let settings, let enabled = settings.nutritionEnabled {
-                showNutrition = enabled
-                UserDefaults.standard.set(enabled, forKey: NutritionSettings.globalEnabledKey)
+            // `/api/settings` (nutrition flag) is fetched exclusively by
+            // `VkusvillSettingsStore.refresh` above, which guards staleness and
+            // account switching; re-reading it here would race that lifecycle.
+            if let serverNutrition = vkusvillSettings.nutritionEnabledFromServer {
+                showNutrition = serverNutrition
+                UserDefaults.standard.set(serverNutrition, forKey: NutritionSettings.globalEnabledKey)
             }
             statusMessage = nil
         } catch {
+            guard auth.userId == userId else { return }
             setStatus(from: error, isBackgroundRefresh: true)
         }
     }
@@ -227,6 +243,15 @@ final class AccountSettingsViewModel {
             UserDefaults.standard.set(previous, forKey: NutritionSettings.globalEnabledKey)
             setStatus(from: error)
         }
+    }
+
+    func setVkusvillEnabled(_ enabled: Bool) async {
+        guard isOnline else {
+            statusMessage = String(localized: "account.offline.alert")
+            return
+        }
+        statusMessage = nil
+        await vkusvillSettings.setEnabled(enabled, userId: auth.userId)
     }
 
     func setAppTheme(_ theme: AppThemePreference) {
@@ -355,6 +380,7 @@ final class AccountSettingsViewModel {
     }
 
     func logout(syncService: YjsSyncService) async {
+        vkusvillSettings.clearForLogout()
         if let userId = auth.userId,
            let deviceId = UserDefaults.standard.string(forKey: "deviceId") {
             await AccountAPI.logoutDevice(userId: userId, deviceId: deviceId)
@@ -379,6 +405,7 @@ final class AccountSettingsViewModel {
     func deleteAccount(seedPhrase: String, syncService: YjsSyncService) async -> String? {
         do {
             try await auth.deleteAccount(seedPhrase: seedPhrase)
+            vkusvillSettings.clearForLogout()
             await syncService.clearSessionForLogout()
             await performLogoutTeardown()
             return nil

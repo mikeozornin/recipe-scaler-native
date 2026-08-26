@@ -4,6 +4,24 @@ import YrsC
 @testable import RecipeScalerNative
 
 final class RecipeScalerNativeTests: XCTestCase {
+    func testUserSettingsDecodesVkusvillEnabled() throws {
+        let data = try XCTUnwrap(
+            "{\"nutritionEnabled\":false,\"vkusvillEnabled\":true}".data(using: .utf8)
+        )
+
+        let settings = try JSONDecoder().decode(UserSettingsDTO.self, from: data)
+
+        XCTAssertEqual(settings.vkusvillEnabled, true)
+    }
+
+    func testVkusvillBuyButtonVisibilityRequiresEnabledRussianLocale() {
+        XCTAssertTrue(VkusvillUIVisibility.showsBuyButton(enabled: true, localeIdentifier: "ru"))
+        XCTAssertTrue(VkusvillUIVisibility.showsBuyButton(enabled: true, localeIdentifier: "ru-RU"))
+        XCTAssertFalse(VkusvillUIVisibility.showsBuyButton(enabled: false, localeIdentifier: "ru"))
+        XCTAssertFalse(VkusvillUIVisibility.showsBuyButton(enabled: true, localeIdentifier: "en"))
+        XCTAssertFalse(VkusvillUIVisibility.showsBuyButton(enabled: true, localeIdentifier: nil))
+    }
+
     func testRecipeEditPolicyV3Only() {
         XCTAssertTrue(RecipeEditPolicy.supportsEditFormat(version: "3"))
         XCTAssertFalse(RecipeEditPolicy.supportsEditFormat(version: "1"))

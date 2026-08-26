@@ -10,8 +10,10 @@ import SwiftUI
 
 struct AssistantSheet: View {
     @Environment(YjsSyncService.self) private var syncService
+    @Environment(AppShellCoordinator.self) private var coordinator
 
     let contextRecipeId: String?
+    let openRequest: AssistantOpenRequest?
 
     @State private var threadId: String?
     @State private var threads: [AssistantThreadDTO] = []
@@ -25,10 +27,29 @@ struct AssistantSheet: View {
     @State private var showHistorySheet = false
     @State private var deletingThreadId: String?
     @State private var streamTask: Task<Void, Never>?
+    @State private var threadsRefreshTask: Task<Void, Never>?
     @State private var hasTriedSessionRestore = false
     @State private var messageListContentWidth: CGFloat = 0
     @State private var inputPlaceholderVariantIndex = Int.random(in: 0..<AssistantInputPlaceholder.variantCount)
     @State private var streamingToolStatusKey: String?
+    @State private var pendingExternalRequest: AssistantOpenRequest?
+    @State private var handledExternalRequestId: Int?
+    @State private var externalSendTask: Task<Void, Never>?
+    @State private var bootstrapTask: Task<Void, Never>?
+    @State private var interactionGeneration = 0
+    /// Message scheduled by an external request but not yet delivered to a
+    /// thread (offline / bootstrap / createThread failure). Survives
+    /// offline→online transitions and is restored into the composer bubble.
+    @State private var undeliveredPrompt: String?
+    /// Coordinator epoch captured when the sheet is built. A mismatch after a
+    /// logout/account-switch bump means this sheet must tear itself down.
+    @State private var observedSessionEpoch = 0
+
+    init(contextRecipeId: String?, openRequest: AssistantOpenRequest? = nil) {
+        self.contextRecipeId = contextRecipeId
+        self.openRequest = openRequest
+        _pendingExternalRequest = State(initialValue: openRequest)
+    }
 
     private var isOnline: Bool {
         syncService.connectionState.isConnected
@@ -49,7 +70,7 @@ struct AssistantSheet: View {
                         isSending: isSending,
                         inputPlaceholderVariantIndex: inputPlaceholderVariantIndex,
                         contextRecipeId: contextRecipeId,
-                        onSend: { Task { await send() } }
+                        onSend: { launchSend() }
                     )
                     .padding(.horizontal, 12)
                     .padding(.top, 6)
@@ -111,17 +132,34 @@ struct AssistantSheet: View {
                 )
             }
             .errorAlert(title: "assistant.error-unavailable", message: $loadError)
-            .task { await initialize() }
+            .task {
+                await bootstrapIfNeeded()
+            }
+            .onChange(of: coordinator.assistantSessionEpoch) { _, epoch in
+                guard epoch != observedSessionEpoch else { return }
+                observedSessionEpoch = epoch
+                teardownForSessionInvalidation()
+            }
             .onChange(of: isOnline) { _, connected in
-                if connected { Task { await initialize() } }
+                if connected {
+                    bootstrapTask?.cancel()
+                    bootstrapTask = Task { @MainActor in
+                        await bootstrapIfNeeded()
+                    }
+                }
+            }
+            .onChange(of: openRequest) { _, request in
+                receiveExternalRequest(request)
             }
             .onChange(of: showHistorySheet) { _, isOpen in
                 if isOpen {
-                    Task { await refreshThreadsList() }
+                    threadsRefreshTask?.cancel()
+                    threadsRefreshTask = Task { await refreshThreadsList() }
                 }
             }
             .onAppear {
                 inputPlaceholderVariantIndex = Int.random(in: 0..<AssistantInputPlaceholder.variantCount)
+                observedSessionEpoch = coordinator.assistantSessionEpoch
                 #if DEBUG
                 AgentSyncDebugLog.sync(
                     location: "AssistantSheet.onAppear",
@@ -132,11 +170,38 @@ struct AssistantSheet: View {
             }
             .onDisappear {
                 persistSession()
+                bootstrapTask?.cancel()
+                externalSendTask?.cancel()
                 streamTask?.cancel()
+                streamTask = nil
+                interactionGeneration &+= 1
+                bootstrapTask = nil
+                externalSendTask = nil
+                undeliveredPrompt = nil
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.assistantSheet)
         }
         .appOpaqueSheetPresentationPlain()
+    }
+
+    /// Logout / account switch while the sheet is open: cancel every in-flight
+    /// task and drop session-scoped state so nothing writes into a dead session.
+    private func teardownForSessionInvalidation() {
+        bootstrapTask?.cancel()
+        externalSendTask?.cancel()
+        streamTask?.cancel()
+        streamTask = nil
+        interactionGeneration &+= 1
+        isSending = false
+        isBootstrapping = false
+        streamingToolStatusKey = nil
+        pendingExternalRequest = nil
+        undeliveredPrompt = nil
+        threadId = nil
+        messages = []
+        threads = []
+        input = ""
+        attachments = []
     }
 
     // MARK: - Message list
@@ -302,6 +367,17 @@ struct AssistantSheet: View {
 
     // MARK: - Lifecycle
 
+    private func bootstrapIfNeeded() async {
+        await initialize()
+        guard !Task.isCancelled else {
+            hasTriedSessionRestore = false
+            return
+        }
+        scheduleExternalSendIfNeeded()
+        deliverUndeliveredPromptIfReady()
+    }
+
+
     /// On first appearance: load thread list, then restore recent thread (≤60s) or start empty chat.
     /// Mirrors web `buildInitialSelection` + `useAssistantChat` bootstrap.
     private func initialize() async {
@@ -310,6 +386,7 @@ struct AssistantSheet: View {
         // `hasTriedSessionRestore` stays false so the bootstrap runs once the connection
         // comes back (see `.onChange(of: isOnline)`).
         guard isOnline else { return }
+        let generation = interactionGeneration
         hasTriedSessionRestore = true
         #if DEBUG
         if DebugLaunchOptions.screenshotAssistantFixture {
@@ -318,13 +395,25 @@ struct AssistantSheet: View {
         }
         #endif
         isBootstrapping = true
-        defer { isBootstrapping = false }
+        defer {
+            isBootstrapping = false
+        }
 
         do {
-            threads = try await AssistantAPI.listThreads(language: AppLanguagePreference.current.rawValue)
+            let fetchedThreads = try await AssistantAPI.listThreads(language: AppLanguagePreference.current.rawValue)
+            guard isCurrent(generation) else { return }
+            threads = fetchedThreads
         } catch {
+            guard !Task.isCancelled else { return }
             loadError = UserFacingAPIError.message(for: error)
             threads = []
+        }
+        guard isCurrent(generation) else { return }
+
+        if let pendingExternalRequest {
+            handledExternalRequestId = pendingExternalRequest.requestId
+            startNewChat(clearExternalRequest: false)
+            return
         }
 
         let now = Date().timeIntervalSince1970
@@ -333,9 +422,11 @@ struct AssistantSheet: View {
            now - lastOpenedAt < Self.newChatTimeout,
            let savedThreadId = UserDefaults.standard.string(forKey: Self.sessionThreadIdKey),
            threads.contains(where: { $0.id == savedThreadId }) {
+            guard isCurrent(generation) else { return }
             await openThread(savedThreadId)
             return
         }
+        guard isCurrent(generation) else { return }
         startNewChat()
     }
 
@@ -369,42 +460,178 @@ struct AssistantSheet: View {
     }
     #endif
 
-    private func startNewChat() {
+    private func startNewChat(clearExternalRequest: Bool = true) {
+        interactionGeneration &+= 1
+        isSending = false
+        externalSendTask?.cancel()
+        externalSendTask = nil
         streamTask?.cancel()
+        streamTask = nil
+        streamingToolStatusKey = nil
         threadId = nil
         messages = []
         input = ""
         attachments = []
+        if clearExternalRequest {
+            pendingExternalRequest = nil
+        }
         UserDefaults.standard.removeObject(forKey: Self.sessionThreadIdKey)
     }
 
     private func openThread(_ id: String) async {
+        interactionGeneration &+= 1
+        let generation = interactionGeneration
+        isSending = false
+        externalSendTask?.cancel()
+        externalSendTask = nil
         streamTask?.cancel()
+        streamTask = nil
+        pendingExternalRequest = nil
         threadId = id
         persistSession()
-        await loadHistory(for: id)
+        await loadHistory(for: id, expectedGeneration: generation)
     }
 
-    private func ensureThread() async {
-        guard threadId == nil else { return }
+    private func receiveExternalRequest(_ request: AssistantOpenRequest?) {
+        guard let request else { return }
+        let trimmed = request.message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, handledExternalRequestId != request.requestId else { return }
+        handledExternalRequestId = request.requestId
+        pendingExternalRequest = AssistantOpenRequest(requestId: request.requestId, message: trimmed)
+        startNewChat(clearExternalRequest: false)
+        if hasTriedSessionRestore, isOnline, !isBootstrapping {
+            scheduleExternalSendIfNeeded()
+        }
+    }
+
+    private func scheduleExternalSendIfNeeded() {
+        guard !Task.isCancelled,
+              isOnline,
+              !isBootstrapping,
+              let request = pendingExternalRequest else { return }
+        externalSendTask?.cancel()
+        let generation = interactionGeneration
+        let requestId = request.requestId
+        externalSendTask = Task { @MainActor in
+            await Task.yield()
+            guard !Task.isCancelled,
+                  isCurrent(generation),
+                  let current = pendingExternalRequest,
+                  current.requestId == requestId else { return }
+            pendingExternalRequest = nil
+            externalSendTask = nil
+            // If the user already started a manual send (stream still in flight),
+            // do NOT cancel their action to inject the autosend — park it in the
+            // composer instead. Completed/cancelled streams clear `streamTask`.
+            if isSending {
+                input = current.message
+                return
+            }
+            launchSend(
+                message: current.message,
+                displayText: current.message,
+                expectedGeneration: generation
+            )
+        }
+    }
+
+    /// Delivers a prompt that could not be sent earlier (offline or failed
+    /// createThread) once the sheet is usable again. A newer external request
+    /// always takes precedence; the undelivered prompt then remains in the
+    /// composer input for the user to send manually.
+    private func deliverUndeliveredPromptIfReady() {
+        guard let prompt = undeliveredPrompt else { return }
+        guard isOnline, !isBootstrapping, pendingExternalRequest == nil, !isSending else { return }
+        undeliveredPrompt = nil
+        launchSend(message: prompt, displayText: prompt)
+    }
+
+    private func launchSend(
+        message: String? = nil,
+        displayText: String? = nil,
+        expectedGeneration: Int? = nil
+    ) {
+        // New manual/queued send supersedes any still-pending stream task. The
+        // deferred-autosend path guards itself BEFORE calling this (parks the
+        // prompt when a stream is in flight), so cancel here only ever replaces
+        // a superseded or completed stream.
+        let generation = expectedGeneration ?? interactionGeneration
+        streamTask?.cancel()
+        streamTask = Task { @MainActor in
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            await send(
+                message: message,
+                displayText: displayText,
+                expectedGeneration: generation
+            )
+        }
+    }
+
+    private func isCurrent(_ generation: Int?) -> Bool {
+        !Task.isCancelled && (generation == nil || generation == interactionGeneration)
+    }
+
+    private func ensureThread(expectedGeneration: Int? = nil) async {
+        guard threadId == nil, isCurrent(expectedGeneration) else { return }
         do {
             let thread = try await AssistantAPI.createThread(language: AppLanguagePreference.current.rawValue)
+            guard isCurrent(expectedGeneration) else { return }
             threadId = thread.id
             threads.insert(thread, at: 0)
             persistSession()
         } catch {
+            guard isCurrent(expectedGeneration) else { return }
             loadError = UserFacingAPIError.message(for: error)
         }
     }
 
     private func refreshThreadsList() async {
+        // Thread creation mutates `threads` locally; a refresh that started
+        // earlier and resolves later would still hold a pre-creation snapshot.
+        // Single-flight guard: the merge applies only while this is still the
+        // newest refresh task (`threadsRefreshTask === currentTask`); a newer
+        // refresh replaces the token, invalidating ours. The merge also
+        // preserves threads created locally after this refresh began.
+        let generation = interactionGeneration
+        let currentTask = threadsRefreshTask
+        let initialThreadIds = Set(threads.map(\.id))
         if threads.isEmpty {
             isLoadingThreads = true
         }
-        defer { isLoadingThreads = false }
+        defer {
+            if generation == interactionGeneration,
+               threadsRefreshTask == nil || threadsRefreshTask == currentTask {
+                isLoadingThreads = false
+            }
+        }
         do {
-            threads = try await AssistantAPI.listThreads(language: AppLanguagePreference.current.rawValue)
+            let fetchedThreads = try await AssistantAPI.listThreads(language: AppLanguagePreference.current.rawValue)
+            guard isCurrent(generation),
+                  threadsRefreshTask == currentTask else { return }
+
+            let fetchedThreadIds = Set(fetchedThreads.map(\.id))
+            let activeThread = threadId.flatMap { activeId in
+                threads.first { $0.id == activeId }
+            }
+            let locallyCreatedThreads = threads.filter {
+                !initialThreadIds.contains($0.id) && !fetchedThreadIds.contains($0.id)
+            }
+            var mergedThreads = fetchedThreads
+            if let activeThread {
+                if let index = mergedThreads.firstIndex(where: { $0.id == activeThread.id }) {
+                    mergedThreads[index] = activeThread
+                } else {
+                    mergedThreads.insert(activeThread, at: 0)
+                }
+            }
+            for thread in locallyCreatedThreads where !mergedThreads.contains(where: { $0.id == thread.id }) {
+                mergedThreads.insert(thread, at: 0)
+            }
+            threads = mergedThreads
         } catch {
+            guard isCurrent(generation),
+                  threadsRefreshTask == currentTask else { return }
             loadError = UserFacingAPIError.message(for: error)
         }
     }
@@ -430,9 +657,11 @@ struct AssistantSheet: View {
         }
     }
 
-    private func loadHistory(for id: String) async {
+    private func loadHistory(for id: String, expectedGeneration: Int? = nil) async {
+        guard isCurrent(expectedGeneration), threadId == id else { return }
         do {
             let history = try await AssistantAPI.getMessages(threadId: id, language: AppLanguagePreference.current.rawValue)
+            guard isCurrent(expectedGeneration), threadId == id else { return }
             messages = history.map {
                 AssistantMessage(
                     id: $0.id,
@@ -444,6 +673,7 @@ struct AssistantSheet: View {
                 )
             }
         } catch {
+            guard isCurrent(expectedGeneration), threadId == id else { return }
             loadError = UserFacingAPIError.message(for: error)
             if threadId == id {
                 threads.removeAll { $0.id == id }
@@ -470,22 +700,49 @@ struct AssistantSheet: View {
 
     /// Web `handleSend` (assistant-sheet.tsx:464-511): trim text, snapshot attachments,
     /// optimistic user bubble, then stream.
-    private func send(displayText: String? = nil) async {
-        await ensureThread()
-        guard let threadId else { return }
+    private func send(
+        message: String? = nil,
+        displayText: String? = nil,
+        expectedGeneration: Int? = nil
+    ) async {
+        let generation = expectedGeneration ?? interactionGeneration
+        guard isCurrent(generation) else { return }
 
-        let trimmedText = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sourceText = message ?? input
+        let trimmedText = sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
         // Web requires non-empty text even with attachments (assistant-composer.tsx:388-394).
         guard !trimmedText.isEmpty else { return }
 
-        let attachedIds = attachments.compactMap { UUID(uuidString: $0.recipeId)?.uuidString.lowercased() }
-        let snapshotAttachments = attachments
+        if !isOnline {
+            // Keep the prompt instead of silently dropping it: store it so the
+            // reconnect path can deliver it, and surface it back in the composer.
+            undeliveredPrompt = trimmedText
+            input = bubbleRestoreText(for: message, displayText: displayText) ?? trimmedText
+            return
+        }
+
+        await ensureThread(expectedGeneration: generation)
+        guard isCurrent(generation), let threadId else {
+            // createThread failed — keep the prompt for retry instead of losing it.
+            undeliveredPrompt = trimmedText
+            input = bubbleRestoreText(for: message, displayText: displayText) ?? trimmedText
+            return
+        }
+
+        let snapshotAttachments = message == nil ? attachments : []
+        let attachedIds = snapshotAttachments.compactMap {
+            UUID(uuidString: $0.recipeId)?.uuidString.lowercased()
+        }
         let bubbleText = displayText ?? trimmedText
 
         input = ""
         attachments = []
         isSending = true
-        defer { isSending = false }
+        defer {
+            if generation == interactionGeneration {
+                isSending = false
+            }
+        }
         streamingToolStatusKey = nil
 
         let userMessageId = "optimistic-user-\(UUID().uuidString)"
@@ -513,12 +770,14 @@ struct AssistantSheet: View {
                 threadId: threadId,
                 message: trimmedText,
                 attachedRecipeIds: attachedIds,
-                displayText: bubbleText
+                displayText: bubbleText,
+                generation: generation
             )
         } catch {
+            guard isCurrent(generation) else { return }
             // Drop optimistic user bubble on failure so the user can retry.
             messages.removeAll { $0.id == userMessageId }
-            input = bubbleText
+            input = bubbleRestoreText(for: message, displayText: displayText) ?? bubbleText
             attachments = snapshotAttachments
             messages.append(
                 AssistantMessage(
@@ -531,6 +790,13 @@ struct AssistantSheet: View {
                 )
             )
         }
+    }
+
+    /// External autosends pass `message != nil`; their prompt must return to the
+    /// composer verbatim. Manual composer sends restore the raw typed text.
+    private func bubbleRestoreText(for message: String?, displayText: String?) -> String? {
+        guard message != nil else { return nil }
+        return displayText
     }
 
     /// Widget / follow-up submit (assistant-widget.tsx). The raw `value` goes to the server;
@@ -549,9 +815,7 @@ struct AssistantSheet: View {
         }
         input = value
         self.attachments = attachments
-        Task {
-            await send(displayText: displayText)
-        }
+        launchSend(displayText: displayText)
     }
 
     // MARK: - Stream
@@ -560,10 +824,13 @@ struct AssistantSheet: View {
         threadId: String,
         message: String,
         attachedRecipeIds: [String],
-        displayText: String
+        displayText: String,
+        generation: Int
     ) async throws {
+        guard isCurrent(generation) else { return }
         let assistantMessageId = "optimistic-assistant-\(UUID().uuidString)"
         await MainActor.run {
+            guard isCurrent(generation) else { return }
             messages.append(
                 AssistantMessage(
                     id: assistantMessageId,
@@ -575,6 +842,7 @@ struct AssistantSheet: View {
                 )
             )
         }
+        guard isCurrent(generation) else { return }
 
         let stream = try await AssistantAPI.stream(
             threadId: threadId,
@@ -582,7 +850,9 @@ struct AssistantSheet: View {
             attachedRecipeIds: attachedRecipeIds,
             language: AppLanguagePreference.current.rawValue
         )
+        guard isCurrent(generation) else { return }
         for try await event in stream {
+            guard isCurrent(generation) else { return }
             switch event {
             case .textStart:
                 updateStreamingMessage(id: assistantMessageId) { msg in

@@ -12,6 +12,11 @@ struct ImportPresentation: Identifiable {
     let id = UUID()
 }
 
+struct AssistantOpenRequest: Equatable, Sendable {
+    let requestId: Int
+    let message: String
+}
+
 @MainActor
 @Observable
 final class AppShellCoordinator {
@@ -40,6 +45,17 @@ final class AppShellCoordinator {
     /// Spec 057 — last user-facing toast message from a silent file import.
     /// AppShellView renders this as a transient overlay.
     var pendingFileImportToast: String?
+
+    /// One-shot external assistant entry point (spec 072). The request remains
+    /// queued until AppShellView has mounted the sheet, so a tap cannot be lost
+    /// in the presentation transaction.
+    private(set) var pendingAssistantOpenRequest: AssistantOpenRequest?
+    private var nextAssistantRequestId = 0
+
+    /// Bumped on every shell-wide reset (logout / account switch) so any open
+    /// assistant sheet can detect that its session no longer belongs to the
+    /// active account and tear itself down (cancel stream / bootstrap tasks).
+    private(set) var assistantSessionEpoch = 0
 
     init(
         syncService: YjsSyncService,
@@ -81,6 +97,27 @@ final class AppShellCoordinator {
 
     func clearPendingRemindersSetup() {
         pendingRemindersSetup = false
+    }
+
+    // MARK: - Assistant external entry point
+
+    /// Opens the assistant on a fresh thread and asks it to send `message`.
+    /// Repeated identical messages still get distinct request ids.
+    func openAssistantWithMessage(_ message: String) {
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        nextAssistantRequestId &+= 1
+        pendingAssistantOpenRequest = AssistantOpenRequest(
+            requestId: nextAssistantRequestId,
+            message: trimmed
+        )
+    }
+
+    /// A request is consumed only when AppShellView has copied it into the
+    /// sheet input. A newer request must remain authoritative if callbacks race.
+    func consumeAssistantOpenRequest(_ request: AssistantOpenRequest) {
+        guard pendingAssistantOpenRequest?.requestId == request.requestId else { return }
+        pendingAssistantOpenRequest = nil
     }
 
     // MARK: - Import completion
@@ -245,6 +282,11 @@ final class AppShellCoordinator {
         importPresentation = nil
         pendingSpotlightRecipeId = nil
         pendingRemindersSetup = false
+        // Invalidate any open assistant sheet: bumping the epoch makes the sheet's
+        // `onChange` tear down its stream/bootstrap/send tasks, so a streaming
+        // response or deferred autosend cannot write into a logged-out session.
+        assistantSessionEpoch &+= 1
+        pendingAssistantOpenRequest = nil
         discoverListState?.clearAll()
         selectedTab = .recipes
         recipesPath = NavigationPath()

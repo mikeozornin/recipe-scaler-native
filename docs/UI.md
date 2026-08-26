@@ -193,9 +193,19 @@ ContentUnavailableView {
 
 iOS Settings patterns (toggles, `NavigationLink` submenus, label–value rows); no explicit Save button; avatar as centered circle with Set photo below; descriptive copy uses `.appBody()` line-height.
 
+The Vkusvill setting follows the Telegram/connection section: it is visible only
+in the Russian locale, uses the localized section title, and is disabled while
+offline or while the account setting is loading. The shared flag is owned by the
+app container so the Shopping List toolbar updates without reopening Profile. Its
+toggle uses a dedicated localized connection label.
+
 ### Shopping list
 
 Header matches Recipes: large title with sort segment in the collapsible search slot (`UISearchController` / `UISearchBar` pattern — SwiftUI has no separate API for a custom block under large title).
+
+When the Vkusvill setting is enabled and the locale is Russian, the toolbar adds
+the `cart` action beside Share. It is disabled offline and opens the existing
+Assistant sheet on a fresh thread with the localized shopping-list prompt.
 
 ### Collections
 
@@ -350,4 +360,3 @@ Suppression задаётся в `syncDescriptionChromeSuppression()` (`YDocRecip
 | Писать raw `contentInset` под клавиатуру | SwiftUI сбрасывает; поведение нестабильно |
 | Таймер на деталке без suppress в edit | Конфликт bottom inset с панелью форматирования |
 | UIKit Done accessory в inline | Дубли Done, лишний chrome |
-
