@@ -148,7 +148,10 @@ final class DeepLinkRouter {
     /// Pure parse for tests and callers that want the link without mutating state.
     static func parse(_ url: URL) -> DeepLink? {
         let scheme = url.scheme?.lowercased()
-        if scheme == "recipe-scaler" {
+        // Accept both the prod scheme and the side-by-side dev scheme
+        // (spec 066): the parser is flavor-agnostic, the OS routes by each
+        // build's declared CFBundleURLSchemes.
+        if scheme == "recipe-scaler" || scheme == "recipe-scaler-dev" {
             return parseCustomScheme(url)
         }
         if scheme == "https" || scheme == "http" {

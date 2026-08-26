@@ -10,6 +10,12 @@
 		0089FE21D37A4D84BF4355E3 /* ShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B8E4D1A7552D487F80885A2F /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		031287A80FDB41308E31AE3E /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7585E91075F045FF9D2C26D1 /* ShareViewController.swift */; };
 		0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C45A57EDAC270C757266F8FA /* AuthService.swift */; };
+		062CORE001A293A4B701000A1 /* Networking/WatchExpiryNotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062CORE001F293A4B701000A0 /* Networking/WatchExpiryNotificationPlanner.swift */; };
+		062TEST001A293A4B701000A1 /* WatchExpiryNotificationSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062TEST001F293A4B701000A0 /* WatchExpiryNotificationSchedulerTests.swift */; };
+		062WATCH001A293A4B701000A1 /* Services/WatchExpiryNotificationsPrefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062WATCH001F293A4B701000A0 /* Services/WatchExpiryNotificationsPrefs.swift */; };
+		062WATCH002A293A4B701000A1 /* Services/WatchExpiryNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062WATCH002F293A4B701000A0 /* Services/WatchExpiryNotificationScheduler.swift */; };
+		062WATCH003A293A4B701000A1 /* Views/WatchSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062WATCH003F293A4B701000A0 /* Views/WatchSettingsView.swift */; };
+		062WATCH004A293A4B701000A1 /* App/WatchNotificationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062WATCH004F293A4B701000A0 /* App/WatchNotificationDelegate.swift */; };
 		082B9A25B01040469E077B58 /* Auth/SharedAuthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F696F3421504AD3A7836B0C /* Auth/SharedAuthStore.swift */; };
 		0952E30F55AC49E7BCCDEE93 /* TimerLockScreenLiveActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B83AB2645384EAFBD1AD4A3 /* TimerLockScreenLiveActivityView.swift */; };
 		0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */; };
@@ -31,7 +37,6 @@
 		1A53619D3D6AF4AF6CD2CDE8 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 397972E3080EA1238A19CE9C /* KeychainAccess */; };
 		1A94422F09EA4C03BD017D23 /* Networking/APIClient+Requests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41F1A2877817482DAC0FE2DC /* Networking/APIClient+Requests.swift */; };
 		1BAEE2C386A5454CB68D9C8B /* Networking/APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 922F28300880430B97A0348C /* Networking/APIClient.swift */; };
-		1D624A656C3A4FAF9496BDB0 /* RecipeScalerNativeWatch.app in Embed Watch App */ = {isa = PBXBuildFile; fileRef = 8F19F53FEC2043319894598C /* RecipeScalerNativeWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersCopy, ); }; };
 		2104E1D88FB54554B80BD761 /* TimerLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 535668B361594581A4C5E026 /* TimerLiveActivityBundle.swift */; };
 		2D50E94419BB114AE83F8C41 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3297FDC9814D7043F3A05E04 /* Database.swift */; };
 		2DD6149EDF9BC8DA18E52FDD /* DocumentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D966868028D4B6CFD6DE498 /* DocumentManager.swift */; };
@@ -46,11 +51,13 @@
 		3A809462F86A2ADD2A492047 /* WidgetPushRegistrar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F89323F776D65016934FBB2 /* WidgetPushRegistrar.swift */; };
 		3C55EF45B74C4F359BB7ED21 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B4344307EF74BA0948DA3DD /* Assets.xcassets */; };
 		3CC3D76CA52B4B3293D8D000 /* TimerLiveActivityCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816A3426E81C4E58B85FD44B /* TimerLiveActivityCoordinator.swift */; };
+		3DE3DAF17FBB3570B593E38F /* OfflineBannerGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251D70EF435803E81D00CEDA /* OfflineBannerGate.swift */; };
 		3F2854C6A861495B098D027B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EA48CAFA747D30B7BE80A3B /* Foundation.framework */; };
 		40FCBD3240184C3DA0D2D673 /* ActionExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 7E906824536341C2920D9DC5 /* ActionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		41043E5774649BBB0EB1CEA6 /* HomeWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F58FAB09283CA8326C38419C /* HomeWidgetBundle.swift */; };
 		42667C91A6DD160819A90989 /* YrsValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7951C990E84C9EFE9685023 /* YrsValue.swift */; };
 		427B277591247DD49F05344E /* TimerAccessoryRectangularView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834E62CA7EEF87A7CA763E5E /* TimerAccessoryRectangularView.swift */; };
+		485C79BA3D9AE14EB0BCFF27 /* OfflineBannerGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B347C656005186097A24DAD5 /* OfflineBannerGateTests.swift */; };
 		495CE78F926CAF1D896D139D /* WidgetTimerBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FF25ED86ABF55F68DF0BCAC /* WidgetTimerBackground.swift */; };
 		4A7854A4A9AD73FD8FC6BA63 /* YrsError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A14EFAC19F16EB6D5C3B232 /* YrsError.swift */; };
 		4AA8B9DAF9AF436590E13E76 /* TimerLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = C62A87AD94EF44749A3FF476 /* TimerLiveActivityWidget.swift */; };
@@ -72,7 +79,6 @@
 		62AB0E221B7ED6F6F79F9259 /* YrsDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 918F51E10FCE4C23134D68CE /* YrsDocument.swift */; };
 		64694ACF1805F99D988C668A /* MartianGrotesk-StdxBd.otf in Resources */ = {isa = PBXBuildFile; fileRef = 5B607E48597DEC5368CA9640 /* MartianGrotesk-StdxBd.otf */; };
 		67A6550B36933C92D59DB2B9 /* FeatureAdoptionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAA4DF54D6AD9C9C26DC444 /* FeatureAdoptionStore.swift */; };
-		D1A100000000000000000001 /* TipPurchaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A100000000000000000002 /* TipPurchaseService.swift */; };
 		69260D31481836DE8DC2349C /* RecipeData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AF33ADA594B16A7C6F4A381 /* RecipeData.swift */; };
 		69CA5B8741F33C2F92CD0048 /* RecipeScalerNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296450B0B341AB25920D2100 /* RecipeScalerNativeApp.swift */; };
 		6BBC390F7AF94B5AA3A27468 /* TimerLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF518ADEDA245B099EC5C7E /* TimerLiveActivityIntents.swift */; };
@@ -102,10 +108,6 @@
 		922A2B3A3550913CA9886250 /* WidgetSilentPushHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCCF9006265F5B2697622906 /* WidgetSilentPushHandler.swift */; };
 		95DD7E548A202A1047110394 /* FeatureAdoptionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DDA10FB70EB04235CF1A47E /* FeatureAdoptionDetailView.swift */; };
 		960FBC69B3B84454A444F025 /* Views/SettingsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB815A7AAADF4189BC529973 /* Views/SettingsRow.swift */; };
-		062WATCH001A293A4B701000A1 /* Services/WatchExpiryNotificationsPrefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062WATCH001F293A4B701000A0 /* Services/WatchExpiryNotificationsPrefs.swift */; };
-		062WATCH002A293A4B701000A1 /* Services/WatchExpiryNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062WATCH002F293A4B701000A0 /* Services/WatchExpiryNotificationScheduler.swift */; };
-		062WATCH003A293A4B701000A1 /* Views/WatchSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062WATCH003F293A4B701000A0 /* Views/WatchSettingsView.swift */; };
-		062WATCH004A293A4B701000A1 /* App/WatchNotificationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062WATCH004F293A4B701000A0 /* App/WatchNotificationDelegate.swift */; };
 		96DDAC9E8733509BF08272F4 /* MartianGrotesk-NrLt.otf in Resources */ = {isa = PBXBuildFile; fileRef = EB452B44E6C61233D3482133 /* MartianGrotesk-NrLt.otf */; };
 		98043B5A4C25AAF27D48104E /* AssistantThreadSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5TH068293A4B7010000006 /* AssistantThreadSearchTests.swift */; };
 		982960F83D64336767544729 /* WidgetTimerLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B65555D56665D8687D4FEAF /* WidgetTimerLayout.swift */; };
@@ -186,7 +188,9 @@
 		A1B2C3D4E5F64789AABBCC03 /* TimerLiveActivityLinearProgressStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F64789AABBCC01 /* TimerLiveActivityLinearProgressStyle.swift */; };
 		A1TYPOG1A2B3C4D5E6F7080902 /* AppTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1TYPOG1A2B3C4D5E6F7080901 /* AppTypography.swift */; };
 		A456EBD108E7F61A6ED40F0B /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95C3A04549F6100B5EE76690 /* AppGroup.swift */; };
+		RS066BUILDDEEPLINK00000001 /* DeepLinkURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = RS066FILELINK00000000001 /* DeepLinkURL.swift */; };
 		A520DBD4E2174DD9B97FDF13 /* Import/ImportPhotoValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C6A0A37120248F8AAB066E8 /* Import/ImportPhotoValidator.swift */; };
+		A5ATCH18293A4B7010000001 /* AssistantAttachmentChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ATCH18293A4B7010000002 /* AssistantAttachmentChip.swift */; };
 		A5FCB870243125B620B8D992 /* TimerSnapshot+RecipeTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12919043AAC5B1C102723AAC /* TimerSnapshot+RecipeTimer.swift */; };
 		A5MD018293A4B7010000001 /* AssistantMarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5MD028293A4B7010000002 /* AssistantMarkdownRenderer.swift */; };
 		A5MD038293A4B7010000003 /* AssistantMarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5MD048293A4B7010000004 /* AssistantMarkdownText.swift */; };
@@ -204,7 +208,6 @@
 		AB245CF76E7C618304E6E89E /* YDocStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E420A114755D01EE96F560A /* YDocStore.swift */; };
 		AC55326516F2DD99B42F0F6B /* ConnectionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7485486C3DAE972B94C9AE9B /* ConnectionState.swift */; };
 		AC6A576E26314798BE3FBF1A /* SystemBannerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */; };
-		3DE3DAF17FBB3570B593E38F /* OfflineBannerGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251D70EF435803E81D00CEDA /* OfflineBannerGate.swift */; };
 		AC9F920B800391992215A1CF /* IngredientData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24D8ACC6DE6F3FE3D4AE9C40 /* IngredientData.swift */; };
 		AE6149B3EB41238B4A40A652 /* TimerWidgetPushHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA782D4A8C11ED57CE8A11A1 /* TimerWidgetPushHandler.swift */; };
 		AFFE8032F61B41C88C0CA977 /* RecipeLegacyBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 480DCDACDCA0402582631501 /* RecipeLegacyBanner.swift */; };
@@ -213,6 +216,7 @@
 		APP0000000000000000000093 /* TimerEventBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000003 /* TimerEventBridge.swift */; };
 		APP0000000000000000000094 /* DebugSimulatorAutoLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = APP0000000000000000000004 /* DebugSimulatorAutoLogin.swift */; };
 		APURL0001000200030004000A3 /* AppURLSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = APURL0001000200030004000A2 /* AppURLSession.swift */; };
+		ATGATE01A293A4B701000001 /* AsyncTestGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ATGATE01A293A4B701000002 /* AsyncTestGate.swift */; };
 		B041LGB001 /* LegacyAuthBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B041LGB002 /* LegacyAuthBannerView.swift */; };
 		B041LGR001 /* LegacyAuthBannerReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B041LGR002 /* LegacyAuthBannerReminder.swift */; };
 		B21E98DE40075926FE4CF18B /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = D5AD4954620B5F09F6E7BD90 /* GRDB */; };
@@ -253,7 +257,6 @@
 		B3TIMEWIDGET01B293A4B70100001 /* TimerWidgetTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */; };
 		B3TORD01B293A4B701000002 /* TimerOrdering.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TORD01A293A4B701000001 /* TimerOrdering.swift */; };
 		B3TORD02B293A4B701000002 /* TimerOrderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TORD02A293A4B701000001 /* TimerOrderingTests.swift */; };
-		062TEST001A293A4B701000A1 /* WatchExpiryNotificationSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062TEST001F293A4B701000A0 /* WatchExpiryNotificationSchedulerTests.swift */; };
 		B3TPAL01B293A4B701000002 /* TimerPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TPAL01A293A4B701000001 /* TimerPaletteTests.swift */; };
 		B3TSPATCH01B293A4B70100001 /* TimerSnapshotDocumentPatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TSPATCH01A293A4B70100001 /* TimerSnapshotDocumentPatcher.swift */; };
 		B3UIDFMT02B293A4B70100002 /* UserIdFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3UIDFMT02A293A4B70100001 /* UserIdFormatterTests.swift */; };
@@ -299,6 +302,12 @@
 		CF426B33FE3F47E4B8249F09 /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAF82F83AFCF4454AA71B812 /* ActionViewController.swift */; };
 		CF8E368196962A4E338F79E6 /* TimerAccessoryCircularView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FDE9DAE2E060C387083B297 /* TimerAccessoryCircularView.swift */; };
 		CF9CD12E0E41C65FE02AE3E9 /* WidgetFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770923D279017ABF70397F4B /* WidgetFonts.swift */; };
+		D15C00000000000000000001 /* DiscoverListStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000002 /* DiscoverListStateStore.swift */; };
+		D15C00000000000000000003 /* DiscoverListStateStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000004 /* DiscoverListStateStoreTests.swift */; };
+		D15C00000000000000000005 /* DiscoverCollectionModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000006 /* DiscoverCollectionModelTests.swift */; };
+		D15C00000000000000000007 /* DiscoverPublicProfileModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000008 /* DiscoverPublicProfileModelTests.swift */; };
+		D1A100000000000000000001 /* TipPurchaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A100000000000000000002 /* TipPurchaseService.swift */; };
+		D1A100000000000000000003 /* AccountTipsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A100000000000000000004 /* AccountTipsSection.swift */; };
 		D32494D8B32B4083A621A5D5 /* TimerLiveActivityActionQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE9AF6E91804571BD26336B /* TimerLiveActivityActionQueue.swift */; };
 		D34AC33D3DC18E0DA6BAD587 /* WidgetTimerPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F5F8E02417D04709ED4FEE /* WidgetTimerPalette.swift */; };
 		D478160040C08F50D4A06091 /* TimerWidgetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27F7288EC5F094475438A06F /* TimerWidgetProvider.swift */; };
@@ -306,11 +315,7 @@
 		D4E5F6A7B8C9D0E1F2A3B4D2 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4D1 /* InfoPlist.xcstrings */; };
 		D5796382221C4D669FEB7155 /* SpotlightIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96ECDC1C61704BD8AF111FBD /* SpotlightIndexer.swift */; };
 		D5SS01B293A4B7010000002 /* DiscoverSearchStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5SS01A293A4B7010000001 /* DiscoverSearchStoreTests.swift */; };
-		D15C00000000000000000003 /* DiscoverListStateStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000004 /* DiscoverListStateStoreTests.swift */; };
-		D15C00000000000000000005 /* DiscoverCollectionModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000006 /* DiscoverCollectionModelTests.swift */; };
-		D15C00000000000000000007 /* DiscoverPublicProfileModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000008 /* DiscoverPublicProfileModelTests.swift */; };
 		D750066ACA5505A1A07A4780 /* Networking/WidgetPushTokenClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BE92D4F7D7D370A1E12BF5 /* Networking/WidgetPushTokenClient.swift */; };
-		062CORE001A293A4B701000A1 /* Networking/WatchExpiryNotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062CORE001F293A4B701000A0 /* Networking/WatchExpiryNotificationPlanner.swift */; };
 		D963C6002ACA43AE8B000E1D /* Config/Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CBCE9817864C1C8B333764 /* Config/Config.swift */; };
 		D9CE2453B71F439583814D83 /* TimerLiveActivityAccent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56565D99438548F29F16D7DE /* TimerLiveActivityAccent.swift */; };
 		DB2344F39F6C4D9E970E5D07 /* RecipeScalerCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E05920822F344D9691E82401 /* RecipeScalerCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -375,7 +380,6 @@
 		E5F60718293A4B7018FB5571 /* AssistantMessageFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B706CC8B6CE /* AssistantMessageFooter.swift */; };
 		E5F60718293A4B70267CA7BD /* ShoppingListData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A32A1501 /* ShoppingListData.swift */; };
 		E5F60718293A4B702B6FFEC2 /* AssistantComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70220BC4FC /* AssistantComposer.swift */; };
-		A5ATCH18293A4B7010000001 /* AssistantAttachmentChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ATCH18293A4B7010000002 /* AssistantAttachmentChip.swift */; };
 		E5F60718293A4B703037711D /* DescriptionTimerPopoverState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70309B38A2 /* DescriptionTimerPopoverState.swift */; };
 		E5F60718293A4B70321FB5DD /* ScreenAwakeStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */; };
 		E5F60718293A4B70374F8F19 /* SeedQRCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70F25813BA /* SeedQRCodeView.swift */; };
@@ -384,9 +388,6 @@
 		E5F60718293A4B70443E17D7 /* ShoppingListReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B702F0A2841 /* ShoppingListReader.swift */; };
 		E5F60718293A4B7044C89B39 /* AssistantAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A0E4855E /* AssistantAPI.swift */; };
 		E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70344FA5B3 /* AccountView.swift */; };
-		D1A100000000000000000003 /* AccountTipsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A100000000000000000004 /* AccountTipsSection.swift */; };
-		FB065VW00000000000000003 /* AccountFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB065VW00000000000000004 /* AccountFeedbackView.swift */; };
-		FB065MD00000000000000003 /* AccountFeedbackModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB065MD00000000000000004 /* AccountFeedbackModel.swift */; };
 		E5F60718293A4B704B61748D /* DiscoverAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7011DA2DE4 /* DiscoverAPI.swift */; };
 		E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */; };
 		E5F60718293A4B7055FFBBCC /* DocumentManager+ShoppingList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */; };
@@ -398,6 +399,7 @@
 		E5F60718293A4B7078685F7E /* ShoppingListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700A5738C7 /* ShoppingListView.swift */; };
 		E5F60718293A4B7079EF0178 /* DiscoverPublicProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70322645C2 /* DiscoverPublicProfileView.swift */; };
 		E5F60718293A4B707BD2B9B5 /* ShoppingListPlainText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B703691736C /* ShoppingListPlainText.swift */; };
+		SHP043C01 /* ResolveShoppingIllustrationId.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHP043F01 /* ResolveShoppingIllustrationId.swift */; };
 		E5F60718293A4B70811A7C4D /* TelegramAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B705F98774E /* TelegramAPI.swift */; };
 		E5F60718293A4B7084781F33 /* ShoppingListConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70219947AF /* ShoppingListConstants.swift */; };
 		E5F60718293A4B708BB3E294 /* DiscoverRecipeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700AF73307 /* DiscoverRecipeCard.swift */; };
@@ -486,6 +488,9 @@
 		FADKEY02B293A4B701000001 /* Networking/FeatureAdoptionClientFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADKEY01A293A4B701000001 /* Networking/FeatureAdoptionClientFeature.swift */; };
 		FADLAY02B293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADLAY01A293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift */; };
 		FADLAY04D293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */; };
+		FB065MD00000000000000003 /* AccountFeedbackModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB065MD00000000000000004 /* AccountFeedbackModel.swift */; };
+		FB065TS00000000000000003 /* AccountFeedbackSubmitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB065TS00000000000000004 /* AccountFeedbackSubmitTests.swift */; };
+		FB065VW00000000000000003 /* AccountFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB065VW00000000000000004 /* AccountFeedbackView.swift */; };
 		FB47945F9C6342719A745D7B /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 0A5A136ADBF870BFBD1C3902 /* Localizable.xcstrings */; };
 		FE3231F287C04923B25E29E8 /* TimerLiveActivityAccent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56565D99438548F29F16D7DE /* TimerLiveActivityAccent.swift */; };
 		FE65CF9516F7EF7F3C31E708 /* RecipeTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11665252A14BBEBAF0D694C4 /* RecipeTimer.swift */; };
@@ -516,7 +521,7 @@
 		MIK200005001 /* DiscoverCollectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = MIK200005002 /* DiscoverCollectionModel.swift */; };
 		MIK200006001 /* DiscoverPublicProfileModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = MIK200006002 /* DiscoverPublicProfileModel.swift */; };
 		MIK200007001 /* RecipeShareModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = MIK200007002 /* RecipeShareModel.swift */; };
-		D15C00000000000000000001 /* DiscoverListStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000002 /* DiscoverListStateStore.swift */; };
+		NOEXTN01A293A4B701000001 /* NoExternalNetworkURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOEXTN01A293A4B701000002 /* NoExternalNetworkURLProtocol.swift */; };
 		REMINDERS0001AA0001BB01 /* RemindersSyncPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0002AA0002BB02 /* RemindersSyncPreferences.swift */; };
 		REMINDERS0003AA0003BB03 /* RemindersMapStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0004AA0004BB04 /* RemindersMapStore.swift */; };
 		REMINDERS0005AA0005BB05 /* RemindersSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = REMINDERS0006AA0006BB06 /* RemindersSyncService.swift */; };
@@ -528,8 +533,6 @@
 		SCTA00002AA000200000002 /* ShortcutItemsUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */; };
 		SRTIPPREF0001AA0001BB01 /* ShoppingRemindersTipPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRTIPPREF0002AA0002BB02 /* ShoppingRemindersTipPreferences.swift */; };
 		SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */; };
-		FB065TS00000000000000003 /* AccountFeedbackSubmitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB065TS00000000000000004 /* AccountFeedbackSubmitTests.swift */; };
-		485C79BA3D9AE14EB0BCFF27 /* OfflineBannerGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B347C656005186097A24DAD5 /* OfflineBannerGateTests.swift */; };
 		TP14SAFE01A293A4B70100001 /* SafeIntCasts.swift in Sources */ = {isa = PBXBuildFile; fileRef = TP14SAFE01A293A4B70100002 /* SafeIntCasts.swift */; };
 		UIT018898C9CB55D28DA5 /* AuthPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = UIT960324BAA0FDC8FD99 /* AuthPage.swift */; };
 		UIT093A852449B362733F /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = UIT2F7824BE9658F66419 /* Errors.swift */; };
@@ -593,8 +596,6 @@
 		UITFF472A397240D658C9 /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = UIT2DCFE4D99B71C8461E /* TestData.swift */; };
 		WATCHFAD02B293A4B70100001 /* Services/WatchFeatureAdoptionReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = WATCHFAD01A293A4B70100001 /* Services/WatchFeatureAdoptionReporter.swift */; };
 		YJSOFF01A293A4B701000001 /* YjsOfflineSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */; };
-		ATGATE01A293A4B701000001 /* AsyncTestGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ATGATE01A293A4B701000002 /* AsyncTestGate.swift */; };
-		NOEXTN01A293A4B701000001 /* NoExternalNetworkURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOEXTN01A293A4B701000002 /* NoExternalNetworkURLProtocol.swift */; };
 		YRSDOC01A293A4B701000001 /* YrsDocument+TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */; };
 /* End PBXBuildFile section */
 
@@ -698,17 +699,6 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		63B9A08D5525466B9A9458A0 /* Embed Watch App */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
-			dstSubfolderSpec = 16;
-			files = (
-				1D624A656C3A4FAF9496BDB0 /* RecipeScalerNativeWatch.app in Embed Watch App */,
-			);
-			name = "Embed Watch App";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		C5F9A3B24D6E5F701234567A /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -738,6 +728,12 @@
 
 /* Begin PBXFileReference section */
 		057A55B7EC424D69BA4BA244 /* TimerLiveActivityMetadataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityMetadataProvider.swift; sourceTree = "<group>"; };
+		062CORE001F293A4B701000A0 /* Networking/WatchExpiryNotificationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/WatchExpiryNotificationPlanner.swift; sourceTree = "<group>"; };
+		062TEST001F293A4B701000A0 /* WatchExpiryNotificationSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchExpiryNotificationSchedulerTests.swift; sourceTree = "<group>"; };
+		062WATCH001F293A4B701000A0 /* Services/WatchExpiryNotificationsPrefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchExpiryNotificationsPrefs.swift; sourceTree = "<group>"; };
+		062WATCH002F293A4B701000A0 /* Services/WatchExpiryNotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchExpiryNotificationScheduler.swift; sourceTree = "<group>"; };
+		062WATCH003F293A4B701000A0 /* Views/WatchSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/WatchSettingsView.swift; sourceTree = "<group>"; };
+		062WATCH004F293A4B701000A0 /* App/WatchNotificationDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/WatchNotificationDelegate.swift; sourceTree = "<group>"; };
 		064C0C1021D58AB32FC2DCF2 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		082DDFB9F64449A7BCF4D3FA /* WriteSyncState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WriteSyncState.swift; sourceTree = "<group>"; };
 		0913FBEDF877DA9B6F52F552 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -760,6 +756,7 @@
 		2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeScalerNativeTests.swift; sourceTree = "<group>"; };
 		2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationConsistencyTests.swift; sourceTree = "<group>"; };
 		24D8ACC6DE6F3FE3D4AE9C40 /* IngredientData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientData.swift; sourceTree = "<group>"; };
+		251D70EF435803E81D00CEDA /* OfflineBannerGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineBannerGate.swift; sourceTree = "<group>"; };
 		26FFE4B96B1A4F1BA8AD1B65 /* TimerPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPalette.swift; sourceTree = "<group>"; };
 		278E2E8D30140D9F0095156C /* RecipeScalerNativeDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RecipeScalerNativeDebug.entitlements; sourceTree = "<group>"; };
 		27E6B46B3014098600193795 /* RecipeScalerNativeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RecipeScalerNativeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -784,7 +781,6 @@
 		450283E26C9249C5858DFCEF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		46BF5AD0548A4829A7C387F9 /* Services/WatchCredentialsBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchCredentialsBridge.swift; sourceTree = "<group>"; };
 		47BE92D4F7D7D370A1E12BF5 /* Networking/WidgetPushTokenClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/WidgetPushTokenClient.swift; sourceTree = "<group>"; };
-		062CORE001F293A4B701000A0 /* Networking/WatchExpiryNotificationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/WatchExpiryNotificationPlanner.swift; sourceTree = "<group>"; };
 		480DCDACDCA0402582631501 /* RecipeLegacyBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeLegacyBanner.swift; sourceTree = "<group>"; };
 		48F07333AE4345FD8D008AA4 /* Views/NotAuthorizedStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/NotAuthorizedStateView.swift; sourceTree = "<group>"; };
 		4B5D272EB4ED4555A30CD3B2 /* RecipeEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEditViewModel.swift; sourceTree = "<group>"; };
@@ -840,6 +836,7 @@
 		95FDE9BE4DC2CA4E5B1DDA73 /* WidgetSilentPushHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSilentPushHandlerTests.swift; sourceTree = "<group>"; };
 		96ECDC1C61704BD8AF111FBD /* SpotlightIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexer.swift; sourceTree = "<group>"; };
 		97BBFB8DCFCA4FD59AA65367 /* ActionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ActionExtension.entitlements; sourceTree = "<group>"; };
+		RS066FILELINK00000000001 /* DeepLinkURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkURL.swift; sourceTree = "<group>"; };
 		98A60ED09D57AE1CE0E67D37 /* TimerWidgetEntry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimerWidgetEntry.swift; sourceTree = "<group>"; };
 		A027027000101 /* Import/ThirdParty/ThirdPartyImportTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Import/ThirdParty/ThirdPartyImportTypes.swift; sourceTree = "<group>"; };
 		A027027000102 /* Import/ThirdParty/Gunzip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Import/ThirdParty/Gunzip.swift; sourceTree = "<group>"; };
@@ -910,6 +907,7 @@
 		A3497363D26FF94F419BA85F /* Auth/SharedDeviceId.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/SharedDeviceId.swift; sourceTree = "<group>"; };
 		A3AC0B0A69EA4637B134D9A5 /* SystemBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerView.swift; sourceTree = "<group>"; };
 		A3E905C3C326440BBA62742C /* Views/TimerRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/TimerRow.swift; sourceTree = "<group>"; };
+		A5ATCH18293A4B7010000002 /* AssistantAttachmentChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantAttachmentChip.swift; sourceTree = "<group>"; };
 		A5MD028293A4B7010000002 /* AssistantMarkdownRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMarkdownRenderer.swift; sourceTree = "<group>"; };
 		A5MD048293A4B7010000004 /* AssistantMarkdownText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMarkdownText.swift; sourceTree = "<group>"; };
 		A5MD058293A4B7010000005 /* AssistantMarkdownRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMarkdownRendererTests.swift; sourceTree = "<group>"; };
@@ -939,6 +937,7 @@
 		APP0000000000000000000003 /* TimerEventBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerEventBridge.swift; sourceTree = "<group>"; };
 		APP0000000000000000000004 /* DebugSimulatorAutoLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSimulatorAutoLogin.swift; sourceTree = "<group>"; };
 		APURL0001000200030004000A2 /* AppURLSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppURLSession.swift; sourceTree = "<group>"; };
+		ATGATE01A293A4B701000002 /* AsyncTestGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncTestGate.swift; sourceTree = "<group>"; };
 		B041LGB002 /* LegacyAuthBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyAuthBannerView.swift; sourceTree = "<group>"; };
 		B041LGR002 /* LegacyAuthBannerReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyAuthBannerReminder.swift; sourceTree = "<group>"; };
 		B1FC95C981104E30AE6DFE07 /* RecipeScalerCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeScalerCore.swift; sourceTree = "<group>"; };
@@ -946,6 +945,7 @@
 		B2C3D4E5F60718293A4B61 /* ServingsStepperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServingsStepperView.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60718293A4B63 /* YDocIngredientsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YDocIngredientsSection.swift; sourceTree = "<group>"; };
 		B2FD0DF0B71C1B50552D1B2F /* RecipeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeListView.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.crashreport; };
+		B347C656005186097A24DAD5 /* OfflineBannerGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineBannerGateTests.swift; sourceTree = "<group>"; };
 		B3AE1379BA360BCA84247C8D /* CollectionEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEntry.swift; sourceTree = "<group>"; };
 		B3APIC01B293A4B701000005 /* APIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientTests.swift; sourceTree = "<group>"; };
 		B3APIELOC002 /* APIError+Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIError+Localization.swift"; sourceTree = "<group>"; };
@@ -978,7 +978,6 @@
 		B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerWidgetTimelineTests.swift; sourceTree = "<group>"; };
 		B3TORD01A293A4B701000001 /* TimerOrdering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerOrdering.swift; sourceTree = "<group>"; };
 		B3TORD02A293A4B701000001 /* TimerOrderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerOrderingTests.swift; sourceTree = "<group>"; };
-		062TEST001F293A4B701000A0 /* WatchExpiryNotificationSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchExpiryNotificationSchedulerTests.swift; sourceTree = "<group>"; };
 		B3TPAL01A293A4B701000001 /* TimerPaletteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPaletteTests.swift; sourceTree = "<group>"; };
 		B3TSPATCH01A293A4B70100001 /* TimerSnapshotDocumentPatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSnapshotDocumentPatcher.swift; sourceTree = "<group>"; };
 		B3UIDFMT02A293A4B70100001 /* UserIdFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserIdFormatterTests.swift; sourceTree = "<group>"; };
@@ -1013,13 +1012,17 @@
 		CC1101AABB000200000004 /* SyncErrorCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorCode.swift; sourceTree = "<group>"; };
 		CDC8307193209458433B2DAF /* SnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotTests.swift; sourceTree = "<group>"; };
 		CEF518ADEDA245B099EC5C7E /* TimerLiveActivityIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityIntents.swift; sourceTree = "<group>"; };
+		D15C00000000000000000002 /* DiscoverListStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverListStateStore.swift; sourceTree = "<group>"; };
+		D15C00000000000000000004 /* DiscoverListStateStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverListStateStoreTests.swift; sourceTree = "<group>"; };
+		D15C00000000000000000006 /* DiscoverCollectionModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverCollectionModelTests.swift; sourceTree = "<group>"; };
+		D15C00000000000000000008 /* DiscoverPublicProfileModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverPublicProfileModelTests.swift; sourceTree = "<group>"; };
+		D1A100000000000000000002 /* TipPurchaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipPurchaseService.swift; sourceTree = "<group>"; };
+		D1A100000000000000000004 /* AccountTipsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountTipsSection.swift; sourceTree = "<group>"; };
+		D1A100000000000000000008 /* RecipeScalerTips.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = RecipeScalerTips.storekit; sourceTree = "<group>"; };
 		D24E09F4CE9D4C34852A98AF /* Import/ImportContentClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Import/ImportContentClassifier.swift; sourceTree = "<group>"; };
 		D4E5F6A7B8C9D0E1F2A3B4D1 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		D5C0593B743DA50B2CB0DFF7 /* FeatureAdoptionItem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionItem.swift; sourceTree = "<group>"; };
 		D5SS01A293A4B7010000001 /* DiscoverSearchStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverSearchStoreTests.swift; sourceTree = "<group>"; };
-		D15C00000000000000000004 /* DiscoverListStateStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverListStateStoreTests.swift; sourceTree = "<group>"; };
-		D15C00000000000000000006 /* DiscoverCollectionModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverCollectionModelTests.swift; sourceTree = "<group>"; };
-		D15C00000000000000000008 /* DiscoverPublicProfileModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverPublicProfileModelTests.swift; sourceTree = "<group>"; };
 		D6293E6CF2D08DC5DEA259B6 /* WidgetPushRegistrarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPushRegistrarTests.swift; sourceTree = "<group>"; };
 		D731DFB5A563F7A7930800AF /* HomeWidgetExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = HomeWidgetExtension.entitlements; sourceTree = "<group>"; };
 		D8A2FBA494D4B821D6044FD7 /* ShoppingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingViewModel.swift; sourceTree = "<group>"; };
@@ -1035,7 +1038,6 @@
 		DE1ABB28709A39ED21AF2C28 /* MartianMono-NrLt.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MartianMono-NrLt.otf"; sourceTree = "<group>"; };
 		E05920822F344D9691E82401 /* RecipeScalerCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = RecipeScalerCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerStore.swift; sourceTree = "<group>"; };
-		251D70EF435803E81D00CEDA /* OfflineBannerGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineBannerGate.swift; sourceTree = "<group>"; };
 		E2C8DC8D63F14DC8A5436B59 /* RecipeEditPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEditPolicy.swift; sourceTree = "<group>"; };
 		E3CBCE9817864C1C8B333764 /* Config/Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config/Config.swift; sourceTree = "<group>"; };
 		E5F5F8E02417D04709ED4FEE /* WidgetTimerPalette.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetTimerPalette.swift; sourceTree = "<group>"; };
@@ -1097,19 +1099,15 @@
 		E5F60718293A4B70219947AF /* ShoppingListConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListConstants.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountCheckmarkSelectionView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70220BC4FC /* AssistantComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantComposer.swift; sourceTree = "<group>"; };
-		A5ATCH18293A4B7010000002 /* AssistantAttachmentChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantAttachmentChip.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7024E554ED /* ShoppingSmokeTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingSmokeTest.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7024E554FD /* TimerNotificationSmokeTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerNotificationSmokeTest.swift; sourceTree = "<group>"; };
 		E5F60718293A4B702F0A2841 /* ShoppingListReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListReader.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70309B38A2 /* DescriptionTimerPopoverState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionTimerPopoverState.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70322645C2 /* DiscoverPublicProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverPublicProfileView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70344FA5B3 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
-		D1A100000000000000000004 /* AccountTipsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountTipsSection.swift; sourceTree = "<group>"; };
-		FB065VW00000000000000004 /* AccountFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountFeedbackView.swift; sourceTree = "<group>"; };
-		FB065MD00000000000000004 /* AccountFeedbackModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountFeedbackModel.swift; sourceTree = "<group>"; };
-		D1A100000000000000000008 /* RecipeScalerTips.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = RecipeScalerTips.storekit; sourceTree = "<group>"; };
 		E5F60718293A4B7035E279C2 /* SharingAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingAPI.swift; sourceTree = "<group>"; };
 		E5F60718293A4B703691736C /* ShoppingListPlainText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListPlainText.swift; sourceTree = "<group>"; };
+		SHP043F01 /* ResolveShoppingIllustrationId.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolveShoppingIllustrationId.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7040751435 /* ShoppingListFromRecipe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListFromRecipe.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenAwakeStatusBanner.swift; sourceTree = "<group>"; };
 		E5F60718293A4B705F98774E /* TelegramAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelegramAPI.swift; sourceTree = "<group>"; };
@@ -1187,18 +1185,16 @@
 		F4E0F52196856ADAA6F5C473 /* TimerExampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerExampleView.swift; sourceTree = "<group>"; };
 		F58FAB09283CA8326C38419C /* HomeWidgetBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeWidgetBundle.swift; sourceTree = "<group>"; };
 		FAAA4DF54D6AD9C9C26DC444 /* FeatureAdoptionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionStore.swift; sourceTree = "<group>"; };
-		D1A100000000000000000002 /* TipPurchaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipPurchaseService.swift; sourceTree = "<group>"; };
 		FADAPI01A293A4B701000001 /* Networking/FeatureAdoptionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/FeatureAdoptionAPI.swift; sourceTree = "<group>"; };
 		FADFIX0A0A293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionInstalledFlagTests.swift; sourceTree = "<group>"; };
 		FADKEY01A293A4B701000001 /* Networking/FeatureAdoptionClientFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/FeatureAdoptionClientFeature.swift; sourceTree = "<group>"; };
 		FADLAY01A293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionRingLabelLayout.swift; sourceTree = "<group>"; };
 		FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionRingLabelLayoutTests.swift; sourceTree = "<group>"; };
 		FAF82F83AFCF4454AA71B812 /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
+		FB065MD00000000000000004 /* AccountFeedbackModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountFeedbackModel.swift; sourceTree = "<group>"; };
+		FB065TS00000000000000004 /* AccountFeedbackSubmitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountFeedbackSubmitTests.swift; sourceTree = "<group>"; };
+		FB065VW00000000000000004 /* AccountFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountFeedbackView.swift; sourceTree = "<group>"; };
 		FB815A7AAADF4189BC529973 /* Views/SettingsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/SettingsRow.swift; sourceTree = "<group>"; };
-		062WATCH001F293A4B701000A0 /* Services/WatchExpiryNotificationsPrefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchExpiryNotificationsPrefs.swift; sourceTree = "<group>"; };
-		062WATCH002F293A4B701000A0 /* Services/WatchExpiryNotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchExpiryNotificationScheduler.swift; sourceTree = "<group>"; };
-		062WATCH003F293A4B701000A0 /* Views/WatchSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/WatchSettingsView.swift; sourceTree = "<group>"; };
-		062WATCH004F293A4B701000A0 /* App/WatchNotificationDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/WatchNotificationDelegate.swift; sourceTree = "<group>"; };
 		FBED86F57850D8012BF9D4BD /* RecipeScalerNativeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RecipeScalerNativeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FD3DE42F47CA47F4BC49DCBC /* YrsInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YrsInput.swift; sourceTree = "<group>"; };
 		FEA658D7E63AC1DAEBDA6361 /* MartianGrotesk-NrMd.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MartianGrotesk-NrMd.otf"; sourceTree = "<group>"; };
@@ -1229,7 +1225,7 @@
 		MIK200005002 /* DiscoverCollectionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverCollectionModel.swift; sourceTree = "<group>"; };
 		MIK200006002 /* DiscoverPublicProfileModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverPublicProfileModel.swift; sourceTree = "<group>"; };
 		MIK200007002 /* RecipeShareModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeShareModel.swift; sourceTree = "<group>"; };
-		D15C00000000000000000002 /* DiscoverListStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverListStateStore.swift; sourceTree = "<group>"; };
+		NOEXTN01A293A4B701000002 /* NoExternalNetworkURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoExternalNetworkURLProtocol.swift; sourceTree = "<group>"; };
 		REMINDERS0002AA0002BB02 /* RemindersSyncPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersSyncPreferences.swift; sourceTree = "<group>"; };
 		REMINDERS0004AA0004BB04 /* RemindersMapStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersMapStore.swift; sourceTree = "<group>"; };
 		REMINDERS0006AA0006BB06 /* RemindersSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersSyncService.swift; sourceTree = "<group>"; };
@@ -1241,8 +1237,6 @@
 		SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutItemsUpdater.swift; sourceTree = "<group>"; };
 		SRTIPPREF0002AA0002BB02 /* ShoppingRemindersTipPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingRemindersTipPreferences.swift; sourceTree = "<group>"; };
 		SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingRemindersTipPreferencesTests.swift; sourceTree = "<group>"; };
-		FB065TS00000000000000004 /* AccountFeedbackSubmitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountFeedbackSubmitTests.swift; sourceTree = "<group>"; };
-		B347C656005186097A24DAD5 /* OfflineBannerGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineBannerGateTests.swift; sourceTree = "<group>"; };
 		TP14SAFE01A293A4B70100002 /* SafeIntCasts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeIntCasts.swift; sourceTree = "<group>"; };
 		UIT00DC9B186ADBD3C32D /* ImportPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPage.swift; sourceTree = "<group>"; };
 		UIT042788CF0A93FC75C3 /* DiscoverEnablementSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverEnablementSpec.swift; sourceTree = "<group>"; };
@@ -1306,8 +1300,6 @@
 		VRSNXCFG00010002BB000002 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		WATCHFAD01A293A4B70100001 /* Services/WatchFeatureAdoptionReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchFeatureAdoptionReporter.swift; sourceTree = "<group>"; };
 		YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsOfflineSyncTests.swift; sourceTree = "<group>"; };
-		ATGATE01A293A4B701000002 /* AsyncTestGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncTestGate.swift; sourceTree = "<group>"; };
-		NOEXTN01A293A4B701000002 /* NoExternalNetworkURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoExternalNetworkURLProtocol.swift; sourceTree = "<group>"; };
 		YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "YrsDocument+TestSupport.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -1750,6 +1742,7 @@
 				2957EAE3186567297DECD2F3 /* Snapshots */,
 				C8F000A9193A47F3955634E8 /* TimerViews */,
 				95C3A04549F6100B5EE76690 /* AppGroup.swift */,
+				RS066FILELINK00000000001 /* DeepLinkURL.swift */,
 			);
 			path = RecipeScalerCore;
 			sourceTree = "<group>";
@@ -1762,7 +1755,6 @@
 				A14001A00000000000000001A /* FeatureAdoptionGuideContentTests.swift */,
 				A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */,
 				VKSTOR001A2B3C4D5E6F70800 /* VkusvillSettingsStoreTests.swift */,
-				A05700000201 /* UTTypeRecipeScalerTests.swift */,
 				A05700000202 /* NativeFormatDetectorTests.swift */,
 				A05700000203 /* RecipeFileImportCoordinatorTests.swift */,
 				SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */,
@@ -2512,9 +2504,6 @@
 				B723C003B318C8956FF9B79E /* Frameworks */,
 				27380E66AD33499FA150A543 /* Embed Frameworks */,
 				D91A88FEF44E45399F512C8A /* Embed App Extensions */,
-				// TODO(060-G2): «Embed Watch App» временно снята — store v1 без Watch.
-				// Вернуть при включении watchOS в релиз (specs/060-app-store-screenshots/spec.md G2).
-				// 63B9A08D5525466B9A9458A0 /* Embed Watch App */,
 			);
 			buildRules = (
 			);
@@ -2792,6 +2781,7 @@
 				A029031000006 /* NativeRecipeImporter.swift in Sources */,
 				A029031000007 /* NativeImportImagePicker.swift in Sources */,
 				A456EBD108E7F61A6ED40F0B /* AppGroup.swift in Sources */,
+				RS066BUILDDEEPLINK00000001 /* DeepLinkURL.swift in Sources */,
 				36868E6A4338C22FDD6F8EAD /* TimerSnapshot.swift in Sources */,
 				B5B1532151BD871ECE63155C /* TimerSnapshotStore.swift in Sources */,
 				CC36F1622B2C07DCCADC8310 /* TimerSnapshot+ServerActiveTimer.swift in Sources */,
@@ -3185,7 +3175,6 @@
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
 				A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */,
 				VKSTOR001A2B3C4D5E6F70801 /* VkusvillSettingsStoreTests.swift in Sources */,
-				A05700000200 /* UTTypeRecipeScalerTests.swift in Sources */,
 				A05700000210 /* NativeFormatDetectorTests.swift in Sources */,
 				A05700000220 /* RecipeFileImportCoordinatorTests.swift in Sources */,
 				SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */,
@@ -3410,6 +3399,135 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		RS066PRJDDB0000000000000 /* DebugDevice */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = VRSNXCFG00010002BB000002 /* Version.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				RS_DISPLAY_NAME = "Recipe Scaler";
+				RS_RECIPE_UTTYPE = ru.recipescaler.recipe;
+				RS_URL_SCHEME = recipe-scaler;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG RS_DEV_FLAVOR";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = DebugDevice;
+		};
+		RS066PRJDDR0000000000000 /* ReleaseDevice */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = VRSNXCFG00010002BB000002 /* Version.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				RS_DISPLAY_NAME = "Recipe Scaler";
+				RS_RECIPE_UTTYPE = ru.recipescaler.recipe;
+				RS_URL_SCHEME = recipe-scaler;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = ReleaseDevice;
+		};
 		070ABCD4514FB7A3D5674728 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3592,6 +3710,9 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler;
+				RS_DISPLAY_NAME = "Recipe Scaler";
+				RS_RECIPE_UTTYPE = ru.recipescaler.recipe;
+				RS_URL_SCHEME = recipe-scaler;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -3813,6 +3934,51 @@
 			};
 			name = Debug;
 		};
+		RS066MAINDEVDBG000000000 /* DebugDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconDev;
+				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = RecipeScalerNative/RecipeScalerNativeDev.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				INFOPLIST_FILE = RecipeScalerNative/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.debug;
+				RS_ALLOWS_LOCAL_NETWORKING = YES;
+				RS_DISPLAY_NAME = "RS Dev";
+				RS_RECIPE_UTTYPE = ru.recipescaler.recipe.debug;
+				RS_URL_SCHEME = recipe-scaler-dev;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = DebugDevice;
+		};
+		RS066MAINDEVRLS000000000 /* ReleaseDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconDev;
+				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = RecipeScalerNative/RecipeScalerNativeDev.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				INFOPLIST_FILE = RecipeScalerNative/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.debug;
+				RS_DISPLAY_NAME = "RS Dev";
+				RS_RECIPE_UTTYPE = ru.recipescaler.recipe.debug;
+				RS_URL_SCHEME = recipe-scaler-dev;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = ReleaseDevice;
+		};
 		C1ADC71C5ADCAA42AC80B419 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3828,6 +3994,9 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler;
 				RS_ALLOWS_LOCAL_NETWORKING = YES;
+				RS_DISPLAY_NAME = "Recipe Scaler";
+				RS_RECIPE_UTTYPE = ru.recipescaler.recipe;
+				RS_URL_SCHEME = recipe-scaler;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -4030,6 +4199,379 @@
 			};
 			name = Release;
 		};
+		RS066SHAREDEVDBG000000000 /* DebugDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtensionDev.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.debug.Share;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = DebugDevice;
+		};
+		RS066SHAREDEVRLS000000000 /* ReleaseDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtensionDev.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.debug.Share;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = ReleaseDevice;
+		};
+		RS066ACTIONDEVDBG00000000 /* DebugDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = ActionExtension/ActionExtensionDev.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ActionExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.debug.Action;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = DebugDevice;
+		};
+		RS066ACTIONDEVRLS00000000 /* ReleaseDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = ActionExtension/ActionExtensionDev.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ActionExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.debug.Action;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = ReleaseDevice;
+		};
+		RS066WIDGETDEVDBG0000000 /* DebugDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = HomeWidgetExtension/HomeWidgetExtensionDev.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = HomeWidgetExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.debug.HomeWidget;
+				PRODUCT_NAME = HomeWidgetExtension;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = DebugDevice;
+		};
+		RS066WIDGETDEVRLS0000000 /* ReleaseDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = HomeWidgetExtension/HomeWidgetExtensionDev.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = HomeWidgetExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.debug.HomeWidget;
+				PRODUCT_NAME = HomeWidgetExtension;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = ReleaseDevice;
+		};
+		RS066LADEVDBG0000000000 /* DebugDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = TimerLiveActivityExtension/TimerLiveActivityExtensionDev.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TimerLiveActivityExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.debug.TimerLiveActivity;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = DebugDevice;
+		};
+		RS066LADEVRLS0000000000 /* ReleaseDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = TimerLiveActivityExtension/TimerLiveActivityExtensionDev.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TimerLiveActivityExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.debug.TimerLiveActivity;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = ReleaseDevice;
+		};
+		RS066WATCHDEVDBG00000000 /* DebugDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconDev;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = RecipeScalerNativeWatch/RecipeScalerNativeWatchDev.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				EAGER_LINKING = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RecipeScalerNativeWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.debug.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WK_APPLICATION = YES;
+				WK_COMPANIONAppBundleIdentifier = ru.recipescaler.RecipeScaler.debug;
+				WK_WATCH_ONLY = NO;
+			};
+			name = DebugDevice;
+		};
+		RS066WATCHDEVRLS00000000 /* ReleaseDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconDev;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = RecipeScalerNativeWatch/RecipeScalerNativeWatchDev.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				EAGER_LINKING = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RecipeScalerNativeWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.debug.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WK_APPLICATION = YES;
+				WK_COMPANIONAppBundleIdentifier = ru.recipescaler.RecipeScaler.debug;
+				WK_WATCH_ONLY = NO;
+			};
+			name = ReleaseDevice;
+		};
+		RS066COREDEVDBG000000000 /* DebugDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_TEXT_BASED_STUBS = NO;
+				INFOPLIST_KEY_CFBundleDisplayName = RecipeScalerCore;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.Core;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator watchos watchsimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG RS_DEV_FLAVOR";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,4";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = DebugDevice;
+		};
+		RS066COREDEVRLS000000000 /* ReleaseDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_TEXT_BASED_STUBS = NO;
+				INFOPLIST_KEY_CFBundleDisplayName = RecipeScalerCore;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.Core;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator watchos watchsimulator";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,4";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = ReleaseDevice;
+		};
+		RS066SHAREUIDEVDBG0000000 /* DebugDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareExtensionUI;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.ShareExtensionUI;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = DebugDevice;
+		};
+		RS066SHAREUIDEVRLS0000000 /* ReleaseDevice */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = ZBPX4JYT24;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareExtensionUI;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScaler.ShareExtensionUI;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = ReleaseDevice;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -4038,6 +4580,8 @@
 			buildConfigurations = (
 				E15B78C6D76343B49683D8C2 /* Debug */,
 				97AA9577FAFC4749A970EB8F /* Release */,
+				RS066LADEVDBG0000000000 /* DebugDevice */,
+				RS066LADEVRLS0000000000 /* ReleaseDevice */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -4047,6 +4591,8 @@
 			buildConfigurations = (
 				1EBB1B5D569E4F9E8938C036 /* Debug */,
 				798B89AD255F4AEFAA6573DD /* Release */,
+				RS066SHAREDEVDBG000000000 /* DebugDevice */,
+				RS066SHAREDEVRLS000000000 /* ReleaseDevice */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -4065,6 +4611,8 @@
 			buildConfigurations = (
 				67ACA229B7E34C44A5482B9A /* Debug */,
 				CFAB8851BE8244C3BC8B44E9 /* Release */,
+				RS066ACTIONDEVDBG00000000 /* DebugDevice */,
+				RS066ACTIONDEVRLS00000000 /* ReleaseDevice */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -4074,6 +4622,8 @@
 			buildConfigurations = (
 				BF48DF757C734DD2B0B00C1F /* Debug */,
 				267046CACDC945398AAB0834 /* Release */,
+				RS066WATCHDEVDBG00000000 /* DebugDevice */,
+				RS066WATCHDEVRLS00000000 /* ReleaseDevice */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -4083,6 +4633,8 @@
 			buildConfigurations = (
 				7C3091BED9FCD5FB24F96E15 /* Debug */,
 				2D024F59518D715FC6BB513A /* Release */,
+				RS066PRJDDB0000000000000 /* DebugDevice */,
+				RS066PRJDDR0000000000000 /* ReleaseDevice */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -4092,6 +4644,8 @@
 			buildConfigurations = (
 				C1ADC71C5ADCAA42AC80B419 /* Debug */,
 				4D613DB505C94B562A72088D /* Release */,
+				RS066MAINDEVDBG000000000 /* DebugDevice */,
+				RS066MAINDEVRLS000000000 /* ReleaseDevice */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -4101,6 +4655,8 @@
 			buildConfigurations = (
 				070ABCD4514FB7A3D5674728 /* Release */,
 				F2F0C4CD5FD100F2EDCF5A07 /* Debug */,
+				RS066WIDGETDEVDBG0000000 /* DebugDevice */,
+				RS066WIDGETDEVRLS0000000 /* ReleaseDevice */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -4110,6 +4666,8 @@
 			buildConfigurations = (
 				D42C9EF6FA43430CB2C48A72 /* Debug */,
 				2DEE340A1320484286CD3710 /* Release */,
+				RS066COREDEVDBG000000000 /* DebugDevice */,
+				RS066COREDEVRLS000000000 /* ReleaseDevice */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -4119,6 +4677,8 @@
 			buildConfigurations = (
 				F1A2B3C4D5E60718293A4B70 /* Debug */,
 				F1A2B3C4D5E60718293A4B71 /* Release */,
+				RS066SHAREUIDEVDBG0000000 /* DebugDevice */,
+				RS066SHAREUIDEVRLS0000000 /* ReleaseDevice */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

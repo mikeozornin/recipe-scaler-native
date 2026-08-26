@@ -75,8 +75,10 @@ launch_and_probe() {
   # Stash a per-tab screenshot for triage. Pixel diffs are not asserted here.
   sim_screenshot "$SHOT_DIR" "$tab" >/dev/null || true
 
-  # Pull the freshest NDJSON for assertions below.
-  sim_pull_debug_log >/dev/null 2>&1 || true
+  # Pull the freshest NDJSON for assertions below. LOG_FILE must target
+  # LOG_HOST: bare sim_pull_debug_log would write .debug-session.ndjson and
+  # the per-tab copy below would silently never fire.
+  LOG_FILE="$LOG_HOST" sim_pull_debug_log >/dev/null 2>&1 || true
   if [[ -f "$LOG_HOST" ]]; then
     cp "$LOG_HOST" "$ROOT/.ui-smoke-${tab}.ndjson"
   fi

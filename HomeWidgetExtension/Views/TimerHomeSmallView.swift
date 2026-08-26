@@ -38,7 +38,7 @@ struct TimerHomeSmallView: View {
         }
         .padding(WidgetTimerLayout.padding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .widgetURL(URL(string: "recipe-scaler://home"))
+        .widgetURL(URL(string: "\(DeepLinkURL.baseScheme)://home"))
     }
 
     // MARK: - Empty (Figma 107:303)
