@@ -12,6 +12,7 @@ import RecipeScalerCore
 struct AssistantSheet: View {
     @Environment(YjsSyncService.self) private var syncService
     @Environment(AppShellCoordinator.self) private var coordinator
+    @Environment(OfflineBannerGate.self) private var offlineGate
 
     let contextRecipeId: String?
     let openRequest: AssistantOpenRequest?
@@ -55,6 +56,13 @@ struct AssistantSheet: View {
         syncService.connectionState.isConnected
     }
 
+    /// Debounced online signal for the body branch (spec 066 `OfflineBannerGate`):
+    /// hides the foreground-reconnect flash (.disconnected → .connecting →
+    /// .connected after unlock/app return). Action paths stay on instant `isOnline`.
+    private var showsOnlineContent: Bool {
+        !offlineGate.isVisible
+    }
+
     private static let newChatTimeout: TimeInterval = 60
     private static let userMessageLeadingInset: CGFloat = 48
     private static let messageMaxWidthFraction: CGFloat = 0.9
@@ -62,7 +70,7 @@ struct AssistantSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                if isOnline {
+                if showsOnlineContent {
                     messageList
                     AssistantComposer(
                         text: $input,

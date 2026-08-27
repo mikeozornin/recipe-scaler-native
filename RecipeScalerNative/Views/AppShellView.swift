@@ -307,9 +307,10 @@ struct AppShellView: View {
             coordinator.handleDeepLink(link)
         }
         // Spec 066 — single writer for offline banner debounce.
-        // Feature-gating views (AssistantSheet, disabled buttons, image refresh)
-        // continue to read `connectionState.isConnected` directly (instant);
-        // only status banners read `offlineGate` (debounced).
+        // Status banners and AssistantSheet's body branch read `offlineGate`
+        // (debounced); action paths (AssistantSheet bootstrap/send/autosend,
+        // disabled buttons, image refresh) still read
+        // `connectionState.isConnected` directly (instant).
         //
         // Signal: `!connectionState.isConnected` (not NWPathMonitor). Airplane
         // mode oscillates connecting ↔ reconnecting without `.connected`; those
