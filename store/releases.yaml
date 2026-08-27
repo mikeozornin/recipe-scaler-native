@@ -1,0 +1,17 @@
+# Реестр iOS-релизов в App Store.
+#
+# Заполняется автоматически: bash scripts/mark-ios-release.sh <version> [--commit <sha>]
+# `version` — то, что видит пользователь (CFBundleShortVersionString, например 1.0.8);
+# `commit` — SHA коммита-якоря (обычно commit с bump build number);
+# `notes` — опциональный финальный текст What's New из App Store Connect (для истории).
+#
+# Формат версий: X.Y.Z. Порядок записей не нормируется; скрипты ищут по полю version.
+# Block sequence (не `[]`): скрипт дописывает записи аппендом, flow-стиль дал бы битый YAML.
+releases:
+
+
+  - version: "1.0.8"
+    tag: ios/1.0.8
+    commit: 04cd445
+    date: "2026-08-27"
+    notes: ""

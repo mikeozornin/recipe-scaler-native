@@ -56,8 +56,7 @@ xcuserdata/
 # scripts/ npm deps (svg-outline-stroke for symbol pack build)
 scripts/node_modules/
 
-# Spec Kit agent dirs (skills live globally in ~/.agents/skills)
-.agents/
+# Spec Kit agent dirs (agent skills are version-controlled in .agents/skills/)
 .cursor/
 .playwright-screenshots
 .debug-tabbar.ndjson
@@ -68,6 +67,9 @@ tmp
 .capture-screenshots.lock
 .capture-screenshots.lock.d/
 store/screenshots/iphone-6.9/**/*.png
+# Drafts (digest/What's New) — локальные артефакты; .gitkeep держит каталог в git.
+store/drafts/*
+!store/drafts/.gitkeep
 .test-fast-results.xcresult
 .test-fast.log
 
