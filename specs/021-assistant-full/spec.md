@@ -59,6 +59,10 @@
 
 **Когда** ассистент дописал ответ в открытом чате (стрим завершился `final`), **тогда** устройство единоразово вибрирует success-паттерном (`UINotificationFeedbackGenerator.notificationOccurred(.success)`), чтобы пользователь с телефоном в руке узнал о готовности ответа без визуального контроля экрана. При stream-error срабатывает error-паттерн (`.error`), чтобы отличить нормальное завершение от сбоя. iOS-only через `#if os(iOS)`.
 
+### US9 — Tool-status UI (P2) → [073-assistant-tool-status](../073-assistant-tool-status/spec.md)
+
+**Когда** ассистент вызывает tools во время стрима, **тогда** native показывает отдельные tool-status строки и processing shimmer — паритет web ([`073` kanon](../../../specs/073-assistant-tool-status/spec.md)).
+
 ## Требования
 
 ### FR-021-001 — Стрим UI

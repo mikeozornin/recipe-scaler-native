@@ -248,6 +248,14 @@ invalidating session-scoped wire operations.
 
 ---
 
+### 2026-08-27 — Assistant tool-status rows (spec 073)
+
+**Decision:** Native assistant shows tool-call progress as separate status rows (web parity): processing shimmer + one row per `tool-start` NDJSON event. Supersedes 2026-06-14 deferral of web-style tool-status rows.
+
+**Rationale:** Users could not see assistant working during tool calls; web already had visible Marker rows. Cross-platform contract: [`specs/073-assistant-tool-status`](../../specs/073-assistant-tool-status/spec.md) (monorepo root, sibling to native/web repos).
+
+---
+
 ### 2026-06-14 — AI Assistant: iOS-native release scope
 
 **Decision:** Ship assistant release minimum with iOS-native patterns only — voice via `AVAudioRecorder`, offline disabled composer, FAB inset above tab bar/timer panel — without blind web UI copy (no web-style tool-status rows in the message list, no attachment chips in historical user bubbles, no cosmetic-only i18n keys).

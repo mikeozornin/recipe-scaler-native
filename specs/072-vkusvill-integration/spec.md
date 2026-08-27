@@ -181,7 +181,7 @@ Web-прототип: кнопка на списке → ассистент → 
 | `vkusvill.buy-button` | Купить во Вкусвилле | Buy at Vkusvill |
 | `vkusvill.assistant-prompt` | Собери корзину во Вкусвилле из моего списка покупок | Build a Vkusvill cart from my shopping list |
 
-Tool-status строки приходят с сервера / уже в web i18n ответа ассистента — **не** дублировать на клиенте, если native показывает server/tool status из стрима как сейчас.
+Tool-status: клиент мапит `toolName` из NDJSON `tool-start` → i18n-ключи `assistant.tool-status.*` (как web). Механизм — [`073-assistant-tool-status`](../073-assistant-tool-status/spec.md); Vkusvill: `assistant.tool-status.vkusvill-*`.
 
 ### FR-VV-006 — Документация
 

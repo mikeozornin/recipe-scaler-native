@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import RecipeScalerCore
 
 struct AssistantSheet: View {
     @Environment(YjsSyncService.self) private var syncService
@@ -31,7 +32,6 @@ struct AssistantSheet: View {
     @State private var hasTriedSessionRestore = false
     @State private var messageListContentWidth: CGFloat = 0
     @State private var inputPlaceholderVariantIndex = Int.random(in: 0..<AssistantInputPlaceholder.variantCount)
-    @State private var streamingToolStatusKey: String?
     @State private var pendingExternalRequest: AssistantOpenRequest?
     @State private var handledExternalRequestId: Int?
     @State private var externalSendTask: Task<Void, Never>?
@@ -194,7 +194,6 @@ struct AssistantSheet: View {
         interactionGeneration &+= 1
         isSending = false
         isBootstrapping = false
-        streamingToolStatusKey = nil
         pendingExternalRequest = nil
         undeliveredPrompt = nil
         threadId = nil
@@ -298,9 +297,7 @@ struct AssistantSheet: View {
     }
 
     private func shouldShowMessageMeta(for message: AssistantMessage) -> Bool {
-        if message.role == "assistant",
-           message.isStreaming,
-           message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if message.isToolStatusRow || message.isProcessingPlaceholder {
             return false
         }
         return true
@@ -308,6 +305,24 @@ struct AssistantSheet: View {
 
     @ViewBuilder
     private func messageBubbleBody(
+        for message: AssistantMessage,
+        isLast: Bool,
+        isUser: Bool,
+        lookups: AssistantAttachableRecipeLookups
+    ) -> some View {
+        if !isUser, message.isToolStatusRow, let toolName = message.metadata?.toolStatus?.toolName {
+            AssistantToolStatusRow(toolName: toolName)
+                .accessibilityIdentifier("assistant_message_\(message.id)")
+        } else if !isUser, message.isProcessingPlaceholder {
+            AssistantProcessingRow()
+                .accessibilityIdentifier("assistant_message_\(message.id)")
+        } else {
+            assistantReplyOrUserBubble(for: message, isLast: isLast, isUser: isUser, lookups: lookups)
+        }
+    }
+
+    @ViewBuilder
+    private func assistantReplyOrUserBubble(
         for message: AssistantMessage,
         isLast: Bool,
         isUser: Bool,
@@ -339,9 +354,6 @@ struct AssistantSheet: View {
                         }
                     }
                 }
-            } else if message.text.isEmpty && message.isStreaming {
-                Text(verbatim: streamingPlaceholder(for: message, isLast: isLast))
-                    .appBodySelectable(multilineTextAlignment: .leading)
             } else {
                 AssistantMarkdownText(content: message.text)
             }
@@ -467,7 +479,6 @@ struct AssistantSheet: View {
         externalSendTask = nil
         streamTask?.cancel()
         streamTask = nil
-        streamingToolStatusKey = nil
         threadId = nil
         messages = []
         input = ""
@@ -743,7 +754,6 @@ struct AssistantSheet: View {
                 isSending = false
             }
         }
-        streamingToolStatusKey = nil
 
         let userMessageId = "optimistic-user-\(UUID().uuidString)"
         let now = Date()
@@ -775,8 +785,7 @@ struct AssistantSheet: View {
             )
         } catch {
             guard isCurrent(generation) else { return }
-            // Drop optimistic user bubble on failure so the user can retry.
-            messages.removeAll { $0.id == userMessageId }
+            removeAllOptimisticMessages()
             input = bubbleRestoreText(for: message, displayText: displayText) ?? bubbleText
             attachments = snapshotAttachments
             messages.append(
@@ -789,6 +798,9 @@ struct AssistantSheet: View {
                     createdAt: Date()
                 )
             )
+            #if os(iOS)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            #endif
         }
     }
 
@@ -863,26 +875,39 @@ struct AssistantSheet: View {
                     msg.text.append(delta)
                 }
             case .toolStart(let toolName, _):
-                streamingToolStatusKey = AssistantToolStatusI18n.localizationKey(for: toolName)
+                await MainActor.run {
+                    guard isCurrent(generation) else { return }
+                    insertOptimisticToolStatusRow(toolName: toolName, assistantMessageId: assistantMessageId)
+                }
             case .final(let data):
-                streamingToolStatusKey = nil
-                applyFinal(data, optimisticAssistantId: assistantMessageId)
+                await MainActor.run {
+                    guard isCurrent(generation) else { return }
+                    applyFinal(data, optimisticAssistantId: assistantMessageId)
+                }
                 #if os(iOS)
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                 #endif
                 return
             case .error(let code):
-                streamingToolStatusKey = nil
-                updateStreamingMessage(id: assistantMessageId) { msg in
-                    msg.text = Bundle.currentLocalizedString(code.rawValue)
-                    msg.isStreaming = false
-                }
-                #if os(iOS)
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
-                #endif
-                return
+                throw APIError.serverError(code: code)
             }
         }
+    }
+
+    private func insertOptimisticToolStatusRow(toolName: String, assistantMessageId: String) {
+        let toolMessage = AssistantMessage.optimisticToolStatus(toolName: toolName)
+        guard let assistantIndex = messages.firstIndex(where: { $0.id == assistantMessageId }) else {
+            messages.append(toolMessage)
+            return
+        }
+        let assistantMessage = messages[assistantIndex]
+        messages.remove(at: assistantIndex)
+        messages.append(toolMessage)
+        messages.append(assistantMessage)
+    }
+
+    private func removeAllOptimisticMessages() {
+        messages.removeAll { AssistantMessage.isOptimisticID($0.id) }
     }
 
     private func updateStreamingMessage(id: String, _ mutate: (inout AssistantMessage) -> Void) {
@@ -891,7 +916,6 @@ struct AssistantSheet: View {
     }
 
     private func applyFinal(_ data: AssistantStreamFinalData, optimisticAssistantId: String) {
-        streamingToolStatusKey = nil
         if let threadData = data.thread {
             if threadData.id != threadId {
                 threadId = threadData.id
@@ -954,14 +978,4 @@ struct AssistantSheet: View {
 
     private static let sessionThreadIdKey = "assistant.session.threadId"
     private static let sessionLastOpenedAtKey = "assistant.session.lastOpenedAt"
-
-    private func streamingPlaceholder(for message: AssistantMessage, isLast: Bool) -> String {
-        if isLast,
-           message.isStreaming,
-           message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-           let streamingToolStatusKey {
-            return Bundle.currentLocalizedString(streamingToolStatusKey)
-        }
-        return Bundle.currentLocalizedString("assistant.thinking")
-    }
 }

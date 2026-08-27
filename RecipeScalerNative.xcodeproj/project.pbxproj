@@ -195,9 +195,11 @@
 		A5MD018293A4B7010000001 /* AssistantMarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5MD028293A4B7010000002 /* AssistantMarkdownRenderer.swift */; };
 		A5MD038293A4B7010000003 /* AssistantMarkdownText.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5MD048293A4B7010000004 /* AssistantMarkdownText.swift */; };
 		A5PA01B293A4B7010000008 /* AssistantPendingActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5PA01A293A4B7010000007 /* AssistantPendingActionTests.swift */; };
+		A5TS073293A4B7010000003 /* AssistantToolStatusI18nTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5TS073293A4B7010000004 /* AssistantToolStatusI18nTests.swift */; };
 		A5TH018293A4B7010000001 /* AssistantThreadListSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5TH028293A4B7010000002 /* AssistantThreadListSheet.swift */; };
 		A5TH038293A4B7010000003 /* AssistantThreadSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5TH048293A4B7010000004 /* AssistantThreadSearch.swift */; };
 		A5TST01293A4B7010000001 /* AssistantToolStatusI18n.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5TST02293A4B7010000002 /* AssistantToolStatusI18n.swift */; };
+		A5TS073293A4B7010000001 /* AssistantToolStatusRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5TS073293A4B7010000002 /* AssistantToolStatusRow.swift */; };
 		A5VLM01293A4B7010000001 /* AssistantVoiceLevelMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5VLM02293A4B7010000002 /* AssistantVoiceLevelMeter.swift */; };
 		A5VOC01293A4B7010000001 /* AssistantVoiceRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5VOC02293A4B7010000002 /* AssistantVoiceRecorder.swift */; };
 		A6F7AE7D9127ACA699DE84DB /* TimerWidgetEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A60ED09D57AE1CE0E67D37 /* TimerWidgetEntry.swift */; };
@@ -912,10 +914,12 @@
 		A5MD048293A4B7010000004 /* AssistantMarkdownText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMarkdownText.swift; sourceTree = "<group>"; };
 		A5MD058293A4B7010000005 /* AssistantMarkdownRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMarkdownRendererTests.swift; sourceTree = "<group>"; };
 		A5PA01A293A4B7010000007 /* AssistantPendingActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantPendingActionTests.swift; sourceTree = "<group>"; };
+		A5TS073293A4B7010000004 /* AssistantToolStatusI18nTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantToolStatusI18nTests.swift; sourceTree = "<group>"; };
 		A5TH028293A4B7010000002 /* AssistantThreadListSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantThreadListSheet.swift; sourceTree = "<group>"; };
 		A5TH048293A4B7010000004 /* AssistantThreadSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantThreadSearch.swift; sourceTree = "<group>"; };
 		A5TH068293A4B7010000006 /* AssistantThreadSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantThreadSearchTests.swift; sourceTree = "<group>"; };
 		A5TST02293A4B7010000002 /* AssistantToolStatusI18n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantToolStatusI18n.swift; sourceTree = "<group>"; };
+		A5TS073293A4B7010000002 /* AssistantToolStatusRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantToolStatusRow.swift; sourceTree = "<group>"; };
 		A5VLM02293A4B7010000002 /* AssistantVoiceLevelMeter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantVoiceLevelMeter.swift; sourceTree = "<group>"; };
 		A5VOC02293A4B7010000002 /* AssistantVoiceRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantVoiceRecorder.swift; sourceTree = "<group>"; };
 		A8AC7E34F697435FAD8F5E77 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
@@ -1548,6 +1552,7 @@
 				E5F60718293A4B7001851F51 /* AssistantSheet.swift */,
 				A5TH028293A4B7010000002 /* AssistantThreadListSheet.swift */,
 				A5MD048293A4B7010000004 /* AssistantMarkdownText.swift */,
+				A5TS073293A4B7010000002 /* AssistantToolStatusRow.swift */,
 				E5F60718293A4B706CC8B6CE /* AssistantMessageFooter.swift */,
 				A5ATCH18293A4B7010000002 /* AssistantAttachmentChip.swift */,
 				A5VLM02293A4B7010000002 /* AssistantVoiceLevelMeter.swift */,
@@ -1807,6 +1812,7 @@
 				A5MD058293A4B7010000005 /* AssistantMarkdownRendererTests.swift */,
 				A5TH068293A4B7010000006 /* AssistantThreadSearchTests.swift */,
 				A5PA01A293A4B7010000007 /* AssistantPendingActionTests.swift */,
+				A5TS073293A4B7010000004 /* AssistantToolStatusI18nTests.swift */,
 				CDC8307193209458433B2DAF /* SnapshotTests.swift */,
 				1056FC9B5113FFE50B50E8AB /* TestSupport.swift */,
 				A027027000110 /* CroutonRecipeParserTests.swift */,
@@ -3022,6 +3028,7 @@
 				A5TH018293A4B7010000001 /* AssistantThreadListSheet.swift in Sources */,
 				A5TH038293A4B7010000003 /* AssistantThreadSearch.swift in Sources */,
 				A5TST01293A4B7010000001 /* AssistantToolStatusI18n.swift in Sources */,
+				A5TS073293A4B7010000001 /* AssistantToolStatusRow.swift in Sources */,
 				A5MD018293A4B7010000001 /* AssistantMarkdownRenderer.swift in Sources */,
 				MDCC01B293A4B70100000001 /* MarkdownCache.swift in Sources */,
 				A5MD038293A4B7010000003 /* AssistantMarkdownText.swift in Sources */,
@@ -3225,6 +3232,7 @@
 				F3445BCB3A10712298441A5C /* AssistantMarkdownRendererTests.swift in Sources */,
 				98043B5A4C25AAF27D48104E /* AssistantThreadSearchTests.swift in Sources */,
 				A5PA01B293A4B7010000008 /* AssistantPendingActionTests.swift in Sources */,
+				A5TS073293A4B7010000003 /* AssistantToolStatusI18nTests.swift in Sources */,
 				7FAFDA11EE42FF087045A34B /* SnapshotTests.swift in Sources */,
 				2FCA4F2E5EAB11EAA4CFB9EA /* TestSupport.swift in Sources */,
 				A027027000010 /* CroutonRecipeParserTests.swift in Sources */,
