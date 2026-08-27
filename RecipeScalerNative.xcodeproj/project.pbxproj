@@ -510,6 +510,7 @@
 		ILL043C13 /* IngredientIllustrationNameMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F13 /* IngredientIllustrationNameMatcher.swift */; };
 		ILL043C14 /* IngredientIllustrationLazyResolve.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F14 /* IngredientIllustrationLazyResolve.swift */; };
 		ILL043C15 /* IngredientIllustrationNameMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F15 /* IngredientIllustrationNameMatcherTests.swift */; };
+		SHP043C02 /* ResolveShoppingIllustrationIdTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHP043F02 /* ResolveShoppingIllustrationIdTests.swift */; };
 		ILL043C16 /* IngredientIllustrationBindingPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ILL043F16 /* IngredientIllustrationBindingPersistenceTests.swift */; };
 		ILL043C18 /* Resources/ingredient-catalog.ru.json in Resources */ = {isa = PBXBuildFile; fileRef = ILL043F18 /* Resources/ingredient-catalog.ru.json */; };
 		ILL043C19 /* Resources/ingredient-catalog.en.json in Resources */ = {isa = PBXBuildFile; fileRef = ILL043F19 /* Resources/ingredient-catalog.en.json */; };
@@ -1216,6 +1217,7 @@
 		ILL043F13 /* IngredientIllustrationNameMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationNameMatcher.swift; sourceTree = "<group>"; };
 		ILL043F14 /* IngredientIllustrationLazyResolve.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationLazyResolve.swift; sourceTree = "<group>"; };
 		ILL043F15 /* IngredientIllustrationNameMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationNameMatcherTests.swift; sourceTree = "<group>"; };
+		SHP043F02 /* ResolveShoppingIllustrationIdTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolveShoppingIllustrationIdTests.swift; sourceTree = "<group>"; };
 		ILL043F16 /* IngredientIllustrationBindingPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientIllustrationBindingPersistenceTests.swift; sourceTree = "<group>"; };
 		ILL043F18 /* Resources/ingredient-catalog.ru.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/ingredient-catalog.ru.json"; sourceTree = "<group>"; };
 		ILL043F19 /* Resources/ingredient-catalog.en.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/ingredient-catalog.en.json"; sourceTree = "<group>"; };
@@ -1803,6 +1805,7 @@
 				B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */,
 				ILL043F11 /* IngredientIllustrationCatalogTests.swift */,
 				ILL043F15 /* IngredientIllustrationNameMatcherTests.swift */,
+				SHP043F02 /* ResolveShoppingIllustrationIdTests.swift */,
 				ILL043F16 /* IngredientIllustrationBindingPersistenceTests.swift */,
 				E5F60718293A4B7000000095 /* RecipeSearchUtilsTests.swift */,
 				D5SS01A293A4B7010000001 /* DiscoverSearchStoreTests.swift */,
@@ -2059,6 +2062,7 @@
 				E5F60718293A4B70219947AF /* ShoppingListConstants.swift */,
 				E5F60718293A4B7040751435 /* ShoppingListFromRecipe.swift */,
 				E5F60718293A4B703691736C /* ShoppingListPlainText.swift */,
+				SHP043F01 /* ResolveShoppingIllustrationId.swift */,
 				E5F60718293A4B7024E554ED /* ShoppingSmokeTest.swift */,
 				E5F60718293A4B7024E554FD /* TimerNotificationSmokeTest.swift */,
 				E5F60718293A4B70898823B7 /* PublicURLBuilder.swift */,
@@ -2984,6 +2988,7 @@
 				E5F60718293A4B7084781F33 /* ShoppingListConstants.swift in Sources */,
 				E5F60718293A4B70D78B092E /* ShoppingListFromRecipe.swift in Sources */,
 				E5F60718293A4B707BD2B9B5 /* ShoppingListPlainText.swift in Sources */,
+				SHP043C01 /* ResolveShoppingIllustrationId.swift in Sources */,
 				E5F60718293A4B70C440D93D /* ShoppingSmokeTest.swift in Sources */,
 				E5F60718293A4B70C440D94D /* TimerNotificationSmokeTest.swift in Sources */,
 				E5F60718293A4B70F4B04DF3 /* PublicURLBuilder.swift in Sources */,
@@ -3262,6 +3267,7 @@
 				NOEXTN01A293A4B701000001 /* NoExternalNetworkURLProtocol.swift in Sources */,
 				ILL043C11 /* IngredientIllustrationCatalogTests.swift in Sources */,
 				ILL043C15 /* IngredientIllustrationNameMatcherTests.swift in Sources */,
+				SHP043C02 /* ResolveShoppingIllustrationIdTests.swift in Sources */,
 				ILL043C16 /* IngredientIllustrationBindingPersistenceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

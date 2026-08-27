@@ -1230,6 +1230,43 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertNil(snapshot.items.first?.recipeId)
     }
 
+    func testShoppingListIllustrationIdRoundTrip() async throws {
+        let userId = "user-shopping-ill"
+        let store = try YDocStore.inMemory()
+        let manager = DocumentManager(store: store)
+        await manager.setUserId(userId)
+
+        let item = ShoppingListItem(
+            label: "200 g · Flour",
+            recipeId: "recipe-1",
+            ingredientId: "ing-1",
+            recipeName: "Bread",
+            illustrationId: "flour"
+        )
+        try await manager.addShoppingItems([item])
+        let snapshot = try await manager.readShoppingListSnapshot()
+        XCTAssertEqual(snapshot.items.count, 1)
+        XCTAssertEqual(snapshot.items.first?.illustrationId, "flour")
+    }
+
+    func testShoppingListFromRecipeCopiesIllustrationId() {
+        let ingredient = IngredientData(
+            id: "ing-tomato",
+            name: "Помидоры",
+            originalAmount: "2",
+            unit: "шт",
+            order: 1,
+            illustrationId: "tomato"
+        )
+        let items = ShoppingListFromRecipe.makeItems(
+            recipeId: "recipe-1",
+            recipeName: "Salad",
+            ingredients: [ingredient]
+        )
+        XCTAssertEqual(items.count, 1)
+        XCTAssertEqual(items.first?.illustrationId, "tomato")
+    }
+
     func testShoppingListFromRecipeEligibilityMatchesWeb() {
         let eligible = IngredientData(
             id: "1",

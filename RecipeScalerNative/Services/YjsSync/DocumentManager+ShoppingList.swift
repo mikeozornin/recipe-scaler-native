@@ -229,6 +229,10 @@ extension DocumentManager {
         if !item.recipeName.isEmpty {
             map.insert(key: "recipeName", value: .string(item.recipeName), txn: txn)
         }
+        if let illustrationId = item.illustrationId?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !illustrationId.isEmpty {
+            map.insert(key: "illustrationId", value: .string(illustrationId), txn: txn)
+        }
         if let purchasedAt = item.purchasedAt {
             map.insert(key: "purchasedAt", value: .int(purchasedAt), txn: txn)
         }

@@ -11,6 +11,8 @@ struct ShoppingListItem: Identifiable, Equatable, Sendable {
     var recipeId: String?
     var ingredientId: String?
     var recipeName: String
+    /// Catalog slug when copied from a recipe ingredient row (web shopping schema v2).
+    var illustrationId: String?
     var purchased: Bool
     var purchasedAt: Int64?
     var createdAt: Int64?
@@ -21,6 +23,7 @@ struct ShoppingListItem: Identifiable, Equatable, Sendable {
         recipeId: String? = nil,
         ingredientId: String? = nil,
         recipeName: String = "",
+        illustrationId: String? = nil,
         purchased: Bool = false,
         purchasedAt: Int64? = nil,
         createdAt: Int64? = nil
@@ -30,6 +33,7 @@ struct ShoppingListItem: Identifiable, Equatable, Sendable {
         self.recipeId = recipeId
         self.ingredientId = ingredientId
         self.recipeName = recipeName
+        self.illustrationId = illustrationId
         self.purchased = purchased
         self.purchasedAt = purchasedAt
         self.createdAt = createdAt

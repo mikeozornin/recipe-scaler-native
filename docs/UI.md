@@ -203,6 +203,8 @@ toggle uses a dedicated localized connection label.
 
 Header matches Recipes: large title with sort segment in the collapsible search slot (`UISearchController` / `UISearchBar` pattern — SwiftUI has no separate API for a custom block under large title).
 
+Each to-buy or purchased row: **checkbox** → **40 pt ingredient illustration thumb** (`IngredientIllustrationThumb`, web parity) → label (+ optional recipe subtitle). Thumb resolves stored `illustrationId` from Yjs, then label-based catalog match; Bowl placeholder when unknown. Add-item row keeps **plus** marker only (no thumb).
+
 When the Vkusvill setting is enabled and the locale is Russian, the toolbar adds
 the `cart` action beside Share. It is disabled offline and opens the existing
 Assistant sheet on a fresh thread with the localized shopping-list prompt.

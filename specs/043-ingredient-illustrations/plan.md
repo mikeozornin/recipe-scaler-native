@@ -154,10 +154,10 @@ Runtime (`IngredientIllustrationCatalog`) грузит все три файла 
 - [x] `LocalizationConsistencyTests`
 - [~] layout audit — waived
 
-### Фаза 5 — P2 (отдельный срез, не блокирует закрытие P1)
+### Фаза 5 — P2 — done
 
-- [ ] Discover read-only thumbs
-- [ ] Shopping list item thumb + copy `illustrationId` on add-from-recipe
+- [x] Discover read-only thumbs (shared `YDocIngredientsSection`)
+- [x] Shopping list item thumb + copy `illustrationId` on add-from-recipe + label fallback
 
 ## Верификация
 

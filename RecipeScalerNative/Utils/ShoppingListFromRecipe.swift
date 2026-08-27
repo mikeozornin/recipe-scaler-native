@@ -46,11 +46,13 @@ enum ShoppingListFromRecipe {
             if let ids = ingredientIds, !ids.contains(ing.id) { return nil }
             let label = label(for: ing)
             guard !label.isEmpty else { return nil }
+            let illustrationId = ing.illustrationId?.trimmingCharacters(in: .whitespacesAndNewlines)
             return ShoppingListItem(
                 label: label,
                 recipeId: recipeId,
                 ingredientId: ing.id,
                 recipeName: recipeName,
+                illustrationId: illustrationId?.isEmpty == false ? illustrationId : nil,
                 createdAt: now
             )
         }
