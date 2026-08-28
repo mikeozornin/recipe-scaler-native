@@ -275,6 +275,19 @@ enum AppChromeAppearance {
         ]
         UITabBarItem.appearance().setTitleTextAttributes(attributes, for: .normal)
         UITabBarItem.appearance().setTitleTextAttributes(attributes, for: .selected)
+
+        // iOS 18 regression: during a NavigationStack push the system tab bar
+        // briefly switches to its scroll-edge (transparent) appearance, exposing
+        // the incoming screen's content under the bar until the transition
+        // finishes. Pinning standard + scroll-edge appearances to the default
+        // material keeps the bar opaque through the transition. iOS 26's
+        // redesigned tab bar manages its own chrome and must stay untouched.
+        if #unavailable(iOS 26.0) {
+            let tabBarAppearance = UITabBarAppearance()
+            tabBarAppearance.configureWithDefaultBackground()
+            UITabBar.appearance().standardAppearance = tabBarAppearance
+            UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+        }
     }
 
     private static func configureListSectionHeaders() {
