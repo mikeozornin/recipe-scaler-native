@@ -967,8 +967,8 @@ private struct IngredientGridRow<Ingredients: View, BaseQty: View, ScaledQty: Vi
 
 private enum IngredientHeaderLabelStyle {
     static let fontSize = AppTypography.bodySize
-    /// 2% of body size (0.02 em).
-    static let letterSpacing = fontSize * 0.02
+    /// Web: `letterSpacing: '1px'` on ingredient group headers (view-only + edit rows).
+    static let letterSpacing: CGFloat = 1.0
     static var font: Font { AppTypography.sansMedium(fontSize) }
 }
 

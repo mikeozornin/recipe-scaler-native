@@ -32,6 +32,8 @@ Web reference: `../recipe-scaler-web/recipe-scaler`.
 | `compact` | 14 pt | sans | — | Секционные заголовки в списке |
 | empty state icon | 48 pt | SF Symbol | — | `AppEmptyState.icon` / `ContentUnavailableView` |
 
+**Заголовки групп ингредиентов** (внутри рецепта, `IngredientHeaderLabelStyle` в `YDocIngredientsSection.swift`): `sansMedium` 16 pt, uppercase, tracking **1 pt** (web: `letterSpacing: 1px`).
+
 ### Text extensions (SwiftUI)
 
 Используй вместо ручного `.font(...)` + `.lineSpacing(...)`:
