@@ -76,3 +76,4 @@ store/drafts/*
 # Python
 __pycache__/
 *.py[cod]
+.agents/state/continual-learning-index.json
