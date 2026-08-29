@@ -68,6 +68,6 @@ enum IngredientNutritionDisplay {
         if value == floor(value), let intValue = Int(exactlySafe: value) {
             return String(intValue)
         }
-        return String(format: "%.1f", value)
+        return AppNumberFormat.string(value, maximumFractionDigits: 1)
     }
 }

@@ -537,6 +537,8 @@
 		SRTIPPREF0001AA0001BB01 /* ShoppingRemindersTipPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRTIPPREF0002AA0002BB02 /* ShoppingRemindersTipPreferences.swift */; };
 		SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */; };
 		TP14SAFE01A293A4B70100001 /* SafeIntCasts.swift in Sources */ = {isa = PBXBuildFile; fileRef = TP14SAFE01A293A4B70100002 /* SafeIntCasts.swift */; };
+		NUMFMT0001A293A4B70100001 /* AppNumberFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = NUMFMT0001A293A4B70100002 /* AppNumberFormat.swift */; };
+		NUMFMTTEST01A293A4B701001 /* AppNumberFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = NUMFMTTEST01A293A4B701002 /* AppNumberFormatTests.swift */; };
 		UIT018898C9CB55D28DA5 /* AuthPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = UIT960324BAA0FDC8FD99 /* AuthPage.swift */; };
 		UIT093A852449B362733F /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = UIT2F7824BE9658F66419 /* Errors.swift */; };
 		UIT0AAD8C3C379B7AE247 /* FeatureAdoptionTrackerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = UITEF4902F43B6C5EDA96 /* FeatureAdoptionTrackerSpec.swift */; };
@@ -1244,6 +1246,8 @@
 		SRTIPPREF0002AA0002BB02 /* ShoppingRemindersTipPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingRemindersTipPreferences.swift; sourceTree = "<group>"; };
 		SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingRemindersTipPreferencesTests.swift; sourceTree = "<group>"; };
 		TP14SAFE01A293A4B70100002 /* SafeIntCasts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeIntCasts.swift; sourceTree = "<group>"; };
+		NUMFMT0001A293A4B70100002 /* AppNumberFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNumberFormat.swift; sourceTree = "<group>"; };
+		NUMFMTTEST01A293A4B701002 /* AppNumberFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNumberFormatTests.swift; sourceTree = "<group>"; };
 		UIT00DC9B186ADBD3C32D /* ImportPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPage.swift; sourceTree = "<group>"; };
 		UIT042788CF0A93FC75C3 /* DiscoverEnablementSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverEnablementSpec.swift; sourceTree = "<group>"; };
 		UIT10DBDA4F55A1F89B01 /* YrsNativeReadSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YrsNativeReadSpec.swift; sourceTree = "<group>"; };
@@ -1759,6 +1763,7 @@
 			children = (
 				94F6EEB0522CF5E6241A73B1 /* Info.plist */,
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
+				NUMFMTTEST01A293A4B701002 /* AppNumberFormatTests.swift */,
 				A14001A00000000000000001A /* FeatureAdoptionGuideContentTests.swift */,
 				A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */,
 				VKSTOR001A2B3C4D5E6F70800 /* VkusvillSettingsStoreTests.swift */,
@@ -2040,6 +2045,7 @@
 				E5F60718293A4B700000000F /* RecipeNutritionDisplay.swift */,
 				E5F60718293A4B70000A002 /* RecipeServings.swift */,
 				TP14SAFE01A293A4B70100002 /* SafeIntCasts.swift */,
+				NUMFMT0001A293A4B70100002 /* AppNumberFormat.swift */,
 				E5F60718293A4B7000000031 /* IngredientNutritionEditing.swift */,
 				E5F60718293A4B7000000007 /* RecipeTitleEmoji.swift */,
 				E5F60718293A4B700000000B /* RecipeCollectionMerge.swift */,
@@ -2938,6 +2944,7 @@
 				E5F60718293A4B700000000E /* RecipeNutritionDisplay.swift in Sources */,
 				E5F60718293A4B70000A001 /* RecipeServings.swift in Sources */,
 				TP14SAFE01A293A4B70100001 /* SafeIntCasts.swift in Sources */,
+				NUMFMT0001A293A4B70100001 /* AppNumberFormat.swift in Sources */,
 				E5F60718293A4B7000000030 /* IngredientNutritionEditing.swift in Sources */,
 				E5F60718293A4B7000000014 /* RecipeScaleStorage.swift in Sources */,
 				E5F60718293A4B7000000062 /* NutritionViewModeStorage.swift in Sources */,
@@ -3185,6 +3192,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
+				NUMFMTTEST01A293A4B701001 /* AppNumberFormatTests.swift in Sources */,
 				A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */,
 				VKSTOR001A2B3C4D5E6F70801 /* VkusvillSettingsStoreTests.swift in Sources */,
 				A05700000210 /* NativeFormatDetectorTests.swift in Sources */,

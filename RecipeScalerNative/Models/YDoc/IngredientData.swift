@@ -192,9 +192,7 @@ struct IngredientData: Identifiable, Sendable {
         if value == floor(value) && abs(value) < Double(Int.max) {
             return String(Int(value))
         }
-        let formatted = String(format: "%.2f", value)
-        return formatted
-            .replacingOccurrences(of: "0+$", with: "", options: .regularExpression)
-            .replacingOccurrences(of: "\\.$", with: "", options: .regularExpression)
+        // Locale-aware: ru renders `,` (docs/I18N.md); parse paths normalize back to `.`.
+        return AppNumberFormat.string(value, maximumFractionDigits: 2)
     }
 }

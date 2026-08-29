@@ -154,12 +154,10 @@ struct EditIngredientNutritionSheet: View {
         // TP14 [review #14]: guard before Int cast.
         guard value.isFinite else { return "" }
         if value.rounded() == value, let intValue = Int(exactlySafe: value) { return String(intValue) }
-        return String(format: "%.1f", value)
+        return AppNumberFormat.string(value, maximumFractionDigits: 1)
     }
 
     private static func parse(_ text: String) -> Double? {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        return Double(trimmed.replacingOccurrences(of: ",", with: "."))
+        AppNumberFormat.parse(text)
     }
 }

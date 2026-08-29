@@ -104,7 +104,7 @@ enum RecipeNutritionDisplay {
     static func formatCalories(_ value: Double) -> String {
         // TP14 [review #14]: NaN/Inf/overflow guard before Int cast.
         guard value.isFinite, let intValue = Int(exactlySafe: value.rounded()) else {
-            return value.isFinite ? String(value.rounded()) : ""
+            return value.isFinite ? AppNumberFormat.string(value, maximumFractionDigits: 0) : ""
         }
         return String(intValue)
     }
@@ -116,7 +116,7 @@ enum RecipeNutritionDisplay {
         if value == floor(value), let intValue = Int(exactlySafe: value) {
             return String(intValue)
         }
-        return String(format: "%.1f", value)
+        return AppNumberFormat.string(value, maximumFractionDigits: 1)
     }
 
     static func formatScaleFactorLabel(_ scaleFactor: Double) -> String {
@@ -126,10 +126,7 @@ enum RecipeNutritionDisplay {
         if rounded == floor(rounded), let intValue = Int(exactlySafe: rounded) {
             return "×\(intValue)"
         }
-        var text = String(format: "%.2f", rounded)
-        while text.contains(".") && (text.hasSuffix("0") || text.hasSuffix(".")) {
-            text.removeLast()
-        }
+        let text = AppNumberFormat.string(rounded, minimumFractionDigits: 1, maximumFractionDigits: 2)
         return "×\(text)"
     }
 }

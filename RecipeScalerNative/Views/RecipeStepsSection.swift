@@ -148,11 +148,7 @@ struct IngredientRow: View {
     }
 
     private func formatNumber(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 2
-        formatter.minimumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
+        AppNumberFormat.string(value, maximumFractionDigits: 2)
     }
 }
 
