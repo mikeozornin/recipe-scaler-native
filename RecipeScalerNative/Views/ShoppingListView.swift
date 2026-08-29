@@ -324,8 +324,12 @@ struct ShoppingListView: View {
     private func inlineEditRow(_ item: ShoppingListItem) -> some View {
         HStack(alignment: .center, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
             shoppingRowMarker(systemName: "circle", foreground: .secondary)
-            IngredientIllustrationThumb(
-                illustrationId: ResolveShoppingIllustrationId.resolve(item: item)
+            IngredientIllustrationSlot(
+                content: .thumb(
+                    illustrationId: ResolveShoppingIllustrationId.resolve(item: item),
+                    isInteractive: false,
+                    onTap: nil
+                )
             )
             TextField(String(localized: "shopping.add.placeholder"), text: $inlineEditDraft)
                 .font(AppTypography.body)
@@ -387,8 +391,12 @@ struct ShoppingListView: View {
                     : String(localized: "shopping.mark-purchased")
             )
 
-            IngredientIllustrationThumb(
-                illustrationId: ResolveShoppingIllustrationId.resolve(item: item)
+            IngredientIllustrationSlot(
+                content: .thumb(
+                    illustrationId: ResolveShoppingIllustrationId.resolve(item: item),
+                    isInteractive: false,
+                    onTap: nil
+                )
             )
             .opacity(showChecked ? 0.8 : 1)
 
