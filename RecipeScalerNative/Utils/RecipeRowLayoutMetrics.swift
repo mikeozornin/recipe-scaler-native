@@ -69,14 +69,11 @@ enum RecipeRowLayoutMetrics {
     static let editListRowLift: CGFloat = 4
     /// Gap between custom delete minus and ingredient text in edit `List`.
     static let editListDeleteToContentSpacing: CGFloat = 6
-    /// Matches system `minus.circle.fill` control in edit lists.
+    /// Symbol point size for edit-list minus/plus (and new-row submit height); not a column width.
     static let editListDeleteControlSize: CGFloat = 22
-    /// Minus column + gap before ingredient name (aligns new-row fields with edit rows).
-    static var editListLeadingSlotWidth: CGFloat {
-        editListDeleteControlSize + editListDeleteToContentSpacing
-    }
-    /// «+» row: optical inset so «Name» lines up with edit-row titles (minus.circle is wider).
-    static let editListNewRowNameLeadingInset: CGFloat = 2
+    /// Layout width for the shared minus/plus leading slot (intrinsic width of
+    /// `minus.circle.fill` at symbol size 22) — aligns new-row fields with edit rows.
+    static let editListDeleteControlSlotWidth: CGFloat = 26
     /// Top offset for reorder control — aligned with custom minus in edit rows.
     static var editListReorderControlTopOffset: CGFloat {
         ingredientRowVerticalPadding

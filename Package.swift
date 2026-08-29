@@ -55,6 +55,11 @@ let package = Package(
                 ".DS_Store",
                 "Import/.DS_Store",
             ],
+            swiftSettings: [
+                // Mirror the Xcode dev-flavor condition (spec 066) for plain
+                // `swift build` runs. Xcode builds use SWIFT_ACTIVE_COMPILATION_CONDITIONS.
+                .define("RS_DEV_FLAVOR", .when(configuration: .debug))
+            ],
             resources: [
                 .process("Resources"),
                 .copy("Export/Native/schemas"),

@@ -28,24 +28,28 @@ struct AccountView: View {
     /// `AppShellView` resolves these from `@Environment`.
     private let auth: AuthService
     private let timer: TimerManager
+    private let vkusvillSettings: VkusvillSettingsStore
     @State private var viewModel: AccountSettingsViewModel
 
-    init(auth: AuthService, timer: TimerManager) {
+    /// `performLogoutTeardown` must come from the composition root (AppShellView
+    /// resolves it from the injected container). Previews/tests construct
+    /// `AccountView` without one, so the default is an explicit no-op — logout
+    /// in those environments simply skips container teardown instead of
+    /// silently reaching for a possibly-nil global.
+    init(
+        auth: AuthService,
+        timer: TimerManager,
+        vkusvillSettings: VkusvillSettingsStore,
+        performLogoutTeardown: (() async -> Void)? = nil
+    ) {
         self.auth = auth
         self.timer = timer
-        let container = AppContainer.shared
+        self.vkusvillSettings = vkusvillSettings
         _viewModel = State(initialValue: AccountSettingsViewModel(
             auth: auth,
             timer: timer,
-            performLogoutTeardown: {
-                // Read fresh at call time — the captured syncService may not
-                // outlive root-view churn, but AppContainer.shared is stable
-                // for the production lifetime of the app.
-                if let container {
-                    await container.sync.clearSessionForLogout()
-                    await container.stopForLogout()
-                }
-            }
+            vkusvillSettings: vkusvillSettings,
+            performLogoutTeardown: performLogoutTeardown ?? {}
         ))
     }
 
@@ -130,6 +134,7 @@ struct AccountView: View {
                         .id(AccountViewSection.reminders.id)
                     telegramSection
                         .id(AccountViewSection.telegram.id)
+                    vkusvillSection
                     // TODO(payments): секция tips временно скрыта (2026-08-14);
                     // feedback перенесён в footerSection над About.
                     // AccountTipsSection()
@@ -138,7 +143,7 @@ struct AccountView: View {
                         dangerZoneSection
                     }
 
-                    if let statusMessage = viewModel.statusMessage {
+                    if let statusMessage = accountStatusMessage {
                         Section {
                             Text(statusMessage)
                                 .appFootnote()
@@ -255,9 +260,16 @@ struct AccountView: View {
                     appLanguage = .current
                     await consumePendingRemindersSetupIfNeeded(scrollProxy: proxy)
                 }
-                .onChange(of: syncService.connectionState) { _, _ in
+                .onChange(of: syncService.connectionState) { _, newState in
                     Task { @MainActor in
                         viewModel.bind(syncService: syncService)
+                        // Reconnect after a gap: refetch settings so toggles do
+                        // not sit stale on values that failed to persist while
+                        // offline (review finding: profile never refreshes on
+                        // connection restore).
+                        if newState.isConnected {
+                            await viewModel.refresh(syncService: syncService)
+                        }
                     }
                 }
                 .onChange(of: isTelegramConnected) { wasConnected, isConnected in
@@ -457,6 +469,27 @@ struct AccountView: View {
     }
 
     @ViewBuilder
+    private var vkusvillSection: some View {
+        if appLanguage == .ru {
+            Section {
+                Toggle(isOn: Binding(
+                    get: { vkusvillSettings.enabled },
+                    set: { value in
+                        Task { @MainActor in await viewModel.setVkusvillEnabled(value) }
+                    }
+                )) {
+                    Text("vkusvill.settings-toggle-title").appBody()
+                }
+                .disabled(!viewModel.isOnline || vkusvillSettings.isLoading || vkusvillSettings.isUpdating)
+                .accessibilityIdentifier(AccessibilityIdentifiers.vkusvillToggle)
+            } header: {
+                AppSectionHeader("vkusvill.settings-title")
+            }
+            .appListSectionHeaderStyle()
+        }
+    }
+
+    @ViewBuilder
     private var preferencesSection: some View {
         Section {
             NavigationLink {
@@ -650,6 +683,14 @@ struct AccountView: View {
         FeatureAdoptionItem.allCases
             .filter { featureAdoptionStore.value(for: $0) }
             .count
+    }
+
+    private var accountStatusMessage: String? {
+        if let statusMessage = viewModel.statusMessage {
+            return statusMessage
+        }
+        guard let error = vkusvillSettings.lastError else { return nil }
+        return UserFacingAPIError.message(for: error)
     }
 
 
@@ -976,7 +1017,11 @@ private struct AccountSeedPhraseSheet: View {
     let sync = YjsSyncService.makeForTesting(store: store)
     let coordinator = AppShellCoordinator(syncService: sync, deepLinkRouter: DeepLinkRouter())
     return NavigationStack {
-        AccountView(auth: AuthService(), timer: TimerManager.shared)
+        AccountView(
+            auth: AuthService(),
+            timer: TimerManager.shared,
+            vkusvillSettings: VkusvillSettingsStore()
+        )
             .environment(coordinator)
     }
 }

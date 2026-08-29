@@ -15,6 +15,9 @@ enum ShoppingListReader {
         var items: [ShoppingListItem] = []
         itemsArray.forEachMap(txn: txn) { map in
             guard let id = map.scalarString(key: "id", txn: txn), !id.isEmpty else { return }
+            let illustrationIdRaw = map.scalarString(key: "illustrationId", txn: txn)?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let illustrationId = illustrationIdRaw?.isEmpty == false ? illustrationIdRaw : nil
             items.append(
                 ShoppingListItem(
                     id: id,
@@ -22,6 +25,7 @@ enum ShoppingListReader {
                     recipeId: map.scalarString(key: "recipeId", txn: txn),
                     ingredientId: map.scalarString(key: "ingredientId", txn: txn),
                     recipeName: map.scalarString(key: "recipeName", txn: txn) ?? "",
+                    illustrationId: illustrationId,
                     purchased: map.bool(key: "purchased", txn: txn) ?? false,
                     purchasedAt: map.int(key: "purchasedAt", txn: txn).map { Int64($0) },
                     createdAt: map.int(key: "createdAt", txn: txn).map { Int64($0) }

@@ -42,7 +42,10 @@ done
 echo "PASS: App Group entitlements on main + extensions"
 
 # URL scheme declared in main Info.plist (CFBundleURLTypes).
-if ! rg -q "recipe-scaler" RecipeScalerNative/Info.plist; then
+# Spec 066: scheme is parameterized ($(RS_URL_SCHEME)); default (prod) value
+# `recipe-scaler` lives in the build settings, so match the variable OR the
+# literal for pre-parameterization checkouts.
+if ! rg -q 'recipe-scaler|\$\(RS_URL_SCHEME\)' RecipeScalerNative/Info.plist; then
   echo "FAIL: 'recipe-scaler' URL scheme missing in Info.plist"
   exit 1
 fi

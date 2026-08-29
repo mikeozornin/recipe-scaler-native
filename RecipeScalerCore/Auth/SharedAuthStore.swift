@@ -45,7 +45,13 @@ public enum SharedAuthStore {
 
     /// Team ID from `DEVELOPMENT_TEAM` (`ZBPX4JYT24`) + keychain sharing suffix.
     /// Matches entitlements after `$(AppIdentifierPrefix)` expansion.
+    /// Spec 066: dev flavor (RS_DEV_FLAVOR) uses the `.debug`-suffixed group —
+    /// keep in sync with the matching entitlements file per flavor.
+    #if RS_DEV_FLAVOR
+    public static let sharedKeychainAccessGroup = "ZBPX4JYT24.ru.recipescaler.RecipeScaler.debug"
+    #else
     public static let sharedKeychainAccessGroup = "ZBPX4JYT24.ru.recipescaler.RecipeScaler"
+    #endif
 
     /// Documented access group for SecItem queries. Always the team-prefixed
     /// group — never the literal `$(AppIdentifierPrefix)…` macro.

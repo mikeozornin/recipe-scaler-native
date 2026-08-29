@@ -4,6 +4,24 @@ import YrsC
 @testable import RecipeScalerNative
 
 final class RecipeScalerNativeTests: XCTestCase {
+    func testUserSettingsDecodesVkusvillEnabled() throws {
+        let data = try XCTUnwrap(
+            "{\"nutritionEnabled\":false,\"vkusvillEnabled\":true}".data(using: .utf8)
+        )
+
+        let settings = try JSONDecoder().decode(UserSettingsDTO.self, from: data)
+
+        XCTAssertEqual(settings.vkusvillEnabled, true)
+    }
+
+    func testVkusvillBuyButtonVisibilityRequiresEnabledRussianLocale() {
+        XCTAssertTrue(VkusvillUIVisibility.showsBuyButton(enabled: true, localeIdentifier: "ru"))
+        XCTAssertTrue(VkusvillUIVisibility.showsBuyButton(enabled: true, localeIdentifier: "ru-RU"))
+        XCTAssertFalse(VkusvillUIVisibility.showsBuyButton(enabled: false, localeIdentifier: "ru"))
+        XCTAssertFalse(VkusvillUIVisibility.showsBuyButton(enabled: true, localeIdentifier: "en"))
+        XCTAssertFalse(VkusvillUIVisibility.showsBuyButton(enabled: true, localeIdentifier: nil))
+    }
+
     func testRecipeEditPolicyV3Only() {
         XCTAssertTrue(RecipeEditPolicy.supportsEditFormat(version: "3"))
         XCTAssertFalse(RecipeEditPolicy.supportsEditFormat(version: "1"))
@@ -1212,6 +1230,43 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertNil(snapshot.items.first?.recipeId)
     }
 
+    func testShoppingListIllustrationIdRoundTrip() async throws {
+        let userId = "user-shopping-ill"
+        let store = try YDocStore.inMemory()
+        let manager = DocumentManager(store: store)
+        await manager.setUserId(userId)
+
+        let item = ShoppingListItem(
+            label: "200 g · Flour",
+            recipeId: "recipe-1",
+            ingredientId: "ing-1",
+            recipeName: "Bread",
+            illustrationId: "flour"
+        )
+        try await manager.addShoppingItems([item])
+        let snapshot = try await manager.readShoppingListSnapshot()
+        XCTAssertEqual(snapshot.items.count, 1)
+        XCTAssertEqual(snapshot.items.first?.illustrationId, "flour")
+    }
+
+    func testShoppingListFromRecipeCopiesIllustrationId() {
+        let ingredient = IngredientData(
+            id: "ing-tomato",
+            name: "Помидоры",
+            originalAmount: "2",
+            unit: "шт",
+            order: 1,
+            illustrationId: "tomato"
+        )
+        let items = ShoppingListFromRecipe.makeItems(
+            recipeId: "recipe-1",
+            recipeName: "Salad",
+            ingredients: [ingredient]
+        )
+        XCTAssertEqual(items.count, 1)
+        XCTAssertEqual(items.first?.illustrationId, "tomato")
+    }
+
     func testShoppingListFromRecipeEligibilityMatchesWeb() {
         let eligible = IngredientData(
             id: "1",
@@ -1593,4 +1648,81 @@ private final class PublicImageCacheTestURLProtocol: URLProtocol {
     }
 
     override func stopLoading() {}
+}
+
+final class DescriptionEditorScrollInsetTests: XCTestCase {
+    func testContentBottomPaddingEqualsBarClearancePlusBreathingRoomWhenFormattingBarShown() {
+        XCTAssertEqual(
+            DescriptionFormattingBarLayoutMetrics.contentBottomPadding(showsFormattingBar: true),
+            DescriptionFormattingBarLayoutMetrics.scrollClearanceHeight
+                + DescriptionFormattingBarLayoutMetrics.contentBottomBreathingRoom
+        )
+        XCTAssertEqual(
+            DescriptionFormattingBarLayoutMetrics.contentBottomPadding(showsFormattingBar: false),
+            0
+        )
+    }
+
+    func testBottomPinnedContentOffsetDoesNotDoubleCountTopInset() {
+        // Device-shaped numbers from debug-session 8: pinning caret/editor bottom
+        // must use (bounds - insetBottom), not (bounds - insetTop - insetBottom).
+        let focusMaxY: CGFloat = 2479
+        let boundsHeight: CGFloat = 912
+        let insetBottom: CGFloat = 397
+        XCTAssertEqual(
+            DescriptionFormattingBarLayoutMetrics.bottomPinnedContentOffset(
+                focusMaxY: focusMaxY,
+                boundsHeight: boundsHeight,
+                insetBottom: insetBottom
+            ),
+            1964,
+            accuracy: 0.01
+        )
+        // Wrong formula (subtracting a ~122pt top inset) would yield ~2086 and
+        // leave a ~120pt hole under the last line.
+        let wrongVisibleHeight = boundsHeight - 122 - insetBottom
+        XCTAssertNotEqual(
+            focusMaxY - wrongVisibleHeight,
+            DescriptionFormattingBarLayoutMetrics.bottomPinnedContentOffset(
+                focusMaxY: focusMaxY,
+                boundsHeight: boundsHeight,
+                insetBottom: insetBottom
+            ),
+            accuracy: 0.01
+        )
+    }
+
+    @MainActor
+    func testContentHeightPaintedBottomStoredSeparately() throws {
+        let db = try YrsDatabase.makeInMemoryFallback()
+        let store = YDocStore(dbQueue: db.dbQueue)
+        let sync = YjsSyncService.makeForTesting(store: store)
+        let bridge = DescriptionEditorBridge(recipeId: "short-recipe", syncService: sync)
+
+        bridge.handleWebMessage([
+            "type": "contentHeight",
+            "height": 80,
+            "paintedBottom": 72,
+            "scrollHeight": 400,
+        ])
+
+        XCTAssertEqual(bridge.contentHeight, 80, accuracy: 0.01)
+        XCTAssertEqual(bridge.paintedContentBottom, 72, accuracy: 0.01)
+    }
+
+    @MainActor
+    func testContentHeightMissingPaintedBottomFallsBackToHeight() throws {
+        let db = try YrsDatabase.makeInMemoryFallback()
+        let store = YDocStore(dbQueue: db.dbQueue)
+        let sync = YjsSyncService.makeForTesting(store: store)
+        let bridge = DescriptionEditorBridge(recipeId: "short-recipe", syncService: sync)
+
+        bridge.handleWebMessage([
+            "type": "contentHeight",
+            "height": 64,
+        ])
+
+        XCTAssertEqual(bridge.contentHeight, 64, accuracy: 0.01)
+        XCTAssertEqual(bridge.paintedContentBottom, 64, accuracy: 0.01)
+    }
 }

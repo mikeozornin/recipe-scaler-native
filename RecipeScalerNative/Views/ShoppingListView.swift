@@ -15,10 +15,20 @@ private enum ShoppingPurchaseTiming {
     static let exitSeconds: TimeInterval = 0.4
 }
 
+enum VkusvillUIVisibility {
+    static func showsBuyButton(enabled: Bool, localeIdentifier: String?) -> Bool {
+        guard let localeIdentifier else { return false }
+        return enabled && localeIdentifier.lowercased().hasPrefix("ru")
+    }
+}
+
 struct ShoppingListView: View {
     @Environment(YjsSyncService.self) private var syncService
     @Environment(TimerManager.self) private var timerManager
     @Environment(AppShellCoordinator.self) private var coordinator
+    @Environment(AuthService.self) private var authService
+    @Environment(VkusvillSettingsStore.self) private var vkusvillSettings
+    @Environment(\.locale) private var locale
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var path: NavigationPath
     @State private var bottomDraft = ""
@@ -44,6 +54,13 @@ struct ShoppingListView: View {
         syncService.connectionState == .connected
     }
 
+    private var showsVkusvillBuyButton: Bool {
+        VkusvillUIVisibility.showsBuyButton(
+            enabled: vkusvillSettings.enabled,
+            localeIdentifier: locale.language.languageCode?.identifier
+        )
+    }
+
     private var toBuy: [ShoppingListItem] {
         shoppingModel.sortedToBuy
     }
@@ -65,18 +82,37 @@ struct ShoppingListView: View {
         .localizedNavigationTitle("shopping.title")
         .appListBodyTypography()
         .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 0) {
+                    if showsVkusvillBuyButton {
+                        Button {
+                            coordinator.openAssistantWithMessage(
+                                Bundle.currentLocalizedString("vkusvill.assistant-prompt")
+                            )
+                        } label: {
+                            AppToolbarStyle.labeledIcon(
+                                systemName: "banknote",
+                                title: "vkusvill.buy-button"
+                            )
+                        }
+                        .appToolbarIconButton()
+                        .disabled(!isOnline)
+                        .accessibilityIdentifier(AccessibilityIdentifiers.vkusvillBuyButton)
+                        .accessibilityLabel(Text("vkusvill.buy-button"))
+                        .accessibilityHint(
+                            isOnline ? Text("") : Text("vkusvill.offline")
+                        )
+                    }
                     Button {
                         showShareSheet = true
                     } label: {
-                        AppToolbarStyle.labeledIcon(
-                            systemName: "square.and.arrow.up",
-                            title: "shopping.share-button"
-                        )
+                        AppToolbarStyle.iconOnly(systemName: "square.and.arrow.up")
                     }
                     .appToolbarIconButton()
+                    .accessibilityLabel(Text("shopping.share-button"))
                     .accessibilityIdentifier(AccessibilityIdentifiers.shoppingShareButton)
                 }
+            }
         }
         .accessibilityIdentifier(AccessibilityIdentifiers.shoppingList)
         #if DEBUG
@@ -98,6 +134,10 @@ struct ShoppingListView: View {
         .task {
             shoppingModel.recompute(snapshot: snapshot, purchasePhases: purchasePhases)
             refreshRemindersTipVisibility()
+            await vkusvillSettings.refresh(
+                userId: authService.userId,
+                isOnline: isOnline
+            )
         }
         .onAppear {
             refreshRemindersTipVisibility()
@@ -107,6 +147,22 @@ struct ShoppingListView: View {
         }
         .onChange(of: purchasePhases) { _, newValue in
             shoppingModel.recompute(snapshot: snapshot, purchasePhases: newValue)
+        }
+        .onChange(of: isOnline) { _, online in
+            Task { @MainActor in
+                await vkusvillSettings.refresh(
+                    userId: authService.userId,
+                    isOnline: online
+                )
+            }
+        }
+        .onChange(of: authService.userId) { _, userId in
+            Task { @MainActor in
+                await vkusvillSettings.refresh(
+                    userId: userId,
+                    isOnline: isOnline
+                )
+            }
         }
     }
 
@@ -268,6 +324,9 @@ struct ShoppingListView: View {
     private func inlineEditRow(_ item: ShoppingListItem) -> some View {
         HStack(alignment: .center, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
             shoppingRowMarker(systemName: "circle", foreground: .secondary)
+            IngredientIllustrationThumb(
+                illustrationId: ResolveShoppingIllustrationId.resolve(item: item)
+            )
             TextField(String(localized: "shopping.add.placeholder"), text: $inlineEditDraft)
                 .font(AppTypography.body)
                 .frame(height: RecipeRowLayoutMetrics.titleLineHeight)
@@ -327,6 +386,11 @@ struct ShoppingListView: View {
                     ? String(localized: "shopping.mark-not-purchased")
                     : String(localized: "shopping.mark-purchased")
             )
+
+            IngredientIllustrationThumb(
+                illustrationId: ResolveShoppingIllustrationId.resolve(item: item)
+            )
+            .opacity(showChecked ? 0.8 : 1)
 
             VStack(alignment: .leading, spacing: RecipeRowLayoutMetrics.searchSnippetSpacing) {
                 Text(item.label)

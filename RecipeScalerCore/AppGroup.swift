@@ -22,7 +22,19 @@ public enum AppGroup {
     /// - `TimerLiveActivityMetadataProvider` (recipe thumbnails)
     /// - `TimerSnapshotStore` (timer snapshot for HomeWidgetExtension)
     /// - `pendingRecipeIdKey` (Share/Action extension → host recipe hand-off)
+    ///
+    /// Side-by-side builds (spec 066): the dev flavor (`RS_DEV_FLAVOR`
+    /// compilation condition, DebugDevice/ReleaseDevice configurations, scheme
+    /// RecipeScalerNative-Dev) uses a `.debug`-suffixed group so the dev
+    /// install on the same phone never shares data with the App Store
+    /// install. The suffix must match every target's entitlements.
+    #if RS_DEV_FLAVOR
+    public static let id = "group.ru.recipescaler.RecipeScaler.debug"
+    public static let isDevFlavor = true
+    #else
     public static let id = "group.ru.recipescaler.RecipeScaler"
+    public static let isDevFlavor = false
+    #endif
 
     /// Pending recipe id hand-off from Share/Action extensions to the host app.
     ///

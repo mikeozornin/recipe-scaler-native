@@ -43,6 +43,7 @@ extension View {
             .environment(container.reminders)
             .environment(container.spotlight)
             .environment(container.featureAdoption)
+            .environment(container.vkusvillSettings)
             .environment(container.systemBanner)
             .environment(container.offlineGate)
             .environment(container.tips)

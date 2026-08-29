@@ -93,6 +93,11 @@ final class AppContainer {
 
     let featureAdoption: FeatureAdoptionStore
 
+    // MARK: - Vkusvill settings (spec 072)
+
+    /// Account-scoped feature flag shared by Profile and Shopping List.
+    let vkusvillSettings: VkusvillSettingsStore
+
     // MARK: - System banner (spec 061)
 
     let systemBanner: SystemBannerStore
@@ -214,6 +219,10 @@ final class AppContainer {
         // Feature adoption store (spec 038). Cache is loaded lazily in
         // `bootstrap(userId:)` so the section renders instantly on first appear.
         self.featureAdoption = FeatureAdoptionStore()
+
+        // Spec 072: one account-scoped flag is shared by Profile and Shopping
+        // List so the toolbar reacts immediately after the toggle changes.
+        self.vkusvillSettings = VkusvillSettingsStore()
 
         // System banner store (spec 061). Refreshed once per session during
         // bootstrap; never polls. Dismissal is persisted server-side.
@@ -367,6 +376,7 @@ final class AppContainer {
         if !isSameUser, previousUserId != nil {
             shellCoordinator.resetShellStateForLogout()
             discoverListState.clearAll()
+            vkusvillSettings.clearForLogout()
         }
         bootstrappedUserId = userId
 
@@ -524,6 +534,7 @@ final class AppContainer {
         // Spec 030 B2: drop widget push registration on logout.
         await widgetPushRegistrar.unregister()
         featureAdoption.clearForLogout()
+        vkusvillSettings.clearForLogout()
         systemBanner.clearForLogout()
     }
 

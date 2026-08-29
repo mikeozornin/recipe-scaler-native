@@ -105,6 +105,47 @@ Apple CDN может кэшировать AASA до ~1 суток.
 Development (+ Distribution при TestFlight) для всех таргетов выше.  
 Xcode: **Automatically manage signing**, team `ZBPX4JYT24`, без красных ошибок.
 
+### 1.3.1 Side-by-side dev-флейвор (spec 066)
+
+Две сборки на одном iPhone: prod (`ru.recipescaler.RecipeScaler`, App Store) и
+dev («RS Dev», схема **RecipeScalerNative-Dev**, конфигурации DebugDevice/ReleaseDevice,
+bundle ID `ru.recipescaler.RecipeScaler.debug`). Отдельные sandbox / Keychain /
+App Group → два аккаунта, две иконки. Обычные Debug/Release не тронуты
+(симуляторный workflow на prod-ID).
+
+**Портал — одноразовый чеклист (руками):**
+
+1. [Identifiers → App Groups](https://developer.apple.com/account/resources/identifiers/list/applicationGroup):
+   `group.ru.recipescaler.RecipeScaler.debug`
+2. App IDs (capabilities как у prod-аналога, но группы с `.debug`):
+
+| Bundle ID | Capabilities |
+|-----------|--------------|
+| `ru.recipescaler.RecipeScaler.debug` | App Groups (.debug), Keychain Sharing `.debug`, Push Notifications; **без** Associated Domains |
+| `…debug.Share` / `…debug.Action` | App Groups + Keychain Sharing |
+| `…debug.HomeWidget` | App Groups + Keychain + aps-environment |
+| `…debug.TimerLiveActivity` | App Groups + Keychain |
+| `…debug.watchkitapp` | App Groups |
+
+3. Signing: остаётся Automatic — профили подтянутся при первой сборке схемы
+   RecipeScalerNative-Dev на устройство (`-allowProvisioningUpdates`).
+
+Entitlements в репо для флейвора: `RecipeScalerNativeDev.entitlements`,
+`{Share,Action,HomeWidget,TimerLiveActivity,RecipeScalerNativeWatch}Dev.entitlements`
+(группа/keychain с `.debug`; main/widget — `aps-environment=development`;
+Associated Domains у main отсутствуют).
+
+Константы флейвора в коде резолвятся компиляцией по `RS_DEV_FLAVOR`:
+`AppGroup.id`, `SharedAuthStore.sharedKeychainAccessGroup`,
+`UTType+recipeScalerRecipe` (`ru.recipescaler.recipe.debug`),
+`DeepLinkURL.baseScheme` (`recipe-scaler-dev`). Info.plist параметризован:
+`$(RS_DISPLAY_NAME)` = «RS Dev», `$(RS_URL_SCHEME)`, `$(RS_RECIPE_UTTYPE)`;
+иконка `AppIconDev` (синяя).
+
+**Ограничения флейвора:** push в dev не работает (backend шлёт только в
+prod-topic); Universal Links открывают сайт, а не dev-app (нет Associated
+Domains в AASA); Watch dev-таргет не проверяется (нет железа).
+
 ### 1.4 Распространение
 
 - **TestFlight** — Share Sheet, extensions, push, чужие устройства.

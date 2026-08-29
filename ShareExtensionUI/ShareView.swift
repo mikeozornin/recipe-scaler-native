@@ -181,7 +181,8 @@ public struct ShareView: View {
         } else {
             id = lastResult?.recipeIds.first
         }
-        guard let id, let url = URL(string: "recipe-scaler://recipe/\(id)") else {
+        guard let id,
+              let url = URL(string: "\(DeepLinkURL.baseScheme)://recipe/\(id)") else {
             completeRequest()
             return
         }

@@ -119,6 +119,8 @@ xcodebuild build -scheme RecipeScalerNative \
 
 Новый релиз (например 1.1): поднять `MARKETING_VERSION`, сбросить `CURRENT_PROJECT_VERSION`.
 
+Фиксация App Store-релизов (git tag + реестр) и подготовка What's New — [docs/RELEASES.md](./RELEASES.md).
+
 ## Phase 4: Tiptap WebView Bundle
 
 When reaching Phase 4 (description editing), build the Tiptap bundle:

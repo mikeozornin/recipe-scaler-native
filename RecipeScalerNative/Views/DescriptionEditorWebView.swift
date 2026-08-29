@@ -49,7 +49,11 @@ struct DescriptionEditorWebView: UIViewRepresentable {
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.keyboardDismissMode = .interactive
-        applyScrollPolicy(on: webView, allowsScrolling: allowsScrolling)
+        applyScrollPolicy(
+            on: webView,
+            allowsScrolling: allowsScrolling,
+            coordinator: context.coordinator
+        )
 
         context.coordinator.webView = webView
         bridge.attach(webView: context.coordinator)
@@ -60,7 +64,11 @@ struct DescriptionEditorWebView: UIViewRepresentable {
 
     func updateUIView(_ uiView: DescriptionEditorWKWebView, context: Context) {
         context.coordinator.onKeyboardDone = onKeyboardDone
-        applyScrollPolicy(on: uiView, allowsScrolling: allowsScrolling)
+        applyScrollPolicy(
+            on: uiView,
+            allowsScrolling: allowsScrolling,
+            coordinator: context.coordinator
+        )
         applyInlineKeyboardAccessory(on: uiView, context: context)
     }
 
@@ -74,34 +82,67 @@ struct DescriptionEditorWebView: UIViewRepresentable {
         webView.reloadInputViews()
     }
 
-    private func applyScrollPolicy(on webView: DescriptionEditorWKWebView, allowsScrolling: Bool) {
+    private func applyScrollPolicy(
+        on webView: DescriptionEditorWKWebView,
+        allowsScrolling: Bool,
+        coordinator: Coordinator
+    ) {
         let scrollView = webView.scrollView
+        coordinator.allowsScrolling = allowsScrolling
         scrollView.isScrollEnabled = allowsScrolling
         scrollView.bounces = allowsScrolling
         scrollView.alwaysBounceVertical = false
         scrollView.showsVerticalScrollIndicator = false
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.contentInsetAdjustmentBehavior = .never
+        // Inline: parent ScrollView owns caret reveal. WebKit still shifts
+        // `contentOffset` when the keyboard opens, which paints a hole under
+        // the last line. Keep the inner offset pinned at zero.
+        if allowsScrolling {
+            if scrollView.delegate === coordinator {
+                scrollView.delegate = nil
+            }
+        } else {
+            scrollView.delegate = coordinator
+            coordinator.lockInlineContentOffset(scrollView)
+        }
     }
 
     static func dismantleUIView(_ uiView: DescriptionEditorWKWebView, coordinator: Coordinator) {
+        if uiView.scrollView.delegate === coordinator {
+            uiView.scrollView.delegate = nil
+        }
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: Coordinator.handlerName)
         coordinator.bridge.detach(webView: coordinator)
     }
 
     @MainActor
-    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler, UIScrollViewDelegate {
         static let handlerName = "descriptionEditor"
 
         let bridge: DescriptionEditorBridge
         weak var webView: WKWebView?
         private let accentColor: Color
         var onKeyboardDone: (() -> Void)?
+        var allowsScrolling = false
+        private var isResettingInlineOffset = false
 
         init(bridge: DescriptionEditorBridge, accentColor: Color, onKeyboardDone: (() -> Void)?) {
             self.bridge = bridge
             self.accentColor = accentColor
             self.onKeyboardDone = onKeyboardDone
+        }
+
+        func lockInlineContentOffset(_ scrollView: UIScrollView) {
+            guard !allowsScrolling, !isResettingInlineOffset else { return }
+            guard scrollView.contentOffset != .zero else { return }
+            isResettingInlineOffset = true
+            scrollView.setContentOffset(.zero, animated: false)
+            isResettingInlineOffset = false
+        }
+
+        func scrollViewDidScroll(_ scrollView: UIScrollView) {
+            lockInlineContentOffset(scrollView)
         }
 
         func loadEditor(in webView: WKWebView) {
@@ -184,6 +225,35 @@ struct DescriptionEditorWebView: UIViewRepresentable {
 
         func resignEditingKeyboard() {
             webView?.resignFirstResponder()
+        }
+
+        func queryCaretRectInEditor() async -> CGRect? {
+            guard let webView else { return nil }
+            return await withCheckedContinuation { continuation in
+                webView.evaluateJavaScript(
+                    "window.__descriptionEditorGetCaretRect && window.__descriptionEditorGetCaretRect()"
+                ) { result, _ in
+                    continuation.resume(returning: Self.parseCaretRect(result))
+                }
+            }
+        }
+
+        static func parseCaretRect(_ value: Any?) -> CGRect? {
+            guard let dict = value as? [String: Any] else { return nil }
+            func cgFloat(_ key: String) -> CGFloat? {
+                if let value = dict[key] as? Double { return CGFloat(value) }
+                if let value = dict[key] as? NSNumber { return CGFloat(truncating: value) }
+                return nil
+            }
+            guard
+                let x = cgFloat("x"),
+                let y = cgFloat("y"),
+                let width = cgFloat("width"),
+                let height = cgFloat("height"),
+                width > 0,
+                height > 0
+            else { return nil }
+            return CGRect(x: x, y: y, width: width, height: height)
         }
 
         private func sendToJS(_ payload: [String: Any]) {

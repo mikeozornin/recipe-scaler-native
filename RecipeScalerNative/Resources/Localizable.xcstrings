@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "–" : {
 
     },
@@ -3391,23 +3394,6 @@
         }
       }
     },
-    "account.tips.loading" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading support options…"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Загружаем варианты поддержки…"
-          }
-        }
-      }
-    },
     "account.tips.legal.privacy" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3438,6 +3424,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Условия использования (EULA)"
+          }
+        }
+      }
+    },
+    "account.tips.loading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading support options…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загружаем варианты поддержки…"
           }
         }
       }
@@ -4415,6 +4418,22 @@
         }
       }
     },
+    "assistant.processing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking about your question…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Думаю над вопросом…"
+          }
+        }
+      }
+    },
     "assistant.thinking" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4548,6 +4567,22 @@
         }
       }
     },
+    "assistant.tool-status.add-recipe-to-shopping-list" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adding recipe to shopping list…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавляю рецепт в список покупок…"
+          }
+        }
+      }
+    },
     "assistant.tool-status.add-to-shopping-list" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4561,6 +4596,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавляю в список покупок…"
+          }
+        }
+      }
+    },
+    "assistant.tool-status.change-items-status" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updating shopping list…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновляю список покупок…"
+          }
+        }
+      }
+    },
+    "assistant.tool-status.clear-shopping-list" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clearing shopping list…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очищаю список покупок…"
           }
         }
       }
@@ -4582,6 +4649,38 @@
         }
       }
     },
+    "assistant.tool-status.create-recipe-from-url" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importing recipe from URL…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортирую рецепт из URL…"
+          }
+        }
+      }
+    },
+    "assistant.tool-status.delete-recipe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleting recipe…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удаляю рецепт…"
+          }
+        }
+      }
+    },
     "assistant.tool-status.generic" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4595,6 +4694,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Обрабатываю…"
+          }
+        }
+      }
+    },
+    "assistant.tool-status.get-recipe-url" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Getting recipe link…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Получаю ссылку на рецепт…"
+          }
+        }
+      }
+    },
+    "assistant.tool-status.get-shopping-list" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading shopping list…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читаю список покупок…"
+          }
+        }
+      }
+    },
+    "assistant.tool-status.list-timers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking timers…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверяю таймеры…"
+          }
+        }
+      }
+    },
+    "assistant.tool-status.load-profile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading your profile…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загружаю профиль…"
           }
         }
       }
@@ -4616,6 +4779,22 @@
         }
       }
     },
+    "assistant.tool-status.render-widget" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing options…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готовлю варианты…"
+          }
+        }
+      }
+    },
     "assistant.tool-status.scale-recipe" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4633,6 +4812,54 @@
         }
       }
     },
+    "assistant.tool-status.set-public" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updating recipe visibility…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновляю видимость рецепта…"
+          }
+        }
+      }
+    },
+    "assistant.tool-status.start-timer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starting timer…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запускаю таймер…"
+          }
+        }
+      }
+    },
+    "assistant.tool-status.stop-timer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stopping timer…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Останавливаю таймер…"
+          }
+        }
+      }
+    },
     "assistant.tool-status.search-recipes" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4646,6 +4873,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ищу рецепты…"
+          }
+        }
+      }
+    },
+    "assistant.tool-status.update-ingredients" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updating ingredients…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновляю ингредиенты…"
+          }
+        }
+      }
+    },
+    "assistant.tool-status.update-recipe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updating recipe…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновляю рецепт…"
+          }
+        }
+      }
+    },
+    "assistant.tool-status.vkusvill-create-cart-link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Building the Vkusvill cart…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Собираю корзину Вкусвилла…"
+          }
+        }
+      }
+    },
+    "assistant.tool-status.vkusvill-search-products" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searching Vkusvill products…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ищу товары во Вкусвилле…"
           }
         }
       }
@@ -10074,23 +10365,6 @@
         }
       }
     },
-    "terms.link" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Terms of Use (EULA)"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Условия использования (EULA)"
-          }
-        }
-      }
-    },
     "qr-scanner.cancel" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11687,7 +11961,6 @@
       }
     },
     "shopping.share-button" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12687,6 +12960,23 @@
         }
       }
     },
+    "terms.link" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms of Use (EULA)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Условия использования (EULA)"
+          }
+        }
+      }
+    },
     "The camera couldn't be accessed. It might be in use by another app." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13515,6 +13805,88 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Повторить"
+          }
+        }
+      }
+    },
+    "vkusvill.assistant-prompt" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Build a Vkusvill cart from my shopping list"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Собери корзину во Вкусвилле из моего списка покупок"
+          }
+        }
+      }
+    },
+    "vkusvill.buy-button" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy at Vkusvill"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Купить во Вкусвилле"
+          }
+        }
+      }
+    },
+    "vkusvill.offline" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable offline"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недоступно офлайн"
+          }
+        }
+      }
+    },
+    "vkusvill.settings-title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vkusvill"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкусвилл"
+          }
+        }
+      }
+    },
+    "vkusvill.settings-toggle-title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to Vkusvill"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключение ко Вкусвиллу"
           }
         }
       }

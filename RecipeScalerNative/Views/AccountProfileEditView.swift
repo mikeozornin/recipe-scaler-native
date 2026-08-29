@@ -156,6 +156,7 @@ struct AccountProfileEditView: View {
             viewModel: AccountSettingsViewModel(
                 auth: AuthService(),
                 timer: TimerManager.shared,
+                vkusvillSettings: VkusvillSettingsStore(),
                 performLogoutTeardown: {}
             )
         )

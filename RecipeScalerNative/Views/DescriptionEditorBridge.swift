@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import WebKit
 
 final class DescriptionEditorDeinitCleaner: @unchecked Sendable {
     private let recipeId: String
@@ -107,6 +108,8 @@ final class DescriptionEditorBridge {
     private(set) var phase: Phase = .loading
     private(set) var isFocused = false
     private(set) var contentHeight: CGFloat = DescriptionEditorLayoutMetrics.minInlineContentHeight
+    /// Last non-empty paint extent from JS (`paintedBottom`); ≤ `contentHeight`.
+    private(set) var paintedContentBottom: CGFloat = DescriptionEditorLayoutMetrics.minInlineContentHeight
     private(set) var selectionState = DescriptionEditorSelectionState()
     private(set) var lastNodeClick: DescriptionNodeClick?
     private(set) var nodeClickSequence: UInt = 0
@@ -230,9 +233,19 @@ final class DescriptionEditorBridge {
         case "contentHeight":
             if let height = dict["height"] as? Double, height > 0 {
                 contentHeight = CGFloat(height)
+                paintedContentBottom = Self.paintedBottom(from: dict, fallback: contentHeight)
             } else if let height = dict["height"] as? NSNumber {
                 contentHeight = CGFloat(truncating: height)
+                paintedContentBottom = Self.paintedBottom(from: dict, fallback: contentHeight)
             }
+            #if DEBUG
+            if contentHeight > 0 {
+                AppLog.info(.ui, "description_editor_content_height", data: [
+                    "height": String(Int(contentHeight)),
+                    "paintedBottom": String(Int(paintedContentBottom)),
+                ])
+            }
+            #endif
         case "selectionState":
             selectionState = Self.parseSelectionState(dict)
         case "html":
@@ -248,6 +261,16 @@ final class DescriptionEditorBridge {
 
     func sendCommand(name: String, args: [String: Any]? = nil) {
         webView?.sendCommand(name: name, args: args)
+    }
+
+    var editorWebView: WKWebView? {
+        webView?.webView
+    }
+
+    /// Caret / selection bounds in editor DOM coordinates (origin = top-left of ProseMirror root).
+    func requestCaretRectInEditor() async -> CGRect? {
+        guard phase == .ready else { return nil }
+        return await webView?.queryCaretRectInEditor()
     }
 
     /// Live ingredient scaling in the editor (Tiptap `scaleStorage` + ingredient NodeView).
@@ -377,6 +400,17 @@ final class DescriptionEditorBridge {
         resumeHtmlWaiters(with: "")
     }
 
+    private static func paintedBottom(from dict: [String: Any], fallback: CGFloat) -> CGFloat {
+        func cgFloat(_ key: String) -> CGFloat? {
+            if let value = dict[key] as? Double, value > 0 { return CGFloat(value) }
+            if let value = dict[key] as? NSNumber, value.doubleValue > 0 {
+                return CGFloat(value.doubleValue)
+            }
+            return nil
+        }
+        return cgFloat("paintedBottom") ?? fallback
+    }
+
     private static func parseSelectionState(_ dict: [String: Any]) -> DescriptionEditorSelectionState {
         func bool(_ key: String) -> Bool {
             (dict[key] as? Bool) == true || (dict[key] as? NSNumber)?.boolValue == true
@@ -429,4 +463,11 @@ final class DescriptionEditorBridge {
             anchorHeight: cgFloat("anchorHeight")
         )
     }
+
+    #if DEBUG
+    /// Test seam for `DescriptionEditorBridgeSelectionStateTests`.
+    static func makeSelectionStateForTesting(_ dict: [String: Any]) -> DescriptionEditorSelectionState {
+        parseSelectionState(dict)
+    }
+    #endif
 }

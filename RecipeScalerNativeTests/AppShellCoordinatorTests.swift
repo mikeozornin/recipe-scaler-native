@@ -224,4 +224,63 @@ final class AppShellCoordinatorTests: XCTestCase {
         coordinator.clearPendingRemindersSetup()
         XCTAssertFalse(coordinator.pendingRemindersSetup)
     }
+
+    func test_openAssistantWithMessage_trimsAndQueuesRequest() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+
+        coordinator.openAssistantWithMessage("  Собери корзину  \n")
+
+        XCTAssertEqual(coordinator.pendingAssistantOpenRequest?.requestId, 1)
+        XCTAssertEqual(coordinator.pendingAssistantOpenRequest?.message, "Собери корзину")
+    }
+
+    func test_openAssistantWithMessage_ignoresBlankMessage() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+
+        coordinator.openAssistantWithMessage(" \n\t ")
+
+        XCTAssertNil(coordinator.pendingAssistantOpenRequest)
+    }
+
+    func test_openAssistantWithMessage_usesDistinctIdsForRepeatedPrompt() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+
+        coordinator.openAssistantWithMessage("Собери корзину")
+        let first = coordinator.pendingAssistantOpenRequest
+        coordinator.openAssistantWithMessage("Собери корзину")
+        let second = coordinator.pendingAssistantOpenRequest
+
+        XCTAssertEqual(first?.message, second?.message)
+        XCTAssertNotEqual(first?.requestId, second?.requestId)
+    }
+
+    func test_consumeAssistantOpenRequest_doesNotDropNewerRequest() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+
+        coordinator.openAssistantWithMessage("first")
+        let first = try XCTUnwrap(coordinator.pendingAssistantOpenRequest)
+        coordinator.openAssistantWithMessage("second")
+
+        coordinator.consumeAssistantOpenRequest(first)
+
+        XCTAssertEqual(coordinator.pendingAssistantOpenRequest?.message, "second")
+    }
+
+    /// Review finding: logout must invalidate pending assistant state so an
+    /// open sheet can detect the session change (assistantSessionEpoch) and no
+    /// stale external request survives into the fresh session.
+    func test_resetShellStateForLogout_bumpsAssistantSessionEpochAndClearsPendingRequest() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.openAssistantWithMessage("Собери корзину")
+        let epochBefore = coordinator.assistantSessionEpoch
+
+        coordinator.resetShellStateForLogout()
+
+        XCTAssertEqual(
+            coordinator.assistantSessionEpoch,
+            epochBefore + 1,
+            "Logout must bump the assistant epoch so an open sheet tears down"
+        )
+        XCTAssertNil(coordinator.pendingAssistantOpenRequest)
+    }
 }

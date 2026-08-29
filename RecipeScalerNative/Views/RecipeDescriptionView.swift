@@ -52,7 +52,10 @@ struct RecipeDescriptionView: View {
     private func blockBottomPadding(_ block: RecipeDescriptionBlock) -> CGFloat {
         switch block {
         case .paragraph, .heading:
-            return bodySize * 0.25
+            // Visible inter-paragraph delta calibrated to editor parity (8pt):
+            // UITextView crops half-leading around blocks, so pure CSS `margin-bottom: 0.5em`
+            // reads as only ~4pt here. Measured via screenshot ink-band diffing.
+            return bodySize * 0.75
         case .orderedStep:
             return 6
         case .bullet:

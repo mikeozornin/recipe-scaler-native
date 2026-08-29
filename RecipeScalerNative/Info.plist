@@ -9,7 +9,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Recipe Scaler</string>
+	<string>$(RS_DISPLAY_NAME)</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -21,7 +21,7 @@
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>ru.recipescaler.recipe</string>
+				<string>$(RS_RECIPE_UTTYPE)</string>
 			</array>
 		</dict>
 	</array>
@@ -41,10 +41,10 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>ru.recipescaler.RecipeScaler</string>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>recipe-scaler</string>
+				<string>$(RS_URL_SCHEME)</string>
 			</array>
 		</dict>
 	</array>
@@ -122,7 +122,7 @@
 			<key>UTTypeDescription</key>
 			<string>Recipe Scaler recipe</string>
 			<key>UTTypeIdentifier</key>
-			<string>ru.recipescaler.recipe</string>
+			<string>$(RS_RECIPE_UTTYPE)</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>

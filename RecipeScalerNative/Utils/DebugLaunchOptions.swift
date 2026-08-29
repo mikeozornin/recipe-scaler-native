@@ -149,6 +149,18 @@ enum DebugLaunchOptions {
         boolFlag("StartDescriptionEdit")
     }
 
+    /// `-DescriptionEditorFocus=end|mid|start` — caret placement after `-StartDescriptionEdit`.
+    /// Default `end` (long-recipe keyboard-gap verify). `mid` exercises mid-document scroll.
+    static var descriptionEditorFocus: String {
+        let raw = (stringValue("DescriptionEditorFocus") ?? "end").lowercased()
+        switch raw {
+        case "mid", "middle", "start", "end":
+            return raw == "middle" ? "mid" : raw
+        default:
+            return "end"
+        }
+    }
+
     /// `-DescriptionEditorSimulateText=.` — after editor ready, inserts text (verify scripts only).
     static var simulateDescriptionEditorText: String? {
         stringValue("DescriptionEditorSimulateText")

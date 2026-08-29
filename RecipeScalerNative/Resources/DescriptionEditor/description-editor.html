@@ -35,16 +35,28 @@
       background: transparent;
     }
     #editor {
-      min-height: calc(100vh - 16px);
       padding: 16px;
       outline: none;
       line-height: 1.5;
       font-size: 16px;
       font-family: "Martian Grotesk Nr Lt", -apple-system, BlinkMacSystemFont, sans-serif;
     }
+    body:not(.inline-embedded) #editor {
+      min-height: calc(100vh - 16px);
+    }
+    body.inline-embedded {
+      overflow: hidden;
+    }
     body.inline-embedded #editor {
       min-height: 0;
+      height: auto;
       padding: 0;
+      overflow: hidden;
+    }
+    body.inline-embedded .ProseMirror {
+      height: auto;
+      min-height: 0;
+      overflow: hidden;
     }
     #editor p { margin: 0 0 0.5em; }
     #editor h1 { font-size: 1.1em; margin: 0 0 0.5em; font-weight: 600; }

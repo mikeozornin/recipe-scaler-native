@@ -86,7 +86,9 @@ struct TimerLockScreenLiveActivityView: View {
             }
             .padding(14)
         }
-        .widgetURL(attributes.recipeId.flatMap { URL(string: "recipe-scaler://recipe/\($0)") })
+        .widgetURL(attributes.recipeId.flatMap {
+            URL(string: "\(DeepLinkURL.baseScheme)://recipe/\($0)")
+        })
         .activitySystemActionForegroundColor(labelColor)
         // Fixed dark card chrome + light foreground for every appearance.
         // See `dim-live-activity.md`: the widget extension process can resolve
@@ -205,7 +207,7 @@ struct TimerLockScreenLiveActivityView: View {
                     .frame(width: 24, height: 24)
                     .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
             } else {
-                Image("AppLogo")
+                Image(RecipeScalerFlavor.appLogoAssetName)
                     .resizable()
                     .scaledToFill()
                     .frame(width: 24, height: 24)

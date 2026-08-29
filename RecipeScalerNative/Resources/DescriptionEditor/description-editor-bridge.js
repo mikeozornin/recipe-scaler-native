@@ -111,6 +111,11 @@
         postSelectionState();
       },
       onFocus: function () {
+        if (inlineMode) {
+          requestAnimationFrame(function () {
+            measureContentHeightNow();
+          });
+        }
         post('focus');
       },
       onBlur: function () {
@@ -173,13 +178,166 @@
     }, UI_POST_DEBOUNCE_MS);
   }
 
+  function getCaretRectInEditor() {
+    if (!editor || !editor.view) return null;
+    try {
+      const view = editor.view;
+      const dom = editorDom();
+      if (!dom) return null;
+      const from = editor.state.selection.from;
+      const to = editor.state.selection.to;
+      const start = view.coordsAtPos(from);
+      const end = view.coordsAtPos(to);
+      const domRect = dom.getBoundingClientRect();
+      const top = Math.min(start.top, end.top) - domRect.top;
+      const bottom = Math.max(start.bottom, end.bottom) - domRect.top;
+      const left = Math.min(start.left, end.left) - domRect.left;
+      const right = Math.max(start.right, end.right) - domRect.left;
+      const minHeight = 24;
+      return {
+        x: left,
+        y: top,
+        width: Math.max(right - left, 1),
+        height: Math.max(bottom - top, minHeight),
+      };
+    } catch (_err) {
+      return null;
+    }
+  }
+
+  function blockHasVisibleContent(el) {
+    if (!el) return false;
+    var text = (el.textContent || '').replace(/\u200b/g, '').trim();
+    if (text.length > 0) return true;
+    return !!(
+      el.querySelector &&
+      el.querySelector(
+        'img, ul, ol, hr, table, .timer-reference, .ingredient-reference, [data-timer-id], [data-ingredient-id]'
+      )
+    );
+  }
+
+  function pmBlockHasVisibleContent(node) {
+    if (!node || !node.isBlock) return false;
+    var text = (node.textContent || '').replace(/\u200b/g, '').trim();
+    if (text.length > 0) return true;
+    var hasAtom = false;
+    node.descendants(function (child) {
+      if (child.type && (child.type.name === 'timer' || child.type.name === 'ingredient')) {
+        hasAtom = true;
+      }
+    });
+    return hasAtom;
+  }
+
+  function measureLastTextBottom(root, domRect) {
+    var bottom = 0;
+    if (!root) return 0;
+    try {
+      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+      var node;
+      while ((node = walker.nextNode())) {
+        var text = (node.nodeValue || '').replace(/\u200b/g, '').trim();
+        if (!text) continue;
+        var range = document.createRange();
+        range.setStart(node, 0);
+        range.setEnd(node, node.nodeValue.length);
+        var rects = range.getClientRects();
+        for (var i = 0; i < rects.length; i++) {
+          if (rects[i].height > 0) {
+            bottom = Math.max(bottom, rects[i].bottom - domRect.top);
+          }
+        }
+      }
+    } catch (_rangeErr) {
+      /* layout mid-transaction */
+    }
+    return bottom;
+  }
+
+  function measurePaintedContentBottom(dom, domRect) {
+    var root = dom.classList && dom.classList.contains('ProseMirror') ? dom : dom.querySelector('.ProseMirror') || dom;
+    var bottom = measureLastTextBottom(root, domRect);
+
+    if (bottom <= 0) {
+      for (var i = root.children.length - 1; i >= 0; i--) {
+        var child = root.children[i];
+        if (!blockHasVisibleContent(child)) continue;
+        var layoutBottom = child.offsetTop + child.offsetHeight;
+        if (layoutBottom > 0) bottom = Math.max(bottom, layoutBottom);
+        var rect = child.getBoundingClientRect();
+        if (rect.height > 0) bottom = Math.max(bottom, rect.bottom - domRect.top);
+        break;
+      }
+    }
+
+    if (editor && editor.view && editor.state.doc.content.size > 0) {
+      try {
+        var headCoords = editor.view.coordsAtPos(editor.state.selection.from);
+        var caretBottom = headCoords.bottom - domRect.top;
+        if (bottom <= 0 || (caretBottom > 0 && caretBottom <= bottom + 48)) {
+          bottom = Math.max(bottom, caretBottom);
+        }
+      } catch (_coordsErr) {
+        /* layout mid-transaction */
+      }
+    }
+
+    return bottom;
+  }
+
+  function withInlineShrinkWrapMeasure(dom, measureFn) {
+    var editorHost = document.getElementById('editor');
+    var saved = {
+      hostHeight: editorHost ? editorHost.style.height : '',
+      hostMinHeight: editorHost ? editorHost.style.minHeight : '',
+      domHeight: dom.style.height,
+      domMinHeight: dom.style.minHeight,
+    };
+    if (editorHost) {
+      editorHost.style.height = 'auto';
+      editorHost.style.minHeight = '0';
+    }
+    dom.style.height = 'auto';
+    dom.style.minHeight = '0';
+    void dom.offsetHeight;
+    var result = measureFn();
+    if (editorHost) {
+      editorHost.style.height = saved.hostHeight;
+      editorHost.style.minHeight = saved.hostMinHeight;
+    }
+    dom.style.height = saved.domHeight;
+    dom.style.minHeight = saved.domMinHeight;
+    return result;
+  }
+
+  function measureInlineLayoutHeight(dom) {
+    withInlineShrinkWrapMeasure(dom, function () {
+      var scrollHeight = dom.scrollHeight;
+      var domRect = dom.getBoundingClientRect();
+      var paintedBottom = measurePaintedContentBottom(dom, domRect);
+      var trailing = 8;
+      var height =
+        paintedBottom > 0
+          ? Math.max(MIN_INLINE_CONTENT_HEIGHT, paintedBottom + trailing)
+          : Math.max(MIN_INLINE_CONTENT_HEIGHT, scrollHeight);
+      post('contentHeight', {
+        height: height,
+        scrollHeight: scrollHeight,
+        paintedBottom: paintedBottom,
+      });
+    });
+  }
+
   function measureContentHeightNow() {
     const dom = editorDom();
     if (!dom) return;
+    if (inlineMode) {
+      measureInlineLayoutHeight(dom);
+      return;
+    }
     const measured = dom.scrollHeight;
-    const height = inlineMode
-      ? Math.max(MIN_INLINE_CONTENT_HEIGHT, measured)
-      : Math.max(MIN_FULLSCREEN_HEIGHT, measured + 8);
+    const height = Math.max(MIN_FULLSCREEN_HEIGHT, measured + 8);
     post('contentHeight', { height: height });
   }
 
@@ -270,7 +428,17 @@
   function applyInlinePresentation(config) {
     document.body.classList.add('inline-embedded');
     document.documentElement.style.background = 'transparent';
+    document.documentElement.style.height = 'auto';
     document.body.style.background = 'transparent';
+    document.body.style.height = 'auto';
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    var editorHost = document.getElementById('editor');
+    if (editorHost) {
+      editorHost.style.minHeight = '0';
+      editorHost.style.height = 'auto';
+      editorHost.style.overflow = 'hidden';
+    }
     applyTypography(config || {});
     measureContentHeight();
     setupResizeObserver();
@@ -496,6 +664,19 @@
         editor.commands.focus();
         post('focus');
         return;
+      case 'focusEnd':
+        editor.chain().focus().setTextSelection(editor.state.doc.content.size).run();
+        measureContentHeightNow();
+        post('focus');
+        return;
+      case 'focusMid': {
+        var midSize = editor.state.doc.content.size;
+        var midPos = Math.max(1, Math.floor(midSize / 2));
+        editor.chain().focus().setTextSelection(midPos).run();
+        measureContentHeightNow();
+        post('focus');
+        return;
+      }
       case 'flush':
         flushOutboundUpdates();
         if (ydoc) {
@@ -693,6 +874,7 @@
   }
 
   window.__descriptionEditorReceive = handleNativeMessage;
+  window.__descriptionEditorGetCaretRect = getCaretRectInEditor;
 
   post('loaded');
 

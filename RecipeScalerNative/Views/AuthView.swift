@@ -4,6 +4,7 @@
 //
 //
 
+import RecipeScalerCore
 import SwiftUI
 
 struct AuthView: View {
@@ -42,7 +43,7 @@ struct AuthView: View {
                                 .shadow(color: Color(red: 0.88, green: 0.22, blue: 0.00, opacity: 0.30), radius: 40, x: 0, y: 10)
                                 .frame(width: 96, height: 96)
 
-                            Image("AppLogo")
+                            Image(RecipeScalerFlavor.appLogoAssetName)
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
                                 .frame(width: 96, height: 96)

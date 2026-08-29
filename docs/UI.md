@@ -195,9 +195,21 @@ ContentUnavailableView {
 
 iOS Settings patterns (toggles, `NavigationLink` submenus, label–value rows); no explicit Save button; avatar as centered circle with Set photo below; descriptive copy uses `.appBody()` line-height.
 
+The Vkusvill setting follows the Telegram/connection section: it is visible only
+in the Russian locale, uses the localized section title, and is disabled while
+offline or while the account setting is loading. The shared flag is owned by the
+app container so the Shopping List toolbar updates without reopening Profile. Its
+toggle uses a dedicated localized connection label.
+
 ### Shopping list
 
 Header matches Recipes: large title with sort segment in the collapsible search slot (`UISearchController` / `UISearchBar` pattern — SwiftUI has no separate API for a custom block under large title).
+
+Each to-buy or purchased row: **checkbox** → **40 pt ingredient illustration thumb** (`IngredientIllustrationThumb`, web parity) → label (+ optional recipe subtitle). Thumb resolves stored `illustrationId` from Yjs, then label-based catalog match; Bowl placeholder when unknown. Add-item row keeps **plus** marker only (no thumb).
+
+When the Vkusvill setting is enabled and the locale is Russian, the toolbar adds
+the `cart` action beside Share. It is disabled offline and opens the existing
+Assistant sheet on a fresh thread with the localized shopping-list prompt.
 
 ### Collections
 
@@ -219,9 +231,9 @@ flowchart TB
     subgraph detail["YDocRecipeDetailView"]
         SV["ScrollView (единственный вертикальный скролл)"]
         RDE["RecipeDescriptionEditorBlock<br/>WKWebView allowsScrolling: false"]
-        KBP["descriptionEditorScrollBottomInset<br/>компенсация клавиатуры + clearance панели"]
-        KPOL["DescriptionEditorScrollKeyboardPolicy<br/>ignoresSafeArea(.keyboard) при фокусе"]
-        BAR["safeAreaInset(.bottom) → DescriptionFormattingBar"]
+        KBP["scroll-into-view + bar clearance<br/>+ breathing room (не keyboard padding)"]
+        KPOL["DescriptionEditorScrollKeyboardPolicy<br/>ignoresKeyboardSafeArea: false"]
+        BAR["safeAreaInset(.bottom) → DescriptionFormattingBar<br/>+ system keyboard avoidance"]
     end
     subgraph chrome["DescriptionEditorChromeState"]
         SHOW["showsFormattingBar"]
@@ -277,7 +289,7 @@ Suppression задаётся в `syncDescriptionChromeSuppression()` (`YDocRecip
 
 | Режим | Поведение |
 |---|---|
-| Inline (деталка) | `allowsScrolling: false`; высота WebView = полная высота контента Tiptap; скроллит **родительский** `ScrollView` |
+| Inline (деталка) | `allowsScrolling: false`; внутренний `WKWebView.scrollView.contentOffset` **зажат в 0** (WebKit иначе скроллит к каретке при клавиатуре и рисует дыру); высота WebView = **фактический низ текста** (last text rect / painted bottom, не `100vh` и не phantom `scrollHeight`); скроллит **родительский** `ScrollView` |
 | Fullscreen sheet | WebView может иметь свой scroll + UIKit keyboard accessory |
 
 **Запрещено** для inline: включать `allowsScrolling: true` и/или ограничивать высоту WebView фиксированным viewport — WebView начнёт скроллиться отдельно от экрана (regression).
@@ -286,17 +298,22 @@ Suppression задаётся в `syncDescriptionChromeSuppression()` (`YDocRecip
 
 Три связанных механизма на `ScrollView` контента деталки:
 
-1. **`DescriptionEditorScrollKeyboardPolicy`** — при `isEditing && descriptionChrome.isFocused` включает `.ignoresSafeArea(.keyboard, edges: .bottom)`. Модifier должен оставаться **стабильным** (не оборачивать ScrollView в `if/else` с разной иерархией — иначе пересоздаётся WebView и мигает chrome).
+1. **`DescriptionEditorScrollKeyboardPolicy`** — структурно стабильный wrapper (не оборачивать ScrollView в `if/else` — иначе пересоздаётся WebView). **`ignoresKeyboardSafeArea` должен оставаться `false`.** Пара `ignoresSafeArea(.keyboard)` + formatting-bar `safeAreaInset` на iOS 26 раздувает scroll extent (~клавиатура + бар) и оставляет дыру под текстом.
 
-2. **`descriptionEditorKeyboardCompensation`** — отрицательный padding ≈ `-keyboardOverlapHeight` из `keyboardWillChangeFrame`, чтобы **отменить двойной** keyboard safe area inset (иначе огромный зазор между текстом и панелью).
+2. **Владелец visible extent над клавиатурой:**
+   - системный keyboard avoidance;
+   - `.safeAreaInset(edge: .bottom) { formattingBar }`.
+   **Не** включай `ignoresSafeArea(.keyboard)` при фокусе. **Не** добавляй `Color.clear(height: keyboardOverlap)` под бар. **Не** пиши raw `contentInset`. **Не** клади overlap в `.padding` документа.
 
-3. **`descriptionEditorScrollBottomInset`** — сумма compensation + `DescriptionFormattingBarLayoutMetrics.scrollClearanceHeight` (52 pt), когда `showsFormattingBar`. Без clearance низ документа **перекрывается** панелью.
+3. **`scrollDescriptionEditorAboveKeyboard`** — при фокусе и появлении клавиатуры скроллит каретку inline редактора в видимую зону над панелью (`DescriptionEditorScrollAnchor` — explicit `contentOffset`, caret rect из JS; nested `WKWebView.scrollView` пропускать; SwiftUI `scrollTo` — fallback). Только двигает `contentOffset`, extent не создаёт.
+
+4. **`descriptionEditorScrollBottomInset`** — `scrollClearanceHeight` (52) + `contentBottomBreathingRoom` (16), когда `showsFormattingBar`. Без clearance низ длинного документа перекрывается панелью; breathing room — зазор между последней строкой и панелью.
 
 ```swift
 // YDocRecipeDetailView — не разносить по разным местам без причины
 .padding(.bottom, descriptionEditorScrollBottomInset)
 .modifier(DescriptionEditorScrollKeyboardPolicy(
-    ignoresKeyboardSafeArea: isEditing && descriptionChrome.isFocused
+    ignoresKeyboardSafeArea: false
 ))
 ```
 
@@ -325,8 +342,10 @@ Suppression задаётся в `syncDescriptionChromeSuppression()` (`YDocRecip
 
 - [ ] Панель по-прежнему в `safeAreaInset`, не в keyboard toolbar?
 - [ ] Inline WebView: `allowsScrolling: false`, полная `contentHeight`?
-- [ ] `descriptionEditorScrollBottomInset` учитывает высоту панели при `showsFormattingBar`?
-- [ ] Keyboard compensation не убран (нет двойного gap)?
+- [ ] Inline height: JS `measureInlineLayoutHeight` — `paintedBottom` по последнему текстовому rect (не `100vh` / не stretched `ol`); Swift scroll cap использует `paintedContentBottom`?
+- [ ] Inline WebView: `scrollView.delegate` держит `contentOffset = 0` (клавиатура не скроллит внутренний WKWebView)?
+- [ ] `descriptionEditorScrollBottomInset` = clearance + breathing room при `showsFormattingBar` (без keyboard overlap в padding)?
+- [ ] Scroll extent над клавиатурой — system keyboard avoidance + bar `safeAreaInset` (`ignoresKeyboardSafeArea: false`; без `Color.clear(keyboardOverlap)` / raw `contentInset` / padding на высоту клавиатуры)?
 - [ ] `DescriptionEditorScrollKeyboardPolicy` не toggles через смену ветки `if/else` на ScrollView?
 - [ ] UITest `testDescriptionKeyboardDoneHidesFormattingBar` проходит?
 - [ ] Verify: `bash scripts/verify-description-editor.sh [recipe-uuid]`
@@ -339,7 +358,9 @@ Suppression задаётся в `syncDescriptionChromeSuppression()` (`YDocRecip
 | `if focused { ScrollView… } else { ScrollView… }` для keyboard policy | Мигание / teardown WebView, пропадание панели |
 | Internal scroll WebView в inline | Два независимых скролла |
 | Убрать `scrollClearanceHeight` | Низ описания под панелью |
-| Убрать keyboard compensation | Огромный зазор при фокусе |
+| `ignoresSafeArea(.keyboard)` при фокусе + bar `safeAreaInset` | Огромная дыра ~высоты клавиатуры; бар «отрывается» |
+| Убрать bar `safeAreaInset` при фокусе | Низ описания / пустое поле под клавиатурой, скролл не дотягивает |
+| Padding на высоту клавиатуры | Огромная дыра между текстом и панелью |
+| Писать raw `contentInset` под клавиатуру | SwiftUI сбрасывает; поведение нестабильно |
 | Таймер на деталке без suppress в edit | Конфликт bottom inset с панелью форматирования |
 | UIKit Done accessory в inline | Дубли Done, лишний chrome |
-

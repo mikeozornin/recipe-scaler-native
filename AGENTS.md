@@ -19,6 +19,7 @@
 - Monorepo: native здесь, web — `../recipe-scaler-web`, API — `https://recipe-scaler.ru`.
 - Offline-first; debug builds auto-login prod debug user.
 - Recipes v1/v2 — read-only на iOS; v3 editing и миграция — только web.
+- **Side-by-side сборки (spec 066):** схема **RecipeScalerNative-Dev** = dev-иконка «RS Dev» (`ru.recipescaler.RecipeScaler.debug`) рядом с App Store версией; константы флейвора — `AppGroup.id` / `SharedAuthStore` / `DeepLinkURL.baseScheme` под `RS_DEV_FLAVOR`; портал-чеклист и ограничения — [docs/PAID-APPLE-DEVELOPER-REQUIRED.md](docs/PAID-APPLE-DEVELOPER-REQUIRED.md) §1.3.1.
 - **Composition root:** app-level сервисы строятся в `RecipeScalerNative/App/AppContainer.swift` и инжектятся через `.appEnvironment(_:)`. `.shared` разрешён только для AppIntents/pre-bootstrap и OS-фасадов. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (Composition Root).
 
 ## Журналирование

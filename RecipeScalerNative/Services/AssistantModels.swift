@@ -129,6 +129,32 @@ struct AssistantMessage: Identifiable {
     var isStreaming: Bool
     var metadata: AssistantMessageMetadata?
     var createdAt: Date
+
+    static func optimisticToolStatus(toolName: String) -> AssistantMessage {
+        AssistantMessage(
+            id: "optimistic-tool-status-\(UUID().uuidString)",
+            role: "assistant",
+            text: "",
+            isStreaming: false,
+            metadata: .toolStatusOnly(toolName: toolName),
+            createdAt: Date()
+        )
+    }
+
+    var isToolStatusRow: Bool {
+        metadata?.toolStatus != nil
+    }
+
+    var isProcessingPlaceholder: Bool {
+        role == "assistant"
+            && isStreaming
+            && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !isToolStatusRow
+    }
+
+    static func isOptimisticID(_ id: String) -> Bool {
+        id.hasPrefix("optimistic-")
+    }
 }
 
 enum AssistantISO8601 {
@@ -149,6 +175,12 @@ enum AssistantISO8601 {
     }
 }
 
+// MARK: - Tool status (client-only UI metadata; web parity spec 073)
+
+struct AssistantToolStatus: Sendable, Hashable {
+    let toolName: String
+}
+
 // MARK: - Message metadata (subset of the web `AssistantMessageMetadata` that iOS consumes)
 
 struct AssistantMessageMetadata: Decodable, Sendable {
@@ -157,6 +189,36 @@ struct AssistantMessageMetadata: Decodable, Sendable {
     let pendingAction: AssistantPendingAction?
     let actionResolution: AssistantActionResolution?
     let followUpSuggestions: [AssistantFollowUpSuggestion]?
+    /// Client-only; never sent by server. Mirrors web `metadata.toolStatus`.
+    var toolStatus: AssistantToolStatus?
+
+    enum CodingKeys: String, CodingKey {
+        case attachments
+        case interactiveWidget
+        case pendingAction
+        case actionResolution
+        case followUpSuggestions
+    }
+
+    init(
+        attachments: [AssistantRecipeAttachment]? = nil,
+        interactiveWidget: AssistantInteractiveWidget? = nil,
+        pendingAction: AssistantPendingAction? = nil,
+        actionResolution: AssistantActionResolution? = nil,
+        followUpSuggestions: [AssistantFollowUpSuggestion]? = nil,
+        toolStatus: AssistantToolStatus? = nil
+    ) {
+        self.attachments = attachments
+        self.interactiveWidget = interactiveWidget
+        self.pendingAction = pendingAction
+        self.actionResolution = actionResolution
+        self.followUpSuggestions = followUpSuggestions
+        self.toolStatus = toolStatus
+    }
+
+    static func toolStatusOnly(toolName: String) -> AssistantMessageMetadata {
+        AssistantMessageMetadata(toolStatus: AssistantToolStatus(toolName: toolName))
+    }
 }
 
 // MARK: - Stream final payload

@@ -69,10 +69,12 @@ struct AppShellView: View {
     @Environment(TimerManager.self) private var timerManager
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
     @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
+    @Environment(VkusvillSettingsStore.self) private var vkusvillSettings
     @Environment(OfflineBannerGate.self) private var offlineGate
     @Environment(\.scenePhase) private var scenePhase
     @State private var showAssistant = false
     @State private var assistantContextRecipeId: String?
+    @State private var assistantOpenRequest: AssistantOpenRequest?
     @State private var transientStatus: TransientStatusPayload?
     @State private var transientStatusDismissTask: Task<Void, Never>?
     @State private var mobileTimerPanelCollapsed = true
@@ -86,6 +88,20 @@ struct AppShellView: View {
 
     init(coordinator: AppShellCoordinator) {
         _coordinator = Bindable(wrappedValue: coordinator)
+    }
+
+    /// Resolved from the environment's `AppContainer` (composition root owns
+    /// teardown wiring); nil in previews/tests, where logout skips container
+    /// teardown instead of touching a global.
+    @Environment(\.appContainer) private var appContainer
+
+    private var performLogoutTeardown: () async -> Void {
+        let container = appContainer
+        return {
+            guard let container else { return }
+            await container.sync.clearSessionForLogout()
+            await container.stopForLogout()
+        }
     }
 
     /// Spec 066 — ignore connection flaps while backgrounded; reset so lock
@@ -133,6 +149,18 @@ struct AppShellView: View {
         49
     }
 
+    /// Routes a queued external assistant request only after the shell exists.
+    /// The coordinator consumes the exact request id, so a newer request cannot
+    /// be accidentally cleared by a delayed presentation callback.
+    private func routePendingAssistantOpenRequest() {
+        guard let request = coordinator.pendingAssistantOpenRequest else { return }
+        coordinator.consumeAssistantOpenRequest(request)
+        assistantOpenRequest = request
+        assistantContextRecipeId = nil
+        assistantRecipeContext.isAssistantSheetOpen = true
+        showAssistant = true
+    }
+
     /// Spec 040 — handlers for CTA taps in `FeatureAdoptionGuideView`.
     /// Spec 040 — handlers for CTA taps in `FeatureAdoptionGuideView`.
     /// These are the app-level actions (tab switch, sheet, external Safari).
@@ -143,6 +171,9 @@ struct AppShellView: View {
         FeatureAdoptionAppCtaHandler(
             openAssistant: {
                 Task { @MainActor in
+                    // Manual open carries no external payload; reset so a stale
+                    // request from a previous presentation cannot leak in.
+                    assistantOpenRequest = nil
                     showAssistant = true
                     assistantRecipeContext.isAssistantSheetOpen = true
                 }
@@ -192,26 +223,44 @@ struct AppShellView: View {
                     }
                 }
             }
-            .onChange(of: coordinator.pendingFileImportToast) { _, newValue in
-                guard let newValue else { return }
-                postTransientStatus(newValue)
-                coordinator.pendingFileImportToast = nil
-            }
+        .onChange(of: coordinator.pendingFileImportToast) { _, newValue in
+            guard let newValue else { return }
+            postTransientStatus(newValue)
+            coordinator.pendingFileImportToast = nil
+        }
+        .onChange(of: coordinator.pendingAssistantOpenRequest) { _, _ in
+            routePendingAssistantOpenRequest()
+        }
         .onChange(of: showAssistant) { _, isOpen in
             assistantRecipeContext.isAssistantSheetOpen = isOpen
         }
         .sheet(isPresented: $showAssistant, onDismiss: {
             assistantRecipeContext.isAssistantSheetOpen = false
             assistantContextRecipeId = nil
+            // Deliberately NOT clearing `assistantOpenRequest` here. A request
+            // consumed by `routePendingAssistantOpenRequest` after our dismissal
+            // started cannot be distinguished from the dismissing presentation's
+            // own payload, so clearing here raced new external opens (review
+            // finding: onDismiss could wipe an already-queued request). Stale
+            // payloads are impossible instead: every manual open site below
+            // assigns this field explicitly, and external requests overwrite it
+            // synchronously before presenting.
         }) {
             AssistantSheet(
-                contextRecipeId: assistantContextRecipeId ?? assistantRecipeContext.visibleRecipeId
+                contextRecipeId: assistantContextRecipeId ?? assistantRecipeContext.visibleRecipeId,
+                openRequest: assistantOpenRequest
             )
+            // Sheet content is hosted outside `tabView`; `.environment(coordinator)`
+            // on the shell does not propagate here (fatal: missing AppShellCoordinator).
+            .environment(coordinator)
         }
         .overlay(alignment: .bottomTrailing) {
             if !showAssistant {
                 AssistantFabButton {
                     assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
+                    // Manual open carries no external payload; reset so a stale
+                    // request from a previous presentation cannot leak in.
+                    assistantOpenRequest = nil
                     assistantRecipeContext.isAssistantSheetOpen = true
                     showAssistant = true
                 }
@@ -258,9 +307,10 @@ struct AppShellView: View {
             coordinator.handleDeepLink(link)
         }
         // Spec 066 — single writer for offline banner debounce.
-        // Feature-gating views (AssistantSheet, disabled buttons, image refresh)
-        // continue to read `connectionState.isConnected` directly (instant);
-        // only status banners read `offlineGate` (debounced).
+        // Status banners and AssistantSheet's body branch read `offlineGate`
+        // (debounced); action paths (AssistantSheet bootstrap/send/autosend,
+        // disabled buttons, image refresh) still read
+        // `connectionState.isConnected` directly (instant).
         //
         // Signal: `!connectionState.isConnected` (not NWPathMonitor). Airplane
         // mode oscillates connecting ↔ reconnecting without `.connected`; those
@@ -290,6 +340,7 @@ struct AppShellView: View {
             // not fire for a value already set before this view mounted (cold
             // start already offline), so without this the banner would never appear.
             applyOfflineBannerGate(for: scenePhase)
+            routePendingAssistantOpenRequest()
         }
         #if DEBUG
         .onAppear {
@@ -299,6 +350,7 @@ struct AppShellView: View {
             }
             if DebugLaunchOptions.showAssistant {
                 assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
+                assistantOpenRequest = nil
                 assistantRecipeContext.isAssistantSheetOpen = true
                 showAssistant = true
             }
@@ -366,7 +418,12 @@ struct AppShellView: View {
             .tag(AppTab.shopping)
             .accessibilityIdentifier(AccessibilityIdentifiers.tabShopping)
 
-            tabRoot(AccountView(auth: authService, timer: timerManager)) {
+            tabRoot(AccountView(
+                auth: authService,
+                timer: timerManager,
+                vkusvillSettings: vkusvillSettings,
+                performLogoutTeardown: performLogoutTeardown
+            )) {
                 AppTabBarLabel(tab: .profile)
             }
             .tag(AppTab.profile)

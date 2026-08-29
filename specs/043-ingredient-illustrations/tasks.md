@@ -33,9 +33,7 @@
 
 - [x] `docs/ARCHITECTURE.md`
 
-## Фаза 5 — P2 (вне scope закрытия P1)
+## Фаза 5 — P2 — done
 
-Отдельная задача / спека при необходимости:
-
-- [ ] Discover — read-only thumbs
-- [ ] Shopping — thumb в строке + copy `illustrationId` при add-from-recipe
+- [x] Discover — read-only thumbs (via shared `YDocIngredientsSection`)
+- [x] Shopping — thumb в строке + copy `illustrationId` при add-from-recipe + label fallback

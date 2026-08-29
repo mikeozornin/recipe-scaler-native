@@ -210,6 +210,10 @@ struct RecipeListView: View {
             .onChange(of: syncService.collectionEntries.count) { _, _ in
                 openDebugRecipeIfNeeded()
             }
+            .onChange(of: debugOpenRecipeIsAvailable) { _, available in
+                guard available else { return }
+                openDebugRecipeIfNeeded()
+            }
             .task {
                 openDebugRecipeIfNeeded()
             }
@@ -479,6 +483,12 @@ struct RecipeListView: View {
     }
 
     #if DEBUG
+    /// True when `-OpenRecipeId` is present in the current collection (DEBUG launch).
+    private var debugOpenRecipeIsAvailable: Bool {
+        guard let recipeId = DebugLaunchOptions.openRecipeId else { return false }
+        return syncService.collectionEntries.contains { !$0.deleted && $0.id == recipeId }
+    }
+
     private func openDebugRecipeIfNeeded() {
         guard !didOpenDebugRecipe else { return }
         let entries = syncService.collectionEntries.filter { !$0.deleted }

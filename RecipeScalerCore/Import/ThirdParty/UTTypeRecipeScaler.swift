@@ -17,6 +17,32 @@
 
 import UniformTypeIdentifiers
 
+/// Recipe file type identifier, flavor-dependent (spec 066).
+///
+/// The prod app exports `ru.recipescaler.recipe`; the side-by-side dev build
+/// exports `ru.recipescaler.recipe.debug` so AirDrop / «Open in…» routes
+/// files to the intended install. The value must match the main target's
+/// `UTExportedTypeDeclarations` in Info.plist (`$(RS_RECIPE_UTTYPE)`) and the
+/// `RS_RECIPE_UTTYPE` build setting of the active configuration.
+public enum RecipeScalerFlavor {
+    public static let recipeUTTypeIdentifier: String = {
+        #if RS_DEV_FLAVOR
+        return "ru.recipescaler.recipe.debug"
+        #else
+        return "ru.recipescaler.recipe"
+        #endif
+    }()
+
+    /// Asset catalog logo for splash, auth, and widget chrome (spec 066).
+    public static let appLogoAssetName: String = {
+        #if RS_DEV_FLAVOR
+        return "AppLogoDev"
+        #else
+        return "AppLogo"
+        #endif
+    }()
+}
+
 public extension UTType {
     /// Recipe Scaler's own recipe file type.
     ///
@@ -26,7 +52,7 @@ public extension UTType {
     /// registered (the main app is installed), iOS will report our bundle as
     /// the owner and use our icon in share sheets.
     static let recipeScalerRecipe = UTType(
-        exportedAs: "ru.recipescaler.recipe",
+        exportedAs: RecipeScalerFlavor.recipeUTTypeIdentifier,
         conformingTo: .zip
     )
 }
