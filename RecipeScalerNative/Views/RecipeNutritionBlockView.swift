@@ -60,24 +60,25 @@ struct RecipeNutritionBlockView: View {
         }
     }
 
-    private var modeSegments: [NutritionModeSegment] {
-        var segments: [NutritionModeSegment] = [
-            NutritionModeSegment(mode: .dish, titleKey: "nutrition.per-dish")
+    private var modeItems: [(title: String, mode: IngredientNutritionViewMode)] {
+        var items: [(title: String, mode: IngredientNutritionViewMode)] = [
+            (Bundle.currentLocalizedString("nutrition.per-dish"), .dish)
         ]
         if (totalWeight ?? 0) > 0 {
-            segments.append(NutritionModeSegment(mode: .per100g, titleKey: "nutrition.per-100g"))
+            items.append((Bundle.currentLocalizedString("nutrition.per-100g"), .per100g))
         }
         if recipe.servings > 0 {
-            segments.append(NutritionModeSegment(mode: .perServing, titleKey: "nutrition.per-serving"))
+            items.append((Bundle.currentLocalizedString("nutrition.per-serving"), .perServing))
         }
-        segments.append(
-            NutritionModeSegment(
-                mode: .scaled,
-                verbatimTitle: RecipeNutritionDisplay.formatScaleFactorLabel(scaleFactor),
-                unselectedTitleColor: accentColor
-            )
-        )
-        return segments
+        items.append((RecipeNutritionDisplay.formatScaleFactorLabel(scaleFactor), .scaled))
+        return items
+    }
+
+    private func clampViewMode() {
+        let available = modeItems.map(\.mode)
+        if !available.contains(viewMode) {
+            viewMode = available.first ?? .dish
+        }
     }
 
     @ViewBuilder
@@ -87,23 +88,13 @@ struct RecipeNutritionBlockView: View {
                 .appHeadline()
 
             if showsModeToggle {
-                NutritionModeSegmentedControl(
-                    segments: modeSegments,
-                    selection: $viewMode
-                )
+                NutritionModeSegmentedPicker(modes: modeItems, selection: $viewMode)
             }
         }
         .onAppear { clampViewMode() }
         .onChange(of: recipe.id) { _, _ in clampViewMode() }
         .onChange(of: recipe.servings) { _, _ in clampViewMode() }
         .onChange(of: totalWeight) { _, _ in clampViewMode() }
-    }
-
-    private func clampViewMode() {
-        let available = Set(modeSegments.map(\.mode))
-        if !available.contains(viewMode) {
-            viewMode = modeSegments.first?.mode ?? .dish
-        }
     }
 
     private func macrosRow(_ macros: RecipeNutritionDisplay.Macros) -> some View {
@@ -171,90 +162,75 @@ struct RecipeNutritionBlockView: View {
                 .minimumScaleFactor(0.7)
             Text(labelKey)
                 .appFootnote()
-                .foregroundStyle(.primary)
+                .foregroundStyle(valueColor)
                 .lineLimit(1)
         }
     }
 }
 
-private struct NutritionModeSegment: Identifiable {
-    let mode: IngredientNutritionViewMode
-    let titleKey: String?
-    let verbatimTitle: String?
-    var unselectedTitleColor: Color = .primary
-
-    var id: IngredientNutritionViewMode { mode }
-
-    init(mode: IngredientNutritionViewMode, titleKey: String, unselectedTitleColor: Color = .primary) {
-        self.mode = mode
-        self.titleKey = titleKey
-        self.verbatimTitle = nil
-        self.unselectedTitleColor = unselectedTitleColor
-    }
-
-    init(mode: IngredientNutritionViewMode, verbatimTitle: String, unselectedTitleColor: Color = .primary) {
-        self.mode = mode
-        self.titleKey = nil
-        self.verbatimTitle = verbatimTitle
-        self.unselectedTitleColor = unselectedTitleColor
-    }
-}
-
-/// Glued segmented control (web `ToggleGroup` with `gap-0` / shared outer border).
-private struct NutritionModeSegmentedControl: View {
-    let segments: [NutritionModeSegment]
+/// `UISegmentedControl` с `apportionsSegmentWidthsByContent`: общий контрол растягивается
+/// по доступной ширине, но ширины сегментов подстраиваются под содержимое.
+private struct NutritionModeSegmentedPicker: UIViewRepresentable {
+    let modes: [(title: String, mode: IngredientNutritionViewMode)]
     @Binding var selection: IngredientNutritionViewMode
 
-    private let trackInset: CGFloat = 2
-    private let cornerRadius: CGFloat = 8
-    private let segmentCornerRadius: CGFloat = 6
-
-    var body: some View {
-        HStack(spacing: 0) {
-            ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
-                segmentButton(segment: segment, index: index)
-            }
-        }
-        .padding(trackInset)
-        .background(Color(.tertiarySystemFill))
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(Color(.separator), lineWidth: 1)
-        }
-        .fixedSize(horizontal: true, vertical: false)
+    func makeUIView(context: Context) -> UISegmentedControl {
+        let control = UISegmentedControl(items: modes.map(\.title))
+        control.selectedSegmentIndex = currentSegmentIndex
+        control.addTarget(context.coordinator, action: #selector(Coordinator.valueChanged(_:)), for: .valueChanged)
+        control.accessibilityLabel = Bundle.currentLocalizedString("nutrition.view-mode")
+        applyContentBasedWidths(to: control)
+        return control
     }
 
-    private func segmentButton(segment: NutritionModeSegment, index: Int) -> some View {
-        let isSelected = selection == segment.mode
-        return Button {
-            selection = segment.mode
-        } label: {
-            Group {
-                if let titleKey = segment.titleKey {
-                    Text(LocalizedStringKey(titleKey))
-                        .appHeadline()
-                } else {
-                    Text(segment.verbatimTitle ?? "")
-                        .appHeadline()
-                }
-            }
-            .foregroundStyle(isSelected ? Color.primary : segment.unselectedTitleColor)
-            .lineLimit(1)
-            .minimumScaleFactor(0.75)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .fixedSize(horizontal: true, vertical: false)
-            .background {
-                if isSelected {
-                    RoundedRectangle(cornerRadius: segmentCornerRadius, style: .continuous)
-                        .fill(Color(.systemBackground))
-                        .shadow(color: Color.black.opacity(0.06), radius: 1, y: 1)
-                }
-            }
-            .contentShape(Rectangle())
+    func updateUIView(_ control: UISegmentedControl, context: Context) {
+        syncSegments(in: control)
+        applyContentBasedWidths(to: control)
+        control.selectedSegmentIndex = currentSegmentIndex
+    }
+
+    /// У сегментов UISegmentedControl нет публичного API внутренних отступов.
+    /// Компенсируем: явные ширины = ширина текста + компактный боковой паддинг.
+    private func applyContentBasedWidths(to control: UISegmentedControl) {
+        control.apportionsSegmentWidthsByContent = false
+        let attributes: [NSAttributedString.Key: Any] = [.font: AppTypography.bodyUIFont]
+        for (index, item) in modes.enumerated() {
+            let textWidth = (item.title as NSString).size(withAttributes: attributes).width
+            control.setWidth(ceil(textWidth) + Self.segmentPadding * 2, forSegmentAt: index)
         }
-        .buttonStyle(.plain)
-        .zIndex(isSelected ? 1 : 0)
+    }
+
+    private static let segmentPadding: CGFloat = 8
+
+    /// Набор режимов меняется динамически (есть вес/порции) — обновляем сегменты и
+    /// выбранный индекс при каждом обновлении.
+    private func syncSegments(in control: UISegmentedControl) {
+        let titles = modes.map(\.title)
+        guard titles.count != control.numberOfSegments
+            || (0..<control.numberOfSegments).contains(where: { control.titleForSegment(at: $0) != titles[$0] })
+        else { return }
+        control.removeAllSegments()
+        titles.forEach { control.insertSegment(withTitle: $0, at: control.numberOfSegments, animated: false) }
+    }
+
+    private var currentSegmentIndex: Int {
+        modes.firstIndex(where: { $0.mode == selection }) ?? 0
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    final class Coordinator: NSObject {
+        var parent: NutritionModeSegmentedPicker
+
+        init(_ parent: NutritionModeSegmentedPicker) {
+            self.parent = parent
+        }
+
+        @objc func valueChanged(_ sender: UISegmentedControl) {
+            guard parent.modes.indices.contains(sender.selectedSegmentIndex) else { return }
+            parent.selection = parent.modes[sender.selectedSegmentIndex].mode
+        }
     }
 }
