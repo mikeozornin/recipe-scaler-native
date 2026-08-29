@@ -237,15 +237,11 @@ struct ShoppingListView: View {
     }
 
     private var shoppingSortControl: some View {
-        AppSegmentedControl(
-            segments: [
-                .init(value: ShoppingSortMode.recipe, title: "shopping.sort.by-recipe"),
-                .init(value: ShoppingSortMode.alphabet, title: "shopping.sort.az"),
-            ],
-            selection: sortBinding,
-            style: .listHeader
-        )
-        .accessibilityLabel("shopping.sort")
+        Picker("shopping.sort", selection: sortBinding) {
+            Text("shopping.sort.by-recipe").tag(ShoppingSortMode.recipe)
+            Text("shopping.sort.az").tag(ShoppingSortMode.alphabet)
+        }
+        .pickerStyle(.segmented)
     }
 
     private func refreshRemindersTipVisibility() {
@@ -292,8 +288,10 @@ struct ShoppingListView: View {
                 alignment: .center
             )
             .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
             addItemRow
                 .shoppingListItemRowInsets()
+                .listRowSeparator(.hidden)
         }
     }
 
@@ -614,7 +612,7 @@ private struct ShoppingRemindersTipBanner: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier(AccessibilityIdentifiers.shoppingRemindersTipEnable)
         }
-        .padding(12)
+        .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 10))

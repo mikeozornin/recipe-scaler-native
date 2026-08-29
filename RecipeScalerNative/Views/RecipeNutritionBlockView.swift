@@ -193,14 +193,18 @@ private struct NutritionModeSegmentedPicker: UIViewRepresentable {
     /// Компенсируем: явные ширины = ширина текста + компактный боковой паддинг.
     private func applyContentBasedWidths(to control: UISegmentedControl) {
         control.apportionsSegmentWidthsByContent = false
-        let attributes: [NSAttributedString.Key: Any] = [.font: AppTypography.bodyUIFont]
+        control.setTitleTextAttributes([.font: Self.segmentFont], for: .normal)
+        control.setTitleTextAttributes([.font: Self.segmentFont], for: .selected)
         for (index, item) in modes.enumerated() {
-            let textWidth = (item.title as NSString).size(withAttributes: attributes).width
+            let textWidth = (item.title as NSString).size(withAttributes: [.font: Self.segmentFont]).width
             control.setWidth(ceil(textWidth) + Self.segmentPadding * 2, forSegmentAt: index)
         }
     }
 
-    private static let segmentPadding: CGFloat = 8
+    /// Стиль заголовка («КБЖУ на»): Martian Medium 16.
+    private static let segmentFont = AppTypography.sansMediumBodyUIFont
+
+    private static let segmentPadding: CGFloat = 10
 
     /// Набор режимов меняется динамически (есть вес/порции) — обновляем сегменты и
     /// выбранный индекс при каждом обновлении.

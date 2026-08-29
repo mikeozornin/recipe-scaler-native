@@ -54,12 +54,12 @@ struct ImportRecipeSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    AppSegmentedControl(segments: [
-                        .init(value: .text, title: "import.tab-text", isDisabled: !isOnline),
-                        .init(value: .photo, title: "import.tab-photo", isDisabled: !isOnline),
-                        .init(value: .file, title: "import.tab-file")
-                    ], selection: $mode)
-                    .accessibilityLabel(Text("import.mode-accessibility"))
+                    Picker("import.mode-accessibility", selection: $mode) {
+                        Text("import.tab-text").tag(ImportMode.text)
+                        Text("import.tab-photo").tag(ImportMode.photo)
+                        Text("import.tab-file").tag(ImportMode.file)
+                    }
+                    .pickerStyle(.segmented)
                 }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))

@@ -10349,6 +10349,23 @@
         }
       }
     },
+    "nutrition.view-mode" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nutrition units"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Единицы КБЖУ"
+          }
+        }
+      }
+    },
     "privacy.link" : {
       "localizations" : {
         "en" : {

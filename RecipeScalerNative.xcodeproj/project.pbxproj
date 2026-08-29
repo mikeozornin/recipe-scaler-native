@@ -409,7 +409,6 @@
 		E5F60718293A4B709F00BE94 /* SharingAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7035E279C2 /* SharingAPI.swift */; };
 		E5F60718293A4B70A1B2C3D /* RecipeReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A1B2C3E /* RecipeReader.swift */; };
 		E5F60718293A4B70A1B2C3E5 /* RecipeImageUploadPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */; };
-		E5F60718293A4B70A1SEG001 /* AppSegmentedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A1SEG002 /* AppSegmentedControl.swift */; };
 		E5F60718293A4B70A1TBR001 /* AppToolbarStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A1TBR002 /* AppToolbarStyle.swift */; };
 		E5F60718293A4B70AAV01234 /* AuthAvatarImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70AAV00001 /* AuthAvatarImage.swift */; };
 		E5F60718293A4B70ACE05678 /* AccountProfileEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70ACE01234 /* AccountProfileEditView.swift */; };
@@ -1133,7 +1132,6 @@
 		E5F60718293A4B70A0E4855E /* AssistantAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantAPI.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A1B2C3E /* RecipeReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeReader.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A1B2C3E4 /* RecipeImageUploadPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeImageUploadPreprocessor.swift; sourceTree = "<group>"; };
-		E5F60718293A4B70A1SEG002 /* AppSegmentedControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSegmentedControl.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A1TBR002 /* AppToolbarStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppToolbarStyle.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A32A1501 /* ShoppingListData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListData.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A5EF6DCE /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
@@ -1533,7 +1531,6 @@
 				E5F60718293A4B70A5EF6DCE /* AppShellView.swift */,
 				E5F60718293A4B700A5738C7 /* ShoppingListView.swift */,
 				E5F60718293A4B7060097EA7 /* ImportRecipeSheet.swift */,
-				E5F60718293A4B70A1SEG002 /* AppSegmentedControl.swift */,
 				E5F60718293A4B70A1TBR002 /* AppToolbarStyle.swift */,
 				E5F60718293A4B70AFAB0002 /* AssistantFabStyle.swift */,
 				E5F60718293A4B7017DF9B12 /* DiscoverRootView.swift */,
@@ -3017,7 +3014,6 @@
 				E5F60718293A4B705777B4EE /* AppShellView.swift in Sources */,
 				E5F60718293A4B7078685F7E /* ShoppingListView.swift in Sources */,
 				E5F60718293A4B70CD074276 /* ImportRecipeSheet.swift in Sources */,
-				E5F60718293A4B70A1SEG001 /* AppSegmentedControl.swift in Sources */,
 				E5F60718293A4B70A1TBR001 /* AppToolbarStyle.swift in Sources */,
 				E5F60718293A4B70AFAB0001 /* AssistantFabStyle.swift in Sources */,
 				E5F60718293A4B7076429294 /* DiscoverRootView.swift in Sources */,
