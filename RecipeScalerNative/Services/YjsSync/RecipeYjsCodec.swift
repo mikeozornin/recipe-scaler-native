@@ -152,13 +152,16 @@ enum RecipeYjsCodec {
             if let totalWeight = nMap.double(key: "totalWeight", txn: txn) {
                 extra["totalWeight"] = totalWeight
             }
-            let nutritionOutdated = nMap.bool(key: "nutritionOutdated", txn: txn) ?? false
+            let nestedOutdated = nMap.bool(key: "nutritionOutdated", txn: txn) ?? false
+            // Match web `parseNutritionFromYJS`: nested map is source of truth for v2/v3.
+            // Root-level `nutritionOutdated` is legacy from edit API; OR-ing it kept the
+            // banner after server recalc cleared nested but not root.
             return NutritionData(
                 calories: nMap.double(key: "calories", txn: txn),
                 protein: nMap.double(key: "protein", txn: txn),
                 fat: nMap.double(key: "fat", txn: txn),
                 carbs: nMap.double(key: "carbs", txn: txn),
-                nutritionOutdated: rootOutdated || nutritionOutdated,
+                nutritionOutdated: nestedOutdated,
                 extra: extra
             )
         }) {

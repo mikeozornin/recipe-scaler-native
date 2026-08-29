@@ -233,6 +233,13 @@ struct RecipeMapWriter {
 
     func setNutritionOutdated(_ outdated: Bool) {
         map.insert(key: "nutritionOutdated", value: .bool(outdated), txn: txn)
+        writeNutritionMap(
+            calories: nil,
+            protein: nil,
+            fat: nil,
+            carbs: nil,
+            nutritionOutdated: outdated
+        )
     }
 
     /// Bulk-write a set of scalar fields via raw `YrsInput` values.
