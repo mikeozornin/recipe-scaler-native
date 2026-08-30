@@ -70,6 +70,8 @@ store/screenshots/iphone-6.9/**/*.png
 # Drafts (digest/What's New) — локальные артефакты; .gitkeep держит каталог в git.
 store/drafts/*
 !store/drafts/.gitkeep
+# App Store Connect API credentials (local only)
+store/asc.env.local
 .test-fast-results.xcresult
 .test-fast.log
 

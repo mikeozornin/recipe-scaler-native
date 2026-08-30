@@ -1,17 +1,19 @@
 # iOS релизы и release notes
 
 Лёгкий workflow фиксации App Store-релизов и подготовки What's New.
-App Store Connect API не используется — только git + локальный реестр.
+Listing-тексты (description, subtitle, keywords) — git master в [`store/`](../store/) (`listing/`, `scripts/asc-pull-app-store-metadata.py`, read-only pull). Теги релизов и What's New history — без ASC API.
 
 ## Артефакты
 
 | Артефакт | Назначение |
 |----------|------------|
 | git tag `ios/X.Y.Z` (annotated) | якорь «эта версия вышла в App Store» |
+| [`store/`](../store/) | скриншоты, fixtures, master listing metadata из ASC (`listing/`, pull + будущий push) |
 | [`store/releases.yaml`](../store/releases.yaml) | реестр релизов: version, tag, commit, date, notes |
 | `store/drafts/*` | черновики digest'ов и What's New (gitignored, кроме `.gitkeep`) |
 | [`scripts/mark-ios-release.sh`](../scripts/mark-ios-release.sh) | создать тег + запись реестра |
 | [`scripts/collect-ios-release-changes.sh`](../scripts/collect-ios-release-changes.sh) | собрать коммиты с последнего релиза |
+| [`scripts/asc-pull-app-store-metadata.py`](../scripts/asc-pull-app-store-metadata.py) | pull listing metadata из ASC в `store/` |
 | `.agents/skills/prepare-ios-release/SKILL.md` | агентский skill для черновика What's New |
 
 ## Runbook

@@ -2,13 +2,16 @@
 #
 # Read-only inventory of App Store Connect in-app purchases and subscriptions.
 #
-# Requires: ASC_KEY_ID, ASC_ISSUER_ID, ASC_P8_PATH (or defaults below).
+# Requires: ASC_KEY_ID, ASC_ISSUER_ID, ASC_P8_PATH (or store/asc.env.local).
 # Only GET requests — no mutations. See docs/AGENT-WORKFLOW.md for verify
 # script contract; this is a diagnostics helper, not a verify script.
 #
 set -euo pipefail
 
-ASC_KEY_ID="${ASC_KEY_ID:?ASC_KEY_ID (10 chars) required}"
+# shellcheck source=asc-load-env.sh
+source "$(dirname "$0")/asc-load-env.sh"
+
+ASC_KEY_ID="${ASC_KEY_ID:?ASC_KEY_ID (10 chars) required — set env or store/asc.env.local (see asc.env.example)}"
 ASC_ISSUER_ID="${ASC_ISSUER_ID:?ASC_ISSUER_ID (uuid) required}"
 ASC_P8_PATH="${ASC_P8_PATH:-/Users/mike/work/git-repos/projects/recipe-scaler/recipe-scaler-apple-api-connect-app-manager.p8}"
 export ASC_KEY_ID ASC_ISSUER_ID ASC_P8_PATH

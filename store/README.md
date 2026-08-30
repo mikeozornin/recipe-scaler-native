@@ -1,4 +1,45 @@
-# App Store screenshots
+# App Store (screenshots + listing metadata)
+
+Скриншоты, fixtures и master-тексты listing'а для App Store Connect.
+
+## Listing metadata (ASC API)
+
+Мастер-копия description, subtitle, keywords и прочих текстов из ASC — для переводов и последующей загрузки локализаций.
+
+| Путь | Содержимое |
+|------|------------|
+| [`manifest.json`](manifest.json) | app id, bundle id, primary locale, дата последнего pull |
+| [`listing/app-info/{locale}.json`](listing/app-info/) | name, subtitle, privacy URLs |
+| [`listing/versions/{version}/{locale}.json`](listing/versions/) | description, keywords, promotional text, What's New, URLs |
+| [`versions-index.json`](versions-index.json) | версии в ASC (id, state, platform) |
+| [`releases.yaml`](releases.yaml) | реестр shipped-релизов (теги, commit, notes) |
+| [`asc.env.example`](asc.env.example) | шаблон credentials для ASC API |
+| `asc.env.local` | Key ID / Issuer ID / путь к `.p8` (**gitignored**) |
+
+### Credentials (ASC API)
+
+Скрипты `asc-pull-app-store-metadata.py` и `asc-iap-inventory.sh` читают **`store/asc.env.local`**, если файл есть. Явный `export` в shell имеет приоритет.
+
+| Переменная | Что это | Секрет? |
+|------------|---------|---------|
+| `ASC_KEY_ID` | Key ID из [Integrations → Keys](https://appstoreconnect.apple.com/access/integrations/api) | идентификатор |
+| `ASC_ISSUER_ID` | Issuer ID (UUID на той же странице) | идентификатор |
+| `ASC_P8_PATH` | Абсолютный путь к `.p8` private key | **да — не коммитить** |
+
+Bootstrap: `cp store/asc.env.example store/asc.env.local` → заполнить значения.
+
+### Pull / translate / push
+
+```bash
+python3 scripts/asc-pull-app-store-metadata.py   # read-only sync из ASC → store/listing/
+bash scripts/asc-iap-inventory.sh                # read-only IAP inventory
+```
+
+Workflow перевода: добавить `listing/app-info/ru.json`, `listing/versions/1.0/ru.json` рядом с master (`en-GB`); push-скрипт — TODO.
+
+---
+
+## Screenshots
 
 Сырые кадры 6.9″ (без рамок) для App Store Connect. Спека: [`specs/060-app-store-screenshots/`](../specs/060-app-store-screenshots/spec.md).
 
