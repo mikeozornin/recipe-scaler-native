@@ -192,6 +192,17 @@ class AuthService {
     /// session wipe.
     var ownUsername: String?
 
+    /// Whether `ownUsername` has been resolved for the current session. Guests
+    /// are always treated as resolved via `shouldShowFollowControls`. Authed
+    /// users stay unresolved until `refreshOwnUsername()` completes or a cache
+    /// seed in `applySession` succeeds.
+    private(set) var isOwnUsernameResolved = false
+
+    /// Indirected for unit tests; production uses `AccountAPI.fetchSharingSettings`.
+    var fetchSharingSettingsProvider: () async throws -> SharingSettingsDTO = {
+        try await AccountAPI.fetchSharingSettings()
+    }
+
     /// Spec 054: probe used by `performStaleSessionHealthCheck()` to verify the
     /// restored user still exists on the server. Indirected through a closure
     /// so unit tests can inject a stub without hitting the network.
@@ -481,6 +492,7 @@ class AuthService {
         // Parity with `logout()`: a stale own username from the wiped account
         // must not leak into the next session (spec 072 own-profile gate).
         ownUsername = nil
+        isOwnUsernameResolved = false
 
         apiClient.configure(authToken: nil)
         apiClient.configure(userId: nil)
@@ -566,11 +578,58 @@ class AuthService {
         self.token = deviceToken
         self.isAuthenticated = true
 
+        seedOwnUsernameFromSharingCache()
         configureAPIClient(userId: userId, deviceToken: deviceToken)
         WatchCredentialsBridge.shared.publish(
             userId: userId,
             token: SharedAuthStore.token
         )
+    }
+
+    /// Spec 072 (web parity): resolve the caller's public username early so
+    /// `DiscoverPublicProfileView` can hide follow controls on the own profile
+    /// without opening Account Settings first.
+    func refreshOwnUsername() async {
+        guard isAuthenticated else {
+            isOwnUsernameResolved = true
+            return
+        }
+        do {
+            let data = try await fetchSharingSettingsProvider()
+            ownUsername = data.username
+            let shareMode = PublicShareMode(apiValue: data.shareMode) ?? .one_by_one
+            SharingSettingsCache.save(
+                publicProfileEnabled: data.publicProfileEnabled == true,
+                shareMode: shareMode,
+                username: data.username ?? ""
+            )
+        } catch {
+            AppLog.info(.app, "own_username_refresh_failed", data: [
+                "reason": String(describing: type(of: error))
+            ])
+        }
+        isOwnUsernameResolved = true
+    }
+
+    /// Whether follow controls should render on a public profile (spec 072).
+    /// Guests see the button (tap → login). Authed users hide controls while
+    /// ownership is unresolved and on their own profile.
+    func shouldShowFollowControls(for profileUsername: String) -> Bool {
+        guard isAuthenticated else { return true }
+        guard isOwnUsernameResolved else { return false }
+        return !isOwnPublicProfile(username: profileUsername)
+    }
+
+    func isOwnPublicProfile(username: String) -> Bool {
+        guard let own = ownUsername, !own.isEmpty else { return false }
+        return own.caseInsensitiveCompare(username) == .orderedSame
+    }
+
+    private func seedOwnUsernameFromSharingCache() {
+        let cached = SharingSettingsCache.username
+        guard !cached.isEmpty else { return }
+        ownUsername = cached
+        isOwnUsernameResolved = true
     }
 
     private func configureAPIClient(userId: String, deviceToken: String?) {
@@ -839,6 +898,7 @@ class AuthService {
         self.token = nil
         self.isAuthenticated = false
         self.ownUsername = nil
+        self.isOwnUsernameResolved = false
 
         apiClient.configure(authToken: nil)
         apiClient.configure(userId: nil)

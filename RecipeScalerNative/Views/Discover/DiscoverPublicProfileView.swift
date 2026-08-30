@@ -60,7 +60,9 @@ struct DiscoverPublicProfileView: View {
                 }
             }
             followStore.clearError()
-            await followStore.refresh(username: username, api: apiClient)
+            if authService.shouldShowFollowControls(for: username) {
+                await followStore.refresh(username: username, api: apiClient)
+            }
             await model?.loadIfNeeded(username: username)
             if case .loaded(let response) = model?.state {
                 searchStore.setItems(DiscoverSearch.sortedByRecipeName(response.recipes) { $0.name })
@@ -244,15 +246,14 @@ struct DiscoverFollowControls: View {
     private static let pendingIndicatorDelay: Duration = .seconds(1)
 
     /// A resolved own-username that matches this profile hides the controls.
-    /// Unknown own username (settings never loaded) keeps them visible —
-    /// tapping would only surface `follow.self-not-allowed` (US9).
-    private var isOwnProfile: Bool {
-        guard let own = authService.ownUsername, !own.isEmpty else { return false }
-        return own.caseInsensitiveCompare(username) == .orderedSame
+    /// Authed users with an unresolved own username hide controls until
+    /// `AuthService.refreshOwnUsername()` completes (web parity).
+    private var shouldShowControls: Bool {
+        authService.shouldShowFollowControls(for: username)
     }
 
     var body: some View {
-        if !isOwnProfile {
+        if shouldShowControls {
             controls
                 .task(id: followStore.isFollowingPending) {
                     guard followStore.isFollowingPending else {

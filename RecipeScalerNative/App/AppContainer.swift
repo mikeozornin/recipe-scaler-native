@@ -441,6 +441,10 @@ final class AppContainer {
         // Discover mount (US4). Silent on failure: offline leaves no dot.
         Task { await feedBadgeStore.refresh() }
 
+        // Spec 072: resolve own public username for follow-button ownership gate
+        // (web parity — hide controls on own profile without opening Account).
+        Task { await auth.refreshOwnUsername() }
+
         // 1a. Mirror session to paired watch (token may have been set by migration).
         WatchCredentialsBridge.shared.publish(userId: userId, token: SharedAuthStore.token)
 

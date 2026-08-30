@@ -539,6 +539,7 @@
 		SB0610A1B293A4B7010000010 /* SystemBannerStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */; };
 		FF072TESTU01B293A4B70101 /* FollowFeedTestURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072TESTU01A293A4B70102 /* FollowFeedTestURLProtocol.swift */; };
 		FF072TESTF01B293A4B70101 /* FollowStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072TESTF01A293A4B70102 /* FollowStoreTests.swift */; };
+		FF072AUTH01B293A4B70101 /* AuthServiceOwnUsernameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072AUTH01A293A4B70102 /* AuthServiceOwnUsernameTests.swift */; };
 		FF072TESTF02B293A4B70101 /* FeedStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072TESTF02A293A4B70102 /* FeedStoreTests.swift */; };
 		NUMFMTTEST01A293A4B701001 /* AppNumberFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = NUMFMTTEST01A293A4B701002 /* AppNumberFormatTests.swift */; };
 		FF072TESTB01B293A4B70101 /* FeedBadgeStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072TESTB01A293A4B70102 /* FeedBadgeStoreTests.swift */; };
@@ -1261,6 +1262,7 @@
 		SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerStoreTests.swift; sourceTree = "<group>"; };
 		FF072TESTU01A293A4B70102 /* FollowFeedTestURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowFeedTestURLProtocol.swift; sourceTree = "<group>"; };
 		FF072TESTF01A293A4B70102 /* FollowStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowStoreTests.swift; sourceTree = "<group>"; };
+		FF072AUTH01A293A4B70102 /* AuthServiceOwnUsernameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthServiceOwnUsernameTests.swift; sourceTree = "<group>"; };
 		FF072TESTF02A293A4B70102 /* FeedStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedStoreTests.swift; sourceTree = "<group>"; };
 		NUMFMTTEST01A293A4B701002 /* AppNumberFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNumberFormatTests.swift; sourceTree = "<group>"; };
 		FF072TESTB01A293A4B70102 /* FeedBadgeStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedBadgeStoreTests.swift; sourceTree = "<group>"; };
@@ -1802,6 +1804,7 @@
 				SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */,
 				FF072TESTU01A293A4B70102 /* FollowFeedTestURLProtocol.swift */,
 				FF072TESTF01A293A4B70102 /* FollowStoreTests.swift */,
+				FF072AUTH01A293A4B70102 /* AuthServiceOwnUsernameTests.swift */,
 				FF072TESTF02A293A4B70102 /* FeedStoreTests.swift */,
 				NUMFMTTEST01A293A4B701002 /* AppNumberFormatTests.swift */,
 				FF072TESTB01A293A4B70102 /* FeedBadgeStoreTests.swift */,
@@ -3250,6 +3253,7 @@
 				SB0610A1B293A4B7010000010 /* SystemBannerStoreTests.swift in Sources */,
 				FF072TESTU01B293A4B70101 /* FollowFeedTestURLProtocol.swift in Sources */,
 				FF072TESTF01B293A4B70101 /* FollowStoreTests.swift in Sources */,
+				FF072AUTH01B293A4B70101 /* AuthServiceOwnUsernameTests.swift in Sources */,
 				FF072TESTF02B293A4B70101 /* FeedStoreTests.swift in Sources */,
 				NUMFMTTEST01A293A4B701001 /* AppNumberFormatTests.swift in Sources */,
 				FF072TESTB01B293A4B70101 /* FeedBadgeStoreTests.swift in Sources */,
