@@ -954,16 +954,43 @@ extension TimerManager: UNUserNotificationCenterDelegate {
             }
         }
 
-        // Deep link to recipe on notification tap (works for both local and APNs notifications).
-        if response.actionIdentifier == UNNotificationDefaultActionIdentifier,
-           let recipeId, !recipeId.isEmpty {
-            NotificationCenter.default.post(
-                name: .openRecipe,
-                object: nil,
-                userInfo: ["recipeId": recipeId]
-            )
+        // Spec 072: follow-feed pushes carry a canonical 059 `url` (single
+        // recipe → /public/@/{username}/{recipeId}, digest → /discover/feed).
+        // Routed through DeepLinkRouter so a push tap behaves exactly like a
+        // Universal Link tap. Takes priority over the legacy `recipeId` field:
+        // routing both would queue two conflicting links (2026-08-30 debug:
+        // the fallback ran 3 ms later and overwrote the parsed url), and for
+        // follow-feed pushes the recipe is public — `.openRecipe` (own
+        // collection lookup) can never resolve it.
+        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else {
+            completionHandler()
+            return
         }
 
-        completionHandler()
+        let payloadURL = userInfo["url"] as? String
+        let legacyRecipeId = userInfo["recipeId"] as? String
+
+        if let payloadURL, !payloadURL.isEmpty {
+            Task { @MainActor in
+                if DeepLinkRouter.handlePushURL(payloadURL) {
+                    AppLog.info(.push, "push_payload_url_routed")
+                } else if let legacyRecipeId, !legacyRecipeId.isEmpty {
+                    // `url` present but unroutable — legacy recipeId fallback.
+                    DeepLinkRouter.shared.handle(.openRecipe(recipeId: legacyRecipeId))
+                    AppLog.info(.push, "push_recipe_id_fallback_routed")
+                }
+                completionHandler()
+            }
+        } else if let legacyRecipeId, !legacyRecipeId.isEmpty {
+            // Legacy `recipeId` payload (pre-072 server builds, third-party
+            // APNs): no `url` field at all.
+            Task { @MainActor in
+                DeepLinkRouter.shared.handle(.openRecipe(recipeId: legacyRecipeId))
+                AppLog.info(.push, "push_recipe_id_fallback_routed")
+                completionHandler()
+            }
+        } else {
+            completionHandler()
+        }
     }
 }

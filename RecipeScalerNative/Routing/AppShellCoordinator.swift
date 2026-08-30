@@ -52,6 +52,13 @@ final class AppShellCoordinator {
     private(set) var pendingAssistantOpenRequest: AssistantOpenRequest?
     private var nextAssistantRequestId = 0
 
+    /// Spec 072 — digest push landing request for the «Моя лента» segment.
+    /// Monotonic counter: `DiscoverRootView` observes it and switches the
+    /// segment each time it bumps (deep link → segment while the tab is
+    /// already visible). Counter (not Bool) so a second push tap after
+    /// switching back to «Подборки» re-triggers the request.
+    var discoverFeedRequestEpoch = 0
+
     /// Bumped on every shell-wide reset (logout / account switch) so any open
     /// assistant sheet can detect that its session no longer belongs to the
     /// active account and tear itself down (cancel stream / bootstrap tasks).
@@ -197,10 +204,38 @@ final class AppShellCoordinator {
                 )
             )
             deepLinkRouter.clear()
+        case .openFeedRecipe(let recipeId):
+            // Spec 072 single-recipe push tap: «Моя лента» segment with the
+            // recipe card pushed on top — back navigation returns to the
+            // feed (product decision 2026-08-30). Segment activation works
+            // through the same epoch flag as the digest landing.
+            selectedTab = .discover
+            discoverListState?.clearAll()
+            discoverPath = NavigationPath()
+            discoverFeedRequestEpoch += 1
+            discoverPath.append(
+                DiscoverRoute.recipe(
+                    id: recipeId,
+                    allowDownloads: true,
+                    imageSource: .publicRecipe
+                )
+            )
+            deepLinkRouter.clear()
         case .openDiscover:
             selectedTab = .discover
             discoverListState?.clearAll()
             discoverPath = NavigationPath()
+            deepLinkRouter.clear()
+        case .openDiscoverFeed:
+            // Spec 072 digest push: land on the «Моя лента» segment. The
+            // segment is ephemeral view state inside `DiscoverRootView`, so
+            // the coordinator only flags the request; the view consumes it on
+            // appear (mirrors the `pendingAssistantOpenRequest` one-shot
+            // pattern) and lands back on «Подборки» next time.
+            selectedTab = .discover
+            discoverListState?.clearAll()
+            discoverPath = NavigationPath()
+            discoverFeedRequestEpoch += 1
             deepLinkRouter.clear()
         case .openDiscoverCollection(let slug):
             selectedTab = .discover

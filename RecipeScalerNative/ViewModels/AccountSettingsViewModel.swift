@@ -102,6 +102,10 @@ final class AccountSettingsViewModel {
             username = profileData.username ?? sharingData.username
             canChangeUsername = profileData.canChangeUsername ?? false
 
+            // Spec 072: mirror the own username for public-profile ownership
+            // checks (hides the follow controls on the user's own profile).
+            auth.ownUsername = username
+
             publicProfileEnabled = sharingData.publicProfileEnabled == true
             shareMode = PublicShareMode(apiValue: sharingData.shareMode) ?? .one_by_one
             allowRecipeDownloads = sharingData.allowRecipeDownloads != false
@@ -175,6 +179,7 @@ final class AccountSettingsViewModel {
             publicProfileEnabled = result.publicProfileEnabled ?? enabled
             if let generated = result.username {
                 username = generated
+                auth.ownUsername = generated
             }
             if let mode = PublicShareMode(apiValue: result.shareMode) {
                 shareMode = mode
@@ -226,6 +231,7 @@ final class AccountSettingsViewModel {
             try await AccountAPI.updateUsername(sanitized)
             username = sanitized
             canChangeUsername = false
+            auth.ownUsername = sanitized
             statusMessage = String(localized: "account.username.saved")
         } catch {
             setStatus(from: error)

@@ -317,7 +317,9 @@ struct RecipeMapWriter {
             }
         }
         if markNutritionOutdated {
-            map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
+            // Dual-write (root + nested): `readNutrition` reads the nested map
+            // only on the v2/v3 path — a root-only write is invisible to it.
+            setNutritionOutdated(true)
         }
     }
 
@@ -374,7 +376,8 @@ struct RecipeMapWriter {
                 }
             }
         }
-        map.insert(key: "nutritionOutdated", value: .bool(true), txn: txn)
+        // Dual-write (root + nested) — see `updateIngredient`.
+        setNutritionOutdated(true)
     }
 
     /// Move the element at `fromIndex` to `toIndex` and renumber orders.

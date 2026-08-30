@@ -161,6 +161,48 @@ final class SeedClient {
         return timerId
     }
 
+    // MARK: - Follow / Feed (072)
+
+    /// `POST /api/v1/users/:username/follow` — idempotent subscribe.
+    func follow(username: String) async throws {
+        let encoded = username.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? username
+        let url = base.appendingPathComponent("/api/v1/users/\(encoded)/follow")
+        let (data, resp) = try await post(url: url, body: Data())
+        try ensureOK(resp, url, data: data)
+    }
+
+    /// `GET /api/v1/feed/badge` → `has_new`.
+    func fetchFeedBadgeHasNew() async throws -> Bool {
+        let url = base.appendingPathComponent("/api/v1/feed/badge")
+        let (data, resp) = try await get(url: url)
+        try ensureOK(resp, url, data: data)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard
+            let success = json?["success"] as? Bool, success,
+            let dataDict = json?["data"] as? [String: Any],
+            let hasNew = dataDict["has_new"] as? Bool
+        else {
+            throw E2EError.unexpectedStatus("GET /api/v1/feed/badge malformed body", 0)
+        }
+        return hasNew
+    }
+
+    /// Usernames from the Discover home payload (`GET /api/discover/collections`).
+    func discoveryProfileUsernames() async throws -> [String] {
+        let url = base.appendingPathComponent("/api/discover/collections")
+        let (data, resp) = try await get(url: url)
+        try ensureOK(resp, url, data: data)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard
+            let success = json?["success"] as? Bool, success,
+            let dataDict = json?["data"] as? [String: Any],
+            let profiles = dataDict["profiles"] as? [[String: Any]]
+        else {
+            throw E2EError.unexpectedStatus("GET /api/discover/collections malformed body", 0)
+        }
+        return profiles.compactMap { $0["username"] as? String }.filter { !$0.isEmpty }
+    }
+
     // MARK: - HTTP primitives
 
     /// Crash loudly if `id` is not a UUID-shaped string before interpolating
@@ -184,6 +226,14 @@ final class SeedClient {
         req.httpMethod = "POST"
         for (k, v) in try user.authHeaders() { req.setValue(v, forHTTPHeaderField: k) }
         req.httpBody = body
+        let (data, resp) = try await session.data(for: req)
+        return (data, try unwrapHTTP(resp))
+    }
+
+    private func get(url: URL) async throws -> (Data, HTTPURLResponse) {
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        for (k, v) in try user.authHeaders() { req.setValue(v, forHTTPHeaderField: k) }
         let (data, resp) = try await session.data(for: req)
         return (data, try unwrapHTTP(resp))
     }

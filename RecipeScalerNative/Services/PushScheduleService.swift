@@ -70,7 +70,3 @@ final class PushScheduleService {
         }
     }
 }
-
-extension Notification.Name {
-    static let openRecipe = Notification.Name("OpenRecipeNotification")
-}

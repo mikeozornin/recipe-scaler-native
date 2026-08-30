@@ -28,8 +28,17 @@ enum DeepLink: Equatable, Sendable {
     case openPublicProfile(username: String)
     /// Spec 059 — Universal Link `https://…/public/@/{username}/{recipeId}`.
     case openPublicRecipe(recipeId: String, username: String)
+    /// Spec 072 — single-recipe push tap: lands on the «Моя лента» segment
+    /// with the recipe card pushed on top (back returns to the feed).
+    /// Mapped from the same URL as `.openPublicRecipe` in `handlePushURL` —
+    /// only push taps land inside the feed; Universal Links keep the
+    /// profile → recipe stack.
+    case openFeedRecipe(recipeId: String)
     /// Spec 059 — Universal Link `https://…/discover`.
     case openDiscover
+    /// Spec 072 — digest push target: Discover tab with the «Моя лента»
+    /// feed segment selected (`https://…/discover/feed`).
+    case openDiscoverFeed
     /// Spec 059 — Universal Link `https://…/discover/collection/{slug}`.
     case openDiscoverCollection(slug: String)
     /// Spec 059 — Universal Link `https://…/discover/recipe/{recipeId}` (curated).
@@ -116,6 +125,8 @@ final class DeepLinkRouter {
     /// - `https://recipe-scaler.ru/recipe/{id}` → `.openRecipe`
     /// - `https://recipe-scaler.ru/shopping` → `.openShoppingList`
     /// - `https://recipe-scaler.ru/discover` → `.openDiscover`
+    /// - `https://recipe-scaler.ru/discover/feed` → `.openDiscoverFeed`
+    ///   (spec 072 digest push target: Discover tab, «Моя лента» segment)
     /// - `https://recipe-scaler.ru/discover/collection/{slug}` → `.openDiscoverCollection`
     /// - `https://recipe-scaler.ru/discover/recipe/{id}` → `.openDiscoverRecipe`
     /// - `https://recipe-scaler.ru/public/@/{username}` → `.openPublicProfile`
@@ -143,6 +154,72 @@ final class DeepLinkRouter {
     /// to simulate a post-TTL re-tap don't have to sleep for real seconds.
     static func _backdateLastHandledForTesting(by seconds: TimeInterval) {
         lastHandledAt = Date().addingTimeInterval(-seconds)
+    }
+
+    // MARK: - Push payload routing (spec 072)
+
+    /// Route the `url` field of an APNs push payload (spec 072). Single-recipe
+    /// pushes carry `https://…/public/@/{username}/{recipeId}`, digest pushes
+    /// carry `https://…/discover/feed`; both are canonical spec 059 universal
+    /// links.
+    ///
+    /// The server sends web-format hash URLs (`https://…/#/discover/feed`); a
+    /// leading-slash fragment is rewritten into the path form before parsing,
+    /// mirroring the web client's own normalization (App.tsx postMessage
+    /// handler). Reuses the 059 parser so a push tap and a Universal Link tap
+    /// route identically, and goes through `handle(_:)` so the same-tap
+    /// double-delivery guard applies to APNs redelivery as well. Malformed or
+    /// unknown URLs are logged and dropped — no fallback routing on the other
+    /// payload fields (`username`, `recipeId`, `locale`).
+    ///
+    /// - Returns: `true` when the URL was recognized and queued as pending.
+    @discardableResult
+    static func handlePushURL(_ urlString: String?) -> Bool {
+        guard let urlString, !urlString.isEmpty else {
+            AppLog.notice(.push, "push_url_missing")
+            return false
+        }
+        guard let url = URL(string: urlString) else {
+            AppLog.notice(.push, "push_url_malformed")
+            return false
+        }
+        let normalized = normalizeHashURL(url)
+        guard var link = parse(normalized) else {
+            AppLog.notice(.push, "push_url_not_routable", data: ["path": normalized.path])
+            return false
+        }
+        // Spec 072 (2026-08-30): a push tap lands *inside* the feed —
+        // single-recipe → «Моя лента» with the recipe card on top (back
+        // returns to the feed), digest → the feed segment itself. The raw
+        // parse targets are kept for Universal Links.
+        if case .openPublicRecipe(let recipeId, _) = link {
+            link = .openFeedRecipe(recipeId: recipeId)
+        }
+        if let last = lastHandledURL, last == url,
+           let handledAt = lastHandledAt,
+           Date().timeIntervalSince(handledAt) < lastHandledURLDedupWindow {
+            AppLog.notice(.push, "push_url_deduped")
+            return true
+        }
+        lastHandledURL = url
+        lastHandledAt = Date()
+        shared.handle(link)
+        AppLog.info(.push, "push_url_routed", data: ["path": normalized.path])
+        return true
+    }
+
+    /// Rewrite `https://host/#/discover/feed` into the path form
+    /// `https://host/discover/feed`. Web-format hash URLs carry the route in
+    /// the fragment; the 059 parser only reads `pathComponents`. No-op for
+    /// path-based URLs and non-leading-slash fragments (`#section-anchor`).
+    static func normalizeHashURL(_ url: URL) -> URL {
+        guard let fragment = url.fragment, fragment.hasPrefix("/") else { return url }
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return url
+        }
+        components.path = fragment
+        components.fragment = nil
+        return components.url ?? url
     }
 
     /// Pure parse for tests and callers that want the link without mutating state.
@@ -207,6 +284,10 @@ final class DeepLinkRouter {
         case "discover":
             if parts.count == 1 {
                 return .openDiscover
+            }
+            // Spec 072 — digest push target: the follower's feed segment.
+            if parts.count == 2, parts[1] == "feed" {
+                return .openDiscoverFeed
             }
             guard parts.count == 3 else { return nil }
             switch parts[1] {

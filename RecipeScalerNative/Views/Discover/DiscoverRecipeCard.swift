@@ -13,17 +13,23 @@ struct DiscoverRecipeCard: View {
     let name: String
     let accentColor: Color
     let searchTokens: [String]
+    let aspectRatio: CGFloat
+    let fillsFrame: Bool
 
     init(
         imageURL: URL?,
         name: String,
         accentColor: Color,
-        searchTokens: [String] = []
+        searchTokens: [String] = [],
+        aspectRatio: CGFloat = 16.0 / 9.0,
+        fillsFrame: Bool = true
     ) {
         self.imageURL = imageURL
         self.name = name
         self.accentColor = accentColor
         self.searchTokens = searchTokens
+        self.aspectRatio = aspectRatio
+        self.fillsFrame = fillsFrame
     }
 
     var body: some View {
@@ -32,7 +38,8 @@ struct DiscoverRecipeCard: View {
                 url: imageURL,
                 fallbackColor: accentColor,
                 cornerRadius: 8,
-                aspectRatio: 16.0 / 9.0
+                aspectRatio: aspectRatio,
+                fillsFrame: fillsFrame
             )
 
             titleLabel

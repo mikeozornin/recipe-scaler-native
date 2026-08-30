@@ -140,4 +140,5 @@ class BaseTestCase: XCTestCase {
     var timersPage: TimersPage { TimersPage(app: app) }
     var importPage: ImportPage { ImportPage(app: app) }
     var authPage: AuthPage { AuthPage(app: app) }
+    var feedPage: FeedPage { FeedPage(app: app) }
 }

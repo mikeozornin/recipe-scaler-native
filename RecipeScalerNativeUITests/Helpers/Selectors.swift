@@ -190,6 +190,19 @@ enum UIA {
         "\(collectionsRootGridTilePrefix)\(folderId)"
     }
 
+    // MARK: - Follow / feed (072)
+
+    static let followButton = "follow-button"
+    static let followMenu = "follow-menu"
+    static let followMenuUnsubscribe = "follow-menu-unsubscribe"
+    static let followMenuSubscribeOnly = "follow-menu-subscribe-only"
+    static let followMenuSubscribeNotifications = "follow-menu-subscribe-notifications"
+    static let discoverFeedSegment = "discover-feed-segment"
+    static let discoverFeedList = "discover-feed-list"
+    static let discoverFeedCard = "discover-feed-card"
+    static let discoverFeedCardNewBadge = "discover-feed-card-new-badge"
+    static let discoverFeedAutoLoad = "discover-feed-auto-load"
+
     static func recipeRow(id: String) -> String {
         "\(recipeRowPrefix)\(id)"
     }

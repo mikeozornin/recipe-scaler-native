@@ -45,6 +45,13 @@ public enum ServerErrorCode: String, Sendable, Equatable, CaseIterable {
     case discoverCopyFailed = "discover.copy-failed"
     case discoverPublicProfileFailed = "discover.public-profile-failed"
 
+    // follow.* (spec 072)
+    case followUserNotFound = "follow.user-not-found"
+    case followSelfNotAllowed = "follow.self-not-allowed"
+    case followTooManyFollows = "follow.too-many-follows"
+    case followRateLimited = "follow.rate-limited"
+    case followNotFollowing = "follow.not-following"
+
     // recipe.*
     case recipeImportNoImages = "recipe.import.no-images"
     case recipeImportFailed = "recipe.import.failed"

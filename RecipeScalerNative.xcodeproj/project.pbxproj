@@ -210,6 +210,11 @@
 		AB245CF76E7C618304E6E89E /* YDocStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E420A114755D01EE96F560A /* YDocStore.swift */; };
 		AC55326516F2DD99B42F0F6B /* ConnectionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7485486C3DAE972B94C9AE9B /* ConnectionState.swift */; };
 		AC6A576E26314798BE3FBF1A /* SystemBannerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */; };
+		FF072FOLLOWAPI01B293A4B701 /* FollowAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072FOLLOWAPIREFB293A4B701 /* FollowAPI.swift */; };
+		FF072FEEDAPI001B293A4B701 /* FeedAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072FEEDAPIREFB293A4B701 /* FeedAPI.swift */; };
+		FF072FEEDSTORE1B293A4B7010 /* FeedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072FEEDSTOREREFB293A4B70 /* FeedStore.swift */; };
+		FF072FOLLOWSTO1B293A4B7010 /* FollowStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072FOLLOWSTORREFB293A4B70 /* FollowStore.swift */; };
+		FF072BADGESTO1B293A4B7010 /* FeedBadgeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072BADGESTORREFB293A4B70 /* FeedBadgeStore.swift */; };
 		AC9F920B800391992215A1CF /* IngredientData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24D8ACC6DE6F3FE3D4AE9C40 /* IngredientData.swift */; };
 		AE6149B3EB41238B4A40A652 /* TimerWidgetPushHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA782D4A8C11ED57CE8A11A1 /* TimerWidgetPushHandler.swift */; };
 		AFFE8032F61B41C88C0CA977 /* RecipeLegacyBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 480DCDACDCA0402582631501 /* RecipeLegacyBanner.swift */; };
@@ -436,6 +441,7 @@
 		E5F60718293A4B70F68BDA71 /* AppThemePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */; };
 		E5F60718293A4B70F9B21071 /* DiscoverSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7019BAC15E /* DiscoverSearch.swift */; };
 		E5F60718293A4B70FBB75338 /* DiscoverRecipePreviewImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A8935C5F /* DiscoverRecipePreviewImage.swift */; };
+		FF072FEEDVIEW1B293A4B701 /* DiscoverFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072FEEDVIEWREFB293A4B70 /* DiscoverFeedView.swift */; };
 		E5F60719293A4B7000000081 /* RecipeDescriptionEditorBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000080 /* RecipeDescriptionEditorBlock.swift */; };
 		E5F60719293A4B7000000083 /* DescriptionFormattingBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000082 /* DescriptionFormattingBar.swift */; };
 		E5F60719293A4B7000000085 /* DescriptionEditorChromeState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000084 /* DescriptionEditorChromeState.swift */; };
@@ -531,13 +537,21 @@
 		RYJC0DE1001001001001001A001 /* RecipeYjsCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = RYJC0DE1001001001001001A002 /* RecipeYjsCodec.swift */; };
 		RYJW0DE1001001001001001A001 /* RecipeYjsWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = RYJW0DE1001001001001001A002 /* RecipeYjsWriter.swift */; };
 		SB0610A1B293A4B7010000010 /* SystemBannerStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */; };
+		FF072TESTU01B293A4B70101 /* FollowFeedTestURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072TESTU01A293A4B70102 /* FollowFeedTestURLProtocol.swift */; };
+		FF072TESTF01B293A4B70101 /* FollowStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072TESTF01A293A4B70102 /* FollowStoreTests.swift */; };
+		FF072TESTF02B293A4B70101 /* FeedStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072TESTF02A293A4B70102 /* FeedStoreTests.swift */; };
+		NUMFMTTEST01A293A4B701001 /* AppNumberFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = NUMFMTTEST01A293A4B701002 /* AppNumberFormatTests.swift */; };
+		FF072TESTB01B293A4B70101 /* FeedBadgeStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072TESTB01A293A4B70102 /* FeedBadgeStoreTests.swift */; };
+		FF072AUTD01B293A4B70101 /* DiscoverRecipeModelAuthorDownloadsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072AUTD01A293A4B70102 /* DiscoverRecipeModelAuthorDownloadsTests.swift */; };
+		FF072TESTL01B293A4B70101 /* FollowFeedStoresTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072TESTL01A293A4B70102 /* FollowFeedStoresTests.swift */; };
+		FF072UITPAGE1B293A4B701 /* FeedPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072UITPAGE1A293A4B702 /* FeedPage.swift */; };
+		FF072UITSPEC1B293A4B702 /* FollowFeedSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072UITSPEC1A293A4B701 /* FollowFeedSpec.swift */; };
 		SB061CHRB293A4B701000002 /* SystemBannerChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = SB061CHRB293A4B701000001 /* SystemBannerChrome.swift */; };
 		SCTA00002AA000200000002 /* ShortcutItemsUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */; };
 		SRTIPPREF0001AA0001BB01 /* ShoppingRemindersTipPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRTIPPREF0002AA0002BB02 /* ShoppingRemindersTipPreferences.swift */; };
 		SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */; };
 		TP14SAFE01A293A4B70100001 /* SafeIntCasts.swift in Sources */ = {isa = PBXBuildFile; fileRef = TP14SAFE01A293A4B70100002 /* SafeIntCasts.swift */; };
 		NUMFMT0001A293A4B70100001 /* AppNumberFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = NUMFMT0001A293A4B70100002 /* AppNumberFormat.swift */; };
-		NUMFMTTEST01A293A4B701001 /* AppNumberFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = NUMFMTTEST01A293A4B701002 /* AppNumberFormatTests.swift */; };
 		UIT018898C9CB55D28DA5 /* AuthPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = UIT960324BAA0FDC8FD99 /* AuthPage.swift */; };
 		UIT093A852449B362733F /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = UIT2F7824BE9658F66419 /* Errors.swift */; };
 		UIT0AAD8C3C379B7AE247 /* FeatureAdoptionTrackerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = UITEF4902F43B6C5EDA96 /* FeatureAdoptionTrackerSpec.swift */; };
@@ -1044,6 +1058,11 @@
 		DE1ABB28709A39ED21AF2C28 /* MartianMono-NrLt.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MartianMono-NrLt.otf"; sourceTree = "<group>"; };
 		E05920822F344D9691E82401 /* RecipeScalerCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = RecipeScalerCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerStore.swift; sourceTree = "<group>"; };
+		FF072FOLLOWAPIREFB293A4B701 /* FollowAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowAPI.swift; sourceTree = "<group>"; };
+		FF072FEEDAPIREFB293A4B701 /* FeedAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedAPI.swift; sourceTree = "<group>"; };
+		FF072FEEDSTOREREFB293A4B70 /* FeedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedStore.swift; sourceTree = "<group>"; };
+		FF072FOLLOWSTORREFB293A4B70 /* FollowStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowStore.swift; sourceTree = "<group>"; };
+		FF072BADGESTORREFB293A4B70 /* FeedBadgeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedBadgeStore.swift; sourceTree = "<group>"; };
 		E2C8DC8D63F14DC8A5436B59 /* RecipeEditPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEditPolicy.swift; sourceTree = "<group>"; };
 		E3CBCE9817864C1C8B333764 /* Config/Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config/Config.swift; sourceTree = "<group>"; };
 		E5F5F8E02417D04709ED4FEE /* WidgetTimerPalette.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetTimerPalette.swift; sourceTree = "<group>"; };
@@ -1136,6 +1155,7 @@
 		E5F60718293A4B70A32A1501 /* ShoppingListData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListData.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A5EF6DCE /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A8935C5F /* DiscoverRecipePreviewImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverRecipePreviewImage.swift; sourceTree = "<group>"; };
+		FF072FEEDVIEWREFB293A4B70 /* DiscoverFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverFeedView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70AAV00001 /* AuthAvatarImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthAvatarImage.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70ACE01234 /* AccountProfileEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountProfileEditView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70AFAB0002 /* AssistantFabStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantFabStyle.swift; sourceTree = "<group>"; };
@@ -1239,13 +1259,21 @@
 		RYJC0DE1001001001001001A002 /* RecipeYjsCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeYjsCodec.swift; sourceTree = "<group>"; };
 		RYJW0DE1001001001001001A002 /* RecipeYjsWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeYjsWriter.swift; sourceTree = "<group>"; };
 		SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerStoreTests.swift; sourceTree = "<group>"; };
+		FF072TESTU01A293A4B70102 /* FollowFeedTestURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowFeedTestURLProtocol.swift; sourceTree = "<group>"; };
+		FF072TESTF01A293A4B70102 /* FollowStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowStoreTests.swift; sourceTree = "<group>"; };
+		FF072TESTF02A293A4B70102 /* FeedStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedStoreTests.swift; sourceTree = "<group>"; };
+		NUMFMTTEST01A293A4B701002 /* AppNumberFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNumberFormatTests.swift; sourceTree = "<group>"; };
+		FF072TESTB01A293A4B70102 /* FeedBadgeStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedBadgeStoreTests.swift; sourceTree = "<group>"; };
+		FF072AUTD01A293A4B70102 /* DiscoverRecipeModelAuthorDownloadsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverRecipeModelAuthorDownloadsTests.swift; sourceTree = "<group>"; };
+		FF072TESTL01A293A4B70102 /* FollowFeedStoresTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowFeedStoresTests.swift; sourceTree = "<group>"; };
+		FF072UITSPEC1A293A4B701 /* FollowFeedSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowFeedSpec.swift; sourceTree = "<group>"; };
+		FF072UITPAGE1A293A4B702 /* FeedPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedPage.swift; sourceTree = "<group>"; };
 		SB061CHRB293A4B701000001 /* SystemBannerChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerChrome.swift; sourceTree = "<group>"; };
 		SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutItemsUpdater.swift; sourceTree = "<group>"; };
 		SRTIPPREF0002AA0002BB02 /* ShoppingRemindersTipPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingRemindersTipPreferences.swift; sourceTree = "<group>"; };
 		SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingRemindersTipPreferencesTests.swift; sourceTree = "<group>"; };
 		TP14SAFE01A293A4B70100002 /* SafeIntCasts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeIntCasts.swift; sourceTree = "<group>"; };
 		NUMFMT0001A293A4B70100002 /* AppNumberFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNumberFormat.swift; sourceTree = "<group>"; };
-		NUMFMTTEST01A293A4B701002 /* AppNumberFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNumberFormatTests.swift; sourceTree = "<group>"; };
 		UIT00DC9B186ADBD3C32D /* ImportPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPage.swift; sourceTree = "<group>"; };
 		UIT042788CF0A93FC75C3 /* DiscoverEnablementSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverEnablementSpec.swift; sourceTree = "<group>"; };
 		UIT10DBDA4F55A1F89B01 /* YrsNativeReadSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YrsNativeReadSpec.swift; sourceTree = "<group>"; };
@@ -1760,7 +1788,6 @@
 			children = (
 				94F6EEB0522CF5E6241A73B1 /* Info.plist */,
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
-				NUMFMTTEST01A293A4B701002 /* AppNumberFormatTests.swift */,
 				A14001A00000000000000001A /* FeatureAdoptionGuideContentTests.swift */,
 				A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */,
 				VKSTOR001A2B3C4D5E6F70800 /* VkusvillSettingsStoreTests.swift */,
@@ -1773,6 +1800,13 @@
 				FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */,
 				FADFIX0A0A293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift */,
 				SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */,
+				FF072TESTU01A293A4B70102 /* FollowFeedTestURLProtocol.swift */,
+				FF072TESTF01A293A4B70102 /* FollowStoreTests.swift */,
+				FF072TESTF02A293A4B70102 /* FeedStoreTests.swift */,
+				NUMFMTTEST01A293A4B701002 /* AppNumberFormatTests.swift */,
+				FF072TESTB01A293A4B70102 /* FeedBadgeStoreTests.swift */,
+				FF072AUTD01A293A4B70102 /* DiscoverRecipeModelAuthorDownloadsTests.swift */,
+				FF072TESTL01A293A4B70102 /* FollowFeedStoresTests.swift */,
 				B3TESTERR0020 /* ErrorLocalizationTests.swift */,
 				B3SYNCERR0020 /* SyncErrorCodeTests.swift */,
 				B3AUTHERR0020 /* AuthErrorLocalizationTests.swift */,
@@ -2106,6 +2140,7 @@
 				E5F60718293A4B70D1881049 /* DiscoverRecipeView.swift */,
 				E5F60718293A4B70A8935C5F /* DiscoverRecipePreviewImage.swift */,
 				E5F60718293A4B700AF73307 /* DiscoverRecipeCard.swift */,
+				FF072FEEDVIEWREFB293A4B70 /* DiscoverFeedView.swift */,
 			);
 			path = Discover;
 			sourceTree = "<group>";
@@ -2138,6 +2173,11 @@
 				E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */,
 				251D70EF435803E81D00CEDA /* OfflineBannerGate.swift */,
 				3C08EE69E64A48AE8B692E6A /* SystemBannerAPI.swift */,
+				FF072FOLLOWAPIREFB293A4B701 /* FollowAPI.swift */,
+				FF072FOLLOWSTORREFB293A4B70 /* FollowStore.swift */,
+				FF072FEEDAPIREFB293A4B701 /* FeedAPI.swift */,
+				FF072FEEDSTOREREFB293A4B70 /* FeedStore.swift */,
+				FF072BADGESTORREFB293A4B70 /* FeedBadgeStore.swift */,
 				E5F60718293A4B70A0E4855E /* AssistantAPI.swift */,
 				E5LLMPARSE293A4B70100001 /* RecipeLLMParseAPI.swift */,
 				A5VOC02293A4B7010000002 /* AssistantVoiceRecorder.swift */,
@@ -2338,6 +2378,7 @@
 				UIT3CFD236059302BFC87 /* DescriptionDisplaySpec.swift */,
 				UIT10DBDA4F55A1F89B01 /* YrsNativeReadSpec.swift */,
 				UIT695A838D9AFF8CF62C /* DiscoverPublicSpec.swift */,
+				FF072UITSPEC1A293A4B701 /* FollowFeedSpec.swift */,
 				UIT54FB09697E0AA791C0 /* AccountSettingsSpec.swift */,
 				UIT394A5FF0BDAC78718C /* ShoppingListCompletionSpec.swift */,
 				UIT28F137268006EB7666 /* RecipeEditingSpec.swift */,
@@ -2354,6 +2395,7 @@
 				UITB7B681D29942B53B92 /* TimersPage.swift */,
 				UITCDF4F304CA32B31182 /* AssistantPage.swift */,
 				UITD2C1495EBC7AEC883C /* DiscoverPage.swift */,
+				FF072UITPAGE1A293A4B702 /* FeedPage.swift */,
 				UIT90284C75D3F2565F44 /* AccountPage.swift */,
 				UIT5D5511D70B62A4E767 /* CollectionsPage.swift */,
 				UITDD48A757A60C9C1698 /* ShoppingListPage.swift */,
@@ -2847,6 +2889,11 @@
 				AC6A576E26314798BE3FBF1A /* SystemBannerStore.swift in Sources */,
 				3DE3DAF17FBB3570B593E38F /* OfflineBannerGate.swift in Sources */,
 				1758D7142F1C4429B9A37584 /* SystemBannerAPI.swift in Sources */,
+				FF072FOLLOWAPI01B293A4B701 /* FollowAPI.swift in Sources */,
+				FF072FOLLOWSTO1B293A4B7010 /* FollowStore.swift in Sources */,
+				FF072FEEDAPI001B293A4B701 /* FeedAPI.swift in Sources */,
+				FF072FEEDSTORE1B293A4B7010 /* FeedStore.swift in Sources */,
+				FF072BADGESTO1B293A4B7010 /* FeedBadgeStore.swift in Sources */,
 				4CE1EBBF8B610A4B091090FF /* AuthView.swift in Sources */,
 				72BCE454FF7ECB782A54D4ED /* ContentView.swift in Sources */,
 				39CBF56DFACE248C54B1D988 /* ImageCacheService.swift in Sources */,
@@ -3023,6 +3070,7 @@
 				E5F60718293A4B70C2E684EE /* DiscoverRecipeView.swift in Sources */,
 				E5F60718293A4B70FBB75338 /* DiscoverRecipePreviewImage.swift in Sources */,
 				E5F60718293A4B708BB3E294 /* DiscoverRecipeCard.swift in Sources */,
+				FF072FEEDVIEW1B293A4B701 /* DiscoverFeedView.swift in Sources */,
 				E5F60718293A4B70A1B2C3D /* RecipeReader.swift in Sources */,
 				E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */,
 				D1A100000000000000000003 /* AccountTipsSection.swift in Sources */,
@@ -3188,7 +3236,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
-				NUMFMTTEST01A293A4B701001 /* AppNumberFormatTests.swift in Sources */,
 				A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */,
 				VKSTOR001A2B3C4D5E6F70801 /* VkusvillSettingsStoreTests.swift in Sources */,
 				A05700000210 /* NativeFormatDetectorTests.swift in Sources */,
@@ -3201,6 +3248,13 @@
 				A140019000000000000000019 /* FeatureAdoptionGuideContentTests.swift in Sources */,
 				FADFIX0A1B293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift in Sources */,
 				SB0610A1B293A4B7010000010 /* SystemBannerStoreTests.swift in Sources */,
+				FF072TESTU01B293A4B70101 /* FollowFeedTestURLProtocol.swift in Sources */,
+				FF072TESTF01B293A4B70101 /* FollowStoreTests.swift in Sources */,
+				FF072TESTF02B293A4B70101 /* FeedStoreTests.swift in Sources */,
+				NUMFMTTEST01A293A4B701001 /* AppNumberFormatTests.swift in Sources */,
+				FF072TESTB01B293A4B70101 /* FeedBadgeStoreTests.swift in Sources */,
+				FF072AUTD01B293A4B70101 /* DiscoverRecipeModelAuthorDownloadsTests.swift in Sources */,
+				FF072TESTL01B293A4B70101 /* FollowFeedStoresTests.swift in Sources */,
 				B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */,
 				B3SYNCERR0010 /* SyncErrorCodeTests.swift in Sources */,
 				B3AUTHERR0010 /* AuthErrorLocalizationTests.swift in Sources */,
@@ -3296,6 +3350,7 @@
 				UIT21F2D6E49691C5182A /* CollectionsPage.swift in Sources */,
 				UIT8A925BD3F80C0EF7C7 /* AccountPage.swift in Sources */,
 				UIT77B174F5EAF7119FFF /* DiscoverPage.swift in Sources */,
+				FF072UITPAGE1B293A4B701 /* FeedPage.swift in Sources */,
 				UITE49117278BEE4396A4 /* AssistantPage.swift in Sources */,
 				UITF5DED2E7B0BB87C9A3 /* TimersPage.swift in Sources */,
 				UITE3638143F0CEEB8A5C /* ImportPage.swift in Sources */,
@@ -3305,6 +3360,7 @@
 				UITEAE624CEC74847BB71 /* ShoppingListCompletionSpec.swift in Sources */,
 				UIT3EBCDC64462C3A4A32 /* AccountSettingsSpec.swift in Sources */,
 				UIT92B6D072FF7D843E85 /* DiscoverPublicSpec.swift in Sources */,
+				FF072UITSPEC1B293A4B702 /* FollowFeedSpec.swift in Sources */,
 				UITEEF336EE90FBE06137 /* YrsNativeReadSpec.swift in Sources */,
 				UIT2E9FADF892A4B2F684 /* DescriptionDisplaySpec.swift in Sources */,
 				UIT1743D0FA51240BAEAA /* RecipeCollectionsSpec.swift in Sources */,

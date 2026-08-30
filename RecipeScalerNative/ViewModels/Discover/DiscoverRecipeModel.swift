@@ -20,24 +20,49 @@ final class DiscoverRecipeModel {
     private(set) var state: LoadState<RecipeData> = .idle
     private(set) var cloneState: CloneState = .idle
 
-    private let api: APIClient
+    /// Author's public-profile `allowRecipeDownloads` (web `public-recipe.tsx`
+    /// fetches the profile and gates the copy CTA on `!== false`). `nil` until
+    /// the profile fetch resolves — the recipe renders immediately, the flag
+    /// arrives a moment later. Errors are swallowed (web parity: stay default-on).
+    private(set) var authorAllowsDownloads: Bool?
 
-    init(api: APIClient) {
+    private let api: APIClient
+    private let fetchAuthorProfile: (String) async throws -> Bool?
+
+    init(
+        api: APIClient,
+        fetchAuthorProfile: ((String) async throws -> Bool?)? = nil
+    ) {
         self.api = api
+        self.fetchAuthorProfile = fetchAuthorProfile ?? { username in
+            let response = try await DiscoverAPI.fetchPublicProfile(username: username, api: api)
+            return response.profile.allowRecipeDownloads != false
+        }
     }
 
     func detailImageURL(recipeId: String, imageSource: DiscoverRecipeImageSource) -> URL? {
         DiscoverAPI.detailImageURL(recipeId: recipeId, imageSource: imageSource)
     }
 
-    func load(recipeId: String) async {
+    func load(recipeId: String, fetchAuthorProfile: Bool = false) async {
         state = .loading
         do {
-            let parsed = try await Self.parseRecipe(id: recipeId)
+            let stateDTO = try await DiscoverAPI.fetchPublicRecipeState(id: recipeId)
+            let parsed = await Self.parseRecipe(state: stateDTO, recipeId: recipeId)
             state = .loaded(parsed)
+            if fetchAuthorProfile {
+                await updateAuthorDownloads(username: stateDTO.username)
+            }
         } catch {
             state = .failed(UserFacingAPIError.message(for: error))
         }
+    }
+
+    /// Resolves the author's download permission from the public profile.
+    /// Testable seam: injectable fetch, nil/empty username → no request.
+    func updateAuthorDownloads(username: String?) async {
+        guard let username, !username.isEmpty else { return }
+        authorAllowsDownloads = try? await fetchAuthorProfile(username)
     }
 
     func clone(recipeId: String, fallbackImageUrl: String?, syncService: YjsSyncService) async {
@@ -57,8 +82,7 @@ final class DiscoverRecipeModel {
         }
     }
 
-    private static func parseRecipe(id recipeId: String) async throws -> RecipeData {
-        let state = try await DiscoverAPI.fetchPublicRecipeState(id: recipeId)
+    private static func parseRecipe(state: PublicRecipeStateDTO, recipeId: String) async -> RecipeData {
         if let bytes = state.yjsState, !bytes.isEmpty {
             let data = YjsPayloadBytes.data(from: bytes) ?? Data(bytes.map { UInt8(truncatingIfNeeded: $0) })
             if var parsed = await RecipeReader.parse(state: data, recipeId: recipeId) {

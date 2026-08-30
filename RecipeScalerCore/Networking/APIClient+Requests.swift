@@ -25,6 +25,11 @@ extension APIClient {
             notifyUnauthorizedIfNeeded(statusCode: http.statusCode)
             throw Self.mapHTTPFailure(statusCode: http.statusCode, data: data)
         }
+        // 204/205 (and defensively any empty body) carry no JSON envelope —
+        // spec 072: `DELETE /follow` and `POST /feed/seen` return bare `204`.
+        if http.statusCode == 204 || http.statusCode == 205 || data.isEmpty {
+            return APIResponse<T>(success: true, data: nil, error: nil)
+        }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(APIResponse<T>.self, from: data)

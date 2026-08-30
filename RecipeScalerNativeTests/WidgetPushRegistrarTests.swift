@@ -22,6 +22,12 @@ final class WidgetPushRegistrarTests: XCTestCase {
         AppGroup.userDefaults?.set("device-widget-fixture", forKey: SharedDeviceId.appGroupKey)
         WidgetPushTokenClient.clearCachedToken()
 
+        // Isolate from AppContainer's 401 handler and stale bearer tokens left
+        // by earlier suites (otherwise widget POST can hit prod and session_wipe).
+        APIClient.shared.configure(authToken: nil)
+        APIClient.shared.configure(userId: nil)
+        APIClient.shared.unauthorizedHandler = nil
+
         WidgetPushRegistrarTestURLProtocol.reset()
         URLProtocol.registerClass(WidgetPushRegistrarTestURLProtocol.self)
     }
@@ -47,17 +53,18 @@ final class WidgetPushRegistrarTests: XCTestCase {
         let registrar = WidgetPushRegistrar()
         var capturedBody: [String: Any]?
         WidgetPushRegistrarTestURLProtocol.handler = { request in
-            XCTAssertEqual(request.httpMethod, "POST")
+            guard request.httpMethod == "POST" else { return Self.okResponse() }
             XCTAssertTrue(
                 request.url?.absoluteString.contains("/api/push/apns-register-widget") == true
             )
             capturedBody = Self.bodyJSON(from: request)
             return Self.okResponse()
         }
+        let baseline = WidgetPushRegistrarTestURLProtocol.postCallCount
 
         let ok = await registrar.register(tokenHex: "aabbccdd")
         XCTAssertTrue(ok)
-        XCTAssertEqual(WidgetPushRegistrarTestURLProtocol.callCount, 1)
+        XCTAssertEqual(WidgetPushRegistrarTestURLProtocol.postCallCount - baseline, 1)
         XCTAssertEqual(capturedBody?["token"] as? String, "aabbccdd")
         XCTAssertEqual(capturedBody?["device_id"] as? String, "device-widget-fixture")
         XCTAssertTrue(registrar.hasCachedToken)
@@ -65,13 +72,16 @@ final class WidgetPushRegistrarTests: XCTestCase {
 
     func testRegister_DedupSkipsIdenticalToken() async {
         let registrar = WidgetPushRegistrar()
-        WidgetPushRegistrarTestURLProtocol.handler = { _ in Self.okResponse() }
+        WidgetPushRegistrarTestURLProtocol.handler = { request in
+            guard request.httpMethod == "POST" else { return Self.okResponse() }
+            return Self.okResponse()
+        }
 
         _ = await registrar.register(tokenHex: "aabbccdd")
-        let first = WidgetPushRegistrarTestURLProtocol.callCount
+        let first = WidgetPushRegistrarTestURLProtocol.postCallCount
         _ = await registrar.register(tokenHex: "aabbccdd")
         XCTAssertEqual(
-            WidgetPushRegistrarTestURLProtocol.callCount,
+            WidgetPushRegistrarTestURLProtocol.postCallCount,
             first,
             "identical token must not re-POST"
         )
@@ -79,11 +89,15 @@ final class WidgetPushRegistrarTests: XCTestCase {
 
     func testRegister_RotationRePosts() async {
         let registrar = WidgetPushRegistrar()
-        WidgetPushRegistrarTestURLProtocol.handler = { _ in Self.okResponse() }
+        WidgetPushRegistrarTestURLProtocol.handler = { request in
+            guard request.httpMethod == "POST" else { return Self.okResponse() }
+            return Self.okResponse()
+        }
+        let baseline = WidgetPushRegistrarTestURLProtocol.postCallCount
 
         _ = await registrar.register(tokenHex: "aabbccdd")
         _ = await registrar.register(tokenHex: "11223344")
-        XCTAssertEqual(WidgetPushRegistrarTestURLProtocol.callCount, 2)
+        XCTAssertEqual(WidgetPushRegistrarTestURLProtocol.postCallCount - baseline, 2)
         XCTAssertEqual(WidgetPushTokenClient.registeredTokenHex, "11223344")
     }
 
@@ -95,6 +109,7 @@ final class WidgetPushRegistrarTests: XCTestCase {
         var method: String?
         var url: String?
         WidgetPushRegistrarTestURLProtocol.callCount = 0
+        WidgetPushRegistrarTestURLProtocol.deleteCallCount = 0
         WidgetPushRegistrarTestURLProtocol.handler = { request in
             method = request.httpMethod
             url = request.url?.absoluteString
@@ -105,7 +120,7 @@ final class WidgetPushRegistrarTests: XCTestCase {
         XCTAssertEqual(method, "DELETE")
         XCTAssertTrue(url?.contains("device_id=device-widget-fixture") == true)
         XCTAssertFalse(registrar.hasCachedToken)
-        XCTAssertEqual(WidgetPushRegistrarTestURLProtocol.callCount, 1)
+        XCTAssertEqual(WidgetPushRegistrarTestURLProtocol.deleteCallCount, 1)
     }
 
     func testUnregister_ToleratesServerError() async {
@@ -174,21 +189,34 @@ final class WidgetPushRegistrarTests: XCTestCase {
 
 private final class WidgetPushRegistrarTestURLProtocol: URLProtocol {
     nonisolated(unsafe) static var handler: ((URLRequest) -> (HTTPURLResponse, Data))?
-    nonisolated(unsafe) static var callCount = 0
+    nonisolated(unsafe) static var postCallCount = 0
+    nonisolated(unsafe) static var deleteCallCount = 0
+
+    /// Legacy alias used by tests that only care about POST volume.
+    nonisolated(unsafe) static var callCount: Int {
+        get { postCallCount }
+        set { postCallCount = newValue }
+    }
 
     static func reset() {
         handler = nil
-        callCount = 0
+        postCallCount = 0
+        deleteCallCount = 0
     }
 
     override class func canInit(with request: URLRequest) -> Bool {
-        request.url?.path == "/api/push/apns-register-widget"
+        guard handler != nil else { return false }
+        return request.url?.path == "/api/push/apns-register-widget"
     }
 
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
-        Self.callCount += 1
+        if request.httpMethod == "POST" {
+            Self.postCallCount += 1
+        } else if request.httpMethod == "DELETE" {
+            Self.deleteCallCount += 1
+        }
         guard let handler = Self.handler else {
             client?.urlProtocol(self, didFailWithError: URLError(.unknown))
             return

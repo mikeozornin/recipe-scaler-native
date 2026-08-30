@@ -16,7 +16,23 @@ enum DiscoverImageURLs {
     }
 
     static func avatar(fromPublicProfile relativeURL: String?) -> URL? {
-        DiscoverAPI.avatarURL(fromPublicProfile: relativeURL)
+        avatarPreviewURL(DiscoverAPI.avatarURL(fromPublicProfile: relativeURL))
+    }
+
+    /// Web `Avatar.appendPreviewAndVersion` parity: server serves the square
+    /// `preview.webp` only when `preview=true`; without it the portrait original
+    /// is returned and `scaledToFill` in a 24pt frame looks over-zoomed.
+    static func avatarPreviewURL(_ url: URL?) -> URL? {
+        guard let url else { return nil }
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: true) else { return url }
+        var queryItems = components.queryItems ?? []
+        if let index = queryItems.firstIndex(where: { $0.name == "preview" }) {
+            queryItems[index].value = "true"
+        } else {
+            queryItems.append(URLQueryItem(name: "preview", value: "true"))
+        }
+        components.queryItems = queryItems
+        return components.url ?? url
     }
 
     static func collectionRecipeCard(recipe: CuratedRecipeMetadataDTO) -> URL? {

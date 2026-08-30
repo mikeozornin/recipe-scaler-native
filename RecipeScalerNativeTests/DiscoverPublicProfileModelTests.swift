@@ -50,7 +50,8 @@ final class DiscoverPublicProfileModelTests: XCTestCase {
                 recipeCount: 0,
                 description: nil,
                 allowRecipeDownloads: true,
-                shareMode: .all
+                shareMode: .all,
+                followersCount: nil
             ),
             recipes: []
         )

@@ -47,7 +47,7 @@ struct DiscoverRecipeView: View {
                     hero(for: recipe)
 
                     VStack(alignment: .leading, spacing: 16) {
-                        if allowRecipeDownloads {
+                        if effectiveAllowDownloads {
                             cloneButton
                                 .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
                         }
@@ -133,8 +133,18 @@ struct DiscoverRecipeView: View {
                     for: returnContext.scope
                 )
             }
-            await model?.load(recipeId: recipeId)
+            await model?.load(
+                recipeId: recipeId,
+                fetchAuthorProfile: imageSource == .publicRecipe
+            )
         }
+    }
+
+    /// Author-level download permission (web parity): until the profile fetch
+    /// resolves, fall back to the route's `allowDownloads` (default `true` —
+    /// same progressive behavior as web's `allowRecipeDownloads !== false` gate).
+    private var effectiveAllowDownloads: Bool {
+        model?.authorAllowsDownloads ?? allowRecipeDownloads
     }
 
     @ViewBuilder

@@ -102,6 +102,12 @@ final class AppContainer {
 
     let systemBanner: SystemBannerStore
 
+    // MARK: - Follow / feed stores (spec 072)
+
+    let followStore: FollowStore
+    let feedStore: FeedStore
+    let feedBadgeStore: FeedBadgeStore
+
     // MARK: - Offline banner debounce (spec 066)
 
     /// UI-derived состояние: показывает status-баннеры только после 3с непрерывного
@@ -227,6 +233,16 @@ final class AppContainer {
         // System banner store (spec 061). Refreshed once per session during
         // bootstrap; never polls. Dismissal is persisted server-side.
         self.systemBanner = SystemBannerStore()
+
+        // Follow/feed stores (spec 072). Badge refresh runs once per session
+        // in bootstrap; the feed page's seen-echo clears the badge optimistically.
+        let followStore = FollowStore()
+        self.followStore = followStore
+        let feedBadgeStore = FeedBadgeStore()
+        self.feedBadgeStore = feedBadgeStore
+        let feedStore = FeedStore()
+        feedStore.bind(badgeStore: feedBadgeStore)
+        self.feedStore = feedStore
 
         // Spec 066 — debounced offline banner gate.
         self.offlineGate = OfflineBannerGate()
@@ -421,6 +437,10 @@ final class AppContainer {
         // Spec 061: refresh after APIClient has Bearer / userId.
         Task { await systemBanner.refresh() }
 
+        // Spec 072: badge refresh after the banner; no polling — re-checked on
+        // Discover mount (US4). Silent on failure: offline leaves no dot.
+        Task { await feedBadgeStore.refresh() }
+
         // 1a. Mirror session to paired watch (token may have been set by migration).
         WatchCredentialsBridge.shared.publish(userId: userId, token: SharedAuthStore.token)
 
@@ -536,6 +556,11 @@ final class AppContainer {
         featureAdoption.clearForLogout()
         vkusvillSettings.clearForLogout()
         systemBanner.clearForLogout()
+        // Spec 072: reset feed, badge and follow state (US8) — the server-side
+        // seen marker is intentionally untouched.
+        feedStore.clearForLogout()
+        feedBadgeStore.clearForLogout()
+        followStore.clearForLogout()
     }
 
     /// Spec 055 Phase R: full teardown after `AuthService` decides the local

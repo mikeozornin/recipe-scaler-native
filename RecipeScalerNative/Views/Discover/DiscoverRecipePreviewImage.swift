@@ -65,6 +65,8 @@ struct DiscoverRecipePreviewImage: View {
     let fallbackColor: Color
     var cornerRadius: CGFloat = 12
     var aspectRatio: CGFloat = 16.0 / 9.0
+    /// When `false`, the image is letterboxed inside the aspect box (web `object-contain`).
+    var fillsFrame: Bool = true
 
     @State private var loadedImage: UIImage?
 
@@ -84,7 +86,7 @@ struct DiscoverRecipePreviewImage: View {
                     if let displayedImage {
                         Image(uiImage: displayedImage)
                             .resizable()
-                            .scaledToFill()
+                            .aspectRatio(contentMode: fillsFrame ? .fill : .fit)
                     } else {
                         placeholder
                     }

@@ -130,6 +130,8 @@ struct PublicProfileDTO: Decodable, Identifiable, Sendable {
     let description: String?
     let allowRecipeDownloads: Bool?
     let shareMode: PublicProfileShareMode?
+    /// Spec 072: number of followers; absent from older servers → chip hidden.
+    let followersCount: Int?
 }
 
 struct PublicRecipePreviewDTO: Decodable, Identifiable, Sendable {

@@ -52,6 +52,7 @@ RecipeScalerNativeUITests/
 │   ├── CollectionsPage.swift
 │   ├── AccountPage.swift
 │   ├── DiscoverPage.swift
+│   ├── FeedPage.swift                    # 072
 │   ├── AssistantPage.swift
 │   ├── TimersPage.swift
 │   ├── ImportPage.swift
@@ -62,6 +63,7 @@ RecipeScalerNativeUITests/
     ├── ShoppingListCompletionSpec.swift  # 024
     ├── AccountSettingsSpec.swift         # 013
     ├── DiscoverPublicSpec.swift          # 011
+    ├── FollowFeedSpec.swift              # 072
     ├── YrsNativeReadSpec.swift           # 001
     ├── DescriptionDisplaySpec.swift      # 004
     ├── RecipeCollectionsSpec.swift       # 026

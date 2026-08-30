@@ -186,6 +186,11 @@ class AuthService {
     var isAuthenticated = false
     var userId: String?
     var token: String?
+    /// Last-known own username (spec 072): set when the app loads the account
+    /// profile/sharing settings; lets the public-profile screen hide the
+    /// follow controls on the user's own profile. Cleared on logout and on
+    /// session wipe.
+    var ownUsername: String?
 
     /// Spec 054: probe used by `performStaleSessionHealthCheck()` to verify the
     /// restored user still exists on the server. Indirected through a closure
@@ -473,6 +478,9 @@ class AuthService {
         userId = nil
         token = nil
         isAuthenticated = false
+        // Parity with `logout()`: a stale own username from the wiped account
+        // must not leak into the next session (spec 072 own-profile gate).
+        ownUsername = nil
 
         apiClient.configure(authToken: nil)
         apiClient.configure(userId: nil)
@@ -830,6 +838,7 @@ class AuthService {
         self.userId = nil
         self.token = nil
         self.isAuthenticated = false
+        self.ownUsername = nil
 
         apiClient.configure(authToken: nil)
         apiClient.configure(userId: nil)

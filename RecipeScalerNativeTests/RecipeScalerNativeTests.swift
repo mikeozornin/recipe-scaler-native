@@ -852,6 +852,52 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertEqual(readBack?.nutrition?.carbs, 30)
     }
 
+    /// Regression (072 review): `updateIngredient` / `removeIngredient` used to
+    /// write only the root-level `nutritionOutdated`, which the nested-only
+    /// `readNutrition` ignores — the «данные устарели» banner never appeared.
+    /// Both writers must go through the dual-write `setNutritionOutdated`.
+    func testUpdateAndRemoveIngredientMarkNutritionOutdated() async throws {
+        let userId = "user-outdated-flag"
+        let store = try YDocStore.inMemory()
+        let manager = DocumentManager(store: store)
+        await manager.setUserId(userId)
+
+        let recipeId = try await manager.createRecipe(name: "Outdated flag test")
+        let ingredient = IngredientData(
+            id: "ing-1",
+            name: "Мука",
+            amount: "200",
+            originalAmount: "200",
+            unit: "g",
+            order: 1
+        )
+        try await manager.addIngredient(recipeId: recipeId, ingredient: ingredient)
+
+        let updated = IngredientData(
+            id: "ing-1",
+            name: "Мука высшего сорта",
+            amount: "200",
+            originalAmount: "200",
+            unit: "g",
+            order: 1
+        )
+        try await manager.updateIngredient(recipeId: recipeId, ingredient: updated)
+        var readBack = try await manager.readRecipeData(recipeId: recipeId, userId: userId)
+        XCTAssertEqual(
+            readBack?.nutrition?.nutritionOutdated,
+            true,
+            "editing an ingredient must flag nutrition as outdated (nested write, which the reader honors)"
+        )
+
+        try await manager.removeIngredient(recipeId: recipeId, ingredientId: ingredient.id)
+        readBack = try await manager.readRecipeData(recipeId: recipeId, userId: userId)
+        XCTAssertEqual(
+            readBack?.nutrition?.nutritionOutdated,
+            true,
+            "removing an ingredient must keep the outdated flag set"
+        )
+    }
+
     func testAddIngredientViaIngredientMapDoesNotCrash() async throws {
         let userId = "user-add-ingredient"
         let recipeId = "recipe-add-ingredient"

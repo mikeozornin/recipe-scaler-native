@@ -5,6 +5,7 @@
 
 import RecipeScalerCore
 import SwiftUI
+import UIKit
 
 struct DiscoverRecipeReturnContext: Hashable, Sendable {
     let scope: DiscoverListScope
@@ -14,17 +15,35 @@ struct DiscoverRecipeReturnContext: Hashable, Sendable {
 struct DiscoverRootView: View {
     @Binding var path: NavigationPath
     @Environment(\.apiClient) private var apiClient
+    @Environment(FeedBadgeStore.self) private var feedBadgeStore
+    @Environment(AppShellCoordinator.self) private var coordinator
     @State private var model: DiscoverRootModel?
+    /// Ephemeral segment state (spec 072): not persisted, Discover always
+    /// enters on «Подборки». A digest push bump (see `.task`/`.onChange`
+    /// below) switches it to «Моя лента» once.
+    @State private var segment: DiscoverFeedSegment = .collections
 
     var body: some View {
         NavigationStack(path: $path) {
-            Group {
-                if let model {
-                    DiscoverRootContent(model: model)
-                } else {
-                    ProgressView()
-                        .mobileTimerPanelBottomPadding()
+            VStack(spacing: 0) {
+                DiscoverFeedSegmentPicker(segment: $segment)
+                Group {
+                    switch segment {
+                    case .collections:
+                        if let model {
+                            DiscoverRootContent(model: model)
+                        } else {
+                            ProgressView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .mobileTimerPanelBottomPadding()
+                        }
+                    case .following:
+                        DiscoverFeedView {
+                            segment = .collections
+                        }
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .localizedNavigationTitle("discover.title")
             .navigationDestination(for: DiscoverRoute.self) { route in
@@ -46,27 +65,93 @@ struct DiscoverRootView: View {
                 if model == nil {
                     model = DiscoverRootModel(api: apiClient)
                 }
-            }
-        }
-    }
-
-    /// Vertical list of rows, one card per line (web parity on mobile).
-    @ViewBuilder
-    private func section<Item: Identifiable, Content: View>(
-        titleKey: LocalizedStringKey,
-        items: [Item],
-        @ViewBuilder cell: @escaping (Item) -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            AppSectionHeader(titleKey)
-            VStack(spacing: 0) {
-                ForEach(items) { item in
-                    cell(item)
+                if coordinator.discoverFeedRequestEpoch > 0 {
+                    activateFeedSegment()
                 }
             }
+            .onChange(of: coordinator.discoverFeedRequestEpoch) { _, _ in
+                activateFeedSegment()
+            }
         }
     }
 
+    /// Spec 072 digest push landing: select «Моя лента» and clear the new-content
+    /// dot — same side effects as a manual segment tap (`DiscoverFeedSegmentPicker`).
+    /// `markSeenLocally` (not `clearForLogout`) so the server marker is owned
+    /// by `FeedStore` after the feed page loads.
+    private func activateFeedSegment() {
+        segment = .following
+        feedBadgeStore.markSeenLocally()
+    }
+}
+
+/// «Подборки | Моя лента» header control (spec 072). Segmented picker under
+/// the navigation title; the «Моя лента» segment carries the red new-content
+/// dot while unread (US4), matching the tab-bar dot semantics.
+///
+/// A custom SwiftUI segment, not `Picker(.segmented)`: the system control
+/// flattens its labels into `UISegmentedControl` titles, so an overlay dot on
+/// the label is not guaranteed to render on device (the reason
+/// `RecipeNutritionBlockView` ships its own segment wrapper too). Full control
+/// over the dot, hit targets and the a11y identifier the UI tests use.
+/// Styling mirrors the system segmented control (ImportRecipeSheet):
+/// rounded track (8) + thumb (6), Martian 16 via `AppTypography.body`.
+struct DiscoverFeedSegmentPicker: View {
+    @Binding var segment: DiscoverFeedSegment
+    @Environment(FeedBadgeStore.self) private var feedBadgeStore
+
+    var body: some View {
+        HStack(spacing: 2) {
+            segmentButton(.collections, titleKey: "discover.feed.segment-collections")
+            segmentButton(.following, titleKey: "discover.feed.segment-following")
+        }
+        .padding(2)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(.tertiarySystemFill))
+        )
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color(.systemBackground))
+        .accessibilityIdentifier(AccessibilityIdentifiers.discoverFeedSegment)
+        .accessibilityLabel(Text("discover.feed.segment-label"))
+    }
+
+    private func segmentButton(
+        _ target: DiscoverFeedSegment,
+        titleKey: LocalizedStringKey
+    ) -> some View {
+        let isSelected = segment == target
+        return Button {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                segment = target
+            }
+            if target == .following {
+                feedBadgeStore.markSeenLocally()
+            }
+        } label: {
+            Text(titleKey)
+                .font(AppTypography.body)
+                .foregroundStyle(Color.primary)
+                .overlay(alignment: .trailing) {
+                    if target == .following, feedBadgeStore.hasNew {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 7, height: 7)
+                            .offset(x: 8, y: -7)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(isSelected ? Color(.systemBackground) : .clear)
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+    }
 }
 
 /// Renders the loaded discover root content. Extracted so the parent
@@ -81,11 +166,16 @@ private struct DiscoverRootContent: View {
             case .idle, .loading:
                 ProgressView()
                     .mobileTimerPanelBottomPadding()
-            case .failed(let message):
+            case .failed:
                 ContentUnavailableView {
                     AppEmptyState.label("discover.error", symbol: "wifi.exclamationmark")
                 } description: {
-                    Text(message).appBody()
+                    Text("discover.error-server").appBody()
+                } actions: {
+                    Button("common.try-again") {
+                        Task { await model.load() }
+                    }
+                    .buttonStyle(.bordered)
                 }
                 .mobileTimerPanelBottomPadding()
             case .loaded(let data) where !data.collections.isEmpty || !data.profiles.isEmpty:
@@ -328,18 +418,22 @@ struct DiscoverAvatar: View {
     let avatarURL: URL?
     var size: CGFloat = 40
 
+    @State private var uiImage: UIImage?
+
+    private var resolvedURL: URL? {
+        DiscoverImageURLs.avatarPreviewURL(avatarURL)
+    }
+
     private var cornerRadius: CGFloat { 8 }
 
     var body: some View {
-        ZStack {
-            placeholder
-            if let avatarURL {
-                PublicCachedImageView(
-                    url: avatarURL,
-                    allowsNetworkRefresh: true,
-                    maxPixelSize: RecipeImageDecoder.previewMaxPixelSize,
-                    contentMode: .fill
-                )
+        Group {
+            if let uiImage {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                placeholder
             }
         }
         .frame(width: size, height: size)
@@ -348,15 +442,72 @@ struct DiscoverAvatar: View {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.05), lineWidth: 0.5)
         )
+        .task(id: resolvedURL) {
+            await loadAvatar()
+        }
+    }
+
+    /// Avatars use full bitmap decode; keep them out of `DiscoverImageMemoryCache`
+    /// which stores downsampled recipe thumbnails keyed by the same public URL.
+    private enum AvatarImageCache {
+        private static let cache: NSCache<NSURL, UIImage> = {
+            let cache = NSCache<NSURL, UIImage>()
+            cache.countLimit = 64
+            return cache
+        }()
+
+        static func image(for url: URL) -> UIImage? {
+            cache.object(forKey: url as NSURL)
+        }
+
+        static func store(_ image: UIImage, for url: URL) {
+            cache.setObject(image, forKey: url as NSURL)
+        }
     }
 
     private var placeholder: some View {
-        AppSymbol.sizedImage("person.fill", pointSize: max(size * 0.5, 40))
+        AppSymbol.sizedImage("person.fill", pointSize: max(size * 0.55, 16))
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(Color(.tertiarySystemFill))
             )
+    }
+
+    /// Square server preview (`preview=true`) + full bitmap + `scaledToFill`,
+    /// matching web feed `Avatar` (`object-cover` on the 96×96 preview asset).
+    private func loadAvatar() async {
+        guard let resolvedURL else {
+            uiImage = nil
+            return
+        }
+
+        if let cached = AvatarImageCache.image(for: resolvedURL) {
+            uiImage = cached
+            return
+        }
+
+        if let fileURL = PublicImageDiskCache.existingFileURL(for: resolvedURL),
+           let image = Self.decodeFullImage(from: fileURL) {
+            AvatarImageCache.store(image, for: resolvedURL)
+            uiImage = image
+            return
+        }
+
+        guard let fileURL = await PublicImageCacheService.shared.ensureCached(
+            url: resolvedURL,
+            allowNetwork: true
+        ),
+              let image = Self.decodeFullImage(from: fileURL) else {
+            return
+        }
+        AvatarImageCache.store(image, for: resolvedURL)
+        uiImage = image
+    }
+
+    private static func decodeFullImage(from fileURL: URL) -> UIImage? {
+        guard let data = try? Data(contentsOf: fileURL) else { return nil }
+        return UIImage(data: data)
     }
 }

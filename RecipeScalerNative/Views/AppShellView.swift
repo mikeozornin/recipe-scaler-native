@@ -62,6 +62,23 @@ private struct AppTabBarLabel: View {
     }
 }
 
+/// Red new-content dot (spec 072 US4) overlaid on the Discover tab icon.
+private struct FeedBadgeTabLabel: View {
+    @Environment(FeedBadgeStore.self) private var feedBadgeStore
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            AppTabBarLabel(tab: .discover)
+            if feedBadgeStore.hasNew {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 9, height: 9)
+                    .offset(x: 8, y: -6)
+            }
+        }
+    }
+}
+
 struct AppShellView: View {
     @Bindable private var coordinator: AppShellCoordinator
     @Environment(YjsSyncService.self) private var syncService
@@ -398,7 +415,7 @@ struct AppShellView: View {
     @ViewBuilder
     private var tabView: some View {
         let tabs = TabView(selection: tabSelection) {
-            tabRoot(DiscoverRootView(path: $coordinator.discoverPath)) { AppTabBarLabel(tab: .discover) }
+            tabRoot(DiscoverRootView(path: $coordinator.discoverPath)) { FeedBadgeTabLabel() }
                 .tag(AppTab.discover)
                 .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
 
