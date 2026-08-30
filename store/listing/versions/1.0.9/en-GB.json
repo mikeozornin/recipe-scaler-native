@@ -1,0 +1,9 @@
+{
+  "locale": "en-GB",
+  "description": "Recipe Scaler is a native, beautifully designed app for storing recipes and cooking with real convenience.\n\nSave your favorite recipes in one place, quickly scale them to any number of servings, and cook without unnecessary calculations. Clean interface, smooth performance, and thoughtful details make everyday cooking simpler and more enjoyable.\n\nMain features:\n• Store and organize your recipes\n• Instantly scale any recipe to the desired number of servings\n• Helpful cooking assistant\n• Full offline mode\n• Seamless sync across devices\n• Easy recipe sharing\n\nDeep iOS integration:\n• Home Screen Widgets\n• Live Activities\n• Push Notifications\n• Spotlight Search\n\nBuilt natively for iPhone — fast, polished, and a pleasure to use every day.\n\nTerms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+  "keywords": "recipe storage,recipe scaler,cooking assistant,save recipes,meal prep,cooking app,recipe manager",
+  "marketingUrl": "https://recipe-scaler.ru/about",
+  "promotionalText": "Store and scale your recipes, cook with ease. Adjust servings, save favorites, work offline and sync across devices. Native, beautiful and convenient.",
+  "supportUrl": "https://recipe-scaler.ru/about",
+  "whatsNew": "New:\nRecipe Scaler is now a social network too: follow friends and stay up to date on their new recipes.\n\nFixes:\nFixed recipe text editing\nLots of minor bug fixes"
+}
