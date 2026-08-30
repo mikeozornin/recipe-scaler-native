@@ -11,6 +11,23 @@ enum AppToolbarStyle {
     static let minimumTapSide: CGFloat = 44
     static let iconButtonPadding: CGFloat = (minimumTapSide - iconSide) / 2
 
+    private struct ToolbarIconMetrics {
+        let width: CGFloat
+        let height: CGFloat
+        let pointSize: CGFloat
+    }
+
+    /// Wide glyphs (e.g. bell + sound waves) need a larger point size so the
+    /// core icon matches `iconSide` after `scaledToFit`.
+    private static func toolbarIconMetrics(for systemName: String) -> ToolbarIconMetrics {
+        switch systemName {
+        case "bell.and.waves.left.and.right.fill":
+            return ToolbarIconMetrics(width: 28, height: iconSide, pointSize: 26)
+        default:
+            return ToolbarIconMetrics(width: iconSide, height: iconSide, pointSize: iconSide)
+        }
+    }
+
     /// iOS 26 Liquid Glass toolbar pills hug label bounds; pre-26 toolbar chrome adds trailing inset.
     private static var labeledIconTrailingPadding: CGFloat {
         if #available(iOS 26.0, *) {
@@ -21,10 +38,11 @@ enum AppToolbarStyle {
 
     @ViewBuilder
     static func icon(_ systemName: String) -> some View {
-        AppSymbol.toolbarImage(systemName)
+        let metrics = toolbarIconMetrics(for: systemName)
+        AppSymbol.sizedImage(systemName, pointSize: metrics.pointSize, weight: .semibold)
             .resizable()
             .scaledToFit()
-            .frame(width: iconSide, height: iconSide)
+            .frame(width: metrics.width, height: metrics.height)
             .foregroundStyle(AppChromeAppearance.systemActionColor)
     }
 
@@ -38,9 +56,27 @@ enum AppToolbarStyle {
 
     @ViewBuilder
     static func labeledIcon(systemName: String, title: LocalizedStringKey) -> some View {
+        labeledIconRow(systemName: systemName, title: title, showsChevron: false)
+    }
+
+    /// Toolbar menu trigger: icon + body label + chevron (web follow dropdown parity).
+    @ViewBuilder
+    static func dropdownLabel(systemName: String, title: LocalizedStringKey) -> some View {
+        labeledIconRow(systemName: systemName, title: title, showsChevron: true)
+    }
+
+    @ViewBuilder
+    private static func labeledIconRow(
+        systemName: String,
+        title: LocalizedStringKey,
+        showsChevron: Bool
+    ) -> some View {
         HStack(spacing: 4) {
             icon(systemName)
             actionText(title)
+            if showsChevron {
+                icon("chevron.down")
+            }
         }
         .fixedSize(horizontal: true, vertical: false)
         .padding(.leading, iconButtonPadding)
