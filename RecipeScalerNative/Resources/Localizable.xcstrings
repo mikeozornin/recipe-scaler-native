@@ -6777,13 +6777,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Could not load the feed."
+            "value" : "Could not load the feed"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не удалось загрузить ленту."
+            "value" : "Не удалось загрузить ленту"
           }
         }
       }

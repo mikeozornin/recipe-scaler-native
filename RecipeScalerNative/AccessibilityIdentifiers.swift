@@ -48,6 +48,7 @@ enum AccessibilityIdentifiers {
     static let discoverFeedCard = "discover-feed-card"
     static let discoverFeedCardNewBadge = "discover-feed-card-new-badge"
     static let discoverFeedAutoLoad = "discover-feed-auto-load"
+    static let discoverFeedRetry = "discover-feed-retry"
 
     static func discoverRecipeCard(recipeID: String) -> String {
         "\(discoverRecipeCardPrefix)\(recipeID)"

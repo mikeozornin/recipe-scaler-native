@@ -137,6 +137,14 @@ public final class APIClient: @unchecked Sendable {
 
     // MARK: - Request Builder
 
+    /// Per-request cap for API calls built by `buildRequest`. `URLSession.shared`
+    /// defaults to a 60s `timeoutIntervalForRequest`, which in airplane mode
+    /// parks the loading UI for a full minute before the error state renders.
+    /// The Native layer has its own policy (`AppURLSession`, 15s/30s); Core
+    /// requests get the same 15s bound — never longer than the session
+    /// configuration, so the shorter test-host timeouts (3s) stay in force.
+    public static let requestTimeout: TimeInterval = 15
+
     public func buildRequest(
         path: String,
         method: String = "GET",
@@ -149,6 +157,10 @@ public final class APIClient: @unchecked Sendable {
 
         var request = URLRequest(url: url)
         request.httpMethod = method
+        request.timeoutInterval = min(
+            Self.requestTimeout,
+            URLSession.shared.configuration.timeoutIntervalForRequest
+        )
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let snapshot = authLock.withLock { $0 }

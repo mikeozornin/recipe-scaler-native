@@ -110,6 +110,44 @@ final class FeedStoreTests: XCTestCase {
 
     // MARK: - Failed first page (plan Positive invariants row 4, US4)
 
+    /// The view gates its empty states on this flag: before the first
+    /// successful page the feed must never render «нет нового» — that
+    /// false-empty flash is the airplane-mode bug this flag fixes.
+    func test_didLoadFirstPage_gates_empty_state() async {
+        let store = FeedStore()
+        let badge = FeedBadgeStore()
+        store.bind(badgeStore: badge)
+
+        XCTAssertFalse(
+            store.didLoadFirstPage,
+            "before any load the flag must be down — the view shows the spinner"
+        )
+
+        FollowFeedTestURLProtocol.handler = { _ in
+            FollowFeedTestURLProtocol.apiFailure("api.error.server-generic", status: 500)
+        }
+        await store.loadFirstPage()
+        XCTAssertFalse(
+            store.didLoadFirstPage,
+            "a failed first page must not light the flag — empty states stay gated"
+        )
+
+        FollowFeedTestURLProtocol.handler = { _ in
+            FollowFeedTestURLProtocol.feedPage(items: [], nextCursor: nil, snapshotAt: nil)
+        }
+        await store.refresh()
+        XCTAssertTrue(
+            store.didLoadFirstPage,
+            "a successful (even empty) first page lights the flag — «нет нового» is now truthful"
+        )
+
+        store.clearForLogout()
+        XCTAssertFalse(
+            store.didLoadFirstPage,
+            "clearForLogout must reset the flag — the next account starts from the spinner"
+        )
+    }
+
     func test_failed_first_page_does_not_mark_seen() async {
         let badge = FeedBadgeStore()
         let store = FeedStore()

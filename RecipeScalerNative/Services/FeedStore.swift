@@ -26,6 +26,11 @@ final class FeedStore {
 
     private(set) var isLoadingFirstPage = false
 
+    /// `true` after the first successful page-1 load; gates the empty states in
+    /// the view so a not-yet-loaded feed renders the spinner, never a false
+    /// «нет нового». Cleared in `clearForLogout`.
+    private(set) var didLoadFirstPage = false
+
     /// Cursor of the last loaded page; `nil` when the feed is exhausted.
     private(set) var nextCursor: String?
 
@@ -71,6 +76,7 @@ final class FeedStore {
             items = page.items
             nextCursor = page.nextCursor
             hasFollows = page.hasFollows
+            didLoadFirstPage = true
             // Web parity: `lastSeenAt ?? snapshotAt` — both bound the entries
             // the server flagged `is_new` on page 1 (query preceded the echo).
             lastSeenCutoff = page.lastSeenAt ?? page.snapshotAt
@@ -150,6 +156,7 @@ final class FeedStore {
         isAppendingPage = false
         pageError = false
         hasFollows = nil
+        didLoadFirstPage = false
         lastSeenCutoff = nil
         AppLog.info(.app, "feed_store_cleared")
     }

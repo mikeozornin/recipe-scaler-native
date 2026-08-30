@@ -34,11 +34,18 @@ struct DiscoverFeedView: View {
         content
             .task {
                 guard isAuthenticated else { return }
-                await feedBadgeStore.refresh(api: apiClient)
+                // Parallel: in airplane mode a hung badge request must not
+                // delay the first feed page (the spinner gate below depends
+                // only on the feed load). `markSeenLocally` inside the seen
+                // echo bumps the badge epoch, so a late badge response that
+                // lands after a successful feed load is discarded — no dot
+                // resurrection race.
+                async let badgeRefresh: Void = feedBadgeStore.refresh(api: apiClient)
                 if !hasLoadedOnce {
                     hasLoadedOnce = true
                     await feedStore.loadFirstPage(api: apiClient)
                 }
+                _ = await badgeRefresh
             }
     }
 
@@ -53,8 +60,16 @@ struct DiscoverFeedView: View {
         } else if feedStore.items.isEmpty {
             if feedStore.pageError {
                 feedErrorState
-            } else {
+            } else if feedStore.didLoadFirstPage {
+                // A successful empty page (no follows / nothing new) — the
+                // only path where the empty states are truthful.
                 feedEmptyState
+            } else {
+                // First page not loaded yet (e.g. badge refresh in flight):
+                // keep the spinner instead of flashing «нет нового».
+                ProgressView(Bundle.currentLocalizedString("discover.feed.loading"))
+                    .mobileTimerPanelBottomPadding()
+                    .accessibilityIdentifier(AccessibilityIdentifiers.discoverFeedList)
             }
         } else {
             feedList
@@ -118,15 +133,14 @@ struct DiscoverFeedView: View {
     }
 
     private var feedErrorState: some View {
-        VStack(spacing: 16) {
+        ContentUnavailableView {
             AppEmptyState.label("discover.feed.error", symbol: "wifi.exclamationmark")
-            Button("common.retry") {
-                Task { await feedStore.loadFirstPage(api: apiClient) }
+        } description: {
+            VStack(spacing: 0) {
+                Text("discover.error-server").appBody()
+                tryAgainButton
             }
-            .buttonStyle(.bordered)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 60)
         .mobileTimerPanelBottomPadding()
         .accessibilityIdentifier(AccessibilityIdentifiers.discoverFeedList)
     }
@@ -161,6 +175,21 @@ struct DiscoverFeedView: View {
         }
         .mobileTimerPanelBottomPadding()
         .accessibilityIdentifier(AccessibilityIdentifiers.discoverFeedList)
+    }
+
+    /// Transparent button with standard control padding; the explicit
+    /// `.appBody()` label keeps the 16 pt Martian size — `ContentUnavailableView`
+    /// description would otherwise downsize a plain string label.
+    private var tryAgainButton: some View {
+        Button {
+            Task { await feedStore.loadFirstPage(api: apiClient) }
+        } label: {
+            Text("common.try-again")
+                .appBody()
+        }
+        .buttonStyle(.borderless)
+        .padding(.vertical, 16)
+        .accessibilityIdentifier(AccessibilityIdentifiers.discoverFeedRetry)
     }
 
     /// Transparent button with standard control padding; the explicit

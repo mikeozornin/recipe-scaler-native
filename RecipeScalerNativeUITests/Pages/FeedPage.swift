@@ -88,9 +88,11 @@ struct FeedPage: Page {
         app.buttons["Retry"].firstMatch
     }
 
-    /// «Повторить» button for a failed first page (error empty state).
+    /// «Попробовать снова» button for a failed first page (error empty state).
+    /// Matched by the a11y identifier — the label changed from «Повторить»
+    /// to «Попробовать снова» (spec 072 error-state parity).
     var retryFirstPageButton: XCUIElement {
-        app.buttons["Retry"].firstMatch
+        app.buttons[UIA.discoverFeedRetry].firstMatch
     }
 
     // MARK: - Follow controls (public profile)

@@ -109,6 +109,8 @@ final class LocalizationConsistencyTests: XCTestCase {
             "common.cancel",
             "common.close",
             "common.delete-image",
+            "common.retry",
+            "common.try-again",
             "account.sync.title",
             "account.sync.never",
             "account.collections-layout.label",

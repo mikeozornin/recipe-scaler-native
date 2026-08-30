@@ -170,12 +170,17 @@ private struct DiscoverRootContent: View {
                 ContentUnavailableView {
                     AppEmptyState.label("discover.error", symbol: "wifi.exclamationmark")
                 } description: {
-                    Text("discover.error-server").appBody()
-                } actions: {
-                    Button("common.try-again") {
-                        Task { await model.load() }
+                    VStack(spacing: 0) {
+                        Text("discover.error-server").appBody()
+                        Button {
+                            Task { await model.load() }
+                        } label: {
+                            Text("common.try-again")
+                                .appBody()
+                        }
+                        .buttonStyle(.borderless)
+                        .padding(.vertical, 16)
                     }
-                    .buttonStyle(.bordered)
                 }
                 .mobileTimerPanelBottomPadding()
             case .loaded(let data) where !data.collections.isEmpty || !data.profiles.isEmpty:
