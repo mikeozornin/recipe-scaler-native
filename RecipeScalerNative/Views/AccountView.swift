@@ -69,8 +69,10 @@ struct AccountView: View {
     /// Incremented on every pull-to-refresh so child views (Telegram status,
     /// legacy auth banner) re-run their `.task` and refetch non-pushed data.
     @State private var refreshTick = 0
+    #if DEBUG
     /// Tracks NDJSON journal presence so export/clear rows refresh after wipe.
     @State private var hasDebugLogFile = AppLog.currentLogFileURL() != nil
+    #endif
 
     private var collectionsLayout: RecipeFolderRoutes.CollectionsRootLayout {
         RecipeFolderRoutes.CollectionsRootLayout(rawValue: collectionsLayoutRaw)
@@ -152,7 +154,9 @@ struct AccountView: View {
                     }
 
                     footerSection
+                    #if DEBUG
                     logExportSection
+                    #endif
 
                     if MobileTimerPanelListChrome.needsSpacer(
                         timerManager: timer,
@@ -694,6 +698,7 @@ struct AccountView: View {
     }
 
 
+    #if DEBUG
     @ViewBuilder
     private var logExportSection: some View {
         Section {
@@ -768,6 +773,20 @@ struct AccountView: View {
         }
     }
 
+    /// Relative "5 min ago"-style label for the last successful sync.
+    /// Reads `\.locale` so the label recomputes when the user switches language.
+    private var syncDateLabel: String {
+        _ = locale
+        guard let date = syncService.lastSuccessfulSyncAt else {
+            return Bundle.currentLocalizedString("account.sync.never")
+        }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = locale
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+    #endif
+
     @ViewBuilder
     private var footerSection: some View {
         Section {
@@ -810,19 +829,6 @@ struct AccountView: View {
                 LabeledContent("account.version", value: version)
             }
         }
-    }
-
-    /// Relative "5 min ago"-style label for the last successful sync.
-    /// Reads `\.locale` so the label recomputes when the user switches language.
-    private var syncDateLabel: String {
-        _ = locale
-        guard let date = syncService.lastSuccessfulSyncAt else {
-            return Bundle.currentLocalizedString("account.sync.never")
-        }
-        let formatter = RelativeDateTimeFormatter()
-        formatter.locale = locale
-        formatter.unitsStyle = .full
-        return formatter.localizedString(for: date, relativeTo: Date())
     }
 
     @ViewBuilder

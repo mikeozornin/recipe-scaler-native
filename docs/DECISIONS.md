@@ -224,7 +224,7 @@ invalidating session-scoped wire operations.
 
 ### 2026-06-16 — Unified AppLog facade (spec 028)
 
-**Decision:** Single `AppLog` facade for all app logging. DEBUG builds write NDJSON to `Library/Application Support/debug-session.ndjson` **by default** (no scheme env required). Opt-out: `AGENT_DEBUG_LOG_DISABLED=1`. All builds mirror to `os.Logger`. `AgentSyncDebugLog` / `DebugSessionNDJSONLog` / `CursorDebugIngestLog` remain as thin compatibility wrappers. Agent pulls logs via `scripts/pull-app-logs.sh`; user exports from Profile → Diagnostics on device. Release: no file; profile shows a clear «no log» message.
+**Decision:** Single `AppLog` facade for all app logging. DEBUG builds write NDJSON to `Library/Application Support/debug-session.ndjson` **by default** (no scheme env required). Opt-out: `AGENT_DEBUG_LOG_DISABLED=1`. All builds mirror to `os.Logger`. `AgentSyncDebugLog` / `DebugSessionNDJSONLog` / `CursorDebugIngestLog` remain as thin compatibility wrappers. Agent pulls logs via `scripts/pull-app-logs.sh`; user exports from Profile → Diagnostics on device (DEBUG only). Release: no file; Diagnostics section (sync status + log export) hidden in profile.
 
 **Rationale:** Fragmented logging (`AgentSyncDebugLog` only in Views, `print`/`Logger` in Services) made agent reproduction unreliable. Default-on DEBUG logging works on simulator and phone without env injection; rotation caps disk use (5 MB × 3 archives).
 

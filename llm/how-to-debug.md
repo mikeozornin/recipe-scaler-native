@@ -17,7 +17,7 @@
 1. **Один формат** — NDJSON (одна строка = один JSON-объект).
 2. **Один файл в sandbox** — `Library/Application Support/debug-session.ndjson` (симулятор и телефон).
 3. **DEBUG-сборка** — журнал в файл включён по умолчанию; opt-out: `AGENT_DEBUG_LOG_DISABLED=1`.
-4. **Доставка наружу** — pull из симулятора (`scripts/pull-app-logs.sh`) или share sheet в профиле (телефон).
+4. **Доставка наружу** — pull из симулятора (`scripts/pull-app-logs.sh`) или share sheet в профиле → «Диагностика» (только DEBUG-сборка).
 
 ## Единая точка входа: `AppLog`
 
