@@ -2279,13 +2279,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Attach"
+            "value" : "Add file"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Приложить"
+            "value" : "Добавить файл"
           }
         }
       }
