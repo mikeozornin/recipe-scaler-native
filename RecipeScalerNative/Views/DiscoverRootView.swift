@@ -89,68 +89,57 @@ struct DiscoverRootView: View {
 /// the navigation title; the «Моя лента» segment carries the red new-content
 /// dot while unread (US4), matching the tab-bar dot semantics.
 ///
-/// A custom SwiftUI segment, not `Picker(.segmented)`: the system control
-/// flattens its labels into `UISegmentedControl` titles, so an overlay dot on
-/// the label is not guaranteed to render on device (the reason
-/// `RecipeNutritionBlockView` ships its own segment wrapper too). Full control
-/// over the dot, hit targets and the a11y identifier the UI tests use.
-/// Styling mirrors the system segmented control (ImportRecipeSheet):
-/// rounded track (8) + thumb (6), Martian 16 via `AppTypography.body`.
+/// Same `Picker(.segmented)` as Shopping List (system font + iOS 26 pill chrome).
+/// A SwiftUI overlay carries the badge — not per-label overlays inside segments.
 struct DiscoverFeedSegmentPicker: View {
     @Binding var segment: DiscoverFeedSegment
     @Environment(FeedBadgeStore.self) private var feedBadgeStore
 
+    private static let newDotSize: CGFloat = 7
+    private static let newDotTrailingInset: CGFloat = 12
+
     var body: some View {
-        HStack(spacing: 2) {
-            segmentButton(.collections, titleKey: "discover.feed.segment-collections")
-            segmentButton(.following, titleKey: "discover.feed.segment-following")
+        Picker("discover.feed.segment-label", selection: segmentBinding) {
+            Text("discover.feed.segment-collections").tag(DiscoverFeedSegment.collections)
+            Text("discover.feed.segment-following").tag(DiscoverFeedSegment.following)
         }
-        .padding(2)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(.tertiarySystemFill))
-        )
+        .pickerStyle(.segmented)
+        .overlay {
+            if feedBadgeStore.hasNew {
+                followingSegmentNewDot
+            }
+        }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .background(Color(.systemBackground))
         .accessibilityIdentifier(AccessibilityIdentifiers.discoverFeedSegment)
-        .accessibilityLabel(Text("discover.feed.segment-label"))
     }
 
-    private func segmentButton(
-        _ target: DiscoverFeedSegment,
-        titleKey: LocalizedStringKey
-    ) -> some View {
-        let isSelected = segment == target
-        return Button {
-            withAnimation(.easeInOut(duration: 0.15)) {
-                segment = target
-            }
-            if target == .following {
-                feedBadgeStore.markSeenLocally()
-            }
-        } label: {
-            Text(titleKey)
-                .font(AppTypography.body)
-                .foregroundStyle(Color.primary)
-                .overlay(alignment: .trailing) {
-                    if target == .following, feedBadgeStore.hasNew {
-                        Circle()
-                            .fill(Color.red)
-                            .frame(width: 7, height: 7)
-                            .offset(x: 8, y: -7)
-                    }
+    /// User taps only — programmatic `segment =` updates bypass this setter.
+    private var segmentBinding: Binding<DiscoverFeedSegment> {
+        Binding(
+            get: { segment },
+            set: { newValue in
+                if newValue == .following {
+                    feedBadgeStore.markSeenLocally()
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(isSelected ? Color(.systemBackground) : .clear)
+                segment = newValue
+            }
+        )
+    }
+
+    /// Inside the capsule: trailing «Моя лента», vertically centered, 12 pt from the right edge.
+    private var followingSegmentNewDot: some View {
+        GeometryReader { proxy in
+            Circle()
+                .fill(Color.red)
+                .frame(width: Self.newDotSize, height: Self.newDotSize)
+                .position(
+                    x: proxy.size.width - Self.newDotTrailingInset - Self.newDotSize / 2,
+                    y: proxy.size.height / 2
                 )
-                .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+        .allowsHitTesting(false)
     }
 }
 
