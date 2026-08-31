@@ -202,6 +202,12 @@ actor DocumentManager {
         plainTextCache.removeValue(forKey: key)
         let doc = try YrsDocument(state: state)
         docs[key] = doc
+        if key.hasSuffix(":collection") {
+            // Server snapshots from legacy paths may omit root `folders` / `recipes`
+            // arrays. `getOrCreateDoc` ensures them only on first load; without this,
+            // subsequent folder mutations throw `documentNotLoaded` (MIK-155 parity).
+            await doc.ensureCollectionRoots()
+        }
         try? await store.saveSnapshot(docKey: key, state: state, lastSyncedAt: lastSyncedAt)
         await installObservers(key: key, doc: doc)
         Self.logger.info("Replaced doc \(UserIdFormatter.redactDocKey(key)) from server snapshot (\(state.count) bytes)")
@@ -805,6 +811,8 @@ actor DocumentManager {
         let now = Self.isoTimestamp()
 
         let doc = try await getOrCreateDoc(key: key)
+        guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
+        await doc.ensureCollectionRoots()
         guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
         try await doc.withWriteTransaction { rawDoc, txn in
             let array: YrsArray

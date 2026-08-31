@@ -25,6 +25,9 @@ enum UserFacingAPIError {
         if let yrsError = error as? YrsError {
             return yrsError.userFacingMessage()
         }
+        if let editError = error as? RecipeEditError {
+            return editError.localizedDescription
+        }
         if isTransientNetworkError(error) {
             return Bundle.currentLocalizedString("account.error.unreachable")
         }

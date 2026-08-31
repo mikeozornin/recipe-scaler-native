@@ -1490,6 +1490,28 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertEqual(folders.first?.color, RecipeFolderConstants.defaultFolderColor)
     }
 
+    /// Legacy `document_loaded` / recovery may replace the collection doc without
+    /// root `folders`/`recipes` arrays. Folder create from CollectionAssignSheet
+    /// must still succeed after `replaceDocument`.
+    func testCreateFolderAfterReplaceDocumentWithoutCollectionRoots() async throws {
+        let userId = "user-folder-replace"
+        let key = "\(userId):collection"
+        let store = try YDocStore.inMemory()
+        let manager = DocumentManager(store: store)
+        await manager.setUserId(userId)
+
+        let legacyDoc = try YrsDocument()
+        let encoded = await legacyDoc.encodeStateAsUpdate()
+        let state = try XCTUnwrap(encoded)
+        try await manager.replaceDocument(key: key, state: state)
+
+        let id = try await manager.createFolder(name: "Assign sheet")
+        XCTAssertFalse(id.isEmpty)
+        let folders = try await manager.readFolders()
+        XCTAssertEqual(folders.count, 1)
+        XCTAssertEqual(folders.first?.name, "Assign sheet")
+    }
+
     func testCreateFolderBlankNameStoresSentinel() async throws {
         let userId = "user-folder-blank"
         let store = try YDocStore.inMemory()

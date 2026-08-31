@@ -26,6 +26,10 @@ struct CollectionAssignSheet: View {
     var body: some View {
         NavigationStack {
             Group {
+                if !syncService.isLocalDataLoaded {
+                    ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
                 let sortedFolders = RecipeFolder.sortedActive(syncService.folders)
                 List {
                     if sortedFolders.isEmpty && !isCreatingNew {
@@ -70,6 +74,7 @@ struct CollectionAssignSheet: View {
                 }
                 .listStyle(.plain)
                 .appOpaqueListSurface()
+                }
             }
             .background(AppSheetChrome.groupedBackground)
             .navigationTitle(Text(verbatim: Bundle.currentLocalizedString("collections.assign-title")))
