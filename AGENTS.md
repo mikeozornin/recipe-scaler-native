@@ -52,7 +52,6 @@ from [specs/065-share-feedback/plan.md](specs/065-share-feedback/plan.md).
 ## Learned User Preferences
 
 - All app text must use the project typeface (Martian), not the default SF — if a text block renders in the system font, it's a bug.
-- Verify UI changes via the simulator accessibility server, not screenshot reads — `read`-tool image rendering is unreliable for visual verification.
 - For Figma-driven UI: write `layout.md` + `layout-audit.json` before SwiftUI views; human reviews `layout.md`; run `audit-ui-layout.sh` in the agent loop.
 - Never use the `composer-fast` model for subagents — always use the primary model (composer-2.5).
 - Commit/close Linear issue only on explicit «закрой задачу» or `/solve-issue` with commit authorization; otherwise stop after `VERIFIED`.

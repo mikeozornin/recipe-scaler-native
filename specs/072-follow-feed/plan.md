@@ -114,7 +114,7 @@
 - `xcodebuild … test -only-testing:RecipeScalerNativeTests` — зелёный.
 - `bash scripts/lint-i18n.sh` — exit 0.
 - E2E `FeedPage` (US1–US4, US14) против REST-фикстур.
-- UI-верификация через simulator accessibility server.
+- UI-верификация: simulator screenshot (vision models) или accessibility server.
 
 ## Rollback / maintenance
 

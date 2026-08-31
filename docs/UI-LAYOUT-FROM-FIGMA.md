@@ -73,7 +73,7 @@ flowchart TD
 4. **`bash scripts/audit-ui-layout.sh specs/<feature>`** — в agent loop после layout-правок.
 5. **Субагент-ревью** (layout-reviewer): код ↔ `layout.md`, не «на глаз по скриншоту».
 
-Верификация UI: **accessibility simulator**, не screenshot в чате ([AGENTS.md](../AGENTS.md)).
+Верификация UI: simulator screenshot (vision models) или accessibility server — по [AGENTS.md](../AGENTS.md).
 
 ---
 

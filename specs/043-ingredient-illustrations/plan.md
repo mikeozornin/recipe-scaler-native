@@ -108,7 +108,7 @@ Runtime (`IngredientIllustrationCatalog`) грузит все три файла 
 3. `IngredientIllustrationLayoutMetrics.swift` (40 pt slot, corner radius, grid).
 4. `#Preview` worst-case (длинное имя, dark mode).
 5. `bash scripts/audit-ui-layout.sh specs/043-ingredient-illustrations`.
-6. Симулятор: accessibility identifiers, не screenshot-read.
+6. Симулятор: screenshot (vision models) или accessibility identifiers.
 
 ## DI
 

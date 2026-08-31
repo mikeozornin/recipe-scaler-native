@@ -138,7 +138,7 @@ sequenceDiagram
 - i18n: ключи en+ru в `Localizable.xcstrings` — по канону web spec 072 § UX: `discover.follow.subscribe` / `.subscribed` / `.unsubscribe` / `.subscribe-only` / `.subscribe-notifications` / `.menu-label` / `.followers` (плюрализация); `discover.feed.segment-collections` / `.segment-following` / `.empty-no-follows` / `.empty-no-new` / `.new-badge` / `.new-badge-a11y` / `.load-error` (повтор — `common.retry`). `discover.follow.bell-tooltip` не добавляется (удалён из канона). `scripts/lint-i18n.sh` зелёный; Martian-типографика `.appBody()`.
 - A11y identifiers (kebab-case, по правилам E2E, канон — web data-testid): `follow-button`, `follow-menu`, `follow-menu-unsubscribe`, `follow-menu-subscribe-only`, `follow-menu-subscribe-notifications`, `discover-feed-segment`, `discover-feed-list`, `discover-feed-card`, `discover-feed-card-new-badge`, `discover-feed-auto-load`.
 - E2E (XCTest, page object `FeedPage`): US1–US4, US14 против REST-фикстур (docs/E2E.md).
-- UI-верификация через simulator accessibility server (не скриншоты).
+- UI-верификация: simulator screenshot (vision models) или accessibility server.
 
 ## Артефакты
 
