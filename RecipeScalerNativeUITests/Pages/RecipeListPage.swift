@@ -20,8 +20,14 @@ struct RecipeListPage: Page {
         app.descendants(matching: .any)[UIA.recipeList].firstMatch
     }
 
-    /// "+" button to create a new recipe (always present on Recipes tab).
+    /// "+" menu trigger on the Recipes tab (create / import).
     var addButton: XCUIElement { app.buttons[UIA.recipeListAdd] }
+
+    /// "New recipe" item inside the add menu.
+    var addNewRecipeButton: XCUIElement { app.buttons[UIA.recipeListAddNew] }
+
+    /// "Import recipe" item inside the add menu.
+    var importRecipeButton: XCUIElement { app.buttons[UIA.recipeListImport] }
 
     /// Virtual "All recipes" grid tile (always present on collections grid).
     var allCollectionsTile: XCUIElement {
@@ -84,7 +90,7 @@ struct RecipeListPage: Page {
         return RecipeDetailPage(app: app)
     }
 
-    /// Tap the "+" button to start the new-recipe flow.
+    /// Tap the "+" menu and choose "New recipe".
     @discardableResult
     func tapAddRecipe() -> Self {
         guard addButton.waitForExistence(timeout: Wait.element) else {
@@ -92,6 +98,27 @@ struct RecipeListPage: Page {
             return self
         }
         addButton.tap()
+        guard addNewRecipeButton.waitForExistence(timeout: Wait.element) else {
+            XCTFail("Recipe list add-new menu item missing")
+            return self
+        }
+        addNewRecipeButton.tap()
+        return self
+    }
+
+    /// Tap the "+" menu and choose "Import recipe".
+    @discardableResult
+    func tapImportRecipe() -> Self {
+        guard addButton.waitForExistence(timeout: Wait.element) else {
+            XCTFail("Recipe list add button missing")
+            return self
+        }
+        addButton.tap()
+        guard importRecipeButton.waitForExistence(timeout: Wait.element) else {
+            XCTFail("Recipe list import menu item missing")
+            return self
+        }
+        importRecipeButton.tap()
         return self
     }
 

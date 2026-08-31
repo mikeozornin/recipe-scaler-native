@@ -3,6 +3,7 @@ import UIKit
 
 struct RecipeListView: View {
     @Environment(YjsSyncService.self) private var syncService
+    @Environment(AppShellCoordinator.self) private var coordinator
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
@@ -241,17 +242,17 @@ struct RecipeListView: View {
                     viewModeMenu
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task { @MainActor in
-                            await handleCreateRecipe(folderId: nil)
+                    RecipesAddToolbarMenu(
+                        isCreatingRecipe: isCreatingRecipe,
+                        onCreateRecipe: {
+                            Task { @MainActor in
+                                await handleCreateRecipe(folderId: nil)
+                            }
+                        },
+                        onImport: {
+                            coordinator.presentImport()
                         }
-                    } label: {
-                        AppToolbarStyle.iconOnly(systemName: "plus")
-                    }
-                    .appToolbarIconButton()
-                    .disabled(isCreatingRecipe)
-                    .accessibilityLabel("recipes.add-button")
-                    .accessibilityIdentifier(AccessibilityIdentifiers.recipeListAdd)
+                    )
                 }
             }
             .sheet(item: $presentedSheet) { sheet in

@@ -7,9 +7,15 @@ import XCTest
 /// Verifies the import pipeline refuses a zip bomb rather than consuming
 /// unbounded memory. The actual bomb payload is constructed in unit tests;
 /// this E2E just asserts the import sheet is reachable and stable.
+///
+/// Spec 074: Import left the tab bar; presented via `-OpenTab=import`.
 final class ImportDecompressionBombSpec: BaseTestCase {
+    override func extraLaunchArguments() -> [String] {
+        super.extraLaunchArguments() + ["-OpenTab", "import"]
+    }
+
     func test_importSheetDoesNotCrashOnLaunch() {
-        Navigation.openTab(.importTab, in: app)
+        Navigation.awaitImportSheet(in: app)
         XCTAssertTrue(
             app.descendants(matching: .any)[UIA.importSheet].waitForExistence(timeout: Wait.firstPaint),
             "Import sheet did not render (crash on launch?)"

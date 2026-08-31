@@ -13,6 +13,7 @@ enum AppTab: String, CaseIterable, Hashable {
     case recipes
     case shopping
     case profile
+    case assistant
 
     var title: LocalizedStringKey {
         switch self {
@@ -21,6 +22,7 @@ enum AppTab: String, CaseIterable, Hashable {
         case .recipes: "discover.nav.my-recipes"
         case .shopping: "discover.nav.shopping"
         case .profile: "discover.nav.profile"
+        case .assistant: "assistant.title"
         }
     }
 
@@ -33,6 +35,7 @@ enum AppTab: String, CaseIterable, Hashable {
         case .recipes: "book"
         case .shopping: "cart"
         case .profile: "person"
+        case .assistant: "sparkles"
         }
     }
 
@@ -44,10 +47,15 @@ enum AppTab: String, CaseIterable, Hashable {
     var accessibilityId: String {
         switch self {
         case .discover: AccessibilityIdentifiers.tabDiscover
-        case .importTab: AccessibilityIdentifiers.tabImport
+        case .importTab:
+            // Spec 074 — Import tab removed from the bar. The case survives
+            // only for the DEBUG `-OpenTab=import` launch argument; this slug
+            // is never attached to live UI.
+            "debug-import"
         case .recipes: AccessibilityIdentifiers.tabRecipes
         case .shopping: AccessibilityIdentifiers.tabShopping
         case .profile: AccessibilityIdentifiers.tabProfile
+        case .assistant: AccessibilityIdentifiers.tabAssistant
         }
     }
 }
@@ -88,8 +96,6 @@ struct AppShellView: View {
     @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
     @Environment(VkusvillSettingsStore.self) private var vkusvillSettings
     @Environment(OfflineBannerGate.self) private var offlineGate
-    @Environment(ClipboardImportStore.self) private var clipboardImport
-    @Environment(ReleaseNotesStore.self) private var releaseNotes
     @Environment(\.scenePhase) private var scenePhase
     @State private var showAssistant = false
     @State private var assistantContextRecipeId: String?
@@ -97,10 +103,6 @@ struct AppShellView: View {
     @State private var transientStatus: TransientStatusPayload?
     @State private var transientStatusDismissTask: Task<Void, Never>?
     @State private var mobileTimerPanelCollapsed = true
-    @State private var tabBarTopOffsetFromLayoutBottom: CGFloat = 0
-    @State private var clipboardBannerHeight: CGFloat = 0
-    @State private var clipboardImportPresentTask: Task<Void, Never>?
-    @State private var inboundClipboardFinishTask: Task<Void, Never>?
     @Namespace private var mobileTimerPanelChevronNamespace
 
     /// Глобальный zoom-session для hero-фотографий (spec 064). `@State` +
@@ -155,141 +157,6 @@ struct AppShellView: View {
         )
     }
 
-    private var assistantFabBottomPadding: CGFloat {
-        let timerHeight = MobileTimerPanelLayout.height(
-            timerCount: timerManager.timers.count,
-            isExpanded: !mobileTimerPanelCollapsed
-        )
-        let tabBarOffset = tabBarTopOffsetFromLayoutBottom > 0
-            ? tabBarTopOffsetFromLayoutBottom
-            : Self.fallbackTabBarTopOffsetFromLayoutBottom
-        return tabBarOffset + timerHeight + AssistantFabStyle.margin
-            + clipboardFabLift
-    }
-
-    private var clipboardFabLift: CGFloat {
-        guard clipboardBannerHeight > 0 else { return 0 }
-        return clipboardBannerHeight + ClipboardImportBannerLayout.bottomGap
-    }
-
-    private var clipboardBannerBottomPadding: CGFloat {
-        let timerHeight = MobileTimerPanelLayout.height(
-            timerCount: timerManager.timers.count,
-            isExpanded: !mobileTimerPanelCollapsed
-        )
-        let tabBarOffset = tabBarTopOffsetFromLayoutBottom > 0
-            ? tabBarTopOffsetFromLayoutBottom
-            : Self.fallbackTabBarTopOffsetFromLayoutBottom
-        return tabBarOffset + timerHeight + ClipboardImportBannerLayout.bottomGap
-    }
-
-    private var clipboardEvaluateContext: ClipboardImportEvaluateContext {
-        ClipboardImportEvaluateContext(
-            hasSession: authService.isAuthenticated,
-            isURLImportAvailable: isClipboardURLImportAvailable,
-            isImportSheetPresented: coordinator.importPresentation != nil,
-            hasPendingInboundImport: coordinator.inboundClipboardSuppressed
-                || coordinator.pendingSpotlightRecipeId != nil
-                || DeepLinkRouter.hasPendingRecipeId()
-                || deepLinkRouter.pending != nil,
-            isTransientToastVisible: transientStatus != nil
-        )
-    }
-
-    private var isClipboardURLImportAvailable: Bool {
-        switch syncService.connectionState {
-        case .connected, .connecting, .reconnecting:
-            return true
-        case .disconnected, .error:
-            return false
-        }
-    }
-
-    private func evaluateClipboardImport() {
-        let context = clipboardEvaluateContext
-        Task { await clipboardImport.evaluate(context: context) }
-    }
-
-    private func presentClipboardImport() {
-        clipboardImportPresentTask?.cancel()
-        let generation = clipboardImport.evaluateGeneration
-        clipboardImportPresentTask = Task {
-            guard let seed = await clipboardImport.seedTextForImport() else { return }
-            guard !Task.isCancelled else { return }
-            guard generation == clipboardImport.evaluateGeneration else { return }
-            guard authService.isAuthenticated else { return }
-            coordinator.presentImport(
-                seedText: seed,
-                autoSubmit: true,
-                consumesClipboard: true
-            )
-        }
-    }
-
-    private func armInboundClipboardSuppressionIfNeeded() {
-        if DeepLinkRouter.hasPendingRecipeId() || deepLinkRouter.pending != nil {
-            coordinator.beginInboundClipboardSuppression()
-        }
-    }
-
-    private func scheduleEndInboundClipboardSuppression() {
-        guard coordinator.inboundClipboardSuppressed else { return }
-        inboundClipboardFinishTask?.cancel()
-        inboundClipboardFinishTask = Task { @MainActor in
-            coordinator.endInboundClipboardSuppression()
-            evaluateClipboardImport()
-        }
-    }
-
-    private var isClipboardBannerVisible: Bool {
-        if transientStatus != nil { return false }
-        if case .visible = clipboardImport.bannerState { return true }
-        return false
-    }
-
-    @ViewBuilder
-    private var bottomStatusOverlays: some View {
-        if let transientStatus {
-            TransientStatusBanner(
-                message: transientStatus.message,
-                symbolName: transientStatus.symbolName,
-                kind: transientStatus.kind
-            )
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, 72)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        } else if clipboardImport.bannerState == .visible {
-            ClipboardImportBanner(
-                onImport: presentClipboardImport,
-                onDismiss: {
-                    clipboardImport.dismissVisible()
-                }
-            )
-            .padding(.horizontal, ClipboardImportBannerLayout.horizontalInset)
-            .padding(.bottom, clipboardBannerBottomPadding)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        }
-    }
-
-    private func importSheet(_ presentation: ImportPresentation) -> some View {
-        ImportRecipeSheet(
-            seedText: presentation.seedText,
-            autoSubmit: presentation.autoSubmit
-        ) { result in
-            if presentation.consumesClipboard {
-                clipboardImport.markConsumed()
-            }
-            if let message = coordinator.completeImport(result) {
-                postTransientStatus(message)
-            }
-        }
-    }
-
-    /// Tab bar height fallback until UIKit layout publishes a measured value.
-    private static var fallbackTabBarTopOffsetFromLayoutBottom: CGFloat {
-        49
-    }
-
     /// Routes a queued external assistant request only after the shell exists.
     /// The coordinator consumes the exact request id, so a newer request cannot
     /// be accidentally cleared by a delayed presentation callback.
@@ -302,7 +169,16 @@ struct AppShellView: View {
         showAssistant = true
     }
 
-    /// Spec 040 — handlers for CTA taps in `FeatureAdoptionGuideView`.
+    /// Spec 074 — manual open (tab-bar entry, FAB replacement, adoption CTA).
+    /// Manual open carries no external payload; `assistantOpenRequest` is reset
+    /// so a stale request from a previous presentation cannot leak in.
+    private func openAssistantManually() {
+        assistantOpenRequest = nil
+        assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
+        assistantRecipeContext.isAssistantSheetOpen = true
+        showAssistant = true
+    }
+
     /// Spec 040 — handlers for CTA taps in `FeatureAdoptionGuideView`.
     /// These are the app-level actions (tab switch, sheet, external Safari).
     /// The in-Profile scroll actions live in `AccountView` under a separate
@@ -312,16 +188,13 @@ struct AppShellView: View {
         FeatureAdoptionAppCtaHandler(
             openAssistant: {
                 Task { @MainActor in
-                    // Manual open carries no external payload; reset so a stale
-                    // request from a previous presentation cannot leak in.
-                    assistantOpenRequest = nil
-                    showAssistant = true
-                    assistantRecipeContext.isAssistantSheetOpen = true
+                    openAssistantManually()
                 }
             },
             openImport: {
                 Task { @MainActor in
-                    coordinator.selectedTab = .importTab
+                    // Spec 074 — Import tab removed from the bar; the CTA
+                    // presents the sheet directly over the current tab.
                     coordinator.presentImport()
                 }
             },
@@ -334,245 +207,163 @@ struct AppShellView: View {
     }
 
     var body: some View {
-        withClipboardImportBanner(shellWithoutClipboard)
-    }
-
-    private func withClipboardImportBanner<Content: View>(_ content: Content) -> some View {
-        content
-            .overlay(alignment: .bottom) {
-                bottomStatusOverlays
-            }
-            .onPreferenceChange(ClipboardBannerHeightKey.self) { clipboardBannerHeight = $0 }
-            .onChange(of: isClipboardBannerVisible) { _, visible in
-                if !visible {
-                    clipboardBannerHeight = 0
-                }
-            }
-            .animation(
-                .easeInOut(duration: ClipboardImportBannerLayout.appearDuration),
-                value: isClipboardBannerVisible
-            )
-            .sheet(item: $coordinator.importPresentation, content: importSheet)
-            .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
-                evaluateClipboardImport()
-            }
-            .onChange(of: coordinator.importPresentation?.id) { _, _ in
-                evaluateClipboardImport()
-            }
-            .onChange(of: transientStatus != nil) { _, _ in
-                evaluateClipboardImport()
-            }
-            .onChange(of: coordinator.inboundClipboardSuppressed) { _, suppressed in
-                if !suppressed {
-                    evaluateClipboardImport()
-                }
-            }
-            .onChange(of: authService.isAuthenticated) { _, isAuthenticated in
-                if !isAuthenticated {
-                    clipboardImportPresentTask?.cancel()
-                }
-            }
-    }
-
-    private var shellWithoutClipboard: some View {
-        tabView
+        shellObservers
             .environment(coordinator)
             .environment(
                 \.featureAdoptionAppCta,
                 makeFeatureAdoptionAppCtaHandler()
             )
+    }
+
+    /// `body` split: SwiftUI type-checker chokes on the full modifier chain
+    /// (AppShellView body is one of the widest in the app), so overlays/sheets
+    /// and lifecycle observers live in separate computed views.
+    private var shellWithOverlays: some View {
+        tabView
             .environment(\.heroPhotoZoomContext, heroPhotoZoomSession.context)
-        .background {
-            TabBarTopOffsetReader(offsetFromLayoutBottom: $tabBarTopOffsetFromLayoutBottom)
-        }
             .heroPhotoZoomOverlay(heroPhotoZoomSession.context)
+            .overlay(alignment: .bottom) {
+                if let transientStatus {
+                    TransientStatusBanner(
+                        message: transientStatus.message,
+                        symbolName: transientStatus.symbolName
+                    )
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, 72)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
             .animation(.easeInOut(duration: 0.25), value: transientStatus != nil)
-            .sheet(isPresented: Binding(
-                get: { releaseNotes.isSheetPresented },
-                set: { releaseNotes.isSheetPresented = $0 }
-            )) {
-                ReleaseNotesSheet()
-                    .environment(releaseNotes)
-            }
-        .onChange(of: coordinator.pendingFileImportToast) { _, newValue in
-            guard let newValue else { return }
-            postTransientStatus(newValue)
-            coordinator.pendingFileImportToast = nil
-        }
-        .onChange(of: coordinator.pendingAssistantOpenRequest) { _, _ in
-            routePendingAssistantOpenRequest()
-        }
-        .onChange(of: showAssistant) { _, isOpen in
-            assistantRecipeContext.isAssistantSheetOpen = isOpen
-        }
-        .sheet(isPresented: $showAssistant, onDismiss: {
-            assistantRecipeContext.isAssistantSheetOpen = false
-            assistantContextRecipeId = nil
-            // Deliberately NOT clearing `assistantOpenRequest` here. A request
-            // consumed by `routePendingAssistantOpenRequest` after our dismissal
-            // started cannot be distinguished from the dismissing presentation's
-            // own payload, so clearing here raced new external opens (review
-            // finding: onDismiss could wipe an already-queued request). Stale
-            // payloads are impossible instead: every manual open site below
-            // assigns this field explicitly, and external requests overwrite it
-            // synchronously before presenting.
-        }) {
-            AssistantSheet(
-                contextRecipeId: assistantContextRecipeId ?? assistantRecipeContext.visibleRecipeId,
-                openRequest: assistantOpenRequest
-            )
-            // Sheet content is hosted outside `tabView`; `.environment(coordinator)`
-            // on the shell does not propagate here (fatal: missing AppShellCoordinator).
-            .environment(coordinator)
-        }
-        .overlay(alignment: .bottomTrailing) {
-            if !showAssistant {
-                AssistantFabButton {
-                    assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
-                    // Manual open carries no external payload; reset so a stale
-                    // request from a previous presentation cannot leak in.
-                    assistantOpenRequest = nil
-                    assistantRecipeContext.isAssistantSheetOpen = true
-                    showAssistant = true
-                }
-                .padding(.trailing, AssistantFabStyle.margin)
-                .padding(.bottom, assistantFabBottomPadding)
-                .accessibilityIdentifier(AccessibilityIdentifiers.assistantFab)
-                .accessibilityLabel(Text("assistant.title"))
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .shoppingStatusMessage)) { notification in
-            let payload: TransientStatusPayload?
-            if let typed = notification.object as? TransientStatusPayload {
-                payload = typed
-            } else if let message = notification.object as? String, !message.isEmpty {
-                payload = TransientStatusPayload(message: message)
-            } else {
-                payload = nil
-            }
-            guard let payload, !payload.message.isEmpty else { return }
-            transientStatusDismissTask?.cancel()
-            withAnimation(.easeInOut(duration: 0.25)) {
-                transientStatus = payload
-            }
-            let shown = payload
-            transientStatusDismissTask = Task { @MainActor in
-                do {
-                    try await Task.sleep(nanoseconds: 3_000_000_000)
-                } catch {
-                    return
-                }
-                guard !Task.isCancelled else { return }
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    if transientStatus == shown {
-                        transientStatus = nil
+            .sheet(item: $coordinator.importPresentation) { _ in
+                ImportRecipeSheet { result in
+                    if let message = coordinator.completeImport(result) {
+                        postTransientStatus(message)
                     }
                 }
             }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .openRecipeRequested)) { _ in
-            coordinator.consumePendingRecipeIdIfNeeded()
-        }
-        .onChange(of: deepLinkRouter.pending) { _, link in
-            if link != nil {
-                coordinator.beginInboundClipboardSuppression()
+            .modifier(AssistantSheetModifier(
+                isPresented: $showAssistant,
+                contextRecipeId: assistantContextRecipeId ?? assistantRecipeContext.visibleRecipeId,
+                openRequest: assistantOpenRequest,
+                onDismiss: {
+                    assistantRecipeContext.isAssistantSheetOpen = false
+                    assistantContextRecipeId = nil
+                },
+                environmentCoordinator: coordinator
+            ))
+    }
+    /// Lifecycle observers, split into small chains so the SwiftUI
+    /// type-checker can handle each expression.
+    private var shellObservers: some View {
+        assistantObservers(on: transientStatusObservers(on: navigationObservers(on: shellWithOverlays)))
+            .onAppear {
+                RecipeImageDiskCache.migrateFromCachesIfNeeded()
+                // Spec 059 fix: on cold launch iOS delivers the Universal Link URL
+                // during splash, before `AppShellView` mounts. `onChange(pending)`
+                // cannot observe a value that was already set, so a queued link
+                // would be silently dropped and the app opened on the default tab.
+                // Drain any pre-existing pending link once on appear.
+                if let link = deepLinkRouter.pending {
+                    coordinator.handleDeepLink(link)
+                }
+                // Spec 066 — arm gate from the current state; `onChange` above does
+                // not fire for a value already set before this view mounted (cold
+                // start already offline), so without this the banner would never appear.
+                applyOfflineBannerGate(for: scenePhase)
+                routePendingAssistantOpenRequest()
             }
-            guard let link else {
-                evaluateClipboardImport()
-                return
-            }
-            coordinator.handleDeepLink(link)
-            evaluateClipboardImport()
-            scheduleEndInboundClipboardSuppression()
-        }
-        // Spec 066 — single writer for offline banner debounce.
-        // Status banners and AssistantSheet's body branch read `offlineGate`
-        // (debounced); action paths (AssistantSheet bootstrap/send/autosend,
-        // disabled buttons, image refresh) still read
-        // `connectionState.isConnected` directly (instant).
-        //
-        // Signal: `!connectionState.isConnected` (not NWPathMonitor). Airplane
-        // mode oscillates connecting ↔ reconnecting without `.connected`; those
-        // states must keep the arm running. Hide only on `.connected`.
-        //
-        // Background time must not count (US1): lock → `.disconnected` would
-        // otherwise expire the 3s timer while the phone is locked, then flash
-        // banners until reconnect. Reset on `.background`, ignore connection
-        // updates until `.active`, then re-arm with a fresh window.
-        .onChange(of: scenePhase) { _, phase in
-            applyOfflineBannerGate(for: phase)
-            if phase == .active {
-                evaluateClipboardImport()
-            }
-        }
-        .onChange(of: syncService.connectionState) { _, newState in
-            applyOfflineBannerGate(isNotConnected: !newState.isConnected)
-            evaluateClipboardImport()
-        }
-        .onAppear {
-            RecipeImageDiskCache.migrateFromCachesIfNeeded()
-            armInboundClipboardSuppressionIfNeeded()
-            // Spec 059 fix: on cold launch iOS delivers the Universal Link URL
-            // during splash, before `AppShellView` mounts. `onChange(pending)`
-            // cannot observe a value that was already set, so a queued link
-            // would be silently dropped and the app opened on the default tab.
-            // Drain any pre-existing pending link once on appear.
             #if DEBUG
-            if let username = DebugLaunchOptions.openDiscoverProfileUsername, !username.isEmpty {
-                _ = DeepLinkRouter.consumePendingRecipeId()
-                coordinator.handleDeepLink(.openPublicProfile(username: username))
-            } else if let slug = DebugLaunchOptions.openDiscoverCollectionSlug, !slug.isEmpty {
-                _ = DeepLinkRouter.consumePendingRecipeId()
-                coordinator.handleDeepLink(.openDiscoverCollection(slug: slug))
-            } else if DebugLaunchOptions.openTab != nil {
+            .onAppear {
                 coordinator.openDebugTabIfNeeded(DebugLaunchOptions.openTab)
-            } else if let link = deepLinkRouter.pending {
-                coordinator.handleDeepLink(link)
-            }
-            #else
-            if let link = deepLinkRouter.pending {
-                coordinator.handleDeepLink(link)
-            }
-            #endif
-            // Spec 066 — arm gate from the current state; `onChange` above does
-            // not fire for a value already set before this view mounted (cold
-            // start already offline), so without this the banner would never appear.
-            applyOfflineBannerGate(for: scenePhase)
-            routePendingAssistantOpenRequest()
-            evaluateClipboardImport()
-            scheduleEndInboundClipboardSuppression()
-        }
-        #if DEBUG
-        .onAppear {
-            if DebugLaunchOptions.openDiscoverProfileUsername == nil,
-               DebugLaunchOptions.openDiscoverCollectionSlug == nil,
-               DebugLaunchOptions.openTab == nil {
-                coordinator.openDebugTabIfNeeded(DebugLaunchOptions.openTab)
-            }
-            if DebugLaunchOptions.mobileTimerPanelExpanded {
-                mobileTimerPanelCollapsed = false
-            }
-            if DebugLaunchOptions.showAssistant {
-                assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
-                assistantOpenRequest = nil
-                assistantRecipeContext.isAssistantSheetOpen = true
-                showAssistant = true
-            }
-            // Screenshot deep links must win over Share-extension pending recipe ids.
-            if DebugLaunchOptions.openDiscoverProfileUsername == nil,
-               DebugLaunchOptions.openDiscoverCollectionSlug == nil {
+                if DebugLaunchOptions.mobileTimerPanelExpanded {
+                    mobileTimerPanelCollapsed = false
+                }
+                if DebugLaunchOptions.showAssistant {
+                    openAssistantManually()
+                }
                 coordinator.consumePendingRecipeIdIfNeeded()
             }
-            evaluateClipboardImport()
-            scheduleEndInboundClipboardSuppression()
-        }
-        #else
-        .onAppear {
-            coordinator.consumePendingRecipeIdIfNeeded()
-            evaluateClipboardImport()
-            scheduleEndInboundClipboardSuppression()
-        }
-        #endif
+            #else
+            .onAppear {
+                coordinator.consumePendingRecipeIdIfNeeded()
+            }
+            #endif
+    }
+
+    private func assistantObservers(on base: some View) -> some View {
+        base
+            .onChange(of: coordinator.pendingAssistantOpenRequest) { _, _ in
+                routePendingAssistantOpenRequest()
+            }
+            .onChange(of: coordinator.pendingAssistantTabOpen) { _, isPending in
+                guard isPending else { return }
+                coordinator.consumeAssistantTabOpen()
+                // PI-5: if an external request was routed in the same SwiftUI
+                // transaction (both onChange handlers fire before the render),
+                // it already set `assistantOpenRequest` and the sheet will
+                // present its payload. A manual open would nil it out and the
+                // message would be silently lost — skip the manual open.
+                guard assistantOpenRequest == nil else { return }
+                openAssistantManually()
+            }
+            .onChange(of: showAssistant) { _, isOpen in
+                assistantRecipeContext.isAssistantSheetOpen = isOpen
+            }
+    }
+
+    private func transientStatusObservers(on base: some View) -> some View {
+        base
+            .onReceive(NotificationCenter.default.publisher(for: .shoppingStatusMessage)) { notification in
+                let payload: TransientStatusPayload?
+                if let typed = notification.object as? TransientStatusPayload {
+                    payload = typed
+                } else if let message = notification.object as? String, !message.isEmpty {
+                    payload = TransientStatusPayload(message: message)
+                } else {
+                    payload = nil
+                }
+                guard let payload, !payload.message.isEmpty else { return }
+                transientStatusDismissTask?.cancel()
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    transientStatus = payload
+                }
+                let shown = payload
+                transientStatusDismissTask = Task { @MainActor in
+                    do {
+                        try await Task.sleep(nanoseconds: 3_000_000_000)
+                    } catch {
+                        return
+                    }
+                    guard !Task.isCancelled else { return }
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        if transientStatus == shown {
+                            transientStatus = nil
+                        }
+                    }
+                }
+            }
+    }
+
+    private func navigationObservers(on base: some View) -> some View {
+        base
+            .onChange(of: coordinator.pendingFileImportToast) { _, newValue in
+                guard let newValue else { return }
+                postTransientStatus(newValue)
+                coordinator.pendingFileImportToast = nil
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openRecipeRequested)) { _ in
+                coordinator.consumePendingRecipeIdIfNeeded()
+            }
+            .onChange(of: deepLinkRouter.pending) { _, link in
+                guard let link else { return }
+                coordinator.handleDeepLink(link)
+            }
+            .onChange(of: syncService.connectionState) { _, newState in
+                applyOfflineBannerGate(isNotConnected: !newState.isConnected)
+            }
+            .onChange(of: scenePhase) { _, phase in
+                applyOfflineBannerGate(for: phase)
+            }
     }
 
     private var mobileTimerPanel: some View {
@@ -607,16 +398,96 @@ struct AppShellView: View {
         return false
     }
 
+    /// Spec 074 — dual TabView. The new `Tab { }` API cannot be mixed with the
+    /// legacy `.tabItem` style in one TabView (type-checker fails), so the shell
+    /// has two builders:
+    ///  - iOS 26.2+: trailing `Tab(role: .search)` (Liquid Glass slot) → sheet;
+    ///    no `.searchable` / no morph — fake selection via `handleTabSelection`.
+    ///  - iOS < 26.2 (incl. 26.0/26.1): legacy fake tab (`Color.clear`) → sheet.
+    ///    The modern path's timer panel (`tabViewBottomAccessory` / `safeAreaBar`)
+    ///    only exists on 26.2+, so earlier 26.x must stay on the legacy builder
+    ///    or its timer panel would silently disappear.
     @ViewBuilder
     private var tabView: some View {
-        let tabs = TabView(selection: tabSelection) {
+        if #available(iOS 26.2, *) {
+            modernTabView
+        } else {
+            legacyTabView
+        }
+    }
+
+    @available(iOS 26.2, *)
+    private var modernTabView: some View {
+        modernTabBar
+            .animation(MobileTimerPanelLayout.toggleAnimation, value: mobileTimerPanelCollapsed)
+            .modifier(MobileTimerAccessoryModifier(
+                isEnabled: showsMobileTimerPanelAccessory,
+                accessory: mobileTimerPanelAccessory
+            ))
+    }
+
+    @available(iOS 26.2, *)
+    private var modernTabBar: some View {
+        TabView(selection: modernTabSelection) {
+            Tab(value: AppTab.discover) {
+                modernTabRoot(DiscoverRootView(path: $coordinator.discoverPath))
+            } label: {
+                FeedBadgeTabLabel()
+            }
+
+            Tab(value: AppTab.recipes) {
+                modernTabRoot(RecipeListView(navigationPath: $coordinator.recipesPath))
+            } label: {
+                AppTabBarLabel(tab: .recipes)
+            }
+
+            Tab(value: AppTab.shopping) {
+                modernTabRoot(ShoppingListView(path: $coordinator.shoppingPath))
+            } label: {
+                AppTabBarLabel(tab: .shopping)
+            }
+
+            Tab(value: AppTab.profile) {
+                modernTabRoot(AccountView(
+                    auth: authService,
+                    timer: timerManager,
+                    vkusvillSettings: vkusvillSettings,
+                    performLogoutTeardown: performLogoutTeardown
+                ))
+            } label: {
+                AppTabBarLabel(tab: .profile)
+            }
+
+            // Spec 074 — iOS 26: `role: .search` renders sparkles in the
+            // separated Liquid Glass slot (trailing). Intentionally **no**
+            // `.searchable` / `tabViewSearchActivation` — tap opens modal sheet
+            // via fake selection (`handleTabSelection(.assistant)`), same as legacy.
+            Tab(value: AppTab.assistant, role: .search) {
+                Color.clear
+            } label: {
+                AppTabBarLabel(tab: .assistant)
+            }
+            .accessibilityIdentifier(AccessibilityIdentifiers.tabAssistant)
+        }
+    }
+
+    @available(iOS 26.2, *)
+    private var modernTabSelection: Binding<AppTab> {
+        Binding(
+            get: { coordinator.selectedTab },
+            set: { coordinator.handleTabSelection($0) }
+        )
+    }
+
+    private var legacyTabView: some View {
+        legacyTabBar
+    }
+
+    private var legacyTabBar: some View {
+        TabView(selection: tabSelection) {
             tabRoot(DiscoverRootView(path: $coordinator.discoverPath)) { FeedBadgeTabLabel() }
                 .tag(AppTab.discover)
                 .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
-
-            tabRoot(Color.clear) { AppTabBarLabel(tab: .importTab) }
-                .tag(AppTab.importTab)
-                .accessibilityIdentifier(AccessibilityIdentifiers.tabImport)
 
             tabRoot(RecipeListView(navigationPath: $coordinator.recipesPath)) {
                 AppTabBarLabel(tab: .recipes)
@@ -640,15 +511,10 @@ struct AppShellView: View {
             }
             .tag(AppTab.profile)
             .accessibilityIdentifier(AccessibilityIdentifiers.tabProfile)
-        }
-        if #available(iOS 26.2, *) {
-            tabs
-                .animation(MobileTimerPanelLayout.toggleAnimation, value: mobileTimerPanelCollapsed)
-                .tabViewBottomAccessory(isEnabled: showsMobileTimerPanelAccessory) {
-                    mobileTimerPanelAccessory
-                }
-        } else {
-            tabs
+
+            tabRoot(Color.clear) { AppTabBarLabel(tab: .assistant) }
+                .tag(AppTab.assistant)
+                .accessibilityIdentifier(AccessibilityIdentifiers.tabAssistant)
         }
     }
 
@@ -695,6 +561,21 @@ struct AppShellView: View {
         }
     }
 
+    /// Modern twin of `tabRoot` for the iOS 26 `Tab { }` builder — identical
+    /// timer-panel wiring, without `.tabItem` (the label comes from `Tab`).
+    private func modernTabRoot<Content: View>(
+        _ content: Content
+    ) -> some View {
+        let rooted = content
+            .environment(\.mobileTimerPanelIsCollapsed, mobileTimerPanelCollapsed)
+
+        return rooted
+            .modifier(ModernTabBottomBarModifier(
+                showsExpandedInset: showsMobileTimerPanelExpandedInset,
+                expandedPanel: mobileTimerPanelExpandedInset
+            ))
+    }
+
     private var tabSelection: Binding<AppTab> {
         Binding(
             get: { coordinator.selectedTab },
@@ -706,99 +587,65 @@ struct AppShellView: View {
     }
 }
 
-private struct TabBarTopOffsetReader: UIViewControllerRepresentable {
-    @Binding var offsetFromLayoutBottom: CGFloat
+/// Spec 074 — availability-isolated `tabViewBottomAccessory` (iOS 26.2+). The
+/// modern TabView gate in `AppShellView.tabView` is also 26.2+, so the `else`
+/// branch here is unreachable in production and exists for type-checking only.
+private struct MobileTimerAccessoryModifier<Accessory: View>: ViewModifier {
+    let isEnabled: Bool
+    let accessory: Accessory
 
-    func makeUIViewController(context: Context) -> TabBarTopOffsetReaderViewController {
-        let controller = TabBarTopOffsetReaderViewController()
-        controller.onOffsetChange = { newValue in
-            guard offsetFromLayoutBottom != newValue else { return }
-            offsetFromLayoutBottom = newValue
+    func body(content: Content) -> some View {
+        if #available(iOS 26.2, *) {
+            content
+                .tabViewBottomAccessory(isEnabled: isEnabled) {
+                    accessory
+                }
+        } else {
+            content
         }
-        return controller
-    }
-
-    func updateUIViewController(_ uiViewController: TabBarTopOffsetReaderViewController, context: Context) {
-        uiViewController.onOffsetChange = { newValue in
-            guard offsetFromLayoutBottom != newValue else { return }
-            offsetFromLayoutBottom = newValue
-        }
-        uiViewController.view.setNeedsLayout()
     }
 }
 
-/// Resolves the `UITabBarController` hosting a window's root view-controller
-/// hierarchy. Caches the resolved controller and only re-runs the recursive
-/// search when the cached reference is missing (controller deallocated) or its
-/// `parent` has changed (modal presentation / reparenting), so a stable layout
-/// does not walk the view-controller hierarchy on every `viewDidLayoutSubviews`.
-///
-/// `search` is injectable so tests can count traversals without polluting
-/// production code with test hooks.
-final class TabBarDiscovery {
-    private weak var cached: UITabBarController?
-    private var cachedParent: UIViewController?
-    private let search: (UIViewController?) -> UITabBarController?
+/// Spec 074 — assistant modal sheet for all iOS versions (fake tab entry).
+private struct AssistantSheetModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    let contextRecipeId: String?
+    let openRequest: AssistantOpenRequest?
+    let onDismiss: () -> Void
+    let environmentCoordinator: AppShellCoordinator
 
-    init(search: @escaping (UIViewController?) -> UITabBarController? = TabBarDiscovery.find) {
-        self.search = search
-    }
-
-    func resolve(root: UIViewController?) -> UITabBarController? {
-        if let cached, cached.parent === cachedParent {
-            return cached
-        }
-        let resolved = search(root)
-        cached = resolved
-        cachedParent = resolved?.parent
-        return resolved
-    }
-
-    static func find(in viewController: UIViewController?) -> UITabBarController? {
-        guard let viewController else { return nil }
-        if let tabBarController = viewController as? UITabBarController {
-            return tabBarController
-        }
-        for child in viewController.children {
-            if let tabBarController = find(in: child) {
-                return tabBarController
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $isPresented, onDismiss: onDismiss) {
+                AssistantSheet(
+                    contextRecipeId: contextRecipeId,
+                    openRequest: openRequest
+                )
+                // Sheet content is hosted outside `tabView`; `.environment(coordinator)`
+                // on the shell does not propagate here (fatal: missing AppShellCoordinator).
+                .environment(environmentCoordinator)
             }
-        }
-        if let presented = viewController.presentedViewController,
-           let tabBarController = find(in: presented) {
-            return tabBarController
-        }
-        return nil
     }
 }
 
-private final class TabBarTopOffsetReaderViewController: UIViewController {
-    var onOffsetChange: ((CGFloat) -> Void)?
-    private let tabBarDiscovery = TabBarDiscovery()
+/// iOS 26.2-only expanded timer inset over `safeAreaBar` — same wiring as the
+/// legacy `tabRoot` 26.2 branch, isolated for the `Tab { }` builder.
+private struct ModernTabBottomBarModifier<Panel: View>: ViewModifier {
+    let showsExpandedInset: Bool
+    let expandedPanel: Panel
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.isUserInteractionEnabled = false
-        view.backgroundColor = .clear
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        publishOffsetIfNeeded()
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        publishOffsetIfNeeded()
-    }
-
-    private func publishOffsetIfNeeded() {
-        guard let window = view.window,
-              let tabBar = tabBarDiscovery.resolve(root: window.rootViewController)?.tabBar else { return }
-        let tabBarFrame = tabBar.convert(tabBar.bounds, to: window)
-        let offsetFromWindowBottom = window.bounds.height - tabBarFrame.minY
-        let offsetFromLayoutBottom = offsetFromWindowBottom - window.safeAreaInsets.bottom
-        guard offsetFromLayoutBottom > 0 else { return }
-        onOffsetChange?(offsetFromLayoutBottom)
+    func body(content: Content) -> some View {
+        if #available(iOS 26.2, *) {
+            content
+                .safeAreaBar(edge: .bottom, spacing: 0) {
+                    if showsExpandedInset {
+                        expandedPanel
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+        } else {
+            content
+        }
     }
 }
+

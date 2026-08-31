@@ -1,14 +1,13 @@
 import XCTest
 
-/// Spec coverage: specs/007-app-shell-navigation/spec.md
+/// Spec coverage: specs/007-app-shell-navigation/spec.md,
+/// specs/074-assistant-tab-entry/spec.md
 ///
 /// Web parity: tests/e2e/specs/007-app-shell-navigation.spec.ts
 ///
-///   - US1 — 5 tabs visible
+///   - US1 — 5 tabs visible (Import left the bar in spec 074, Assistant joined)
 ///   - US2 — reset nested routes (tab tap resets to root)
-///   - US3 — Import tab → sheet (only trigger here)
-///   - US4 — safe area + timer panel
-///   - US5 — sync lifecycle (covered indirectly by other specs)
+///   - US3 — Assistant tab → sheet (fake tab, selection never changes)
 final class AppShellNavigationSpec: BaseTestCase {
     func test_US1_fiveTabsVisible() {
         Navigation.openTab(.recipes, in: app)
@@ -17,10 +16,10 @@ final class AppShellNavigationSpec: BaseTestCase {
             app.buttons[UIA.tabDiscover].waitForExistence(timeout: Wait.firstPaint),
             "Discover tab missing"
         )
-        XCTAssertTrue(app.buttons[UIA.tabImport].exists, "Import tab missing")
         XCTAssertTrue(app.buttons[UIA.tabRecipes].exists, "Recipes tab missing")
         XCTAssertTrue(app.buttons[UIA.tabShopping].exists, "Shopping tab missing")
         XCTAssertTrue(app.buttons[UIA.tabProfile].exists, "Profile tab missing")
+        XCTAssertTrue(app.buttons[UIA.assistantTab].exists, "Assistant tab missing")
     }
 
     func test_US2_tabSwitchWorks() {
@@ -51,13 +50,14 @@ final class AppShellNavigationSpec: BaseTestCase {
         _ = recipeListPage.awaitReady(timeout: Wait.firstPaint)
     }
 
-    func test_US3_importTabOpensSheet() {
+    /// Spec 074 — fake assistant tab: tapping it presents the sheet over the
+    /// current tab; the tab bar never switches to an "assistant" root.
+    func test_US3_assistantTabOpensSheet() {
         Navigation.openTab(.recipes, in: app)
-        Navigation.openTab(.importTab, in: app)
-        // Import sheet should appear (placeholder or full content from 010).
+        Navigation.openTab(.assistant, in: app)
         XCTAssertTrue(
-            app.descendants(matching: .any)[UIA.importSheet].waitForExistence(timeout: Wait.element),
-            "Import sheet did not appear when Import tab tapped"
+            assistantPage.sheet.waitForExistence(timeout: Wait.element),
+            "Assistant sheet did not appear when Assistant tab tapped"
         )
     }
 }

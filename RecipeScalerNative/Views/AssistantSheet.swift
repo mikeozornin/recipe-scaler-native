@@ -13,6 +13,7 @@ struct AssistantSheet: View {
     @Environment(YjsSyncService.self) private var syncService
     @Environment(AppShellCoordinator.self) private var coordinator
     @Environment(OfflineBannerGate.self) private var offlineGate
+    @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
 
     let contextRecipeId: String?
     let openRequest: AssistantOpenRequest?
@@ -46,7 +47,10 @@ struct AssistantSheet: View {
     /// logout/account-switch bump means this sheet must tear itself down.
     @State private var observedSessionEpoch = 0
 
-    init(contextRecipeId: String?, openRequest: AssistantOpenRequest? = nil) {
+    init(
+        contextRecipeId: String?,
+        openRequest: AssistantOpenRequest? = nil
+    ) {
         self.contextRecipeId = contextRecipeId
         self.openRequest = openRequest
         _pendingExternalRequest = State(initialValue: openRequest)

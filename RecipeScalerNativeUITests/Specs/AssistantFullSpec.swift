@@ -9,10 +9,10 @@ import XCTest
 final class AssistantFullSpec: BaseTestCase {
     func test_US1_composerShellVisibleAfterOpen() throws {
         Navigation.openTab(.recipes, in: app)
-        let page = assistantPage.openViaFab()
+        let page = assistantPage.openViaTab()
         XCTAssertTrue(
             page.sheet.waitForExistence(timeout: Wait.element),
-            "Assistant sheet did not appear after FAB tap"
+            "Assistant sheet did not appear after assistant tab tap"
         )
         // Composer shell a11y id may be nested under sheet chrome on iOS 26,
         // but its absence means the assistant flow regressed — fail rather
@@ -26,7 +26,7 @@ final class AssistantFullSpec: BaseTestCase {
 
     func test_US2_messageInputAcceptsText() throws {
         Navigation.openTab(.recipes, in: app)
-        let page = assistantPage.openViaFab()
+        let page = assistantPage.openViaTab()
         XCTAssertTrue(page.sheet.waitForExistence(timeout: Wait.element), "Sheet missing")
 
         // Prefer dedicated a11y id; fall back to any text view in the sheet.

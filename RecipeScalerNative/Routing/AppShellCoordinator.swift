@@ -54,6 +54,17 @@ final class AppShellCoordinator {
     /// queued until AppShellView has mounted the sheet, so a tap cannot be lost
     /// in the presentation transaction.
     private(set) var pendingAssistantOpenRequest: AssistantOpenRequest?
+
+    /// Spec 074 — tab-bar assistant entry. Set by `handleTabSelection(.assistant)`,
+    /// consumed by AppShellView's `onChange` which presents the sheet. The tab
+    /// selection itself never changes (fake tab, same pattern as `importTab`).
+    private(set) var pendingAssistantTabOpen = false
+
+    /// Consumes the pending tab-open flag after AppShellView presented the sheet.
+    func consumeAssistantTabOpen() {
+        pendingAssistantTabOpen = false
+    }
+
     private var nextAssistantRequestId = 0
 
     /// Spec 072 — digest push landing request for the «Моя лента» segment.
@@ -93,6 +104,12 @@ final class AppShellCoordinator {
     func handleTabSelection(_ newTab: AppTab) {
         if newTab == .importTab {
             presentImport()
+            return
+        }
+        if newTab == .assistant {
+            // Spec 074 — fake tab: present the sheet over the current tab;
+            // selection binding snaps back because `selectedTab` is unchanged.
+            pendingAssistantTabOpen = true
             return
         }
         if newTab == selectedTab {
@@ -368,6 +385,8 @@ final class AppShellCoordinator {
         if tab == .importTab {
             selectedTab = .recipes
             presentImport()
+        } else if tab == .assistant {
+            pendingAssistantTabOpen = true
         } else {
             selectedTab = tab
         }
@@ -391,6 +410,7 @@ final class AppShellCoordinator {
         // response or deferred autosend cannot write into a logged-out session.
         assistantSessionEpoch &+= 1
         pendingAssistantOpenRequest = nil
+        pendingAssistantTabOpen = false
         discoverListState?.clearAll()
         selectedTab = .recipes
         recipesPath = NavigationPath()
@@ -414,6 +434,9 @@ final class AppShellCoordinator {
             if !recipesPath.isEmpty { recipesPath = NavigationPath() }
         case .shopping:
             if !shoppingPath.isEmpty { shoppingPath = NavigationPath() }
+        case .assistant:
+            // Fake tab — no nested navigation to reset.
+            break
         default:
             break
         }

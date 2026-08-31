@@ -12,7 +12,7 @@ enum Navigation {
         case shopping
         case discover
         case profile
-        case importTab = "import"
+        case assistant
 
         var accessibilityId: String {
             switch self {
@@ -20,7 +20,7 @@ enum Navigation {
             case .shopping: return UIA.tabShopping
             case .discover: return UIA.tabDiscover
             case .profile: return UIA.tabProfile
-            case .importTab: return UIA.tabImport
+            case .assistant: return UIA.assistantTab
             }
         }
 
@@ -31,9 +31,21 @@ enum Navigation {
             case .shopping: return "Shopping"
             case .discover: return "Discover"
             case .profile: return "Profile"
-            case .importTab: return "Import"
+            case .assistant: return "Assistant"
             }
         }
+    }
+
+    /// Spec 074 — Import is no longer a tab (6 tabs did not fit the bar).
+    /// Import specs pass `-OpenTab=import` (via `extraLaunchArguments`); the
+    /// app's `openDebugTabIfNeeded` presents the import sheet on launch.
+    /// This helper just waits for the sheet.
+    static func awaitImportSheet(in app: XCUIApplication) {
+        let sheet = app.descendants(matching: .any)[UIA.importSheet]
+        XCTAssertTrue(
+            sheet.waitForExistence(timeout: Wait.element),
+            "Import sheet did not appear — launch with -OpenTab=import"
+        )
     }
 
     /// Tap a tab bar button. Retries when not hittable; falls back to label.

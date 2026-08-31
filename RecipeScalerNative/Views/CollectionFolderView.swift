@@ -8,6 +8,7 @@ struct CollectionFolderView: View {
     let folderId: String
 
     @Environment(YjsSyncService.self) private var syncService
+    @Environment(AppShellCoordinator.self) private var coordinator
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
@@ -266,17 +267,17 @@ struct CollectionFolderView: View {
 
     @ViewBuilder
     private var createRecipeButton: some View {
-        Button {
-            Task { @MainActor in
-                await handleCreateRecipe()
+        RecipesAddToolbarMenu(
+            isCreatingRecipe: isCreatingRecipe,
+            onCreateRecipe: {
+                Task { @MainActor in
+                    await handleCreateRecipe()
+                }
+            },
+            onImport: {
+                coordinator.presentImport()
             }
-        } label: {
-            AppToolbarStyle.iconOnly(systemName: "plus")
-        }
-        .appToolbarIconButton()
-        .disabled(isCreatingRecipe)
-        .accessibilityLabel("recipes.add-button")
-        .accessibilityIdentifier(AccessibilityIdentifiers.recipeListAdd)
+        )
     }
 
     // MARK: - Inline rename

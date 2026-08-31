@@ -188,7 +188,7 @@ enum DebugLaunchOptions {
         boolFlag("SimulateErrorAlert")
     }
 
-    /// `-OpenTab=shopping|discover|recipes|profile|import`
+    /// `-OpenTab=shopping|discover|recipes|profile|import|assistant`
     static var openTab: AppTab? {
         guard let raw = stringValue("OpenTab") else { return nil }
         switch raw {
@@ -197,6 +197,7 @@ enum DebugLaunchOptions {
         case "recipes": return .recipes
         case "shopping": return .shopping
         case "profile": return .profile
+        case "assistant": return .assistant
         default: return nil
         }
     }

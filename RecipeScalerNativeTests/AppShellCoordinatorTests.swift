@@ -34,6 +34,59 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.selectedTab, .recipes)
     }
 
+    /// Spec 074 — fake assistant tab: tap sets the pending-open flag and keeps
+    /// the current selection (the sheet presents over whichever tab is active).
+    func test_assistantTabTap_setsPendingFlagWithoutChangingTab() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.selectedTab = .recipes
+
+        coordinator.handleTabSelection(.assistant)
+
+        XCTAssertTrue(coordinator.pendingAssistantTabOpen)
+        XCTAssertEqual(coordinator.selectedTab, .recipes)
+    }
+
+    func test_assistantTabTap_keepsActiveTabAndFlags() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.selectedTab = .discover
+
+        coordinator.handleTabSelection(.assistant)
+
+        XCTAssertTrue(coordinator.pendingAssistantTabOpen)
+        XCTAssertEqual(coordinator.selectedTab, .discover)
+    }
+
+    /// Spec 074 — logout must clear the tab-entry flag together with the
+    /// external request, so a queued open cannot leak into a fresh session.
+    func test_resetShellStateForLogout_clearsAssistantTabFlag() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.handleTabSelection(.assistant)
+        XCTAssertTrue(coordinator.pendingAssistantTabOpen)
+
+        coordinator.resetShellStateForLogout()
+
+        XCTAssertFalse(coordinator.pendingAssistantTabOpen)
+    }
+
+    /// PI-5 race (spec 074 review): an external request can arrive in the same
+    /// SwiftUI transaction as a tab tap. AppShellView's tab-open handler skips
+    /// the manual open when a request was routed, so the coordinator contract
+    /// here is: consuming the tab flag must not touch the queued request —
+    /// the request stays queued until the sheet consumes it.
+    func test_consumeAssistantTabOpen_keepsQueuedExternalRequest() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+
+        coordinator.handleTabSelection(.assistant)
+        XCTAssertTrue(coordinator.pendingAssistantTabOpen)
+        coordinator.openAssistantWithMessage("Summarize recipe")
+
+        coordinator.consumeAssistantTabOpen()
+
+        XCTAssertFalse(coordinator.pendingAssistantTabOpen)
+        XCTAssertNotNil(coordinator.pendingAssistantOpenRequest)
+        XCTAssertEqual(coordinator.pendingAssistantOpenRequest?.message, "Summarize recipe")
+    }
+
     func test_doubleImportTap_refreshesPresentationId() throws {
         let (coordinator, _, _) = try makeCoordinator()
 

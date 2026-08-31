@@ -18,10 +18,11 @@ enum AccessibilityIdentifiers {
     static let qrScannerCancel = "qr_scanner_cancel"
 
     static let tabDiscover = "tab_discover"
-    static let tabImport = "tab_import"
     static let tabRecipes = "tab_recipes"
     static let tabShopping = "tab_shopping"
     static let tabProfile = "tab_profile"
+    // Spec 074 — new identifiers are kebab-case; tab_* above are legacy snake_case.
+    static let tabAssistant = "tab-assistant"
     static let discoverRoot = "discover_root"
 
     // MARK: - Discover (017)
@@ -99,7 +100,6 @@ enum AccessibilityIdentifiers {
     static let deleteAccountConfirmButton = "delete_account_confirm_button"
     static let deleteAccountCancelButton = "delete_account_cancel_button"
     static let deleteAccountError = "delete_account_error"
-    static let assistantFab = "assistant_fab"
     static let assistantSheet = "assistant_sheet"
     static let assistantComposerShell = "assistant_composer_shell"
     static let assistantMessageInput = "assistant_message_input"
@@ -134,6 +134,8 @@ enum AccessibilityIdentifiers {
 
     static let recipeList = "recipe_list"
     static let recipeListAdd = "recipe_list_add"
+    static let recipeListAddNew = "recipe-list-add-new"
+    static let recipeListImport = "recipe-list-import"
     static let recipeRowPrefix = "recipe_row_"
     static let profileButton = "profile_button"
     static let scaleMinusButton = "scale_minus_button"
