@@ -11,13 +11,23 @@ final class YrsDatabase {
     /// `true` when on-disk open failed and the app is using an in-memory fallback.
     static var dbInitFailed = false
 
-    init() throws {
-        let appSupport = FileManager.default.urls(
+    /// `directory` is injectable for tests; `nil` resolves to the app's
+    /// Application Support (production path). The directory is created when
+    /// missing because a fresh install has no Application Support and
+    /// `sqlite3_open_v2` (SQLITE_OPEN_CREATE) creates only the file, never
+    /// intermediate directories — without this the first launch fails with
+    /// SQLITE_CANTOPEN and drops into the in-memory fallback.
+    init(directory: URL? = nil) throws {
+        let appSupport = directory ?? FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
         )[0]
 
         let dbURL = appSupport.appendingPathComponent("ydoc_snapshots.sqlite")
+        try FileManager.default.createDirectory(
+            at: appSupport,
+            withIntermediateDirectories: true
+        )
         AppLog.info(.database, "Opening database at \(dbURL.path)")
 
         var config = Configuration()

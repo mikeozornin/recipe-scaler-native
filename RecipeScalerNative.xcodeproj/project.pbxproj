@@ -237,6 +237,7 @@
 		B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */; };
 		B3APPTEST02B293A4B70100001 /* ObservableMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */; };
 		B3APPTEST03B293A4B70100001 /* YjsMemoryLeakTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */; };
+		B3YRSDB01B293A4B70100001 /* YrsDatabaseInitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3YRSDB01A293A4B70100001 /* YrsDatabaseInitTests.swift */; };
 		B3ATPR01B293A4B701000002 /* ActiveTimerPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ATPR01A293A4B701000001 /* ActiveTimerPresentation.swift */; };
 		B3ATPR02B293A4B701000002 /* ActiveTimerPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ATPR02A293A4B701000001 /* ActiveTimerPresentationTests.swift */; };
 		B3AUTHERR0010 /* AuthErrorLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AUTHERR0020 /* AuthErrorLocalizationTests.swift */; };
@@ -975,6 +976,7 @@
 		B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainerTests.swift; sourceTree = "<group>"; };
 		B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableMigrationTests.swift; sourceTree = "<group>"; };
 		B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsMemoryLeakTests.swift; sourceTree = "<group>"; };
+		B3YRSDB01A293A4B70100001 /* YrsDatabaseInitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YrsDatabaseInitTests.swift; sourceTree = "<group>"; };
 		B3ATPR01A293A4B701000001 /* ActiveTimerPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveTimerPresentation.swift; sourceTree = "<group>"; };
 		B3ATPR02A293A4B701000001 /* ActiveTimerPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveTimerPresentationTests.swift; sourceTree = "<group>"; };
 		B3AUTHERR0020 /* AuthErrorLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthErrorLocalizationTests.swift; sourceTree = "<group>"; };
@@ -1842,6 +1844,7 @@
 				B3LAINTT01A293A4B70100001 /* TimerLiveActivityIntentSnapshotTests.swift */,
 				B3APPTEST02A293A4B70100001 /* ObservableMigrationTests.swift */,
 				B3APPTEST03A293A4B70100001 /* YjsMemoryLeakTests.swift */,
+				B3YRSDB01A293A4B70100001 /* YrsDatabaseInitTests.swift */,
 				ILL043F11 /* IngredientIllustrationCatalogTests.swift */,
 				ILL043F15 /* IngredientIllustrationNameMatcherTests.swift */,
 				SHP043F02 /* ResolveShoppingIllustrationIdTests.swift */,
@@ -3291,6 +3294,7 @@
 				B3LAINTT01B293A4B70100001 /* TimerLiveActivityIntentSnapshotTests.swift in Sources */,
 				B3APPTEST02B293A4B70100001 /* ObservableMigrationTests.swift in Sources */,
 				B3APPTEST03B293A4B70100001 /* YjsMemoryLeakTests.swift in Sources */,
+				B3YRSDB01B293A4B70100001 /* YrsDatabaseInitTests.swift in Sources */,
 				7F2675404F75AD0EC794F971 /* RecipeSearchUtilsTests.swift in Sources */,
 				D5SS01B293A4B7010000002 /* DiscoverSearchStoreTests.swift in Sources */,
 				D15C00000000000000000003 /* DiscoverListStateStoreTests.swift in Sources */,
