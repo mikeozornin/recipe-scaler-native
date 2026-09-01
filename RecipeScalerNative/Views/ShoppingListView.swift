@@ -80,6 +80,7 @@ struct ShoppingListView: View {
             shoppingList
         }
         .localizedNavigationTitle("shopping.title")
+        .navigationBarTitleDisplayMode(.inline)
         .appListBodyTypography()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

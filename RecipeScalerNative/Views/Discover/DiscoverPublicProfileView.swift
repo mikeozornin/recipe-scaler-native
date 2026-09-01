@@ -157,7 +157,11 @@ struct DiscoverPublicProfileView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    DiscoverFollowControls(username: username)
+                    DiscoverFollowControls(
+                        username: username,
+                        authService: authService,
+                        followStore: followStore
+                    )
                 }
             }
         }
@@ -244,10 +248,13 @@ struct DiscoverPublicProfileView: View {
 /// user's own profile; the server is the source of truth for ownership.
 struct DiscoverFollowControls: View {
     let username: String
+    /// Injected (not `@Environment`): this view renders inside a `ToolbarItem`,
+    /// and iOS 26 measures toolbar content in a fallback environment without
+    /// injected observables (crash: `EnvironmentValues.subscript.getter` trap).
+    let authService: AuthService
+    let followStore: FollowStore
 
     @Environment(\.apiClient) private var apiClient
-    @Environment(AuthService.self) private var authService
-    @Environment(FollowStore.self) private var followStore
 
     /// Spinner appears only after a 1s pending delay — fast mutations
     /// (typical unfollow/follow) flip the control without a flash.

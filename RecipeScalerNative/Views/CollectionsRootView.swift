@@ -6,7 +6,9 @@ import SwiftUI
 /// with recipe counts, and an inline "New collection" create row.
 /// Supports two layouts: plain list and folder grid (configurable in Profile).
 struct CollectionsRootView: View {
-    @Environment(YjsSyncService.self) private var syncService
+    /// Injected (not `@Environment`): iOS 26 re-measures navigation chrome in a
+    /// fallback environment after the assistant sheet dismisses; see `RecipeListView`.
+    let syncService: YjsSyncService
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
@@ -35,8 +37,7 @@ struct CollectionsRootView: View {
     /// Mirrors `RecipeListView.isUITestingHost` — skip the cold-start spinner when
     /// `AppContainer.bootstrap` short-circuits sync under XCTest/UI-test hosts.
     private var isUITestingHost: Bool {
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-            || ProcessInfo.processInfo.arguments.contains("ui-testing")
+        DebugLaunchOptions.usesReducedTestingHostBehavior
     }
 
     var body: some View {

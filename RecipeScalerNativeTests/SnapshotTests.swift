@@ -21,8 +21,11 @@ final class SnapshotTests: XCTestCase {
 
     func testRecipeListView() throws {
         let container = try TestSupport.makeInMemoryContainer()
+        let database = try YrsDatabase()
+        let store = YDocStore(dbQueue: database.dbQueue)
+        let syncService = YjsSyncService.makeForTesting(store: store)
 
-        let view = RecipeListView()
+        let view = RecipeListView(syncService: syncService)
             .modelContainer(container)
 
         assertSnapshot(

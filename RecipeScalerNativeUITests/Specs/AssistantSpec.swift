@@ -50,3 +50,65 @@ final class AssistantSpec: BaseTestCase {
         page.openViaTab().awaitSheet()
     }
 }
+
+/// Repro for iOS 26 toolbar env crash: assistant dismiss → recipe detail push.
+///
+/// XCTest uses **register-auto + REST seed** (same toolbar/nav path as manual repro).
+/// Prod debug-user + full bootstrap: `bash scripts/repro-assistant-recipe-crash.sh`.
+///
+/// **Phase 1:** detail must open after assistant dismiss → recipe tap (else crash/no push).
+/// **Phase 2:** app stays `runningForeground` (`Logs.assertNoCrash` in tearDown).
+final class AssistantRecipeNavReproSpec: BaseTestCase {
+    private var seededRecipeId: String?
+
+    override func extraLaunchArguments() -> [String] { ["-OpenTab=recipes"] }
+
+    override func prepareBeforeLaunch() async throws {
+        let name = "NavRepro \(UUID().uuidString.prefix(6))"
+        let created = try await seedOrSkip("createRecipe") {
+            try await seedClient.createRecipe(name: name)
+        }
+        seededRecipeId = created.id
+    }
+
+    func test_assistantDismissThenOpenRecipe_survivesNavigation() throws {
+        executionTimeAllowance = 180
+
+        var list = recipeListPage.awaitReady()
+        list.openAllRecipesIfNeeded()
+
+        guard let recipeId = seededRecipeId else {
+            XCTFail("prepareBeforeLaunch did not set seededRecipeId")
+            return
+        }
+
+        let row = list.recipeRow(id: recipeId)
+        XCTAssertTrue(
+            row.waitForExistence(timeout: Wait.syncRoundTrip)
+                || list.hasRecipes,
+            "Seeded recipe \(recipeId) did not appear — cannot exercise assistant→detail nav"
+        )
+
+        assistantPage.openViaTab().awaitSheet()
+        assistantPage.dismissViaSwipe()
+
+        list = recipeListPage.awaitReady(timeout: Wait.element)
+        list.openAllRecipesIfNeeded()
+
+        list.tapFirstRecipe()
+
+        let detailVisible = recipeDetailPage.menuButton.waitForExistence(timeout: Wait.syncRoundTrip)
+            || recipeDetailPage.ingredientsSection.waitForExistence(timeout: Wait.element)
+            || recipeDetailPage.editButton.waitForExistence(timeout: Wait.element)
+        XCTAssertTrue(
+            detailVisible,
+            "Recipe detail did not open — navigation push (toolbar env crash) was not exercised"
+        )
+
+        XCTAssertEqual(
+            app.state,
+            .runningForeground,
+            "App crashed after opening recipe detail"
+        )
+    }
+}

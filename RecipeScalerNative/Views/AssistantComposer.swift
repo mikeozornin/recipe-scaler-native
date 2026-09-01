@@ -35,6 +35,7 @@ struct AssistantComposerChrome: View {
         isSending: Bool,
         contextRecipeId: String?,
         onSend: @escaping () -> Void,
+        syncService: YjsSyncService,
         @ViewBuilder topContent: @escaping () -> some View = { EmptyView() }
     ) {
         _text = text
@@ -43,10 +44,15 @@ struct AssistantComposerChrome: View {
         self.isSending = isSending
         self.contextRecipeId = contextRecipeId
         self.onSend = onSend
+        self.syncService = syncService
         self.topContent = { AnyView(topContent()) }
     }
 
-    @Environment(YjsSyncService.self) private var syncService
+    /// Injected (not `@Environment`): the composer chrome can outlive the
+    /// sheet presentation (dismiss animation) while iOS 26 re-measures bar
+    /// items in a fallback environment that has no injected observables.
+    /// `@Environment(YjsSyncService.self)` in that subtree traps.
+    let syncService: YjsSyncService
     @Environment(AssistantRecipeContext.self) private var recipeContext
     @State private var showAttachSheet = false
     @State private var voiceRecorder = AssistantVoiceRecorder()
@@ -429,6 +435,9 @@ struct AssistantComposer: View {
     let inputPlaceholderVariantIndex: Int
     let contextRecipeId: String?
     let onSend: () -> Void
+    /// Injected through to `AssistantComposerChrome` — no `@Environment` in the
+    /// composer subtree (iOS 26 fallback-env measurement during sheet dismiss).
+    let syncService: YjsSyncService
 
     @Environment(\.locale) private var locale
     @FocusState private var isInputFocused: Bool
@@ -449,7 +458,8 @@ struct AssistantComposer: View {
             isVoiceTranscribing: $isVoiceTranscribing,
             isSending: isSending,
             contextRecipeId: contextRecipeId,
-            onSend: onSend
+            onSend: onSend,
+            syncService: syncService
         ) {
             messageInput
                 .padding(.horizontal, 16)

@@ -161,8 +161,7 @@ final class AppContainer {
         // carries stale schema from previous runs that triggers the slow fallback
         // path AND the "Local storage unavailable" banner. Skip straight to the
         // in-memory DB in that case — mirrors `bootstrap(userId:)`'s gate.
-        let isTestingHost = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-            || ProcessInfo.processInfo.arguments.contains("ui-testing")
+        let isTestingHost = DebugLaunchOptions.usesReducedTestingHostBehavior
         if isTestingHost {
             database = try YrsDatabase.makeInMemoryForTesting()
         } else {
@@ -372,7 +371,12 @@ final class AppContainer {
         // sync session — see review finding #71.
         let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
         let isUITesting = ProcessInfo.processInfo.arguments.contains("ui-testing")
-        if isTesting || isUITesting {
+        #if DEBUG
+        let allowFullBootstrap = DebugLaunchOptions.allowBootstrapUnderXCTest
+        #else
+        let allowFullBootstrap = false
+        #endif
+        if (isTesting || isUITesting) && !allowFullBootstrap {
             return
         }
 
@@ -555,8 +559,7 @@ final class AppContainer {
             // Simulator DEBUG auto-login never shows AuthView, so re-inject
             // Bearer and re-enter bootstrap for the same debug user.
             #if DEBUG
-            let isTestingHost = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-                || ProcessInfo.processInfo.arguments.contains("ui-testing")
+            let isTestingHost = DebugLaunchOptions.usesReducedTestingHostBehavior
             if DebugSimulatorAutoLogin.isEnabled, !isTestingHost {
                 AppLog.info(.app, "stale_session_sim_debug_continue", data: [
                     "userId": UserIdFormatter.redact(expectedUserId)

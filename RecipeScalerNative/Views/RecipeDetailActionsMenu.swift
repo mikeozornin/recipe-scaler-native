@@ -11,8 +11,11 @@ struct RecipeDetailActionsMenu: View {
     let ingredients: [IngredientData]
     let isEditing: Bool
     let isPinned: Bool
-
-    @Environment(YjsSyncService.self) private var syncService
+    /// Injected (not `@Environment`): this view renders inside a `ToolbarItem`,
+    /// and iOS 26 measures toolbar content in a fallback environment without
+    /// injected observables (crash: `EnvironmentValues.subscript.getter` trap
+    /// after dismissing the assistant sheet — fallback env has no `YjsSyncService`).
+    let syncService: YjsSyncService
 
     @State private var recipePendingDelete = false
     @State private var showingAssignSheet = false
@@ -55,7 +58,11 @@ struct RecipeDetailActionsMenu: View {
         .accessibilityLabel("recipe.detail.more-actions")
         .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailMenu)
         .sheet(isPresented: $showingAssignSheet) {
-            CollectionAssignSheet(recipeId: recipeId, recipeName: recipeName)
+            CollectionAssignSheet(
+                recipeId: recipeId,
+                recipeName: recipeName,
+                syncService: syncService
+            )
         }
         .alert(
             Bundle.currentLocalizedString("recipe.list.delete.confirm.title"),

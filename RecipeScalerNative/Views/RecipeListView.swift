@@ -2,8 +2,12 @@ import SwiftUI
 import UIKit
 
 struct RecipeListView: View {
-    @Environment(YjsSyncService.self) private var syncService
+    /// Injected (not `@Environment`): after the assistant sheet dismisses on iOS 26,
+    /// `NavigationStack` push re-measures bar chrome in a fallback environment;
+    /// `@Environment(YjsSyncService.self)` on this tab root traps during the transition.
+    let syncService: YjsSyncService
     @Environment(AppShellCoordinator.self) private var coordinator
+    @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var navigationPath: NavigationPath
@@ -24,8 +28,12 @@ struct RecipeListView: View {
         RecipeFolderRoutes.ViewMode(rawValue: viewModeRaw) ?? .collections
     }
 
-    init(navigationPath: Binding<NavigationPath> = .constant(NavigationPath())) {
+    init(
+        navigationPath: Binding<NavigationPath> = .constant(NavigationPath()),
+        syncService: YjsSyncService
+    ) {
         _navigationPath = navigationPath
+        self.syncService = syncService
     }
     #if DEBUG
     @State private var didOpenDebugRecipe = false
@@ -35,8 +43,7 @@ struct RecipeListView: View {
     /// cold-start loading spinner, which would otherwise spin forever because
     /// `AppContainer.bootstrap` short-circuits sync startup in those hosts.
     private var isUITestingHost: Bool {
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-            || ProcessInfo.processInfo.arguments.contains("ui-testing")
+        DebugLaunchOptions.usesReducedTestingHostBehavior
     }
 
     private var isSearching: Bool {
@@ -92,8 +99,7 @@ struct RecipeListView: View {
         // for those hosts; production users still see the real failure.
         // Store screenshot mode (`-ScreenshotCapture=1`) likewise must not show
         // recovery chrome on marketing frames.
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-            || ProcessInfo.processInfo.arguments.contains("ui-testing") {
+        if DebugLaunchOptions.usesReducedTestingHostBehavior {
             return false
         }
         #if DEBUG
@@ -113,7 +119,10 @@ struct RecipeListView: View {
 
                 Group {
                 if showsCollectionsRoot {
-                    CollectionsRootView(navigationPath: $navigationPath)
+                    CollectionsRootView(
+                        syncService: syncService,
+                        navigationPath: $navigationPath
+                    )
                 } else if !isUITestingHost && !syncService.isLocalDataLoaded
                             || (!isUITestingHost
                                 && syncService.connectionState == .connecting
@@ -192,6 +201,46 @@ struct RecipeListView: View {
             .searchable(text: $searchText, prompt: Text("search.recipes"))
             .onAppear {
                 searchStore.bind(syncService: syncService)
+                #if DEBUG
+                // #region agent log
+                AgentSyncDebugLog.assistantLayout(
+                    hypothesisId: "H4",
+                    location: "RecipeListView.onAppear",
+                    message: "recipes_tab_visible",
+                    data: [
+                        "selectedTab": coordinator.selectedTab.rawValue,
+                        "assistantSheetOpen": assistantRecipeContext.isAssistantSheetOpen ? "true" : "false",
+                        "viewMode": viewMode.rawValue
+                    ]
+                )
+                AgentSyncDebugLog.logNavigationBarState(
+                    hypothesisId: "H2",
+                    location: "RecipeListView.onAppear",
+                    tag: "recipes_onAppear"
+                )
+                // #endregion
+                #endif
+            }
+            .background {
+                GeometryReader { geo in
+                    Color.clear
+                        .onChange(of: geo.safeAreaInsets.top) { _, top in
+                            #if DEBUG
+                            // #region agent log
+                            guard top > 0 else { return }
+                            AgentSyncDebugLog.assistantLayout(
+                                hypothesisId: "H4",
+                                location: "RecipeListView.safeArea",
+                                message: "safe_area_top_changed",
+                                data: [
+                                    "safeTop": String(format: "%.1f", top),
+                                    "assistantSheetOpen": assistantRecipeContext.isAssistantSheetOpen ? "true" : "false"
+                                ]
+                            )
+                            // #endregion
+                            #endif
+                        }
+                }
             }
             .onChange(of: searchText) { _, query in
                 // Tokens computed once per change (was: 16–26× per render).
@@ -207,12 +256,14 @@ struct RecipeListView: View {
                 case .folder(let folderId):
                     CollectionFolderView(
                         folderId: folderId,
+                        syncService: syncService,
                         navigationPath: $navigationPath
                     )
                 case .recipe(let recipeId, _, let openInEditMode):
                     YDocRecipeDetailView(
                         recipeId: recipeId,
-                        startInEditMode: openInEditMode
+                        startInEditMode: openInEditMode,
+                        syncService: syncService
                     )
                 }
             }
@@ -249,16 +300,18 @@ struct RecipeListView: View {
                                 await handleCreateRecipe(folderId: nil)
                             }
                         },
-                        onImport: {
-                            coordinator.presentImport()
-                        }
+                        onImport: { coordinator.presentImport() }
                     )
                 }
             }
             .sheet(item: $presentedSheet) { sheet in
                 switch sheet {
                 case .assign(let recipeId, let recipeName):
-                    CollectionAssignSheet(recipeId: recipeId, recipeName: recipeName)
+                    CollectionAssignSheet(
+                        recipeId: recipeId,
+                        recipeName: recipeName,
+                        syncService: syncService
+                    )
                 }
             }
             .alert(item: $presentedAlert) { alert in
@@ -825,10 +878,11 @@ extension Color {
 }
 
 #Preview {
-    RecipeListView()
-        .environment({
-            let database = try! YrsDatabase()
-            let store = YDocStore(dbQueue: database.dbQueue)
-            return YjsSyncService.makeForTesting(store: store)
-        }())
+    let database = try! YrsDatabase()
+    let store = YDocStore(dbQueue: database.dbQueue)
+    let syncService = YjsSyncService.makeForTesting(store: store)
+    return RecipeListView(
+        navigationPath: .constant(NavigationPath()),
+        syncService: syncService
+    )
 }

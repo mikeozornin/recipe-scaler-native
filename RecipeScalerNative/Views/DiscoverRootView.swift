@@ -46,6 +46,7 @@ struct DiscoverRootView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .localizedNavigationTitle("discover.title")
+            .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: DiscoverRoute.self) { route in
                 switch route {
                 case .collection(let slug):

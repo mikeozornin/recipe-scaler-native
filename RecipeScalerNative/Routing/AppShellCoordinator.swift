@@ -109,6 +109,19 @@ final class AppShellCoordinator {
         if newTab == .assistant {
             // Spec 074 — fake tab: present the sheet over the current tab;
             // selection binding snaps back because `selectedTab` is unchanged.
+            #if DEBUG
+            // #region agent log
+            AgentSyncDebugLog.assistantLayout(
+                hypothesisId: "H3",
+                location: "AppShellCoordinator.handleTabSelection",
+                message: "assistant_tab_tapped",
+                data: [
+                    "selectedTab": selectedTab.rawValue,
+                    "pendingTabOpen": "true"
+                ]
+            )
+            // #endregion
+            #endif
             pendingAssistantTabOpen = true
             return
         }

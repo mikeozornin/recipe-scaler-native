@@ -103,6 +103,10 @@ struct AppShellView: View {
     @State private var transientStatus: TransientStatusPayload?
     @State private var transientStatusDismissTask: Task<Void, Never>?
     @State private var mobileTimerPanelCollapsed = true
+    /// Spec 074 — TabView selection decoupled from `coordinator.selectedTab` so the
+    /// fake assistant tab (`Color.clear`) never becomes the hosted tab root after a
+    /// tap or dismiss (fixes shell chrome / safe-area corruption after sheet dismiss).
+    @State private var tabViewSelection: AppTab = .recipes
     @Namespace private var mobileTimerPanelChevronNamespace
 
     /// Глобальный zoom-session для hero-фотографий (spec 064). `@State` +
@@ -177,6 +181,22 @@ struct AppShellView: View {
         assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
         assistantRecipeContext.isAssistantSheetOpen = true
         showAssistant = true
+        resyncTabViewSelectionAfterAssistantInteraction()
+    }
+
+    /// Keep TabView on the real tab; the assistant entry is a fake tab (sheet only).
+    private func resyncTabViewSelectionAfterAssistantInteraction() {
+        let tab = coordinator.selectedTab
+        guard tab != .assistant else { return }
+        tabViewSelection = tab
+        #if DEBUG
+        AgentSyncDebugLog.assistantLayout(
+            hypothesisId: "H1",
+            location: "AppShellView.resyncTabViewSelection",
+            message: "tab_view_selection_resynced",
+            data: ["tab": tab.rawValue]
+        )
+        #endif
     }
 
     /// Spec 040 — handlers for CTA taps in `FeatureAdoptionGuideView`.
@@ -246,10 +266,32 @@ struct AppShellView: View {
                 contextRecipeId: assistantContextRecipeId ?? assistantRecipeContext.visibleRecipeId,
                 openRequest: assistantOpenRequest,
                 onDismiss: {
+                    #if DEBUG
+                    // #region agent log
+                    AgentSyncDebugLog.assistantLayout(
+                        hypothesisId: "H1",
+                        location: "AppShellView.assistantOnDismiss",
+                        message: "assistant_sheet_onDismiss",
+                        data: [
+                            "selectedTab": coordinator.selectedTab.rawValue,
+                            "showAssistant": showAssistant ? "true" : "false"
+                        ]
+                    )
+                    AgentSyncDebugLog.logNavigationBarState(
+                        hypothesisId: "H2",
+                        location: "AppShellView.assistantOnDismiss",
+                        tag: "sheet_onDismiss"
+                    )
+                    // #endregion
+                    #endif
                     assistantRecipeContext.isAssistantSheetOpen = false
                     assistantContextRecipeId = nil
+                    resyncTabViewSelectionAfterAssistantInteraction()
                 },
-                environmentCoordinator: coordinator
+                environmentCoordinator: coordinator,
+                syncService: syncService,
+                offlineGate: offlineGate,
+                assistantRecipeContext: assistantRecipeContext
             ))
     }
     /// Lifecycle observers, split into small chains so the SwiftUI
@@ -257,6 +299,7 @@ struct AppShellView: View {
     private var shellObservers: some View {
         assistantObservers(on: transientStatusObservers(on: navigationObservers(on: shellWithOverlays)))
             .onAppear {
+                tabViewSelection = coordinator.selectedTab
                 RecipeImageDiskCache.migrateFromCachesIfNeeded()
                 // Spec 059 fix: on cold launch iOS delivers the Universal Link URL
                 // during splash, before `AppShellView` mounts. `onChange(pending)`
@@ -306,8 +349,33 @@ struct AppShellView: View {
                 guard assistantOpenRequest == nil else { return }
                 openAssistantManually()
             }
+            .onChange(of: coordinator.selectedTab) { _, newTab in
+                guard newTab != .assistant else { return }
+                tabViewSelection = newTab
+            }
             .onChange(of: showAssistant) { _, isOpen in
                 assistantRecipeContext.isAssistantSheetOpen = isOpen
+                #if DEBUG
+                // #region agent log
+                AgentSyncDebugLog.assistantLayout(
+                    hypothesisId: "H1",
+                    location: "AppShellView.showAssistant",
+                    message: "assistant_sheet_visibility",
+                    data: [
+                        "isOpen": isOpen ? "true" : "false",
+                        "selectedTab": coordinator.selectedTab.rawValue,
+                        "tabViewSelection": tabViewSelection.rawValue
+                    ]
+                )
+                if !isOpen {
+                    AgentSyncDebugLog.logNavigationBarState(
+                        hypothesisId: "H2",
+                        location: "AppShellView.showAssistant",
+                        tag: "sheet_closed"
+                    )
+                }
+                // #endregion
+                #endif
             }
     }
 
@@ -436,7 +504,10 @@ struct AppShellView: View {
             }
 
             Tab(value: AppTab.recipes) {
-                modernTabRoot(RecipeListView(navigationPath: $coordinator.recipesPath))
+                modernTabRoot(RecipeListView(
+                    navigationPath: $coordinator.recipesPath,
+                    syncService: syncService
+                ))
             } label: {
                 AppTabBarLabel(tab: .recipes)
             }
@@ -458,24 +529,29 @@ struct AppShellView: View {
                 AppTabBarLabel(tab: .profile)
             }
 
-            // Spec 074 — iOS 26: `role: .search` renders sparkles in the
-            // separated Liquid Glass slot (trailing). Intentionally **no**
-            // `.searchable` / `tabViewSearchActivation` — tap opens modal sheet
-            // via fake selection (`handleTabSelection(.assistant)`), same as legacy.
-            Tab(value: AppTab.assistant, role: .search) {
+            // Spec 074 — fake assistant tab (sheet only). Without `role: .search`:
+            // iOS 26.2+ search slot corrupts nav chrome after sheet dismiss.
+            Tab(value: AppTab.assistant) {
                 Color.clear
             } label: {
                 AppTabBarLabel(tab: .assistant)
+                    .accessibilityIdentifier(AccessibilityIdentifiers.tabAssistant)
             }
-            .accessibilityIdentifier(AccessibilityIdentifiers.tabAssistant)
         }
     }
 
     @available(iOS 26.2, *)
     private var modernTabSelection: Binding<AppTab> {
         Binding(
-            get: { coordinator.selectedTab },
-            set: { coordinator.handleTabSelection($0) }
+            get: { tabViewSelection },
+            set: { newTab in
+                if newTab == .assistant {
+                    openAssistantManually()
+                    return
+                }
+                tabViewSelection = newTab
+                coordinator.handleTabSelection(newTab)
+            }
         )
     }
 
@@ -489,7 +565,10 @@ struct AppShellView: View {
                 .tag(AppTab.discover)
                 .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
 
-            tabRoot(RecipeListView(navigationPath: $coordinator.recipesPath)) {
+            tabRoot(RecipeListView(
+                navigationPath: $coordinator.recipesPath,
+                syncService: syncService
+            )) {
                 AppTabBarLabel(tab: .recipes)
             }
             .tag(AppTab.recipes)
@@ -578,8 +657,15 @@ struct AppShellView: View {
 
     private var tabSelection: Binding<AppTab> {
         Binding(
-            get: { coordinator.selectedTab },
-            set: { coordinator.handleTabSelection($0) }
+            get: { tabViewSelection },
+            set: { newTab in
+                if newTab == .assistant {
+                    openAssistantManually()
+                    return
+                }
+                tabViewSelection = newTab
+                coordinator.handleTabSelection(newTab)
+            }
         )
     }
     private func postTransientStatus(_ message: String) {
@@ -606,24 +692,29 @@ private struct MobileTimerAccessoryModifier<Accessory: View>: ViewModifier {
     }
 }
 
-/// Spec 074 — assistant modal sheet for all iOS versions (fake tab entry).
+/// Spec 074 — assistant sheet for all iOS versions (fake tab entry).
 private struct AssistantSheetModifier: ViewModifier {
     @Binding var isPresented: Bool
     let contextRecipeId: String?
     let openRequest: AssistantOpenRequest?
     let onDismiss: () -> Void
     let environmentCoordinator: AppShellCoordinator
+    let syncService: YjsSyncService
+    let offlineGate: OfflineBannerGate
+    let assistantRecipeContext: AssistantRecipeContext
 
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: $isPresented, onDismiss: onDismiss) {
                 AssistantSheet(
                     contextRecipeId: contextRecipeId,
-                    openRequest: openRequest
+                    openRequest: openRequest,
+                    syncService: syncService
                 )
-                // Sheet content is hosted outside `tabView`; `.environment(coordinator)`
-                // on the shell does not propagate here (fatal: missing AppShellCoordinator).
                 .environment(environmentCoordinator)
+                .environment(offlineGate)
+                .environment(assistantRecipeContext)
+                .appOpaqueSheetPresentationPlain()
             }
     }
 }

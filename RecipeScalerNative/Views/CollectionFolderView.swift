@@ -6,8 +6,9 @@ import SwiftUI
 /// plus an overflow menu for user folders (rename, select recipes, delete).
 struct CollectionFolderView: View {
     let folderId: String
-
-    @Environment(YjsSyncService.self) private var syncService
+    /// Injected (not `@Environment`): toolbar hosts trap in iOS 26 fallback env
+    /// during `NavigationStack` push after assistant dismiss — see `RecipeListView`.
+    let syncService: YjsSyncService
     @Environment(AppShellCoordinator.self) private var coordinator
     @Environment(TimerManager.self) private var timerManager
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
@@ -196,7 +197,11 @@ struct CollectionFolderView: View {
         .sheet(item: $presentedSheet) { sheet in
             switch sheet {
             case .assign(let recipeId, let recipeName):
-                CollectionAssignSheet(recipeId: recipeId, recipeName: recipeName)
+                CollectionAssignSheet(
+                    recipeId: recipeId,
+                    recipeName: recipeName,
+                    syncService: syncService
+                )
             case .manageRecipes:
                 ManageCollectionRecipesSheet(folderId: folderId)
             }

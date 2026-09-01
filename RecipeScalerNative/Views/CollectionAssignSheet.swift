@@ -8,8 +8,9 @@ import SwiftUI
 struct CollectionAssignSheet: View {
     let recipeId: String
     let recipeName: String
-
-    @Environment(YjsSyncService.self) private var syncService
+    /// Injected (not `@Environment`): parent may live in a toolbar subtree measured
+    /// in iOS 26's fallback environment (see `RecipeDetailActionsMenu`).
+    let syncService: YjsSyncService
 
     /// Local working copy of selected folder ids (committed on dismiss).
     @State private var selectedFolderIds: Set<String> = []

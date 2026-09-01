@@ -16,8 +16,7 @@ struct RecipeDetailImageSection: View {
     let imageAspectRatio: CGFloat?
     let isEditing: Bool
     let allowsNetworkRefresh: Bool
-
-    @Environment(YjsSyncService.self) private var syncService
+    let syncService: YjsSyncService
     @State private var photoItem: PhotosPickerItem?
     @State private var isPhotoPickerPresented = false
     @State private var isUploading = false

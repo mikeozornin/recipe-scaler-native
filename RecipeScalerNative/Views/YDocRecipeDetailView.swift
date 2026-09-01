@@ -7,8 +7,12 @@ struct YDocRecipeDetailView: View {
     let recipeId: String
     var startInEditMode: Bool = false
     var startDescriptionEdit: Bool = false
+    /// Injected (not `@Environment`): iOS 26 builds the pushed destination's
+    /// body while measuring bar items in a fallback environment (no injected
+    /// observables); an `@Environment(YjsSyncService.self)` field on the pushed
+    /// root traps during `EnvironmentValues.subscript.getter`.
+    let syncService: YjsSyncService
 
-    @Environment(YjsSyncService.self) var syncService
     @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
     @Environment(TimerManager.self) var timerManager
     @Environment(\.appContainer) private var appContainer
@@ -243,6 +247,17 @@ struct YDocRecipeDetailView: View {
     }
 
     var body: some View {
+        RecipeDetailToolbarHost(
+            recipeId: recipeId,
+            recipe: recipe,
+            isEditing: isEditing,
+            canEnterEditMode: canEnterEditMode,
+            isPinned: syncService.collectionEntries.first { $0.id == recipeId }?.isPinned ?? false,
+            syncService: syncService,
+            apiClient: appContainer?.api ?? .shared,
+            isScreenAwakeActive: $isScreenAwakeActive,
+            onToggleEdit: { Task { await toggleEditMode() } }
+        ) {
         ScrollViewReader { scrollProxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -255,7 +270,8 @@ struct YDocRecipeDetailView: View {
                         imageUrl: headerImageUrl,
                         imageAspectRatio: recipe?.imageAspectRatio.map { CGFloat($0) },
                         isEditing: isEditing && canEnterEditMode,
-                        allowsNetworkRefresh: allowsImageNetworkRefresh
+                        allowsNetworkRefresh: allowsImageNetworkRefresh,
+                        syncService: syncService
                     )
                 }
 
@@ -547,47 +563,6 @@ struct YDocRecipeDetailView: View {
                 }
             )
         }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 0) {
-                    if isEditing, canEnterEditMode {
-                        Button("edit.done") {
-                            Task { await toggleEditMode() }
-                        }
-                        .appToolbarConfirmButton()
-                        .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailDone)
-                    } else if let recipe {
-                        RecipeDetailActionsMenu(
-                            recipeId: recipeId,
-                            recipeName: recipe.name,
-                            ingredients: recipe.ingredients,
-                            isEditing: false,
-                            isPinned: syncService.collectionEntries.first { $0.id == recipeId }?.isPinned ?? false
-                        )
-                        RecipeDetailShareButton(
-                            recipeId: recipeId,
-                            isPublic: recipe.isPublic,
-                            hasImage: !(recipe.imageUrl?.isEmpty ?? true),
-                            hasSteps: recipe.hasSteps
-                        )
-                        ScreenAwakeToggle(isActive: $isScreenAwakeActive)
-                        if canEnterEditMode {
-                            Button {
-                                Task { await toggleEditMode() }
-                            } label: {
-                                AppToolbarStyle.labeledIcon(
-                                    systemName: "pencil",
-                                    title: "edit.edit"
-                                )
-                            }
-                            .appToolbarIconButton()
-                            .accessibilityLabel("edit.edit")
-                            .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailEdit)
-                        }
-                    }
-                }
-            }
-        }
         .onChange(of: descriptionChrome.isFocused) { _, focused in
             if !focused {
                 keyboardOverlapHeight = 0
@@ -777,6 +752,7 @@ struct YDocRecipeDetailView: View {
                 onDismiss: { descriptionTimerPopover = nil }
             )
         }
+        }
     }
 
     @ViewBuilder
@@ -828,3 +804,66 @@ struct YDocRecipeDetailView: View {
 // `DescriptionEditorScrollKeyboardPolicy`, `dismissPopoverOnVerticalDrag`
 // and `DescriptionEditorScrollAnchor` live in
 // `YDocRecipeDetailScrollSupport.swift` / `YDocRecipeDetailEditHeader.swift`.
+
+private struct RecipeDetailToolbarHost<Content: View>: View {
+    let recipeId: String
+    let recipe: RecipeData?
+    let isEditing: Bool
+    let canEnterEditMode: Bool
+    let isPinned: Bool
+    let syncService: YjsSyncService
+    let apiClient: APIClient
+    @Binding var isScreenAwakeActive: Bool
+    let onToggleEdit: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        content()
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    trailingToolbarItems
+                        .environment(syncService)
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var trailingToolbarItems: some View {
+        HStack(spacing: 0) {
+            if isEditing, canEnterEditMode {
+                Button("edit.done", action: onToggleEdit)
+                    .appToolbarConfirmButton()
+                    .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailDone)
+            } else if let recipe {
+                RecipeDetailActionsMenu(
+                    recipeId: recipeId,
+                    recipeName: recipe.name,
+                    ingredients: recipe.ingredients,
+                    isEditing: false,
+                    isPinned: isPinned,
+                    syncService: syncService
+                )
+                RecipeDetailShareButton(
+                    recipeId: recipeId,
+                    isPublic: recipe.isPublic,
+                    hasImage: !(recipe.imageUrl?.isEmpty ?? true),
+                    hasSteps: recipe.hasSteps,
+                    syncService: syncService,
+                    apiClient: apiClient
+                )
+                ScreenAwakeToggle(isActive: $isScreenAwakeActive)
+                if canEnterEditMode {
+                    Button(action: onToggleEdit) {
+                        AppToolbarStyle.labeledIcon(
+                            systemName: "pencil",
+                            title: "edit.edit"
+                        )
+                    }
+                    .appToolbarIconButton()
+                    .accessibilityLabel("edit.edit")
+                    .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailEdit)
+                }
+            }
+        }
+    }
+}

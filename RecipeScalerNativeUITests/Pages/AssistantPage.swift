@@ -59,10 +59,26 @@ struct AssistantPage: Page {
             return
         }
         target.swipeDown()
-        let dismissed = !composerShell.waitForExistence(timeout: timeout)
+        // `isHittable == false` is not enough: the dismissed sheet can linger in
+        // the a11y hierarchy and swallow touches on the list underneath. Require
+        // full disappearance; fall back to a tab switch (spec 074 dismiss path).
+        func sheetGone() -> Bool {
+            !composerShell.exists && !target.exists
+        }
+        let gone = NSPredicate { [composerShell, target] _, _ in
+            !composerShell.exists && !target.exists
+        }
+        let expectation = XCTNSPredicateExpectation(predicate: gone, object: nil)
+        let result = XCTWaiter().wait(for: [expectation], timeout: timeout)
+        if result != .completed {
+            Navigation.openTab(.recipes, in: app)
+            // Re-create the expectation: XCTNSPredicateExpectation is one-shot.
+            let retry = XCTNSPredicateExpectation(predicate: gone, object: nil)
+            _ = XCTWaiter().wait(for: [retry], timeout: timeout)
+        }
         XCTAssertTrue(
-            dismissed,
-            "Assistant sheet still present after swipe-down dismiss"
+            sheetGone(),
+            "Assistant sheet still in hierarchy after dismiss — it swallows list taps"
         )
     }
 }
