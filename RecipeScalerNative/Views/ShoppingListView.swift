@@ -582,6 +582,7 @@ private extension View {
 // MARK: - Reminders tip
 
 private struct ShoppingRemindersTipBanner: View {
+    @Environment(\.colorScheme) private var colorScheme
     let onEnable: () -> Void
     let onDismiss: () -> Void
 
@@ -614,8 +615,8 @@ private struct ShoppingRemindersTipBanner: View {
         }
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .background(colorScheme == .dark ? Color.clear : Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: colorScheme == .dark ? 0 : 10))
         .accessibilityIdentifier(AccessibilityIdentifiers.shoppingRemindersTip)
     }
 }
