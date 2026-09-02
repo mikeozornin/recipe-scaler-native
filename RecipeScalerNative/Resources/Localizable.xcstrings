@@ -2612,6 +2612,22 @@
         }
       }
     },
+    "account.nutrition.footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calculate calories, protein, fat, and carbohydrates"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рассчитывать калорийность, белки, жиры и углеводы"
+          }
+        }
+      }
+    },
     "account.nutrition.show" : {
       "localizations" : {
         "en" : {

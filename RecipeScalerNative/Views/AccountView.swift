@@ -552,7 +552,13 @@ struct AccountView: View {
                     Task { @MainActor in await viewModel.setShowNutrition(value) }
                 }
             )) {
-                Text("account.nutrition.show").appBody()
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("account.nutrition.show").appBody()
+                    Text("account.nutrition.footer")
+                        .appFootnote()
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 2)
+                }
             }
 
         } header: {
