@@ -153,7 +153,14 @@ struct ImportRecipeSheet: View {
             ) { result in
                 handleFileImportSelection(result)
             }
-            .onAppear { resetState() }
+            .onAppear {
+                resetState()
+                if DebugLaunchOptions.screenshotCapture {
+                    AppLog.info(.app, "screenshot_import_ready", data: [
+                        "mode": mode.rawValue,
+                    ])
+                }
+            }
             .onChange(of: mode) { _, _ in
                 // Only wipe transient state on user-initiated tab switches.
                 // System-driven fallback (offline auto-switch in
@@ -171,6 +178,8 @@ struct ImportRecipeSheet: View {
                 // do NOT auto-restore the previous mode, by design: once the
                 // user has been moved to `.file`, switching back automatically
                 // would be surprising.
+                // Screenshot capture always stays on Text (marketing default).
+                if DebugLaunchOptions.screenshotCapture { return }
                 if !online, mode != .file {
                     applySystemMode(.file)
                 }
@@ -397,7 +406,10 @@ struct ImportRecipeSheet: View {
     /// visually honest state during the normal 1–3s cold-launch window —
     /// `SyncStatusSheet` shows a spinner, not `wifi.slash`, in these states.
     /// Matches the contract used for `submit()`'s pre-check below.
+    /// Screenshot capture pretends online so About/App Store shots land on
+    /// Text with the Import button (not offline File / «Попробуйте позже»).
     private var isOnline: Bool {
+        if DebugLaunchOptions.screenshotCapture { return true }
         switch syncService.connectionState {
         case .connected, .connecting, .reconnecting:
             return true
@@ -614,7 +626,9 @@ struct ImportRecipeSheet: View {
         // Route through `applySystemMode` to skip the `onChange(of: mode)` wipe
         // (irrelevant here since we wipe everything below, but keeps the
         // no-wipe-on-system-change invariant uniform).
-        let targetMode: ImportMode = isOnline ? .text : .file
+        // Screenshot capture always opens Text — marketing default for About.
+        let targetMode: ImportMode =
+            DebugLaunchOptions.screenshotCapture || isOnline ? .text : .file
         if mode != targetMode {
             applySystemMode(targetMode)
         }
