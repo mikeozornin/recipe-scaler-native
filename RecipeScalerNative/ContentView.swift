@@ -220,6 +220,11 @@ struct ContentView: View {
             #endif
             if let userId = effectiveUserId {
                 await container.bootstrap(userId: userId)
+                #if DEBUG
+                container.shellCoordinator.openDebugRecipeIfNeeded(
+                    in: container.sync.collectionEntries
+                )
+                #endif
             } else {
                 container.sync.stop()
                 container.spotlight.stop()
@@ -233,7 +238,10 @@ struct ContentView: View {
                 entries.first(where: { $0.id == recipeId && !$0.deleted })?.name
             }
             container.timer.refreshLiveActivities()
-            container.shellCoordinator.resolvePendingSpotlightRecipe(in: entries)
+        container.shellCoordinator.resolvePendingSpotlightRecipe(in: entries)
+            #if DEBUG
+            container.shellCoordinator.openDebugRecipeIfNeeded(in: entries)
+            #endif
         }
     }
 }

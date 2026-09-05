@@ -51,4 +51,25 @@ enum DebugSimulatorAutoLogin {
         return bundledDeviceToken
     }
 }
+
+/// Launch-env session for capture scripts and XCUITest (`SIMCTL_CHILD_E2E_*`).
+/// Applied in `AuthService.init` so socket handshake never uses a leftover
+/// Keychain session / debug seed.
+enum E2ELaunchCredentials {
+    static func fromEnvironment(
+        _ env: [String: String] = ProcessInfo.processInfo.environment
+    ) -> (userId: String, deviceToken: String, seedPhrase: String?)? {
+        guard let userId = env["E2E_OVERRIDE_USER_ID"], !userId.isEmpty,
+              let deviceToken = env["E2E_OVERRIDE_DEVICE_TOKEN"], !deviceToken.isEmpty
+        else {
+            return nil
+        }
+        let seed = env["E2E_OVERRIDE_SEED_PHRASE"]
+        return (
+            userId,
+            deviceToken,
+            (seed?.isEmpty == false) ? seed : nil
+        )
+    }
+}
 #endif

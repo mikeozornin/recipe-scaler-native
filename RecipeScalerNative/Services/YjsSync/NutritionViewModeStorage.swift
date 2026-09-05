@@ -42,4 +42,10 @@ enum NutritionSettings {
     static var isGlobalEnabled: Bool {
         (UserDefaults.standard.object(forKey: globalEnabledKey) as? Bool) ?? true
     }
+
+    /// Review 2026.09.04 №19: single write path for the global flag — the
+    /// ViewModel and the server sync both used to write the raw key.
+    static func setGlobalEnabled(_ enabled: Bool) {
+        UserDefaults.standard.set(enabled, forKey: globalEnabledKey)
+    }
 }

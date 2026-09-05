@@ -112,6 +112,12 @@ public final class APIClient: @unchecked Sendable {
     }
 
     /// Builds an authenticated GET for recipe image bytes (used by `ImageCacheService`).
+    ///
+    /// Auth headers go only to the API host (review 2026.09.04 №9): an
+    /// absolute `avatarUrl`/`imageUrl` from the server is trusted as a
+    /// location, not as an auth target — a foreign host would receive the
+    /// Bearer token (and log it) without ever being vetted. Foreign URLs are
+    /// fetched unauthenticated, mirroring `PublicImageCacheService`.
     public func recipeImageDownloadRequest(
         remoteURL: URL,
         etag: String?,
@@ -121,11 +127,13 @@ public final class APIClient: @unchecked Sendable {
         request.httpMethod = "GET"
         request.cachePolicy = .reloadIgnoringLocalCacheData
 
-        let snapshot = authLock.withLock { $0 }
-        if let token = snapshot.authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        } else if let userId = snapshot.userId {
-            request.setValue(userId, forHTTPHeaderField: "x-user-id")
+        if Self.isAPIHost(remoteURL.host) {
+            let snapshot = authLock.withLock { $0 }
+            if let token = snapshot.authToken {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            } else if let userId = snapshot.userId {
+                request.setValue(userId, forHTTPHeaderField: "x-user-id")
+            }
         }
         if let etag, !etag.isEmpty {
             request.setValue(etag, forHTTPHeaderField: "If-None-Match")
@@ -133,6 +141,12 @@ public final class APIClient: @unchecked Sendable {
             request.setValue(lastModified, forHTTPHeaderField: "If-Modified-Since")
         }
         return request
+    }
+
+    /// Whether `host` belongs to the trusted API origin (baseURL + `www.`).
+    private static func isAPIHost(_ host: String?) -> Bool {
+        guard let host, !host.isEmpty else { return false }
+        return Config.universalLinkHosts.contains(host.lowercased())
     }
 
     // MARK: - Request Builder

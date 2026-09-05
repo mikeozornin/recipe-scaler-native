@@ -53,6 +53,13 @@ final class WidgetPushRegistrar {
 
     /// Best-effort DELETE + clear local cache (logout / account wipe).
     func unregister() async {
+        // Nothing registered on this device means nothing to DELETE. This
+        // also keeps container unit tests from firing unauthenticated DELETE
+        // traffic while a later suite asserts on the same App Group cache.
+        guard hasCachedToken else {
+            AppLog.info(.push, "widget_push_token_unregister_skipped_no_token")
+            return
+        }
         configureAPIClientFromSharedAuth()
         let deviceId = SharedDeviceId.current()
         let outcome = await WidgetPushTokenClient.unregister(deviceId: deviceId)

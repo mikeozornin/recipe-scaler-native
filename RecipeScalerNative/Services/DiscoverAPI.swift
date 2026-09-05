@@ -237,18 +237,40 @@ enum DiscoverAPI {
         let encoded = username.addingPercentEncoding(
             withAllowedCharacters: .urlPathAllowed
         ) ?? username
-        let request = try api.buildRequest(
-            path: "/api/users/public/\(encoded)",
-            method: "GET",
-            body: nil,
-            headers: [:]
-        )
-        let (data, response) = try await AppURLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
+        var data = Data()
+        var http: HTTPURLResponse?
+        for attempt in 1...4 {
+            let request = try api.buildRequest(
+                path: "/api/users/public/\(encoded)",
+                method: "GET",
+                body: nil,
+                headers: [:]
+            )
+            let pair = try await AppURLSession.shared.data(for: request)
+            data = pair.0
+            http = pair.1 as? HTTPURLResponse
+            guard let status = http?.statusCode else {
+                throw APIError.invalidResponse
+            }
+            if status == 429, attempt < 4 {
+                AppLog.info(.app, "discover_public_profile_rate_limited", data: [
+                    "username": username,
+                    "attempt": "\(attempt)",
+                ])
+                try await Task.sleep(nanoseconds: UInt64(attempt) * 2_000_000_000)
+                continue
+            }
+            guard (200...299).contains(status) else {
+                AppLog.error(.app, "discover_public_profile_http_error", data: [
+                    "username": username,
+                    "status": "\(status)",
+                ])
+                throw APIError.httpError(statusCode: status)
+            }
+            break
         }
-        guard (200...299).contains(http.statusCode) else {
-            throw APIError.httpError(statusCode: http.statusCode)
+        guard http != nil else {
+            throw APIError.invalidResponse
         }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .custom { decoder in

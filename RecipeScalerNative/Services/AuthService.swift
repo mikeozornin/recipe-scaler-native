@@ -295,7 +295,13 @@ class AuthService {
         // Architecture review H3: apply DEBUG simulator auto-login here — before
         // any other service reads `userId` — instead of waiting for
         // `AppContainer.bootstrap`, which left a race window after Keychain restore.
+        // E2E / capture launch env must win first: otherwise restore + token
+        // recovery exchange a leftover debug seed and the store-user collection
+        // never syncs (empty library screenshots).
         #if DEBUG
+        if applyE2EOverrideSessionOnLaunchIfNeeded() {
+            return
+        }
         if applyDebugSimulatorAutoLoginOnLaunchIfNeeded() {
             return
         }
@@ -399,7 +405,8 @@ class AuthService {
     /// (account deletion, admin revoke, rotation) — only treat the account as
     /// deleted when the server confirms via `exchange-seed-for-token` →
     /// `404 User not found`. On success the session is silently recovered;
-    /// on transient failure we light-revoke (clear auth, keep local data).
+    /// on transient failure the session is kept for a silent retry (review
+    /// 2026.09.04 №12 — wiping the seed locked users out of intact data).
     ///
     /// Web parity: `handleAuthFailureResponse()` in
     /// `recipe-scaler-web/recipe-scaler/src/services/auth-session-revoked.ts`.
@@ -414,7 +421,7 @@ class AuthService {
 
         let seed: String
         do {
-            seed = try retrieveSeedPhraseFromKeychain()
+            seed = try seedPhraseForDeviceTokenRecovery()
         } catch {
             // No seed to recover with — wipe silently. Local data stays
             // (logout() path wipes seed; recovery without it is impossible).
@@ -443,10 +450,19 @@ class AuthService {
             await performInvalidationTeardown(wipeReason: .accountDeletedRest)
 
         case .transient:
-            AppLog.info(.app, "device_token_recovery_transient")
-            // Light revoke — keep local data so the user can retry once the
-            // transient condition clears. Web parity: "light-revoke" branch.
-            wipeLocalSession(reason: .lightRevoke)
+            // Review 2026.09.04 №12: keep the session on transient failures
+            // (5xx from a flaky load balancer, network outage during exchange).
+            // The old `wipeLocalSession(reason: .lightRevoke)` deleted the seed
+            // phrase, making silent recovery impossible on next launch — a
+            // user without a seed backup was permanently locked out of intact
+            // local data. This mirrors the cold-start probe semantics
+            // (`performStaleSessionHealthCheck`: `.transient` → keep session)
+            // and the `testHealthCheck_transient_keepsSession` invariant.
+            // Convergence: stale token keeps 401-ing → re-entry guard releases
+            // → next recovery attempt retries the exchange. Intentional
+            // divergence from web light-revoke (web asks for manual seed
+            // re-entry; native can retry silently because the seed survives).
+            AppLog.info(.app, "device_token_recovery_transient_keep_session")
         }
     }
 
@@ -524,6 +540,19 @@ class AuthService {
         await migrateDeviceTokenIfNeeded()
     }
 
+    /// Seed used when the current Bearer is rejected. Capture / E2E launch env
+    /// must win over a leftover Keychain phrase (debug autologin) so recovery
+    /// re-issues a token for the injected user, not a different account.
+    private func seedPhraseForDeviceTokenRecovery() throws -> String {
+        #if DEBUG
+        if let envSeed = ProcessInfo.processInfo.environment["E2E_OVERRIDE_SEED_PHRASE"],
+           !envSeed.isEmpty {
+            return envSeed
+        }
+        #endif
+        return try retrieveSeedPhraseFromKeychain()
+    }
+
     #if DEBUG
     /// Injects a full Bearer session for DEBUG simulator auto-login (parity with
     /// `E2E_OVERRIDE_USER_ID` + `E2E_OVERRIDE_DEVICE_TOKEN`). Also parks the
@@ -532,6 +561,35 @@ class AuthService {
     func applyDebugSimulatorSession(userId: String, deviceToken: String, seedPhrase: String) {
         applySession(userId: userId, deviceToken: deviceToken)
         try? saveSeedPhraseToKeychain(seedPhrase)
+    }
+
+    /// Synchronous cold-start inject for `DebugSimulatorAutoLogin` (architecture
+    /// review H3). Prefer an existing App Group token for the debug user, else
+    /// the launch-env / bundled token. Returns `true` when credentials were
+    /// applied so `init` can skip Keychain restore of a different session.
+    ///
+    /// Cold-start inject for capture scripts and XCUITest. Must run before
+    /// Keychain restore so socket handshake uses the launched token, and must
+    /// persist `E2E_OVERRIDE_SEED_PHRASE` so token recovery cannot swap in the
+    /// leftover debug-simulator seed.
+    @discardableResult
+    func applyE2EOverrideSessionOnLaunchIfNeeded() -> Bool {
+        guard let creds = E2ELaunchCredentials.fromEnvironment() else { return false }
+        if let seed = creds.seedPhrase {
+            applyDebugSimulatorSession(
+                userId: creds.userId,
+                deviceToken: creds.deviceToken,
+                seedPhrase: seed
+            )
+        } else {
+            applySession(userId: creds.userId, deviceToken: creds.deviceToken)
+        }
+        AppLog.info(.app, "e2e_override_credentials_injected", data: [
+            "userId": UserIdFormatter.redact(creds.userId),
+            "phase": "auth_init",
+            "hasSeed": creds.seedPhrase == nil ? "false" : "true",
+        ])
+        return true
     }
 
     /// Synchronous cold-start inject for `DebugSimulatorAutoLogin` (architecture

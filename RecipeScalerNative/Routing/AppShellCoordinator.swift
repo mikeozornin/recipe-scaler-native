@@ -64,6 +64,11 @@ final class AppShellCoordinator {
     /// active account and tear itself down (cancel stream / bootstrap tasks).
     private(set) var assistantSessionEpoch = 0
 
+    #if DEBUG
+    /// One-shot guard for `-OpenRecipeId` / `-OpenRecipeName` shell navigation.
+    private var didOpenDebugLaunchRecipe = false
+    #endif
+
     init(
         syncService: YjsSyncService,
         deepLinkRouter: DeepLinkRouter,
@@ -289,14 +294,46 @@ final class AppShellCoordinator {
     // MARK: - DEBUG
 
     #if DEBUG
+    /// Store / verify launches: open a recipe by id or name once the collection is loaded.
+    /// Uses the shell `recipesPath` (same as Spotlight) so TabView lazy tabs cannot
+    /// swallow a push that only happened inside `RecipeListView`.
+    func openDebugRecipeIfNeeded(in entries: [CollectionEntry]) {
+        guard !didOpenDebugLaunchRecipe else { return }
+        let live = entries.filter { !$0.deleted }
+        let recipeId: String?
+        if let explicitId = DebugLaunchOptions.openRecipeId,
+           live.contains(where: { $0.id == explicitId }) {
+            recipeId = explicitId
+        } else if let name = DebugLaunchOptions.openRecipeName?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !name.isEmpty {
+            recipeId = live.first(where: { entry in
+                let display = RecipeTitleEmoji.displayName(for: entry.name)
+                return entry.name.caseInsensitiveCompare(name) == .orderedSame
+                    || display.caseInsensitiveCompare(name) == .orderedSame
+                    || entry.name.localizedCaseInsensitiveContains(name)
+                    || display.localizedCaseInsensitiveContains(name)
+            })?.id
+        } else {
+            recipeId = nil
+        }
+        guard let recipeId else { return }
+        didOpenDebugLaunchRecipe = true
+        selectedTab = .recipes
+        recipesPath = NavigationPath()
+        recipesPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
+        AppLog.info(.app, "debug_open_recipe_shell", data: ["recipeId": recipeId])
+    }
+
     func openDebugTabIfNeeded(_ tab: AppTab?) {
         if let slug = DebugLaunchOptions.openDiscoverCollectionSlug, !slug.isEmpty {
+            clearScreenshotNavigationOverrides()
             selectedTab = .discover
             discoverPath = NavigationPath()
             discoverPath.append(DiscoverRoute.collection(slug))
             return
         }
         if let username = DebugLaunchOptions.openDiscoverProfileUsername, !username.isEmpty {
+            clearScreenshotNavigationOverrides()
             selectedTab = .discover
             discoverPath = NavigationPath()
             discoverPath.append(DiscoverRoute.profile(username))
@@ -309,6 +346,12 @@ final class AppShellCoordinator {
         } else {
             selectedTab = tab
         }
+    }
+
+    private func clearScreenshotNavigationOverrides() {
+        pendingSpotlightRecipeId = nil
+        deepLinkRouter.clear()
+        _ = DeepLinkRouter.consumePendingRecipeId()
     }
     #endif
 

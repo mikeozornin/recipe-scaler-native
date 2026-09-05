@@ -437,10 +437,10 @@ struct AssistantSheet: View {
         }
 
         let now = Date().timeIntervalSince1970
-        let lastOpenedAt = UserDefaults.standard.double(forKey: Self.sessionLastOpenedAtKey)
+        let lastOpenedAt = AssistantSessionStore.lastOpenedAt
         if lastOpenedAt > 0,
            now - lastOpenedAt < Self.newChatTimeout,
-           let savedThreadId = UserDefaults.standard.string(forKey: Self.sessionThreadIdKey),
+           let savedThreadId = AssistantSessionStore.threadId,
            threads.contains(where: { $0.id == savedThreadId }) {
             guard isCurrent(generation) else { return }
             await openThread(savedThreadId)
@@ -494,7 +494,7 @@ struct AssistantSheet: View {
         if clearExternalRequest {
             pendingExternalRequest = nil
         }
-        UserDefaults.standard.removeObject(forKey: Self.sessionThreadIdKey)
+        AssistantSessionStore.clearThreadId()
     }
 
     private func openThread(_ id: String) async {
@@ -972,18 +972,10 @@ struct AssistantSheet: View {
     // MARK: - Session persistence
 
     private func persistSession() {
-        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Self.sessionLastOpenedAtKey)
-        if let threadId {
-            UserDefaults.standard.set(threadId, forKey: Self.sessionThreadIdKey)
-        } else {
-            UserDefaults.standard.removeObject(forKey: Self.sessionThreadIdKey)
-        }
+        AssistantSessionStore.persist(threadId: threadId)
     }
 
     private func stampSession() {
         persistSession()
     }
-
-    private static let sessionThreadIdKey = "assistant.session.threadId"
-    private static let sessionLastOpenedAtKey = "assistant.session.lastOpenedAt"
 }

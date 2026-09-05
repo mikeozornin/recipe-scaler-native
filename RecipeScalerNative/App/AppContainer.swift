@@ -139,7 +139,10 @@ final class AppContainer {
 
     // MARK: - Construction
 
-    init(modelContext: ModelContext) throws {
+    init(
+        modelContext: ModelContext,
+        timerSnapshotStore: TimerSnapshotStoring = TimerSnapshotStore.MutableStore()
+    ) throws {
         let database: YrsDatabase
         // Under XCTest/UI-test hosts we don't need on-disk persistence (each test
         // builds its own `YDocStore.inMemory()`), and the test host's sandbox often
@@ -188,7 +191,8 @@ final class AppContainer {
             timerSync: timerSync,
             liveActivity: timerLiveActivityCoordinator,
             pushSchedule: pushSchedule,
-            modelContext: modelContext
+            modelContext: modelContext,
+            snapshotStore: timerSnapshotStore
         )
         self.recipeImage = RecipeImageService(
             imageCache: imageCache,
@@ -290,6 +294,9 @@ final class AppContainer {
         APIClient.shared.unauthorizedHandler = { [weak self] in
             await Task { @MainActor in
                 await self?.auth.handleDeviceTokenInvalid()
+                if self?.auth.isAuthenticated == true {
+                    self?.sync.reconnectAfterCredentialChange()
+                }
             }.value
         }
         sync.authInvalidationHandler = { [weak self] reason in
@@ -353,18 +360,9 @@ final class AppContainer {
         // processes, `xcrun simctl launch` on shared devices, share-extension
         // co-processes). See review finding Critical #1.
         #if DEBUG
-        if let envUserId = ProcessInfo.processInfo.environment["E2E_OVERRIDE_USER_ID"],
-           let envToken = ProcessInfo.processInfo.environment["E2E_OVERRIDE_DEVICE_TOKEN"],
-           !envUserId.isEmpty, !envToken.isEmpty {
-            SharedAuthStore.userId = envUserId
-            SharedAuthStore.token = envToken
-            auth.userId = envUserId
-            auth.token = envToken
-            auth.isAuthenticated = true
-            APIClient.shared.configure(authToken: envToken)
-            APIClient.shared.configure(userId: envUserId)
+        if auth.applyE2EOverrideSessionOnLaunchIfNeeded() {
             // Skip stale-session health check for E2E — freshly-registered
-            // user is guaranteed to exist on the server.
+            // or capture store user is guaranteed to exist on the server.
             didPerformStaleSessionHealthCheck = true
         }
         // DEBUG simulator auto-login is applied in `AuthService.init` (H3) so
@@ -549,9 +547,23 @@ final class AppContainer {
         resetBootstrapAfterLogout()
         shellCoordinator.resetShellStateForLogout()
         discoverListState.clearAll()
+        // Teardown must not send authenticated traffic: by this point the
+        // outgoing account's credentials are already gone (logout wipes
+        // SharedAuthStore/Keychain first). Clearing the client here makes the
+        // outgoing DELETE explicitly credential-free; the unregister guard
+        // (`WidgetPushRegistrar.unregister` skips when no cached token exists)
+        // is what actually stops the 401 → wipe → teardown cascade from
+        // repeating across account invalidation and container teardowns.
+        APIClient.shared.configure(authToken: nil)
+        APIClient.shared.configure(userId: nil)
         sync.stop()
         spotlight.stop()
         await spotlight.clearAll()
+        // Review 2026.09.04 №3: pending timer sync events, SwiftData timers,
+        // local notifications and the widget snapshot belong to the outgoing
+        // account — wipe them or account A's timers ring in account B's session.
+        timerSync.clearForLogout()
+        timer.clearForLogout()
         // Spec 055/058: end Live Activities + wipe cached push tokens so the
         // Lock Screen and UserDefaults cannot leak the previous user's timers.
         await timerLiveActivityCoordinator.clearForLogout()

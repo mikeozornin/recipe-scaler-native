@@ -66,6 +66,16 @@ struct DiscoverPublicProfileView: View {
             await model?.loadIfNeeded(username: username)
             if case .loaded(let response) = model?.state {
                 searchStore.setItems(DiscoverSearch.sortedByRecipeName(response.recipes) { $0.name })
+                #if DEBUG
+                await DebugLaunchOptions.signalScreenshotDiscoverProfileMediaReadyIfNeeded(response: response)
+                #endif
+            } else if case .failed(let errorMessage) = model?.state {
+                #if DEBUG
+                AppLog.error(.app, "screenshot_discover_failed", data: [
+                    "username": username,
+                    "error": errorMessage,
+                ])
+                #endif
             }
         }
         .refreshable {

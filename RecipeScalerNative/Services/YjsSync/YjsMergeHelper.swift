@@ -22,7 +22,30 @@ final class YjsMergeHelper: NSObject {
 
     private var webView: WKWebView?
     private var ready = false
-    private var loadContinuations: [CheckedContinuation<Void, Never>] = []
+
+    /// A parked `ensureReady()` waiter plus its last-resort timeout task.
+    /// Per-waiter ownership matters: a stale timeout must not reset a fresh
+    /// retry started by a different caller, so `resume` cancels its own task.
+    private final class LoadWaiter {
+        let continuation: CheckedContinuation<Bool, Never>
+        var timeoutTask: Task<Void, Never>?
+
+        init(continuation: CheckedContinuation<Bool, Never>) {
+            self.continuation = continuation
+        }
+
+        func resume(returning value: Bool) {
+            timeoutTask?.cancel()
+            timeoutTask = nil
+            continuation.resume(returning: value)
+        }
+    }
+
+    private var loadWaiters: [LoadWaiter] = []
+
+    /// Upper bound for the bundled HTML load + bootstrap. Local file loads are
+    /// fast; anything longer means the WebContent process is wedged/killed.
+    private static let loadTimeoutSeconds: TimeInterval = 10
 
     override init() {
         super.init()
@@ -61,10 +84,40 @@ final class YjsMergeHelper: NSObject {
             view.loadFileURL(htmlURL, allowingReadAccessTo: Bundle.main.bundleURL)
         }
         if ready { return }
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            loadContinuations.append(continuation)
+        // Bounded wait (review 2026.09.04 №2): a single failed load (network-less
+        // bundle, WebContent process killed by the OS) must not park `ensureReady()`
+        // forever — callers like `drainOfflineQueue` hold the offline pipeline while
+        // waiting. Navigation callbacks resume waiters with the outcome; the per-waiter
+        // timeout is the last-resort unblock. `webView` is reset on every failure path
+        // so the next call retries with a fresh view instead of a dead instance.
+        let loadSucceeded: Bool = await withTaskCancellationHandler {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+                let waiter = LoadWaiter(continuation: continuation)
+                loadWaiters.append(waiter)
+                waiter.timeoutTask = Task { [weak self, weak waiter] in
+                    try? await Task.sleep(nanoseconds: UInt64(Self.loadTimeoutSeconds * 1_000_000_000))
+                    guard !Task.isCancelled, let self, let waiter else { return }
+                    // Timed out and still parked: unblock this waiter and
+                    // drop the wedged web view so the next call retries.
+                    guard self.loadWaiters.contains(where: { $0 === waiter }) else { return }
+                    AppLog.notice(.sync, "yjs_merge_helper_load_timeout", data: [
+                        "timeoutSeconds": "\(Self.loadTimeoutSeconds)"
+                    ])
+                    self.loadWaiters.removeAll { $0 === waiter }
+                    self.resetWebView()
+                    waiter.resume(returning: false)
+                    // Other waiters parked on the same dead view fail too.
+                    self.resumeWaiters(success: false)
+                }
+            }
+        } onCancel: {
+            Task { @MainActor in
+                self.resumeWaiters(success: false)
+            }
         }
-        if !ready { throw YjsMergeHelperError.notReady }
+        if !loadSucceeded || !ready {
+            throw YjsMergeHelperError.notReady
+        }
     }
 
     private func evaluateByteArray(script: String) async throws -> Data {
@@ -95,11 +148,25 @@ final class YjsMergeHelper: NSObject {
     private func markReady() {
         guard !ready else { return }
         ready = true
-        let waiters = loadContinuations
-        loadContinuations.removeAll()
+        resumeWaiters(success: true)
+    }
+
+    /// Resumes all parked waiters. `success == false` keeps `ready` unset so
+    /// `ensureReady()` throws `notReady` after resumption.
+    private func resumeWaiters(success: Bool) {
+        let waiters = loadWaiters
+        loadWaiters.removeAll()
         for waiter in waiters {
-            waiter.resume()
+            waiter.resume(returning: success)
         }
+    }
+
+    /// Drops the failed/killed web view so the next `ensureReady()` call
+    /// reloads from scratch instead of hanging on a dead instance.
+    private func resetWebView() {
+        webView?.stopLoading()
+        webView?.navigationDelegate = nil
+        webView = nil
     }
 }
 
@@ -109,16 +176,27 @@ extension YjsMergeHelper: WKNavigationDelegate {
             Task { @MainActor in
                 if (value as? Bool) == true {
                     self?.markReady()
+                } else {
+                    // HTML loaded but the merge bootstrap never became ready
+                    // (broken bundle). Report failure so waiters don't park.
+                    self?.resetWebView()
+                    self?.resumeWaiters(success: false)
                 }
             }
         }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        let waiters = loadContinuations
-        loadContinuations.removeAll()
-        for waiter in waiters {
-            waiter.resume()
-        }
+        // Review 2026.09.04 №2: a failed load must reset the view (retry on
+        // next call) and unblock waiters with an error, not park them forever.
+        resetWebView()
+        resumeWaiters(success: false)
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        // WebContent process killed (memory pressure) — same reset path.
+        ready = false
+        resetWebView()
+        resumeWaiters(success: false)
     }
 }

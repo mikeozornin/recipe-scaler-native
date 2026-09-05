@@ -77,7 +77,12 @@ struct RecipeListView: View {
 
     /// Whether we should show the collections root instead of the flat list.
     private var showsCollectionsRoot: Bool {
-        viewMode == .collections && !isSearching
+        #if DEBUG
+        if DebugLaunchOptions.openRecipeName != nil || DebugLaunchOptions.openRecipeId != nil {
+            return false
+        }
+        #endif
+        return viewMode == .collections && !isSearching
     }
 
     private var showsDatabaseInitFailedBanner: Bool {
@@ -215,7 +220,16 @@ struct RecipeListView: View {
                 openDebugRecipeIfNeeded()
             }
             .task {
-                openDebugRecipeIfNeeded()
+                for _ in 0..<40 {
+                    openDebugRecipeIfNeeded()
+                    if didOpenDebugRecipe { return }
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                }
+            }
+            .task(id: syncService.collectionEntries.count) {
+                await DebugLaunchOptions.signalScreenshotListMediaReadyIfNeeded(
+                    entries: syncService.collectionEntries
+                )
             }
             #endif
             .toolbar {
@@ -498,14 +512,27 @@ struct RecipeListView: View {
             recipeId = explicitId
         } else if let name = DebugLaunchOptions.openRecipeName?.trimmingCharacters(in: .whitespacesAndNewlines),
                   !name.isEmpty {
-            recipeId = entries.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame })?.id
-                ?? entries.first(where: { $0.name.localizedCaseInsensitiveContains(name) })?.id
+            recipeId = entries.first(where: { entry in
+                let display = RecipeTitleEmoji.displayName(for: entry.name)
+                return entry.name.caseInsensitiveCompare(name) == .orderedSame
+                    || display.caseInsensitiveCompare(name) == .orderedSame
+                    || entry.name.localizedCaseInsensitiveContains(name)
+                    || display.localizedCaseInsensitiveContains(name)
+            })?.id
+            if recipeId == nil, !entries.isEmpty {
+                AppLog.info(.app, "debug_open_recipe_unmatched", data: [
+                    "wanted": name,
+                    "count": "\(entries.count)",
+                    "names": entries.prefix(12).map(\.name).joined(separator: " | "),
+                ])
+            }
         } else {
             recipeId = nil
         }
         guard let recipeId else { return }
         didOpenDebugRecipe = true
         navigationPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
+        AppLog.info(.app, "debug_open_recipe", data: ["recipeId": recipeId])
     }
     #endif
 }

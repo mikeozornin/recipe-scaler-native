@@ -187,4 +187,28 @@ final class AuthServiceStaleSessionTests: XCTestCase {
         throw XCTSkip("DEBUG simulator auto-login is DEBUG-only")
         #endif
     }
+
+    func testE2ELaunchCredentials_parsesUserTokenAndSeed() {
+        #if DEBUG
+        XCTAssertNil(E2ELaunchCredentials.fromEnvironment([:]))
+        XCTAssertNil(E2ELaunchCredentials.fromEnvironment([
+            "E2E_OVERRIDE_USER_ID": "user-1",
+        ]))
+        let withoutSeed = E2ELaunchCredentials.fromEnvironment([
+            "E2E_OVERRIDE_USER_ID": "user-1",
+            "E2E_OVERRIDE_DEVICE_TOKEN": "tok",
+        ])
+        XCTAssertEqual(withoutSeed?.userId, "user-1")
+        XCTAssertEqual(withoutSeed?.deviceToken, "tok")
+        XCTAssertNil(withoutSeed?.seedPhrase)
+        let withSeed = E2ELaunchCredentials.fromEnvironment([
+            "E2E_OVERRIDE_USER_ID": "user-1",
+            "E2E_OVERRIDE_DEVICE_TOKEN": "tok",
+            "E2E_OVERRIDE_SEED_PHRASE": "alpha beta gamma",
+        ])
+        XCTAssertEqual(withSeed?.seedPhrase, "alpha beta gamma")
+        #else
+        throw XCTSkip("E2E launch credentials are DEBUG-only")
+        #endif
+    }
 }

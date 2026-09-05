@@ -122,7 +122,7 @@ final class AccountSettingsViewModel {
             // account switching; re-reading it here would race that lifecycle.
             if let serverNutrition = vkusvillSettings.nutritionEnabledFromServer {
                 showNutrition = serverNutrition
-                UserDefaults.standard.set(serverNutrition, forKey: NutritionSettings.globalEnabledKey)
+                NutritionSettings.setGlobalEnabled(serverNutrition)
             }
             statusMessage = nil
         } catch {
@@ -241,12 +241,12 @@ final class AccountSettingsViewModel {
     func setShowNutrition(_ enabled: Bool) async {
         let previous = showNutrition
         showNutrition = enabled
-        UserDefaults.standard.set(enabled, forKey: NutritionSettings.globalEnabledKey)
+        NutritionSettings.setGlobalEnabled(enabled)
         do {
             try await AccountAPI.updateNutritionEnabled(enabled)
         } catch {
             showNutrition = previous
-            UserDefaults.standard.set(previous, forKey: NutritionSettings.globalEnabledKey)
+            NutritionSettings.setGlobalEnabled(previous)
             setStatus(from: error)
         }
     }
@@ -387,8 +387,10 @@ final class AccountSettingsViewModel {
 
     func logout(syncService: YjsSyncService) async {
         vkusvillSettings.clearForLogout()
-        if let userId = auth.userId,
-           let deviceId = UserDefaults.standard.string(forKey: "deviceId") {
+        if let userId = auth.userId {
+            // SharedDeviceId facade (review 2026.09.04 №6) — same source of
+            // truth as the sync layer, with the App Group mirror maintained.
+            let deviceId = SharedDeviceId.current()
             await AccountAPI.logoutDevice(userId: userId, deviceId: deviceId)
         }
         await syncService.clearSessionForLogout()

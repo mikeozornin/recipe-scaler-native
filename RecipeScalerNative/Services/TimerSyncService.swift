@@ -70,6 +70,13 @@ final class TimerSyncService {
     weak var timerManager: TimerManager?
     var sendTimerEvent: ((SyncedTimerEventType, String, [String: Any]) async -> Bool)?
 
+    /// Test seam: replaces `GET /api/v1/timers/active` (review 2026.09.04 №4).
+    var activeTimersLoader: (() async throws -> ActiveTimersResponse)?
+
+    /// Test seam: replaces `POST /api/v1/timers/sync` (review 2026.09.04 №11).
+    /// Receives the exact request body; returns the parsed response.
+    var syncPoster: ((Data) async throws -> TimerSyncHTTPResponse)?
+
     init() {
         loadState()
         deviceId = Self.storedDeviceId()
@@ -85,6 +92,23 @@ final class TimerSyncService {
         self.userId = userId
         self.deviceId = deviceId
         self.timerManager = timerManager
+    }
+
+    /// Review 2026.09.04 №3: logout / account switch must not leak queued timer
+    /// events into the next account. Without this, user A's pending
+    /// `timer_created` events flush to the server under user B's Bearer —
+    /// ghost timers ringing on all of B's devices.
+    func clearForLogout() {
+        syncTask?.cancel()
+        syncTask = nil
+        userId = nil
+        processedEventKeys.removeAll()
+        state = TimerSyncPersistedState(lastSyncAt: 0, pendingEvents: [])
+        UserDefaults.standard.removeObject(forKey: storageKey)
+        lastSyncTime = .distantPast
+        lastLoadTime = .distantPast
+        isLoadingTimers = false
+        AppLog.info(.timer, "timer_sync_cleared_for_logout")
     }
 
     func initializeAfterAuth() {
@@ -200,9 +224,14 @@ final class TimerSyncService {
         await flushPendingSyncImmediately()
 
         do {
-            let response: ActiveTimersResponse = try await APIClient.shared.performDecodable(
-                path: "/api/v1/timers/active"
-            )
+            let response: ActiveTimersResponse
+            if let activeTimersLoader {
+                response = try await activeTimersLoader()
+            } else {
+                response = try await APIClient.shared.performDecodable(
+                    path: "/api/v1/timers/active"
+                )
+            }
             guard response.success, let timers = response.data?.timers else { return }
 
             let pendingDeletes = Set(
@@ -210,11 +239,20 @@ final class TimerSyncService {
                     .filter { $0.type == .timerDeleted && !$0.synced }
                     .map(\.timerId)
             )
+            // Review 2026.09.04 №4: offline-created timers whose POST has not
+            // landed on the server must survive the pull — the GET response
+            // does not know them yet, and dropping them here would silently
+            // delete user data from UI + SwiftData.
+            let pendingCreatedIds = Set(
+                state.pendingEvents
+                    .filter { $0.type == .timerCreated && !$0.synced }
+                    .map(\.timerId)
+            )
             let mapped = timers
                 .filter { !pendingDeletes.contains($0.timerId) }
                 .map { Self.recipeTimer(from: $0) }
 
-            timerManager?.replaceTimersFromServer(mapped)
+            timerManager?.replaceTimersFromServer(mapped, preservingLocalIds: pendingCreatedIds)
             AppLog.info(.timer, "Loaded \(mapped.count) active timer(s) from server")
         } catch {
             AppLog.notice(.timer, "Failed to load active timers: \(error.localizedDescription)")
@@ -264,16 +302,27 @@ final class TimerSyncService {
         ]
         guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else { return }
 
+        // Review 2026.09.04 №11: snapshot the exact event ids put on the wire.
+        // The server acks by timerId, so a naive `timerId`-only removal would
+        // also drop events enqueued for the same timer while the POST was in
+        // flight (pause acked → resume, enqueued mid-flight, silently lost).
+        let sentEventIds = Set(pending.map(\.id))
+
         do {
-            let response: TimerSyncHTTPResponse = try await APIClient.shared.performDecodable(
-                path: "/api/v1/timers/sync",
-                method: "POST",
-                body: bodyData
-            )
+            let response: TimerSyncHTTPResponse
+            if let syncPoster {
+                response = try await syncPoster(bodyData)
+            } else {
+                response = try await APIClient.shared.performDecodable(
+                    path: "/api/v1/timers/sync",
+                    method: "POST",
+                    body: bodyData
+                )
+            }
             if response.success, let synced = response.data?.syncedEvents {
                 let syncedSet = Set(synced)
                 state.pendingEvents.removeAll { event in
-                    syncedSet.contains(event.timerId)
+                    sentEventIds.contains(event.id) && syncedSet.contains(event.timerId)
                 }
                 state.lastSyncAt = Int64(Date().timeIntervalSince1970 * 1000)
                 saveState()
@@ -454,6 +503,11 @@ final class TimerSyncService {
               let decoded = try? JSONDecoder().decode(TimerSyncPersistedState.self, from: data)
         else { return }
         state = decoded
+    }
+
+    /// Test seam: read-only view of the unsynced queue (review 2026.09.04 №3/№4/№11 tests).
+    var pendingEventsForTesting: [TimerSyncQueuedEvent] {
+        state.pendingEvents.filter { !$0.synced }
     }
 
     private func saveState() {

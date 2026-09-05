@@ -13,11 +13,21 @@ final class WidgetPushRegistrarTests: XCTestCase {
     private let deviceIdKey = SharedDeviceId.standardKey
     private var savedDeviceId: String?
     private var savedAppGroupDeviceId: String?
+    private var savedPendingWidgetToken: String?
+    private var savedRegisteredWidgetToken: String?
 
     override func setUp() {
         super.setUp()
+        // A widget token POST started by an earlier suite can still be in
+        // flight when this suite registers the protocol: URLSession keeps the
+        // request running after that suite's tearDown reset the shared static
+        // counters. Drain before taking ownership of the stub so every count
+        // below measures only this test's requests.
+        drainWidgetPushTransport()
         savedDeviceId = UserDefaults.standard.string(forKey: deviceIdKey)
         savedAppGroupDeviceId = AppGroup.userDefaults?.string(forKey: SharedDeviceId.appGroupKey)
+        savedPendingWidgetToken = WidgetPushTokenClient.pendingTokenHex
+        savedRegisteredWidgetToken = WidgetPushTokenClient.registeredTokenHex
         UserDefaults.standard.set("device-widget-fixture", forKey: deviceIdKey)
         AppGroup.userDefaults?.set("device-widget-fixture", forKey: SharedDeviceId.appGroupKey)
         WidgetPushTokenClient.clearCachedToken()
@@ -33,6 +43,10 @@ final class WidgetPushRegistrarTests: XCTestCase {
     }
 
     override func tearDown() {
+        // Drain before unregistering: once the protocol is gone the request
+        // falls through to a real transport, and the next suite inherits the
+        // response side effects (401 handler, cache writes) off the stub.
+        drainWidgetPushTransport()
         WidgetPushRegistrarTestURLProtocol.reset()
         URLProtocol.unregisterClass(WidgetPushRegistrarTestURLProtocol.self)
         WidgetPushTokenClient.clearCachedToken()
@@ -46,6 +60,8 @@ final class WidgetPushRegistrarTests: XCTestCase {
         } else {
             AppGroup.userDefaults?.removeObject(forKey: SharedDeviceId.appGroupKey)
         }
+        WidgetPushTokenClient.pendingTokenHex = savedPendingWidgetToken
+        WidgetPushTokenClient.registeredTokenHex = savedRegisteredWidgetToken
         super.tearDown()
     }
 
@@ -60,11 +76,14 @@ final class WidgetPushRegistrarTests: XCTestCase {
             capturedBody = Self.bodyJSON(from: request)
             return Self.okResponse()
         }
-        let baseline = WidgetPushRegistrarTestURLProtocol.postCallCount
+        let baseline = WidgetPushRegistrarTestURLProtocol.postCallCount(forToken: "aabbccdd")
 
         let ok = await registrar.register(tokenHex: "aabbccdd")
         XCTAssertTrue(ok)
-        XCTAssertEqual(WidgetPushRegistrarTestURLProtocol.postCallCount - baseline, 1)
+        XCTAssertEqual(
+            WidgetPushRegistrarTestURLProtocol.postCallCount(forToken: "aabbccdd") - baseline,
+            1
+        )
         XCTAssertEqual(capturedBody?["token"] as? String, "aabbccdd")
         XCTAssertEqual(capturedBody?["device_id"] as? String, "device-widget-fixture")
         XCTAssertTrue(registrar.hasCachedToken)
@@ -78,10 +97,10 @@ final class WidgetPushRegistrarTests: XCTestCase {
         }
 
         _ = await registrar.register(tokenHex: "aabbccdd")
-        let first = WidgetPushRegistrarTestURLProtocol.postCallCount
+        let first = WidgetPushRegistrarTestURLProtocol.postCallCount(forToken: "aabbccdd")
         _ = await registrar.register(tokenHex: "aabbccdd")
         XCTAssertEqual(
-            WidgetPushRegistrarTestURLProtocol.postCallCount,
+            WidgetPushRegistrarTestURLProtocol.postCallCount(forToken: "aabbccdd"),
             first,
             "identical token must not re-POST"
         )
@@ -93,12 +112,22 @@ final class WidgetPushRegistrarTests: XCTestCase {
             guard request.httpMethod == "POST" else { return Self.okResponse() }
             return Self.okResponse()
         }
-        let baseline = WidgetPushRegistrarTestURLProtocol.postCallCount
+        let firstToken = "aabbccdd"
+        let secondToken = "11223344"
+        let firstBaseline = WidgetPushRegistrarTestURLProtocol.postCallCount(forToken: firstToken)
+        let secondBaseline = WidgetPushRegistrarTestURLProtocol.postCallCount(forToken: secondToken)
 
-        _ = await registrar.register(tokenHex: "aabbccdd")
-        _ = await registrar.register(tokenHex: "11223344")
-        XCTAssertEqual(WidgetPushRegistrarTestURLProtocol.postCallCount - baseline, 2)
-        XCTAssertEqual(WidgetPushTokenClient.registeredTokenHex, "11223344")
+        _ = await registrar.register(tokenHex: firstToken)
+        _ = await registrar.register(tokenHex: secondToken)
+        XCTAssertEqual(
+            WidgetPushRegistrarTestURLProtocol.postCallCount(forToken: firstToken) - firstBaseline,
+            1
+        )
+        XCTAssertEqual(
+            WidgetPushRegistrarTestURLProtocol.postCallCount(forToken: secondToken) - secondBaseline,
+            1
+        )
+        XCTAssertEqual(WidgetPushTokenClient.registeredTokenHex, secondToken)
     }
 
     func testUnregister_DeletesAndClearsCache() async {
@@ -120,7 +149,10 @@ final class WidgetPushRegistrarTests: XCTestCase {
         XCTAssertEqual(method, "DELETE")
         XCTAssertTrue(url?.contains("device_id=device-widget-fixture") == true)
         XCTAssertFalse(registrar.hasCachedToken)
-        XCTAssertEqual(WidgetPushRegistrarTestURLProtocol.deleteCallCount, 1)
+        XCTAssertEqual(
+            WidgetPushRegistrarTestURLProtocol.deleteCallCount(forDevice: "device-widget-fixture"),
+            1
+        )
     }
 
     func testUnregister_ToleratesServerError() async {
@@ -151,6 +183,19 @@ final class WidgetPushRegistrarTests: XCTestCase {
     }
 
     // MARK: - helpers
+
+    /// Give URLProtocol-mediated widget POST/DELETE traffic a few runloop
+    /// turns to finish. The handlers respond synchronously, so any request
+    /// that has already reached the transport completes here; requests that
+    /// never start cannot produce a count later.
+    private func drainWidgetPushTransport() {
+        for _ in 0..<20 {
+            RunLoop.current.run(
+                mode: .default,
+                before: Date().addingTimeInterval(0.005)
+            )
+        }
+    }
 
     private static func bodyJSON(from request: URLRequest) -> [String: Any]? {
         if let body = request.httpBody,
@@ -191,6 +236,8 @@ private final class WidgetPushRegistrarTestURLProtocol: URLProtocol {
     nonisolated(unsafe) static var handler: ((URLRequest) -> (HTTPURLResponse, Data))?
     nonisolated(unsafe) static var postCallCount = 0
     nonisolated(unsafe) static var deleteCallCount = 0
+    nonisolated(unsafe) static var postCountsByToken: [String: Int] = [:]
+    nonisolated(unsafe) static var deleteCountsByDevice: [String: Int] = [:]
 
     /// Legacy alias used by tests that only care about POST volume.
     nonisolated(unsafe) static var callCount: Int {
@@ -202,6 +249,19 @@ private final class WidgetPushRegistrarTestURLProtocol: URLProtocol {
         handler = nil
         postCallCount = 0
         deleteCallCount = 0
+        postCountsByToken.removeAll()
+        deleteCountsByDevice.removeAll()
+    }
+
+    /// Suite teardown in other classes can still be posting widget tokens when
+    /// this suite runs; only requests carrying this test's token may affect
+    /// its assertions.
+    static func postCallCount(forToken token: String) -> Int {
+        postCountsByToken[token] ?? 0
+    }
+
+    static func deleteCallCount(forDevice deviceId: String) -> Int {
+        deleteCountsByDevice[deviceId] ?? 0
     }
 
     override class func canInit(with request: URLRequest) -> Bool {
@@ -214,8 +274,14 @@ private final class WidgetPushRegistrarTestURLProtocol: URLProtocol {
     override func startLoading() {
         if request.httpMethod == "POST" {
             Self.postCallCount += 1
+            if let token = Self.token(in: request) {
+                Self.postCountsByToken[token, default: 0] += 1
+            }
         } else if request.httpMethod == "DELETE" {
             Self.deleteCallCount += 1
+            if let deviceId = Self.deviceId(in: request) {
+                Self.deleteCountsByDevice[deviceId, default: 0] += 1
+            }
         }
         guard let handler = Self.handler else {
             client?.urlProtocol(self, didFailWithError: URLError(.unknown))
@@ -228,4 +294,35 @@ private final class WidgetPushRegistrarTestURLProtocol: URLProtocol {
     }
 
     override func stopLoading() {}
+
+    private static func token(in request: URLRequest) -> String? {
+        guard let data = bodyData(of: request),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        return json["token"] as? String
+    }
+
+    private static func deviceId(in request: URLRequest) -> String? {
+        guard let url = request.url,
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+        return components.queryItems?.first { $0.name == "device_id" }?.value
+    }
+
+    private static func bodyData(of request: URLRequest) -> Data? {
+        if let body = request.httpBody { return body }
+        guard let stream = request.httpBodyStream else { return nil }
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: 1024)
+        defer { buffer.deallocate() }
+        while stream.hasBytesAvailable {
+            let read = stream.read(buffer, maxLength: 1024)
+            if read > 0 { data.append(buffer, count: read) } else { break }
+        }
+        return data
+    }
 }

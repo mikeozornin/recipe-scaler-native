@@ -17,9 +17,26 @@ struct TimerWidgetEntry: TimelineEntry {
     static let empty = TimerWidgetEntry(date: Date(), timers: [])
 
     // MARK: - Figma copy (107:238 / 107:318)
+    //
+    // Review 2026.09.04 №22: the placeholder recipe names are user-visible in
+    // the widget gallery (`placeholder(in:)`) — localized via the shared
+    // Localizable.xcstrings (included in the HomeWidgetExtension resources).
 
-    private static let figmaRecipeShort = "выпекайте до золотой корочки"
-    private static let figmaRecipeLong = "выпекайте до золотой корочки и вообще"
+    private static var figmaRecipeShort: String {
+        String(localized: "widgets.timer.placeholder.recipe-short")
+    }
+
+    private static var figmaRecipeLong: String {
+        String(localized: "widgets.timer.placeholder.recipe-long")
+    }
+
+    private static var wrapLongName: String {
+        String(localized: "widgets.timer.placeholder.wrap-long-name")
+    }
+
+    private static var hoursLongName: String {
+        String(localized: "widgets.timer.placeholder.hours-long-name")
+    }
 
     /// Figma `107:238` — 1 timer, `4m` of 50m, soon (orange).
     static func placeholderOne(now: Date = Date()) -> TimerWidgetEntry {
@@ -46,14 +63,14 @@ struct TimerWidgetEntry: TimelineEntry {
                     id: "stub-1",
                     overdueMinutes: 16,
                     totalMinutes: 10,
-                    recipeName: "10 минут длинное название",
+                    recipeName: wrapLongName,
                     now: now
                 ),
                 runningSnapshot(
                     id: "stub-2",
                     remainingMinutes: 9 * 60 + 45,
                     totalMinutes: 10 * 60,
-                    recipeName: "10 часов длинное название",
+                    recipeName: hoursLongName,
                     now: now
                 ),
             ]

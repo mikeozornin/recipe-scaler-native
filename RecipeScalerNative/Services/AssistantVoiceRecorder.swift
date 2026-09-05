@@ -123,6 +123,11 @@ final class AssistantVoiceRecorder {
                     markIdle()
                 }
             } catch {
+                // Review 2026.09.04 №21: a failed auto-stop silently discarded
+                // the recording (dictation disappeared with zero diagnostics).
+                AppLog.error(.app, "assistant_voice_autostop_failed", data: [
+                    "reason": String(describing: type(of: error))
+                ])
                 markIdle()
             }
         }

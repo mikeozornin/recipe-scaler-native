@@ -7,8 +7,9 @@ import SwiftUI
 
 private let recipeScalerBotURL = URL(string: "https://t.me/RecipeScalerBot")!
 private let recipeScalerBotHandle = "@RecipeScalerBot"
-private let statusPollIntervalSeconds: UInt64 = 3
 
+/// Review 2026.09.04 №18: network orchestration + polling live in
+/// `TelegramConnectionViewModel`; this view is pure presentation.
 struct TelegramConnectionView: View {
     let isOnline: Bool
     /// Incremented by the parent on pull-to-refresh so this view re-fetches
@@ -17,13 +18,7 @@ struct TelegramConnectionView: View {
     let onStatusChange: (Bool) -> Void
 
     @Environment(OfflineBannerGate.self) private var offlineGate
-    @State private var isConnected = false
-    @State private var telegramUsername: String?
-    @State private var isLoading = false
-    @State private var connectionCode: String?
-    @State private var instructions: String?
-    @State private var errorMessage: String?
-    @State private var pollTask: Task<Void, Never>?
+    @State private var model = TelegramConnectionViewModel()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -35,41 +30,39 @@ struct TelegramConnectionView: View {
                     .foregroundStyle(.secondary)
             }
 
-            if let errorMessage {
+            if let errorMessage = model.errorMessage {
                 Text(errorMessage)
                     .appFootnote()
                     .foregroundStyle(.secondary)
             }
 
-            if isConnected {
+            if model.isConnected {
                 connectedContent
-            } else if let connectionCode {
+            } else if let connectionCode = model.connectionCode {
                 codeContent(connectionCode)
             } else {
                 connectButton
             }
         }
         .task(id: pollTaskKey) {
-            await refreshStatus()
+            await model.refreshStatus()
         }
-        .onChange(of: connectionCode) { _, code in
-            restartPolling(if: code != nil && !isConnected)
+        .onChange(of: model.connectionCode) { _, _ in
+            model.handleConnectionCodeChange(isOnline: isOnline)
         }
-        .onChange(of: isConnected) { _, connected in
+        .onChange(of: model.isConnected) { _, connected in
             onStatusChange(connected)
             if connected {
-                connectionCode = nil
-                instructions = nil
-                stopPolling()
+                model.handleConnected()
             }
         }
         .onDisappear {
-            stopPolling()
+            model.stopPolling()
         }
     }
 
     private var pollTaskKey: String {
-        "\(isConnected)-\(connectionCode ?? "")-\(isOnline)-\(refreshTick)"
+        "\(model.isConnected)-\(model.connectionCode ?? "")-\(isOnline)-\(refreshTick)"
     }
 
     @ViewBuilder
@@ -85,9 +78,9 @@ struct TelegramConnectionView: View {
         Divider()
 
         Button(String(localized: "telegram.disconnect")) {
-            Task { await disconnect() }
+            Task { await model.disconnect(isOnline: isOnline) }
         }
-        .disabled(isLoading || !isOnline)
+        .disabled(model.isLoading || !isOnline)
         .accessibilityIdentifier(AccessibilityIdentifiers.accountTelegramDisconnect)
     }
 
@@ -100,7 +93,7 @@ struct TelegramConnectionView: View {
     }
 
     private var formattedTelegramUsername: String? {
-        guard let raw = telegramUsername?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+        guard let raw = model.telegramUsername?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
             return nil
         }
         return raw.hasPrefix("@") ? raw : "@\(raw)"
@@ -109,15 +102,15 @@ struct TelegramConnectionView: View {
     @ViewBuilder
     private var connectButton: some View {
         Button("telegram.connect") {
-            Task { await connect() }
+            Task { await model.connect(isOnline: isOnline) }
         }
-        .disabled(isLoading || !isOnline)
+        .disabled(model.isLoading || !isOnline)
         .accessibilityIdentifier(AccessibilityIdentifiers.accountTelegramConnect)
     }
 
     @ViewBuilder
     private func codeContent(_ code: String) -> some View {
-        if let instructions {
+        if let instructions = model.instructions {
             instructionsView(instructions)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -145,9 +138,9 @@ struct TelegramConnectionView: View {
                 symbol: "arrow.clockwise",
                 labelKey: "telegram.refresh-code",
                 identifier: AccessibilityIdentifiers.accountTelegramRefresh,
-                isDisabled: isLoading || !isOnline
+                isDisabled: model.isLoading || !isOnline
             ) {
-                Task { await connect() }
+                Task { await model.connect(isOnline: isOnline) }
             }
         }
     }
@@ -191,80 +184,5 @@ struct TelegramConnectionView: View {
             }
         }
         return result
-    }
-
-    private func refreshStatus() async {
-        guard AuthService.shared.userId != nil else { return }
-        do {
-            let status = try await TelegramAPI.status()
-            applyStatus(status)
-        } catch {
-            // Match web: status errors are non-fatal on initial load.
-        }
-    }
-
-    private func applyStatus(_ status: TelegramConnectionStatusDTO) {
-        isConnected = status.connected
-        telegramUsername = status.telegramUsername
-        if status.connected {
-            connectionCode = nil
-            instructions = nil
-        }
-    }
-
-    private func connect() async {
-        guard isOnline else { return }
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-        do {
-            let result = try await TelegramAPI.connect()
-            connectionCode = result.code
-            instructions = result.instructions
-            restartPolling(if: true)
-        } catch {
-            errorMessage = UserFacingAPIError.message(for: error)
-        }
-    }
-
-    private func disconnect() async {
-        guard isOnline else { return }
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-        do {
-            try await TelegramAPI.disconnect()
-            isConnected = false
-            telegramUsername = nil
-            connectionCode = nil
-            instructions = nil
-        } catch {
-            errorMessage = UserFacingAPIError.message(for: error)
-        }
-    }
-
-    private func restartPolling(if shouldPoll: Bool) {
-        stopPolling()
-        guard shouldPoll, isOnline, !isConnected else { return }
-        pollTask = Task {
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: statusPollIntervalSeconds * 1_000_000_000)
-                guard !Task.isCancelled else { break }
-                guard connectionCode != nil, !isConnected else { break }
-                do {
-                    let status = try await TelegramAPI.status()
-                    guard !Task.isCancelled else { break }
-                    applyStatus(status)
-                    if status.connected { break }
-                } catch {
-                    // Keep polling until connected or code cleared.
-                }
-            }
-        }
-    }
-
-    private func stopPolling() {
-        pollTask?.cancel()
-        pollTask = nil
     }
 }

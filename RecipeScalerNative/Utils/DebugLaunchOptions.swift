@@ -102,7 +102,12 @@ enum DebugLaunchOptions {
 
     /// `-OpenDiscoverProfile=<username>` — Discover → public profile.
     static var openDiscoverProfileUsername: String? {
-        stringValue("OpenDiscoverProfile")
+        guard var value = stringValue("OpenDiscoverProfile") else { return nil }
+        value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.hasPrefix("@") {
+            value.removeFirst()
+        }
+        return value.isEmpty ? nil : value
     }
 
     /// `-OpenDiscoverCollection=<slug>` — Discover → curated collection.
@@ -122,6 +127,12 @@ enum DebugLaunchOptions {
     /// `-ScreenshotScreenAwake=1` — force cooking wake-lock banner on.
     static var screenshotScreenAwake: Bool {
         boolFlag("ScreenshotScreenAwake")
+    }
+
+    /// `-ScreenshotScrollToNutrition=1` — recipe detail scrolls to the nutrition
+    /// block after load (about-media 09-nutrition shot; needs `-OpenRecipeName`).
+    static var screenshotScrollToNutrition: Bool {
+        boolFlag("ScreenshotScrollToNutrition")
     }
 
     /// `-ScreenshotTimerSeconds=2700` — start a countdown timer on launch.
@@ -275,6 +286,70 @@ enum DebugLaunchOptions {
         }
     }
 
+    /// Prefetch list thumbnails, then emit `screenshot_media_ready` for capture scripts.
+    @MainActor
+    static func signalScreenshotListMediaReadyIfNeeded(entries: [CollectionEntry]) async {
+        guard screenshotCapture else { return }
+        guard openRecipeName == nil, openRecipeId == nil else { return }
+        let live = entries.filter { !$0.deleted }
+        guard !live.isEmpty else { return }
+        await RecipeImageService.shared.prefetchPreviews(entries: live, allowNetwork: true)
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        AppLog.info(.app, "screenshot_media_ready", data: [
+            "scope": "list",
+            "count": "\(live.count)",
+        ])
+    }
+
+    /// Prefetch recipe hero image, then emit `screenshot_media_ready` for capture scripts.
+    @MainActor
+    static func signalScreenshotRecipeMediaReadyIfNeeded(
+        recipeId: String,
+        imageUrl: String?
+    ) async {
+        guard screenshotCapture else { return }
+        guard openRecipeName != nil || screenshotScaleFactor != nil else { return }
+        await RecipeImageService.shared.prefetchFull(
+            recipeId: recipeId,
+            imageUrl: imageUrl,
+            allowNetwork: true
+        )
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        AppLog.info(.app, "screenshot_media_ready", data: [
+            "scope": "recipe",
+            "recipeId": recipeId,
+        ])
+    }
+
+    /// Prefetch public profile recipe cards, then emit `screenshot_media_ready` for capture scripts.
+    @MainActor
+    static func signalScreenshotDiscoverProfileMediaReadyIfNeeded(
+        response: PublicProfileResponseDTO
+    ) async {
+        guard screenshotCapture else { return }
+        guard openDiscoverProfileUsername != nil else { return }
+        let recipes = response.recipes.filter { recipe in
+            guard let url = recipe.imageUrl else { return false }
+            return !url.isEmpty
+        }
+        for recipe in recipes.prefix(12) {
+            await RecipeImageService.shared.prefetchFull(
+                recipeId: recipe.id,
+                imageUrl: recipe.imageUrl,
+                allowNetwork: true
+            )
+        }
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        AppLog.info(.app, "screenshot_media_ready", data: [
+            "scope": "discover_profile",
+            "count": "\(recipes.count)",
+        ])
+        AppLog.info(.app, "screenshot_discover_ready", data: [
+            "username": response.profile.username,
+            "recipes": "\(recipes.count)",
+        ])
+    }
+
     private static func clearDeliveredNotifications() {
         let center = UNUserNotificationCenter.current()
         center.removeAllDeliveredNotifications()
@@ -296,10 +371,21 @@ enum DebugLaunchOptions {
 
     private static func stringValue(_ name: String) -> String? {
         let prefix = "-\(name)="
-        for arg in ProcessInfo.processInfo.arguments {
-            guard arg.hasPrefix(prefix) else { continue }
-            let value = String(arg.dropFirst(prefix.count))
-            return value.isEmpty ? nil : value
+        let flag = "-\(name)"
+        let args = ProcessInfo.processInfo.arguments
+        for index in args.indices {
+            let arg = args[index]
+            if arg.hasPrefix(prefix) {
+                let value = String(arg.dropFirst(prefix.count))
+                return value.isEmpty ? nil : value
+            }
+            // simctl/Unicode: `-OpenRecipeName Штрудель` (value as the next argv)
+            if arg == flag, index + 1 < args.count {
+                let value = args[index + 1]
+                if !value.hasPrefix("-") {
+                    return value.isEmpty ? nil : value
+                }
+            }
         }
         return nil
     }

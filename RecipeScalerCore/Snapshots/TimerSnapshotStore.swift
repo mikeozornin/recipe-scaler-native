@@ -32,6 +32,14 @@ public enum TimerSnapshotStore {
         defaults?.set(data, forKey: key)
     }
 
+    /// Test seam: persist to an explicit suite instead of the shared App Group.
+    public static func save(_ document: TimerSnapshotDocument, to defaults: UserDefaults) {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        guard let data = try? encoder.encode(document) else { return }
+        defaults.set(data, forKey: key)
+    }
+
     /// Read the latest snapshot, or `.empty` when no data is present or decoding fails.
     ///
     /// Decoding is intentionally defensive: any schema drift or corruption yields `.empty`,
@@ -43,10 +51,24 @@ public enum TimerSnapshotStore {
         return (try? decoder.decode(TimerSnapshotDocument.self, from: data)) ?? .empty
     }
 
+    /// Test seam: read from an explicit suite instead of the shared App Group.
+    public static func load(from defaults: UserDefaults) -> TimerSnapshotDocument {
+        guard let data = defaults.data(forKey: key) else { return .empty }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return (try? decoder.decode(TimerSnapshotDocument.self, from: data)) ?? .empty
+    }
+
     /// Remove the stored snapshot (e.g. on sign-out).
     public static func clear() {
         defaults?.removeObject(forKey: key)
         clearPendingLocalMutation()
+    }
+
+    /// Test seam: clear an explicit suite instead of the shared App Group.
+    public static func clear(in defaults: UserDefaults) {
+        defaults.removeObject(forKey: key)
+        clearPendingLocalMutation(in: defaults)
     }
 
     // MARK: - Pending local mutation (Intent optimistic vs Provider fetch)
@@ -61,9 +83,24 @@ public enum TimerSnapshotStore {
         defaults?.set(until, forKey: pendingLocalUntilKey)
     }
 
+    /// Test seam: mark the pending-local gate in an explicit suite.
+    public static func markPendingLocalMutation(
+        ttl: TimeInterval = pendingLocalMutationTTL,
+        now: Date = Date(),
+        in defaults: UserDefaults
+    ) {
+        let until = now.addingTimeInterval(ttl).timeIntervalSince1970
+        defaults.set(until, forKey: pendingLocalUntilKey)
+    }
+
     /// Clear the pending-local gate (after TimerManager pause/resume persist).
     public static func clearPendingLocalMutation() {
         defaults?.removeObject(forKey: pendingLocalUntilKey)
+    }
+
+    /// Test seam: clear the pending-local gate in an explicit suite.
+    public static func clearPendingLocalMutation(in defaults: UserDefaults) {
+        defaults.removeObject(forKey: pendingLocalUntilKey)
     }
 
     /// Whether Provider/network refresh must keep the existing snapshot.
@@ -73,4 +110,42 @@ public enum TimerSnapshotStore {
         }
         return now.timeIntervalSince1970 < until
     }
+
+    /// Production sink used by `TimerManager`: every instance writes the
+    /// shared App Group store that `HomeWidgetExtension` reads.
+    public struct MutableStore: TimerSnapshotStoring {
+        public init() {}
+
+        public func save(_ document: TimerSnapshotDocument) {
+            TimerSnapshotStore.save(document)
+        }
+
+        public func clear() {
+            TimerSnapshotStore.clear()
+        }
+
+        public func markPendingLocalMutation(
+            ttl: TimeInterval = pendingLocalMutationTTL,
+            now: Date = Date()
+        ) {
+            TimerSnapshotStore.markPendingLocalMutation(ttl: ttl, now: now)
+        }
+
+        public func clearPendingLocalMutation() {
+            TimerSnapshotStore.clearPendingLocalMutation()
+        }
+    }
+}
+
+/// Per-manager sink for widget snapshots. Tests inject a private
+/// implementation backed by a throwaway UserDefaults suite; production uses
+/// `TimerSnapshotStore.MutableStore()`.
+public protocol TimerSnapshotStoring {
+    func save(_ document: TimerSnapshotDocument)
+    func clear()
+    func markPendingLocalMutation(
+        ttl: TimeInterval,
+        now: Date
+    )
+    func clearPendingLocalMutation()
 }

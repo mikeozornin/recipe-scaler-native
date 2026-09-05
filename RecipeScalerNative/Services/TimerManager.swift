@@ -55,6 +55,10 @@ final class TimerManager: NSObject {
     private let timerSync: TimerSyncService
     private let liveActivity: TimerLiveActivityCoordinator
     private let pushSchedule: PushScheduleService
+    /// Widget snapshot sink. Production writes the shared App Group store;
+    /// tests inject a throwaway suite so debounced writes from one manager
+    /// cannot leak into another test assertions.
+    private let snapshotStore: TimerSnapshotStoring
 
     private var serverScheduledPushTimerIds: Set<String> = []
 
@@ -89,12 +93,14 @@ final class TimerManager: NSObject {
         timerSync: TimerSyncService,
         liveActivity: TimerLiveActivityCoordinator,
         pushSchedule: PushScheduleService,
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        snapshotStore: TimerSnapshotStoring = TimerSnapshotStore.MutableStore()
     ) {
         self.timerSync = timerSync
         self.liveActivity = liveActivity
         self.pushSchedule = pushSchedule
         self.modelContext = modelContext
+        self.snapshotStore = snapshotStore
         super.init()
         notificationCenter.delegate = self
         registerNotificationCategories()
@@ -325,14 +331,73 @@ final class TimerManager: NSObject {
 
     // MARK: - Sync (TimerSyncService)
 
-    func replaceTimersFromServer(_ serverTimers: [RecipeTimer]) {
+    /// Review 2026.09.04 №3: account teardown. SwiftData timers, local
+    /// notifications, the update loop and the widget snapshot all belong to
+    /// the outgoing user — without this wipe, account A's timers keep ringing
+    /// (and syncing) after account B logs in on the same device.
+    func clearForLogout() {
+        stopUpdateTimer()
+        endLiveActivityBackgroundUpdates()
+        scheduleBackgroundTaskCancelledForLogout()
+        let allTimers = timers
+        timers = []
+        for timer in allTimers {
+            let completeRequestId = "\(timer.id)-complete"
+            notificationCenter.removePendingNotificationRequests(
+                withIdentifiers: [timer.id, completeRequestId]
+            )
+            notificationCenter.removeDeliveredNotifications(
+                withIdentifiers: [timer.id, completeRequestId]
+            )
+        }
+        if let modelContext {
+            do {
+                let existing = try modelContext.fetch(FetchDescriptor<RecipeTimer>())
+                for item in existing {
+                    modelContext.delete(item)
+                }
+                try modelContext.save()
+            } catch {
+                AppLog.error(.timer, "clearForLogout: failed to delete timers: \(error.localizedDescription)")
+            }
+        }
+        serverScheduledPushTimerIds.removeAll()
+        lastLiveActivityProgressSync.removeAll()
+        lastOverdueLiveActivitySync.removeAll()
+        inFlightSyncTasks.values.forEach { $0.cancel() }
+        inFlightSyncTasks.removeAll()
+        reconcileTask?.cancel()
+        reconcileTask = nil
+        pendingReconcile = false
+        // Empty snapshot + timeline reload so the widget and
+        // Lock Screen drop the previous account's timers immediately.
+        snapshotStore.clear()
+        WidgetCenter.shared.reloadTimelines(ofKind: TimerWidgetKind.id)
+        refreshPanelTimers()
+        AppLog.info(.timer, "timer_manager_cleared_for_logout", data: ["count": "\(allTimers.count)"])
+    }
+
+    /// Cancel the BGProcessingTask request so a logged-out device does not
+    /// keep scheduling `handleBackgroundTask` wakeups.
+    private func scheduleBackgroundTaskCancelledForLogout() {
+        BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: Self.backgroundTaskIdentifier)
+    }
+
+    func replaceTimersFromServer(_ serverTimers: [RecipeTimer], preservingLocalIds: Set<String> = []) {
         let localById = Dictionary(uniqueKeysWithValues: timers.map { ($0.id, $0) })
-        let merged = serverTimers.map { serverTimer -> RecipeTimer in
+        // Review 2026.09.04 №4: timers created offline whose create-event has
+        // not reached the server are absent from `serverTimers` — keep them in
+        // the merged set, otherwise the pull below silently deletes them from
+        // UI + SwiftData while the server still knows nothing about them.
+        let localOnlyPreserved = timers.filter { preservingLocalIds.contains($0.id) }
+        var merged = serverTimers.map { serverTimer -> RecipeTimer in
             guard let local = localById[serverTimer.id] else { return serverTimer }
             let localMs = Int64(local.lastUpdated.timeIntervalSince1970 * 1000)
             let serverMs = Int64(serverTimer.lastUpdated.timeIntervalSince1970 * 1000)
             return localMs > serverMs ? local : serverTimer
         }
+        let presentIds = Set(merged.map(\.id))
+        merged.append(contentsOf: localOnlyPreserved.filter { !presentIds.contains($0.id) })
 
         guard let modelContext else {
             timers = merged
@@ -416,16 +481,56 @@ final class TimerManager: NSObject {
     /// Debounced write of the active timers into the App Group so that
     /// `HomeWidgetExtension` can render `TimerWidget` without touching SwiftData.
     private var snapshotWriteWorkItem: DispatchWorkItem?
+    /// Monotonic token for the newest scheduled widget-snapshot write. A queued
+    /// item checks it before writing, so a superseded (or test-drained) item can
+    /// never clobber a newer snapshot when its `asyncAfter` slot finally fires.
+    private let snapshotWriteState = SnapshotWriteState()
+
+    #if DEBUG
+    /// Run the currently scheduled debounced widget-snapshot write now, on the
+    /// calling actor. Cancelling a `DispatchWorkItem` and then calling
+    /// `perform()` is undefined behaviour — in practice `perform()` becomes a
+    /// no-op there, so the store stayed empty and tests failed. Drain instead by
+    /// superseding the queued item (generation bump) and writing the current
+    /// document synchronously; when this method returns the store already
+    /// contains the new document. A fixed sleep cannot give that guarantee.
+    @MainActor
+    func drainTimerSnapshotWriteForTests() async {
+        guard snapshotWriteWorkItem != nil else { return }
+        snapshotWriteWorkItem?.cancel()
+        snapshotWriteWorkItem = nil
+        snapshotWriteState.supersede()
+        performSnapshotWrite(timers.timerSnapshotDocument())
+    }
+    #endif
+
+    private func performSnapshotWrite(_ document: TimerSnapshotDocument) {
+        snapshotStore.save(document)
+        // Intent optimistic writes set pending-local; durable Manager snapshot
+        // is authoritative — release the Provider / silent network gate early
+        // instead of waiting out the full 15s TTL.
+        snapshotStore.clearPendingLocalMutation()
+        WidgetCenter.shared.reloadTimelines(ofKind: TimerWidgetKind.id)
+    }
 
     private func persistTimerSnapshot() {
         snapshotWriteWorkItem?.cancel()
+        // The work item can outlive this manager (0.2s debounce vs test teardown),
+        // so it must not capture `self` strongly: when the last manager reference
+        // drops before the write fires, the closure would dereference freed actor
+        // storage (Dictionary.Keys.makeIterator segfault seen in crash reports).
+        // Capture the immutable sink by value; `timers` is read synchronously
+        // here on the MainActor, before the debounced write. The closure does
+        // not clear `snapshotWriteWorkItem` itself: that would need `self`,
+        // and the work item can legitimately outlive the manager.
+        let snapshotStore = self.snapshotStore
+        let snapshotWriteState = self.snapshotWriteState
+        let generation = snapshotWriteState.next()
+        let document = self.timers.timerSnapshotDocument()
         let work = DispatchWorkItem {
-            let document = self.timers.timerSnapshotDocument()
-            TimerSnapshotStore.save(document)
-            // Intent optimistic writes set pending-local; durable Manager snapshot
-            // is authoritative — release the Provider / silent network gate early
-            // instead of waiting out the full 15s TTL.
-            TimerSnapshotStore.clearPendingLocalMutation()
+            guard snapshotWriteState.claimIfLatest(generation) else { return }
+            snapshotStore.save(document)
+            snapshotStore.clearPendingLocalMutation()
             WidgetCenter.shared.reloadTimelines(ofKind: TimerWidgetKind.id)
         }
         snapshotWriteWorkItem = work
@@ -448,30 +553,30 @@ final class TimerManager: NSObject {
 
     private var lastLiveActivityProgressSync: [String: Date] = [:]
 
-    /// Tick: discovers completion, refreshes Live Activity, and pushes a debounced
-    /// snapshot to the widget. Does NOT mutate `remainingTime` (UI countdown is
-    /// driven by `TimelineView` in `MobileTimerPanel`) and does NOT reassign
-    /// `activeTimers` (which would invalidate `safeAreaInset` on every tab root
-    /// every second). Widget snapshot is republished on every tick — the widget
-    /// has no other source of truth for overdue-phase progression.
+    /// Tick: discovers completion and refreshes Live Activity. Does NOT mutate
+    /// `remainingTime` (UI countdown is driven by `TimelineView` in
+    /// `MobileTimerPanel`) and does NOT reassign `activeTimers` (which would
+    /// invalidate `safeAreaInset` on every tab root every second).
+    ///
+    /// Widget snapshot (review 2026.09.04 №8): the tick does NOT republish —
+    /// `TimerWidgetProvider.getTimeline` builds forward entries (per-second
+    /// near the threshold, minute boundaries otherwise) from the App Group
+    /// snapshot, so the widget advances without host wakeups. Structural
+    /// mutations (start/pause/resume/delete) and the completion transition
+    /// (`handleTimerReachedZero` → `refreshPanelTimers`) are the only
+    /// republish triggers.
     private func updateRunningTimers() {
-        var snapshotNeedsRepublish = false
         for timer in timers where timer.isRunning {
             guard let endTime = timer.endTime else { continue }
             let remaining = endTime.timeIntervalSinceNow
             if remaining <= 0, !timer.hasCompleted {
+                // Content transition → refreshPanelTimers() → snapshot republish.
                 handleTimerReachedZero(timer)
-                snapshotNeedsRepublish = true
             } else if remaining <= 0 {
                 syncLiveActivityIfOverdue(timer)
-                snapshotNeedsRepublish = true
             } else {
                 syncLiveActivityProgress(timer)
-                snapshotNeedsRepublish = true
             }
-        }
-        if snapshotNeedsRepublish {
-            persistTimerSnapshot()
         }
     }
 
@@ -740,14 +845,14 @@ final class TimerManager: NSObject {
         var payload: [String: Any]
         switch type {
         case .timerCreated:
-            payload = TimerSyncService.shared.timerCreatedPayload(for: timer)
+            payload = timerSync.timerCreatedPayload(for: timer)
         case .timerStarted, .timerResumed, .timerPaused, .timerDeleted:
             payload = ["type": type.rawValue, "timerId": timer.id]
         }
         for (key, value) in extra {
             payload[key] = value
         }
-        TimerSyncService.shared.enqueue(type: type, timerId: timer.id, payload: payload)
+        timerSync.enqueue(type: type, timerId: timer.id, payload: payload)
     }
 
     private static func makeTimerId() -> String {
@@ -791,7 +896,7 @@ final class TimerManager: NSObject {
             }
         }
         TimerLiveActivityActionQueue.drainIfNeeded()
-        TimerLiveActivityCoordinator.shared.restoreFromSystem()
+        liveActivity.restoreFromSystem()
         reconcileLiveActivities()
     }
 
@@ -816,7 +921,7 @@ final class TimerManager: NSObject {
             inFlightSyncTasks.removeValue(forKey: timerId)
             return
         }
-        await TimerLiveActivityCoordinator.shared.sync(timer: timer, policy: policy)
+        await liveActivity.sync(timer: timer, policy: policy)
         // Only clear if we're still the active task — a newer caller may have
         // already replaced us and put their own Task here.
         if inFlightSyncTasks[timerId]?.isCancelled == false {
@@ -828,7 +933,7 @@ final class TimerManager: NSObject {
         inFlightSyncTasks[timerId]?.cancel()
         inFlightSyncTasks.removeValue(forKey: timerId)
         Task {
-            await TimerLiveActivityCoordinator.shared.end(timerId: timerId)
+            await liveActivity.end(timerId: timerId)
         }
     }
 
@@ -854,7 +959,7 @@ final class TimerManager: NSObject {
         // has a stable array even if `timers` mutates during the await.
         let snapshot = timers
         let task: Task<Void, Never> = Task { [weak self] in
-            await TimerLiveActivityCoordinator.shared.reconcile(with: snapshot)
+            await self?.liveActivity.reconcile(with: snapshot)
             self?.finishReconcilePass()
         }
         reconcileTask = task
@@ -878,14 +983,44 @@ final class TimerManager: NSObject {
     #endif
 
     nonisolated deinit {
-        Task { @MainActor in
-            stopUpdateTimer()
-            for task in inFlightSyncTasks.values {
-                task.cancel()
-            }
-            inFlightSyncTasks.removeAll()
-            reconcileTask?.cancel()
-            reconcileTask = nil
+        // Do not hop back to MainActor from deinit. The detached hop runs after
+        // object storage is freed, so touching any property inside that closure
+        // (even assigning nil) dereferences freed storage and segfaults the
+        // process. The update Timer dies with the run loop; snapshot work items
+        // are self-contained and cancel-on-replace; sync tasks hold only
+        // `[weak self]` closures and clean themselves up.
+    }
+}
+
+/// Generation token for debounced widget-snapshot writes. `TimerManager` owns
+/// the instance on the MainActor; queued work items capture it and claim their
+/// generation so only the newest write survives and a test-drained item cannot
+/// resurrect stale state when its deadline later fires.
+@MainActor
+private final class SnapshotWriteState {
+    private var latestGeneration = 0
+
+    /// Register a new scheduled write and return its generation token.
+    nonisolated func next() -> Int {
+        MainActor.assumeIsolated {
+            let generation = latestGeneration + 1
+            latestGeneration = generation
+            return generation
+        }
+    }
+
+    /// Mark any queued write as stale without scheduling a replacement.
+    nonisolated func supersede() {
+        _ = next()
+    }
+
+    /// Returns true once for the still-current generation, false once that
+    /// generation has already written or has been superseded.
+    nonisolated func claimIfLatest(_ generation: Int) -> Bool {
+        MainActor.assumeIsolated {
+            guard latestGeneration == generation else { return false }
+            latestGeneration += 1
+            return true
         }
     }
 }

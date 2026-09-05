@@ -14729,6 +14729,74 @@
         }
       }
     },
+    "widgets.timer.placeholder.recipe-short" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bake until golden brown"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "выпекайте до золотой корочки"
+          }
+        }
+      }
+    },
+    "widgets.timer.placeholder.recipe-long" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bake until golden brown and more"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "выпекайте до золотой корочки и вообще"
+          }
+        }
+      }
+    },
+    "widgets.timer.placeholder.wrap-long-name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 minutes long name"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 минут длинное название"
+          }
+        }
+      }
+    },
+    "widgets.timer.placeholder.hours-long-name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 hours long name"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 часов длинное название"
+          }
+        }
+      }
+    },
     "widgets.timer.name" : {
       "extractionState" : "manual",
       "localizations" : {

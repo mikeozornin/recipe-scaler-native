@@ -45,26 +45,43 @@ final class SpotlightIndexer {
         guard !isStarted else { return }
         isStarted = true
 
-        // Observe `collectionEntries` via Observation framework (replaces Combine subscription).
+        // Review 2026.09.04 №16: reactive wait instead of a 100ms poll loop.
+        // `withObservationTracking` fires exactly once per registration; the
+        // continuation bridge suspends until `collectionEntries` changes, then
+        // the loop re-registers. No main-actor wakeups while the collection
+        // is idle (the old loop polled at 10 Hz for the whole app lifetime).
         observeTask?.cancel()
         observeTask = Task { @MainActor [weak self] in
             var lastSeen: [CollectionEntry]?
             while !Task.isCancelled {
                 guard let self else { return }
-                let snapshot: [CollectionEntry] = withObservationTracking {
-                    self.syncService.collectionEntries
-                } onChange: { [weak self] in
-                    Task { @MainActor [weak self] in self?.start() }
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    var resumed = false
+                    let snapshot: [CollectionEntry] = withObservationTracking {
+                        self.syncService.collectionEntries
+                    } onChange: {
+                        Task { @MainActor in
+                            guard !resumed else { return }
+                            resumed = true
+                            continuation.resume()
+                        }
+                    }
+                    if lastSeen != snapshot {
+                        // First registration (or re-registration right after a
+                        // reindex): process the current snapshot immediately.
+                        resumed = true
+                        continuation.resume()
+                    }
                 }
+
+                guard !Task.isCancelled else { return }
+                let snapshot = self.syncService.collectionEntries
                 if lastSeen != snapshot {
                     lastSeen = snapshot
                     // Debounce: wait 1s before reindexing (web parity with Combine .debounce).
                     try? await Task.sleep(for: .seconds(1))
                     guard !Task.isCancelled else { return }
                     await self.reindex(entries: snapshot)
-                } else {
-                    // No change in this iteration; wait briefly before re-observing.
-                    try? await Task.sleep(for: .milliseconds(100))
                 }
             }
         }

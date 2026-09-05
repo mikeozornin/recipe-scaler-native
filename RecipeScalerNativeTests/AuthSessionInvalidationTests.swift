@@ -7,7 +7,7 @@
 //    1. Socket `auth_error` "Account deleted" → wipe + isAuthenticated == false.
 //    2. REST 401 → exchange → 404 User not found → wipe + stopForLogout.
 //    3. REST 401 → exchange → success token → keep session, new token applied.
-//    4. REST 401 → exchange → transient → light revoke (no stopForLogout).
+//    4. REST 401 → exchange → transient → keep session (silent retry; review 2026.09.04 №12).
 //    5. Double signal (socket + REST) → wipe called exactly once.
 //
 //  The seed-exchange network call is indirected via
@@ -110,24 +110,29 @@ final class AuthSessionInvalidationTests: XCTestCase {
         XCTAssertNotNil(try? keychain.get(seedPhraseKey))
     }
 
-    // MARK: - R6.5 — REST 401 + transient → light revoke
+    // MARK: - R6.5 — REST 401 + transient → keep session for silent retry
 
-    func test_rest_401_exchange_network_light_revoke() async {
+    func test_rest_401_exchange_transient_keeps_session() async {
         let service = makeAuthService()
         service.exchangeSeedForTokenRecoveryProvider = { _ in .transient }
 
         await service.handleDeviceTokenInvalid()
 
-        XCTAssertFalse(
+        // Review 2026.09.04 №12: a transient exchange failure (5xx from a
+        // flaky LB, network outage) must keep the session — the seed phrase
+        // is the only silent-recovery credential, wiping it locks the user
+        // out of intact local data. The stale token keeps 401-ing and the
+        // next recovery attempt (re-entry guard released) retries the exchange.
+        XCTAssertTrue(
             service.isAuthenticated,
-            "Transient exchange failure must light-revoke (clear auth state)"
+            "Transient exchange failure must keep the session for silent retry"
         )
-        XCTAssertNil(SharedAuthStore.userId)
-        XCTAssertNil(SharedAuthStore.token)
-        // Light revoke still wipes the seed: we have no way back to a known
-        // state without the user re-entering the seed. Local data (Yjs store)
-        // is preserved by the absence of `stopForLogout` — only auth is cleared.
-        XCTAssertNil(try? keychain.get(seedPhraseKey))
+        XCTAssertEqual(SharedAuthStore.userId, "user-from-keychain")
+        XCTAssertEqual(SharedAuthStore.token, "device-token-from-keychain")
+        XCTAssertNotNil(
+            try? keychain.get(seedPhraseKey),
+            "Transient exchange failure must not wipe the seed phrase"
+        )
     }
 
     // MARK: - R6.6 — Double signal → single wipe (concurrent)

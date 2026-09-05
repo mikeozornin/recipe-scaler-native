@@ -217,9 +217,9 @@ struct AppShellView: View {
                 makeFeatureAdoptionAppCtaHandler()
             )
             .environment(\.heroPhotoZoomContext, heroPhotoZoomSession.context)
-            .background {
-                TabBarTopOffsetReader(offsetFromLayoutBottom: $tabBarTopOffsetFromLayoutBottom)
-            }
+        .background {
+            TabBarTopOffsetReader(offsetFromLayoutBottom: $tabBarTopOffsetFromLayoutBottom)
+        }
             .heroPhotoZoomOverlay(heroPhotoZoomSession.context)
             .overlay(alignment: .bottom) {
                 if let transientStatus {
@@ -350,9 +350,23 @@ struct AppShellView: View {
             // cannot observe a value that was already set, so a queued link
             // would be silently dropped and the app opened on the default tab.
             // Drain any pre-existing pending link once on appear.
+            #if DEBUG
+            if let username = DebugLaunchOptions.openDiscoverProfileUsername, !username.isEmpty {
+                _ = DeepLinkRouter.consumePendingRecipeId()
+                coordinator.handleDeepLink(.openPublicProfile(username: username))
+            } else if let slug = DebugLaunchOptions.openDiscoverCollectionSlug, !slug.isEmpty {
+                _ = DeepLinkRouter.consumePendingRecipeId()
+                coordinator.handleDeepLink(.openDiscoverCollection(slug: slug))
+            } else if DebugLaunchOptions.openTab != nil {
+                coordinator.openDebugTabIfNeeded(DebugLaunchOptions.openTab)
+            } else if let link = deepLinkRouter.pending {
+                coordinator.handleDeepLink(link)
+            }
+            #else
             if let link = deepLinkRouter.pending {
                 coordinator.handleDeepLink(link)
             }
+            #endif
             // Spec 066 — arm gate from the current state; `onChange` above does
             // not fire for a value already set before this view mounted (cold
             // start already offline), so without this the banner would never appear.
@@ -361,7 +375,11 @@ struct AppShellView: View {
         }
         #if DEBUG
         .onAppear {
-            coordinator.openDebugTabIfNeeded(DebugLaunchOptions.openTab)
+            if DebugLaunchOptions.openDiscoverProfileUsername == nil,
+               DebugLaunchOptions.openDiscoverCollectionSlug == nil,
+               DebugLaunchOptions.openTab == nil {
+                coordinator.openDebugTabIfNeeded(DebugLaunchOptions.openTab)
+            }
             if DebugLaunchOptions.mobileTimerPanelExpanded {
                 mobileTimerPanelCollapsed = false
             }
@@ -371,7 +389,11 @@ struct AppShellView: View {
                 assistantRecipeContext.isAssistantSheetOpen = true
                 showAssistant = true
             }
-            coordinator.consumePendingRecipeIdIfNeeded()
+            // Screenshot deep links must win over Share-extension pending recipe ids.
+            if DebugLaunchOptions.openDiscoverProfileUsername == nil,
+               DebugLaunchOptions.openDiscoverCollectionSlug == nil {
+                coordinator.consumePendingRecipeIdIfNeeded()
+            }
         }
         #else
         .onAppear {

@@ -140,51 +140,117 @@ final class TimerPanelRefreshTests: XCTestCase {
     }
 
     /// Regression MIK-187 follow-up: widget snapshot must still be republished on tick.
-    /// The widget has no other source of truth for overdue-phase progression; removing
-    /// `persistTimerSnapshot()` from the tick (alongside `refreshPanelTimers()`) froze
-    /// the widget at the last structural state. The fix republishes the snapshot
-    /// without reassigning `activeTimers`.
-    func testUpdateRunningTimers_republishesWidgetSnapshotOnTick() throws {
-        let manager = try makeTimerManager()
-        TimerSnapshotStore.clear()
+    /// Review 2026.09.04 №8: the per-second tick must NOT republish the widget
+    /// snapshot — `TimerWidgetProvider.getTimeline` builds forward entries
+    /// (per-second near the threshold, minute boundaries otherwise) so the
+    /// widget advances without a host wakeup every second. Republishing on
+    /// every tick woke the widget extension 1 Hz for the whole timer run.
+    /// Structural mutations (`refreshPanelTimers`) still republish.
+    func testUpdateRunningTimers_doesNotRepublishWidgetSnapshotOnTick() async throws {
+        let snapshotStore = TestSnapshotStore()
+        snapshotStore.clear()
+        let manager = try makeTimerManager(snapshotStore: snapshotStore)
+        XCTAssertNil(
+            snapshotStore.loadForAssertions().timers
+                .first { $0.id.hasPrefix("timer_") },
+            "Precondition: no timer snapshot left over from an earlier test"
+        )
         _ = manager.createAndStartTimer(name: "Pasta", duration: 120, type: .seconds)
 
         // `createAndStartTimer` triggers a structural `refreshPanelTimers()` →
         // `persistTimerSnapshot()` debounced 200ms. Drain it so we get a clean
         // baseline `generatedAt` before the tick.
-        let baselineDocument = drainSnapshotWriteAndLoad()
+        await manager.drainTimerSnapshotWriteForTests()
+        let baselineDocument = snapshotStore.loadForAssertions()
         XCTAssertFalse(baselineDocument.timers.isEmpty,
                        "Structural mutation must have published an initial widget snapshot")
 
         manager.tickUpdateRunningTimersForTests()
 
-        let afterTickDocument = drainSnapshotWriteAndLoad()
-        XCTAssertGreaterThanOrEqual(
+        let afterTickDocument = snapshotStore.loadForAssertions()
+        XCTAssertEqual(
             afterTickDocument.generatedAt,
             baselineDocument.generatedAt,
-            "Tick must republish the widget snapshot so the widget can advance overdue/running phase"
+            "Tick must not republish — the widget timeline advances on its own entries"
+        )
+    }
+
+    /// Companion to the test above (№8): a structural mutation mid-run
+    /// (pause) must still republish the snapshot so the widget phase flips.
+    func testPauseRepublishesWidgetSnapshot() async throws {
+        let snapshotStore = TestSnapshotStore()
+        snapshotStore.clear()
+        let manager = try makeTimerManager(snapshotStore: snapshotStore)
+        XCTAssertNil(
+            snapshotStore.loadForAssertions().timers
+                .first { $0.id.hasPrefix("timer_") },
+            "Precondition: no timer snapshot left over from an earlier test"
+        )
+        let timer = manager.createAndStartTimer(name: "Pasta", duration: 120, type: .seconds)
+        await manager.drainTimerSnapshotWriteForTests()
+
+        manager.pauseTimer(id: timer.id)
+
+        await manager.drainTimerSnapshotWriteForTests()
+        let afterPauseDocument = snapshotStore.loadForAssertions()
+        XCTAssertTrue(
+            afterPauseDocument.timers.contains { $0.pausedRemainingSeconds != nil },
+            "Pause must republish the snapshot with the paused phase for the widget"
         )
     }
 
     // MARK: - Helpers
 
-    private func drainSnapshotWriteAndLoad() -> TimerSnapshotDocument {
-        // `persistTimerSnapshot()` schedules a write 0.2s out on the main queue.
-        // Wait long enough to drain it, then read.
-        let expectation = XCTestExpectation(description: "drain snapshot write")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            expectation.fulfill()
+    /// Per-test widget-snapshot sink. Each test owns a private UserDefaults
+    /// suite, so other suites' async teardown cannot wipe the snapshot this
+    /// test is draining.
+    private final class TestSnapshotStore: TimerSnapshotStoring {
+        private let defaults: UserDefaults
+        private let suiteName: String
+
+        init() {
+            suiteName = "TimerPanelRefreshTests.\(UUID().uuidString)"
+            defaults = UserDefaults(suiteName: suiteName)!
         }
-        wait(for: [expectation], timeout: 2.0)
-        return TimerSnapshotStore.load()
+
+        deinit {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        func save(_ document: TimerSnapshotDocument) {
+            TimerSnapshotStore.save(document, to: defaults)
+        }
+
+        func clear() {
+            TimerSnapshotStore.clear(in: defaults)
+        }
+
+        func markPendingLocalMutation(
+            ttl: TimeInterval,
+            now: Date
+        ) {
+            TimerSnapshotStore.markPendingLocalMutation(ttl: ttl, now: now, in: defaults)
+        }
+
+        func clearPendingLocalMutation() {
+            TimerSnapshotStore.clearPendingLocalMutation(in: defaults)
+        }
+
+        func loadForAssertions() -> TimerSnapshotDocument {
+            TimerSnapshotStore.load(from: defaults)
+        }
+
     }
 
     // MARK: - Helpers
 
-    private func makeTimerManager() throws -> TimerManager {
+    private func makeTimerManager(snapshotStore: TimerSnapshotStoring? = nil) throws -> TimerManager {
         let modelContainer = try TestSupport.makeInMemoryContainer()
         let context = ModelContext(modelContainer)
-        let container = try AppContainer(modelContext: context)
+        let container = try AppContainer(
+            modelContext: context,
+            timerSnapshotStore: snapshotStore ?? TestSnapshotStore()
+        )
         return container.timer
     }
 

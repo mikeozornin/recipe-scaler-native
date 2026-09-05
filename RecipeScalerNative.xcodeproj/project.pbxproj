@@ -202,6 +202,7 @@
 		A5TS073293A4B7010000001 /* AssistantToolStatusRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5TS073293A4B7010000002 /* AssistantToolStatusRow.swift */; };
 		A5VLM01293A4B7010000001 /* AssistantVoiceLevelMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5VLM02293A4B7010000002 /* AssistantVoiceLevelMeter.swift */; };
 		A5VOC01293A4B7010000001 /* AssistantVoiceRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5VOC02293A4B7010000002 /* AssistantVoiceRecorder.swift */; };
+		A5SESS01293A4B701000001 /* AssistantSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5SESS02293A4B701000002 /* AssistantSessionStore.swift */; };
 		A6F7AE7D9127ACA699DE84DB /* TimerWidgetEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A60ED09D57AE1CE0E67D37 /* TimerWidgetEntry.swift */; };
 		A71A768B1F09607B3D20EF78 /* MartianGrotesk-NrMd.otf in Resources */ = {isa = PBXBuildFile; fileRef = FEA658D7E63AC1DAEBDA6361 /* MartianGrotesk-NrMd.otf */; };
 		A7F3E91B2C4D5061728394A1 /* RecipeScalerCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E05920822F344D9691E82401 /* RecipeScalerCore.framework */; };
@@ -262,6 +263,7 @@
 		B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TESTERR0020 /* ErrorLocalizationTests.swift */; };
 		B3TIMENOTIF01B293A4B70100001 /* TimerNotificationActionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */; };
 		B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */; };
+		B3TIMESYNC01B293A4B70100001 /* TimerSyncQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMESYNC01A293A4B70100001 /* TimerSyncQueueTests.swift */; };
 		B3TIMEWIDGET01B293A4B70100001 /* TimerWidgetTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */; };
 		B3TORD01B293A4B701000002 /* TimerOrdering.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TORD01A293A4B701000001 /* TimerOrdering.swift */; };
 		B3TORD02B293A4B701000002 /* TimerOrderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TORD02A293A4B701000001 /* TimerOrderingTests.swift */; };
@@ -304,6 +306,7 @@
 		CC0004AA0004BB0004CC0004 /* PushScheduleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0003AA0003BB0003CC0003 /* PushScheduleService.swift */; };
 		CC1101AABB000100000001 /* SyncEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1101AABB000200000001 /* SyncEventHandler.swift */; };
 		CC1101AABB000100000002 /* YjsSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1101AABB000200000002 /* YjsSyncService.swift */; };
+		CC1101AABB000100000005 /* YjsSyncService+ShoppingList.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1101AABB000200000005 /* YjsSyncService+ShoppingList.swift */; };
 		CC1101AABB000100000003 /* YjsPayloadBytes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1101AABB000200000003 /* YjsPayloadBytes.swift */; };
 		CC1101AABB000100000004 /* SyncErrorCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1101AABB000200000004 /* SyncErrorCode.swift */; };
 		CC36F1622B2C07DCCADC8310 /* TimerSnapshot+ServerActiveTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5942CB97921F9C6CC9AD6B51 /* TimerSnapshot+ServerActiveTimer.swift */; };
@@ -398,6 +401,13 @@
 		E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70344FA5B3 /* AccountView.swift */; };
 		E5F60718293A4B704B61748D /* DiscoverAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7011DA2DE4 /* DiscoverAPI.swift */; };
 		E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */; };
+		E5TELEVM01A293A4B70100001 /* TelegramConnectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5TELEVM01A293A4B70100002 /* TelegramConnectionViewModel.swift */; };
+		E5YDOCBK01A293A4B70100001 /* YDocRecipeDetailBlocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5YDOCBK01A293A4B70100002 /* YDocRecipeDetailBlocks.swift */; };
+		E5YDOCEM01A293A4B70100001 /* YDocRecipeDetailEditMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5YDOCEM01A293A4B70100002 /* YDocRecipeDetailEditMode.swift */; };
+		E5YDOCIN01A293A4B70100001 /* YDocRecipeDetailIngredients.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5YDOCIN01A293A4B70100002 /* YDocRecipeDetailIngredients.swift */; };
+		E5YDOCDI01A293A4B70100001 /* YDocRecipeDetailDescriptionEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5YDOCDI01A293A4B70100002 /* YDocRecipeDetailDescriptionEditing.swift */; };
+		E5YDOCSD01A293A4B70100001 /* YDocRecipeDetailScrollSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5YDOCSD01A293A4B70100002 /* YDocRecipeDetailScrollSupport.swift */; };
+		E5YDOCED01A293A4B70100001 /* YDocRecipeDetailEditHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5YDOCED01A293A4B70100002 /* YDocRecipeDetailEditHeader.swift */; };
 		E5F60718293A4B7055FFBBCC /* DocumentManager+ShoppingList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70060C0C11 /* DocumentManager+ShoppingList.swift */; };
 		E5F60718293A4B705777B4EE /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A5EF6DCE /* AppShellView.swift */; };
 		E5F60718293A4B7058D1A50A /* AccountOptionLabels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70E32FCAE0 /* AccountOptionLabels.swift */; };
@@ -940,6 +950,7 @@
 		A5TS073293A4B7010000002 /* AssistantToolStatusRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantToolStatusRow.swift; sourceTree = "<group>"; };
 		A5VLM02293A4B7010000002 /* AssistantVoiceLevelMeter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantVoiceLevelMeter.swift; sourceTree = "<group>"; };
 		A5VOC02293A4B7010000002 /* AssistantVoiceRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantVoiceRecorder.swift; sourceTree = "<group>"; };
+		A5SESS02293A4B701000002 /* AssistantSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSessionStore.swift; sourceTree = "<group>"; };
 		A8AC7E34F697435FAD8F5E77 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
 		AA0000000000000000000001 /* RecipeSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeSnapshotStore.swift; sourceTree = "<group>"; };
 		AA0000000000000000000002 /* RecipeEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEntity.swift; sourceTree = "<group>"; };
@@ -998,6 +1009,7 @@
 		B3TESTERR0020 /* ErrorLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorLocalizationTests.swift; sourceTree = "<group>"; };
 		B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerNotificationActionsTests.swift; sourceTree = "<group>"; };
 		B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPanelRefreshTests.swift; sourceTree = "<group>"; };
+		B3TIMESYNC01A293A4B70100001 /* TimerSyncQueueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSyncQueueTests.swift; sourceTree = "<group>"; };
 		B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerWidgetTimelineTests.swift; sourceTree = "<group>"; };
 		B3TORD01A293A4B701000001 /* TimerOrdering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerOrdering.swift; sourceTree = "<group>"; };
 		B3TORD02A293A4B701000001 /* TimerOrderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerOrderingTests.swift; sourceTree = "<group>"; };
@@ -1031,6 +1043,7 @@
 		CC0005AA0005BB0005CC0005 /* RecipeScalerNative.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RecipeScalerNative.entitlements; sourceTree = "<group>"; };
 		CC1101AABB000200000001 /* SyncEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncEventHandler.swift; sourceTree = "<group>"; };
 		CC1101AABB000200000002 /* YjsSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsSyncService.swift; sourceTree = "<group>"; };
+		CC1101AABB000200000005 /* YjsSyncService+ShoppingList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "YjsSyncService+ShoppingList.swift"; sourceTree = "<group>"; };
 		CC1101AABB000200000003 /* YjsPayloadBytes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsPayloadBytes.swift; sourceTree = "<group>"; };
 		CC1101AABB000200000004 /* SyncErrorCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorCode.swift; sourceTree = "<group>"; };
 		CDC8307193209458433B2DAF /* SnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotTests.swift; sourceTree = "<group>"; };
@@ -1172,6 +1185,13 @@
 		E5F60718293A4B70D1881049 /* DiscoverRecipeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverRecipeView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70DEADB001 /* SharingSettingsCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingSettingsCache.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingsViewModel.swift; sourceTree = "<group>"; };
+		E5TELEVM01A293A4B70100002 /* TelegramConnectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelegramConnectionViewModel.swift; sourceTree = "<group>"; };
+		E5YDOCBK01A293A4B70100002 /* YDocRecipeDetailBlocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YDocRecipeDetailBlocks.swift; sourceTree = "<group>"; };
+		E5YDOCEM01A293A4B70100002 /* YDocRecipeDetailEditMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YDocRecipeDetailEditMode.swift; sourceTree = "<group>"; };
+		E5YDOCIN01A293A4B70100002 /* YDocRecipeDetailIngredients.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YDocRecipeDetailIngredients.swift; sourceTree = "<group>"; };
+		E5YDOCDI01A293A4B70100002 /* YDocRecipeDetailDescriptionEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YDocRecipeDetailDescriptionEditing.swift; sourceTree = "<group>"; };
+		E5YDOCSD01A293A4B70100002 /* YDocRecipeDetailScrollSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YDocRecipeDetailScrollSupport.swift; sourceTree = "<group>"; };
+		E5YDOCED01A293A4B70100002 /* YDocRecipeDetailEditHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YDocRecipeDetailEditHeader.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70E19AC353 /* DiscoverCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverCollectionView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70E32FCAE0 /* AccountOptionLabels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountOptionLabels.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70E374EEFC /* MobileTimerPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileTimerPanel.swift; sourceTree = "<group>"; };
@@ -1533,6 +1553,12 @@
 				C46C342D35721B88D83D58BB /* QRScannerView.swift */,
 				F1A2B3C4D5E60718293A4C02 /* RecipeStepsSection.swift */,
 				DD2201AABB000200000003 /* YDocRecipeDetailView.swift */,
+				E5YDOCBK01A293A4B70100002 /* YDocRecipeDetailBlocks.swift */,
+				E5YDOCEM01A293A4B70100002 /* YDocRecipeDetailEditMode.swift */,
+				E5YDOCIN01A293A4B70100002 /* YDocRecipeDetailIngredients.swift */,
+				E5YDOCDI01A293A4B70100002 /* YDocRecipeDetailDescriptionEditing.swift */,
+				E5YDOCSD01A293A4B70100002 /* YDocRecipeDetailScrollSupport.swift */,
+				E5YDOCED01A293A4B70100002 /* YDocRecipeDetailEditHeader.swift */,
 				E5F60718293A4B7000000055 /* RecipeDescriptionView.swift */,
 				E5F60718293A4B700000005B /* RecipeDescriptionInlineTextView.swift */,
 				E5F60718293A4B7000000057 /* DescriptionFixturePreviewView.swift */,
@@ -1838,6 +1864,7 @@
 				B3AUTHINV01A293A4B70100001 /* AuthSessionInvalidationTests.swift */,
 				B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */,
 				B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */,
+				B3TIMESYNC01A293A4B70100001 /* TimerSyncQueueTests.swift */,
 				B3TBDISC01A293A4B70100001 /* TabBarDiscoveryTests.swift */,
 				B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */,
 				B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */,
@@ -1994,6 +2021,7 @@
 			children = (
 				MIK200008000 /* Discover */,
 				E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */,
+				E5TELEVM01A293A4B70100002 /* TelegramConnectionViewModel.swift */,
 				FB065MD00000000000000004 /* AccountFeedbackModel.swift */,
 				E5F60718293A4B7000000093 /* RecipeListSearchStore.swift */,
 				DD2201AABB000200000002 /* RecipeDetailViewModel.swift */,
@@ -2045,6 +2073,7 @@
 				7485486C3DAE972B94C9AE9B /* ConnectionState.swift */,
 				CC1101AABB000200000001 /* SyncEventHandler.swift */,
 				CC1101AABB000200000002 /* YjsSyncService.swift */,
+				CC1101AABB000200000005 /* YjsSyncService+ShoppingList.swift */,
 				E5F60718293A4B7000000015 /* RecipeScaleStorage.swift */,
 				E5F60718293A4B7000000063 /* NutritionViewModeStorage.swift */,
 				CC1101AABB000200000003 /* YjsPayloadBytes.swift */,
@@ -2187,6 +2216,7 @@
 				E5F60718293A4B70A0E4855E /* AssistantAPI.swift */,
 				E5LLMPARSE293A4B70100001 /* RecipeLLMParseAPI.swift */,
 				A5VOC02293A4B7010000002 /* AssistantVoiceRecorder.swift */,
+				A5SESS02293A4B701000002 /* AssistantSessionStore.swift */,
 				E5F60718293A4B70ED0922D8 /* AssistantModels.swift */,
 				E5F60718293A4B705F98774E /* TelegramAPI.swift */,
 				C45A57EDAC270C757266F8FA /* AuthService.swift */,
@@ -2947,6 +2977,12 @@
 				DD2201AABB000100000001 /* YrsObserver.swift in Sources */,
 				DD2201AABB000100000002 /* RecipeDetailViewModel.swift in Sources */,
 				DD2201AABB000100000003 /* YDocRecipeDetailView.swift in Sources */,
+				E5YDOCBK01A293A4B70100001 /* YDocRecipeDetailBlocks.swift in Sources */,
+				E5YDOCEM01A293A4B70100001 /* YDocRecipeDetailEditMode.swift in Sources */,
+				E5YDOCIN01A293A4B70100001 /* YDocRecipeDetailIngredients.swift in Sources */,
+				E5YDOCDI01A293A4B70100001 /* YDocRecipeDetailDescriptionEditing.swift in Sources */,
+				E5YDOCSD01A293A4B70100001 /* YDocRecipeDetailScrollSupport.swift in Sources */,
+				E5YDOCED01A293A4B70100001 /* YDocRecipeDetailEditHeader.swift in Sources */,
 				4A7854A4A9AD73FD8FC6BA63 /* YrsError.swift in Sources */,
 				42667C91A6DD160819A90989 /* YrsValue.swift in Sources */,
 				9EF93633397A179982515AB9 /* YrsMapEntry.swift in Sources */,
@@ -2962,6 +2998,7 @@
 				AC55326516F2DD99B42F0F6B /* ConnectionState.swift in Sources */,
 				CC1101AABB000100000001 /* SyncEventHandler.swift in Sources */,
 				CC1101AABB000100000002 /* YjsSyncService.swift in Sources */,
+				CC1101AABB000100000005 /* YjsSyncService+ShoppingList.swift in Sources */,
 				F1A2B3C4D5E60718293A4B04 /* YjsMergeHelper.swift in Sources */,
 				F1A2B3C4D5E60718293A4B02 /* YjsWireSnapshot.swift in Sources */,
 				CC1101AABB000100000003 /* YjsPayloadBytes.swift in Sources */,
@@ -3061,6 +3098,7 @@
 				E5F60718293A4B7044C89B39 /* AssistantAPI.swift in Sources */,
 				E5LLMPARSE293A4B70100002 /* RecipeLLMParseAPI.swift in Sources */,
 				A5VOC01293A4B7010000001 /* AssistantVoiceRecorder.swift in Sources */,
+				A5SESS01293A4B701000001 /* AssistantSessionStore.swift in Sources */,
 				A5VLM01293A4B7010000001 /* AssistantVoiceLevelMeter.swift in Sources */,
 				E5F60718293A4B70D7CEFCAD /* AssistantModels.swift in Sources */,
 				E5F60718293A4B70811A7C4D /* TelegramAPI.swift in Sources */,
@@ -3114,6 +3152,7 @@
 				E5F60718293A4B703037711D /* DescriptionTimerPopoverState.swift in Sources */,
 				E5F60718293A4B7002D26536 /* RecipeDescriptionTimerReference.swift in Sources */,
 				E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */,
+				E5TELEVM01A293A4B70100001 /* TelegramConnectionViewModel.swift in Sources */,
 				FB065MD00000000000000003 /* AccountFeedbackModel.swift in Sources */,
 				E5F60718293A4B70F68BDA71 /* AppThemePreference.swift in Sources */,
 				E5F60718293A4B70E6687EC7 /* AppLanguagePreference.swift in Sources */,
@@ -3288,6 +3327,7 @@
 				B3AUTHINV01B293A4B70100001 /* AuthSessionInvalidationTests.swift in Sources */,
 				B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */,
 				B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */,
+				B3TIMESYNC01B293A4B70100001 /* TimerSyncQueueTests.swift in Sources */,
 				B3TBDISC01B293A4B70100001 /* TabBarDiscoveryTests.swift in Sources */,
 				B3TIMENOTIF01B293A4B70100001 /* TimerNotificationActionsTests.swift in Sources */,
 				B3TIMEWIDGET01B293A4B70100001 /* TimerWidgetTimelineTests.swift in Sources */,

@@ -27,16 +27,37 @@ final class FollowStore {
 
     private var activeUsername: String?
 
+    /// Monotonic counter bumped on every `refresh()` entry — lets the
+    /// mutation completion tell a mid-mutation refresh (issued after the
+    /// mutation started → fresher server truth, apply it) from a
+    /// pre-mutation refresh (issued before → stale snapshot, must not revert
+    /// the optimistic state; invariant of
+    /// `test_refresh_does_not_clobber_pending_optimistic_follow`).
+    private var refreshEpoch = 0
+
+    /// Review 2026.09.04 №13: a status response that landed while an
+    /// optimistic mutation was in flight used to be discarded wholesale —
+    /// the follow state of profile A then stayed on screen for profile B.
+    /// The response is now parked (with its username + epoch) and applied by
+    /// the mutation's completion when it is the freshest server truth.
+    private var deferredStatus: (username: String, status: FollowStatusDTO, epoch: Int)?
+
     func refresh(username: String, api: APIClient = .shared) async {
         activeUsername = username
+        refreshEpoch += 1
         let requestedUsername = username
+        let requestedEpoch = refreshEpoch
         do {
             let fetched = try await FollowAPI.fetchStatus(username: requestedUsername, api: api)
             guard activeUsername == requestedUsername else { return }
             // A status response that was in flight while an optimistic mutation
-            // for the same profile started must not clobber it — the mutation
-            // applies (or rolls back) its own state on completion.
-            guard !isFollowingPending else { return }
+            // for the same profile started must not clobber it — park it; the
+            // mutation applies (or rolls back) its own state, then adopts the
+            // parked response when it is the freshest server truth.
+            guard !isFollowingPending else {
+                deferredStatus = (requestedUsername, fetched, requestedEpoch)
+                return
+            }
             status = fetched
         } catch {
             guard activeUsername == requestedUsername else { return }
@@ -97,9 +118,27 @@ final class FollowStore {
     ) async -> Bool {
         guard isFollowingPending == false else { return false }
         isFollowingPending = true
-        defer { isFollowingPending = false }
+        let mutationStartEpoch = refreshEpoch
+        defer {
+            isFollowingPending = false
+            // Adopt a status response that arrived from the server while this
+            // mutation was in flight — but only when its refresh was issued
+            // after the mutation started (post-mutation server truth). A
+            // pre-mutation refresh response is a stale snapshot and must not
+            // revert the optimistic state.
+            if let deferred = deferredStatus,
+               deferred.epoch > mutationStartEpoch,
+               deferred.username == activeUsername {
+                status = deferred.status
+            }
+            deferredStatus = nil
+        }
 
-        let previous = optimistic(self)
+        // Review 2026.09.04 №13: the optimistic write targets the profile
+        // currently on screen. A mutation for a different (backgrounded)
+        // profile still runs server-side but must not repaint `status`.
+        let optimisticApplies = (username == activeUsername)
+        let previous = optimisticApplies ? optimistic(self) : status
         let requestedUsername = activeUsername
         do {
             try await perform()
@@ -108,7 +147,7 @@ final class FollowStore {
             // Roll back only when the same profile is still active: a failure
             // for a previous profile must not overwrite the newer profile's
             // freshly refreshed state (same stale-guard as `refresh`).
-            if activeUsername == requestedUsername {
+            if activeUsername == requestedUsername, optimisticApplies {
                 status = previous
             }
             lastError = Self.serverCode(of: error)
@@ -143,6 +182,7 @@ final class FollowStore {
     func clearForLogout() {
         activeUsername = nil
         status = nil
+        deferredStatus = nil
         isFollowingPending = false
         lastError = nil
         AppLog.info(.app, "follow_store_cleared")

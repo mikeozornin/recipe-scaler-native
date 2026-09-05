@@ -364,6 +364,63 @@ final class FollowStoreTests: XCTestCase {
         XCTAssertFalse(store.isFollowingPending)
     }
 
+    // MARK: - Review 2026.09.04 №13 — foreign-profile optimistic writes
+
+    /// Follow on profile "a" starts while profile "b" is on screen: the
+    /// optimistic flip must not paint "b"'s status, the server call still
+    /// runs, and the mutation completion (including the parked-refresh
+    /// adoption in `mutate`'s defer) must not repaint the active profile.
+    ///
+    /// This is the deterministic core of №13 — the "follow A → navigate to B
+    /// → B shows A's state" regression. The parked-refresh interleaving
+    /// (refresh completing mid-mutation) is additionally guarded by
+    /// `test_refresh_does_not_clobber_pending_optimistic_follow` above: a
+    /// pre-mutation refresh must not revert the optimistic state, and the
+    /// parked post-mutation refresh only ever replaces it with fresher
+    /// server truth (epoch-guarded adoption in `mutate`).
+    func test_optimistic_mutation_for_backgrounded_profile_does_not_repaint_status() async {
+        let store = FollowStore()
+
+        let followGate = FFDispatchGate()
+        let followStarted = FFCounter()
+        FollowFeedTestURLProtocol.handler = { [followStarted] request in
+            let path = request.url?.path ?? ""
+            if path.contains("/users/me/following/") {
+                // Server truth: nobody is followed (fresh refreshes return false).
+                return Self.okStatus(following: false, pushOptIn: false)
+            }
+            if path.hasSuffix("/follow") {
+                followStarted.bump()
+                followGate.wait()
+                return Self.okSuccess(status: 201)
+            }
+            return Self.okEmpty()
+        }
+
+        // Seed: profile "b" loaded (following=false), then a follow for
+        // backgrounded profile "a" starts.
+        await store.refresh(username: "b")
+        XCTAssertEqual(store.status, FollowStatusDTO(following: false, pushOptIn: false))
+
+        let followTask = Task { await store.follow(username: "a") }
+        await ffWaitUntil { followStarted.value == 1 }
+        // While in flight, optimistic "following: true" must NOT have painted.
+        XCTAssertEqual(
+            store.status,
+            FollowStatusDTO(following: false, pushOptIn: false),
+            "Optimistic write for a non-active profile must not touch status (№13)"
+        )
+
+        followGate.release()
+        let ok = await followTask.value
+        XCTAssertTrue(ok, "server-side follow still succeeds")
+        XCTAssertEqual(
+            store.status,
+            FollowStatusDTO(following: false, pushOptIn: false),
+            "Completion for a backgrounded profile must not repaint the active profile's status"
+        )
+    }
+
     // MARK: - helpers
 
     private static func okStatus(following: Bool, pushOptIn: Bool = false) -> (HTTPURLResponse, Data) {

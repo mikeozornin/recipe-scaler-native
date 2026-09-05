@@ -141,12 +141,41 @@ actor RecipeImageService {
         return await fetchAndStore(recipeId: recipeId, imageUrl: imageUrl, variant: variant)
     }
 
+    /// Fingerprint of the last `prefetchPreviews` pass (review 2026.09.04 №14):
+    /// every debounced collection refresh re-ran the full sweep — cache stat +
+    /// UserDefaults reads per recipe — and re-issued `removeCache` for every
+    /// imageless recipe. Same fingerprint → skip the whole pass.
+    private var lastPrefetchFingerprint: Set<String>?
+
     func prefetchPreviews(entries: [CollectionEntry], allowNetwork: Bool) async {
-        for entry in entries {
-            if entry.imageUrl?.isEmpty != false {
-                await removeCache(recipeId: entry.id)
+        let fingerprint = cacheFingerprint(for: entries)
+        if let last = lastPrefetchFingerprint, last == fingerprint {
+            // Collection unchanged since the previous pass — nothing new to
+            // sweep, stat or download. A version bump changes `imageUrl`
+            // (the `v=` query), hence the fingerprint, hence the pass.
+            return
+        }
+
+        // Sweep removals by diff (№14): only imageless entries — and only
+        // those the previous pass saw with an image — need `removeCache`.
+        let imagelessIds = Set(entries.filter { $0.imageUrl?.isEmpty != false }.map(\.id))
+        if let last = lastPrefetchFingerprint {
+            let lastImageless = last.filter { $0.split(separator: "|", maxSplits: 1).last == "" }
+            let lastImagelessIds = Set(
+                lastImageless.map { String($0.split(separator: "|", maxSplits: 1).first ?? "") }
+            )
+            let newlyImageless = imagelessIds.subtracting(lastImagelessIds)
+            for id in newlyImageless {
+                await removeCache(recipeId: id)
+            }
+        } else if !imagelessIds.isEmpty {
+            // First pass after (re)launch — mirror the legacy full sweep for
+            // imageless recipes so stale cache from a previous session drops.
+            for id in imagelessIds {
+                await removeCache(recipeId: id)
             }
         }
+        lastPrefetchFingerprint = fingerprint
 
         await postCacheStatusChanged()
 
@@ -212,6 +241,9 @@ actor RecipeImageService {
             defaults.removeObject(forKey: versionKey(recipeId: recipeId, variant: variant))
         }
         invalidateCacheStatusMemo()
+        // Cache changed outside the prefetch path — the next prefetch pass
+        // must re-evaluate instead of short-circuiting on the fingerprint.
+        lastPrefetchFingerprint = nil
     }
 
     // MARK: - Private
