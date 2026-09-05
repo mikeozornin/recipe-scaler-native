@@ -64,18 +64,20 @@ bash scripts/bootstrap-store-libraries.sh         # импорт zip + shopping 
 
 | Ключ | Назначение | Контент |
 |------|------------|---------|
-| `ru` | скриншоты RU | `recipes-ru.zip`, публичный профиль `@mikeozornin-ru-scr` |
-| `en` | скриншоты EN | `recipes-en.zip`, публичный профиль `@mikeozornin-en-scr` |
+| `ru` | скриншоты RU | `recipes-ru.zip`, discover shot = публичный профиль store-юзера (`@mikeozornin-ru-scr`) |
+| `en` | скриншоты EN | `recipes-en.zip`, discover shot = публичный профиль store-юзера (`@mikeozornin-en-scr`) |
 | `app-store-review` | отдать Apple в ASC | копия EN-библиотеки, отдельный seed |
 
 Не использовать shared debug-user (`f088233a-…`). Capture больше не вызывает `register-auto`.
+
+`prepare-discover` после `login` должен получать тот же Bearer (`--token`): повторный `login-with-seed` ротирует device token и симулятор стартует с уже мёртвым Bearer.
 
 ## Снять кадры
 
 ```bash
 bash scripts/capture-app-store-screenshots.sh
 bash scripts/capture-app-store-screenshots.sh --locale ru --appearance light
-bash scripts/capture-app-store-screenshots.sh --shot 07 --shot 08 --skip-build
+bash scripts/capture-app-store-screenshots.sh --shot 09-nutrition
 bash scripts/validate-app-store-screenshots.sh
 ```
 

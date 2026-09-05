@@ -25,7 +25,7 @@ if [[ ! -d "$PROJECT" ]]; then
 fi
 
 DERIVED_DATA="${DERIVED_DATA:-build/verify-derived-data}"
-APPEX=$(find "$DERIVED_DATA/Build/Products" -name 'HomeWidgetExtension.appex' -type d 2>/dev/null | head -1)
+APPEX=$(find "$DERIVED_DATA/Build/Products" -name 'HomeWidgetExtension.appex' -type d 2>/dev/null | head -n 1 || true)
 
 if [[ "${SKIP_BUILD:-0}" == "1" && -n "$APPEX" ]]; then
   echo "[verify] SKIP_BUILD=1 — reusing $APPEX"
@@ -43,7 +43,7 @@ xcodebuild \
     exit 1
   }
 echo "[verify] Build OK"
-APPEX=$(find "$DERIVED_DATA/Build/Products" -name 'HomeWidgetExtension.appex' -type d | head -1)
+APPEX=$(find "$DERIVED_DATA/Build/Products" -name 'HomeWidgetExtension.appex' -type d | head -n 1)
 fi
 
 if [[ -z "$APPEX" ]]; then

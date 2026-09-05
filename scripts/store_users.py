@@ -4,6 +4,7 @@
 Usage:
   python3 scripts/store_users.py provision          # register once, write users.yaml
   python3 scripts/store_users.py login ru|en|app-store-review
+  python3 scripts/store_users.py prepare-discover ru|en [--token BEARER]
   python3 scripts/store_users.py show
 """
 
@@ -57,22 +58,31 @@ def api_base() -> str:
     return (__import__("os").environ.get("E2E_API_BASE") or DEFAULT_API).rstrip("/")
 
 
-def request_json(method: str, path: str, body: dict, timeout: int = 25) -> dict:
-    data = json.dumps(body).encode()
+def request_json(method: str, path: str, body: dict | None, timeout: int = 25, *, token: str | None = None) -> dict:
+    headers = {"Content-Type": "application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(
         api_base() + path,
         data=data,
-        headers={"Content-Type": "application/json"},
+        headers=headers,
         method=method,
     )
     last_error: Exception | None = None
-    for attempt in range(1, 5):
+    for attempt in range(1, 8):
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return json.load(resp)
+        except urllib.error.HTTPError as exc:
+            if exc.code == 429 and attempt < 7:
+                time.sleep(min(attempt * 5, 30))
+                last_error = exc
+                continue
+            raise SystemExit(f"{method} {path} failed: HTTP {exc.code}: {exc.reason}") from exc
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
             last_error = exc
-            time.sleep(attempt * 2)
+            time.sleep(min(attempt * 2, 15))
     raise SystemExit(f"{method} {path} failed: {last_error}")
 
 
@@ -210,6 +220,54 @@ def cmd_login(key: str) -> int:
     return 0
 
 
+def _ensure_store_username(user: dict[str, str], token: str) -> str | None:
+    desired = (user.get("username") or "").strip().lower()
+    if not desired:
+        return None
+    settings = request_json("GET", "/api/users/sharing-settings", None, token=token)
+    current = (settings.get("data") or {}).get("username")
+    if current and current.lower() == desired:
+        return current
+    request_json("PUT", "/api/users/username", {"username": desired}, token=token)
+    return desired
+
+
+def cmd_prepare_discover(key: str, token: str | None = None) -> int:
+    """Enable public profile for the store user and print their @username for discover shots."""
+    if key not in {"ru", "en"}:
+        raise SystemExit("prepare-discover supports ru|en screenshot users only")
+    payload = load_users()
+    user = payload["users"].get(key)
+    if not user:
+        raise SystemExit(f"unknown user key {key!r}")
+    if not user.get("seedPhrase") or not user.get("deviceId"):
+        raise SystemExit(f"{key} has no seed yet; run: python3 scripts/store_users.py provision")
+    # Reusing the capture login token is mandatory: login-with-seed rotates the
+    # device hash, and a second login here would invalidate the Bearer already
+    # handed to the simulator (empty library / socket unauthorized).
+    resolved_token = token
+    if not resolved_token:
+        _user_id, resolved_token = login_with_seed(
+            user["seedPhrase"], user["deviceId"], user.get("locale") or "en"
+        )
+    _ensure_store_username(user, resolved_token)
+    request_json(
+        "PATCH",
+        "/api/users/sharing-settings",
+        {"publicProfileEnabled": True, "shareMode": "all"},
+        token=resolved_token,
+    )
+    settings = request_json("GET", "/api/users/sharing-settings", None, token=resolved_token)
+    data = settings.get("data") or {}
+    username = (data.get("username") or user.get("username") or "").strip().lower()
+    if not username:
+        raise SystemExit(f"{key}: public profile enabled but username is missing in users.yaml and API")
+    if data.get("publicProfileEnabled") is not True:
+        raise SystemExit(f"{key}: failed to enable public profile (API returned disabled)")
+    print(username)
+    return 0
+
+
 def cmd_show() -> int:
     payload = load_users()
     for spec in USER_SPECS:
@@ -230,12 +288,21 @@ def main() -> int:
     p_prov.add_argument("--force", action="store_true")
     p_login = sub.add_parser("login")
     p_login.add_argument("key", choices=[spec["key"] for spec in USER_SPECS])
+    p_prep = sub.add_parser("prepare-discover")
+    p_prep.add_argument("key", choices=["ru", "en"])
+    p_prep.add_argument(
+        "--token",
+        default=None,
+        help="Reuse an existing Bearer instead of login-with-seed (avoids rotating capture tokens)",
+    )
     sub.add_parser("show")
     args = parser.parse_args()
     if args.cmd == "provision":
         return cmd_provision(force=args.force)
     if args.cmd == "login":
         return cmd_login(args.key)
+    if args.cmd == "prepare-discover":
+        return cmd_prepare_discover(args.key, token=args.token)
     if args.cmd == "show":
         return cmd_show()
     return 1

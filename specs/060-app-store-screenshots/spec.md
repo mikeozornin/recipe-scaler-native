@@ -22,7 +22,7 @@
 |---|------|------------|-------------|
 | 1 | `recipes` | sync / «рецепты всегда с собой» | Tab Рецепты, библиотека с фото |
 | 2 | `cooking` | cooking (+ scale незаметно) | Деталка Штрудель/Strudel: wake-lock, раскрытые таймеры, **scale ≠ 1** |
-| 3 | `discover` | discover | Открытая публичная коллекция (не пустой каталог) |
+| 3 | `discover` | discover | Публичный профиль store-юзера (включён `prepare-discover`, рецепты той же локали) |
 | 4 | `shopping` | shopping-list | Несколько позиций, часть отмечена купленной |
 | 5 | `assistant` | assistant | Фикстура troubleshooting («соус свернулся»), не live LLM |
 | 6 | `widget` | native | Springboard + Home Widget таймера (виджет ставится вручную один раз) |

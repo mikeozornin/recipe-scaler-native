@@ -16,6 +16,8 @@
 #   - RecipeScalerNative/LiveActivity/
 #   - RecipeScalerNative/ContentView.swift, RecipeScalerNativeApp.swift
 #   - RecipeScalerNativeWatch/ (if present)
+#   - HomeWidgetExtension/ (review 2026.09.04 №22 — Russian gallery
+#     placeholders shipped outside xcstrings)
 #
 # Constructs flagged:
 #   Text("…")                Button("…")             Label("…", …)
@@ -51,6 +53,7 @@ cd "$ROOT"
 SCAN_DIRS=(
   "RecipeScalerNative/Views"
   "RecipeScalerNative/LiveActivity"
+  "HomeWidgetExtension"
 )
 EXTRA_FILES=(
   "RecipeScalerNative/ContentView.swift"

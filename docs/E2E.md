@@ -66,7 +66,7 @@ flowchart LR
 **Web parity:** Playwright `auth.ts` (`register-auto` per test) → на native то же:
 
 - **Per-test fresh anonymous user** via `POST /api/auth/register-auto`.
-- Credentials injected into the app via launch env (`E2E_OVERRIDE_USER_ID` / `E2E_OVERRIDE_DEVICE_TOKEN`); `AppContainer.bootstrap` + `ContentView` honour these on simulator.
+- Credentials injected into the app via launch env (`E2E_OVERRIDE_USER_ID` / `E2E_OVERRIDE_DEVICE_TOKEN` / `E2E_OVERRIDE_SEED_PHRASE`). `AuthService.init` applies them **before** Keychain restore (and persists the seed) so socket handshake and token recovery cannot reuse a leftover debug-simulator session. `AppContainer.bootstrap` re-applies the same inject. `ContentView` treats `E2E_OVERRIDE_USER_ID` as authenticated on simulator.
 - No wipe needed — each test starts with an empty user.
 
 If register-auto fails, the test **skips** (not fails).

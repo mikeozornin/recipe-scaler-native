@@ -25,7 +25,6 @@ locales:
     primaryRecipeName: Штрудель
     timerName: "Штрудель в духовке"
     assistantPrompt: "Соус свернулся. Как спасти пасту?"
-    discoverProfileUsername: mikeozornin-ru-scr
     # Prefix "!" = purchased on the shopping shot.
     shoppingItems:
       - "Мука, 280 г — Штрудель"
@@ -40,7 +39,6 @@ locales:
     primaryRecipeName: Strudel
     timerName: "Strudel in the oven"
     assistantPrompt: "My sauce split. How can I save the pasta?"
-    discoverProfileUsername: mikeozornin-en-scr
     shoppingItems:
       - "Flour, 280 g — Strudel"
       - "Cherries, 1100 g — Strudel"

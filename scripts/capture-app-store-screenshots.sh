@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Capture App Store screenshots: 8 shots × ru/en × light/dark on a 6.9″ simulator.
+# Capture App Store screenshots: 9 shots × ru/en × light/dark on a 6.9″ simulator.
 #
 # Locale switch = E2E relogin only (no uninstall / no data wipe) so SpringBoard
 # widget placement, app icon position, and push/LA TCC survive across ru↔en.
@@ -15,6 +15,7 @@ source "$ROOT/scripts/sim-capture-lib.sh"
 API_BASE="${E2E_API_BASE:-https://recipe-scaler.ru}"
 OUT_ROOT="$ROOT/store/screenshots/iphone-6.9"
 MANIFEST="$ROOT/store/screenshots/manifest.yaml"
+LOG_FILE="$ROOT/.debug-session.ndjson"
 STATUS_TIME="9:41"
 # Keep these short — library is already on the store account; we only need UI settle.
 SYNC_WAIT_SECONDS="${CAPTURE_SYNC_WAIT:-12}"
@@ -114,6 +115,8 @@ ALL_SHOTS=(
   06-widget
   07-live-activity
   08-push
+  09-nutrition
+  10-import
 )
 
 shot_wanted() {
@@ -148,6 +151,10 @@ resolve_sim() {
 
 login_store_user() {
   python3 "$ROOT/scripts/store_users.py" login "$1"
+}
+
+prepare_discover_profile() {
+  python3 "$ROOT/scripts/store_users.py" prepare-discover "$1" --token "$2"
 }
 
 override_status_bar() {
@@ -330,7 +337,7 @@ launch_capture() {
   export SIMCTL_CHILD_E2E_OVERRIDE_DEVICE_TOKEN="$token"
   export SIMCTL_CHILD_E2E_OVERRIDE_SEED_PHRASE="$seed"
   export SIMCTL_CHILD_E2E_OVERRIDE_API_BASE="$API_BASE"
-  export SIMCTL_CHILD_AGENT_DEBUG_LOG_DISABLED=1
+  unset SIMCTL_CHILD_AGENT_DEBUG_LOG_DISABLED
   # Bring Simulator forward without sending the app to SpringBoard (no Cmd+Shift+H).
   osascript <<'APPLESCRIPT' >/dev/null 2>&1 || true
 tell application "Simulator" to activate
@@ -758,6 +765,110 @@ print("|".join(items))
 PY
 }
 
+wait_for_screenshot_media() {
+  sim_wait_log_line "screenshot_media_ready" "${1:-60}" || {
+    echo "WARN: screenshot_media_ready missing — continuing after extra settle" >&2
+    wait_ready 3
+  }
+}
+
+# Strict variant: only lines at/after since_epoch_ms count, and the signal must
+# come from the recipe-detail prefetch (scope":"recipe"). Returns non-zero when
+# the signal never arrives so callers can retry instead of capturing a wrong UI.
+wait_for_screenshot_media_strict() {
+  # Args: timeout_seconds [since_epoch_ms]
+  local timeout_seconds="${1:-60}"
+  local since_ms="${2:-0}"
+  local log="${LOG_FILE:-$ROOT/.debug-session.ndjson}"
+  local deadline=$((SECONDS + timeout_seconds))
+
+  while (( SECONDS < deadline )); do
+    sim_pull_debug_log 2>/dev/null || true
+    if [[ -f "$log" ]]; then
+      if python3 - "$log" "$since_ms" <<'PY'
+import json, sys
+from pathlib import Path
+path, since = Path(sys.argv[1]), int(sys.argv[2])
+if not path.is_file():
+    raise SystemExit(1)
+for line in path.read_text(errors="replace").splitlines():
+    try:
+        row = json.loads(line)
+    except json.JSONDecodeError:
+        continue
+    ts = row.get("timestamp")
+    if isinstance(ts, (int, float)) and ts < since:
+        continue
+    if row.get("message") == "screenshot_media_ready" and (row.get("data") or {}).get("scope") == "recipe":
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+      then
+        return 0
+      fi
+    fi
+    sleep 0.5
+  done
+
+  echo "Timed out waiting for recipe screenshot_media_ready after ${timeout_seconds}s" >&2
+  return 1
+}
+
+wait_for_discover_screenshot() {
+  # Args: timeout_seconds [since_epoch_ms]
+  # Match only NDJSON lines at/after since_epoch_ms so a truncated/replaced
+  # host log after relaunch cannot hide a fresh screenshot_discover_ready.
+  local timeout_seconds="${1:-90}"
+  local since_ms="${2:-0}"
+  local log="${LOG_FILE:-$ROOT/.debug-session.ndjson}"
+  local deadline=$((SECONDS + timeout_seconds))
+  local status=""
+
+  while (( SECONDS < deadline )); do
+    sim_pull_debug_log 2>/dev/null || true
+    if [[ -f "$log" ]]; then
+      status="$(python3 - "$log" "$since_ms" <<'PY'
+import json, sys
+from pathlib import Path
+path = Path(sys.argv[1])
+since = int(sys.argv[2])
+if not path.is_file():
+    raise SystemExit(0)
+for line in path.read_text(errors="replace").splitlines():
+    try:
+        row = json.loads(line)
+    except json.JSONDecodeError:
+        continue
+    ts = row.get("timestamp")
+    if isinstance(ts, (int, float)) and ts < since:
+        continue
+    msg = row.get("message") or ""
+    if msg == "screenshot_discover_ready":
+        print("ready")
+        raise SystemExit(0)
+    if msg == "screenshot_discover_failed":
+        data = row.get("data") or {}
+        print("failed")
+        print(f"username={data.get('username','')} error={data.get('error','')}")
+        raise SystemExit(0)
+PY
+)"
+      if [[ "$status" == ready* ]]; then
+        return 0
+      fi
+      if [[ "$status" == failed* ]]; then
+        echo "ERROR: public profile failed to load (screenshot_discover_failed)" >&2
+        printf '%s\n' "$status" >&2
+        return 1
+      fi
+    fi
+    sleep 0.5
+  done
+
+  echo "ERROR: screenshot_discover_ready missing — not capturing error UI" >&2
+  return 1
+}
+
 capture_shot() {
   local shot="$1" out_dir="$2" user_id="$3" token="$4" seed="$5"
   local app_lang="$6" appearance="$7" recipe_name="$8" timer_name="$9" discover_profile="${10}"
@@ -769,8 +880,7 @@ capture_shot() {
         "-AppLanguage=$app_lang" \
         "-AppTheme=$appearance" \
         "-OpenTab=recipes"
-      # Extra settle: second timer sweep (~2s) + list thumbnails.
-      wait_ready 3
+      wait_for_screenshot_media 60
       dismiss_notification_alert
       capture_png "$out_dir/01-recipes.png"
       ;;
@@ -778,22 +888,39 @@ capture_shot() {
       launch_for_shot "$user_id" "$token" "$seed" \
         "-AppLanguage=$app_lang" \
         "-AppTheme=$appearance" \
-        "-OpenRecipeName=$recipe_name" \
+        "-OpenRecipeName" \
+        "$recipe_name" \
         "-ScreenshotScaleFactor=2" \
         "-ScreenshotScreenAwake=1" \
         "-ScreenshotTimerSeconds=2700" \
         "-ScreenshotTimerName=$timer_name" \
         "-MobileTimerPanelExpanded=1"
-      wait_ready 2
+      wait_for_screenshot_media 60
       dismiss_notification_alert
       capture_png "$out_dir/02-cooking.png"
       ;;
     03-discover)
-      launch_for_shot "$user_id" "$token" "$seed" \
-        "-AppLanguage=$app_lang" \
-        "-AppTheme=$appearance" \
-        "-OpenDiscoverProfile=$discover_profile"
-      wait_ready 2
+      local discover_ok=0
+      local discover_attempt
+      local since_ms=0
+      for discover_attempt in 1 2 3; do
+        echo "  discover capture attempt $discover_attempt (@$discover_profile)"
+        since_ms="$(python3 -c 'import time; print(int(time.time() * 1000))')"
+        CAPTURE_LAUNCH_WAIT=8 launch_for_shot "$user_id" "$token" "$seed" \
+          "-AppLanguage=$app_lang" \
+          "-AppTheme=$appearance" \
+          "-OpenDiscoverProfile=$discover_profile"
+        if wait_for_discover_screenshot 90 "$since_ms"; then
+          discover_ok=1
+          break
+        fi
+        echo "  discover not ready — waiting before retry" >&2
+        wait_ready $((discover_attempt * 8))
+      done
+      if [[ "$discover_ok" != "1" ]]; then
+        echo "ERROR: 03-discover never reached a loaded public profile (@$discover_profile)" >&2
+        return 1
+      fi
       capture_png "$out_dir/03-discover.png"
       ;;
     04-shopping)
@@ -850,7 +977,7 @@ capture_shot() {
       dismiss_notification_alert
       lock_simulator
       sleep 1.5
-      # AX-only Allow attempt (no geometry taps — those unlock the phone).
+      dismiss_live_activity_allow_chip
       dismiss_notification_alert
       # Lock screen ignores earlier status_bar override until re-applied (ISO time).
       override_status_bar
@@ -889,6 +1016,50 @@ capture_shot() {
       override_status_bar
       capture_png "$out_dir/08-push.png"
       ;;
+    09-nutrition)
+      # Recipe detail scrolled to the nutrition block (about-media layer).
+      # Strict gate: the recipe must actually open (screenshot_media_ready,
+      # scope=recipe) — otherwise we capture an empty library instead of КБЖУ.
+      local nutrition_ok=0
+      local nutrition_attempt
+      local since_ms=0
+      for nutrition_attempt in 1 2 3; do
+        echo "  nutrition capture attempt $nutrition_attempt"
+        since_ms="$(python3 -c 'import time; print(int(time.time() * 1000))')"
+        CAPTURE_LAUNCH_WAIT=8 launch_for_shot "$user_id" "$token" "$seed" \
+          "-AppLanguage=$app_lang" \
+          "-AppTheme=$appearance" \
+          "-OpenTab=recipes" \
+          "-OpenRecipeName" \
+          "$recipe_name" \
+          "-ScreenshotScaleFactor=1" \
+          "-ScreenshotScrollToNutrition=1"
+        if wait_for_screenshot_media_strict 90 "$since_ms"; then
+          nutrition_ok=1
+          break
+        fi
+        echo "  recipe never opened — waiting before retry" >&2
+        wait_ready $((nutrition_attempt * 8))
+      done
+      if [[ "$nutrition_ok" != "1" ]]; then
+        echo "ERROR: 09-nutrition never reached an open recipe ($recipe_name)" >&2
+        return 1
+      fi
+      capture_png "$out_dir/09-nutrition.png"
+      ;;
+    10-import)
+      # Import sheet (about-media layer): Text tab is the marketing default.
+      # App waits for sync online before presenting so resetState picks Text
+      # (offline cold-open would otherwise land on File and stay there).
+      launch_for_shot "$user_id" "$token" "$seed" \
+        "-AppLanguage=$app_lang" \
+        "-AppTheme=$appearance" \
+        "-OpenTab=import"
+      sim_wait_log_line "screenshot_import_ready" 45 || wait_ready 8
+      wait_ready 2
+      dismiss_notification_alert
+      capture_png "$out_dir/10-import.png"
+      ;;
     *)
       echo "Unknown shot: $shot" >&2
       return 1
@@ -913,7 +1084,6 @@ for locale in "${LOCALES[@]}"; do
   [[ -f "$archive" ]] || { echo "missing $archive" >&2; exit 1; }
   recipe_name="$(manifest_value "$locale" primaryRecipeName)"
   timer_name="$(manifest_value "$locale" timerName)"
-  discover_profile="$(manifest_value "$locale" discoverProfileUsername)"
   app_lang="$(manifest_value "$locale" appLanguage)"
   shopping_seed="$(shopping_seed_arg "$locale")"
 
@@ -924,6 +1094,9 @@ for locale in "${LOCALES[@]}"; do
     IFS= read -r token
     IFS= read -r seed
   } < <(login_store_user "$locale")
+
+  discover_profile="$(prepare_discover_profile "$locale" "$token")"
+  echo "  discover profile: @$discover_profile (store user, locale-matched recipes)"
 
   # Relogin only — no uninstall / no container wipe.
   set_flat_recipe_list
