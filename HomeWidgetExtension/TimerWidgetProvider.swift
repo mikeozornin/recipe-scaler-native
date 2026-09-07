@@ -4,7 +4,8 @@
 //
 //  Spec 030 — Timeline provider for `TimerWidget`.
 //  Phase B3 + review fixes: network only when snapshot is stale and no
-//  pending-local Intent mutation; getSnapshot is App Group only; single-flight.
+//  pending-local Intent mutation; getSnapshot is App Group (empty in gallery);
+//  single-flight.
 //
 
 import WidgetKit
@@ -38,10 +39,15 @@ struct TimerWidgetProvider: TimelineProvider {
     private static let networkTimeoutNanoseconds: UInt64 = 8_000_000_000
 
     func placeholder(in context: Context) -> TimerWidgetEntry {
-        TimerWidgetEntry.placeholderSmall()
+        // Loading / gallery must not flash Figma stub timers (soon/orange).
+        TimerWidgetEntry.empty
     }
 
     func getSnapshot(in context: Context, completion: @escaping (TimerWidgetEntry) -> Void) {
+        if context.isPreview {
+            completion(TimerWidgetEntry.empty)
+            return
+        }
         // Review #6 — snapshot must stay fast; App Group only.
         let document = TimerSnapshotStore.load()
         completion(TimerWidgetEntry(date: Date(), timers: document.timers))

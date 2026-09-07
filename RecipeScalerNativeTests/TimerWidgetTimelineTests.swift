@@ -37,4 +37,29 @@ final class TimerWidgetTimelineTests: XCTestCase {
             "coarse timeline must reload 1s after hitting 0"
         )
     }
+
+    func testTimerWidgetProviderPlaceholderIsEmptyNotFigmaStub() throws {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("HomeWidgetExtension/TimerWidgetProvider.swift")
+        let source = try String(contentsOf: url, encoding: .utf8)
+
+        XCTAssertTrue(
+            source.contains("func placeholder(in context: Context) -> TimerWidgetEntry"),
+            "placeholder(in:) must still exist"
+        )
+        XCTAssertTrue(
+            source.contains("TimerWidgetEntry.empty"),
+            "placeholder/gallery must use empty, not Figma stub timers"
+        )
+        XCTAssertFalse(
+            source.contains("placeholderSmall()"),
+            "runtime provider must not call placeholderSmall()"
+        )
+        XCTAssertTrue(
+            source.contains("if context.isPreview"),
+            "getSnapshot must skip App Group in the widget gallery"
+        )
+    }
 }

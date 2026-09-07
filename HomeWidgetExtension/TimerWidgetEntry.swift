@@ -18,9 +18,9 @@ struct TimerWidgetEntry: TimelineEntry {
 
     // MARK: - Figma copy (107:238 / 107:318)
     //
-    // Review 2026.09.04 №22: the placeholder recipe names are user-visible in
-    // the widget gallery (`placeholder(in:)`) — localized via the shared
-    // Localizable.xcstrings (included in the HomeWidgetExtension resources).
+    // Xcode `#Preview` and layout-audit stubs only. Runtime `placeholder(in:)`
+    // and gallery `getSnapshot(isPreview:)` use `.empty`. Recipe names are
+    // localized via the shared Localizable.xcstrings.
 
     private static var figmaRecipeShort: String {
         String(localized: "widgets.timer.placeholder.recipe-short")
@@ -102,7 +102,7 @@ struct TimerWidgetEntry: TimelineEntry {
         )
     }
 
-    /// Placeholder used by `#Preview(as:)` in `TimerWidget.swift`.
+    /// Xcode `#Preview(as:)` in `TimerWidget.swift` — not used at runtime.
     static func placeholderSmall() -> TimerWidgetEntry {
         placeholderOne()
     }
