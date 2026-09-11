@@ -53,6 +53,7 @@ Doc key: `{userId}:collection`
 | `imageUrl` | `imageUrl` | string? |
 | `imageAspectRatio` | `imageAspectRatio` | double? |
 | `originalRecipeLink` / `originalRecipe` | same | string? |
+| `processTable` | `processTable` | JSON string (`ProcessTableV1`, 074). Decode v1; preserve on write. Invalid / missing → ignore, do not delete |
 
 Doc key: `{userId}:recipe:{recipeId}`
 
@@ -68,5 +69,5 @@ Doc key: `{userId}:recipe:{recipeId}`
 - UUID ids: **lowercase** (shared rule).
 - `YrsDocument` sets `Y_SKIP_GC` on recipe docs (y-prosemirror / yjs 13 skip structures).
 - `scaleFactor` — do not persist in Yjs (shared).
-- Do-No-Harm: preserve unknown keys (especially `folderIds`).
+- Do-No-Harm: preserve unknown keys (especially `folderIds`, `processTable`).
 - Collections UI guide: `../recipe-scaler-web/llm/NATIVE_APP_COLLECTIONS.md`
