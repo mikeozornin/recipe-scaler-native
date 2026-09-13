@@ -19,6 +19,14 @@ struct ProcessTableCookingOrientationGate {
         return nil
     }
 
+    /// Landscape (and iPad any) sizes may drive the cooking matrix. Portrait
+    /// iPhone sizes must not rewrite layout metrics (FR-007).
+    static func acceptedLayoutSize(_ size: CGSize, idiom: UIUserInterfaceIdiom) -> CGSize? {
+        guard let orientation = interfaceOrientation(from: size) else { return nil }
+        if idiom == .phone, orientation.isPortrait { return nil }
+        return size
+    }
+
     func apply(_ orientation: UIInterfaceOrientation) -> ProcessTableCookingOrientationAction {
         if orientation.isPortrait { return .reassertLandscape }
         return .stay

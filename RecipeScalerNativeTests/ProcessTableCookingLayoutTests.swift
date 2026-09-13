@@ -92,6 +92,9 @@ final class ProcessTableCookingLayoutTests: XCTestCase {
         XCTAssertEqual(ProcessTableLayout.cookingTrailingEdgePad, 0)
         XCTAssertEqual(ProcessTableLayout.cookingCloseTrailingPad, 28)
         XCTAssertEqual(ProcessTableLayout.cookingCloseTopPad, 10)
+        XCTAssertEqual(ProcessTableLayout.timerChipGap, 4)
+        XCTAssertEqual(ProcessTableLayout.timerChipHorizontalPad, 8)
+        XCTAssertEqual(ProcessTableLayout.timerChipVerticalPad, 6)
         XCTAssertLessThan(
             ProcessTableLayout.cookingHorizontalEdgePad,
             ProcessTableLayout.matrixPadding,
@@ -195,8 +198,8 @@ final class ProcessTableCookingLayoutTests: XCTestCase {
             scaleFactor: 1,
             allowsRebuild: false,
             restoreAwakeOnDismiss: false,
-            rebuildModel: ProcessTableRebuildModel(api: APIClient.shared),
-            onStartTimer: { _ in }
+            session: ProcessTableCookingSession(),
+            rebuildModel: ProcessTableRebuildModel()
         )
     }
 

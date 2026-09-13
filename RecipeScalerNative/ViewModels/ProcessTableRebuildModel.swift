@@ -7,17 +7,12 @@ import RecipeScalerCore
 final class ProcessTableRebuildModel {
     var isRebuilding = false
 
-    private let api: APIClient
     private var generation = 0
     private var inFlight: Task<Void, Never>?
     var rebuildOverride: ((String) async throws -> Void)?
 
-    init(api: APIClient) {
-        self.api = api
-    }
-
     static func makePreview() -> ProcessTableRebuildModel {
-        ProcessTableRebuildModel(api: APIClient.shared)
+        ProcessTableRebuildModel()
     }
 
     func cancel() {
@@ -46,7 +41,7 @@ final class ProcessTableRebuildModel {
                 if let rebuildOverride {
                     try await rebuildOverride(capturedRecipeId)
                 } else {
-                    try await self.api.rebuildProcessTable(recipeId: capturedRecipeId)
+                    try await ProcessTableAPI.rebuild(recipeId: capturedRecipeId)
                 }
                 try Task.checkCancellation()
                 guard capturedGeneration == self.generation else { return }

@@ -165,7 +165,8 @@ public final class APIClient: @unchecked Sendable {
         path: String,
         method: String = "GET",
         body: Data? = nil,
-        headers: [String: String] = [:]
+        headers: [String: String] = [:],
+        timeoutInterval: TimeInterval? = nil
     ) throws -> URLRequest {
         guard let url = URL(string: "\(baseURL)\(path)") else {
             throw APIError.invalidURL
@@ -173,7 +174,7 @@ public final class APIClient: @unchecked Sendable {
 
         var request = URLRequest(url: url)
         request.httpMethod = method
-        request.timeoutInterval = min(
+        request.timeoutInterval = timeoutInterval ?? min(
             Self.requestTimeout,
             URLSession.shared.configuration.timeoutIntervalForRequest
         )
@@ -213,23 +214,6 @@ public final class APIClient: @unchecked Sendable {
         }
     }
 
-    public func rebuildProcessTable(recipeId: String) async throws {
-        var request = try buildRequest(
-            path: "/api/recipes/\(recipeId)/rebuild-process-table",
-            method: "POST"
-        )
-        request.timeoutInterval = Self.llmRequestTimeout
-
-        let (_, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
-        }
-
-        guard (200...299).contains(httpResponse.statusCode) else {
-            throw APIError.httpError(statusCode: httpResponse.statusCode)
-        }
-    }
 }
 
 // MARK: - API Errors

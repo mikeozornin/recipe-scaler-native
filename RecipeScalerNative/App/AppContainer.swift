@@ -122,6 +122,11 @@ final class AppContainer {
     /// account logs out.
     let tips: TipPurchaseService
 
+    /// Spec 074 — cooking cover + iPhone landscape lock. Dismissed on logout.
+    let cooking: ProcessTableCookingCoordinator
+    /// Spec 074 — single-flight rebuild; cancelled on cooking dismiss / logout.
+    let processTableRebuild: ProcessTableRebuildModel
+
     /// Holds the cyclic `TimerSyncService.sendTimerEvent ↔ YjsSyncService.emitTimerEvent`
     /// callback so neither service retains the other directly.
     private let timerEventBridge: TimerEventBridge
@@ -254,6 +259,8 @@ final class AppContainer {
         // StoreKit support purchases are independent of the signed-in
         // Recipe Scaler account and must survive account switching.
         self.tips = TipPurchaseService()
+        self.cooking = ProcessTableCookingCoordinator()
+        self.processTableRebuild = ProcessTableRebuildModel()
 
         // Bridge the cyclic callback
         let bridge = TimerEventBridge()
@@ -544,6 +551,8 @@ final class AppContainer {
 
     /// Stop sync + clear local state on logout (formerly `ContentView.onChange(of: authService.isAuthenticated)`).
     func stopForLogout() async {
+        cooking.dismissForLogout()
+        processTableRebuild.cancel()
         resetBootstrapAfterLogout()
         shellCoordinator.resetShellStateForLogout()
         discoverListState.clearAll()

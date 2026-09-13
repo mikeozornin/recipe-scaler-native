@@ -166,9 +166,8 @@ struct StepsSection: View {
     @Binding var timerPopover: DescriptionTimerPopoverState?
 
     @Environment(TimerManager.self) private var timerManager
-    @Environment(\.apiClient) private var apiClient
+    @Environment(\.appContainer) private var container
     @State private var document: RecipeDescriptionDocument?
-    @State private var rebuildModel: ProcessTableRebuildModel?
 
     init(
         htmlContent: String,
@@ -230,37 +229,20 @@ struct StepsSection: View {
         .task(id: htmlContent) {
             document = RecipeDescriptionParser.parse(htmlContent)
         }
-        .task {
-            if rebuildModel == nil {
-                rebuildModel = ProcessTableRebuildModel(api: apiClient)
+        .onDisappear {
+            if container?.cooking.presentation == nil {
+                container?.processTableRebuild.cancel()
             }
         }
     }
 
     private func presentCookingCover() {
         guard let cookingRecipe else { return }
-        let model = rebuildModel ?? ProcessTableRebuildModel(api: apiClient)
-        if rebuildModel == nil {
-            rebuildModel = model
-        }
-        ProcessTableCookingPresenter.presentOverlay(
-            ProcessTableCookingView(
-                recipe: cookingRecipe,
-                scaleFactor: scaleFactor,
-                allowsRebuild: allowsRebuild,
-                restoreAwakeOnDismiss: restoreAwakeOnDismiss,
-                timerManager: timerManager,
-                syncService: syncService,
-                rebuildModel: model,
-                onStartTimer: { chip in
-                    _ = timerManager.createAndStartTimer(
-                        name: chip.name,
-                        duration: TimeInterval(chip.duration),
-                        type: chip.type,
-                        recipeId: recipeId
-                    )
-                }
-            )
+        container?.cooking.present(
+            recipe: cookingRecipe,
+            scaleFactor: scaleFactor,
+            allowsRebuild: allowsRebuild,
+            restoreAwakeOnDismiss: restoreAwakeOnDismiss
         )
     }
 

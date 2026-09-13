@@ -8,19 +8,20 @@ import RecipeScalerCore
 @MainActor
 final class ProcessTableCookingSceneTests: XCTestCase {
     override func tearDown() {
-        ProcessTableCookingPresenter.dismissOverlay()
+        AppContainer.shared?.cooking.dismissForLogout()
         super.tearDown()
     }
 
     func testBeginSessionAdvertisesLandscapeWithoutRotatingUntilAsked() throws {
         try XCTSkipIf(UIDevice.current.userInterfaceIdiom != .phone, "Forced landscape is iPhone-only")
+        let cooking = ProcessTableCookingCoordinator()
         let window = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .flatMap(\.windows)
             .first
 
-        ProcessTableCookingPresenter.unlockOrientation()
-        let rest = ProcessTableCookingPresenter.supportedInterfaceOrientations(for: window)
+        cooking.unlockOrientation()
+        let rest = cooking.supportedInterfaceOrientations(for: window)
         XCTAssertTrue(
             rest.contains(.portrait),
             "App is portrait-primary while cooking is closed; got \(rest.rawValue)"
@@ -30,19 +31,19 @@ final class ProcessTableCookingSceneTests: XCTestCase {
             "Landscape must not be advertised before cooking is on screen; got \(rest.rawValue)"
         )
 
-        ProcessTableCookingPresenter.beginLandscapeSession(requestGeometry: false)
-        let cooking = ProcessTableCookingPresenter.supportedInterfaceOrientations(for: window)
+        cooking.beginLandscapeSession(requestGeometry: false)
+        let cookingMask = cooking.supportedInterfaceOrientations(for: window)
         XCTAssertTrue(
-            cooking.contains(.landscapeLeft) && cooking.contains(.landscapeRight),
-            "After cooking is visible the app delegate must allow landscape; got \(cooking.rawValue)"
+            cookingMask.contains(.landscapeLeft) && cookingMask.contains(.landscapeRight),
+            "After cooking is visible the app delegate must allow landscape; got \(cookingMask.rawValue)"
         )
         XCTAssertFalse(
-            cooking.contains(.portrait),
-            "Portrait must not be advertised while cooking is locked to landscape; got \(cooking.rawValue)"
+            cookingMask.contains(.portrait),
+            "Portrait must not be advertised while cooking is locked to landscape; got \(cookingMask.rawValue)"
         )
 
-        ProcessTableCookingPresenter.unlockOrientation()
-        let restored = ProcessTableCookingPresenter.supportedInterfaceOrientations(for: window)
+        cooking.unlockOrientation()
+        let restored = cooking.supportedInterfaceOrientations(for: window)
         XCTAssertEqual(restored, rest)
     }
 
@@ -66,38 +67,49 @@ final class ProcessTableCookingSceneTests: XCTestCase {
             UIApplication.shared.connectedScenes.isEmpty,
             "Needs a live window scene"
         )
-        ProcessTableCookingPresenter.presentOverlay(makeCookingView())
+        let cooking = ProcessTableCookingCoordinator()
+        let rebuild = ProcessTableRebuildModel()
+        cooking.present(
+            recipe: makeRecipe(),
+            scaleFactor: 1,
+            allowsRebuild: false,
+            restoreAwakeOnDismiss: false
+        )
+        let host = UIHostingController(
+            rootView: ProcessTableCookingRoot(cooking: cooking, rebuildModel: rebuild) {
+                Color.red
+            }
+        )
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 852, height: 393))
+        window.rootViewController = host
+        window.isHidden = false
+        window.makeKeyAndVisible()
+        host.view.layoutIfNeeded()
         pumpMain(seconds: 0.6)
+        host.view.layoutIfNeeded()
 
         XCTAssertNotNil(
-            ProcessTableCookingCoverModel.shared.item,
-            "Start cooking must set the ContentView cooking cover item"
+            cooking.presentation,
+            "Start cooking must set the cooking presentation"
         )
-        let windows = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-        let root = windows.first(where: \.isKeyWindow)?.rootViewController
-            ?? windows.first?.rootViewController
         XCTAssertTrue(
             containsAccessibilityIdentifier(
                 AccessibilityIdentifiers.recipeProcessTableGrid,
-                in: root?.view
+                in: host.view
             ) || containsAccessibilityIdentifier(
                 AccessibilityIdentifiers.recipeProcessTableGrid,
-                in: root
+                in: host
             ),
             "Presented cooking cover must show the process-table grid"
         )
         XCTAssertTrue(
-            windows.contains { window in
-                containsAccessibilityIdentifier(
-                    AccessibilityIdentifiers.recipeProcessTableClose,
-                    in: window
-                ) || containsAccessibilityIdentifier(
-                    AccessibilityIdentifiers.recipeProcessTableClose,
-                    in: window.rootViewController
-                )
-            },
+            containsAccessibilityIdentifier(
+                AccessibilityIdentifiers.recipeProcessTableClose,
+                in: host.view
+            ) || containsAccessibilityIdentifier(
+                AccessibilityIdentifiers.recipeProcessTableClose,
+                in: host
+            ),
             "Close must be reachable in the cooking chrome"
         )
     }
@@ -105,39 +117,43 @@ final class ProcessTableCookingSceneTests: XCTestCase {
     // MARK: - Fixture
 
     private func makeCookingView() -> ProcessTableCookingView {
+        ProcessTableCookingView(
+            recipe: makeRecipe(),
+            scaleFactor: 1,
+            allowsRebuild: false,
+            restoreAwakeOnDismiss: false,
+            session: ProcessTableCookingSession(),
+            rebuildModel: ProcessTableRebuildModel()
+        )
+    }
+
+    private func makeRecipe() -> RecipeData {
         let ingredients = [
             IngredientData(id: "a", name: "Flour", originalAmount: "200", unit: "g"),
             IngredientData(id: "b", name: "Water", originalAmount: "120", unit: "g"),
         ]
         let html = "<ol><li>Mix</li><li>Bake</li></ol>"
         let hash = ProcessTableSourceHash.hash(ingredients: ingredients, descriptionHtml: html)
-        return ProcessTableCookingView(
-            recipe: RecipeData(
-                id: "scene-test",
-                name: "Scene loaf",
-                servings: 1,
-                color: "#3b82f6",
-                version: "v3",
-                description: html,
-                ingredients: ingredients,
-                nutrition: nil,
-                isPublic: false,
-                hasSteps: true,
-                createdAt: "",
-                updatedAt: "",
-                imageUrl: nil,
-                imageAspectRatio: nil,
-                originalRecipeLink: nil,
-                originalRecipe: nil,
-                processTableRaw: """
-                {"version":1,"sourceHash":"\(hash)","columns":[{"id":"c1","title":"Mix","kind":"cook","stepIndex":0},{"id":"c2","title":"Bake","kind":"cook","stepIndex":1}],"assignments":[{"ingredientId":"a","columnId":"c1"},{"ingredientId":"b","columnId":"c2"}]}
-                """
-            ),
-            scaleFactor: 1,
-            allowsRebuild: false,
-            restoreAwakeOnDismiss: false,
-            rebuildModel: ProcessTableRebuildModel(api: APIClient.shared),
-            onStartTimer: { _ in }
+        return RecipeData(
+            id: "scene-test",
+            name: "Scene loaf",
+            servings: 1,
+            color: "#3b82f6",
+            version: "v3",
+            description: html,
+            ingredients: ingredients,
+            nutrition: nil,
+            isPublic: false,
+            hasSteps: true,
+            createdAt: "",
+            updatedAt: "",
+            imageUrl: nil,
+            imageAspectRatio: nil,
+            originalRecipeLink: nil,
+            originalRecipe: nil,
+            processTableRaw: """
+            {"version":1,"sourceHash":"\(hash)","columns":[{"id":"c1","title":"Mix","kind":"cook","stepIndex":0},{"id":"c2","title":"Bake","kind":"cook","stepIndex":1}],"assignments":[{"ingredientId":"a","columnId":"c1"},{"ingredientId":"b","columnId":"c2"}]}
+            """
         )
     }
 

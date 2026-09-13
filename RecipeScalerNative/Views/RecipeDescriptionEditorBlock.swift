@@ -18,9 +18,8 @@ struct RecipeDescriptionEditorBlock: View {
     var processTableRecipe: RecipeData? = nil
 
     @Environment(\.locale) private var locale
-    @Environment(\.apiClient) private var apiClient
+    @Environment(ProcessTableRebuildModel.self) private var processTableRebuild
     @State private var bridge: DescriptionEditorBridge
-    @State private var processTableRebuild: ProcessTableRebuildModel?
 
     init(
         recipeId: String,
@@ -77,10 +76,9 @@ struct RecipeDescriptionEditorBlock: View {
                     kind: bannerKind,
                     canRecalculate: syncService.connectionState.isConnected,
                     isOnline: syncService.connectionState.isConnected,
-                    isRebuilding: processTableRebuild?.isRebuilding == true,
+                    isRebuilding: processTableRebuild.isRebuilding,
                     onRecalculate: {
-                        let model = processTableRebuild
-                        model?.rebuild(
+                        processTableRebuild.rebuild(
                             recipeId: recipeId,
                             userId: syncService.currentUserId,
                             syncService: syncService
@@ -118,9 +116,6 @@ struct RecipeDescriptionEditorBlock: View {
         }
         .accessibilityIdentifier("recipe_description_editor_inline")
         .task {
-            if processTableRebuild == nil {
-                processTableRebuild = ProcessTableRebuildModel(api: apiClient)
-            }
             await syncService.suspendRecipeRefresh()
         }
         .onAppear {
@@ -128,7 +123,7 @@ struct RecipeDescriptionEditorBlock: View {
             pushScaleToEditor()
         }
         .onDisappear {
-            processTableRebuild?.cancel()
+            processTableRebuild.cancel()
             Task { @MainActor in
                 await syncService.flushPendingEdits()
                 bridge.teardown()

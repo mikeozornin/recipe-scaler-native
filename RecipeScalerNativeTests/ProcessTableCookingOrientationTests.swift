@@ -53,4 +53,26 @@ final class ProcessTableCookingOrientationTests: XCTestCase {
         XCTAssertEqual(gate.apply(landscape), .stay)
         XCTAssertEqual(gate.apply(portrait), .reassertLandscape)
     }
+
+    func testPortraitWindowSizeIsNotAcceptedForLayout() {
+        let landscape = CGSize(width: 852, height: 393)
+        let portrait = CGSize(width: 393, height: 852)
+        XCTAssertEqual(
+            ProcessTableCookingOrientationGate.acceptedLayoutSize(landscape, idiom: .phone),
+            landscape
+        )
+        XCTAssertNil(
+            ProcessTableCookingOrientationGate.acceptedLayoutSize(portrait, idiom: .phone)
+        )
+        XCTAssertEqual(
+            ProcessTableCookingOrientationGate.acceptedLayoutSize(portrait, idiom: .pad),
+            portrait
+        )
+        XCTAssertNil(
+            ProcessTableCookingOrientationGate.acceptedLayoutSize(
+                CGSize(width: 420, height: 56),
+                idiom: .phone
+            )
+        )
+    }
 }

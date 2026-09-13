@@ -5,7 +5,7 @@ import RecipeScalerCore
 @MainActor
 final class ProcessTableRebuildTests: XCTestCase {
     func testCancelDropsInFlightErrorToast() async {
-        let model = ProcessTableRebuildModel(api: APIClient.shared)
+        let model = ProcessTableRebuildModel()
         model.rebuildOverride = { _ in
             try await Task.sleep(nanoseconds: 300_000_000)
             throw APIError.httpError(statusCode: 500)
@@ -30,7 +30,7 @@ final class ProcessTableRebuildTests: XCTestCase {
     }
 
     func testOptionalParentStateCallbackBecomesNoOp() {
-        let model = ProcessTableRebuildModel(api: APIClient.shared)
+        let model = ProcessTableRebuildModel()
         var ran = false
         model.rebuildOverride = { _ in ran = true }
 
@@ -44,34 +44,17 @@ final class ProcessTableRebuildTests: XCTestCase {
     }
 
     func testCookingOverlayRetainsRebuildModelAfterParentClears() async {
-        let model = ProcessTableRebuildModel(api: APIClient.shared)
+        let model = ProcessTableRebuildModel()
         var ran = false
         model.rebuildOverride = { _ in ran = true }
 
         let cooking = ProcessTableCookingView(
-            recipe: RecipeData(
-                id: "r1",
-                name: "Loaf",
-                servings: 1,
-                color: "#000",
-                version: "v3",
-                description: nil,
-                ingredients: [],
-                nutrition: nil,
-                isPublic: false,
-                hasSteps: false,
-                createdAt: "",
-                updatedAt: "",
-                imageUrl: nil,
-                imageAspectRatio: nil,
-                originalRecipeLink: nil,
-                originalRecipe: nil
-            ),
+            recipe: makeRecipe(),
             scaleFactor: 1,
             allowsRebuild: true,
             restoreAwakeOnDismiss: false,
-            rebuildModel: model,
-            onStartTimer: { _ in }
+            session: ProcessTableCookingSession(),
+            rebuildModel: model
         )
         var parentState: ProcessTableRebuildModel? = model
         parentState = nil
@@ -81,13 +64,52 @@ final class ProcessTableRebuildTests: XCTestCase {
         XCTAssertTrue(ran, "Cooking must keep the rebuild model alive after the recipe card unmounts")
     }
 
-    func testCookingSessionClearsChecks() {
-        let session = ProcessTableCookingSession()
-        session.toggleIngredient("a")
-        session.toggleCell(columnId: "c", startIngredientId: "a")
-        XCTAssertTrue(session.measuredIngredientIds.contains("a"))
-        let fresh = ProcessTableCookingSession()
-        XCTAssertTrue(fresh.measuredIngredientIds.isEmpty)
-        XCTAssertTrue(fresh.doneCellKeys.isEmpty)
+    func testCookingSessionClearsChecksOnDismiss() {
+        let cooking = ProcessTableCookingCoordinator()
+        cooking.present(
+            recipe: makeRecipe(),
+            scaleFactor: 1,
+            allowsRebuild: false,
+            restoreAwakeOnDismiss: false
+        )
+        let firstId = cooking.presentation?.id
+        XCTAssertNotNil(firstId)
+        cooking.presentation?.session.toggleIngredient("a")
+        cooking.presentation?.session.toggleCell(columnId: "c", startIngredientId: "a")
+        XCTAssertTrue(cooking.presentation?.session.measuredIngredientIds.contains("a") == true)
+
+        cooking.dismiss()
+        XCTAssertNil(cooking.presentation)
+
+        cooking.present(
+            recipe: makeRecipe(),
+            scaleFactor: 1,
+            allowsRebuild: false,
+            restoreAwakeOnDismiss: false
+        )
+        XCTAssertNotEqual(cooking.presentation?.id, firstId)
+        XCTAssertTrue(cooking.presentation?.session.measuredIngredientIds.isEmpty == true)
+        XCTAssertTrue(cooking.presentation?.session.doneCellKeys.isEmpty == true)
+    }
+
+    private func makeRecipe() -> RecipeData {
+        RecipeData(
+            id: "r1",
+            name: "Loaf",
+            servings: 1,
+            color: "#000",
+            version: "v3",
+            description: nil,
+            ingredients: [],
+            nutrition: nil,
+            isPublic: false,
+            hasSteps: false,
+            createdAt: "",
+            updatedAt: "",
+            imageUrl: nil,
+            imageAspectRatio: nil,
+            originalRecipeLink: nil,
+            originalRecipe: nil
+        )
     }
 }

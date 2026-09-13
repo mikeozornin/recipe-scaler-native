@@ -83,23 +83,16 @@ struct ContentView: View {
     }
 
     var body: some View {
-        ProcessTableCookingRoot(cover: ProcessTableCookingCoverModel.shared) {
-            if showSplash {
-                SplashView()
-            } else if isAuthenticated, let container {
-                #if DEBUG
-                if RecipeDescriptionFixture.showsPreview {
-                    DescriptionFixturePreviewView()
-                } else {
-                    appShell(container: container)
+        Group {
+            if let container {
+                ProcessTableCookingRoot(
+                    cooking: container.cooking,
+                    rebuildModel: container.processTableRebuild
+                ) {
+                    rootChrome(container: container)
                 }
-                #else
-                appShell(container: container)
-                #endif
-            } else if container != nil {
-                AuthView()
             } else {
-                ProgressView()
+                rootChrome(container: nil)
             }
         }
         .task {
@@ -190,6 +183,27 @@ struct ContentView: View {
             @unknown default:
                 break
             }
+        }
+    }
+
+    @ViewBuilder
+    private func rootChrome(container: AppContainer?) -> some View {
+        if showSplash {
+            SplashView()
+        } else if isAuthenticated, let container {
+            #if DEBUG
+            if RecipeDescriptionFixture.showsPreview {
+                DescriptionFixturePreviewView()
+            } else {
+                appShell(container: container)
+            }
+            #else
+            appShell(container: container)
+            #endif
+        } else if container != nil {
+            AuthView()
+        } else {
+            ProgressView()
         }
     }
 

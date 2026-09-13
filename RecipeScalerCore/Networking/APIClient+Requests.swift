@@ -10,13 +10,20 @@ extension APIClient {
         path: String,
         method: String = "GET",
         body: Encodable? = nil,
-        extraHeaders: [String: String] = [:]
+        extraHeaders: [String: String] = [:],
+        timeoutInterval: TimeInterval? = nil
     ) async throws -> APIResponse<T> {
         var bodyData: Data?
         if let body {
             bodyData = try JSONEncoder().encode(AnyEncodable(body))
         }
-        let request = try buildRequest(path: path, method: method, body: bodyData, headers: extraHeaders)
+        let request = try buildRequest(
+            path: path,
+            method: method,
+            body: bodyData,
+            headers: extraHeaders,
+            timeoutInterval: timeoutInterval
+        )
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw APIError.invalidResponse

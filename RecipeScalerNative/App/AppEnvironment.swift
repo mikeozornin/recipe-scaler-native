@@ -50,5 +50,7 @@ extension View {
             .environment(container.feedBadgeStore)
             .environment(container.offlineGate)
             .environment(container.tips)
+            .environment(container.cooking)
+            .environment(container.processTableRebuild)
     }
 }

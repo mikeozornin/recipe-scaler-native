@@ -6,19 +6,19 @@ struct ProcessTableCookingView: View {
     let scaleFactor: Double
     var allowsRebuild: Bool
     var restoreAwakeOnDismiss: Bool
-    /// Running-timers panel source. Optional so previews/tests can skip the heavy manager.
-    var timerManager: TimerManager? = nil
-    var syncService: YjsSyncService? = nil
-    /// Retained for the overlay lifetime. Must not be `@State` on the recipe
-    /// card: cooking replaces that view, and a captured optional becomes a no-op.
+    @Bindable var session: ProcessTableCookingSession
     @Bindable var rebuildModel: ProcessTableRebuildModel
-    var onStartTimer: (ProcessTableTimerChip) -> Void
 
-    @State private var session = ProcessTableCookingSession()
+    @Environment(\.appContainer) private var container
+    @Environment(\.timerManager) private var timerManager
+
     @State private var orientationGate = ProcessTableCookingOrientationGate()
     @State private var containerSize = CGSize(width: 420, height: 868)
     @State private var trailingSafeArea: CGFloat = 0
     @State private var isTimerPanelCollapsed = true
+
+    private var cooking: ProcessTableCookingCoordinator? { container?.cooking }
+    private var syncService: YjsSyncService? { container?.sync }
 
     private var displayedRecipe: RecipeData {
         if let live = syncService?.currentRecipe, live.id == recipe.id, live.processTable != nil {
@@ -43,7 +43,7 @@ struct ProcessTableCookingView: View {
                 cookingBody(table: table)
             } else {
                 Color.clear
-                    .onAppear { ProcessTableCookingPresenter.dismissOverlay() }
+                    .onAppear { closeCooking() }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -77,33 +77,42 @@ struct ProcessTableCookingView: View {
                 .ignoresSafeArea(edges: .trailing)
         }
         .onAppear {
-            ProcessTableCookingPresenter.beginLandscapeSession()
+            cooking?.beginLandscapeSession()
             ScreenAwakeController.setActive(true)
         }
         .onDisappear {
+            rebuildModel.cancel()
             ScreenAwakeController.setActive(restoreAwakeOnDismiss)
         }
     }
 
+    private func closeCooking() {
+        rebuildModel.cancel()
+        cooking?.dismiss()
+    }
+
     private func noteContainerSize(_ size: CGSize) {
+        let idiom = UIDevice.current.userInterfaceIdiom
+        if let accepted = ProcessTableCookingOrientationGate.acceptedLayoutSize(size, idiom: idiom) {
+            containerSize = accepted
+        }
         guard let orientation = ProcessTableCookingOrientationGate.interfaceOrientation(from: size) else {
             return
         }
-        containerSize = size
         applyInterfaceOrientation(orientation)
     }
 
     private func applyInterfaceOrientation(_ orientation: UIInterfaceOrientation) {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
         if orientationGate.apply(orientation) == .reassertLandscape {
-            ProcessTableCookingPresenter.reassertLandscape()
+            cooking?.reassertLandscape()
         }
     }
 
     @ViewBuilder
     private var closeButton: some View {
         let action = {
-            ProcessTableCookingPresenter.dismissOverlay()
+            closeCooking()
         }
         // Toolbar `.glass` outside a nav bar renders as an opaque white pill
         // (no Liquid Glass). Match recipe-detail icon chrome: plain + glassEffect.
@@ -179,12 +188,10 @@ struct ProcessTableCookingView: View {
                     session: session,
                     visibleWidth: visibleWidth,
                     timerMap: timerMap,
-                    onStartTimer: onStartTimer
+                    onStartTimer: startTimer
                 )
                 .frame(width: visibleWidth)
                 .ignoresSafeArea(edges: .trailing)
-                // Live-scene XCTest walks scroll content, not the Close overlay
-                // (glassEffect). Keep a real UIView identifier next to the grid.
                 .background {
                     ProcessTableAccessibilityIdentifierProbe(id: AccessibilityIdentifiers.recipeProcessTableClose)
                         .frame(width: 1, height: 1)
@@ -206,15 +213,13 @@ struct ProcessTableCookingView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: ProcessTableLayout.timerChipGap) {
                             ForEach(timerMap.leftover) { chip in
-                                ProcessTableTimerChipButton(chip: chip, onStart: onStartTimer)
+                                ProcessTableTimerChipButton(chip: chip, onStart: startTimer)
                             }
                         }
                         .padding(ProcessTableLayout.leftoverBarPadding)
                     }
                     .background(.bar)
                 }
-                // Same running-timers panel as the recipe card (web parity: the
-                // panel stays visible in cooking mode).
                 if let timerManager {
                     MobileTimerPanel(isCollapsed: $isTimerPanelCollapsed, presentation: .legacy)
                         .environment(timerManager)
@@ -222,9 +227,20 @@ struct ProcessTableCookingView: View {
             }
         }
     }
+
+    private func startTimer(_ chip: ProcessTableTimerChip) {
+        guard let timerManager else { return }
+        _ = timerManager.createAndStartTimer(
+            name: chip.name,
+            duration: TimeInterval(chip.duration),
+            type: chip.type,
+            recipeId: displayedRecipe.id
+        )
+    }
 }
 
-#Preview {
+@MainActor
+private func processTableCookingPreview() -> ProcessTableCookingView {
     let hash = ProcessTableSourceHash.compute(
         ingredients: [
             .init(id: "a", originalAmount: 200, unit: "g"),
@@ -261,8 +277,11 @@ struct ProcessTableCookingView: View {
         scaleFactor: 1,
         allowsRebuild: false,
         restoreAwakeOnDismiss: false,
-            rebuildModel: ProcessTableRebuildModel.makePreview(),
-        onStartTimer: { _ in }
+        session: ProcessTableCookingSession(),
+        rebuildModel: ProcessTableRebuildModel.makePreview()
     )
 }
 
+#Preview {
+    processTableCookingPreview()
+}

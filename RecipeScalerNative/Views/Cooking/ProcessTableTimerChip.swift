@@ -8,7 +8,7 @@ struct ProcessTableTimerChipButton: View {
         Button {
             onStart?(chip)
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: ProcessTableLayout.timerChipGap) {
                 AppSymbol.sizedImage(
                     "alarm",
                     pointSize: ProcessTableLayout.checkboxPointSize,
@@ -18,8 +18,8 @@ struct ProcessTableTimerChipButton: View {
                     .appBody()
                     .lineLimit(1)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
+            .padding(.horizontal, ProcessTableLayout.timerChipHorizontalPad)
+            .padding(.vertical, ProcessTableLayout.timerChipVerticalPad)
             .overlay(
                 Capsule()
                     .strokeBorder(Color.secondary.opacity(0.35), lineWidth: 1)

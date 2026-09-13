@@ -175,6 +175,56 @@ final class AppContainerTests: XCTestCase {
         XCTAssertNil(container.deepLinkRouter.pending)
     }
 
+    func test_stopForLogout_dismissesCookingAndCancelsRebuild() async throws {
+        let container = try makeContainer()
+        container.cooking.present(
+            recipe: RecipeData(
+                id: "r1",
+                name: "Loaf",
+                servings: 1,
+                color: "#000",
+                version: "v3",
+                description: nil,
+                ingredients: [],
+                nutrition: nil,
+                isPublic: false,
+                hasSteps: false,
+                createdAt: "",
+                updatedAt: "",
+                imageUrl: nil,
+                imageAspectRatio: nil,
+                originalRecipeLink: nil,
+                originalRecipe: nil
+            ),
+            scaleFactor: 1,
+            allowsRebuild: true,
+            restoreAwakeOnDismiss: false
+        )
+        var sawToast = false
+        let observer = NotificationCenter.default.addObserver(
+            forName: .shoppingStatusMessage,
+            object: nil,
+            queue: .main
+        ) { _ in
+            sawToast = true
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+        container.processTableRebuild.rebuildOverride = { _ in
+            try await Task.sleep(nanoseconds: 300_000_000)
+            throw APIError.httpError(statusCode: 500)
+        }
+        container.processTableRebuild.rebuild(recipeId: "r1", userId: "u1", syncService: nil)
+        XCTAssertNotNil(container.cooking.presentation)
+        XCTAssertTrue(container.processTableRebuild.isRebuilding)
+
+        await container.stopForLogout()
+
+        XCTAssertNil(container.cooking.presentation)
+        XCTAssertFalse(container.processTableRebuild.isRebuilding)
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        XCTAssertFalse(sawToast)
+    }
+
 
     func test_sharedShim_resolvesToContainerInstance() throws {
         let previous = AppContainer.shared

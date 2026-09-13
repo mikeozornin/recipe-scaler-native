@@ -25,6 +25,7 @@
 		P074A01B293A4B701000001 /* ProcessTableV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A01A293A4B701000001 /* ProcessTableV1.swift */; };
 		P074A02B293A4B701000001 /* ProcessTableSourceHash.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A02A293A4B701000001 /* ProcessTableSourceHash.swift */; };
 		P074A03B293A4B701000001 /* ProcessTableMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A03A293A4B701000001 /* ProcessTableMatrix.swift */; };
+		P074A14B293A4B701000001 /* ProcessTableAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A14A293A4B701000001 /* ProcessTableAPI.swift */; };
 		P074A04B293A4B701000001 /* ProcessTableRebuildModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A04A293A4B701000001 /* ProcessTableRebuildModel.swift */; };
 		P074A05B293A4B701000001 /* ProcessTableLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A05A293A4B701000001 /* ProcessTableLayout.swift */; };
 		P074A06B293A4B701000001 /* ProcessTableStartButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A06A293A4B701000001 /* ProcessTableStartButton.swift */; };
@@ -841,6 +842,7 @@
 		P074A02A293A4B701000001 /* ProcessTableSourceHash.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableSourceHash.swift; sourceTree = "<group>"; };
 		P074A03A293A4B701000001 /* ProcessTableMatrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableMatrix.swift; sourceTree = "<group>"; };
 		P074A04A293A4B701000001 /* ProcessTableRebuildModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableRebuildModel.swift; sourceTree = "<group>"; };
+		P074A14A293A4B701000001 /* ProcessTableAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableAPI.swift; sourceTree = "<group>"; };
 		P074A05A293A4B701000001 /* ProcessTableLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableLayout.swift; sourceTree = "<group>"; };
 		P074A06A293A4B701000001 /* ProcessTableStartButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableStartButton.swift; sourceTree = "<group>"; };
 		P074A07A293A4B701000001 /* ProcessTableStatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableStatusBanner.swift; sourceTree = "<group>"; };
@@ -2279,6 +2281,7 @@
 				E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */,
 				251D70EF435803E81D00CEDA /* OfflineBannerGate.swift */,
 				3C08EE69E64A48AE8B692E6A /* SystemBannerAPI.swift */,
+				P074A14A293A4B701000001 /* ProcessTableAPI.swift */,
 				FF072FOLLOWAPIREFB293A4B701 /* FollowAPI.swift */,
 				FF072FOLLOWSTORREFB293A4B70 /* FollowStore.swift */,
 				FF072FEEDAPIREFB293A4B701 /* FeedAPI.swift */,
@@ -3083,6 +3086,7 @@
 				P074A02B293A4B701000001 /* ProcessTableSourceHash.swift in Sources */,
 				P074A03B293A4B701000001 /* ProcessTableMatrix.swift in Sources */,
 				P074A04B293A4B701000001 /* ProcessTableRebuildModel.swift in Sources */,
+				P074A14B293A4B701000001 /* ProcessTableAPI.swift in Sources */,
 				P074A05B293A4B701000001 /* ProcessTableLayout.swift in Sources */,
 				P074A06B293A4B701000001 /* ProcessTableStartButton.swift in Sources */,
 				P074A07B293A4B701000001 /* ProcessTableStatusBanner.swift in Sources */,

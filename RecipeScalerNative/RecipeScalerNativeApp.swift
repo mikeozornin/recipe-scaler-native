@@ -79,8 +79,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         supportedInterfaceOrientationsFor window: UIWindow?
     ) -> UIInterfaceOrientationMask {
-        let mask = ProcessTableCookingPresenter.supportedInterfaceOrientations(for: window)
-        return mask
+        if let cooking = AppContainer.shared?.cooking {
+            return cooking.supportedInterfaceOrientations(for: window)
+        }
+        return UIDevice.current.userInterfaceIdiom == .phone ? .portrait : .all
     }
 }
 

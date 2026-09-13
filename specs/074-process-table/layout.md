@@ -98,6 +98,8 @@ Chrome готовки: заголовок в скролле, Close — overlay `
 | `rowCheckboxToThumbGap` | 8 | |
 | `illustrationSlot` | 40 | тот же slot, что список ингредиентов |
 | `timerChipGap` | 4 | |
+| `timerChipHorizontalPad` | 8 | |
+| `timerChipVerticalPad` | 6 | |
 | `leftoverBarPadding` | 12 | inset снизу |
 | `bannerSpacing` | 8 | stale-баннер как nutrition |
 | `bannerLineHeight` | footnote line | высота ряда баннера |

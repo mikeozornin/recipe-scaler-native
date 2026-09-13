@@ -362,7 +362,8 @@ struct YDocRecipeDetailView: View {
                                 chrome: descriptionChrome,
                                 onNodeClick: { click in
                                     handleDescriptionNodeClick(click)
-                                }
+                                },
+                                processTableRecipe: recipe
                             )
                             .id("recipe_instructions")
                         } else if let description = recipe.description, !description.isEmpty {

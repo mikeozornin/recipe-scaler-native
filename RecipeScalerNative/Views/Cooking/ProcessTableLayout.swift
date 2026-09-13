@@ -38,6 +38,8 @@ enum ProcessTableLayout {
     static let rowCheckboxToThumbGap: CGFloat = 8
     static let illustrationSlot: CGFloat = 40
     static let timerChipGap: CGFloat = 4
+    static let timerChipHorizontalPad: CGFloat = 8
+    static let timerChipVerticalPad: CGFloat = 6
     static let leftoverBarPadding: CGFloat = 12
     static let bannerSpacing: CGFloat = 8
     /// Footnote cap height of the stale row (nutrition parity). The rebuild
