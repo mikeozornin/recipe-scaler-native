@@ -305,7 +305,6 @@ actor DocumentManager {
             cachedHTML = nil
         }
 
-        let txnStart = CFAbsoluteTimeGetCurrent()
         var xmlSnapshot: String?
         let recipe: RecipeData? = try await doc.withReadTransaction { rawDoc, txn in
             guard let map = doc.recipeMap(txn: txn) else {
@@ -314,9 +313,9 @@ actor DocumentManager {
             }
             let parsed = RecipeYjsCodec.parseRecipeData(from: map, txn: txn, recipeId: recipeId)
             // Skip the expensive FFI tree walk when the cache is already valid
-            // for this state vector.
-            if cachedHTML == nil,
-               RecipeData.RecipeVersion.detect(parsed.version) == .v3 {
+            // for this state vector. Hash/stale must use XmlFragment HTML whenever
+            // the fragment has children (web `readProcessTableDescriptionHtml`).
+            if cachedHTML == nil {
                 if let fragment = doc.xmlFragment(txn: txn, name: "description") {
                     xmlSnapshot = XmlFragmentToHTML.serializedFragment(from: fragment, txn: txn)
                 }

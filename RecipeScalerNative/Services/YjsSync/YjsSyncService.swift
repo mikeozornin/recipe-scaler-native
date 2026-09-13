@@ -4039,8 +4039,12 @@ final class YjsSyncService {
         if let sessionContext {
             guard isCurrentSession(sessionContext) else { return }
         }
-        guard let capturedUserId = userId else { return }
-        guard activeRecipeId == recipeId else { return }
+        guard let capturedUserId = userId else {
+            return
+        }
+        guard activeRecipeId == recipeId else {
+            return
+        }
 
         do {
             guard var recipe = try await documentManager.readRecipeData(

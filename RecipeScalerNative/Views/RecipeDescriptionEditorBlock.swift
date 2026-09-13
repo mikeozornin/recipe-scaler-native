@@ -15,9 +15,12 @@ struct RecipeDescriptionEditorBlock: View {
     let ingredients: [IngredientData]
     @Bindable var chrome: DescriptionEditorChromeState
     var onNodeClick: ((DescriptionNodeClick) -> Void)?
+    var processTableRecipe: RecipeData? = nil
 
     @Environment(\.locale) private var locale
+    @Environment(\.apiClient) private var apiClient
     @State private var bridge: DescriptionEditorBridge
+    @State private var processTableRebuild: ProcessTableRebuildModel?
 
     init(
         recipeId: String,
@@ -26,7 +29,8 @@ struct RecipeDescriptionEditorBlock: View {
         scaleFactor: Double,
         ingredients: [IngredientData],
         chrome: DescriptionEditorChromeState,
-        onNodeClick: ((DescriptionNodeClick) -> Void)? = nil
+        onNodeClick: ((DescriptionNodeClick) -> Void)? = nil,
+        processTableRecipe: RecipeData? = nil
     ) {
         self.recipeId = recipeId
         self.accentColor = accentColor
@@ -35,6 +39,7 @@ struct RecipeDescriptionEditorBlock: View {
         self.ingredients = ingredients
         self.chrome = chrome
         self.onNodeClick = onNodeClick
+        self.processTableRecipe = processTableRecipe
         _bridge = State(
             initialValue: DescriptionEditorBridge(
                 recipeId: recipeId,
@@ -54,11 +59,36 @@ struct RecipeDescriptionEditorBlock: View {
         }
     }
 
+    private var bannerKind: ProcessTableStatusBanner.Kind? {
+        guard let recipe = processTableRecipe else { return nil }
+        if recipe.processTable == nil { return .missing }
+        if recipe.isProcessTableStale { return .outdated }
+        return nil
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("description.instructions")
                 .font(AppTypography.title2)
                 .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
+
+            if let bannerKind {
+                ProcessTableStatusBanner(
+                    kind: bannerKind,
+                    canRecalculate: syncService.connectionState.isConnected,
+                    isOnline: syncService.connectionState.isConnected,
+                    isRebuilding: processTableRebuild?.isRebuilding == true,
+                    onRecalculate: {
+                        let model = processTableRebuild
+                        model?.rebuild(
+                            recipeId: recipeId,
+                            userId: syncService.currentUserId,
+                            syncService: syncService
+                        )
+                    }
+                )
+                .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
+            }
 
             ZStack(alignment: .top) {
                 DescriptionEditorWebView(
@@ -88,6 +118,9 @@ struct RecipeDescriptionEditorBlock: View {
         }
         .accessibilityIdentifier("recipe_description_editor_inline")
         .task {
+            if processTableRebuild == nil {
+                processTableRebuild = ProcessTableRebuildModel(api: apiClient)
+            }
             await syncService.suspendRecipeRefresh()
         }
         .onAppear {
@@ -95,6 +128,7 @@ struct RecipeDescriptionEditorBlock: View {
             pushScaleToEditor()
         }
         .onDisappear {
+            processTableRebuild?.cancel()
             Task { @MainActor in
                 await syncService.flushPendingEdits()
                 bridge.teardown()

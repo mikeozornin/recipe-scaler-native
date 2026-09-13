@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://recipe-scaler.ru/schemas/process-table-v1.schema.json",
+  "title": "ProcessTableV1",
+  "description": "Stored Y.Map('recipe').processTable JSON. Canonical copy of recipe-scaler-web/specs/074-process-table/contracts/process-table-v1.schema.json. version is mandatory. sourceHash is computed by the server, not the LLM.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "sourceHash", "columns", "assignments"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "sourceHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 hex of canonical ingredients+steps JSON"
+    },
+    "columns": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "kind", "stepIndex"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "enum": ["prep", "cook"] },
+          "stepIndex": { "type": ["integer", "null"], "minimum": 0 }
+        }
+      }
+    },
+    "assignments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ingredientId", "columnId"],
+        "properties": {
+          "ingredientId": { "type": "string", "minLength": 1 },
+          "columnId": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "rowOrder": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "cellTitles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ingredientId", "columnId", "title"],
+        "properties": {
+          "ingredientId": { "type": "string", "minLength": 1 },
+          "columnId": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

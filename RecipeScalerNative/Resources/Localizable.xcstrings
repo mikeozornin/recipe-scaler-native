@@ -10,6 +10,9 @@
     "—" : {
 
     },
+    ": %@" : {
+
+    },
     "·" : {
 
     },
@@ -6105,6 +6108,22 @@
         }
       }
     },
+    "common.screen-always-on" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always on screen enabled"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не гасить экран включено"
+          }
+        }
+      }
+    },
     "common.try-again" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6118,22 +6137,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Попробовать снова"
-          }
-        }
-      }
-    },
-    "common.screen-always-on" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Always on screen enabled"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не гасить экран включено"
           }
         }
       }
@@ -11636,6 +11639,176 @@
         }
       }
     },
+    "recipe.process-table.build" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Build process table"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Собрать таблицу готовки"
+          }
+        }
+      }
+    },
+    "recipe.process-table.column-done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark step done"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отметить шаг выполненным"
+          }
+        }
+      }
+    },
+    "recipe.process-table.may-be-outdated" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Process table may be outdated"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таблица готовки может быть неактуальна"
+          }
+        }
+      }
+    },
+    "recipe.process-table.measured" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark ingredient measured"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отметить, что ингредиент отмерян"
+          }
+        }
+      }
+    },
+    "recipe.process-table.not-built" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Process table is not built yet"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Таблица готовки еще не создавалась"
+          }
+        }
+      }
+    },
+    "recipe.process-table.prep" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prep"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подготовка"
+          }
+        }
+      }
+    },
+    "recipe.process-table.recalculate" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recalculate process table"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пересчитать таблицу готовки"
+          }
+        }
+      }
+    },
+    "recipe.process-table.recalculate-error" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not recalculate the process table"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось пересчитать таблицу готовки"
+          }
+        }
+      }
+    },
+    "recipe.process-table.toggle.classic" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classic view"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Классический вид"
+          }
+        }
+      }
+    },
+    "recipe.process-table.toggle.start" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start cooking"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начать готовить"
+          }
+        }
+      }
+    },
     "recipe.share" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -13534,6 +13707,57 @@
         }
       }
     },
+    "time.short.hours" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "h"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ч"
+          }
+        }
+      }
+    },
+    "time.short.minutes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "min"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "мин"
+          }
+        }
+      }
+    },
+    "time.short.seconds" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "s"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "с"
+          }
+        }
+      }
+    },
     "timer.delete" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -14729,53 +14953,19 @@
         }
       }
     },
-    "widgets.timer.placeholder.recipe-short" : {
+    "widgets.timer.name" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bake until golden brown"
+            "value" : "Recipe Scaler"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "выпекайте до золотой корочки"
-          }
-        }
-      }
-    },
-    "widgets.timer.placeholder.recipe-long" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "bake until golden brown and more"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "выпекайте до золотой корочки и вообще"
-          }
-        }
-      }
-    },
-    "widgets.timer.placeholder.wrap-long-name" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "10 minutes long name"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "10 минут длинное название"
+            "value" : "Recipe Scaler"
           }
         }
       }
@@ -14797,19 +14987,53 @@
         }
       }
     },
-    "widgets.timer.name" : {
+    "widgets.timer.placeholder.recipe-long" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recipe Scaler"
+            "value" : "bake until golden brown and more"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recipe Scaler"
+            "value" : "выпекайте до золотой корочки и вообще"
+          }
+        }
+      }
+    },
+    "widgets.timer.placeholder.recipe-short" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bake until golden brown"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "выпекайте до золотой корочки"
+          }
+        }
+      }
+    },
+    "widgets.timer.placeholder.wrap-long-name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 minutes long name"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 минут длинное название"
           }
         }
       }

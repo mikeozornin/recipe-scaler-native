@@ -19,6 +19,46 @@ struct RecipeData: Identifiable, Sendable {
     let imageAspectRatio: Double?
     let originalRecipeLink: String?
     let originalRecipe: String?
+    /// Raw `Y.Map('recipe').processTable` JSON. Invalid / unknown version stays here and is never deleted.
+    let processTableRaw: String?
+
+    init(
+        id: String,
+        name: String,
+        servings: Int,
+        color: String,
+        version: String,
+        description: String?,
+        ingredients: [IngredientData],
+        nutrition: NutritionData?,
+        isPublic: Bool,
+        hasSteps: Bool,
+        createdAt: String,
+        updatedAt: String,
+        imageUrl: String?,
+        imageAspectRatio: Double?,
+        originalRecipeLink: String?,
+        originalRecipe: String?,
+        processTableRaw: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.servings = servings
+        self.color = color
+        self.version = version
+        self.description = description
+        self.ingredients = ingredients
+        self.nutrition = nutrition
+        self.isPublic = isPublic
+        self.hasSteps = hasSteps
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.imageUrl = imageUrl
+        self.imageAspectRatio = imageAspectRatio
+        self.originalRecipeLink = originalRecipeLink
+        self.originalRecipe = originalRecipe
+        self.processTableRaw = processTableRaw
+    }
 
     /// Recipe version enum for version-aware parsing.
     enum RecipeVersion: String, Sendable {
@@ -64,7 +104,8 @@ struct RecipeData: Identifiable, Sendable {
             imageUrl: imageUrl ?? self.imageUrl,
             imageAspectRatio: imageAspectRatio,
             originalRecipeLink: originalRecipeLink,
-            originalRecipe: originalRecipe
+            originalRecipe: originalRecipe,
+            processTableRaw: processTableRaw
         )
     }
 }

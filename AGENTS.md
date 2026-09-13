@@ -46,7 +46,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-from [specs/065-share-feedback/plan.md](specs/065-share-feedback/plan.md).
+from [specs/074-process-table/plan.md](specs/074-process-table/plan.md).
 <!-- SPECKIT END -->
 
 ## Learned User Preferences

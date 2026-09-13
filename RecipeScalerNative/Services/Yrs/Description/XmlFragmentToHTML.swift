@@ -34,79 +34,11 @@ enum XmlFragmentToHTML {
         return xml.isEmpty ? nil : xml
     }
 
-    #if DEBUG
-    /// Logs element/text shape from yrs walk (differs from `Y.XmlFragment.toString()` on web).
-    static func debugFragmentStructure(from fragment: YrsXmlFragment, txn: OpaquePointer) -> String {
-        var parts: [String] = []
-        var budget = 80
-        let childCount = fragment.childLen(txn: txn)
-        for index in 0..<childCount where budget > 0 {
-            guard let node = fragment.child(at: index, txn: txn) else { continue }
-            debugDescribeNode(node, txn: txn, depth: 0, parts: &parts, budget: &budget)
-        }
-        return parts.joined(separator: ",")
-    }
-
-    private static func debugDescribeNode(
-        _ node: YrsXmlNode,
-        txn: OpaquePointer,
-        depth: Int,
-        parts: inout [String],
-        budget: inout Int
-    ) {
-        guard budget > 0, depth < 6 else { return }
-        budget -= 1
-        switch node {
-        case let .element(elem):
-            let tag = elem.tag(txn: txn)
-            parts.append("e:\(tag.isEmpty ? "?" : tag)")
-            let count = elem.childLen(txn: txn)
-            for index in 0..<count where budget > 0 {
-                guard let child = elem.child(at: index, txn: txn) else { continue }
-                debugDescribeNode(child, txn: txn, depth: depth + 1, parts: &parts, budget: &budget)
-            }
-        case let .text(text):
-            if let chunks = text.withChunks(txn: txn, { chunks in
-                var chunkParts: [String] = []
-                for index in 0..<chunks.count where budget > 0 {
-                    let fmtKeys = chunks.withFormatEntries(at: index) { fmt, fmtLen in
-                        var keys: [String] = []
-                        if let fmt, fmtLen > 0 {
-                            for fmtIndex in 0..<Int(fmtLen) {
-                                if let key = fmt[fmtIndex].key {
-                                    keys.append(String(cString: key))
-                                }
-                            }
-                        }
-                        return keys
-                    }
-                    let href = chunks.withFormatEntries(at: index) { fmt, fmtLen in
-                        linkHref(fromFormatEntries: fmt, count: fmtLen, txn: txn)
-                    }
-                    let label = href.map { "link(\($0.prefix(30)))" }
-                        ?? (fmtKeys.isEmpty ? "plain" : fmtKeys.joined(separator: "+"))
-                    if let textStr = chunks.string(at: index), textStr.contains("http") {
-                        chunkParts.append("t[\(label)]:\(textStr.prefix(40))")
-                    } else {
-                        chunkParts.append("t:\(label)")
-                    }
-                    budget -= 1
-                }
-                return chunkParts.isEmpty ? nil : chunkParts.joined(separator: ",")
-            }) ?? nil {
-                parts.append(chunks)
-            } else {
-                let hasLink = linkHrefFromTextAttributeKeys(text: text, txn: txn) != nil
-                parts.append(hasLink ? "t:linkAttr" : "t:text")
-            }
-        }
-    }
-    #endif
-
     /// Converts ProseMirror XML to HTML outside the Yrs transaction.
     static func html(fromSerializedXML xml: String, ingredients: [IngredientData]) -> String? {
         guard !xml.isEmpty else { return nil }
-        let converted = convertProsemirrorXML(xml, ingredients: ingredients)
+        _ = ingredients
+        let converted = convertProsemirrorXML(xml)
         let trimmed = converted.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
@@ -418,7 +350,7 @@ enum XmlFragmentToHTML {
 
     // MARK: - XML → HTML (Swift-only)
 
-    private static func convertProsemirrorXML(_ xml: String, ingredients: [IngredientData]) -> String {
+    private static func convertProsemirrorXML(_ xml: String) -> String {
         var output = xml
         output = replaceTag(output, from: "paragraph", to: "p")
         output = replaceTag(output, from: "bulletList", to: "ul")
@@ -435,7 +367,7 @@ enum XmlFragmentToHTML {
         output = replaceTag(output, from: "highlight", to: "mark")
         output = replaceTag(output, from: "code", to: "code")
         output = replaceLinkNodes(output)
-        output = replaceIngredientNodes(output, ingredients: ingredients)
+        output = replaceIngredientNodes(output)
         output = replaceTimerNodes(output)
         output = replaceTag(output, from: "doc", to: "div")
         output = replaceTag(output, from: "undefined", to: "div")
@@ -525,8 +457,11 @@ enum XmlFragmentToHTML {
         return result
     }
 
-    private static func replaceIngredientNodes(_ xml: String, ingredients: [IngredientData]) -> String {
-        let pattern = #"<ingredient([^>]*)(?:/>|></ingredient>)"#
+    /// TipTap `IngredientNodeServer.renderHTML`: inner text is `data-original-amount` only
+    /// (not amount+unit+name). Process-table sourceHash hashes stripped step text, so this
+    /// must match the server snapshot HTML.
+    private static func replaceIngredientNodes(_ xml: String) -> String {
+        let pattern = #"<ingredient([^>]*)(?:/>|>([\s\S]*?)</ingredient>)"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return xml }
         let ns = xml as NSString
         var result = ""
@@ -538,13 +473,27 @@ enum XmlFragmentToHTML {
             let attrs = match.range(at: 1).location != NSNotFound
                 ? ns.substring(with: match.range(at: 1))
                 : ""
-            result += ingredientLabel(attrs: attrs, ingredients: ingredients)
+            let inner = match.numberOfRanges >= 3 && match.range(at: 2).location != NSNotFound
+                ? ns.substring(with: match.range(at: 2))
+                : ""
+            result += ingredientReferenceHTML(attrs: attrs, inner: inner)
             cursor = match.range.location + match.range.length
         }
         if cursor < ns.length {
             result += ns.substring(from: cursor)
         }
         return result
+    }
+
+    private static func ingredientReferenceHTML(attrs: String, inner: String) -> String {
+        let id = parseAttribute(attrs, name: "data-ingredient-id") ?? ""
+        let ratio = parseAttribute(attrs, name: "data-ratio") ?? ""
+        let originalAmount = parseAttribute(attrs, name: "data-original-amount") ?? inner
+        var extra = ""
+        if !ratio.isEmpty {
+            extra += #" data-ratio="\#(escapeAttr(ratio))""#
+        }
+        return #"<span class="ingredient-reference" data-ingredient-id="\#(escapeAttr(id))"\#(extra)>\#(escapeHTML(originalAmount))</span>"#
     }
 
     private static func replaceTimerNodes(_ xml: String) -> String {

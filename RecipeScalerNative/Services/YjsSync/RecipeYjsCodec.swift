@@ -43,6 +43,7 @@ enum RecipeYjsCodec {
         let versionString = map.scalarString(key: "version", txn: txn)
         let version = RecipeData.RecipeVersion.detect(versionString)
         let ingredients = readIngredients(from: map, txn: txn, version: version)
+        let processTableRaw = map.scalarString(key: "processTable", txn: txn)
 
         return RecipeData(
             id: recipeId,
@@ -60,7 +61,8 @@ enum RecipeYjsCodec {
             imageUrl: map.scalarString(key: "imageUrl", txn: txn),
             imageAspectRatio: map.double(key: "imageAspectRatio", txn: txn),
             originalRecipeLink: map.scalarString(key: "originalRecipeLink", txn: txn),
-            originalRecipe: map.scalarString(key: "originalRecipe", txn: txn)
+            originalRecipe: map.scalarString(key: "originalRecipe", txn: txn),
+            processTableRaw: processTableRaw
         )
     }
 

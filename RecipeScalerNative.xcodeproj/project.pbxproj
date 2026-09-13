@@ -22,6 +22,19 @@
 		0AD461511B9166BD9EF50932 /* WidgetTimerAccent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 707268FFBE33ABC1D5A95D82 /* WidgetTimerAccent.swift */; };
 		0B14CB3FC8C14335BD2D7365 /* TimerLinearRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 887BA57C2D824ACEB1B2F6AB /* TimerLinearRow.swift */; };
 		0B897FD6085B1E738ED5302B /* NutritionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA2CE2F227482882F3F3C07 /* NutritionData.swift */; };
+		P074A01B293A4B701000001 /* ProcessTableV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A01A293A4B701000001 /* ProcessTableV1.swift */; };
+		P074A02B293A4B701000001 /* ProcessTableSourceHash.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A02A293A4B701000001 /* ProcessTableSourceHash.swift */; };
+		P074A03B293A4B701000001 /* ProcessTableMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A03A293A4B701000001 /* ProcessTableMatrix.swift */; };
+		P074A04B293A4B701000001 /* ProcessTableRebuildModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A04A293A4B701000001 /* ProcessTableRebuildModel.swift */; };
+		P074A05B293A4B701000001 /* ProcessTableLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A05A293A4B701000001 /* ProcessTableLayout.swift */; };
+		P074A06B293A4B701000001 /* ProcessTableStartButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A06A293A4B701000001 /* ProcessTableStartButton.swift */; };
+		P074A07B293A4B701000001 /* ProcessTableStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A07A293A4B701000001 /* ProcessTableStatusBanner.swift */; };
+		P074A08B293A4B701000001 /* ProcessTablePrepStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A08A293A4B701000001 /* ProcessTablePrepStack.swift */; };
+		P074A09B293A4B701000001 /* ProcessTableGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A09A293A4B701000001 /* ProcessTableGrid.swift */; };
+		P074A10B293A4B701000001 /* ProcessTableTimerChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A10A293A4B701000001 /* ProcessTableTimerChip.swift */; };
+		P074A11B293A4B701000001 /* ProcessTableCookingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A11A293A4B701000001 /* ProcessTableCookingView.swift */; };
+		P074A12B293A4B701000001 /* ProcessTableCookingPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A12A293A4B701000001 /* ProcessTableCookingPresenter.swift */; };
+		P074A13B293A4B701000001 /* ProcessTableCookingOrientationGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074A13A293A4B701000001 /* ProcessTableCookingOrientationGate.swift */; };
 		0C742EE9B3563B691A69ED1C /* FeatureAdoptionItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0593B743DA50B2CB0DFF7 /* FeatureAdoptionItem.swift */; };
 		0FB07B606EF8451AB560DDC7 /* TimerLiveActivityFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F90F40E8688492B815EB510 /* TimerLiveActivityFormatting.swift */; };
 		1057DC79BE957450BC6695E6 /* TimerHomeSmallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750B3DD6B6C42552C588D6FC /* TimerHomeSmallView.swift */; };
@@ -104,6 +117,14 @@
 		896F51C011674A728B2F1433 /* WatchCredentialsBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A052C8D8B8477FA14D812A /* WatchCredentialsBridge.swift */; };
 		8E988A9C80C04F009435D353 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EF2B3F0EB5A4599AE467921 /* DeepLinkRouter.swift */; };
 		8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */; };
+		P074T01B293A4B701000001 /* ProcessTableHashTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074T01A293A4B701000001 /* ProcessTableHashTests.swift */; };
+		P074T02B293A4B701000001 /* ProcessTableDecodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074T02A293A4B701000001 /* ProcessTableDecodeTests.swift */; };
+		P074T03B293A4B701000001 /* ProcessTableMergeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074T03A293A4B701000001 /* ProcessTableMergeTests.swift */; };
+		P074T04B293A4B701000001 /* ProcessTablePreserveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074T04A293A4B701000001 /* ProcessTablePreserveTests.swift */; };
+		P074T05B293A4B701000001 /* ProcessTableRebuildTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074T05A293A4B701000001 /* ProcessTableRebuildTests.swift */; };
+		P074T06B293A4B701000001 /* ProcessTableCookingLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074T06A293A4B701000001 /* ProcessTableCookingLayoutTests.swift */; };
+		P074T07B293A4B701000001 /* ProcessTableCookingSceneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074T07A293A4B701000001 /* ProcessTableCookingSceneTests.swift */; };
+		P074T08B293A4B701000001 /* ProcessTableCookingOrientationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P074T08A293A4B701000001 /* ProcessTableCookingOrientationTests.swift */; };
 		91131167C1A00444C453884E /* MartianMono-NrLt.otf in Resources */ = {isa = PBXBuildFile; fileRef = DE1ABB28709A39ED21AF2C28 /* MartianMono-NrLt.otf */; };
 		922A2B3A3550913CA9886250 /* WidgetSilentPushHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCCF9006265F5B2697622906 /* WidgetSilentPushHandler.swift */; };
 		95DD7E548A202A1047110394 /* FeatureAdoptionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DDA10FB70EB04235CF1A47E /* FeatureAdoptionDetailView.swift */; };
@@ -816,6 +837,27 @@
 		4B5D272EB4ED4555A30CD3B2 /* RecipeEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEditViewModel.swift; sourceTree = "<group>"; };
 		4DE9AF6E91804571BD26336B /* TimerLiveActivityActionQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityActionQueue.swift; sourceTree = "<group>"; };
 		4EA2CE2F227482882F3F3C07 /* NutritionData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionData.swift; sourceTree = "<group>"; };
+		P074A01A293A4B701000001 /* ProcessTableV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableV1.swift; sourceTree = "<group>"; };
+		P074A02A293A4B701000001 /* ProcessTableSourceHash.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableSourceHash.swift; sourceTree = "<group>"; };
+		P074A03A293A4B701000001 /* ProcessTableMatrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableMatrix.swift; sourceTree = "<group>"; };
+		P074A04A293A4B701000001 /* ProcessTableRebuildModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableRebuildModel.swift; sourceTree = "<group>"; };
+		P074A05A293A4B701000001 /* ProcessTableLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableLayout.swift; sourceTree = "<group>"; };
+		P074A06A293A4B701000001 /* ProcessTableStartButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableStartButton.swift; sourceTree = "<group>"; };
+		P074A07A293A4B701000001 /* ProcessTableStatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableStatusBanner.swift; sourceTree = "<group>"; };
+		P074A08A293A4B701000001 /* ProcessTablePrepStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTablePrepStack.swift; sourceTree = "<group>"; };
+		P074A09A293A4B701000001 /* ProcessTableGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableGrid.swift; sourceTree = "<group>"; };
+		P074A10A293A4B701000001 /* ProcessTableTimerChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableTimerChip.swift; sourceTree = "<group>"; };
+		P074A11A293A4B701000001 /* ProcessTableCookingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableCookingView.swift; sourceTree = "<group>"; };
+		P074A12A293A4B701000001 /* ProcessTableCookingPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableCookingPresenter.swift; sourceTree = "<group>"; };
+		P074A13A293A4B701000001 /* ProcessTableCookingOrientationGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableCookingOrientationGate.swift; sourceTree = "<group>"; };
+		P074T01A293A4B701000001 /* ProcessTableHashTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableHashTests.swift; sourceTree = "<group>"; };
+		P074T02A293A4B701000001 /* ProcessTableDecodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableDecodeTests.swift; sourceTree = "<group>"; };
+		P074T03A293A4B701000001 /* ProcessTableMergeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableMergeTests.swift; sourceTree = "<group>"; };
+		P074T04A293A4B701000001 /* ProcessTablePreserveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTablePreserveTests.swift; sourceTree = "<group>"; };
+		P074T05A293A4B701000001 /* ProcessTableRebuildTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableRebuildTests.swift; sourceTree = "<group>"; };
+		P074T06A293A4B701000001 /* ProcessTableCookingLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableCookingLayoutTests.swift; sourceTree = "<group>"; };
+		P074T07A293A4B701000001 /* ProcessTableCookingSceneTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableCookingSceneTests.swift; sourceTree = "<group>"; };
+		P074T08A293A4B701000001 /* ProcessTableCookingOrientationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTableCookingOrientationTests.swift; sourceTree = "<group>"; };
 		4F90F40E8688492B815EB510 /* TimerLiveActivityFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityFormatting.swift; sourceTree = "<group>"; };
 		5214C64B40B12FA5176632AC /* TimerAccessoryInlineView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimerAccessoryInlineView.swift; sourceTree = "<group>"; };
 		522FA5F6C32DEEC9F50B4A9C /* WidgetTimerLinearRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetTimerLinearRow.swift; sourceTree = "<group>"; };
@@ -1552,6 +1594,7 @@
 				C38C9866A5142170D549D605 /* AuthView.swift */,
 				C46C342D35721B88D83D58BB /* QRScannerView.swift */,
 				F1A2B3C4D5E60718293A4C02 /* RecipeStepsSection.swift */,
+				P074GRP0293A4B701000001 /* Cooking */,
 				DD2201AABB000200000003 /* YDocRecipeDetailView.swift */,
 				E5YDOCBK01A293A4B70100002 /* YDocRecipeDetailBlocks.swift */,
 				E5YDOCEM01A293A4B70100002 /* YDocRecipeDetailEditMode.swift */,
@@ -1688,12 +1731,31 @@
 			path = LiveActivity;
 			sourceTree = "<group>";
 		};
+		P074GRP0293A4B701000001 /* Cooking */ = {
+			isa = PBXGroup;
+			children = (
+				P074A05A293A4B701000001 /* ProcessTableLayout.swift */,
+				P074A06A293A4B701000001 /* ProcessTableStartButton.swift */,
+				P074A07A293A4B701000001 /* ProcessTableStatusBanner.swift */,
+				P074A08A293A4B701000001 /* ProcessTablePrepStack.swift */,
+				P074A09A293A4B701000001 /* ProcessTableGrid.swift */,
+				P074A10A293A4B701000001 /* ProcessTableTimerChip.swift */,
+				P074A11A293A4B701000001 /* ProcessTableCookingView.swift */,
+				P074A12A293A4B701000001 /* ProcessTableCookingPresenter.swift */,
+				P074A13A293A4B701000001 /* ProcessTableCookingOrientationGate.swift */,
+			);
+			path = Cooking;
+			sourceTree = "<group>";
+		};
 		63C3E85E6495DB975241B781 /* YDoc */ = {
 			isa = PBXGroup;
 			children = (
 				B3AE1379BA360BCA84247C8D /* CollectionEntry.swift */,
 				24D8ACC6DE6F3FE3D4AE9C40 /* IngredientData.swift */,
 				4EA2CE2F227482882F3F3C07 /* NutritionData.swift */,
+				P074A01A293A4B701000001 /* ProcessTableV1.swift */,
+				P074A02A293A4B701000001 /* ProcessTableSourceHash.swift */,
+				P074A03A293A4B701000001 /* ProcessTableMatrix.swift */,
 				3AF33ADA594B16A7C6F4A381 /* RecipeData.swift */,
 				E5F60718293A4B700000100 /* RecipeSearchIndex.swift */,
 				E5F60718293A4B70A32A1501 /* ShoppingListData.swift */,
@@ -1827,6 +1889,14 @@
 				FB065TS00000000000000004 /* AccountFeedbackSubmitTests.swift */,
 				B347C656005186097A24DAD5 /* OfflineBannerGateTests.swift */,
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
+				P074T01A293A4B701000001 /* ProcessTableHashTests.swift */,
+				P074T02A293A4B701000001 /* ProcessTableDecodeTests.swift */,
+				P074T03A293A4B701000001 /* ProcessTableMergeTests.swift */,
+				P074T04A293A4B701000001 /* ProcessTablePreserveTests.swift */,
+				P074T05A293A4B701000001 /* ProcessTableRebuildTests.swift */,
+				P074T06A293A4B701000001 /* ProcessTableCookingLayoutTests.swift */,
+				P074T07A293A4B701000001 /* ProcessTableCookingSceneTests.swift */,
+				P074T08A293A4B701000001 /* ProcessTableCookingOrientationTests.swift */,
 				FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */,
 				FADFIX0A0A293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift */,
 				SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */,
@@ -2027,6 +2097,7 @@
 				DD2201AABB000200000002 /* RecipeDetailViewModel.swift */,
 				4B5D272EB4ED4555A30CD3B2 /* RecipeEditViewModel.swift */,
 				MIK1950A100100100100100A002 /* RecipeNutritionRecalculationModel.swift */,
+				P074A04A293A4B701000001 /* ProcessTableRebuildModel.swift */,
 				D8A2FBA494D4B821D6044FD7 /* ShoppingViewModel.swift */,
 			);
 			path = ViewModels;
@@ -3008,6 +3079,19 @@
 				D48DC5DC2A861BEBACF7ED71 /* CollectionEntry.swift in Sources */,
 				AC9F920B800391992215A1CF /* IngredientData.swift in Sources */,
 				0B897FD6085B1E738ED5302B /* NutritionData.swift in Sources */,
+				P074A01B293A4B701000001 /* ProcessTableV1.swift in Sources */,
+				P074A02B293A4B701000001 /* ProcessTableSourceHash.swift in Sources */,
+				P074A03B293A4B701000001 /* ProcessTableMatrix.swift in Sources */,
+				P074A04B293A4B701000001 /* ProcessTableRebuildModel.swift in Sources */,
+				P074A05B293A4B701000001 /* ProcessTableLayout.swift in Sources */,
+				P074A06B293A4B701000001 /* ProcessTableStartButton.swift in Sources */,
+				P074A07B293A4B701000001 /* ProcessTableStatusBanner.swift in Sources */,
+				P074A08B293A4B701000001 /* ProcessTablePrepStack.swift in Sources */,
+				P074A09B293A4B701000001 /* ProcessTableGrid.swift in Sources */,
+				P074A10B293A4B701000001 /* ProcessTableTimerChip.swift in Sources */,
+				P074A11B293A4B701000001 /* ProcessTableCookingView.swift in Sources */,
+				P074A12B293A4B701000001 /* ProcessTableCookingPresenter.swift in Sources */,
+				P074A13B293A4B701000001 /* ProcessTableCookingOrientationGate.swift in Sources */,
 				69260D31481836DE8DC2349C /* RecipeData.swift in Sources */,
 				F1A2B3C4D5E60718293A4C03 /* DisplayIngredient.swift in Sources */,
 				E5F60718293A4B700000101 /* RecipeSearchIndex.swift in Sources */,
@@ -3289,6 +3373,14 @@
 				FB065TS00000000000000003 /* AccountFeedbackSubmitTests.swift in Sources */,
 				485C79BA3D9AE14EB0BCFF27 /* OfflineBannerGateTests.swift in Sources */,
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
+				P074T01B293A4B701000001 /* ProcessTableHashTests.swift in Sources */,
+				P074T02B293A4B701000001 /* ProcessTableDecodeTests.swift in Sources */,
+				P074T03B293A4B701000001 /* ProcessTableMergeTests.swift in Sources */,
+				P074T04B293A4B701000001 /* ProcessTablePreserveTests.swift in Sources */,
+				P074T05B293A4B701000001 /* ProcessTableRebuildTests.swift in Sources */,
+				P074T06B293A4B701000001 /* ProcessTableCookingLayoutTests.swift in Sources */,
+				P074T07B293A4B701000001 /* ProcessTableCookingSceneTests.swift in Sources */,
+				P074T08B293A4B701000001 /* ProcessTableCookingOrientationTests.swift in Sources */,
 				FADLAY04D293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift in Sources */,
 				A140019000000000000000019 /* FeatureAdoptionGuideContentTests.swift in Sources */,
 				FADFIX0A1B293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift in Sources */,

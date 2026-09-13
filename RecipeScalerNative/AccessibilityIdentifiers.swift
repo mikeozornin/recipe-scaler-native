@@ -208,6 +208,12 @@ enum AccessibilityIdentifiers {
         "mobile_timer_delete_\(timerId)"
     }
 
+    static let recipeProcessTableStart = "recipe_process_table_start"
+    static let recipeProcessTableClose = "recipe_process_table_close"
+    static let recipeProcessTableGrid = "recipe_process_table_grid"
+    static let recipeProcessTableBanner = "recipe_process_table_banner"
+    static let recipeProcessTableTimerChip = "recipe_process_table_timer_chip"
+
     static func descriptionTimerRun(displayText: String) -> String {
         let slug = displayText
             .lowercased()

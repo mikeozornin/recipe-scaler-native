@@ -1,0 +1,201 @@
+{
+  "feature": "074-process-table",
+  "layout_doc": "layout.md",
+  "figma": {
+    "file_key": null,
+    "frames": [],
+    "note": "No Figma. Matrix format from web/RecipeTables; chrome is iOS NavigationStack + requestGeometryUpdate, not web overlay."
+  },
+  "required_files": [
+    "RecipeScalerNative/Views/Cooking/ProcessTableLayout.swift",
+    "RecipeScalerNative/Views/Cooking/ProcessTableCookingView.swift",
+    "RecipeScalerNative/Views/Cooking/ProcessTableGrid.swift",
+    "RecipeScalerNative/Views/Cooking/ProcessTableStartButton.swift",
+    "RecipeScalerNative/Views/Cooking/ProcessTableStatusBanner.swift",
+    "RecipeScalerNative/Models/YDoc/ProcessTableV1.swift"
+  ],
+  "must_contain": [
+    {
+      "id": "layout-cta-header-gap",
+      "description": "CTA sits in Steps header row; gap token 8pt",
+      "pattern": "stepsHeaderToCtaGap:\\s*CGFloat\\s*=\\s*8",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableLayout.swift"]
+    },
+    {
+      "id": "layout-ingredient-fraction",
+      "description": "Ingredient column is 25% of visible matrix",
+      "pattern": "ingredientColumnFraction:\\s*CGFloat\\s*=\\s*0\\.25",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableLayout.swift"]
+    },
+    {
+      "id": "layout-cook-min-width",
+      "description": "Cook column min width 112pt (7rem)",
+      "pattern": "cookColumnMinWidth:\\s*CGFloat\\s*=\\s*112",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableLayout.swift"]
+    },
+    {
+      "id": "layout-cooking-edge-pad",
+      "description": "Cooking edge pad base is 8pt (used for leading)",
+      "pattern": "cookingHorizontalEdgePad:\\s*CGFloat\\s*=\\s*8",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableLayout.swift"]
+    },
+    {
+      "id": "layout-cooking-leading-pad",
+      "description": "Cooking leading edge pad is 24pt (8 + 16 extra)",
+      "pattern": "cookingLeadingEdgePad:\\s*CGFloat\\s*=\\s*cookingHorizontalEdgePad \\+ 16",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableLayout.swift"]
+    },
+    {
+      "id": "layout-cooking-trailing-pad",
+      "description": "Cooking trailing pad is 0 so the matrix reaches the island edge",
+      "pattern": "cookingTrailingEdgePad:\\s*CGFloat\\s*=\\s*0",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableLayout.swift"]
+    },
+    {
+      "id": "layout-cooking-close-trailing",
+      "description": "Close is 28pt left of the Dynamic Island trailing edge",
+      "pattern": "cookingCloseTrailingPad:\\s*CGFloat\\s*=\\s*28",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableLayout.swift"]
+    },
+    {
+      "id": "cooking-ignore-horizontal-safe-area",
+      "description": "Cooking uses the full window width, ignoring island and home-indicator horizontal insets",
+      "pattern": "ignoresSafeArea\\(edges: \\.horizontal\\)",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableCookingView.swift"]
+    },
+    {
+      "id": "layout-checkbox-inset",
+      "description": "Cell checkbox inset 4pt from top-leading",
+      "pattern": "cellCheckboxInset:\\s*CGFloat\\s*=\\s*4",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableLayout.swift"]
+    },
+    {
+      "id": "start-i18n-key",
+      "description": "Start cooking uses process-table i18n key, not 056 cooking.start-button",
+      "pattern": "recipe\\.process-table\\.toggle\\.start",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableStartButton.swift"]
+    },
+    {
+      "id": "cooking-overlay-close",
+      "description": "Cooking uses overlay Close, not a NavigationStack chrome bar",
+      "pattern": "recipeProcessTableClose",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableCookingView.swift"]
+    },
+    {
+      "id": "cooking-fullscreen-cover",
+      "description": "Cooking presented as fullScreenCover (orientation control)",
+      "pattern": "fullScreenCover",
+      "paths": ["RecipeScalerNative/Views"]
+    },
+    {
+      "id": "grid-horizontal-scroll",
+      "description": "Matrix cook columns scroll horizontally",
+      "pattern": "ScrollView\\(\\.horizontal",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableGrid.swift"]
+    },
+    {
+      "id": "screen-awake-on-appear",
+      "description": "Keep-awake on cooking appear",
+      "pattern": "ScreenAwakeController\\.setActive\\(true\\)",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableCookingView.swift"]
+    }
+  ],
+  "must_not_contain": [
+    {
+      "id": "no-system-font-cooking",
+      "description": "No SF Pro via .font(.system(size:)) on cooking Text",
+      "pattern": "\\.font\\(\\.system\\(",
+      "paths": ["RecipeScalerNative/Views/Cooking"]
+    },
+    {
+      "id": "no-second-cook-button-056",
+      "description": "Do not add 056 cooking.start-button as a second entry",
+      "pattern": "cooking\\.start-button",
+      "paths": ["RecipeScalerNative/Views"]
+    },
+    {
+      "id": "no-rotation-effect-root",
+      "description": "Do not fake landscape with rotationEffect on cooking root",
+      "pattern": "rotationEffect",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableCookingView.swift"]
+    },
+    {
+      "id": "no-webview-matrix",
+      "description": "Matrix is native SwiftUI, not WKWebView",
+      "pattern": "WKWebView",
+      "paths": ["RecipeScalerNative/Views/Cooking"]
+    },
+    {
+      "id": "no-shared-in-cooking-views",
+      "description": "Cooking views must not reach .shared services",
+      "pattern": "APIClient\\.shared|YjsSyncService\\.shared",
+      "paths": ["RecipeScalerNative/Views/Cooking"]
+    }
+  ],
+  "previews": [
+    {
+      "id": "grid-merge-preview",
+      "description": "ProcessTableGrid preview for merge consecutive stub",
+      "pattern": "#Preview",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableGrid.swift"]
+    },
+    {
+      "id": "cooking-preview",
+      "description": "CookingView preview worst-case columns",
+      "pattern": "#Preview",
+      "paths": ["RecipeScalerNative/Views/Cooking/ProcessTableCookingView.swift"]
+    }
+  ],
+  "acceptance_claims": [
+    {
+      "id": "claim-cta-right-of-steps",
+      "description": "Start cooking is in the same row, trailing, as the Steps section title — not in the recipe toolbar",
+      "manual": true
+    },
+    {
+      "id": "claim-25-percent-sticky",
+      "description": "Ingredient column is 25% of the visible matrix and stays put during horizontal scroll",
+      "manual": true
+    },
+    {
+      "id": "claim-system-landscape",
+      "description": "iPhone cooking uses system landscape (geometry update + real safe areas), not rotationEffect",
+      "manual": true
+    },
+    {
+      "id": "claim-merge-span",
+      "description": "Consecutive filled rows 2–4 in one cook column render as one span; row 5 empty",
+      "manual": true
+    },
+    {
+      "id": "claim-sticky-seam",
+      "description": "Cook-cell text does not show through the sticky ingredient column while scrolling",
+      "manual": true
+    },
+    {
+      "id": "claim-title-not-under-close",
+      "description": "Recipe title truncates left of the 44pt Close slot and does not sit under the X",
+      "manual": true
+    },
+    {
+      "id": "claim-tap-44",
+      "description": "Start, Close, checkboxes, refresh, timer chips have ≥44pt hit targets",
+      "manual": true
+    },
+    {
+      "id": "claim-martian",
+      "description": "All cooking/matrix text uses Martian; SF only for symbols",
+      "manual": true
+    },
+    {
+      "id": "claim-ipad-no-force-rotate",
+      "description": "iPad cooking uses current orientation without forced landscape",
+      "manual": true
+    },
+    {
+      "id": "claim-portrait-exit",
+      "description": "Rotating iPhone to portrait keeps cooking in system landscape until Close",
+      "manual": true
+    }
+  ]
+}

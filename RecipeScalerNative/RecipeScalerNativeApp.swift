@@ -74,6 +74,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         DeepLinkRouter.shared.handle(.openRecipe(recipeId: recipeId))
         completionHandler(true)
     }
+
+    func application(
+        _ application: UIApplication,
+        supportedInterfaceOrientationsFor window: UIWindow?
+    ) -> UIInterfaceOrientationMask {
+        let mask = ProcessTableCookingPresenter.supportedInterfaceOrientations(for: window)
+        return mask
+    }
 }
 
 @main

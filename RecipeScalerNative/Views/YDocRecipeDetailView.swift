@@ -370,6 +370,11 @@ struct YDocRecipeDetailView: View {
                                 htmlContent: description,
                                 accentColor: accentColor,
                                 recipeId: recipeId,
+                                cookingRecipe: recipe,
+                                scaleFactor: scaleFactor,
+                                restoreAwakeOnDismiss: isScreenAwakeActive,
+                                allowsRebuild: canEnterEditMode,
+                                syncService: syncService,
                                 timerPopover: $descriptionTimerPopover
                             )
                                 .id("recipe_instructions")

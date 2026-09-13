@@ -64,7 +64,8 @@ enum RecipeReader {
             imageUrl: fields.imageUrl,
             imageAspectRatio: fields.imageAspectRatio,
             originalRecipeLink: fields.originalRecipeLink,
-            originalRecipe: nil
+            originalRecipe: nil,
+            processTableRaw: fields.processTableRaw
         )
     }
 
@@ -83,6 +84,7 @@ enum RecipeReader {
         var imageUrl: String?
         var imageAspectRatio: Double?
         var originalRecipeLink: String?
+        var processTableRaw: String?
     }
 
     private static func readFields(
@@ -91,6 +93,7 @@ enum RecipeReader {
     ) -> RecipeFields {
         let versionString = map.scalarString(key: "version", txn: txn)
         let version = RecipeData.RecipeVersion.detect(versionString)
+        let processTableRaw = map.scalarString(key: "processTable", txn: txn)
 
         return RecipeFields(
             name: RecipeYjsCodec.readRecipeName(from: map, txn: txn),
@@ -108,7 +111,8 @@ enum RecipeReader {
             nutrition: RecipeYjsCodec.readNutrition(from: map, txn: txn, version: version),
             imageUrl: map.scalarString(key: "imageUrl", txn: txn),
             imageAspectRatio: map.double(key: "imageAspectRatio", txn: txn),
-            originalRecipeLink: map.scalarString(key: "originalRecipeLink", txn: txn)
+            originalRecipeLink: map.scalarString(key: "originalRecipeLink", txn: txn),
+            processTableRaw: processTableRaw
         )
     }
 }

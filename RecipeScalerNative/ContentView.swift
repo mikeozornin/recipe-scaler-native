@@ -83,7 +83,7 @@ struct ContentView: View {
     }
 
     var body: some View {
-        ZStack {
+        ProcessTableCookingRoot(cover: ProcessTableCookingCoverModel.shared) {
             if showSplash {
                 SplashView()
             } else if isAuthenticated, let container {

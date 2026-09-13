@@ -158,28 +158,61 @@ struct StepsSection: View {
     let htmlContent: String
     var accentColor: Color = RecipeAccentColor.color(from: "oklch(0.65 0.25 270)")
     var recipeId: String?
+    var cookingRecipe: RecipeData?
+    var scaleFactor: Double = 1
+    var restoreAwakeOnDismiss: Bool = false
+    var allowsRebuild: Bool = false
+    var syncService: YjsSyncService? = nil
     @Binding var timerPopover: DescriptionTimerPopoverState?
 
     @Environment(TimerManager.self) private var timerManager
+    @Environment(\.apiClient) private var apiClient
     @State private var document: RecipeDescriptionDocument?
+    @State private var rebuildModel: ProcessTableRebuildModel?
 
     init(
         htmlContent: String,
         accentColor: Color = RecipeAccentColor.color(from: "oklch(0.65 0.25 270)"),
         recipeId: String? = nil,
+        cookingRecipe: RecipeData? = nil,
+        scaleFactor: Double = 1,
+        restoreAwakeOnDismiss: Bool = false,
+        allowsRebuild: Bool = false,
+        syncService: YjsSyncService? = nil,
         timerPopover: Binding<DescriptionTimerPopoverState?> = .constant(nil)
     ) {
         self.htmlContent = htmlContent
         self.accentColor = accentColor
         self.recipeId = recipeId
+        self.cookingRecipe = cookingRecipe
+        self.scaleFactor = scaleFactor
+        self.restoreAwakeOnDismiss = restoreAwakeOnDismiss
+        self.allowsRebuild = allowsRebuild
+        self.syncService = syncService
         _timerPopover = timerPopover
+    }
+
+    private var canStartCooking: Bool {
+        cookingRecipe?.processTable != nil
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Instructions")
-                .font(AppTypography.title2)
-                .padding(.horizontal)
+            HStack(alignment: .center, spacing: ProcessTableLayout.stepsHeaderToCtaGap) {
+                Text("Instructions")
+                    .font(AppTypography.title2)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .layoutPriority(0)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if canStartCooking {
+                    ProcessTableStartButton {
+                        presentCookingCover()
+                    }
+                }
+            }
+            .frame(minHeight: ProcessTableLayout.ctaMinHit)
+            .padding(.horizontal)
 
             if let document {
                 RecipeDescriptionView(
@@ -195,9 +228,40 @@ struct StepsSection: View {
         .padding(.bottom, RecipeDetailLayoutMetrics.descriptionBottomPadding)
         .accessibilityIdentifier(AccessibilityIdentifiers.stepsSection)
         .task(id: htmlContent) {
-            let parsed = RecipeDescriptionParser.parse(htmlContent)
-            document = parsed
+            document = RecipeDescriptionParser.parse(htmlContent)
         }
+        .task {
+            if rebuildModel == nil {
+                rebuildModel = ProcessTableRebuildModel(api: apiClient)
+            }
+        }
+    }
+
+    private func presentCookingCover() {
+        guard let cookingRecipe else { return }
+        let model = rebuildModel ?? ProcessTableRebuildModel(api: apiClient)
+        if rebuildModel == nil {
+            rebuildModel = model
+        }
+        ProcessTableCookingPresenter.presentOverlay(
+            ProcessTableCookingView(
+                recipe: cookingRecipe,
+                scaleFactor: scaleFactor,
+                allowsRebuild: allowsRebuild,
+                restoreAwakeOnDismiss: restoreAwakeOnDismiss,
+                timerManager: timerManager,
+                syncService: syncService,
+                rebuildModel: model,
+                onStartTimer: { chip in
+                    _ = timerManager.createAndStartTimer(
+                        name: chip.name,
+                        duration: TimeInterval(chip.duration),
+                        type: chip.type,
+                        recipeId: recipeId
+                    )
+                }
+            )
+        )
     }
 
     private func startTimer(from reference: RecipeDescriptionTimerReference) {
@@ -210,3 +274,4 @@ struct StepsSection: View {
         )
     }
 }
+

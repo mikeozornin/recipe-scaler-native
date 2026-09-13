@@ -1,0 +1,9 @@
+{
+  "feature": "074-process-table",
+  "layoutHash": "2ebe2366ef4d62bd",
+  "reviewerType": "human",
+  "reviewer": "mike",
+  "verifiedAt": "2026-09-12",
+  "evidencePath": "layout-review.md",
+  "notes": "Human accepted layout as understood: CTA trailing of Steps header; iOS system landscape (not web overlay / picture-rotate). Matrix format still RecipeTables/web. Per docs/agents/VERIFICATION.md: review-agent verdict does NOT count as human acceptance."
+}

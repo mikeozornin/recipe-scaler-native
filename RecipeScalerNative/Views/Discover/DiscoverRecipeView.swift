@@ -83,6 +83,9 @@ struct DiscoverRecipeView: View {
                                 htmlContent: description,
                                 accentColor: accentColor,
                                 recipeId: recipeId,
+                                cookingRecipe: recipe,
+                                scaleFactor: scaleFactor,
+                                syncService: syncService,
                                 timerPopover: $descriptionTimerPopover
                             )
                             .id("discover_recipe_instructions")

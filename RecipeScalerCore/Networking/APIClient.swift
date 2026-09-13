@@ -158,6 +158,8 @@ public final class APIClient: @unchecked Sendable {
     /// requests get the same 15s bound — never longer than the session
     /// configuration, so the shorter test-host timeouts (3s) stay in force.
     public static let requestTimeout: TimeInterval = 15
+    /// `POST …/rebuild-process-table` waits for the LLM (server default 120s).
+    public static let llmRequestTimeout: TimeInterval = 180
 
     public func buildRequest(
         path: String,
@@ -199,6 +201,24 @@ public final class APIClient: @unchecked Sendable {
             path: "/api/recipes/\(recipeId)/calculate-nutrition",
             method: "POST"
         )
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw APIError.httpError(statusCode: httpResponse.statusCode)
+        }
+    }
+
+    public func rebuildProcessTable(recipeId: String) async throws {
+        var request = try buildRequest(
+            path: "/api/recipes/\(recipeId)/rebuild-process-table",
+            method: "POST"
+        )
+        request.timeoutInterval = Self.llmRequestTimeout
 
         let (_, response) = try await URLSession.shared.data(for: request)
 

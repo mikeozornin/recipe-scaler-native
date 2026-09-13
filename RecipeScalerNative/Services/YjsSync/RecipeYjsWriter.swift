@@ -21,6 +21,7 @@ enum RecipeYjsWriter {
     // MARK: - Ingredient array helpers
 
     /// Mutate `ingredients` while the parent `YOutput` from `ymap_get` stays alive (see `withNestedArray`).
+    /// Does not rewrite `recipe.processTable` (074 Do-No-Harm: insert-per-key, never `clear()` the recipe map).
     static func withIngredientsArray<T>(
         in recipeMap: YrsMap,
         txn: OpaquePointer,
