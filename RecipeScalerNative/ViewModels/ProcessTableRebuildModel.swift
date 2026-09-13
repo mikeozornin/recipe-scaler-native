@@ -57,8 +57,15 @@ final class ProcessTableRebuildModel {
                     guard capturedUserId == syncService.currentUserId else { return }
                 }
                 let message = Bundle.currentLocalizedString("recipe.process-table.recalculate-error")
-                ShoppingFeedback.postStatus(message, symbolName: "exclamationmark.triangle")
-                AppLog.debug(.sync, "process table rebuild failed: \(error.localizedDescription)")
+                ShoppingFeedback.postStatus(
+                    message,
+                    symbolName: "exclamationmark.triangle",
+                    kind: .error
+                )
+                AppLog.error(.sync, "process table rebuild failed", data: [
+                    "recipeId": capturedRecipeId,
+                    "error": error.localizedDescription,
+                ])
             }
         }
     }

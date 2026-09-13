@@ -60,6 +60,8 @@ Decode fail (битый JSON, не object, version ≠ 1, нет required) → `
 stateDiagram-v2
   [*] --> Classic: no valid v1
   [*] --> ClassicWithCTA: valid v1, not editing
+  Classic --> ClassicMissingBanner: owner v3, has steps
+  ClassicMissingBanner --> ClassicWithCTA: rebuild synced
   ClassicWithCTA --> Cooking: tap start
   Cooking --> ClassicWithCTA: close
   ClassicWithCTA --> Edit: owner v3
@@ -67,3 +69,5 @@ stateDiagram-v2
   Edit --> Classic: done, key gone
   Cooking --> Cooking: stale banner, table stays
 ```
+
+Classic missing: owner v3 видит not-built баннер. Discover / v1–v2 остаются в `Classic` без баннера.

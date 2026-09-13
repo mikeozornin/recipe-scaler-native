@@ -11,9 +11,10 @@ struct TransientStatusBanner: View {
 
     let message: String
     var symbolName: String = "cart.badge.plus"
+    var kind: TransientStatusPayload.Kind = .success
 
-    /// Matches swipe «add to shopping» actions (`.tint(.green)`).
-    private var bannerFill: Color { .green }
+    /// Matches swipe «add to shopping» (green) vs API/rebuild failures (red).
+    private var bannerFill: Color { kind == .error ? .red : .green }
 
     var body: some View {
         if #available(iOS 26.0, *) {
@@ -51,7 +52,7 @@ struct TransientStatusBanner: View {
             .foregroundStyle(.white)
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .glassEffect(.regular.tint(.green), in: .capsule)
+            .glassEffect(.regular.tint(bannerFill), in: .capsule)
             .accessibilityIdentifier(AccessibilityIdentifiers.transientStatusBanner)
     }
 

@@ -89,15 +89,25 @@ enum ShoppingListPlainText {
 }
 
 struct TransientStatusPayload: Equatable {
+    enum Kind: Equatable {
+        case success
+        case error
+    }
+
     let message: String
     var symbolName: String = "cart.badge.plus"
+    var kind: Kind = .success
 }
 
 enum ShoppingFeedback {
-    static func postStatus(_ message: String, symbolName: String = "cart.badge.plus") {
+    static func postStatus(
+        _ message: String,
+        symbolName: String = "cart.badge.plus",
+        kind: TransientStatusPayload.Kind = .success
+    ) {
         NotificationCenter.default.post(
             name: .shoppingStatusMessage,
-            object: TransientStatusPayload(message: message, symbolName: symbolName)
+            object: TransientStatusPayload(message: message, symbolName: symbolName, kind: kind)
         )
         #if DEBUG
         writeVerifyRecord(message)

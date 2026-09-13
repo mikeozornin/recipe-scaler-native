@@ -192,7 +192,14 @@ struct StepsSection: View {
     }
 
     private var canStartCooking: Bool {
-        cookingRecipe?.processTable != nil
+        ProcessTableClassicChrome.canStartCooking(cookingRecipe)
+    }
+
+    private var showsMissingBanner: Bool {
+        ProcessTableClassicChrome.showsMissingBanner(
+            allowsRebuild: allowsRebuild,
+            recipe: cookingRecipe
+        )
     }
 
     var body: some View {
@@ -212,6 +219,14 @@ struct StepsSection: View {
             }
             .frame(minHeight: ProcessTableLayout.ctaMinHit)
             .padding(.horizontal)
+
+            if showsMissingBanner, let recipeId {
+                ProcessTableMissingCardBanner(
+                    recipeId: recipeId,
+                    syncService: syncService
+                )
+                .padding(.horizontal)
+            }
 
             if let document {
                 RecipeDescriptionView(
@@ -253,6 +268,35 @@ struct StepsSection: View {
             duration: TimeInterval(reference.durationSeconds),
             type: reference.type,
             recipeId: recipeId
+        )
+    }
+}
+
+/// Rebuild environment lives here so `StepsSection` previews/fixtures without
+/// `appEnvironment` do not crash: the child is only in the tree when missing.
+private struct ProcessTableMissingCardBanner: View {
+    let recipeId: String
+    var syncService: YjsSyncService?
+
+    @Environment(ProcessTableRebuildModel.self) private var processTableRebuild
+
+    private var isOnline: Bool {
+        syncService?.connectionState.isConnected ?? false
+    }
+
+    var body: some View {
+        ProcessTableStatusBanner(
+            kind: .missing,
+            canRecalculate: isOnline,
+            isOnline: isOnline,
+            isRebuilding: processTableRebuild.isRebuilding,
+            onRecalculate: {
+                processTableRebuild.rebuild(
+                    recipeId: recipeId,
+                    userId: syncService?.currentUserId,
+                    syncService: syncService
+                )
+            }
         )
     }
 }

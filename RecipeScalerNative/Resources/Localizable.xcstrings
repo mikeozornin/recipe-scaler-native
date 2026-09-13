@@ -11713,13 +11713,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Process table is not built yet"
+            "value" : "Process table is not built"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Таблица готовки еще не создавалась"
+            "value" : "Таблица готовки не создана"
           }
         }
       }

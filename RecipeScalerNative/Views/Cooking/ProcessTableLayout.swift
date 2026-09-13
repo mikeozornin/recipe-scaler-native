@@ -42,10 +42,10 @@ enum ProcessTableLayout {
     static let timerChipVerticalPad: CGFloat = 6
     static let leftoverBarPadding: CGFloat = 12
     static let bannerSpacing: CGFloat = 8
-    /// Footnote cap height of the stale row (nutrition parity). The rebuild
-    /// control still has a 44 pt hit; negative padding keeps this as the row height.
+    /// Body cap height of the status banner row. The rebuild control still has
+    /// a 44 pt hit; negative padding keeps this as the row height.
     static var bannerLineHeight: CGFloat {
-        ceil(AppTypography.footnoteUIFont.lineHeight)
+        ceil(AppTypography.bodyUIFont.lineHeight)
     }
     static var bannerHitVerticalCollapse: CGFloat {
         -(ctaMinHit - bannerLineHeight) / 2

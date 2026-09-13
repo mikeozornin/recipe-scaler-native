@@ -75,14 +75,52 @@ final class ProcessTableCookingLayoutTests: XCTestCase {
         )
     }
 
-    func testStaleBannerRowIsFootnoteHeight() {
+    func testStaleBannerRowIsBodyHeight() {
         XCTAssertEqual(ProcessTableLayout.staleBannerToContentGap, 8)
         XCTAssertEqual(
             ProcessTableLayout.ctaMinHit + ProcessTableLayout.bannerHitVerticalCollapse * 2,
             ProcessTableLayout.bannerLineHeight,
             accuracy: 0.5,
-            "Rebuild hit is 44 pt but the banner row must collapse to the footnote line"
+            "Rebuild hit is 44 pt but the banner row must collapse to the body line"
         )
+        XCTAssertEqual(
+            ProcessTableLayout.bannerLineHeight,
+            ceil(AppTypography.bodyUIFont.lineHeight),
+            "Status banner uses body metrics, not footnote"
+        )
+    }
+
+    func testClassicViewMissingTableShowsBannerWhenRebuildAllowed() {
+        let recipe = makeCardRecipe(processTableRaw: nil)
+        XCTAssertTrue(
+            ProcessTableClassicChrome.showsMissingBanner(allowsRebuild: true, recipe: recipe),
+            "Owner v3 classic view must show not-built banner when the table is missing"
+        )
+        XCTAssertFalse(
+            ProcessTableClassicChrome.canStartCooking(recipe),
+            "Start cooking must stay hidden until a valid table exists"
+        )
+    }
+
+    func testClassicViewValidTableShowsStartNotMissingBanner() {
+        let recipe = makeCardRecipe(processTableRaw: validProcessTableJSON())
+        XCTAssertTrue(
+            ProcessTableClassicChrome.canStartCooking(recipe),
+            "Valid table must show start cooking in the steps header"
+        )
+        XCTAssertFalse(
+            ProcessTableClassicChrome.showsMissingBanner(allowsRebuild: true, recipe: recipe),
+            "Classic view must not show the missing-table banner when v1 decodes"
+        )
+    }
+
+    func testDiscoverMissingTableHidesBanner() {
+        let recipe = makeCardRecipe(processTableRaw: nil)
+        XCTAssertFalse(
+            ProcessTableClassicChrome.showsMissingBanner(allowsRebuild: false, recipe: recipe),
+            "Discover / non-editable cards must not show not-built"
+        )
+        XCTAssertFalse(ProcessTableClassicChrome.canStartCooking(recipe))
     }
 
     func testCookingUsesFullWidthWithTightHorizontalPad() {
@@ -149,6 +187,41 @@ final class ProcessTableCookingLayoutTests: XCTestCase {
     }
 
     // MARK: - Fixture
+
+    private func makeCardRecipe(processTableRaw: String?) -> RecipeData {
+        RecipeData(
+            id: "card-banner-test",
+            name: "Banner loaf",
+            servings: 1,
+            color: "#3b82f6",
+            version: "v3",
+            description: "<ol><li>Mix</li><li>Bake</li></ol>",
+            ingredients: [
+                IngredientData(id: "ing0", name: "Flour", originalAmount: "100", unit: "g", order: 1)
+            ],
+            nutrition: nil,
+            isPublic: false,
+            hasSteps: true,
+            createdAt: "",
+            updatedAt: "",
+            imageUrl: nil,
+            imageAspectRatio: nil,
+            originalRecipeLink: nil,
+            originalRecipe: nil,
+            processTableRaw: processTableRaw
+        )
+    }
+
+    private func validProcessTableJSON() -> String {
+        let ingredients = [
+            IngredientData(id: "ing0", name: "Flour", originalAmount: "100", unit: "g", order: 1)
+        ]
+        let html = "<ol><li>Mix</li><li>Bake</li></ol>"
+        let hash = ProcessTableSourceHash.hash(ingredients: ingredients, descriptionHtml: html)
+        return """
+        {"version":1,"sourceHash":"\(hash)","columns":[{"id":"c0","title":"Mix","kind":"cook","stepIndex":0}],"assignments":[{"ingredientId":"ing0","columnId":"c0"}]}
+        """
+    }
 
     private func makeCookingView() -> ProcessTableCookingView {
         let ingredients: [IngredientData] = (0..<6).map { index in

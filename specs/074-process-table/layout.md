@@ -30,7 +30,7 @@ HStack(alignment: .center, spacing: 8)
 | Горизонтальные insets | как у заголовка `StepsSection` (сейчас `.padding(.horizontal)` = 16) |
 | Высота ряда | ≥ 44 pt (hit кнопки); заголовок по центру ряда |
 | Кнопка | `.borderless`, accent, `.appBody()`, hug; не занимает ширину заголовка |
-| Нет таблицы / edit | только заголовок, как сегодня |
+| Нет таблицы / edit | заголовок; owner v3 — баннер not-built под ним |
 
 **Критично:** заголовок **не** сжимается в колонку кнопки. Кнопка полностью видна; длинный RU «Начать готовить» не переносится под «Шаги». На SE 375: «Шаги» + кнопка влезают в одну строку; если нет — truncate **заголовка**, не кнопки.
 
@@ -102,7 +102,7 @@ Chrome готовки: заголовок в скролле, Close — overlay `
 | `timerChipVerticalPad` | 6 | |
 | `leftoverBarPadding` | 12 | inset снизу |
 | `bannerSpacing` | 8 | stale-баннер как nutrition |
-| `bannerLineHeight` | footnote line | высота ряда баннера |
+| `bannerLineHeight` | body line | высота ряда баннера |
 | `staleBannerToContentGap` | 8 | отступ под баннером до prep |
 | `filledCellBorderWidth` | 1 | |
 | `stickySeamCover` | 1 | шов sticky |
@@ -118,7 +118,7 @@ Chrome готовки: заголовок в скролле, Close — overlay `
 | Prep-ряд | `.appBody()` |
 | Имя + amount | `.appBody()`, wrap; amount — только число, без повторной единицы (`кг, 1 кг` → `кг, 1`) |
 | Текст cook-span | `.appBody()`, center, wrap (тот же кегль, что у ингредиентов) |
-| Stale-баннер | `.appFootnote()` + `.secondary` |
+| Stale / not-built баннер | `.appBody()` + `.secondary` |
 | Timer chip | `.appBody()` / `time.short`; иконка `alarm` через `AppSymbol.sizedImage` = `checkboxPointSize` (16) |
 
 Цвета semantic. Filled ячейка: `Color(uiColor: .secondarySystemFill)`. Light/dark из системы.
@@ -135,6 +135,7 @@ StepsSection
     ├─ HStack  (header row, height ≥ 44, padding horizontal 16)
     │   ├─ Text(заголовок шагов)     lineLimit 1, truncation
     │   └─ ProcessTableStartButton   if valid table && !editing
+    ├─ ProcessTableStatusBanner      if missing && allowsRebuild (owner v3)
     └─ RecipeDescriptionView         (без изменений)
 ```
 
@@ -143,27 +144,29 @@ StepsSection
 - Не в `.toolbar` карточки.
 - Не отдельным блоком над/под секцией.
 - Edit → кнопки нет (заголовок как сейчас).
-- Нет/битый ключ → кнопки нет.
+- Нет/битый ключ → кнопки нет; owner v3 classic — баннер not-built под заголовком.
+- Stale на классике не дублируем.
 
 Accessibility id: `recipe_process_table_start`.  
 Тап → `fullScreenCover` готовки.
 
 ---
 
-## State: Карточка — edit, баннер not-built / stale
+## State: Карточка — баннер not-built / stale
 
-Только edit + owner. Classic вне edit баннер не дублируем.
+- **not-built:** edit и classic view, owner v3. Classic — под заголовком шагов. Discover / v1–v2 — нет.
+- **stale:** только edit и готовка. Classic вне edit не дублируем.
 
 ```text
-edit stack
-├─ ProcessTableStatusBanner     ← над description editor
+edit / classic steps
+├─ ProcessTableStatusBanner     ← над description (edit) / под заголовком шагов (classic missing)
 │   HStack(spacing: 8)
-│   ├─ Text (may-be-outdated | not-built)  .appFootnote()
-│   └─ icon-only repeat  visual = footnote; hit 44, без увеличения ряда (negative pad)
-└─ description editor
+│   ├─ Text (may-be-outdated | not-built)  .appBody(), wrap
+│   └─ icon-only repeat  visual = body; hit 44, без увеличения ряда (negative pad)
+└─ description editor / RecipeDescriptionView
 ```
 
-Как nutrition outdated: одна строка. Public/offline/v1–v2: без кнопки rebuild.
+Одна строка, wrap если не влезает. Public/offline/v1–v2: без кнопки rebuild.
 
 ---
 
@@ -273,7 +276,7 @@ Wiring (`StepsSection` header HStack, Discover, rebuild, geometry) — посл�
 | State | Light | Dark | Edge data |
 |-------|-------|------|-----------|
 | Карточка, есть таблица | ☐ | ☐ | CTA **справа** от заголовка шагов, одна строка |
-| Карточка, нет / битый JSON | ☐ | ☐ | только заголовок шагов |
+| Карточка, нет / битый JSON | ☐ | ☐ | заголовок шагов; owner v3 — баннер not-built body |
 | Edit, not-built / stale | ☐ | ☐ | баннер над редактором, CTA нет |
 | iPhone cooking landscape | ☐ | ☐ | системный nav bar; 6 cook-колонок, гориз. скролл |
 | iPhone, orientation lock | ☐ | ☐ | cover без самодельного 90°; либо OS landscape, либо текущая ориентация |

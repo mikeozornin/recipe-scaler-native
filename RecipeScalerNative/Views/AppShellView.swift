@@ -225,7 +225,8 @@ struct AppShellView: View {
                 if let transientStatus {
                     TransientStatusBanner(
                         message: transientStatus.message,
-                        symbolName: transientStatus.symbolName
+                        symbolName: transientStatus.symbolName,
+                        kind: transientStatus.kind
                     )
                         .frame(maxWidth: .infinity)
                         .padding(.bottom, 72)

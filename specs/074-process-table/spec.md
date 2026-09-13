@@ -110,7 +110,7 @@ Native — первый пользовательский клиент ключа
 **Acceptance Scenarios**:
 
 1. **Given** валидный `processTable` и карточка не в edit, **When** пользователь смотрит деталку (свои или Discover/public), **Then** видит «Начать готовить» в одной строке с заголовком шагов, справа.
-2. **Given** ключа нет / JSON битый / `version !== 1` / edit mode, **When** карточка открыта, **Then** кнопки нет; заголовок шагов на месте.
+2. **Given** ключа нет / JSON битый / `version !== 1` / edit mode, **When** карточка открыта, **Then** кнопки нет; заголовок шагов на месте. Owner v3 в classic view дополнительно видит баннер `recipe.process-table.not-built` под заголовком.
 3. **Given** iPhone и валидная таблица, **When** тап «Начать готовить», **Then** `fullScreenCover` с системным nav bar; окно в landscape через geometry update, без ручного поворота view на 90°.
 4. **Given** режим готовки, **When** Close, **Then** возврат на карточку в portrait; чекбоксы этой сессии сброшены.
 5. **Given** режим готовки на iPhone, **When** пользователь поворачивает устройство в portrait, **Then** окно остаётся landscape; готовка не закрывается.
@@ -151,7 +151,7 @@ Prep — ряды над гридом. Cook — колонки. Подряд з�
 2. **Given** owner, online, баннер, **When** тап пересчёта, **Then** `POST /api/recipes/:id/rebuild-process-table`, кнопка disabled на время запроса; после 200 и sync баннер гаснет.
 3. **Given** 404 или 500, **When** пересчёт завершился, **Then** тост с ошибкой, баннер остаётся, таблица на месте.
 4. **Given** offline / не owner / Discover, **When** таблица stale, **Then** текст баннера без кнопки пересчёта.
-5. **Given** edit, ключа ещё нет, owner online, **When** карточка в edit, **Then** баннер `recipe.process-table.not-built` и действие `recipe.process-table.build` (тот же POST).
+5. **Given** ключа ещё нет, owner v3 online, **When** карточка в edit или в classic view, **Then** баннер `recipe.process-table.not-built` и действие `recipe.process-table.build` (тот же POST). В classic — под заголовком шагов; в edit — над description editor.
 6. **Given** classic view вне edit, **When** таблица stale, **Then** баннер на классике не дублируем (как web); кнопка «Начать готовить» остаётся, баннер — внутри готовки.
 7. **Given** только rename имени ингредиента, **When** хеш пересчитан, **Then** stale нет.
 
@@ -223,6 +223,7 @@ Prep — ряды над гридом. Cook — колонки. Подряд з�
 - **FR-019**: Все пользовательские строки — ключи `recipe.process-table.*` (+ существующие `common.close`, `time.short`, `common.screen-always-on` при необходимости) в `Localizable.xcstrings` (en+ru), без hardcoded UI и без fallback.
 - **FR-020**: Голосовой режим 056 MUST не получать отдельную кнопку «Готовить» в этом заходе; будущий голос вешается на этот же экран.
 - **FR-021**: Перед реализацией view MUST быть `layout.md` + `layout-audit.json` и human review `layout.md` (формат матрицы с web/RecipeTables; chrome iOS-native). Static audit ≠ acceptance.
+- **FR-022**: Classic view (не edit): owner v3 (`canEdit`) без валидной v1 MUST показать `recipe.process-table.not-built` под заголовком шагов. Discover / v1–v2 MUST NOT. Stale-баннер MUST NOT дублироваться на классике. Текст баннера MUST `.appBody()` + `.secondary`.
 
 ### Ключевые сущности
 
@@ -253,7 +254,7 @@ Prep — ряды над гридом. Cook — колонки. Подряд з�
 - CTA на карточке — справа от заголовка шагов, не в toolbar.
 - Figma нет; `layout.md` пишем сами и останавливаемся на human review до view.
 - Чекбоксы как web `sessionStorage`: сессия готовки, не UserDefaults.
-- Classic view вне edit не дублирует stale-баннер (как web); nutrition-баннер на карточке не трогаем.
+- Classic view вне edit не дублирует stale-баннер (как web); not-built на классике показываем owner v3. Nutrition-баннер на карточке не трогаем.
 - Discover/public: матрица read-only, rebuild нет.
 - Rebuild может длиться десятки секунд (LLM) — busy на кнопке, без блокировки всего приложения тостом «ждём».
 - Существующий `ScreenAwakeToggle` на карточке остаётся; готовка включает awake сама.

@@ -15,7 +15,8 @@ struct ProcessTableStatusBanner: View {
     var body: some View {
         HStack(spacing: ProcessTableLayout.bannerSpacing) {
             Text(kind == .missing ? "recipe.process-table.not-built" : "recipe.process-table.may-be-outdated")
-                .appFootnote()
+                .appBody()
+                .fixedSize(horizontal: false, vertical: true)
             if canRecalculate, isOnline, let onRecalculate {
                 Button(action: {
                     onRecalculate()
@@ -26,7 +27,7 @@ struct ProcessTableStatusBanner: View {
                     } else {
                         AppSymbol.sizedImage(
                             "repeat",
-                            pointSize: AppTypography.footnoteSize,
+                            pointSize: AppTypography.bodySize,
                             weight: .semibold
                         )
                     }
@@ -40,7 +41,16 @@ struct ProcessTableStatusBanner: View {
             }
         }
         .foregroundStyle(.secondary)
-        .fixedSize(horizontal: true, vertical: false)
         .accessibilityIdentifier(AccessibilityIdentifiers.recipeProcessTableBanner)
+    }
+}
+
+enum ProcessTableClassicChrome {
+    static func canStartCooking(_ recipe: RecipeData?) -> Bool {
+        recipe?.processTable != nil
+    }
+
+    static func showsMissingBanner(allowsRebuild: Bool, recipe: RecipeData?) -> Bool {
+        allowsRebuild && recipe != nil && recipe?.processTable == nil
     }
 }
