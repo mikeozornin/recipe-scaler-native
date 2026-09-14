@@ -46,7 +46,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-from [specs/074-process-table/plan.md](specs/074-process-table/plan.md).
+from [specs/075-hands-free-cook-controls/plan.md](specs/075-hands-free-cook-controls/plan.md).
 <!-- SPECKIT END -->
 
 ## Learned User Preferences

@@ -1,0 +1,119 @@
+{
+  "feature": "075-hands-free-cook-controls",
+  "layout_doc": "layout.md",
+  "figma": {
+    "file_key": null,
+    "frames": [],
+    "note": "Rev 3: banner ellipsis Hands-free opt-in + help sheet; no cook-matrix HF chrome; no second toolbar button."
+  },
+  "required_files": [
+    "RecipeScalerNative/Views/AwakeScrollLayout.swift",
+    "RecipeScalerNative/Views/ScreenAwakeToggle.swift",
+    "RecipeScalerNative/Views/ScreenAwakeStatusBanner.swift",
+    "RecipeScalerNative/Views/YDocRecipeDetailView.swift",
+    "RecipeScalerNative/Views/AwakeScrollHelpSheet.swift"
+  ],
+  "must_contain": [
+    {
+      "id": "scroll-fraction-75",
+      "description": "Viewport scroll fraction token is 0.75",
+      "pattern": "scrollViewportFraction:\\s*CGFloat\\s*=\\s*0\\.75",
+      "paths": [
+        "RecipeScalerNative/Views/AwakeScrollLayout.swift"
+      ]
+    },
+    {
+      "id": "preview-diameter-48",
+      "description": "Optional camera preview is 48pt",
+      "pattern": "cameraPreviewDiameter:\\s*CGFloat\\s*=\\s*48",
+      "paths": [
+        "RecipeScalerNative/Views/AwakeScrollLayout.swift"
+      ]
+    },
+    {
+      "id": "banner-ellipsis-size-16",
+      "description": "Banner ellipsis visual size is 16pt",
+      "pattern": "bannerAccessorySize:\\s*CGFloat\\s*=\\s*16",
+      "paths": [
+        "RecipeScalerNative/Views/AwakeScrollLayout.swift"
+      ]
+    },
+    {
+      "id": "awake-toggle-sun",
+      "description": "Keep-awake control remains sun.max (no second HF toolbar button)",
+      "pattern": "sun\\.max",
+      "paths": [
+        "RecipeScalerNative/Views/ScreenAwakeToggle.swift"
+      ]
+    },
+    {
+      "id": "banner-menu-ellipsis",
+      "description": "Banner hosts ellipsis Menu for Hands-free",
+      "pattern": "ellipsis",
+      "paths": [
+        "RecipeScalerNative/Views/ScreenAwakeStatusBanner.swift"
+      ]
+    }
+  ],
+  "must_not_contain": [
+    {
+      "id": "no-hf-trailing-80-cook-chrome",
+      "description": "Rev1 cook HF trailing pad must not reappear as product chrome requirement in detail",
+      "pattern": "handsFreeTrailingPad",
+      "paths": [
+        "RecipeScalerNative/Views/YDocRecipeDetailView.swift"
+      ]
+    },
+    {
+      "id": "no-system-font-banner",
+      "description": "Banner must not use SF via .font(.system",
+      "pattern": "\\.font\\(\\.system\\(",
+      "paths": [
+        "RecipeScalerNative/Views/ScreenAwakeStatusBanner.swift",
+        "RecipeScalerNative/Views/AwakeScrollHelpSheet.swift"
+      ]
+    }
+  ],
+  "previews": [
+    {
+      "id": "help-sheet-preview",
+      "description": "Canvas preview for help sheet",
+      "pattern": "#Preview",
+      "paths": [
+        "RecipeScalerNative/Views/AwakeScrollHelpSheet.swift"
+      ]
+    }
+  ],
+  "acceptance_claims": [
+    {
+      "id": "claim-75-percent-delta",
+      "description": "Each action scrolls 75% of visible height until clamp",
+      "manual": true
+    },
+    {
+      "id": "claim-awake-on-hf-off-no-camera",
+      "description": "Awake ON and Hands-free OFF does not start camera (no green dot)",
+      "manual": true
+    },
+    {
+      "id": "claim-preview-overlay-not-inset",
+      "description": "Preview overlay does not change ScrollView height",
+      "manual": true
+    },
+    {
+      "id": "claim-no-extra-toolbar-button",
+      "description": "Only existing sun.max awake toggle in toolbar",
+      "manual": true
+    },
+    {
+      "id": "claim-banner-ellipsis",
+      "description": "Ellipsis is in the keep-awake banner trailing edge; banner height ≤ 48pt",
+      "manual": true
+    },
+    {
+      "id": "claim-help-from-menu",
+      "description": "Help sheet opens from banner menu, not from toolbar",
+      "manual": true
+    }
+  ]
+}
