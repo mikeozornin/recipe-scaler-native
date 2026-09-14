@@ -9537,6 +9537,22 @@
         }
       }
     },
+    "import.clipboard-banner.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import a site from the clipboard?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировать сайт из буфера обмена?"
+          }
+        }
+      }
+    },
     "import.lets-go" : {
       "localizations" : {
         "en" : {

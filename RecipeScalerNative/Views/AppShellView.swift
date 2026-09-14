@@ -88,6 +88,7 @@ struct AppShellView: View {
     @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
     @Environment(VkusvillSettingsStore.self) private var vkusvillSettings
     @Environment(OfflineBannerGate.self) private var offlineGate
+    @Environment(ClipboardImportStore.self) private var clipboardImport
     @Environment(\.scenePhase) private var scenePhase
     @State private var showAssistant = false
     @State private var assistantContextRecipeId: String?
@@ -96,6 +97,9 @@ struct AppShellView: View {
     @State private var transientStatusDismissTask: Task<Void, Never>?
     @State private var mobileTimerPanelCollapsed = true
     @State private var tabBarTopOffsetFromLayoutBottom: CGFloat = 0
+    @State private var clipboardBannerHeight: CGFloat = 0
+    @State private var clipboardImportPresentTask: Task<Void, Never>?
+    @State private var inboundClipboardFinishTask: Task<Void, Never>?
     @Namespace private var mobileTimerPanelChevronNamespace
 
     /// Глобальный zoom-session для hero-фотографий (spec 064). `@State` +
@@ -159,6 +163,125 @@ struct AppShellView: View {
             ? tabBarTopOffsetFromLayoutBottom
             : Self.fallbackTabBarTopOffsetFromLayoutBottom
         return tabBarOffset + timerHeight + AssistantFabStyle.margin
+            + clipboardFabLift
+    }
+
+    private var clipboardFabLift: CGFloat {
+        guard clipboardBannerHeight > 0 else { return 0 }
+        return clipboardBannerHeight + ClipboardImportBannerLayout.bottomGap
+    }
+
+    private var clipboardBannerBottomPadding: CGFloat {
+        let timerHeight = MobileTimerPanelLayout.height(
+            timerCount: timerManager.timers.count,
+            isExpanded: !mobileTimerPanelCollapsed
+        )
+        let tabBarOffset = tabBarTopOffsetFromLayoutBottom > 0
+            ? tabBarTopOffsetFromLayoutBottom
+            : Self.fallbackTabBarTopOffsetFromLayoutBottom
+        return tabBarOffset + timerHeight + ClipboardImportBannerLayout.bottomGap
+    }
+
+    private var clipboardEvaluateContext: ClipboardImportEvaluateContext {
+        ClipboardImportEvaluateContext(
+            hasSession: authService.isAuthenticated,
+            isURLImportAvailable: isClipboardURLImportAvailable,
+            isImportSheetPresented: coordinator.importPresentation != nil,
+            hasPendingInboundImport: coordinator.inboundClipboardSuppressed
+                || coordinator.pendingSpotlightRecipeId != nil
+                || DeepLinkRouter.hasPendingRecipeId()
+                || deepLinkRouter.pending != nil,
+            isTransientToastVisible: transientStatus != nil
+        )
+    }
+
+    private var isClipboardURLImportAvailable: Bool {
+        switch syncService.connectionState {
+        case .connected, .connecting, .reconnecting:
+            return true
+        case .disconnected, .error:
+            return false
+        }
+    }
+
+    private func evaluateClipboardImport() {
+        let context = clipboardEvaluateContext
+        Task { await clipboardImport.evaluate(context: context) }
+    }
+
+    private func presentClipboardImport() {
+        clipboardImportPresentTask?.cancel()
+        let generation = clipboardImport.evaluateGeneration
+        clipboardImportPresentTask = Task {
+            guard let seed = await clipboardImport.seedTextForImport() else { return }
+            guard !Task.isCancelled else { return }
+            guard generation == clipboardImport.evaluateGeneration else { return }
+            guard authService.isAuthenticated else { return }
+            coordinator.presentImport(
+                seedText: seed,
+                autoSubmit: true,
+                consumesClipboard: true
+            )
+        }
+    }
+
+    private func armInboundClipboardSuppressionIfNeeded() {
+        if DeepLinkRouter.hasPendingRecipeId() || deepLinkRouter.pending != nil {
+            coordinator.beginInboundClipboardSuppression()
+        }
+    }
+
+    private func scheduleEndInboundClipboardSuppression() {
+        guard coordinator.inboundClipboardSuppressed else { return }
+        inboundClipboardFinishTask?.cancel()
+        inboundClipboardFinishTask = Task { @MainActor in
+            coordinator.endInboundClipboardSuppression()
+            evaluateClipboardImport()
+        }
+    }
+
+    private var isClipboardBannerVisible: Bool {
+        if transientStatus != nil { return false }
+        if case .visible = clipboardImport.bannerState { return true }
+        return false
+    }
+
+    @ViewBuilder
+    private var bottomStatusOverlays: some View {
+        if let transientStatus {
+            TransientStatusBanner(
+                message: transientStatus.message,
+                symbolName: transientStatus.symbolName,
+                kind: transientStatus.kind
+            )
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, 72)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        } else if clipboardImport.bannerState == .visible {
+            ClipboardImportBanner(
+                onImport: presentClipboardImport,
+                onDismiss: {
+                    clipboardImport.dismissVisible()
+                }
+            )
+            .padding(.horizontal, ClipboardImportBannerLayout.horizontalInset)
+            .padding(.bottom, clipboardBannerBottomPadding)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+
+    private func importSheet(_ presentation: ImportPresentation) -> some View {
+        ImportRecipeSheet(
+            seedText: presentation.seedText,
+            autoSubmit: presentation.autoSubmit
+        ) { result in
+            if presentation.consumesClipboard {
+                clipboardImport.markConsumed()
+            }
+            if let message = coordinator.completeImport(result) {
+                postTransientStatus(message)
+            }
+        }
     }
 
     /// Tab bar height fallback until UIKit layout publishes a measured value.
@@ -210,6 +333,47 @@ struct AppShellView: View {
     }
 
     var body: some View {
+        withClipboardImportBanner(shellWithoutClipboard)
+    }
+
+    private func withClipboardImportBanner<Content: View>(_ content: Content) -> some View {
+        content
+            .overlay(alignment: .bottom) {
+                bottomStatusOverlays
+            }
+            .onPreferenceChange(ClipboardBannerHeightKey.self) { clipboardBannerHeight = $0 }
+            .onChange(of: isClipboardBannerVisible) { _, visible in
+                if !visible {
+                    clipboardBannerHeight = 0
+                }
+            }
+            .animation(
+                .easeInOut(duration: ClipboardImportBannerLayout.appearDuration),
+                value: isClipboardBannerVisible
+            )
+            .sheet(item: $coordinator.importPresentation, content: importSheet)
+            .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
+                evaluateClipboardImport()
+            }
+            .onChange(of: coordinator.importPresentation?.id) { _, _ in
+                evaluateClipboardImport()
+            }
+            .onChange(of: transientStatus != nil) { _, _ in
+                evaluateClipboardImport()
+            }
+            .onChange(of: coordinator.inboundClipboardSuppressed) { _, suppressed in
+                if !suppressed {
+                    evaluateClipboardImport()
+                }
+            }
+            .onChange(of: authService.isAuthenticated) { _, isAuthenticated in
+                if !isAuthenticated {
+                    clipboardImportPresentTask?.cancel()
+                }
+            }
+    }
+
+    private var shellWithoutClipboard: some View {
         tabView
             .environment(coordinator)
             .environment(
@@ -221,26 +385,7 @@ struct AppShellView: View {
             TabBarTopOffsetReader(offsetFromLayoutBottom: $tabBarTopOffsetFromLayoutBottom)
         }
             .heroPhotoZoomOverlay(heroPhotoZoomSession.context)
-            .overlay(alignment: .bottom) {
-                if let transientStatus {
-                    TransientStatusBanner(
-                        message: transientStatus.message,
-                        symbolName: transientStatus.symbolName,
-                        kind: transientStatus.kind
-                    )
-                        .frame(maxWidth: .infinity)
-                        .padding(.bottom, 72)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
             .animation(.easeInOut(duration: 0.25), value: transientStatus != nil)
-            .sheet(item: $coordinator.importPresentation) { _ in
-                ImportRecipeSheet { result in
-                    if let message = coordinator.completeImport(result) {
-                        postTransientStatus(message)
-                    }
-                }
-            }
         .onChange(of: coordinator.pendingFileImportToast) { _, newValue in
             guard let newValue else { return }
             postTransientStatus(newValue)
@@ -321,8 +466,16 @@ struct AppShellView: View {
             coordinator.consumePendingRecipeIdIfNeeded()
         }
         .onChange(of: deepLinkRouter.pending) { _, link in
-            guard let link else { return }
+            if link != nil {
+                coordinator.beginInboundClipboardSuppression()
+            }
+            guard let link else {
+                evaluateClipboardImport()
+                return
+            }
             coordinator.handleDeepLink(link)
+            evaluateClipboardImport()
+            scheduleEndInboundClipboardSuppression()
         }
         // Spec 066 — single writer for offline banner debounce.
         // Status banners and AssistantSheet's body branch read `offlineGate`
@@ -338,14 +491,19 @@ struct AppShellView: View {
         // otherwise expire the 3s timer while the phone is locked, then flash
         // banners until reconnect. Reset on `.background`, ignore connection
         // updates until `.active`, then re-arm with a fresh window.
-        .onChange(of: syncService.connectionState) { _, newState in
-            applyOfflineBannerGate(isNotConnected: !newState.isConnected)
-        }
         .onChange(of: scenePhase) { _, phase in
             applyOfflineBannerGate(for: phase)
+            if phase == .active {
+                evaluateClipboardImport()
+            }
+        }
+        .onChange(of: syncService.connectionState) { _, newState in
+            applyOfflineBannerGate(isNotConnected: !newState.isConnected)
+            evaluateClipboardImport()
         }
         .onAppear {
             RecipeImageDiskCache.migrateFromCachesIfNeeded()
+            armInboundClipboardSuppressionIfNeeded()
             // Spec 059 fix: on cold launch iOS delivers the Universal Link URL
             // during splash, before `AppShellView` mounts. `onChange(pending)`
             // cannot observe a value that was already set, so a queued link
@@ -373,6 +531,8 @@ struct AppShellView: View {
             // start already offline), so without this the banner would never appear.
             applyOfflineBannerGate(for: scenePhase)
             routePendingAssistantOpenRequest()
+            evaluateClipboardImport()
+            scheduleEndInboundClipboardSuppression()
         }
         #if DEBUG
         .onAppear {
@@ -395,10 +555,14 @@ struct AppShellView: View {
                DebugLaunchOptions.openDiscoverCollectionSlug == nil {
                 coordinator.consumePendingRecipeIdIfNeeded()
             }
+            evaluateClipboardImport()
+            scheduleEndInboundClipboardSuppression()
         }
         #else
         .onAppear {
             coordinator.consumePendingRecipeIdIfNeeded()
+            evaluateClipboardImport()
+            scheduleEndInboundClipboardSuppression()
         }
         #endif
     }

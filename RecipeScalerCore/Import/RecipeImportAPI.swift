@@ -37,7 +37,8 @@ public enum RecipeImportAPI {
         let response: APIResponse<ImportRecipesResultDTO> = try await APIClient.shared.requestJSON(
             path: "/api/recipes/import/url",
             method: "POST",
-            body: body
+            body: body,
+            timeoutInterval: APIClient.llmRequestTimeout
         )
         return try unwrap(response)
     }
@@ -52,7 +53,8 @@ public enum RecipeImportAPI {
         let response: APIResponse<ImportRecipesResultDTO> = try await APIClient.shared.requestJSON(
             path: "/api/recipes/import/text",
             method: "POST",
-            body: Body(text: text)
+            body: Body(text: text),
+            timeoutInterval: APIClient.llmRequestTimeout
         )
         return try unwrap(response)
     }
@@ -70,8 +72,10 @@ public enum RecipeImportAPI {
 
         let data = try await APIClient.shared.uploadMultipart(
             path: "/api/recipes/import/image",
+            fields: [:],
             fieldName: "images",
-            files: files
+            files: files,
+            timeoutInterval: APIClient.llmRequestTimeout
         )
         let response = try JSONDecoder().decode(APIResponse<ImportRecipesResultDTO>.self, from: data)
         return try unwrap(response)

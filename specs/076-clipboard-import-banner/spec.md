@@ -11,7 +11,8 @@
 - [025-share-extension](../025-share-extension/spec.md) — параллельный вход (Share/Action); баннер не должен дублировать только что завершённый импорт с расширения
 - [066-offline-banner-debounce](../066-offline-banner-debounce/spec.md) — не мешать debounce офлайн-баннеров; URL-импорт недоступен офлайн так же, как сегмент Text в sheet
 
-**Эталоны**: нижний overlay `TransientStatusBanner` в `AppShellView`; классификация «только URL» как в Import sheet.
+**Эталоны**: нижний overlay `TransientStatusBanner` в `AppShellView`; классификация «только URL» как в Import sheet.  
+**Layout**: [layout.md](./layout.md) · аудит: `bash scripts/audit-ui-layout.sh specs/076-clipboard-import-banner` (STATIC FAIL до появления view/токенов — ожидаемо).
 
 ---
 
@@ -185,7 +186,7 @@ Share Extension (025) уже закрывает путь «Share → Импор�
 - Гостевой/неавторизованный пользователь баннер не видит — импорт URL требует той же сессии, что вкладка Import.
 - Системный тост iOS про доступ к буферу допустим как платформенное поведение; мы не показываем содержимое буфера в своём UI.
 - Макет Figma для баннера нет: компактная нижняя плашка, сообщение + кнопка справа, свайп вниз. Перед вёрсткой — `layout.md` и human review, как у других UI-спек.
-- Черновик копирайта (редполитика: «вы», возможность, не команда): сообщение в духе «Похоже, в буфере ссылка. Можно импортировать рецепт.» / «Looks like there’s a link on the clipboard. You can import the recipe.» Кнопка: существующий глагол импорта из Import sheet, если он подходит по длине; иначе короткий `import.clipboard-banner.action`. Точные ключи — в плане; в UI без хардкода.
+- Черновик копирайта: сообщение `import.clipboard-banner.message` — «Импортировать сайт из буфера обмена?» / «Import a site from the clipboard?» Кнопка на плашке — иконка checkmark; VoiceOver/название действия — `import.lets-go` («Импортировать» / «Import»). Точные ключи — в плане; в UI без хардкода.
 
 ---
 

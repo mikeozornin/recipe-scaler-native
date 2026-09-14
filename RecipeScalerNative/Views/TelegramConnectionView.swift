@@ -131,7 +131,7 @@ struct TelegramConnectionView: View {
                 labelKey: "telegram.copy-code",
                 identifier: AccessibilityIdentifiers.accountTelegramCopy
             ) {
-                UIPasteboard.general.string = "/connect \(code)"
+                AppPasteboard.setString("/connect \(code)")
             }
 
             codeActionButton(

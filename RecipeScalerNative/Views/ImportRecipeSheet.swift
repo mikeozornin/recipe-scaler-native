@@ -23,6 +23,8 @@ struct ImportRecipesResult {
 }
 
 struct ImportRecipeSheet: View {
+    var seedText: String = ""
+    var autoSubmit: Bool = false
     let onImport: (ImportRecipesResult) -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(YjsSyncService.self) private var syncService
@@ -60,6 +62,7 @@ struct ImportRecipeSheet: View {
                         Text("import.tab-file").tag(ImportMode.file)
                     }
                     .pickerStyle(.segmented)
+                    .disabled(isProcessing)
                 }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
@@ -155,6 +158,7 @@ struct ImportRecipeSheet: View {
             }
             .onAppear {
                 resetState()
+                applyClipboardSeedIfNeeded()
                 if DebugLaunchOptions.screenshotCapture {
                     AppLog.info(.app, "screenshot_import_ready", data: [
                         "mode": mode.rawValue,
@@ -211,6 +215,8 @@ struct ImportRecipeSheet: View {
                     .frame(minHeight: 160)
                     .scrollContentBackground(.hidden)
                     .background(Color.clear)
+                    .disabled(isProcessing)
+                    .opacity(isProcessing ? 0.5 : 1)
             }
         } footer: {
             Text("import.text-file-hint")
@@ -230,6 +236,7 @@ struct ImportRecipeSheet: View {
             ) {
                 AppLabel.make(LocalizedStringKey("import.choose-photos"), symbol: "photo")
             }
+            .disabled(isProcessing)
             .onChange(of: photoItems) { _, newItems in
                 Task { await reloadPhotoPreviews(from: newItems) }
             }
@@ -257,6 +264,7 @@ struct ImportRecipeSheet: View {
             } label: {
                 AppLabel.make(LocalizedStringKey("import.file-pick"), symbol: "doc.zipper")
             }
+            .disabled(isProcessing)
             .accessibilityIdentifier(AccessibilityIdentifiers.importFilePickButton)
 
             if !selectedFileName.isEmpty {
@@ -308,6 +316,7 @@ struct ImportRecipeSheet: View {
                     .foregroundStyle(.white, .black.opacity(0.6))
                     .font(.system(size: 20))
             }
+            .disabled(isProcessing)
             .offset(x: 6, y: -6)
             .accessibilityLabel(Text("common.delete-image"))
         }
@@ -462,6 +471,7 @@ struct ImportRecipeSheet: View {
             // a network call that will fail with a less specific error.
             guard isConnectedStrict else {
                 errorMessage = Bundle.currentLocalizedString("import.offline-unavailable")
+                isProcessing = false
                 return
             }
         }
@@ -617,6 +627,23 @@ struct ImportRecipeSheet: View {
         case .file:
             throw ThirdPartyImportError.unsupportedFormat
         }
+    }
+
+    /// Spec 076 — seed after `resetState()` so empty `bodyText` does not wipe URLs.
+    private func applyClipboardSeedIfNeeded() {
+        let trimmed = seedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        applySystemMode(.text)
+        bodyText = seedText
+        guard autoSubmit,
+              !DebugLaunchOptions.screenshotCapture,
+              canSubmit,
+              canShowSubmit else { return }
+        // Lock the field on this runloop pass — `submit()` sets the flag again
+        // after the Task hops, which left the TextEditor editable on first paint.
+        isProcessing = true
+        importTask?.cancel()
+        importTask = Task { await submit() }
     }
 
     private func resetState() {

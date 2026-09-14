@@ -289,7 +289,7 @@ private struct RecipeShareSheetContent: View {
 
     private func copyLink(_ text: String) {
         #if os(iOS)
-        UIPasteboard.general.string = text
+        AppPasteboard.setString(text)
         #endif
         dismiss()
         Task { @MainActor in

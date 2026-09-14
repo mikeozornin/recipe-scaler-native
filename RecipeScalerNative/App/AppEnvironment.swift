@@ -52,5 +52,6 @@ extension View {
             .environment(container.tips)
             .environment(container.cooking)
             .environment(container.processTableRebuild)
+            .environment(container.clipboardImport)
     }
 }

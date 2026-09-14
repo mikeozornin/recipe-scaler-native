@@ -77,7 +77,8 @@ extension APIClient {
         fields: [String: String],
         fieldName: String,
         files: [(fileName: String, data: Data, mimeType: String)],
-        extraHeaders: [String: String] = [:]
+        extraHeaders: [String: String] = [:],
+        timeoutInterval: TimeInterval? = nil
     ) async throws -> Data {
         let boundary = "Boundary-\(UUID().uuidString)"
         var headers = extraHeaders
@@ -86,7 +87,8 @@ extension APIClient {
             path: path,
             method: "POST",
             body: nil,
-            headers: headers
+            headers: headers,
+            timeoutInterval: timeoutInterval
         )
         var body = Data()
         let crlf = "\r\n"

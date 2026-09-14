@@ -649,6 +649,12 @@
 		WATCHFAD02B293A4B70100001 /* Services/WatchFeatureAdoptionReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = WATCHFAD01A293A4B70100001 /* Services/WatchFeatureAdoptionReporter.swift */; };
 		YJSOFF01A293A4B701000001 /* YjsOfflineSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */; };
 		YRSDOC01A293A4B701000001 /* YrsDocument+TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */; };
+		076A0001A293A4B701000002 /* ClipboardImportStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 076A0001A293A4B701000001 /* ClipboardImportStore.swift */; };
+		076A0001A293A4B701000004 /* AppPasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 076A0001A293A4B701000003 /* AppPasteboard.swift */; };
+		076A0001A293A4B701000006 /* ClipboardImportBannerLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 076A0001A293A4B701000005 /* ClipboardImportBannerLayout.swift */; };
+		076A0001A293A4B701000008 /* ClipboardImportBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 076A0001A293A4B701000007 /* ClipboardImportBanner.swift */; };
+		076A0001A293A4B70100000A /* ClipboardImportStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 076A0001A293A4B701000009 /* ClipboardImportStoreTests.swift */; };
+		076A0001A293A4B70100000C /* ClipboardImportCandidateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 076A0001A293A4B70100000B /* ClipboardImportCandidateTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1405,6 +1411,12 @@
 		WATCHFAD01A293A4B70100001 /* Services/WatchFeatureAdoptionReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchFeatureAdoptionReporter.swift; sourceTree = "<group>"; };
 		YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YjsOfflineSyncTests.swift; sourceTree = "<group>"; };
 		YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "YrsDocument+TestSupport.swift"; sourceTree = "<group>"; };
+		076A0001A293A4B701000001 /* ClipboardImportStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardImportStore.swift; sourceTree = "<group>"; };
+		076A0001A293A4B701000003 /* AppPasteboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPasteboard.swift; sourceTree = "<group>"; };
+		076A0001A293A4B701000005 /* ClipboardImportBannerLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardImportBannerLayout.swift; sourceTree = "<group>"; };
+		076A0001A293A4B701000007 /* ClipboardImportBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardImportBanner.swift; sourceTree = "<group>"; };
+		076A0001A293A4B701000009 /* ClipboardImportStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardImportStoreTests.swift; sourceTree = "<group>"; };
+		076A0001A293A4B70100000B /* ClipboardImportCandidateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardImportCandidateTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1670,6 +1682,8 @@
 				E5F60718293A4B7065B733F2 /* ScreenAwakeToggle.swift */,
 				E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */,
 				E5F60718293A4B707F3A30E0 /* TransientStatusBanner.swift */,
+				076A0001A293A4B701000005 /* ClipboardImportBannerLayout.swift */,
+				076A0001A293A4B701000007 /* ClipboardImportBanner.swift */,
 				A3AC0B0A69EA4637B134D9A5 /* SystemBannerView.swift */,
 				SB061CHRB293A4B701000001 /* SystemBannerChrome.swift */,
 				REMINDERS0008AA0008BB08 /* RemindersListPickerView.swift */,
@@ -1890,6 +1904,8 @@
 				SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */,
 				FB065TS00000000000000004 /* AccountFeedbackSubmitTests.swift */,
 				B347C656005186097A24DAD5 /* OfflineBannerGateTests.swift */,
+				076A0001A293A4B701000009 /* ClipboardImportStoreTests.swift */,
+				076A0001A293A4B70100000B /* ClipboardImportCandidateTests.swift */,
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
 				P074T01A293A4B701000001 /* ProcessTableHashTests.swift */,
 				P074T02A293A4B701000001 /* ProcessTableDecodeTests.swift */,
@@ -2200,6 +2216,7 @@
 				E5F60718293A4B7000000053 /* RecipeDescriptionParser.swift */,
 				E5F60718293A4B7000000059 /* RecipeDescriptionStyle.swift */,
 				B3APPLOG01A293A4B70100001 /* AppLog.swift */,
+				076A0001A293A4B701000003 /* AppPasteboard.swift */,
 				FADLAY01A293A4B701000001 /* FeatureAdoptionRingLabelLayout.swift */,
 				E5F60718293A4B700000000D /* AgentSyncDebugLog.swift */,
 				E5F60719293A4B7000000092 /* AgentDebugLogging.swift */,
@@ -2280,6 +2297,7 @@
 				D1A100000000000000000002 /* TipPurchaseService.swift */,
 				E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */,
 				251D70EF435803E81D00CEDA /* OfflineBannerGate.swift */,
+				076A0001A293A4B701000001 /* ClipboardImportStore.swift */,
 				3C08EE69E64A48AE8B692E6A /* SystemBannerAPI.swift */,
 				P074A14A293A4B701000001 /* ProcessTableAPI.swift */,
 				FF072FOLLOWAPIREFB293A4B701 /* FollowAPI.swift */,
@@ -2998,6 +3016,10 @@
 				D1A100000000000000000001 /* TipPurchaseService.swift in Sources */,
 				AC6A576E26314798BE3FBF1A /* SystemBannerStore.swift in Sources */,
 				3DE3DAF17FBB3570B593E38F /* OfflineBannerGate.swift in Sources */,
+				076A0001A293A4B701000002 /* ClipboardImportStore.swift in Sources */,
+				076A0001A293A4B701000004 /* AppPasteboard.swift in Sources */,
+				076A0001A293A4B701000006 /* ClipboardImportBannerLayout.swift in Sources */,
+				076A0001A293A4B701000008 /* ClipboardImportBanner.swift in Sources */,
 				1758D7142F1C4429B9A37584 /* SystemBannerAPI.swift in Sources */,
 				FF072FOLLOWAPI01B293A4B701 /* FollowAPI.swift in Sources */,
 				FF072FOLLOWSTO1B293A4B7010 /* FollowStore.swift in Sources */,
@@ -3376,6 +3398,8 @@
 				SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */,
 				FB065TS00000000000000003 /* AccountFeedbackSubmitTests.swift in Sources */,
 				485C79BA3D9AE14EB0BCFF27 /* OfflineBannerGateTests.swift in Sources */,
+				076A0001A293A4B70100000A /* ClipboardImportStoreTests.swift in Sources */,
+				076A0001A293A4B70100000C /* ClipboardImportCandidateTests.swift in Sources */,
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
 				P074T01B293A4B701000001 /* ProcessTableHashTests.swift in Sources */,
 				P074T02B293A4B701000001 /* ProcessTableDecodeTests.swift in Sources */,

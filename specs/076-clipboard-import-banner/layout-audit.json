@@ -1,0 +1,162 @@
+{
+  "feature": "076-clipboard-import-banner",
+  "layout_doc": "layout.md",
+  "figma": {
+    "file_key": null,
+    "frames": [],
+    "note": "No Figma. Bottom clipboard import prompt: message + import.lets-go, swipe down, above tab bar / timer panel."
+  },
+  "required_files": [
+    "RecipeScalerNative/Views/ClipboardImportBannerLayout.swift",
+    "RecipeScalerNative/Views/ClipboardImportBanner.swift",
+    "RecipeScalerNative/Views/AppShellView.swift"
+  ],
+  "must_contain": [
+    {
+      "id": "horizontal-inset-12",
+      "description": "Banner horizontal inset is 12pt",
+      "pattern": "horizontalInset:\\s*CGFloat\\s*=\\s*12",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBannerLayout.swift"]
+    },
+    {
+      "id": "inner-horizontal-16",
+      "description": "Inner horizontal padding is 16pt",
+      "pattern": "innerHorizontalPadding:\\s*CGFloat\\s*=\\s*16",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBannerLayout.swift"]
+    },
+    {
+      "id": "inner-vertical-12",
+      "description": "Inner vertical padding is 12pt",
+      "pattern": "innerVerticalPadding:\\s*CGFloat\\s*=\\s*12",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBannerLayout.swift"]
+    },
+    {
+      "id": "stack-spacing-12",
+      "description": "Message-to-button spacing is 12pt",
+      "pattern": "stackSpacing:\\s*CGFloat\\s*=\\s*12",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBannerLayout.swift"]
+    },
+    {
+      "id": "corner-radius-12",
+      "description": "Banner corner radius is 12pt, not capsule",
+      "pattern": "cornerRadius:\\s*CGFloat\\s*=\\s*12",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBannerLayout.swift"]
+    },
+    {
+      "id": "bottom-gap-8",
+      "description": "Gap above tab bar / timers is 8pt",
+      "pattern": "bottomGap:\\s*CGFloat\\s*=\\s*8",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBannerLayout.swift"]
+    },
+    {
+      "id": "ipad-max-width-420",
+      "description": "iPad banner max width is 420pt",
+      "pattern": "iPadMaxWidth:\\s*CGFloat\\s*=\\s*420",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBannerLayout.swift"]
+    },
+    {
+      "id": "message-line-limit-3",
+      "description": "Message wraps at most 3 lines",
+      "pattern": "messageLineLimit:\\s*Int\\s*=\\s*3",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBannerLayout.swift"]
+    },
+    {
+      "id": "action-side-44",
+      "description": "Import button is a 44pt circle",
+      "pattern": "actionSide:\\s*CGFloat\\s*=\\s*44",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBannerLayout.swift"]
+    },
+    {
+      "id": "swipe-dismiss-56",
+      "description": "Swipe-down dismiss distance is 56pt",
+      "pattern": "swipeDismissDistance:\\s*CGFloat\\s*=\\s*56",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBannerLayout.swift"]
+    },
+    {
+      "id": "reuse-lets-go",
+      "description": "Banner action VoiceOver reuses import.lets-go",
+      "pattern": "import\\.lets-go",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBanner.swift"]
+    },
+    {
+      "id": "clipboard-message-key",
+      "description": "Banner message uses dedicated i18n key",
+      "pattern": "import\\.clipboard-banner\\.message",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBanner.swift"]
+    }
+  ],
+  "must_not_contain": [
+    {
+      "id": "no-system-font-banner",
+      "description": "Banner text must not use SF via .font(.system",
+      "pattern": "\\.font\\(\\.system\\(",
+      "paths": [
+        "RecipeScalerNative/Views/ClipboardImportBanner.swift",
+        "RecipeScalerNative/Views/ClipboardImportBannerLayout.swift"
+      ]
+    },
+    {
+      "id": "no-url-in-banner-view",
+      "description": "Banner must not render pasteboard URL in Text(verbatim:)",
+      "pattern": "Text\\(verbatim:.*https?",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBanner.swift"]
+    }
+  ],
+  "previews": [
+    {
+      "id": "primary-light-preview",
+      "description": "Canvas preview for visible banner light",
+      "pattern": "#Preview\\(\"clipboard-banner-light\"\\)",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBanner.swift"]
+    },
+    {
+      "id": "primary-dark-preview",
+      "description": "Canvas preview for visible banner dark",
+      "pattern": "#Preview\\(\"clipboard-banner-dark\"\\)",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBanner.swift"]
+    },
+    {
+      "id": "xxxl-se-preview",
+      "description": "Canvas preview for worst-case wrap",
+      "pattern": "#Preview\\(\"clipboard-banner-xxxl-se\"\\)",
+      "paths": ["RecipeScalerNative/Views/ClipboardImportBanner.swift"]
+    }
+  ],
+  "acceptance_claims": [
+    {
+      "id": "gap-above-tab-bar",
+      "description": "Banner bottom stays ≥8pt above tab bar or timer panel",
+      "manual": true
+    },
+    {
+      "id": "message-button-no-overlap",
+      "description": "Message and import button frames do not overlap; button is trailing",
+      "manual": true
+    },
+    {
+      "id": "se-wrap",
+      "description": "On 320pt width RU copy wraps ≤3 lines; Import button has no ellipsis",
+      "manual": true
+    },
+    {
+      "id": "fab-clears-action",
+      "description": "While banner is visible, FAB sits above the banner and does not cover the import button",
+      "manual": true
+    },
+    {
+      "id": "no-url-shown",
+      "description": "Banner never displays the clipboard URL",
+      "manual": true
+    },
+    {
+      "id": "swipe-down-dismiss",
+      "description": "Swipe down ≥56pt dismisses; does not switch tabs",
+      "manual": true
+    },
+    {
+      "id": "martian-body",
+      "description": "Message uses .appBody() / Martian, not SF system font",
+      "manual": true
+    }
+  ]
+}

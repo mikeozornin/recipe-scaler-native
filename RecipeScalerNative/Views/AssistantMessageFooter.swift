@@ -376,7 +376,7 @@ struct AssistantMessageMetaRow: View {
 
     private func copyToPasteboard(_ text: String) {
         #if canImport(UIKit)
-        UIPasteboard.general.string = text
+        AppPasteboard.setString(text)
         #endif
     }
 }

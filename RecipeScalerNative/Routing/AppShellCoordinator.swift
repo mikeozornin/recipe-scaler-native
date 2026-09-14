@@ -10,6 +10,10 @@ import RecipeScalerCore
 
 struct ImportPresentation: Identifiable {
     let id = UUID()
+    var seedText: String = ""
+    var autoSubmit: Bool = false
+    /// When true, a successful import consumes the clipboard banner candidate.
+    var consumesClipboard: Bool = false
 }
 
 struct AssistantOpenRequest: Equatable, Sendable {
@@ -64,6 +68,9 @@ final class AppShellCoordinator {
     /// active account and tear itself down (cancel stream / bootstrap tasks).
     private(set) var assistantSessionEpoch = 0
 
+    /// Spec 076 — hide clipboard banner while Share / UL / file inbound is landing.
+    private(set) var inboundClipboardSuppressed = false
+
     #if DEBUG
     /// One-shot guard for `-OpenRecipeId` / `-OpenRecipeName` shell navigation.
     private var didOpenDebugLaunchRecipe = false
@@ -95,8 +102,24 @@ final class AppShellCoordinator {
         }
     }
 
-    func presentImport() {
-        importPresentation = ImportPresentation()
+    func presentImport(
+        seedText: String = "",
+        autoSubmit: Bool = false,
+        consumesClipboard: Bool = false
+    ) {
+        importPresentation = ImportPresentation(
+            seedText: seedText,
+            autoSubmit: autoSubmit,
+            consumesClipboard: consumesClipboard
+        )
+    }
+
+    func beginInboundClipboardSuppression() {
+        inboundClipboardSuppressed = true
+    }
+
+    func endInboundClipboardSuppression() {
+        inboundClipboardSuppressed = false
     }
 
     // MARK: - Shopping → Reminders setup CTA
@@ -150,6 +173,7 @@ final class AppShellCoordinator {
 
     func consumePendingRecipeIdIfNeeded() {
         guard let id = DeepLinkRouter.consumePendingRecipeId() else { return }
+        inboundClipboardSuppressed = true
         selectedTab = .recipes
         recipesPath.append(RecipesRoute.recipe(recipeId: id, folderContext: nil))
     }
@@ -157,6 +181,7 @@ final class AppShellCoordinator {
     // MARK: - Deep linking (Spotlight, URL scheme, Universal Links)
 
     func handleDeepLink(_ link: DeepLink) {
+        inboundClipboardSuppressed = true
         switch link {
         case .openRecipe(let recipeId):
             selectedTab = .recipes
@@ -358,6 +383,7 @@ final class AppShellCoordinator {
     /// Clears tab stacks, import sheet, and queued deep links after logout or account switch.
     func resetShellStateForLogout() {
         importPresentation = nil
+        inboundClipboardSuppressed = false
         pendingSpotlightRecipeId = nil
         pendingRemindersSetup = false
         // Invalidate any open assistant sheet: bumping the epoch makes the sheet's

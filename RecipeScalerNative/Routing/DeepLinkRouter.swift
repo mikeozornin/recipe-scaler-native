@@ -323,6 +323,19 @@ final class DeepLinkRouter {
         }
     }
 
+    /// Peek without consuming — clipboard banner must not race Share import.
+    static func hasPendingRecipeId() -> Bool {
+        if let suite = AppGroup.userDefaults,
+           let id = suite.string(forKey: pendingRecipeIdKey),
+           !id.isEmpty {
+            return true
+        }
+        if let id = UserDefaults.standard.string(forKey: pendingRecipeIdKey), !id.isEmpty {
+            return true
+        }
+        return false
+    }
+
     /// Legacy + App Group: consume recipe id written by Share/Action extensions.
     /// Extensions write into the App Group suite (separate from `UserDefaults.standard`).
     /// Returns `nil` when nothing is pending.

@@ -126,6 +126,8 @@ final class AppContainer {
     let cooking: ProcessTableCookingCoordinator
     /// Spec 074 — single-flight rebuild; cancelled on cooking dismiss / logout.
     let processTableRebuild: ProcessTableRebuildModel
+    /// Spec 076 — clipboard URL import banner (in-memory).
+    let clipboardImport: ClipboardImportStore
 
     /// Holds the cyclic `TimerSyncService.sendTimerEvent ↔ YjsSyncService.emitTimerEvent`
     /// callback so neither service retains the other directly.
@@ -261,6 +263,9 @@ final class AppContainer {
         self.tips = TipPurchaseService()
         self.cooking = ProcessTableCookingCoordinator()
         self.processTableRebuild = ProcessTableRebuildModel()
+        let clipboardImport = ClipboardImportStore()
+        self.clipboardImport = clipboardImport
+        Self.bindAppPasteboard(clipboardImport)
 
         // Bridge the cyclic callback
         let bridge = TimerEventBridge()
@@ -335,12 +340,19 @@ final class AppContainer {
         )
     }
 
+    private static func bindAppPasteboard(_ clipboardImport: ClipboardImportStore) {
+        AppPasteboard.onOwnWrite = { [weak clipboardImport] changeCount in
+            clipboardImport?.ignoreOwnWrite(changeCount: changeCount)
+        }
+    }
+
     // MARK: - Bootstrap
 
     /// Runs the wiring that previously lived inside `YjsSyncService.start`
     /// (lines 856-884) + `ContentView.appShell.onAppear`. Idempotent on the
     /// same userId; safe to call on every root-view churn.
     func bootstrap(userId: String) async {
+        Self.bindAppPasteboard(clipboardImport)
         // Test host gate: when XCTest loads the app as TEST_HOST, do NOT start
         // the live sync/socket/push/spotlight stack — it parks the main thread
         // on socket auth ack (debug auto-login → `recipe-scaler.ru`) and the
@@ -586,6 +598,8 @@ final class AppContainer {
         feedStore.clearForLogout()
         feedBadgeStore.clearForLogout()
         followStore.clearForLogout()
+        clipboardImport.clearForLogout()
+        AppPasteboard.clearOwnWriteHandler()
     }
 
     /// Spec 055 Phase R: full teardown after `AuthService` decides the local
