@@ -14,7 +14,11 @@ Listing-тексты (description, subtitle, keywords) — git master в [`store
 | [`scripts/mark-ios-release.sh`](../scripts/mark-ios-release.sh) | создать тег + запись реестра |
 | [`scripts/collect-ios-release-changes.sh`](../scripts/collect-ios-release-changes.sh) | собрать коммиты с последнего релиза |
 | [`scripts/asc-pull-app-store-metadata.py`](../scripts/asc-pull-app-store-metadata.py) | pull listing metadata из ASC в `store/` |
-| `.agents/skills/prepare-ios-release/SKILL.md` | агентский skill для черновика What's New |
+| `.agents/skills/prepare-ios-release/SKILL.md` | агентский skill: черновик What's New **и** отдельный DRAFT in-app ноты (spec 077) |
+
+In-app новости (баннер на Recipes, архив в Профиле) живут в бинарнике:
+`IOSReleaseNotesCatalog`. Их не публикуют через ASC. Каталог и What’s New стора —
+разные тексты. Ноту в каталог кладёт человек после DRAFT из skill.
 
 ## Runbook
 

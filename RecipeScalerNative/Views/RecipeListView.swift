@@ -119,6 +119,7 @@ struct RecipeListView: View {
                                 && syncService.collectionEntries.isEmpty) {
                     VStack(spacing: 0) {
                         SystemBannerChrome()
+                        ReleaseNotesChrome()
                         ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
                             .mobileTimerPanelBottomPadding()
                     }
@@ -126,6 +127,7 @@ struct RecipeListView: View {
                     if isSearching {
                         VStack(spacing: 0) {
                             SystemBannerChrome()
+                            ReleaseNotesChrome()
                             ContentUnavailableView {
                                 AppEmptyState.label("recipe.list.search-empty.title", symbol: "magnifyingglass")
                             }
@@ -135,6 +137,7 @@ struct RecipeListView: View {
                     } else {
                         VStack(spacing: 0) {
                             SystemBannerChrome()
+                            ReleaseNotesChrome()
                             ContentUnavailableView {
                                 VStack(spacing: 12) {
                                     AppEmptyStateIllustration(asset: .recipeNotebookEmpty)
@@ -153,6 +156,7 @@ struct RecipeListView: View {
                     List {
                         // Scrolls away with recipe rows (not sticky above the List).
                         SystemBannerListRow()
+                        ReleaseNotesListRow()
 
                         if !pinnedRowItems.isEmpty {
                             RecipeListSectionHeader(isPinnedSection: true)

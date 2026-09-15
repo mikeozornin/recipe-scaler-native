@@ -246,7 +246,7 @@ v1 **рассказывает**, не проводит в функцию: зак
 | open sheet, ключ 2, ноты 1…4 | раскрыты 3 и 4; расчёт до записи ключа | `test_unread_expanded_before_mark` |
 | пустой каталог | нет баннера, нет строки Профиля | `test_empty_catalog_hides_surfaces` |
 | logout при ключе 4 | ключ остаётся 4 | `test_logout_does_not_reset_last_viewed` |
-| screenshot-capture | баннер не рендерится | `test_screenshot_hides_banner` или DEBUG-ветка как у 061 |
+| screenshot-capture | баннер не рендерится | DEBUG-ветка в `ReleaseNotesChrome`, как у 061 |
 
 ---
 

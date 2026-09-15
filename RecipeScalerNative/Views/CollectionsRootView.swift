@@ -59,6 +59,7 @@ struct CollectionsRootView: View {
     private var listContent: some View {
         List {
             SystemBannerListRow()
+            ReleaseNotesListRow()
 
             collectionRow(
                 folderId: CollectionVirtualFolders.allRecipesFolderId,
@@ -129,6 +130,7 @@ struct CollectionsRootView: View {
     private var gridContent: some View {
         ScrollView {
             SystemBannerChrome()
+            ReleaseNotesChrome()
 
             let columns = [
                 GridItem(.flexible(), spacing: 16),

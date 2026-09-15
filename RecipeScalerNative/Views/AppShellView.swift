@@ -88,6 +88,7 @@ struct AppShellView: View {
     @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
     @Environment(VkusvillSettingsStore.self) private var vkusvillSettings
     @Environment(OfflineBannerGate.self) private var offlineGate
+    @Environment(ReleaseNotesStore.self) private var releaseNotes
     @Environment(\.scenePhase) private var scenePhase
     @State private var showAssistant = false
     @State private var assistantContextRecipeId: String?
@@ -240,6 +241,13 @@ struct AppShellView: View {
                         postTransientStatus(message)
                     }
                 }
+            }
+            .sheet(isPresented: Binding(
+                get: { releaseNotes.isSheetPresented },
+                set: { releaseNotes.isSheetPresented = $0 }
+            )) {
+                ReleaseNotesSheet()
+                    .environment(releaseNotes)
             }
         .onChange(of: coordinator.pendingFileImportToast) { _, newValue in
             guard let newValue else { return }

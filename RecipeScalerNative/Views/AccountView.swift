@@ -20,6 +20,7 @@ struct AccountView: View {
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Environment(\.locale) private var locale
     @Environment(OfflineBannerGate.self) private var offlineGate
+    @Environment(ReleaseNotesStore.self) private var releaseNotes
 
     /// Injected dependencies (architecture review C2). AccountView receives
     /// `AuthService` and `TimerManager` explicitly so it can construct the
@@ -367,6 +368,16 @@ struct AccountView: View {
                         .appBody()
                         .foregroundStyle(.secondary)
                 }
+            }
+            if releaseNotes.hasArchiveRow {
+                Button {
+                    releaseNotes.presentSheet()
+                } label: {
+                    Text("release-notes.account.row")
+                        .appBody()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .accessibilityIdentifier(AccessibilityIdentifiers.releaseNotesAccountRow)
             }
         } header: {
             AppSectionHeaderSpacer()
@@ -1035,6 +1046,7 @@ private struct AccountSeedPhraseSheet: View {
             vkusvillSettings: VkusvillSettingsStore()
         )
             .environment(coordinator)
+            .environment(ReleaseNotesStore())
     }
 }
 #endif

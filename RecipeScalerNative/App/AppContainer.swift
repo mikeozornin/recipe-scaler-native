@@ -102,6 +102,11 @@ final class AppContainer {
 
     let systemBanner: SystemBannerStore
 
+    // MARK: - In-app release notes (spec 077)
+
+    /// Device-local catalog banner. Not cleared on logout.
+    let releaseNotes: ReleaseNotesStore
+
     // MARK: - Follow / feed stores (spec 072)
 
     let followStore: FollowStore
@@ -242,6 +247,9 @@ final class AppContainer {
         // System banner store (spec 061). Refreshed once per session during
         // bootstrap; never polls. Dismissal is persisted server-side.
         self.systemBanner = SystemBannerStore()
+
+        // Spec 077 — seeds lastViewed synchronously. Do not clear on logout.
+        self.releaseNotes = ReleaseNotesStore()
 
         // Follow/feed stores (spec 072). Badge refresh runs once per session
         // in bootstrap; the feed page's seen-echo clears the badge optimistically.
@@ -581,6 +589,7 @@ final class AppContainer {
         featureAdoption.clearForLogout()
         vkusvillSettings.clearForLogout()
         systemBanner.clearForLogout()
+        // Spec 077: lastViewed stays on device across logout / account switch.
         // Spec 072: reset feed, badge and follow state (US8) — the server-side
         // seen marker is intentionally untouched.
         feedStore.clearForLogout()

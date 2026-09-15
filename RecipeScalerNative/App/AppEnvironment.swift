@@ -45,6 +45,7 @@ extension View {
             .environment(container.featureAdoption)
             .environment(container.vkusvillSettings)
             .environment(container.systemBanner)
+            .environment(container.releaseNotes)
             .environment(container.followStore)
             .environment(container.feedStore)
             .environment(container.feedBadgeStore)
