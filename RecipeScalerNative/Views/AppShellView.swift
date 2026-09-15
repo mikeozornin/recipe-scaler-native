@@ -89,6 +89,7 @@ struct AppShellView: View {
     @Environment(VkusvillSettingsStore.self) private var vkusvillSettings
     @Environment(OfflineBannerGate.self) private var offlineGate
     @Environment(ClipboardImportStore.self) private var clipboardImport
+    @Environment(ReleaseNotesStore.self) private var releaseNotes
     @Environment(\.scenePhase) private var scenePhase
     @State private var showAssistant = false
     @State private var assistantContextRecipeId: String?
@@ -386,6 +387,13 @@ struct AppShellView: View {
         }
             .heroPhotoZoomOverlay(heroPhotoZoomSession.context)
             .animation(.easeInOut(duration: 0.25), value: transientStatus != nil)
+            .sheet(isPresented: Binding(
+                get: { releaseNotes.isSheetPresented },
+                set: { releaseNotes.isSheetPresented = $0 }
+            )) {
+                ReleaseNotesSheet()
+                    .environment(releaseNotes)
+            }
         .onChange(of: coordinator.pendingFileImportToast) { _, newValue in
             guard let newValue else { return }
             postTransientStatus(newValue)

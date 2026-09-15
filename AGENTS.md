@@ -46,7 +46,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-from [specs/075-hands-free-cook-controls/plan.md](specs/075-hands-free-cook-controls/plan.md).
+from [specs/077-ios-release-notes/plan.md](specs/077-ios-release-notes/plan.md).
 <!-- SPECKIT END -->
 
 ## Learned User Preferences

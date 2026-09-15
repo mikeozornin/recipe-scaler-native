@@ -233,6 +233,12 @@
 		AB245CF76E7C618304E6E89E /* YDocStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E420A114755D01EE96F560A /* YDocStore.swift */; };
 		AC55326516F2DD99B42F0F6B /* ConnectionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7485486C3DAE972B94C9AE9B /* ConnectionState.swift */; };
 		AC6A576E26314798BE3FBF1A /* SystemBannerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */; };
+		N077STOR01B293A4B7010001 /* ReleaseNotesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = N077STOR01A293A4B7010001 /* ReleaseNotesStore.swift */; };
+		N077CATL01B293A4B7010001 /* IOSReleaseNotesCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = N077CATL01A293A4B7010001 /* IOSReleaseNotesCatalog.swift */; };
+		N077NOTE01B293A4B7010001 /* IOSReleaseNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = N077NOTE01A293A4B7010001 /* IOSReleaseNote.swift */; };
+		N077BANR01B293A4B7010001 /* ReleaseNotesBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = N077BANR01A293A4B7010001 /* ReleaseNotesBannerView.swift */; };
+		N077CHRM01B293A4B7010001 /* ReleaseNotesChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = N077CHRM01A293A4B7010001 /* ReleaseNotesChrome.swift */; };
+		N077SHET01B293A4B7010001 /* ReleaseNotesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = N077SHET01A293A4B7010001 /* ReleaseNotesSheet.swift */; };
 		FF072FOLLOWAPI01B293A4B701 /* FollowAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072FOLLOWAPIREFB293A4B701 /* FollowAPI.swift */; };
 		FF072FEEDAPI001B293A4B701 /* FeedAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072FEEDAPIREFB293A4B701 /* FeedAPI.swift */; };
 		FF072FEEDSTORE1B293A4B7010 /* FeedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072FEEDSTOREREFB293A4B70 /* FeedStore.swift */; };
@@ -570,6 +576,7 @@
 		RYJC0DE1001001001001001A001 /* RecipeYjsCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = RYJC0DE1001001001001001A002 /* RecipeYjsCodec.swift */; };
 		RYJW0DE1001001001001001A001 /* RecipeYjsWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = RYJW0DE1001001001001001A002 /* RecipeYjsWriter.swift */; };
 		SB0610A1B293A4B7010000010 /* SystemBannerStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */; };
+		N077TEST01B293A4B7010001 /* ReleaseNotesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = N077TEST01A293A4B7010001 /* ReleaseNotesStoreTests.swift */; };
 		FF072TESTU01B293A4B70101 /* FollowFeedTestURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072TESTU01A293A4B70102 /* FollowFeedTestURLProtocol.swift */; };
 		FF072TESTF01B293A4B70101 /* FollowStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072TESTF01A293A4B70102 /* FollowStoreTests.swift */; };
 		FF072AUTH01B293A4B70101 /* AuthServiceOwnUsernameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072AUTH01A293A4B70102 /* AuthServiceOwnUsernameTests.swift */; };
@@ -978,6 +985,7 @@
 		A140016000000000000000016 /* GuideMediaStudioView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GuideMediaStudioView.swift; sourceTree = "<group>"; };
 		A14001A00000000000000001A /* FeatureAdoptionGuideContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureAdoptionGuideContentTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5C /* UserIdFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserIdFormatter.swift; sourceTree = "<group>"; };
+		N077NOTE01A293A4B7010001 /* IOSReleaseNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSReleaseNote.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B62 /* OfflineWriteQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineWriteQueue.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4C01 /* AppShellCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellCoordinator.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellCoordinatorTests.swift; sourceTree = "<group>"; };
@@ -986,6 +994,9 @@
 		A1TYPOG1A2B3C4D5E6F7080901 /* AppTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTypography.swift; sourceTree = "<group>"; };
 		A3497363D26FF94F419BA85F /* Auth/SharedDeviceId.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/SharedDeviceId.swift; sourceTree = "<group>"; };
 		A3AC0B0A69EA4637B134D9A5 /* SystemBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerView.swift; sourceTree = "<group>"; };
+		N077BANR01A293A4B7010001 /* ReleaseNotesBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesBannerView.swift; sourceTree = "<group>"; };
+		N077CHRM01A293A4B7010001 /* ReleaseNotesChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesChrome.swift; sourceTree = "<group>"; };
+		N077SHET01A293A4B7010001 /* ReleaseNotesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesSheet.swift; sourceTree = "<group>"; };
 		A3E905C3C326440BBA62742C /* Views/TimerRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/TimerRow.swift; sourceTree = "<group>"; };
 		A5ATCH18293A4B7010000002 /* AssistantAttachmentChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantAttachmentChip.swift; sourceTree = "<group>"; };
 		A5MD028293A4B7010000002 /* AssistantMarkdownRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMarkdownRenderer.swift; sourceTree = "<group>"; };
@@ -1124,6 +1135,8 @@
 		DE1ABB28709A39ED21AF2C28 /* MartianMono-NrLt.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MartianMono-NrLt.otf"; sourceTree = "<group>"; };
 		E05920822F344D9691E82401 /* RecipeScalerCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = RecipeScalerCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerStore.swift; sourceTree = "<group>"; };
+		N077STOR01A293A4B7010001 /* ReleaseNotesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesStore.swift; sourceTree = "<group>"; };
+		N077CATL01A293A4B7010001 /* IOSReleaseNotesCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSReleaseNotesCatalog.swift; sourceTree = "<group>"; };
 		FF072FOLLOWAPIREFB293A4B701 /* FollowAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowAPI.swift; sourceTree = "<group>"; };
 		FF072FEEDAPIREFB293A4B701 /* FeedAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedAPI.swift; sourceTree = "<group>"; };
 		FF072FEEDSTOREREFB293A4B70 /* FeedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedStore.swift; sourceTree = "<group>"; };
@@ -1332,6 +1345,7 @@
 		RYJC0DE1001001001001001A002 /* RecipeYjsCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeYjsCodec.swift; sourceTree = "<group>"; };
 		RYJW0DE1001001001001001A002 /* RecipeYjsWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeYjsWriter.swift; sourceTree = "<group>"; };
 		SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemBannerStoreTests.swift; sourceTree = "<group>"; };
+		N077TEST01A293A4B7010001 /* ReleaseNotesStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesStoreTests.swift; sourceTree = "<group>"; };
 		FF072TESTU01A293A4B70102 /* FollowFeedTestURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowFeedTestURLProtocol.swift; sourceTree = "<group>"; };
 		FF072TESTF01A293A4B70102 /* FollowStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowStoreTests.swift; sourceTree = "<group>"; };
 		FF072AUTH01A293A4B70102 /* AuthServiceOwnUsernameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthServiceOwnUsernameTests.swift; sourceTree = "<group>"; };
@@ -1686,6 +1700,9 @@
 				076A0001A293A4B701000007 /* ClipboardImportBanner.swift */,
 				A3AC0B0A69EA4637B134D9A5 /* SystemBannerView.swift */,
 				SB061CHRB293A4B701000001 /* SystemBannerChrome.swift */,
+				N077BANR01A293A4B7010001 /* ReleaseNotesBannerView.swift */,
+				N077CHRM01A293A4B7010001 /* ReleaseNotesChrome.swift */,
+				N077SHET01A293A4B7010001 /* ReleaseNotesSheet.swift */,
 				REMINDERS0008AA0008BB08 /* RemindersListPickerView.swift */,
 				C011ECB100000001 /* CollectionsRootView.swift */,
 				C011ECB200000002 /* CollectionFolderView.swift */,
@@ -1722,6 +1739,7 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F60718293A4B5C /* UserIdFormatter.swift */,
+				N077NOTE01A293A4B7010001 /* IOSReleaseNote.swift */,
 				D5C0593B743DA50B2CB0DFF7 /* FeatureAdoptionItem.swift */,
 				A14000020000000000000002 /* FeatureAdoptionGuideContent.swift */,
 				11665252A14BBEBAF0D694C4 /* RecipeTimer.swift */,
@@ -1918,6 +1936,7 @@
 				FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */,
 				FADFIX0A0A293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift */,
 				SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */,
+				N077TEST01A293A4B7010001 /* ReleaseNotesStoreTests.swift */,
 				FF072TESTU01A293A4B70102 /* FollowFeedTestURLProtocol.swift */,
 				FF072TESTF01A293A4B70102 /* FollowStoreTests.swift */,
 				FF072AUTH01A293A4B70102 /* AuthServiceOwnUsernameTests.swift */,
@@ -2296,6 +2315,8 @@
 				FAAA4DF54D6AD9C9C26DC444 /* FeatureAdoptionStore.swift */,
 				D1A100000000000000000002 /* TipPurchaseService.swift */,
 				E23442DB7FEE46CF8B3F7F7A /* SystemBannerStore.swift */,
+				N077STOR01A293A4B7010001 /* ReleaseNotesStore.swift */,
+				N077CATL01A293A4B7010001 /* IOSReleaseNotesCatalog.swift */,
 				251D70EF435803E81D00CEDA /* OfflineBannerGate.swift */,
 				076A0001A293A4B701000001 /* ClipboardImportStore.swift */,
 				3C08EE69E64A48AE8B692E6A /* SystemBannerAPI.swift */,
@@ -3015,6 +3036,9 @@
 				67A6550B36933C92D59DB2B9 /* FeatureAdoptionStore.swift in Sources */,
 				D1A100000000000000000001 /* TipPurchaseService.swift in Sources */,
 				AC6A576E26314798BE3FBF1A /* SystemBannerStore.swift in Sources */,
+				N077STOR01B293A4B7010001 /* ReleaseNotesStore.swift in Sources */,
+				N077CATL01B293A4B7010001 /* IOSReleaseNotesCatalog.swift in Sources */,
+				N077NOTE01B293A4B7010001 /* IOSReleaseNote.swift in Sources */,
 				3DE3DAF17FBB3570B593E38F /* OfflineBannerGate.swift in Sources */,
 				076A0001A293A4B701000002 /* ClipboardImportStore.swift in Sources */,
 				076A0001A293A4B701000004 /* AppPasteboard.swift in Sources */,
@@ -3254,6 +3278,9 @@
 				E5F60718293A4B7005B62F9C /* TransientStatusBanner.swift in Sources */,
 				F1538D8095C24C9ABD330E36 /* SystemBannerView.swift in Sources */,
 				SB061CHRB293A4B701000002 /* SystemBannerChrome.swift in Sources */,
+				N077BANR01B293A4B7010001 /* ReleaseNotesBannerView.swift in Sources */,
+				N077CHRM01B293A4B7010001 /* ReleaseNotesChrome.swift in Sources */,
+				N077SHET01B293A4B7010001 /* ReleaseNotesSheet.swift in Sources */,
 				E5F60718293A4B701757B9DA /* ScreenAwakeController.swift in Sources */,
 				E5F60718293A4B703C4C8B66 /* TimerUtils.swift in Sources */,
 				E5F60718293A4B70DEADB002 /* SharingSettingsCache.swift in Sources */,
@@ -3413,6 +3440,7 @@
 				A140019000000000000000019 /* FeatureAdoptionGuideContentTests.swift in Sources */,
 				FADFIX0A1B293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift in Sources */,
 				SB0610A1B293A4B7010000010 /* SystemBannerStoreTests.swift in Sources */,
+				N077TEST01B293A4B7010001 /* ReleaseNotesStoreTests.swift in Sources */,
 				FF072TESTU01B293A4B70101 /* FollowFeedTestURLProtocol.swift in Sources */,
 				FF072TESTF01B293A4B70101 /* FollowStoreTests.swift in Sources */,
 				FF072AUTH01B293A4B70101 /* AuthServiceOwnUsernameTests.swift in Sources */,
