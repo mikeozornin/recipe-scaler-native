@@ -44,8 +44,8 @@
 | Key | Содержание |
 |-----|------------|
 | `recipe.awake-scroll.help.title` | заголовок sheet |
-| `recipe.awake-scroll.help.intro` | грязные руки / голос или камера |
-| `recipe.awake-scroll.help.energy` | включать только нужные каналы |
+| `recipe.awake-scroll.help.intro` | руки в тесте / голос или жесты |
+| `recipe.awake-scroll.help.energy` | включать только то, чем будете пользоваться; камера ест заряд сильнее микрофона |
 | `recipe.awake-scroll.voice` | «Голосовое управление» |
 | `recipe.awake-scroll.hand` | «Управление жестами» |
 | `recipe.awake-scroll.face` | «Управление лицом» |
@@ -53,10 +53,13 @@
 | `recipe.awake-scroll.help.try-hand` | показать жесты в камеру |
 | `recipe.awake-scroll.help.try-face` | поморгать левым/правым |
 | `recipe.awake-scroll.help.chip.up` | локаль: вверх / up |
+| `recipe.awake-scroll.help.chip.higher` | выше / higher |
 | `recipe.awake-scroll.help.chip.scroll-up` | прокрути вверх / scroll up |
 | `recipe.awake-scroll.help.chip.down` | вниз / down |
+| `recipe.awake-scroll.help.chip.lower` | ниже / lower |
 | `recipe.awake-scroll.help.chip.scroll-down` | прокрути вниз / scroll down |
 | `recipe.awake-scroll.help.denied.mic` | доступ к микрофону запрещён |
+| `recipe.awake-scroll.help.denied.speech` | доступ к распознаванию речи запрещён |
 | `recipe.awake-scroll.help.denied.camera` | доступ к камере запрещён |
 | `recipe.awake-scroll.help.open-settings` | Открыть параметры |
 | `recipe.awake-scroll.menu` | a11y ellipsis |

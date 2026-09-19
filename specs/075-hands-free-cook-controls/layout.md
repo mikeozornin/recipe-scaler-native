@@ -196,8 +196,8 @@ Sheet
 
 ### Чипы голоса
 
-RU (locale): `вверх` · `прокрути вверх` · `вниз` · `прокрути вниз`  
-EN: `up` · `scroll up` · `down` · `scroll down`
+RU (locale): `вверх` · `выше` · `прокрути вверх` · `вниз` · `ниже` · `прокрути вниз`  
+EN: `up` · `higher` · `scroll up` · `down` · `lower` · `scroll down`
 
 Idle: нейтральный fill, primary label. Fired 0.8 s: green fill, white label, только совпавший чип (Figma `404:3818`).
 

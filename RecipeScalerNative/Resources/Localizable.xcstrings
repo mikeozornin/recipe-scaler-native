@@ -11216,6 +11216,40 @@
         }
       }
     },
+    "recipe.awake-scroll.help.chip.higher" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "higher"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "выше"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.chip.lower" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lower"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ниже"
+          }
+        }
+      }
+    },
     "recipe.awake-scroll.help.chip.scroll-down" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11301,19 +11335,36 @@
         }
       }
     },
+    "recipe.awake-scroll.help.denied.speech" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speech recognition access is denied"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ к распознаванию речи запрещён"
+          }
+        }
+      }
+    },
     "recipe.awake-scroll.help.energy" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Turn on only the channels you need — camera and microphone use extra energy."
+            "value" : "Turn on only what you will use — the camera uses more power than the microphone"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Включайте только нужные каналы — камера и микрофон расходуют заряд."
+            "value" : "Включите только то, чем будете пользоваться, камера расходует заряд сильнее микрофона"
           }
         }
       }
@@ -11443,13 +11494,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "When your hands are messy, scroll the recipe with your voice or the front camera."
+            "value" : "If your hands are in dough, scroll the recipe with voice or gestures"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Если руки в тесте, листайте рецепт голосом или фронтальной камерой."
+            "value" : "Если руки в тесте, листайте рецепт голосом или жестами"
           }
         }
       }
@@ -11511,13 +11562,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blink with your left eye to scroll up, right eye to scroll down."
+            "value" : "Blink with your left eye to scroll up, right eye to scroll down"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Моргните левым глазом — вверх, правым — вниз."
+            "value" : "Моргните левым глазом — вверх, правым — вниз"
           }
         }
       }
@@ -11534,7 +11585,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Покажите эти жесты камере:"
+            "value" : "Показать эти жесты в камеру:"
           }
         }
       }
