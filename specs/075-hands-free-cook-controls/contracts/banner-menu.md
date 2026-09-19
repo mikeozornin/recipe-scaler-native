@@ -1,49 +1,69 @@
-# Contract: banner menu UI
+# Contract: banner chrome + settings sheet UI
 
-**Owner**: `ScreenAwakeStatusBanner`  
-**Layout**: [layout.md](../layout.md)
+**Owner**: `ScreenAwakeStatusBanner`, `AwakeScrollHelpSheet`  
+**Layout**: [layout.md](../layout.md)  
+**Figma**: `404:4872`
 
 ## Visibility
 
-Баннер как сейчас: только `isScreenAwakeActive`. Menu живёт только в баннере.
+Баннер как сейчас: только `isScreenAwakeActive`. Ellipsis живёт только в баннере.
 
-## Menu
+## Ellipsis
 
 - Label: SF Symbol `ellipsis`, 16 pt, цвет `bannerText`.
+- Это **Button**, не `Menu`.
+- Action: `showingHelp = true` → sheet.
 - a11y label: `recipe.awake-scroll.menu`
 - a11y id: `screen_awake_banner_menu`
 
-### Item 1 — Hands-free
+Запрещено: `Toggle` Hands-free в баннере/меню; `Button` Hands-free в toolbar; второй `play.circle.fill`.
 
-- `Toggle` bound to `AwakeHandsFreeStorage` / binding из parent.
-- Title: `recipe.awake-scroll.hands-free`
-- a11y id: `screen_awake_hands_free_toggle`
-- ON → parent ставит pref true и просит controller arm.
-- OFF → pref false, controller stop, awake не трогать.
+## Channel icons (баннер)
 
-### Item 2 — Help
+После `recipe.awake-scroll.banner`, **сразу после текста** (не справа у ellipsis), hug, 16 pt, цвет `bannerText`. Только pref ON:
 
-- `Button` → `showingHelp = true`
-- Title: `recipe.awake-scroll.help`
-- a11y id: `screen_awake_help`
-- Sheet: `AwakeScrollHelpSheet`
+| Канал | Symbol | a11y |
+|-------|--------|------|
+| voice | `waveform` | `recipe.awake-scroll.help.icon.voice` |
+| hand | `hand.thumbsdown.hand.thumbsup.filled` если доступен, иначе `hand.thumbsup.fill` | `recipe.awake-scroll.help.icon.hand` |
+| face | `face.smiling` | `recipe.awake-scroll.help.icon.face` |
 
-Запрещено: `Button` Hands-free в toolbar; второй `sun.max`.
+Порядок voice → hand → face. Пропуск выключенных без пустых слотов. При fire — scale 1.8, easeInOut 0.5 s, затем обратно.
 
-## Help sheet copy keys
+## Sheet
+
+- Title: `recipe.awake-scroll.help.title` — copy «Управление без рук» / EN-эквивалент. В контенте, перенос, не navbar.
+- Intro + energy hint (декоративный `switch.2`, не интерактивный).
+- Три тумблера (лицо скрыть без TrueDepth).
+- Live-блоки только при ON && granted.
+- Denied: OFF + disabled + orange subtitle; Settings button если ≥1 denied.
+- Close нет: swipe / grabber.
+
+### Copy keys (смысл; точные строки в xcstrings)
 
 | Key | Содержание |
 |-----|------------|
-| `recipe.awake-scroll.help.title` | заголовок |
-| `recipe.awake-scroll.help.voice` | фразы вверх/вниз RU+EN |
-| `recipe.awake-scroll.help.hand` | thumbs-up сектора |
-| `recipe.awake-scroll.help.face` | моргание L/R, TrueDepth |
-| `recipe.awake-scroll.help.camera` | XOR Face/Hand |
-| `recipe.awake-scroll.help.permissions` | запросы только после Hands-free |
+| `recipe.awake-scroll.help.title` | заголовок sheet |
+| `recipe.awake-scroll.help.intro` | грязные руки / голос или камера |
+| `recipe.awake-scroll.help.energy` | включать только нужные каналы |
+| `recipe.awake-scroll.voice` | «Голосовое управление» |
+| `recipe.awake-scroll.hand` | «Управление жестами» |
+| `recipe.awake-scroll.face` | «Управление лицом» |
+| `recipe.awake-scroll.help.try-voice` | «Попробуйте сказать:» |
+| `recipe.awake-scroll.help.try-hand` | показать жесты в камеру |
+| `recipe.awake-scroll.help.try-face` | поморгать левым/правым |
+| `recipe.awake-scroll.help.chip.up` | локаль: вверх / up |
+| `recipe.awake-scroll.help.chip.scroll-up` | прокрути вверх / scroll up |
+| `recipe.awake-scroll.help.chip.down` | вниз / down |
+| `recipe.awake-scroll.help.chip.scroll-down` | прокрути вниз / scroll down |
+| `recipe.awake-scroll.help.denied.mic` | доступ к микрофону запрещён |
+| `recipe.awake-scroll.help.denied.camera` | доступ к камере запрещён |
+| `recipe.awake-scroll.help.open-settings` | Открыть параметры |
+| `recipe.awake-scroll.menu` | a11y ellipsis |
 
-Точные предложения — при impl в xcstrings; смысл не менять. Close: `common.close` если toolbar.
+Устаревшие ключи rev 3 (`help.voice` длинный абзац, `help.camera` про auto-XOR, `hands-free` пункт меню) — не показывать в UI; удалять только отдельным i18n-таском, не в том же PR если lint требует наличие.
 
 ## Binding ownership
 
 `isScreenAwakeActive` остаётся у `YDocRecipeDetailView`.  
-`handsFreeEnabled` — `@AppStorage("awakeHandsFreeEnabled")` или storage helper, не дублировать ключ строкой в двух файлах: константа в `AwakeHandsFreeStorage.key`.
+Prefs каналов — `AwakeHandsFreeStorage` (три ключа). Не дублировать строковые ключи в view.

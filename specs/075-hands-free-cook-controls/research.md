@@ -1,80 +1,79 @@
 # Research: Awake-linked hands-free scroll
 
-**Дата**: 2026-09-14 (rev 3)  
+**Дата**: 2026-09-19 (rev 4)  
 **Для**: [spec.md](./spec.md)
 
 ## Pivot
 
 Rev 1 (Crouton Next/Back/List на cook matrix) отменён.  
 Rev 2: keep-awake на recipe detail сразу включал voice+gesture.  
-Rev 3: **opt-in**. `sun.max` только idle timer. Hands-free — флажок в `Menu` справа баннера + sheet справки. Permissions не при awake.
+Rev 3: один флажок Hands-free в `Menu` баннера + отдельная справка; Face XOR Hand по TrueDepth автоматически.  
+Rev 4: **каналы**. Ellipsis открывает один sheet настроек+справки. Голос / жесты / лицо — тумблеры. Жесты XOR лицо выбирает пользователь. Иконки включённых каналов в баннере.
 
-## Decision: opt-in в баннере, не toolbar
+## Decision: ellipsis → sheet, не Menu
 
-- **Decision:** trailing `Menu` (ellipsis) в `ScreenAwakeStatusBanner`; пункты Hands-free toggle + Help.
-- **Rationale:** F1.2 запрещает вторую toolbar-кнопку; баннер уже значит «я готовлю/читаю»; не сюрпризить mic/camera от sun.max.
-- **Alternatives:** второй toolbar toggle (отклонено); автоматический arm с awake (rev 2, отклонено); settings-экран (лишний Tax Job).
+- **Decision:** trailing Button `ellipsis` в `ScreenAwakeStatusBanner` открывает `AwakeScrollHelpSheet`. Тумблеры каналов только на sheet.
+- **Rationale:** Figma `404:4872`; снимает Tax Job «включить Hands-free, потом искать справку»; F1.2 запрещает toolbar-кнопку.
+- **Alternatives:** rev 3 Menu из двух пунктов (отклонено макетом); второй toolbar toggle (отклонено); settings в профиле (лишний уход с карточки).
 
-## Decision: persist `awakeHandsFreeEnabled`
+## Decision: три prefs, не один Bool
 
-- **Decision:** `UserDefaults.standard` Bool, default `false`. Не чистить на logout. Не CRDT.
-- **Rationale:** повторный keep-awake на той же кухне не должен требовать каждый раз открывать меню; это device preference.
-- **Alternatives:** session-only (раздражает); per-recipe key (YAGNI).
+- **Decision:** `awakeHandsFreeVoiceEnabled` / `Hand` / `Face`. Миграция со старого `awakeHandsFreeEnabled`. Не чистить на logout. Не CRDT.
+- **Rationale:** можно включить только голос без камеры (батарея). XOR hand/face должен быть persist.
+- **Alternatives:** один мастер + picker модальности (лишний уровень); session-only (раздражает).
+
+## Decision: Face XOR Hand — пользователь, не железо
+
+- **Decision:** тумблер лица скрыт без TrueDepth. На TrueDepth пользователь выбирает лицо или жесты. Включение одного пишет false другому.
+- **Rationale:** одна фронтальная камера; макет явно даёт оба тумблера; auto-TrueDepth (rev 3) прятал выбор.
+- **Alternatives:** всегда Hand; всегда Face; auto-switch по детекции руки.
+
+## Decision: denied → snap-off + disabled
+
+- **Decision:** отказ permission пишет pref false и disable тумблер, пока status denied. «Открыть параметры», если ≥1 denied.
+- **Rationale:** кадр `404:4092`; не оставлять «включённый» канал, который молча no-op.
+- **Alternatives:** держать ON (отклонено); retry toggle без Settings (бесполезный цикл).
 
 ## Decision: тонкий voice engine, не 056
 
 - **Decision:** `AwakeScrollVoiceEngine` на `SFSpeechRecognizer` + whitelist. Не реализовывать `CookingVoiceProvider` / SpeechAnalyzer / TTS.
-- **Rationale:** 056 в коде отсутствует; CookingModeView вне scope; два действия vs полный command set 056.
-- **Alternatives:** сначала закрыть 056 (блокирует 075); копировать файлы 056 as-is (мертвый TTS).
+- **Rationale:** 056 в коде отсутствует; CookingModeView вне scope.
+- **Alternatives:** сначала закрыть 056 (блокирует 075).
 
 ## Decision: scroll probe, не caret-anchor
 
-- **Decision:** `UIViewRepresentable` / introspect probe на **сам** detail `ScrollView` в `YDocRecipeDetailView`. `DescriptionEditorScrollAnchor.detailScrollView` оставить для caret.
-- **Rationale:** caret-anchor ищет ancestor от description `WKWebView`. В read-mode host — `StepsSection`; editor может отсутствовать; nested web scroll легко спутать.
-- **Alternatives:** всегда ходить в caret-anchor (хрупко); SwiftUI `scrollPosition` iOS 17 (два источника истины с keyboard caret-scroll).
-
-## Decision: Face XOR Hand по железу
-
-- **Decision:** TrueDepth available → Face blink; иначе Hand pose. Voice параллельно. Без пункта меню «модальность».
-- **Rationale:** одна фронтальная камера; v1 без сеттинга; Help sheet объясняет, какой канал на этом устройстве.
-- **Alternatives:** всегда Hand (US3 мёртв на 13 Pro); всегда Face (ломает SE); auto-switch по детекции руки (сложно, ложные переключения).
+- **Decision:** probe на **сам** detail `ScrollView`. Caret-anchor оставить для caret.
+- **Rationale:** read-mode host — не editor WKWebView.
+- **Alternatives:** SwiftUI `scrollPosition` как единственный источник (ломает caret-scroll).
 
 ## Decision: controller view-local
 
-- **Decision:** `@State` / `@Observable` `AwakeScrollController` владеет `YDocRecipeDetailView`. Не `AppContainer`.
-- **Rationale:** сессия привязана к видимой карточке; composition-root `.shared` запрещён кроме OS-фасадов; cooking cover и assistant живут рядом и должны disarm локально.
-- **Alternatives:** AppContainer singleton (утечки камеры между экранами).
+- **Decision:** `AwakeScrollController` владеет `YDocRecipeDetailView`. Не `AppContainer`.
+- **Rationale:** сессия карточки; cooking cover / assistant disarm локально.
+- **Alternatives:** AppContainer singleton.
 
 ## Decision: cooking cover и assistant — CoverDisarmed
 
-- **Decision:** `ProcessTableCookingCoordinator.presentation != nil` или assistant sheet open → teardown capture/speech, pref не сбрасывать. После dismiss — re-arm по F1.1.
-- **Rationale:** detail остаётся в иерархии под cover (`ProcessTableCookingRoot` в `ContentView`); `onDisappear` карточки не сработает.
-- **Alternatives:** оставить камеру под матрицей (privacy + battery).
+- **Decision:** presentation или assistant sheet → teardown capture/speech, prefs каналов не сбрасывать.
+- **Rationale:** detail остаётся под cover; `onDisappear` не сработает.
+- **Alternatives:** камера под матрицей (privacy).
 
 ## Platform
 
 | Need | API |
 |------|-----|
-| Keep awake | existing `ScreenAwakeController` / `UIApplication.isIdleTimerDisabled` |
+| Keep awake | existing `ScreenAwakeController` |
 | Scroll | UIScrollView via **detail probe** |
 | Voice | `SFSpeechRecognizer` on-device, 60s re-arm |
-| Hand | `VNDetectHumanHandPoseRequest` — up/down sectors from thumb vector |
-| Face | ARKit blink left/right → up/down |
-| Pref | UserDefaults `awakeHandsFreeEnabled` |
-| Privacy | extend camera/mic usage; add `NSSpeechRecognitionUsageDescription` |
+| Hand | `VNDetectHumanHandPoseRequest` |
+| Face | ARKit blink; скрыть UI без TrueDepth |
+| Pref | UserDefaults три ключа + миграция |
+| Privacy | extend camera/mic; `NSSpeechRecognitionUsageDescription` |
 
 ## 75% semantics
 
-`delta = 0.75 * scrollView.bounds.height`  
-`offset.y = clamp(offset.y ± delta, 0, maxOffset)`  
-`maxOffset` — см. [contracts/scroll-delta.md](./contracts/scroll-delta.md).
-
-Overlap ~25% сохраняет контекст между шагами рецепта.
+`delta = 0.75 * scrollView.bounds.height` — [contracts/scroll-delta.md](./contracts/scroll-delta.md).
 
 ## Gesture mapping (v1)
 
-См. [contracts/gesture-mapping.md](./contracts/gesture-mapping.md) и [contracts/voice-whitelist.md](./contracts/voice-whitelist.md).
-
-- Hand thumbs-up tip above base → up; tip below → down.
-- Face: blink left → up; blink right → down.
-- Voice: вверх/вниз (+ EN).
+[contracts/gesture-mapping.md](./contracts/gesture-mapping.md), [contracts/voice-whitelist.md](./contracts/voice-whitelist.md).

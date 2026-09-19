@@ -1,6 +1,6 @@
 # План: Hands-free прокрутка при keep-awake
 
-**Дата**: 2026-09-14 (rev 3)  
+**Дата**: 2026-09-19 (rev 4)  
 **Спека**: [spec.md](./spec.md)  
 **Research**: [research.md](./research.md)  
 **Layout**: [layout.md](./layout.md) · аудит: `bash scripts/audit-ui-layout.sh specs/075-hands-free-cook-controls`  
@@ -14,20 +14,23 @@
 ## Границы
 
 - **В scope**:
-  - Opt-in Hands-free: ellipsis-меню в `ScreenAwakeStatusBanner` (флажок + help sheet).
-  - `±75%` вертикальный scroll основного `ScrollView` карточки при F1.1.
-  - Voice whitelist RU/EN; Hand XOR Face по TrueDepth; общий cooldown.
+  - Opt-in по каналам: ellipsis-кнопка в `ScreenAwakeStatusBanner` → единый sheet настроек+справки (Figma `404:4872`).
+  - Иконки включённых каналов в баннере (`waveform` / hand / `face.smiling`).
+  - `±75%` вертикальный scroll основного `ScrollView` карточки при F1.1 канала.
+  - Voice whitelist RU/EN; Hand XOR Face по выбору пользователя; общий cooldown.
   - Probe UIScrollView; view-local `AwakeScrollController`.
-  - Permissions при первом Hands-free ON; teardown на HF OFF / awake OFF / leave / background / cooking cover / assistant.
-  - i18n меню/справки; расширить privacy usage strings; unit tests.
+  - Permissions при включении канала; snap-off+disabled при deny; «Открыть параметры».
+  - Teardown на канал OFF / awake OFF / leave / background / cooking cover / assistant.
+  - i18n sheet/баннера; privacy usage; unit tests XOR/migration/snap-off.
 - **Вне scope**:
   - Cook matrix Next/Back/List; App Intents; 056 CookingModeView / TTS / SpeechAnalyzer.
-  - Web parity; wake word; отдельный выбор Face vs Hand в меню.
+  - Web parity; wake word; мастер-флажок Hands-free в Menu баннера (rev 3).
+  - Автовыбор Face vs Hand по TrueDepth (rev 3).
   - Вторая toolbar-кнопка Hands-free.
 - **STOP conditions**:
-  - **STOP до SwiftUI chrome** (banner Menu, help sheet, camera preview), пока человек не принял [layout.md](./layout.md) (не static audit). Engine + unit tests без view — можно параллельно.
+  - **STOP до SwiftUI chrome rev 4** (banner icons, sheet, preview), пока человек не принял обновлённый [layout.md](./layout.md) (не static audit). Engine + unit tests без view — уже есть.
   - Если probe не находит host ScrollView на живой карточке (read и edit) — STOP: no-op + `AppLog`, не изобретать `scrollTo` id.
-  - Если keep-awake без HF начинает запрашивать mic/camera — STOP, это регресс rev 3.
+  - Если keep-awake без каналов начинает запрашивать mic/camera — STOP.
   - Не чинить 074 cooking UI из этой спеки.
 
 ## Конституционная проверка
@@ -42,19 +45,19 @@
 | i18n | PASS | `recipe.awake-scroll.*` + privacy InfoPlist strings. |
 | Documentation | PASS | spec, layout, research, data-model, contracts, tasks, этот план. |
 
-Post-design: gates без изменений. Complexity: native-only + opt-in banner — принято в spec rev 3.
+Post-design: gates без изменений. Complexity: native-only + per-channel sheet — принято в spec rev 4.
 
 ## Очерёдность
 
-1. **Scroll engine + clamp tests** — чистая функция, без permissions. Layout review не блокирует.
-2. **Detail ScrollView probe** — иначе voice/жесты некуда применять. Не ломать caret-anchor.
-3. **AwakeScrollController arm predicate + epoch teardown** — F1.1 / cooking cover / scenePhase. Зависимости: 1–2.
-4. **Human review `layout.md`** — STOP для banner Menu / sheet / preview.
-5. **Banner Menu + Help sheet + i18n** — после 4. Pref UserDefaults.
-6. **Voice classifier + SF listening** — зависит от 3; UI индикация от 5.
-7. **Hand classifier + capture** — XOR: только без TrueDepth.
-8. **Face blink + TrueDepth gate**.
-9. **Permissions strings + denied paths + verify/build**.
+1. **Scroll engine + clamp tests** — уже сделано (rev 3).
+2. **Detail ScrollView probe** — уже сделано.
+3. **AwakeScrollController arm/epoch** — расширить с одного `handsFreeEnabled` на per-channel F1.1.
+4. **Human review `layout.md` rev 4** — STOP для banner icons / sheet / preview.
+5. **Storage три ключа + миграция** — до UI.
+6. **Banner Button + channel icons + sheet по Figma** — после 4–5.
+7. **Voice/Hand/Face arm от prefs каналов**; XOR; hide Face без TrueDepth.
+8. **Live-фидбек sheet + denied snap-off + Open Settings**.
+9. **Permissions strings + verify/build**.
 
 ## Изменения
 
@@ -63,17 +66,17 @@ Post-design: gates без изменений. Complexity: native-only + opt-in b
 | `RecipeScalerNative/Services/Cooking/AwakeScrollAction.swift` | Создать | `.up` / `.down` |
 | `RecipeScalerNative/Services/Cooking/AwakeScrollEngine.swift` | Создать | delta 0.75, clamp |
 | `RecipeScalerNative/Services/Cooking/AwakeScrollController.swift` | Создать | arm/epoch/cooldown |
-| `RecipeScalerNative/Services/Cooking/AwakeHandsFreeStorage.swift` | Создать | UserDefaults pref |
+| `RecipeScalerNative/Services/Cooking/AwakeHandsFreeStorage.swift` | Изменить | три ключа + миграция `awakeHandsFreeEnabled` |
 | `RecipeScalerNative/Services/Cooking/AwakeScrollVoiceClassifier.swift` | Создать | whitelist |
 | `RecipeScalerNative/Services/Cooking/AwakeScrollVoiceEngine.swift` | Создать | SFSpeechRecognizer |
 | `RecipeScalerNative/Services/Cooking/AwakeScrollHandClassifier.swift` | Создать | thumb sectors |
 | `RecipeScalerNative/Services/Cooking/AwakeScrollFaceClassifier.swift` | Создать | blink L/R |
 | `RecipeScalerNative/Services/Cooking/AwakeScrollCaptureSession.swift` | Создать | Face XOR Hand + teardown |
 | `RecipeScalerNative/Views/DetailScrollViewProbe.swift` | Создать | weak UIScrollView |
-| `RecipeScalerNative/Views/AwakeScrollLayout.swift` | Создать | токены |
-| `RecipeScalerNative/Views/AwakeScrollHelpSheet.swift` | Создать | справка |
+| `RecipeScalerNative/Views/AwakeScrollLayout.swift` | Изменить | токены chip/gesture/banner icons |
+| `RecipeScalerNative/Views/AwakeScrollHelpSheet.swift` | Изменить | settings+help по Figma |
 | `RecipeScalerNative/Views/AwakeScrollCameraPreview.swift` | Создать | 48○ overlay, optional |
-| `RecipeScalerNative/Views/ScreenAwakeStatusBanner.swift` | Изменить | Menu ellipsis |
+| `RecipeScalerNative/Views/ScreenAwakeStatusBanner.swift` | Изменить | Button ellipsis + channel icons, без Menu Toggle |
 | `RecipeScalerNative/Views/YDocRecipeDetailView.swift` | Изменить | probe + controller wire |
 | `RecipeScalerNative/Views/YDocRecipeDetailScrollSupport.swift` | Не менять caret API | Hands-free не через editor ancestor |
 | `RecipeScalerNative/AccessibilityIdentifiers.swift` | Изменить | menu / toggle / help |
@@ -94,7 +97,7 @@ Post-design: gates без изменений. Complexity: native-only + opt-in b
 - **SwiftUI views**: `YDocRecipeDetailView`, `ScreenAwakeStatusBanner`, `AwakeScrollHelpSheet`, optional preview. `ProcessTableCookingView` не показывает HF chrome, но **disarm** когда cover presented.
 - **Cross-process**: widgets, extensions, watchOS, Live Activity, App Intents — N/A, фича не выходит за процесс приложения.
 - **Sync boundaries**: Yjs/CRDT, web, серверный contract — N/A.
-- **Persisted state**: UserDefaults `awakeHandsFreeEnabled`. Не SQLite, не Keychain, не App Group.
+- **Persisted state**: UserDefaults `awakeHandsFreeVoiceEnabled`, `awakeHandsFreeHandEnabled`, `awakeHandsFreeFaceEnabled` + одноразовая миграция `awakeHandsFreeEnabled`. Не SQLite, не Keychain, не App Group.
 - **Tests / verify scripts**: `AwakeScroll*Tests`; `lint-i18n.sh`; `audit-ui-layout.sh specs/075-hands-free-cook-controls` (до view ожидаем FAIL по missing files).
 
 ## Positive invariants
@@ -110,7 +113,9 @@ Post-design: gates без изменений. Complexity: native-only + opt-in b
 | blink left | `.up` | `AwakeScrollFaceClassifierTests.test_left_up` |
 | F1.1 false после armed | capture+speech stop | `AwakeScrollControllerTests.test_predicate_false_teardown` |
 | HF off, awake on | idle timer disabled, нет session | `test_hands_free_off_keeps_awake` |
-| awake on, HF pref false | нет AVCapture | `test_awake_only_no_camera` |
+| hand ON while face ON | face pref false, modality `.hand` | `test_hand_xor_disables_face` |
+| mic denied after voice ON | voice pref false | `test_mic_denied_snaps_voice_off` |
+| awake on, all channel prefs false | нет AVCapture | `test_awake_only_no_camera` |
 | cooking presentation set | teardown, pref не сброшен | `test_cooking_cover_disarm` |
 
 Негатив «не должно сломаться» недостаточен — каждый teardown имеет положительный postcondition в таблице Teardown.
@@ -134,8 +139,9 @@ Single-flight: `isStarting` до первого `await` permission/session, `def
 
 | Entry path | In-memory | Tasks/streams | Persisted state | Cross-process / OS surface | Positive postcondition |
 |------------|-----------|---------------|-----------------|---------------------------|-------------------------|
-| HF toggle OFF | epoch++; modality idle | speech task cancel; capture stop | pref = false | camera indicator off | idle timer всё ещё disabled если awake |
-| awake OFF / `deactivateScreenAwake` | epoch++; controller idle | same | pref **kept** | camera off; idle timer enabled | баннер скрыт |
+| voice OFF, camera channel ON | speech stop | speech task cancel | voice pref false | no mic | camera stays if hand/face armed |
+| camera channels OFF, voice ON | modality none | capture stop | hand/face prefs false | camera indicator off | speech stays |
+| awake OFF / `deactivateScreenAwake` | epoch++; controller idle | same | channel prefs **kept** | camera off; idle timer enabled | баннер скрыт |
 | leave detail / recipeId change | controller deinit/stop | same | pref kept | camera off | нет listening на другом рецепте |
 | background (`scenePhase`) | существующий awake off | same | pref kept | camera off | как сегодня keep-awake |
 | cooking cover present | CoverDisarmed | same | pref kept | camera off | матрица без green dot от HF |
@@ -143,19 +149,19 @@ Single-flight: `isStarting` до первого `await` permission/session, `def
 | assistant sheet open | как cover | same | pref kept | camera off | |
 | logout / account switch | stop | same | pref kept (device) | camera off | нет чужой сессии STT |
 | stale / cold start | не restore capture | N/A | pref читается | N/A | HF не стартует пока нет visible detail+awake |
-| reconnect / partial permission fail | каналы по snapshot | failed engine stopped | pref may stay true | no capture if denied | карточка usable |
-| permission denied both | armed no-op | no streams | pref | no camera | keep-awake работает |
+| reconnect / partial permission fail | каналы по snapshot | failed engine stopped | denied channel pref false | no capture if denied | карточка usable |
+| permission denied | snap-off that channel | no streams for that channel | pref false | no camera if both camera channels off | keep-awake работает; Settings button |
 
 ## Cross-target contracts
 
 - **Canonical owner**: этот spec + [contracts/](./contracts/).
 - **Writer/reader targets**: только native UI. Web не читает pref.
 - **Validator/normalizer**: `AwakeScrollVoiceClassifier` / hand / face — единственные адаптеры whitelist и blink map. Не размазывать литералы по view.
-- **Raw literal exceptions**: системные SF Symbol `"ellipsis"`, `"sun.max"` — OS names, не user-facing copy. Voice phrases живут в classifier (не UI); UI copy только xcstrings.
+- **Raw literal exceptions**: системные SF Symbol `"ellipsis"`, `"play.circle.fill"`, `"waveform"`, `"face.smiling"`, hand glyphs — OS names, не user-facing copy. Voice phrases живут в classifier (не UI); UI copy только xcstrings.
 
 ## Locale / theme consumers
 
-- SwiftUI environment: `Text("recipe.awake-scroll.*")`, `common.screen-always-on`, `common.close`; `.appBody()` / `.appFootnote()`; баннер semantic green как сейчас; help sheet light/dark system background.
+- SwiftUI environment: `Text("recipe.awake-scroll.*")`, `common.screen-always-on`, `common.close`; `.appBody()` / `.appHeadline()` / `.appFootnote()`; баннер semantic green как сейчас; sheet light/dark system background. Не SF из UI Kit.
 - UIKit / notification categories / scheduled content: N/A.
 - Widgets / Live Activities / App Intents: N/A.
 - Cached or generated assets: N/A.
@@ -165,11 +171,11 @@ Privacy usage — `InfoPlist.xcstrings` (системный диалог, не `
 
 ## Compatibility / migration
 
-- Current format/contract: pref Bool `awakeHandsFreeEnabled`.
-- Previous supported format: ключа нет.
-- Missing version/default behavior: nil → `false` (Hands-free OFF).
+- Current format/contract: три Bool `awakeHandsFreeVoiceEnabled` / `Hand` / `Face`.
+- Previous supported format: `awakeHandsFreeEnabled` (rev 3) — одноразовая миграция F1.9.
+- Missing version/default behavior: nil → все каналы `false`.
 - Unknown future version/ID behavior: N/A (нет versioned blob). Неизвестный transcript → nil action, не «умный» prefix match.
-- Required legacy fixture tests: classifier rejects empty / unrelated speech; engine clamp на height 0.
+- Required legacy fixture tests: classifier rejects empty / unrelated speech; engine clamp на height 0; XOR hand/face; denied snap-off.
 
 ## Unknown IDs and fallback policy
 
@@ -187,7 +193,7 @@ i18n — `Localizable.xcstrings` / `InfoPlist.xcstrings`, не codegen.
 
 ## Human gates
 
-- [ ] `layout.md` reviewed by human (**блокер** banner Menu, help sheet, preview).
+- [ ] `layout.md` reviewed by human (**блокер** banner icons, settings sheet, preview). Rev 3 review **не** засчитывается.
 - [ ] `layout-audit.json` static audit passed (ожидаемо FAIL до файлов view; после impl — STATIC PASS).
 - [ ] Human acceptance artifact актуален для hash `layout.md` (ещё нет).
 - [ ] Отдельный review-agent после кода; self-review не замена.
@@ -198,14 +204,14 @@ i18n — `Localizable.xcstrings` / `InfoPlist.xcstrings`, не codegen.
 - `xcodebuild` build по [docs/AGENT-WORKFLOW.md](../../docs/AGENT-WORKFLOW.md) — exit 0.
 - Unit `AwakeScroll*` — pass (positive invariants).
 - `bash scripts/lint-i18n.sh` — exit 0 после ключей.
-- Manual [quickstart.md](./quickstart.md) на iPhone 13 Pro: awake-only без camera dot; HF ON → 75% step; HF OFF → dot off.
+- Manual [quickstart.md](./quickstart.md) на iPhone 13 Pro: awake-only без camera dot; voice-only без camera dot; hand/face → 75% step; канал OFF → соответствующий resource off.
 - Expected: не считать фичу VERIFIED без human layout-acceptance и device pass по camera.
 
 `verify-plan-state.sh` — N/A если скрипта нет под 075; не выдумывать зелёный verify без assertions.
 
 ## Rollback / maintenance
 
-- Как откатить: удалить Menu/controller wire; `sun.max` и баннер текста остаются как сегодня; UserDefaults ключ безвреден.
+- Как откатить: убрать channel icons/sheet wire; `play.circle.fill` и баннер текста остаются; UserDefaults ключи безвредны.
 - Что будет взаимодействовать: 056, если когда-то повесит STT на cooking — не делить `AVAudioSession` с detail HF (cover уже disarm). QR scanner тоже камера — HF обязан быть off вне detail.
 - Временные allowlist/quarantine: нет.
 

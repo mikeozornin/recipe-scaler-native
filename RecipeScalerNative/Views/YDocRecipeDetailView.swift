@@ -36,6 +36,11 @@ struct YDocRecipeDetailView: View {
     @State var titleSaveTask: Task<Void, Never>?
     @State var isFinishingEdit = false
     @State var isScreenAwakeActive = false
+    @State private var awakeScrollController = AwakeScrollController()
+    @AppStorage(AwakeHandsFreeStorage.voiceKey) private var awakeVoiceEnabled = false
+    @AppStorage(AwakeHandsFreeStorage.handKey) private var awakeHandEnabled = false
+    @AppStorage(AwakeHandsFreeStorage.faceKey) private var awakeFaceEnabled = false
+    @State private var showingAwakeScrollHelp = false
     @State private var descriptionTimerPopover: DescriptionTimerPopoverState?
     @State var descriptionTimerMarkupDraft: DescriptionTimerMarkupDraft?
     @State var descriptionIngredientPickerPresented = false
@@ -234,6 +239,9 @@ struct YDocRecipeDetailView: View {
         ScrollViewReader { scrollProxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                DetailScrollViewProbe(box: awakeScrollController.probe)
+                    .frame(width: 1, height: 1)
+                    .accessibilityHidden(true)
                 if showsRecipeImageSection {
                     RecipeDetailImageSection(
                         recipeId: recipeId,
@@ -458,11 +466,20 @@ struct YDocRecipeDetailView: View {
         ))
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if isScreenAwakeActive {
-                ScreenAwakeStatusBanner()
-            }
-        }
+        .modifier(
+            AwakeScrollChromeModifier(
+                controller: awakeScrollController,
+                isScreenAwakeActive: isScreenAwakeActive,
+                cameraModality: awakeScrollController.cameraModality,
+                assistantSheetOpen: assistantRecipeContext.isAssistantSheetOpen,
+                cookingCoverPresented: appContainer?.cooking.presentation != nil,
+                voiceEnabled: $awakeVoiceEnabled,
+                handEnabled: $awakeHandEnabled,
+                faceEnabled: $awakeFaceEnabled,
+                showingHelp: $showingAwakeScrollHelp,
+                onArmFlagsChanged: syncAwakeScrollArm
+            )
+        )
         .safeAreaInset(edge: .bottom, spacing: 0) {
             formattingBarInset
         }
@@ -577,6 +594,9 @@ struct YDocRecipeDetailView: View {
         }
         .onAppear {
             timerManager.setSuppressPanelSafeAreaInset(isEditing)
+            awakeScrollController.flags.detailVisible = true
+            awakeScrollController.onChannelPrefsChanged = pullAwakeChannelBindingsFromStorage
+            syncAwakeScrollArm()
         }
         .onReceive(
             NotificationCenter.default.publisher(
@@ -621,9 +641,6 @@ struct YDocRecipeDetailView: View {
                 DescriptionWireExportHost(recipeId: recipeId, syncService: syncService)
             }
         }
-        .onChange(of: isScreenAwakeActive) { _, active in
-            ScreenAwakeController.setActive(active)
-        }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .background:
@@ -639,7 +656,10 @@ struct YDocRecipeDetailView: View {
             }
         }
         .onDisappear {
+            if showingAwakeScrollHelp { return }
             timerManager.setSuppressPanelSafeAreaInset(false)
+            awakeScrollController.flags.detailVisible = false
+            awakeScrollController.syncArmState()
             guard !assistantRecipeContext.isAssistantSheetOpen else { return }
             assistantRecipeContext.clearVisibleRecipeId(recipeId)
             deactivateScreenAwake()
@@ -752,6 +772,27 @@ struct YDocRecipeDetailView: View {
                 }
             )
         }
+    }
+
+    func syncAwakeScrollArm() {
+        AwakeHandsFreeStorage.migrateIfNeeded(
+            trueDepthAvailable: AwakeScrollCaptureSession.supportsFaceTracking
+        )
+        awakeScrollController.flags.recipeId = recipeId
+        awakeScrollController.flags.isScreenAwakeActive = isScreenAwakeActive
+        awakeScrollController.flags.voiceEnabled = awakeVoiceEnabled
+        awakeScrollController.flags.handEnabled = awakeHandEnabled
+        awakeScrollController.flags.faceEnabled = awakeFaceEnabled
+        awakeScrollController.flags.cookingPresented = appContainer?.cooking.presentation != nil
+        awakeScrollController.flags.assistantSheetOpen = assistantRecipeContext.isAssistantSheetOpen
+        awakeScrollController.syncArmState()
+        pullAwakeChannelBindingsFromStorage()
+    }
+
+    func pullAwakeChannelBindingsFromStorage() {
+        awakeVoiceEnabled = AwakeHandsFreeStorage.voiceEnabled
+        awakeHandEnabled = AwakeHandsFreeStorage.handEnabled
+        awakeFaceEnabled = AwakeHandsFreeStorage.faceEnabled
     }
 }
 

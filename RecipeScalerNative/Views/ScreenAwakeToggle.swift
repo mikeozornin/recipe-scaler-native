@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Toolbar control for keep-awake (web `useWakeLock`; SF `sun.max`). State owned by parent screen.
+/// Toolbar control for keep-awake (web `useWakeLock`; SF `play.circle.fill`). State owned by parent screen.
 struct ScreenAwakeToggle: View {
     @Binding var isActive: Bool
 
@@ -13,7 +13,7 @@ struct ScreenAwakeToggle: View {
         Button {
             isActive.toggle()
         } label: {
-            AppToolbarStyle.iconOnly(systemName: "sun.max", isActive: isActive)
+            AppToolbarStyle.iconOnly(systemName: "play.circle.fill", isActive: isActive)
         }
         .appToolbarIconButton()
         .accessibilityIdentifier(AccessibilityIdentifiers.screenAwakeToggle)

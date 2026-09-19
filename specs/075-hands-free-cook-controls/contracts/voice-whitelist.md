@@ -1,7 +1,7 @@
 # Contract: voice whitelist
 
 **Owner**: `AwakeScrollVoiceClassifier`  
-**Input**: final (или stable partial) transcript, locale hint не обязателен — один набор RU+EN.
+**Input**: final (или stable partial) transcript. Classifier — один набор RU+EN. Локаль STT — язык приложения (`en_US` / `ru_RU`), иначе английские чипы на экране не распознаются.
 
 ## Нормализация
 

@@ -1,7 +1,7 @@
 # Contract: gesture mapping
 
 **Owner**: `AwakeScrollHandClassifier`, `AwakeScrollFaceClassifier`  
-**XOR**: [data-model.md](../data-model.md) `AwakeScrollCameraModality`.
+**XOR**: пользовательские prefs. Hand ON пишет Face OFF и наоборот. Без TrueDepth Face-ряд скрыт — XOR не нужен. Камера одна: [data-model.md](../data-model.md) `AwakeScrollCameraModality`.
 
 ## Hand (Vision)
 
@@ -22,6 +22,7 @@
 - Только если TrueDepth (`ARFaceTrackingConfiguration.isSupported`).
 - `eyeBlinkLeft` rising edge ≥ 0.6 → `.up`.
 - `eyeBlinkRight` rising edge ≥ 0.6 → `.down`.
+- Live-иконки на sheet: слева up (левый глаз), справа down (правый глаз).
 - Оба глаза за один кадр / 100 ms → ignore.
 - `jawOpen` игнорировать.
 - Debounce: повтор того же глаза не раньше cooldown сессии.

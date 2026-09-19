@@ -6109,6 +6109,7 @@
       }
     },
     "common.screen-always-on" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11092,6 +11093,516 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Попробовать снова"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.banner" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cooking mode is on"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Режим готовки включён"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.face" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Face control"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Управление лицом"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.hand" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesture control"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Управление жестами"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.hands-free" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hands-free"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hands-free"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How it works"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как это работает"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.camera" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The front camera uses either face or hand, not both at once. TrueDepth phones use blinks; other phones use the hand pose."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фронтальная камера использует либо лицо, либо руку, не оба сразу. На TrueDepth — моргание, на остальных — жест руки."
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.chip.down" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "down"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "вниз"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.chip.scroll-down" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "scroll down"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "прокрути вниз"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.chip.scroll-up" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "scroll up"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "прокрути вверх"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.chip.up" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "up"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "вверх"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.denied.camera" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera access is denied"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ к камере запрещён"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.denied.mic" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microphone access is denied"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ к микрофону запрещён"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.energy" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on only the channels you need — camera and microphone use extra energy."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включайте только нужные каналы — камера и микрофон расходуют заряд."
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.face" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Face (TrueDepth): wink with your left eye to scroll up, right eye to scroll down."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лицо (TrueDepth): моргните левым глазом — вверх, правым — вниз."
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.hand" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hand: hold a thumbs-up. Tip pointing up scrolls up; tip pointing down scrolls down. Left or right is ignored."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рука: жест «лайк». Палец вверх — прокрутка вверх, палец вниз — вниз. Влево и вправо не считаются."
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.icon.face" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Face"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лицо"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.icon.face.xor" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Face unused on this phone; the hand pose is used instead"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лицо на этом телефоне не используется — работает жест руки"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.icon.hand" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hand"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рука"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.icon.hand.xor" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hand unused on this phone; blinks are used instead"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Жест на этом телефоне не используется — работает моргание"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.icon.voice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voice"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голос"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.intro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When your hands are messy, scroll the recipe with your voice or the front camera."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если руки в тесте, листайте рецепт голосом или фронтальной камерой."
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.open-settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть параметры"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.permissions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microphone, speech recognition, and camera are requested only after you turn Hands-free on — not when you keep the screen awake."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Микрофон, распознавание речи и камера запрашиваются только после включения Hands-free, а не когда вы просто не гасите экран."
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hands-free controls"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Управление без рук"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.try-face" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blink with your left eye to scroll up, right eye to scroll down."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Моргните левым глазом — вверх, правым — вниз."
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.try-hand" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show these gestures to the camera:"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Покажите эти жесты камере:"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.try-voice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try saying:"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробуйте сказать:"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.help.voice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voice: say “down”, “scroll down”, “вниз”, or “прокрути вниз” to move down; “up”, “scroll up”, “вверх”, or “прокрути вверх” to move up. Each command moves about three-quarters of the screen."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голос: «вниз», «прокрути вниз», down или scroll down — вниз; «вверх», «прокрути вверх», up или scroll up — вверх. Одна команда сдвигает примерно на три четверти экрана."
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.menu" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hands-free menu"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Меню Hands-free"
+          }
+        }
+      }
+    },
+    "recipe.awake-scroll.voice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voice control"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голосовое управление"
           }
         }
       }

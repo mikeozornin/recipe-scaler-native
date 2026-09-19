@@ -3,7 +3,7 @@
 **Spec**: [spec.md](./spec.md)  
 **Plan**: [plan.md](./plan.md)
 
-Сервер и Y.Doc **не** участвуют. Модель — in-memory сессия карточки + один Bool в UserDefaults.
+Сервер и Y.Doc **не** участвуют. Модель — in-memory сессия карточки + три Bool каналов в UserDefaults.
 
 ## AwakeScrollAction
 
@@ -34,13 +34,21 @@ enum AwakeScrollAction: Equatable {
 
 ## AwakeHandsFreeStorage
 
-| Поле | Тип | Правила |
-|------|-----|---------|
-| key | `"awakeHandsFreeEnabled"` | UserDefaults.standard |
-| default | `false` | отсутствует ключ → OFF |
-| writer | только UI toggle в banner Menu | teardown awake **не** пишет false |
+Три ключа, `UserDefaults.standard`, default `false`:
+
+| Key | Канал |
+|-----|--------|
+| `awakeHandsFreeVoiceEnabled` | голос |
+| `awakeHandsFreeHandEnabled` | жесты |
+| `awakeHandsFreeFaceEnabled` | лицо |
+
+Писатели: тумблеры sheet; XOR (hand ON → face false и наоборот); snap-off при denied. Teardown awake **не** пишет false.
+
+Миграция один раз: если новых ключей ещё нет и `awakeHandsFreeEnabled == true` → voice=true и (TrueDepth → face, иначе hand). После миграции старый ключ не source of truth.
 
 Не Codable versioning. Не App Group.
+
+Derived: `isAnyChannelEnabled` = voice \|\| hand \|\| face. Мастер-флага в UI нет.
 
 ## AwakeScrollModality
 
@@ -52,7 +60,7 @@ enum AwakeScrollCameraModality: Equatable {
 }
 ```
 
-Резолв: если не armed или camera denied → `.none`. Иначе TrueDepth → `.face`, иначе `.hand`. Voice — отдельный канал, не case этого enum.
+Резолв: `.none` если не armed / camera denied / оба камерных pref false. Иначе если `awakeHandsFreeFaceEnabled` AND TrueDepth → `.face`. Иначе если `awakeHandsFreeHandEnabled` → `.hand`. Voice — отдельный канал.
 
 ## AwakeScrollPermissionSnapshot
 
@@ -97,32 +105,32 @@ Denied канал просто не стартует. Snapshot пересчит�
 
 `eyeBlinkLeft` / `eyeBlinkRight` blend shapes 0…1. Edge: переход через порог (канон 0.6) из ниже порога. Одновременный double-blink → ignore (не два action).
 
-## Arm predicate (F1.1)
+## Arm predicate (F1.1) per channel
 
 ```text
 detailVisible
 && isScreenAwakeActive
-&& handsFreeEnabled
+&& channelPref
+&& channelPermissionsGranted
+&& (face ⇒ TrueDepth)
 && cookingPresentation == nil
 && assistantSheetOpen == false
 ```
 
-Тест обязан подставлять каждый терм.
+Тест обязан подставлять каждый терм. Voice и camera-канал армятся независимо (кроме XOR hand/face).
 
 ## State transitions
 
 ```mermaid
 stateDiagram-v2
   [*] --> AwakeOff
-  AwakeOff --> AwakeOn: sun.max ON
-  AwakeOn --> HandsFreeArmed: banner Hands-free ON and F1.1
-  HandsFreeArmed --> AwakeOn: Hands-free OFF
-  HandsFreeArmed --> AwakeOff: sun.max OFF or leave or background
-  HandsFreeArmed --> CoverDisarmed: cooking cover or assistant
-  CoverDisarmed --> HandsFreeArmed: dismiss and F1.1
+  AwakeOff --> AwakeOn: play.circle.fill ON
+  AwakeOn --> ChannelArmed: channel pref ON, permission granted, F1.1
+  ChannelArmed --> AwakeOn: channel pref OFF or denied snap-off
+  ChannelArmed --> AwakeOff: play.circle.fill OFF or leave or background
+  ChannelArmed --> CoverDisarmed: cooking cover or assistant
+  CoverDisarmed --> ChannelArmed: dismiss and F1.1
   CoverDisarmed --> AwakeOff: awake deactivated while covered
-  HandsFreeArmed --> HandsFreeNoop: both permissions denied
-  HandsFreeNoop --> HandsFreeArmed: permission granted on retry
 ```
 
 ## Validation
@@ -135,4 +143,4 @@ stateDiagram-v2
 | dead-zone thumb | hand | ignore |
 | epoch mismatch | controller | drop |
 
-Нет миграций БД.
+Нет миграций БД. Миграция только UserDefaults F1.9.

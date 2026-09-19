@@ -7,6 +7,27 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		P075S01B /* AwakeScrollAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S01A /* AwakeScrollAction.swift */; };
+		P075S02B /* AwakeHandsFreeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S02A /* AwakeHandsFreeStorage.swift */; };
+		P075S03B /* AwakeScrollEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S03A /* AwakeScrollEngine.swift */; };
+		P075S04B /* AwakeScrollVoiceClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S04A /* AwakeScrollVoiceClassifier.swift */; };
+		P075S05B /* AwakeScrollHandClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S05A /* AwakeScrollHandClassifier.swift */; };
+		P075S06B /* AwakeScrollFaceClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S06A /* AwakeScrollFaceClassifier.swift */; };
+		P075S07B /* AwakeScrollArmFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S07A /* AwakeScrollArmFlags.swift */; };
+		P075S08B /* AwakeScrollPermissions.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S08A /* AwakeScrollPermissions.swift */; };
+		P075S09B /* AwakeScrollController.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S09A /* AwakeScrollController.swift */; };
+		P075S10B /* AwakeScrollVoiceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S10A /* AwakeScrollVoiceEngine.swift */; };
+		P075S11B /* AwakeScrollCaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S11A /* AwakeScrollCaptureSession.swift */; };
+		P075V01B /* DetailScrollViewProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V01A /* DetailScrollViewProbe.swift */; };
+		P075V02B /* AwakeScrollLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V02A /* AwakeScrollLayout.swift */; };
+		P075V03B /* AwakeScrollHelpSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V03A /* AwakeScrollHelpSheet.swift */; };
+		P075V04B /* AwakeScrollCameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V04A /* AwakeScrollCameraPreview.swift */; };
+		P075V05B /* AwakeScrollChromeModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V05A /* AwakeScrollChromeModifier.swift */; };
+		P075T01B /* AwakeScrollEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075T01A /* AwakeScrollEngineTests.swift */; };
+		P075T02B /* AwakeScrollVoiceClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075T02A /* AwakeScrollVoiceClassifierTests.swift */; };
+		P075T03B /* AwakeScrollHandClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075T03A /* AwakeScrollHandClassifierTests.swift */; };
+		P075T04B /* AwakeScrollFaceClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075T04A /* AwakeScrollFaceClassifierTests.swift */; };
+		P075T05B /* AwakeScrollControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075T05A /* AwakeScrollControllerTests.swift */; };
 		0089FE21D37A4D84BF4355E3 /* ShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B8E4D1A7552D487F80885A2F /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		031287A80FDB41308E31AE3E /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7585E91075F045FF9D2C26D1 /* ShareViewController.swift */; };
 		0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C45A57EDAC270C757266F8FA /* AuthService.swift */; };
@@ -779,6 +800,27 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		P075S01A /* AwakeScrollAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollAction.swift; sourceTree = "<group>"; };
+		P075S02A /* AwakeHandsFreeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeHandsFreeStorage.swift; sourceTree = "<group>"; };
+		P075S03A /* AwakeScrollEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollEngine.swift; sourceTree = "<group>"; };
+		P075S04A /* AwakeScrollVoiceClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollVoiceClassifier.swift; sourceTree = "<group>"; };
+		P075S05A /* AwakeScrollHandClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollHandClassifier.swift; sourceTree = "<group>"; };
+		P075S06A /* AwakeScrollFaceClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollFaceClassifier.swift; sourceTree = "<group>"; };
+		P075S07A /* AwakeScrollArmFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollArmFlags.swift; sourceTree = "<group>"; };
+		P075S08A /* AwakeScrollPermissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollPermissions.swift; sourceTree = "<group>"; };
+		P075S09A /* AwakeScrollController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollController.swift; sourceTree = "<group>"; };
+		P075S10A /* AwakeScrollVoiceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollVoiceEngine.swift; sourceTree = "<group>"; };
+		P075S11A /* AwakeScrollCaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollCaptureSession.swift; sourceTree = "<group>"; };
+		P075V01A /* DetailScrollViewProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailScrollViewProbe.swift; sourceTree = "<group>"; };
+		P075V02A /* AwakeScrollLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollLayout.swift; sourceTree = "<group>"; };
+		P075V03A /* AwakeScrollHelpSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollHelpSheet.swift; sourceTree = "<group>"; };
+		P075V04A /* AwakeScrollCameraPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollCameraPreview.swift; sourceTree = "<group>"; };
+		P075V05A /* AwakeScrollChromeModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollChromeModifier.swift; sourceTree = "<group>"; };
+		P075T01A /* AwakeScrollEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollEngineTests.swift; sourceTree = "<group>"; };
+		P075T02A /* AwakeScrollVoiceClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollVoiceClassifierTests.swift; sourceTree = "<group>"; };
+		P075T03A /* AwakeScrollHandClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollHandClassifierTests.swift; sourceTree = "<group>"; };
+		P075T04A /* AwakeScrollFaceClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollFaceClassifierTests.swift; sourceTree = "<group>"; };
+		P075T05A /* AwakeScrollControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollControllerTests.swift; sourceTree = "<group>"; };
 		057A55B7EC424D69BA4BA244 /* TimerLiveActivityMetadataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityMetadataProvider.swift; sourceTree = "<group>"; };
 		062CORE001F293A4B701000A0 /* Networking/WatchExpiryNotificationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/WatchExpiryNotificationPlanner.swift; sourceTree = "<group>"; };
 		062TEST001F293A4B701000A0 /* WatchExpiryNotificationSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchExpiryNotificationSchedulerTests.swift; sourceTree = "<group>"; };
@@ -1669,6 +1711,11 @@
 				E5F60718293A4B708354CFBC /* RecipeDetailShareButton.swift */,
 				E5F60718293A4B7065B733F2 /* ScreenAwakeToggle.swift */,
 				E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */,
+				P075V01A /* DetailScrollViewProbe.swift */,
+				P075V02A /* AwakeScrollLayout.swift */,
+				P075V03A /* AwakeScrollHelpSheet.swift */,
+				P075V04A /* AwakeScrollCameraPreview.swift */,
+				P075V05A /* AwakeScrollChromeModifier.swift */,
 				E5F60718293A4B707F3A30E0 /* TransientStatusBanner.swift */,
 				A3AC0B0A69EA4637B134D9A5 /* SystemBannerView.swift */,
 				SB061CHRB293A4B701000001 /* SystemBannerChrome.swift */,
@@ -1899,6 +1946,11 @@
 				P074T06A293A4B701000001 /* ProcessTableCookingLayoutTests.swift */,
 				P074T07A293A4B701000001 /* ProcessTableCookingSceneTests.swift */,
 				P074T08A293A4B701000001 /* ProcessTableCookingOrientationTests.swift */,
+				P075T01A /* AwakeScrollEngineTests.swift */,
+				P075T02A /* AwakeScrollVoiceClassifierTests.swift */,
+				P075T03A /* AwakeScrollHandClassifierTests.swift */,
+				P075T04A /* AwakeScrollFaceClassifierTests.swift */,
+				P075T05A /* AwakeScrollControllerTests.swift */,
 				FADLAY03C293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift */,
 				FADFIX0A0A293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift */,
 				SB0610A0A293A4B7010000010 /* SystemBannerStoreTests.swift */,
@@ -2269,9 +2321,28 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		P075GRP0293A4B701000001 /* Cooking */ = {
+			isa = PBXGroup;
+			children = (
+				P075S01A /* AwakeScrollAction.swift */,
+				P075S02A /* AwakeHandsFreeStorage.swift */,
+				P075S03A /* AwakeScrollEngine.swift */,
+				P075S04A /* AwakeScrollVoiceClassifier.swift */,
+				P075S05A /* AwakeScrollHandClassifier.swift */,
+				P075S06A /* AwakeScrollFaceClassifier.swift */,
+				P075S07A /* AwakeScrollArmFlags.swift */,
+				P075S08A /* AwakeScrollPermissions.swift */,
+				P075S09A /* AwakeScrollController.swift */,
+				P075S10A /* AwakeScrollVoiceEngine.swift */,
+				P075S11A /* AwakeScrollCaptureSession.swift */,
+			);
+			path = Cooking;
+			sourceTree = "<group>";
+		};
 		EDE97F98D203CDB041112403 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				P075GRP0293A4B701000001 /* Cooking */,
 				E5F60718293A4B7011DA2DE4 /* DiscoverAPI.swift */,
 				E5F60718293A4B7097235780 /* RecipeImageUploadAPI.swift */,
 				E5F60718293A4B7035E279C2 /* SharingAPI.swift */,
@@ -3087,6 +3158,22 @@
 				P074A03B293A4B701000001 /* ProcessTableMatrix.swift in Sources */,
 				P074A04B293A4B701000001 /* ProcessTableRebuildModel.swift in Sources */,
 				P074A14B293A4B701000001 /* ProcessTableAPI.swift in Sources */,
+				P075S01B /* AwakeScrollAction.swift in Sources */,
+				P075S02B /* AwakeHandsFreeStorage.swift in Sources */,
+				P075S03B /* AwakeScrollEngine.swift in Sources */,
+				P075S04B /* AwakeScrollVoiceClassifier.swift in Sources */,
+				P075S05B /* AwakeScrollHandClassifier.swift in Sources */,
+				P075S06B /* AwakeScrollFaceClassifier.swift in Sources */,
+				P075S07B /* AwakeScrollArmFlags.swift in Sources */,
+				P075S08B /* AwakeScrollPermissions.swift in Sources */,
+				P075S09B /* AwakeScrollController.swift in Sources */,
+				P075S10B /* AwakeScrollVoiceEngine.swift in Sources */,
+				P075S11B /* AwakeScrollCaptureSession.swift in Sources */,
+				P075V01B /* DetailScrollViewProbe.swift in Sources */,
+				P075V02B /* AwakeScrollLayout.swift in Sources */,
+				P075V03B /* AwakeScrollHelpSheet.swift in Sources */,
+				P075V04B /* AwakeScrollCameraPreview.swift in Sources */,
+				P075V05B /* AwakeScrollChromeModifier.swift in Sources */,
 				P074A05B293A4B701000001 /* ProcessTableLayout.swift in Sources */,
 				P074A06B293A4B701000001 /* ProcessTableStartButton.swift in Sources */,
 				P074A07B293A4B701000001 /* ProcessTableStatusBanner.swift in Sources */,
@@ -3385,6 +3472,11 @@
 				P074T06B293A4B701000001 /* ProcessTableCookingLayoutTests.swift in Sources */,
 				P074T07B293A4B701000001 /* ProcessTableCookingSceneTests.swift in Sources */,
 				P074T08B293A4B701000001 /* ProcessTableCookingOrientationTests.swift in Sources */,
+				P075T01B /* AwakeScrollEngineTests.swift in Sources */,
+				P075T02B /* AwakeScrollVoiceClassifierTests.swift in Sources */,
+				P075T03B /* AwakeScrollHandClassifierTests.swift in Sources */,
+				P075T04B /* AwakeScrollFaceClassifierTests.swift in Sources */,
+				P075T05B /* AwakeScrollControllerTests.swift in Sources */,
 				FADLAY04D293A4B701000001 /* FeatureAdoptionRingLabelLayoutTests.swift in Sources */,
 				A140019000000000000000019 /* FeatureAdoptionGuideContentTests.swift in Sources */,
 				FADFIX0A1B293A4B701000001 /* FeatureAdoptionInstalledFlagTests.swift in Sources */,

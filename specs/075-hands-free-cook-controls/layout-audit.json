@@ -2,9 +2,34 @@
   "feature": "075-hands-free-cook-controls",
   "layout_doc": "layout.md",
   "figma": {
-    "file_key": null,
-    "frames": [],
-    "note": "Rev 3: banner ellipsis Hands-free opt-in + help sheet; no cook-matrix HF chrome; no second toolbar button."
+    "file_key": "rVzFwMDS5SECfIq4HRLHya",
+    "frames": [
+      {
+        "id": "404:4872",
+        "name": "Hand free",
+        "role": "section all sheet states"
+      },
+      {
+        "id": "404:3351",
+        "name": "Sheet all off",
+        "role": "primary light settings"
+      },
+      {
+        "id": "404:3270",
+        "name": "Sheet voice+hand idle",
+        "role": "voice and hand live blocks"
+      },
+      {
+        "id": "404:3818",
+        "name": "Sheet voice fired",
+        "role": "chip accent"
+      },
+      {
+        "id": "404:4092",
+        "name": "Sheet permissions denied",
+        "role": "denied + open settings"
+      }
+    ]
   },
   "required_files": [
     "RecipeScalerNative/Views/AwakeScrollLayout.swift",
@@ -39,17 +64,57 @@
       ]
     },
     {
-      "id": "awake-toggle-sun",
-      "description": "Keep-awake control remains sun.max (no second HF toolbar button)",
-      "pattern": "sun\\.max",
+      "id": "banner-channel-icon-size-16",
+      "description": "Banner channel icons are 16pt",
+      "pattern": "bannerChannelIconSize:\\s*CGFloat\\s*=\\s*16",
+      "paths": [
+        "RecipeScalerNative/Views/AwakeScrollLayout.swift"
+      ]
+    },
+    {
+      "id": "help-chip-height-34",
+      "description": "Voice chips are 34pt tall",
+      "pattern": "helpChipHeight:\\s*CGFloat\\s*=\\s*34",
+      "paths": [
+        "RecipeScalerNative/Views/AwakeScrollLayout.swift"
+      ]
+    },
+    {
+      "id": "help-gesture-icon-size-64",
+      "description": "Hand/face try-icons are 64pt",
+      "pattern": "helpGestureIconSize:\\s*CGFloat\\s*=\\s*64",
+      "paths": [
+        "RecipeScalerNative/Views/AwakeScrollLayout.swift"
+      ]
+    },
+    {
+      "id": "awake-toggle-play",
+      "description": "Keep-awake control is play.circle.fill (no second HF toolbar button)",
+      "pattern": "play\\.circle\\.fill",
       "paths": [
         "RecipeScalerNative/Views/ScreenAwakeToggle.swift"
       ]
     },
     {
-      "id": "banner-menu-ellipsis",
-      "description": "Banner hosts ellipsis Menu for Hands-free",
+      "id": "banner-ellipsis",
+      "description": "Banner hosts trailing ellipsis that opens the sheet",
       "pattern": "ellipsis",
+      "paths": [
+        "RecipeScalerNative/Views/ScreenAwakeStatusBanner.swift"
+      ]
+    },
+    {
+      "id": "banner-waveform",
+      "description": "Banner shows waveform for voice channel",
+      "pattern": "waveform",
+      "paths": [
+        "RecipeScalerNative/Views/ScreenAwakeStatusBanner.swift"
+      ]
+    },
+    {
+      "id": "banner-face-smiling",
+      "description": "Banner shows face.smiling for face channel",
+      "pattern": "face\\.smiling",
       "paths": [
         "RecipeScalerNative/Views/ScreenAwakeStatusBanner.swift"
       ]
@@ -66,18 +131,26 @@
     },
     {
       "id": "no-system-font-banner",
-      "description": "Banner must not use SF via .font(.system",
+      "description": "Banner and sheet must not use SF via .font(.system",
       "pattern": "\\.font\\(\\.system\\(",
       "paths": [
         "RecipeScalerNative/Views/ScreenAwakeStatusBanner.swift",
         "RecipeScalerNative/Views/AwakeScrollHelpSheet.swift"
+      ]
+    },
+    {
+      "id": "no-two-item-banner-menu",
+      "description": "Rev 3 Menu Toggle+Help must not remain as the banner chrome",
+      "pattern": "Toggle\\(isOn:\\s*\\$handsFreeEnabled\\)",
+      "paths": [
+        "RecipeScalerNative/Views/ScreenAwakeStatusBanner.swift"
       ]
     }
   ],
   "previews": [
     {
       "id": "help-sheet-preview",
-      "description": "Canvas preview for help sheet",
+      "description": "Canvas preview for help/settings sheet",
       "pattern": "#Preview",
       "paths": [
         "RecipeScalerNative/Views/AwakeScrollHelpSheet.swift"
@@ -91,8 +164,8 @@
       "manual": true
     },
     {
-      "id": "claim-awake-on-hf-off-no-camera",
-      "description": "Awake ON and Hands-free OFF does not start camera (no green dot)",
+      "id": "claim-awake-on-channels-off-no-camera",
+      "description": "Awake ON and all channels OFF does not start camera (no green dot)",
       "manual": true
     },
     {
@@ -102,17 +175,37 @@
     },
     {
       "id": "claim-no-extra-toolbar-button",
-      "description": "Only existing sun.max awake toggle in toolbar",
+      "description": "Only existing play.circle.fill awake toggle in toolbar",
       "manual": true
     },
     {
       "id": "claim-banner-ellipsis",
-      "description": "Ellipsis is in the keep-awake banner trailing edge; banner height ≤ 48pt",
+      "description": "Ellipsis is a Button in the keep-awake banner trailing edge; banner height ≤ 48pt",
       "manual": true
     },
     {
-      "id": "claim-help-from-menu",
-      "description": "Help sheet opens from banner menu, not from toolbar",
+      "id": "claim-sheet-from-ellipsis",
+      "description": "Settings/help sheet opens from banner ellipsis, not from toolbar",
+      "manual": true
+    },
+    {
+      "id": "claim-banner-channel-icons",
+      "description": "After keep-awake title, 16pt icons for enabled channels only, order voice→hand→face",
+      "manual": true
+    },
+    {
+      "id": "claim-live-one-accent",
+      "description": "Live feedback recolors one chip or one 64pt icon, not the whole row",
+      "manual": true
+    },
+    {
+      "id": "claim-denied-settings",
+      "description": "Denied: toggle OFF+disabled, orange caption, Open Settings if at least one permission denied",
+      "manual": true
+    },
+    {
+      "id": "claim-hide-face-without-truedepth",
+      "description": "Face row is absent when TrueDepth is unsupported",
       "manual": true
     }
   ]
