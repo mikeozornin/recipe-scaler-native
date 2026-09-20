@@ -7,9 +7,6 @@ enum AwakeHandsFreeStorage {
     static let faceKey = "awakeHandsFreeFaceEnabled"
     static let migrationKey = "awakeHandsFreeChannelMigrationDone"
 
-    /// Rev 3 AppStorage key; not a source of truth after migration.
-    static let key = voiceKey
-
     static var defaults: UserDefaults = .standard
 
     static var voiceEnabled: Bool {

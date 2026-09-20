@@ -56,7 +56,6 @@
 | `bannerChannelIconSize` | 16 | waveform / hand / face в баннере |
 | `bannerChannelPulseScale` | 1.8 | scale при fire канала |
 | `bannerChannelPulseDuration` | 0.5 s | easeInOut туда и обратно |
-| `bannerMaxExtraHeight` | 4 | баннер ≤ 48 |
 | `cameraPreviewDiameter` | 48 | overlay |
 | `cameraPreviewTrailingPad` | 16 | bottomTrailing |
 | `cameraPreviewBottomPad` | 16 | над home indicator |
@@ -74,7 +73,6 @@
 | `helpGestureIconSize` | 64 | like/dislike и глаза |
 | `helpGestureRowHeight` | 96 | 16 + 64 + 16 |
 | `helpDebugFiredDuration` | 0.8 | длительность accent live |
-| `helpDebugIconSize` | 28 | **deprecated** (старая шапка mic/hand/eye); не использовать в новом дереве |
 
 Шрифты:
 

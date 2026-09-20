@@ -1,6 +1,12 @@
 import Foundation
 import UIKit
 
+/// Weak UIScrollView port for hands-free deltas. Lives in Services so the
+/// controller does not import a Views type; the SwiftUI probe stays in Views.
+final class DetailScrollViewProbeBox {
+    weak var host: UIScrollView?
+}
+
 @MainActor
 @Observable
 final class AwakeScrollController {
@@ -104,7 +110,7 @@ final class AwakeScrollController {
 
     func restartVoiceForLocaleChange() {
         guard flags.wantsVoice else { return }
-        stop(reason: "speech_locale")
+        stopVoice(reason: "speech_locale")
         syncArmState()
     }
 
@@ -130,50 +136,105 @@ final class AwakeScrollController {
     }
 
     func syncArmState() {
-        let wantVoice = flags.wantsVoice
-        let wantModality = flags.desiredCameraModality(trueDepthAvailable: prefersTrueDepthFace())
+        let wantVoice = effectiveWantVoice()
+        let wantModality = effectiveWantModality()
         if !wantVoice, wantModality == .none {
             stop(reason: "disarmed")
             return
         }
-        if channelsRunning,
-           runningVoice == wantVoice,
-           runningModality == wantModality {
+        if runningVoice == wantVoice, runningModality == wantModality {
             return
         }
-        if channelsRunning {
-            stop(reason: "reconfigure")
+        if runningVoice, !wantVoice {
+            stopVoice(reason: "voice_off")
         }
-        startIfNeeded()
+        if runningModality != .none, runningModality != wantModality {
+            let reason = wantModality == .none ? "camera_off" : "camera_reconfigure"
+            stopCamera(reason: reason)
+        }
+        if (wantVoice && !runningVoice) || (wantModality != .none && runningModality != wantModality) {
+            startIfNeeded()
+        }
     }
 
     func stop(reason: String) {
-        sessionEpoch += 1
+        let wasRunning = channelsRunning
+        tearDownVoice()
+        tearDownCamera()
         startID += 1
         isStarting = false
+        sessionEpoch += 1
         cooldownUntil = nil
         cameraModality = .none
         runningVoice = false
         runningModality = .none
-        guard channelsRunning else { return }
         channelsRunning = false
+        guard wasRunning else { return }
         channelStopCount += 1
-        voiceEngine.stop()
-        captureSession.stop()
         onStopChannels?()
         AppLog.debug(.gesture, "awake_scroll_stop", data: ["reason": reason])
     }
 
+    private func stopVoice(reason: String) {
+        let wasLast = runningModality == .none
+        let hadVoice = runningVoice || isStarting
+        tearDownVoice()
+        finishChannelStop(reason: reason, bumpEpoch: wasLast && hadVoice)
+    }
+
+    private func stopCamera(reason: String) {
+        let wasLast = !runningVoice
+        let hadCamera = runningModality != .none || isStarting
+        tearDownCamera()
+        finishChannelStop(reason: reason, bumpEpoch: wasLast && hadCamera)
+    }
+
+    private func tearDownVoice() {
+        runningVoice = false
+        voiceEngine.stop()
+    }
+
+    private func tearDownCamera() {
+        runningModality = .none
+        cameraModality = .none
+        captureSession.stop()
+    }
+
+    private func finishChannelStop(reason: String, bumpEpoch: Bool) {
+        startID += 1
+        isStarting = false
+        if bumpEpoch {
+            sessionEpoch += 1
+            cooldownUntil = nil
+        }
+        let idle = !runningVoice && runningModality == .none
+        guard idle, channelsRunning else { return }
+        channelsRunning = false
+        channelStopCount += 1
+        onStopChannels?()
+        AppLog.debug(.gesture, "awake_scroll_stop", data: ["reason": reason])
+    }
+
+    private func effectiveWantVoice() -> Bool {
+        flags.wantsVoice && !lastPermissions.voiceRestricted
+    }
+
+    private func effectiveWantModality() -> AwakeScrollCameraModality {
+        guard !lastPermissions.cameraRestricted else { return .none }
+        return flags.desiredCameraModality(trueDepthAvailable: prefersTrueDepthFace())
+    }
+
     private func startIfNeeded() {
-        let wantVoice = flags.wantsVoice
-        let wantModality = flags.desiredCameraModality(trueDepthAvailable: prefersTrueDepthFace())
-        guard wantVoice || wantModality != .none, !channelsRunning, !isStarting else { return }
+        let wantVoice = effectiveWantVoice() && !runningVoice
+        let wantModality = effectiveWantModality()
+        let needCamera = wantModality != .none && runningModality != wantModality
+        guard wantVoice || needCamera, !isStarting else { return }
         isStarting = true
         startID += 1
         let thisStart = startID
         let epoch = sessionEpoch
         let requestVoice = wantVoice
-        let requestCamera = wantModality != .none
+        let requestCamera = needCamera
         Task { @MainActor in
             defer {
                 if startID == thisStart {
@@ -186,20 +247,17 @@ final class AwakeScrollController {
             applyDeniedSnapOff(permissions)
             guard flags.isArmed else { return }
             beginChannels(epoch: epoch, permissions: permissions)
-            if channelsRunning {
-                syncArmState()
-            }
         }
     }
 
     private func applyDeniedSnapOff(_ permissions: AwakeScrollPermissionSnapshot) {
         var changed = false
-        if flags.voiceEnabled, !(permissions.micGranted && permissions.speechGranted) {
+        if flags.voiceEnabled, permissions.voiceDenied {
             flags.voiceEnabled = false
             if writesStorage { AwakeHandsFreeStorage.voiceEnabled = false }
             changed = true
         }
-        if (flags.handEnabled || flags.faceEnabled), !permissions.cameraGranted {
+        if (flags.handEnabled || flags.faceEnabled), permissions.cameraDenied {
             flags.handEnabled = false
             flags.faceEnabled = false
             if writesStorage {
@@ -214,31 +272,45 @@ final class AwakeScrollController {
     }
 
     private func beginChannels(epoch: UInt64, permissions: AwakeScrollPermissionSnapshot) {
-        let wantVoice = flags.wantsVoice && permissions.micGranted && permissions.speechGranted
+        let wantVoice = flags.wantsVoice
+            && permissions.micGranted
+            && permissions.speechGranted
+            && !permissions.voiceRestricted
         let wantModality = flags.desiredCameraModality(trueDepthAvailable: prefersTrueDepthFace())
         let cameraModality: AwakeScrollCameraModality =
-            permissions.cameraGranted ? wantModality : .none
-        guard wantVoice || cameraModality != .none else { return }
-        var voiceStarted = false
-        if wantVoice {
+            permissions.cameraGranted && !permissions.cameraRestricted ? wantModality : .none
+        let addingVoice = wantVoice && !runningVoice
+        let addingCamera = cameraModality != .none && runningModality != cameraModality
+        guard addingVoice || addingCamera || runningVoice || runningModality != .none else { return }
+
+        var voiceStarted = runningVoice
+        if addingVoice {
             voiceStarted = startVoiceChannel(epoch: epoch)
         }
-        var cameraStarted = false
-        if cameraModality != .none {
+        var cameraStarted = runningModality == cameraModality && cameraModality != .none
+        if addingCamera {
             cameraStarted = startCameraChannel(modality: cameraModality, epoch: epoch)
         }
         applyEngineStartFailureSnapOff(
-            wantVoice: wantVoice,
-            voiceStarted: voiceStarted,
-            requestedModality: cameraModality,
-            cameraStarted: cameraStarted
+            wantVoice: addingVoice,
+            voiceStarted: addingVoice && voiceStarted,
+            requestedModality: addingCamera ? cameraModality : .none,
+            cameraStarted: addingCamera && cameraStarted
         )
-        guard voiceStarted || cameraStarted else { return }
+        let nextVoice = addingVoice ? voiceStarted : runningVoice
+        let nextModality: AwakeScrollCameraModality = {
+            if addingCamera {
+                return cameraStarted ? cameraModality : .none
+            }
+            return runningModality
+        }()
+        guard nextVoice || nextModality != .none else { return }
         commitRunning(
-            voice: voiceStarted,
-            modality: cameraStarted ? cameraModality : .none,
+            voice: nextVoice,
+            modality: nextModality,
             epoch: epoch,
-            permissions: permissions
+            permissions: permissions,
+            startedNewChannel: (addingVoice && voiceStarted) || (addingCamera && cameraStarted)
         )
     }
 
@@ -298,13 +370,20 @@ final class AwakeScrollController {
         voice: Bool,
         modality: AwakeScrollCameraModality,
         epoch: UInt64,
-        permissions: AwakeScrollPermissionSnapshot
+        permissions: AwakeScrollPermissionSnapshot,
+        startedNewChannel: Bool
     ) {
+        let wasRunning = channelsRunning
         channelsRunning = true
         runningVoice = voice
         runningModality = modality
         cameraModality = modality
-        channelStartCount += 1
-        onStartChannels?(epoch, permissions)
+        if startedNewChannel {
+            channelStartCount += 1
+            onStartChannels?(epoch, permissions)
+        } else if !wasRunning {
+            channelStartCount += 1
+            onStartChannels?(epoch, permissions)
+        }
     }
 }

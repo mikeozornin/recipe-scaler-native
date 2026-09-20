@@ -10,7 +10,6 @@ enum AwakeScrollLayout {
     static let bannerChannelIconSize: CGFloat = 16
     static let bannerChannelPulseScale: CGFloat = 1.8
     static let bannerChannelPulseDuration: TimeInterval = 0.5
-    static let bannerMaxExtraHeight: CGFloat = 4
     static let cameraPreviewDiameter: CGFloat = 48
     static let cameraPreviewTrailingPad: CGFloat = 16
     static let cameraPreviewBottomPad: CGFloat = 16
@@ -27,9 +26,7 @@ enum AwakeScrollLayout {
     static let helpTryHintHeight: CGFloat = 22
     static let helpGestureIconSize: CGFloat = 64
     static let helpGestureRowHeight: CGFloat = 96
-    static let helpDebugIconSize: CGFloat = 28
     static let helpDebugFiredDuration: TimeInterval = 0.8
-    static let cooldownFlashOpacity: CGFloat = 0.0
     static let bannerHandSymbol = "hand.thumbsdown.hand.thumbsup.filled"
     static let bannerHandFallbackSymbol = "hand.thumbsup.fill"
 }

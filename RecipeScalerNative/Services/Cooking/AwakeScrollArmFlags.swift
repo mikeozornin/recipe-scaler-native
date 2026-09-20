@@ -50,6 +50,8 @@ struct AwakeScrollPermissionSnapshot: Equatable, Sendable {
     var micDenied: Bool = false
     var speechDenied: Bool = false
     var cameraDenied: Bool = false
+    var speechRestricted: Bool = false
+    var cameraRestricted: Bool = false
 
     static let denied = AwakeScrollPermissionSnapshot(
         micGranted: false,
@@ -67,6 +69,9 @@ struct AwakeScrollPermissionSnapshot: Equatable, Sendable {
     )
 
     var voiceDenied: Bool { micDenied || speechDenied }
+    var voiceRestricted: Bool { speechRestricted }
+    var voiceBlocked: Bool { voiceDenied || voiceRestricted }
+    var cameraBlocked: Bool { cameraDenied || cameraRestricted }
     var showsOpenSettings: Bool { micDenied || cameraDenied || speechDenied }
 }
 
@@ -86,6 +91,17 @@ enum AwakeScrollVoiceChip: String, Equatable, CaseIterable, Sendable {
         case .down: "recipe.awake-scroll.help.chip.down"
         case .lower: "recipe.awake-scroll.help.chip.lower"
         case .scrollDown: "recipe.awake-scroll.help.chip.scroll-down"
+        }
+    }
+
+    var accessibilityToken: String {
+        switch self {
+        case .up: "up"
+        case .higher: "higher"
+        case .scrollUp: "scroll-up"
+        case .down: "down"
+        case .lower: "lower"
+        case .scrollDown: "scroll-down"
         }
     }
 

@@ -24,4 +24,13 @@ final class AwakeScrollVoiceEngineTests: XCTestCase {
         let error = NSError(domain: "kAFAssistantErrorDomain", code: 203)
         XCTAssertFalse(AwakeScrollVoiceEngine.isIgnorableRecognitionError(error))
     }
+
+    @MainActor
+    func test_rotate_without_session_is_noop() {
+        let engine = AwakeScrollVoiceEngine()
+        XCTAssertEqual(engine.audioEngineBuildCount, 0)
+        engine.rotateRecognitionForTesting()
+        XCTAssertEqual(engine.audioEngineBuildCount, 0)
+        XCTAssertEqual(engine.recognitionTaskCount, 0)
+    }
 }

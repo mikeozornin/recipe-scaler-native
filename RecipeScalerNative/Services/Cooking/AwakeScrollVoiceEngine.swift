@@ -64,6 +64,8 @@ final class AwakeScrollVoiceEngine {
     /// Bumped on every `stop` / new recognition task so cancelled-task
     /// callbacks cannot restart a freshly rebuilt session (same epoch).
     private var recognitionAttempt: UInt64 = 0
+    private(set) var audioEngineBuildCount = 0
+    private(set) var recognitionTaskCount = 0
     var now: () -> Date = { Date() }
 
     /// Errors that mean "this task was superseded", not "the session is sick".
@@ -130,6 +132,7 @@ final class AwakeScrollVoiceEngine {
         )
 
         let audioEngine = AVAudioEngine()
+        audioEngineBuildCount += 1
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
         request.requiresOnDeviceRecognition = true
@@ -148,8 +151,8 @@ final class AwakeScrollVoiceEngine {
 
         let input = audioEngine.inputNode
         let format = input.outputFormat(forBus: 0)
-        input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak request] buffer, _ in
-            request?.append(buffer)
+        input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak runtime] buffer, _ in
+            runtime?.request?.append(buffer)
         }
 
         audioEngine.prepare()
@@ -168,36 +171,75 @@ final class AwakeScrollVoiceEngine {
             ]
         )
 
-        let capturedEpoch = epoch
+        beginRecognitionTask(recognizer: recognizer, request: request, epoch: epoch)
+        scheduleRearm(epoch: epoch)
+        return true
+    }
+
+    private func beginRecognitionTask(
+        recognizer: SFSpeechRecognizer,
+        request: SFSpeechAudioBufferRecognitionRequest,
+        epoch: UInt64
+    ) {
         recognitionAttempt += 1
+        recognitionTaskCount += 1
         let attempt = recognitionAttempt
         runtime.task = recognizer.recognitionTask(with: request) { [weak self] result, error in
             Task { @MainActor in
                 guard let self,
-                      self.epoch == capturedEpoch,
+                      self.epoch == epoch,
                       self.recognitionAttempt == attempt else { return }
                 if let result {
                     self.considerTranscript(
                         result.bestTranscription.formattedString,
                         isFinal: result.isFinal,
-                        epoch: capturedEpoch
+                        epoch: epoch
                     )
                 }
                 if let error {
                     guard !Self.isIgnorableRecognitionError(error) else { return }
-                    self.scheduleRestartIfCurrent(epoch: capturedEpoch, error: error)
+                    self.scheduleRestartIfCurrent(epoch: epoch, error: error)
                 }
             }
         }
+    }
 
+    private func scheduleRearm(epoch: UInt64) {
         runtime.rearmTask?.cancel()
         runtime.rearmTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 55_000_000_000)
             guard !Task.isCancelled else { return }
             self?.restartDelay = 1.0
-            self?.restartIfCurrent(epoch: capturedEpoch)
+            self?.rotateRecognitionIfCurrent(epoch: epoch)
         }
-        return true
+    }
+
+    /// Planned 55s re-arm: rotate the Speech request/task only. Keep
+    /// `SFSpeechRecognizer`, `AVAudioEngine`, tap, and audio session.
+    func rotateRecognitionForTesting() {
+        rotateRecognitionIfCurrent(epoch: epoch)
+    }
+
+    private func rotateRecognitionIfCurrent(epoch: UInt64) {
+        guard self.epoch == epoch, onAction != nil else { return }
+        guard runtime.audioEngine?.isRunning == true,
+              let recognizer = runtime.recognizer
+        else {
+            restartIfCurrent(epoch: epoch)
+            return
+        }
+        recognitionAttempt += 1
+        runtime.task?.cancel()
+        runtime.request?.endAudio()
+        runtime.task = nil
+        runtime.request = nil
+
+        let request = SFSpeechAudioBufferRecognitionRequest()
+        request.shouldReportPartialResults = true
+        request.requiresOnDeviceRecognition = true
+        runtime.request = request
+        beginRecognitionTask(recognizer: recognizer, request: request, epoch: epoch)
+        scheduleRearm(epoch: epoch)
     }
 
     private func considerTranscript(_ transcript: String, isFinal: Bool, epoch: UInt64) {
@@ -215,7 +257,11 @@ final class AwakeScrollVoiceEngine {
         guard lastEmittedAction != action else { return }
         lastEmittedAction = action
         lastFireTokenCount = tokenCount
-        AppLog.debug(.gesture, "awake_scroll_voice_fired", data: ["phrase": normalized])
+        AppLog.debug(
+            .gesture,
+            "awake_scroll_voice_fired",
+            data: ["chip": AwakeScrollVoiceClassifier.chip(from: normalized)?.rawValue ?? ""]
+        )
         onAction?(action, epoch, normalized)
     }
 
@@ -226,7 +272,11 @@ final class AwakeScrollVoiceEngine {
         AppLog.debug(
             .gesture,
             "awake_scroll_speech_restart",
-            data: ["delayMs": String(Int(delay * 1000)), "error": error.localizedDescription]
+            data: [
+                "delayMs": String(Int(delay * 1000)),
+                "errorDomain": (error as NSError).domain,
+                "errorCode": String((error as NSError).code),
+            ]
         )
         runtime.restartBackoffTask?.cancel()
         runtime.restartBackoffTask = Task { @MainActor [weak self] in

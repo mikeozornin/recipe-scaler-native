@@ -13,7 +13,9 @@ enum AwakeScrollPermissions {
             cameraGranted: camera == .authorized,
             micDenied: mic == .denied,
             speechDenied: speech == .denied,
-            cameraDenied: camera == .denied
+            cameraDenied: camera == .denied,
+            speechRestricted: speech == .restricted,
+            cameraRestricted: camera == .restricted
         )
     }
 
@@ -26,10 +28,6 @@ enum AwakeScrollPermissions {
             await requestCamera()
         }
         return currentSnapshot()
-    }
-
-    static func request() async -> AwakeScrollPermissionSnapshot {
-        await request(voice: true, camera: true)
     }
 
     private static func requestMic() async {

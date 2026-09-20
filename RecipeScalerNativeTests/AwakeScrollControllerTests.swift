@@ -335,4 +335,103 @@ final class AwakeScrollControllerTests: XCTestCase {
         XCTAssertEqual(controller.channelStartCount, 1)
         XCTAssertEqual(controller.channelStopCount, 0)
     }
+
+    func test_voice_off_keeps_hand_camera() async {
+        let controller = makeController(
+            permissions: AwakeScrollPermissionSnapshot(
+                micGranted: true,
+                speechGranted: true,
+                cameraGranted: true
+            )
+        )
+        controller.prefersTrueDepthFace = { false }
+        var stopped = 0
+        controller.onStopChannels = { stopped += 1 }
+        controller.flags = armedFlags(voice: true, hand: true)
+        controller.syncArmState()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        let epoch = controller.sessionEpoch
+        XCTAssertEqual(controller.cameraModality, .hand)
+        XCTAssertEqual(controller.channelStartCount, 1)
+        controller.flags.voiceEnabled = false
+        controller.syncArmState()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertEqual(stopped, 0)
+        XCTAssertEqual(controller.channelStopCount, 0)
+        XCTAssertEqual(controller.cameraModality, .hand)
+        XCTAssertEqual(controller.sessionEpoch, epoch)
+        XCTAssertEqual(controller.channelStartCount, 1)
+    }
+
+    func test_locale_change_keeps_hand_camera() async {
+        let controller = makeController(
+            permissions: AwakeScrollPermissionSnapshot(
+                micGranted: true,
+                speechGranted: true,
+                cameraGranted: true
+            )
+        )
+        controller.prefersTrueDepthFace = { false }
+        var stopped = 0
+        controller.onStopChannels = { stopped += 1 }
+        controller.flags = armedFlags(voice: true, hand: true)
+        controller.syncArmState()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        let epoch = controller.sessionEpoch
+        controller.restartVoiceForLocaleChange()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertEqual(stopped, 0)
+        XCTAssertEqual(controller.cameraModality, .hand)
+        XCTAssertEqual(controller.sessionEpoch, epoch)
+        XCTAssertEqual(controller.channelStartCount, 2)
+    }
+
+    func test_restricted_speech_does_not_snap_voice_pref() async {
+        let controller = makeController(
+            permissions: AwakeScrollPermissionSnapshot(
+                micGranted: true,
+                speechGranted: false,
+                cameraGranted: false,
+                speechRestricted: true
+            )
+        )
+        controller.flags = armedFlags(voice: true)
+        controller.syncArmState()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertTrue(controller.flags.voiceEnabled)
+        XCTAssertEqual(controller.channelStartCount, 0)
+        XCTAssertFalse(controller.lastPermissions.showsOpenSettings)
+        XCTAssertTrue(controller.lastPermissions.voiceBlocked)
+    }
+
+    func test_awake_scroll_selectors_are_mirrored_in_ui_tests() throws {
+        let testsRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let selectors = try String(
+            contentsOf: testsRoot.appendingPathComponent("RecipeScalerNativeUITests/Helpers/Selectors.swift"),
+            encoding: .utf8
+        )
+        let ids = [
+            AccessibilityIdentifiers.screenAwakeBannerMenu,
+            AccessibilityIdentifiers.screenAwakeBannerIconVoice,
+            AccessibilityIdentifiers.screenAwakeBannerIconHand,
+            AccessibilityIdentifiers.screenAwakeBannerIconFace,
+            AccessibilityIdentifiers.screenAwakeVoiceToggle,
+            AccessibilityIdentifiers.screenAwakeHandToggle,
+            AccessibilityIdentifiers.screenAwakeFaceToggle,
+            AccessibilityIdentifiers.screenAwakeOpenSettings,
+            AccessibilityIdentifiers.screenAwakeHelpIconHandUp,
+            AccessibilityIdentifiers.screenAwakeHelpIconHandDown,
+            AccessibilityIdentifiers.screenAwakeHelpIconFaceUp,
+            AccessibilityIdentifiers.screenAwakeHelpIconFaceDown,
+        ]
+        for id in ids {
+            XCTAssertTrue(selectors.contains("\"\(id)\""), "missing UI-test mirror for \(id)")
+        }
+        XCTAssertTrue(
+            selectors.contains("screen_awake_help_chip_"),
+            "missing UI-test mirror for voice chips"
+        )
+    }
 }

@@ -11148,57 +11148,6 @@
         }
       }
     },
-    "recipe.awake-scroll.hands-free" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hands-free"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hands-free"
-          }
-        }
-      }
-    },
-    "recipe.awake-scroll.help" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "How it works"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Как это работает"
-          }
-        }
-      }
-    },
-    "recipe.awake-scroll.help.camera" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The front camera uses either face or hand, not both at once. TrueDepth phones use blinks; other phones use the hand pose."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фронтальная камера использует либо лицо, либо руку, не оба сразу. На TrueDepth — моргание, на остальных — жест руки."
-          }
-        }
-      }
-    },
     "recipe.awake-scroll.help.chip.down" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11369,40 +11318,6 @@
         }
       }
     },
-    "recipe.awake-scroll.help.face" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Face (TrueDepth): wink with your left eye to scroll up, right eye to scroll down."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Лицо (TrueDepth): моргните левым глазом — вверх, правым — вниз."
-          }
-        }
-      }
-    },
-    "recipe.awake-scroll.help.hand" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hand: hold a thumbs-up. Tip pointing up scrolls up; tip pointing down scrolls down. Left or right is ignored."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Рука: жест «лайк». Палец вверх — прокрутка вверх, палец вниз — вниз. Влево и вправо не считаются."
-          }
-        }
-      }
-    },
     "recipe.awake-scroll.help.icon.face" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11420,23 +11335,6 @@
         }
       }
     },
-    "recipe.awake-scroll.help.icon.face.xor" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Face unused on this phone; the hand pose is used instead"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Лицо на этом телефоне не используется — работает жест руки"
-          }
-        }
-      }
-    },
     "recipe.awake-scroll.help.icon.hand" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11450,23 +11348,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Рука"
-          }
-        }
-      }
-    },
-    "recipe.awake-scroll.help.icon.hand.xor" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hand unused on this phone; blinks are used instead"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Жест на этом телефоне не используется — работает моргание"
           }
         }
       }
@@ -11518,23 +11399,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть параметры"
-          }
-        }
-      }
-    },
-    "recipe.awake-scroll.help.permissions" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Microphone, speech recognition, and camera are requested only after you turn Hands-free on — not when you keep the screen awake."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Микрофон, распознавание речи и камера запрашиваются только после включения Hands-free, а не когда вы просто не гасите экран."
           }
         }
       }
@@ -11607,19 +11471,19 @@
         }
       }
     },
-    "recipe.awake-scroll.help.voice" : {
+    "recipe.awake-scroll.help.voice-listening" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Voice: say “down”, “scroll down”, “вниз”, or “прокрути вниз” to move down; “up”, “scroll up”, “вверх”, or “прокрути вверх” to move up. Each command moves about three-quarters of the screen."
+            "value" : "The microphone stays on while the voice channel is enabled"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Голос: «вниз», «прокрути вниз», down или scroll down — вниз; «вверх», «прокрути вверх», up или scroll up — вверх. Одна команда сдвигает примерно на три четверти экрана."
+            "value" : "Микрофон активен, пока включён голосовой канал"
           }
         }
       }

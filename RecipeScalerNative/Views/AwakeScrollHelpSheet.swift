@@ -38,22 +38,22 @@ struct AwakeScrollHelpSheet: View {
                     channelToggle(
                         titleKey: "recipe.awake-scroll.voice",
                         isOn: $voiceEnabled,
-                        denied: controller.lastPermissions.voiceDenied,
+                        denied: controller.lastPermissions.voiceBlocked,
                         deniedKey: voiceDeniedKey,
                         identifier: AccessibilityIdentifiers.screenAwakeVoiceToggle
                     )
-                    if voiceEnabled, !controller.lastPermissions.voiceDenied {
+                    if voiceEnabled, !controller.lastPermissions.voiceBlocked {
                         voiceLiveBlock
                     }
 
                     channelToggle(
                         titleKey: "recipe.awake-scroll.hand",
                         isOn: $handEnabled,
-                        denied: controller.lastPermissions.cameraDenied,
+                        denied: controller.lastPermissions.cameraBlocked,
                         deniedKey: "recipe.awake-scroll.help.denied.camera",
                         identifier: AccessibilityIdentifiers.screenAwakeHandToggle
                     )
-                    if handEnabled, !controller.lastPermissions.cameraDenied {
+                    if handEnabled, !controller.lastPermissions.cameraBlocked {
                         tryHint("recipe.awake-scroll.help.try-hand")
                         gestureIcons
                     }
@@ -62,11 +62,11 @@ struct AwakeScrollHelpSheet: View {
                         channelToggle(
                             titleKey: "recipe.awake-scroll.face",
                             isOn: $faceEnabled,
-                            denied: controller.lastPermissions.cameraDenied,
+                            denied: controller.lastPermissions.cameraBlocked,
                             deniedKey: "recipe.awake-scroll.help.denied.camera",
                             identifier: AccessibilityIdentifiers.screenAwakeFaceToggle
                         )
-                        if faceEnabled, !controller.lastPermissions.cameraDenied {
+                        if faceEnabled, !controller.lastPermissions.cameraBlocked {
                             tryHint("recipe.awake-scroll.help.try-face")
                             faceIcons
                         }
@@ -133,6 +133,10 @@ struct AwakeScrollHelpSheet: View {
     private var voiceLiveBlock: some View {
         VStack(alignment: .leading, spacing: AwakeScrollLayout.helpChipGap) {
             tryHint("recipe.awake-scroll.help.try-voice")
+            Text("recipe.awake-scroll.help.voice-listening")
+                .appFootnote()
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             TimelineView(.periodic(from: .now, by: 0.1)) { timeline in
                 AwakeScrollChipFlow(spacing: AwakeScrollLayout.helpChipGap) {
                     ForEach(AwakeScrollVoiceChip.allCases, id: \.self) { chip in
@@ -151,7 +155,7 @@ struct AwakeScrollHelpSheet: View {
             .frame(height: AwakeScrollLayout.helpChipHeight)
             .background(fired ? Color.green : Color.secondary.opacity(0.12), in: Capsule())
             .foregroundStyle(fired ? Color.white : Color.primary)
-            .accessibilityIdentifier(AccessibilityIdentifiers.screenAwakeHelpChip(chip.rawValue))
+            .accessibilityIdentifier(AccessibilityIdentifiers.screenAwakeHelpChip(chip.accessibilityToken))
     }
 
     private var gestureIcons: some View {

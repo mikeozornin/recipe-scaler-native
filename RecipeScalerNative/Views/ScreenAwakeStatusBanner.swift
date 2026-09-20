@@ -147,6 +147,11 @@ private struct ScreenAwakeBannerChannelIcon: View {
             guard newValue != nil else { return }
             bounce()
         }
+        .onAppear {
+            if let pulseAt, Date().timeIntervalSince(pulseAt) <= AwakeScrollLayout.bannerChannelPulseDuration {
+                bounce()
+            }
+        }
         .onDisappear {
             bounceTask?.cancel()
             bounceTask = nil

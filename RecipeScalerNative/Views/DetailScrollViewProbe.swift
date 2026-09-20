@@ -1,10 +1,6 @@
 import SwiftUI
 import UIKit
 
-final class DetailScrollViewProbeBox {
-    weak var host: UIScrollView?
-}
-
 struct DetailScrollViewProbe: UIViewRepresentable {
     let box: DetailScrollViewProbeBox
 

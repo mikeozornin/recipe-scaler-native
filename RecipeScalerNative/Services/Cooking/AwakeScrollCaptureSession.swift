@@ -52,8 +52,15 @@ final class AwakeScrollCaptureSession: NSObject {
     private var epoch: UInt64 = 0
     private var modality: AwakeScrollCameraModality = .none
     private var onAction: ((AwakeScrollAction, UInt64) -> Void)?
-    private var hold = AwakeScrollHoldGate()
-    private var blinkState = AwakeScrollBlinkState()
+    nonisolated(unsafe) private let classifierLock = NSLock()
+    nonisolated(unsafe) private var hold = AwakeScrollHoldGate()
+    nonisolated(unsafe) private var blinkState = AwakeScrollBlinkState()
+    nonisolated(unsafe) private var captureModality: AwakeScrollCameraModality = .none
+    nonisolated(unsafe) private let handPoseRequest: VNDetectHumanHandPoseRequest = {
+        let request = VNDetectHumanHandPoseRequest()
+        request.maximumHandCount = 1
+        return request
+    }()
     /// Vision hand-pose sampling interval: 15 fps end-to-end (N4 battery budget).
     static let handPoseSampleInterval: TimeInterval = 1.0 / 15.0
     /// ARKit delivers face anchors at ~60 Hz. 30 Hz keeps wink rising-edges
@@ -74,10 +81,13 @@ final class AwakeScrollCaptureSession: NSObject {
         stop()
         guard modality != .none else { return false }
         self.modality = modality
+        self.captureModality = modality
         self.epoch = epoch
         self.onAction = onAction
+        classifierLock.lock()
         hold.reset()
         blinkState = AwakeScrollBlinkState()
+        classifierLock.unlock()
         let started: Bool
         switch modality {
         case .face:
@@ -93,6 +103,7 @@ final class AwakeScrollCaptureSession: NSObject {
             runtime.tearDown()
             self.onAction = nil
             self.modality = .none
+            self.captureModality = .none
         }
         return started
     }
@@ -100,8 +111,11 @@ final class AwakeScrollCaptureSession: NSObject {
     func stop() {
         onAction = nil
         modality = .none
+        captureModality = .none
         runtime.tearDown()
+        classifierLock.lock()
         hold.reset()
+        classifierLock.unlock()
         visionThrottle.reset()
         faceThrottle.reset()
         setThermalThrottle(nil)
@@ -250,16 +264,22 @@ extension AwakeScrollCaptureSession: ARSessionDelegate {
             arkitRight: arkitRight
         )
         let now = Date()
-        Task { @MainActor in
-            guard self.modality == .face else { return }
-            if let action = AwakeScrollFaceClassifier.action(
+        classifierLock.lock()
+        let action: AwakeScrollAction?
+        if captureModality == .face {
+            action = AwakeScrollFaceClassifier.action(
                 leftBlink: blinks.left,
                 rightBlink: blinks.right,
-                state: &self.blinkState,
+                state: &blinkState,
                 now: now
-            ) {
-                self.emit(action)
-            }
+            )
+        } else {
+            action = nil
+        }
+        classifierLock.unlock()
+        guard let action else { return }
+        Task { @MainActor in
+            self.emit(action)
         }
     }
 }
@@ -274,14 +294,12 @@ extension AwakeScrollCaptureSession: AVCaptureVideoDataOutputSampleBufferDelegat
         let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer).seconds
         guard visionThrottle.shouldProcess(timestamp: timestamp) else { return }
 
-        let request = VNDetectHumanHandPoseRequest()
-        request.maximumHandCount = 1
         let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .leftMirrored)
-        try? handler.perform([request])
-        guard let observation = request.results?.first else {
-            Task { @MainActor in
-                _ = self.hold.sample(nil, now: Date())
-            }
+        try? handler.perform([handPoseRequest])
+        guard let observation = handPoseRequest.results?.first else {
+            classifierLock.lock()
+            _ = hold.sample(nil, now: Date())
+            classifierLock.unlock()
             return
         }
         let points = try? observation.recognizedPoints(.all)
@@ -297,13 +315,18 @@ extension AwakeScrollCaptureSession: AVCaptureVideoDataOutputSampleBufferDelegat
             baseConfidence: Float(cmc.confidence),
             wristConfidence: Float(wrist.confidence)
         )
+        let classified = AwakeScrollHandClassifier.action(from: sample)
+        classifierLock.lock()
+        let action: AwakeScrollAction?
+        if captureModality == .hand {
+            action = hold.sample(classified, now: Date())
+        } else {
+            action = nil
+        }
+        classifierLock.unlock()
+        guard let action else { return }
         Task { @MainActor in
-            guard self.modality == .hand else { return }
-            let now = Date()
-            let classified = AwakeScrollHandClassifier.action(from: sample)
-            if let action = self.hold.sample(classified, now: now) {
-                self.emit(action)
-            }
+            self.emit(action)
         }
     }
 }

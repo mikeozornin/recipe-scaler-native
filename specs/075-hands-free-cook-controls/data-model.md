@@ -70,14 +70,14 @@ enum AwakeScrollCameraModality: Equatable {
 | `speechGranted` | `SFSpeechRecognizer` auth |
 | `cameraGranted` | video |
 
-Denied канал просто не стартует. Snapshot пересчитывать после каждого request, при `scenePhase == .active` / `UIApplication.willEnterForeground` и при каждом `onAppear` help sheet. `showsOpenSettings` = micDenied \|\| cameraDenied \|\| speechDenied.
+Denied канал не стартует. `micDenied`/`speechDenied`/`cameraDenied` — только `.denied` (кнопка Settings). `.restricted` попадает в `speechRestricted`/`cameraRestricted`: тумблер disabled, **pref не snap-off**. Snapshot пересчитывать после каждого request, при `scenePhase == .active` / `UIApplication.willEnterForeground` и при каждом `onAppear` help sheet. `showsOpenSettings` = micDenied \|\| cameraDenied \|\| speechDenied.
 
 ## AwakeScrollSession (in-memory, controller)
 
 | Поле | Тип | Правила |
 |------|-----|---------|
 | `recipeId` | `String` | captured identity |
-| `sessionEpoch` | `UInt64` | ++ на любом teardown/start |
+| `sessionEpoch` | `UInt64` | ++ на полном teardown (все каналы idle); stop только speech при живой камере epoch не рвёт |
 | `voiceSessionId` | `UInt64` | ++ на каждом SF re-arm |
 | `isStarting` | `Bool` | single-flight; снять `defer` только если `startID` свой |
 | `startID` | `UInt64` | ++ на каждом `startIfNeeded` и `stop`; инвалидирует in-flight start |

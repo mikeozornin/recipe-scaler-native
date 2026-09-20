@@ -64,7 +64,7 @@
 | `recipe.awake-scroll.help.open-settings` | Открыть параметры |
 | `recipe.awake-scroll.menu` | a11y ellipsis |
 
-Устаревшие ключи rev 3 (`help.voice` длинный абзац, `help.camera` про auto-XOR, `hands-free` пункт меню) — не показывать в UI; удалять только отдельным i18n-таском, не в том же PR если lint требует наличие.
+Устаревшие ключи rev 3 (`help.voice`, `help.camera`, `hands-free` пункт меню) удалены из каталога; UI использует только ключи из таблицы выше плюс `recipe.awake-scroll.help.voice-listening`.
 
 ## Binding ownership
 
