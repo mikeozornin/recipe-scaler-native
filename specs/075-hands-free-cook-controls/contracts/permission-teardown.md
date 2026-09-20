@@ -25,7 +25,7 @@ en+ru в `InfoPlist.xcstrings`.
 
 ## Arm
 
-`start` только если F1.1 для этого канала. После permission await — re-check F1.1 и epoch. Denied → не start, pref false.
+`start` только если F1.1 для этого канала. После permission await — re-check F1.1 и epoch. Denied → не start, pref false. Отказ `start()` движка при живых грантах → тот же snap-off pref канала (не permission denial, но иначе post-start `syncArmState` бесконечно reconfigure).
 
 ## Teardown (идемпотентный `stop(reason:)`)
 

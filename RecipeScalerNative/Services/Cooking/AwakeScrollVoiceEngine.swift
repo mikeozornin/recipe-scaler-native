@@ -61,7 +61,22 @@ final class AwakeScrollVoiceEngine {
     private var lastEmittedAction: AwakeScrollAction?
     private var lastFireTokenCount = 0
     private var fireGate = AwakeScrollVoiceFireGate()
+    /// Bumped on every `stop` / new recognition task so cancelled-task
+    /// callbacks cannot restart a freshly rebuilt session (same epoch).
+    private var recognitionAttempt: UInt64 = 0
     var now: () -> Date = { Date() }
+
+    /// Errors that mean "this task was superseded", not "the session is sick".
+    nonisolated static func isIgnorableRecognitionError(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        let ns = error as NSError
+        if ns.domain == NSURLErrorDomain, ns.code == NSURLErrorCancelled { return true }
+        if ns.domain == NSCocoaErrorDomain, ns.code == NSUserCancelledError { return true }
+        // SFSpeechRecognitionTask.cancel() typically delivers
+        // `kAFAssistantErrorDomain` code 216.
+        if ns.domain == "kAFAssistantErrorDomain", ns.code == 216 { return true }
+        return false
+    }
 
     func start(
         epoch: UInt64,
@@ -86,6 +101,7 @@ final class AwakeScrollVoiceEngine {
     }
 
     func stop() {
+        recognitionAttempt += 1
         runtime.tearDown()
         onAction = nil
         lastEmittedAction = nil
@@ -153,9 +169,13 @@ final class AwakeScrollVoiceEngine {
         )
 
         let capturedEpoch = epoch
+        recognitionAttempt += 1
+        let attempt = recognitionAttempt
         runtime.task = recognizer.recognitionTask(with: request) { [weak self] result, error in
             Task { @MainActor in
-                guard let self, self.epoch == capturedEpoch else { return }
+                guard let self,
+                      self.epoch == capturedEpoch,
+                      self.recognitionAttempt == attempt else { return }
                 if let result {
                     self.considerTranscript(
                         result.bestTranscription.formattedString,
@@ -164,6 +184,7 @@ final class AwakeScrollVoiceEngine {
                     )
                 }
                 if let error {
+                    guard !Self.isIgnorableRecognitionError(error) else { return }
                     self.scheduleRestartIfCurrent(epoch: capturedEpoch, error: error)
                 }
             }

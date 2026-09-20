@@ -304,4 +304,35 @@ final class AwakeScrollControllerTests: XCTestCase {
         XCTAssertEqual(controller.channelStartCount, 1)
         XCTAssertEqual(controller.cameraModality, .hand)
     }
+
+    func test_partial_engine_start_failure_does_not_hot_loop() async {
+        let suite = UserDefaults(suiteName: "awake-partial-start-\(UUID().uuidString)")!
+        AwakeHandsFreeStorage.defaults = suite
+        defer { AwakeHandsFreeStorage.defaults = .standard }
+        suite.set(true, forKey: AwakeHandsFreeStorage.migrationKey)
+        AwakeHandsFreeStorage.voiceEnabled = true
+        AwakeHandsFreeStorage.setHandEnabled(true)
+
+        let controller = makeController(
+            permissions: AwakeScrollPermissionSnapshot(
+                micGranted: true,
+                speechGranted: true,
+                cameraGranted: true
+            )
+        )
+        controller.writesStorage = true
+        controller.prefersTrueDepthFace = { false }
+        controller.voiceStartResult = false
+        controller.cameraStartResult = true
+        controller.flags = armedFlags(voice: true, hand: true)
+        controller.syncArmState()
+        try? await Task.sleep(nanoseconds: 80_000_000)
+        XCTAssertEqual(controller.channelStartCount, 1)
+        XCTAssertFalse(controller.flags.voiceEnabled)
+        XCTAssertFalse(AwakeHandsFreeStorage.voiceEnabled)
+        XCTAssertEqual(controller.cameraModality, .hand)
+        try? await Task.sleep(nanoseconds: 150_000_000)
+        XCTAssertEqual(controller.channelStartCount, 1)
+        XCTAssertEqual(controller.channelStopCount, 0)
+    }
 }

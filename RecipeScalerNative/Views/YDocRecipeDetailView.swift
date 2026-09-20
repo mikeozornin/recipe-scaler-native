@@ -595,7 +595,16 @@ struct YDocRecipeDetailView: View {
         .onAppear {
             timerManager.setSuppressPanelSafeAreaInset(isEditing)
             awakeScrollController.flags.detailVisible = true
-            awakeScrollController.onChannelPrefsChanged = pullAwakeChannelBindingsFromStorage
+            // Capture Bindings only — capturing `self` / the view method would
+            // retain the `@State` box that owns the controller (cycle).
+            let voice = $awakeVoiceEnabled
+            let hand = $awakeHandEnabled
+            let face = $awakeFaceEnabled
+            awakeScrollController.onChannelPrefsChanged = {
+                voice.wrappedValue = AwakeHandsFreeStorage.voiceEnabled
+                hand.wrappedValue = AwakeHandsFreeStorage.handEnabled
+                face.wrappedValue = AwakeHandsFreeStorage.faceEnabled
+            }
             syncAwakeScrollArm()
         }
         .onReceive(
@@ -660,6 +669,7 @@ struct YDocRecipeDetailView: View {
             let sheetOverlay = showingAwakeScrollHelp
                 && awakeScrollController.probe.host?.window != nil
             if !sheetOverlay {
+                awakeScrollController.onChannelPrefsChanged = nil
                 awakeScrollController.flags.detailVisible = false
                 awakeScrollController.syncArmState()
             }

@@ -42,7 +42,7 @@ enum AwakeScrollAction: Equatable {
 | `awakeHandsFreeHandEnabled` | жесты |
 | `awakeHandsFreeFaceEnabled` | лицо |
 
-Писатели: тумблеры sheet; XOR (hand ON → face false и наоборот); snap-off при denied. Teardown awake **не** пишет false.
+Писатели: тумблеры sheet; XOR (hand ON → face false и наоборот); snap-off при denied **и при отказе старта движка канала** (нет on-device speech / камера недоступна — иначе `syncArmState` после partial commit крутит stop/start). Teardown awake **не** пишет false.
 
 Миграция один раз: если новых ключей ещё нет и `awakeHandsFreeEnabled == true` → voice=true и (TrueDepth → face, иначе hand). После миграции старый ключ не source of truth.
 

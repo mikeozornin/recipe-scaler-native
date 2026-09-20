@@ -32,6 +32,10 @@ final class AwakeScrollController {
     var onChannelPrefsChanged: (() -> Void)?
     var startsRealEngines = true
     var writesStorage = true
+    /// Test seams mirroring `startsRealEngines`: force a channel's engine
+    /// start result to simulate partial failures (reconfigure-loop tests).
+    var voiceStartResult: Bool?
+    var cameraStartResult: Bool?
 
     let probe = DetailScrollViewProbeBox()
     let voiceEngine = AwakeScrollVoiceEngine()
@@ -215,31 +219,20 @@ final class AwakeScrollController {
         let cameraModality: AwakeScrollCameraModality =
             permissions.cameraGranted ? wantModality : .none
         guard wantVoice || cameraModality != .none else { return }
-        guard startsRealEngines else {
-            commitRunning(
-                voice: wantVoice,
-                modality: cameraModality,
-                epoch: epoch,
-                permissions: permissions
-            )
-            return
-        }
         var voiceStarted = false
         if wantVoice {
-            voiceStarted = voiceEngine.start(
-                epoch: epoch,
-                locale: speechLocale()
-            ) { [weak self] action, voiceEpoch, phrase in
-                self?.handleAction(action, epoch: voiceEpoch, channel: .voice, phrase: phrase)
-            }
+            voiceStarted = startVoiceChannel(epoch: epoch)
         }
         var cameraStarted = false
         if cameraModality != .none {
-            let channel: AwakeScrollInputChannel = cameraModality == .face ? .face : .hand
-            cameraStarted = captureSession.start(modality: cameraModality, epoch: epoch) { [weak self] action, captureEpoch in
-                self?.handleAction(action, epoch: captureEpoch, channel: channel)
-            }
+            cameraStarted = startCameraChannel(modality: cameraModality, epoch: epoch)
         }
+        applyEngineStartFailureSnapOff(
+            wantVoice: wantVoice,
+            voiceStarted: voiceStarted,
+            requestedModality: cameraModality,
+            cameraStarted: cameraStarted
+        )
         guard voiceStarted || cameraStarted else { return }
         commitRunning(
             voice: voiceStarted,
@@ -247,6 +240,58 @@ final class AwakeScrollController {
             epoch: epoch,
             permissions: permissions
         )
+    }
+
+    private func startVoiceChannel(epoch: UInt64) -> Bool {
+        if let voiceStartResult { return voiceStartResult }
+        guard startsRealEngines else { return true }
+        return voiceEngine.start(
+            epoch: epoch,
+            locale: speechLocale()
+        ) { [weak self] action, voiceEpoch, phrase in
+            self?.handleAction(action, epoch: voiceEpoch, channel: .voice, phrase: phrase)
+        }
+    }
+
+    private func startCameraChannel(
+        modality: AwakeScrollCameraModality,
+        epoch: UInt64
+    ) -> Bool {
+        if let cameraStartResult { return cameraStartResult }
+        guard startsRealEngines else { return true }
+        let channel: AwakeScrollInputChannel = modality == .face ? .face : .hand
+        return captureSession.start(modality: modality, epoch: epoch) { [weak self] action, captureEpoch in
+            self?.handleAction(action, epoch: captureEpoch, channel: channel)
+        }
+    }
+
+    /// Engine-start failure is not a permission denial, so `applyDeniedSnapOff`
+    /// cannot break the post-start `syncArmState` loop. Snap the failed channel
+    /// off so `running*` matches `want*` on the trailing re-sync.
+    private func applyEngineStartFailureSnapOff(
+        wantVoice: Bool,
+        voiceStarted: Bool,
+        requestedModality: AwakeScrollCameraModality,
+        cameraStarted: Bool
+    ) {
+        var changed = false
+        if wantVoice, !voiceStarted {
+            flags.voiceEnabled = false
+            if writesStorage { AwakeHandsFreeStorage.voiceEnabled = false }
+            changed = true
+        }
+        if requestedModality != .none, !cameraStarted {
+            flags.handEnabled = false
+            flags.faceEnabled = false
+            if writesStorage {
+                AwakeHandsFreeStorage.setHandEnabled(false)
+                AwakeHandsFreeStorage.setFaceEnabled(false)
+            }
+            changed = true
+        }
+        if changed {
+            onChannelPrefsChanged?()
+        }
     }
 
     private func commitRunning(
