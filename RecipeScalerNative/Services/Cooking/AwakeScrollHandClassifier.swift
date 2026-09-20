@@ -16,7 +16,9 @@ struct AwakeScrollHoldGate {
     private var since: Date?
     private var didFire = false
 
-    init(holdDuration: TimeInterval = 0.2) {
+    /// 0.25 s ≈ 4 consecutive samples at the 15 fps battery budget — one
+    /// sample more than the previous 0.2 s required at 20 fps.
+    init(holdDuration: TimeInterval = 0.25) {
         self.holdDuration = holdDuration
     }
 

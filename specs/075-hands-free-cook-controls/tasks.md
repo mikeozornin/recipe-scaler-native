@@ -95,6 +95,13 @@
 
 **Checkpoint**: TrueDepth устройства не должны включать Hand одновременно с Face.
 
+### Performance follow-up (audit 2026-09-19)
+
+- [ ] T061 Battery: sensor frame rate 15 fps (`activeVideoMin/MaxFrameDuration`), Vision throttle 15 fps base (было 30 fps сенсор / 20 fps Vision), hold-gate 250 ms
+- [ ] T062 Thermal: `thermalStateDidChange` → 6 fps sampling (Vision + face anchors + sensor) при `.serious`/`.critical`, возврат 15 fps; spec N7
+- [ ] T063 Voice: убрать per-partial лог (`awake_scroll_voice_phrase`), оставить fired-only + один mode-breadcrumb на сессию; error-restart backoff 1→30 s
+- [ ] T064 Face: троттлинг ARKit-анкеров до MainActor-hop (15 fps base / 6 fps thermal)
+
 ## Phase 6: US3 — Лицо (P2)
 
 **Goal**: TrueDepth → blink left/up, right/down.  
@@ -213,6 +220,7 @@ i18n и accessibility ids — параллельно layout tokens.
 - [x] T066 [US5] Request permissions per channel; snap-off+disable; Settings button per `contracts/permission-teardown.md`
 - [x] T067 `bash scripts/audit-ui-layout.sh specs/075-hands-free-cook-controls`
 - [x] T068 `bash scripts/lint-i18n.sh` + `xcodebuild` build + unit `AwakeScroll*`
+- [x] T069 Review-fixes: 100 ms both-eyes pending, voice exact/final-or-stable, teardown window+runtime deinit, F8.3 refresh, speechDenied Settings, startID, on-device STT, start success flags
 
 **Checkpoint**: quickstart rev 4. Human layout-acceptance до VERIFIED.
 

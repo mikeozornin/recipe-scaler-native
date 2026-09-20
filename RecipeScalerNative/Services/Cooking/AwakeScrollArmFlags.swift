@@ -67,28 +67,32 @@ struct AwakeScrollPermissionSnapshot: Equatable, Sendable {
     )
 
     var voiceDenied: Bool { micDenied || speechDenied }
-    var showsOpenSettings: Bool { micDenied || cameraDenied }
+    var showsOpenSettings: Bool { micDenied || cameraDenied || speechDenied }
 }
 
 enum AwakeScrollVoiceChip: String, Equatable, CaseIterable, Sendable {
     case up
+    case higher
     case scrollUp
     case down
+    case lower
     case scrollDown
 
     var localizationKey: String {
         switch self {
         case .up: "recipe.awake-scroll.help.chip.up"
+        case .higher: "recipe.awake-scroll.help.chip.higher"
         case .scrollUp: "recipe.awake-scroll.help.chip.scroll-up"
         case .down: "recipe.awake-scroll.help.chip.down"
+        case .lower: "recipe.awake-scroll.help.chip.lower"
         case .scrollDown: "recipe.awake-scroll.help.chip.scroll-down"
         }
     }
 
     var action: AwakeScrollAction {
         switch self {
-        case .up, .scrollUp: .up
-        case .down, .scrollDown: .down
+        case .up, .higher, .scrollUp: .up
+        case .down, .lower, .scrollDown: .down
         }
     }
 }

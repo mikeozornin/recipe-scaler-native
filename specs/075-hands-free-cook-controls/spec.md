@@ -179,12 +179,12 @@ Sheet открыт, канал armed. Распознанная фраза под
 - **F8.1.** Структура сверху вниз:
   1. Intro: не касаться экрана грязными руками — голос или камера.
   2. Energy hint с glyph тумблера: включать только то, чем будешь пользоваться.
-  3. Тумблер «Голосовое управление». Если ON и permission ok — блок «Попробуйте сказать» + чипы фраз текущей UI-локали (RU: «вверх», «прокрути вверх», «вниз», «прокрути вниз»; EN: «up», «scroll up», «down», «scroll down»). Classifier по-прежнему принимает **оба** языка.
+  3. Тумблер «Голосовое управление». Если ON и permission ok — блок «Попробуйте сказать» + чипы фраз текущей UI-локали (RU: «вверх», «выше», «прокрути вверх», «вниз», «ниже», «прокрути вниз»; EN: «up», «higher», «scroll up», «down», «lower», «scroll down»). Classifier по-прежнему принимает **оба** языка.
   4. Тумблер «Управление жестами». Если ON и camera ok — «Попробуйте показать…» + две иконки (thumbs up / thumbs down).
   5. Тумблер «Управление лицом» — **только если TrueDepth available**. Если ON и camera ok — «Попробуйте поморгать…» + два глаза.
-  6. Если нет хотя бы одного нужного permission (mic denied при попытке голоса и/или camera denied при попытке жестов/лица) — кнопка «Открыть параметры» (`UIApplication.openSettingsURLString`).
+  6. Если нет хотя бы одного нужного permission (mic/speech denied при попытке голоса и/или camera denied при попытке жестов/лица) — кнопка «Открыть параметры» (`UIApplication.openSettingsURLString`).
 - **F8.2.** Live-реакция (вторая строка макета): idle-чип/иконка нейтральные; при fire канала соответствующий чип или иконка меняет цвет на акцентный (зелёный макета) на `helpDebugFiredDuration` (~0.8 s), затем idle. Неподсвеченные соседи не меняются.
-- **F8.3.** Denied (третья строка): после отказа permission pref канала = false (snap-off). Тумблер **disabled**, пока permission этого канала denied (Figma `404:4092` `isEnabled=False`). Оранжевая подпись остаётся. После grant в Settings тумблер снова enabled и OFF — пользователь включает сам. Кнопка параметров — если **хотя бы одно** из {mic, camera} denied (не undetermined). Undetermined без запроса — кнопки нет, подписей denied нет.
+- **F8.3.** Denied (третья строка): после отказа permission pref канала = false (snap-off). Тумблер **disabled**, пока permission этого канала denied (Figma `404:4092` `isEnabled=False`). Оранжевая подпись остаётся. После grant в Settings тумблер снова enabled и OFF — пользователь включает сам. Кнопка параметров — если **хотя бы одно** из {mic, camera, speech} denied (не undetermined). Undetermined без запроса — кнопки нет, подписей denied нет.
 - **F8.4.** Sheet не teardown'ит armed каналы: пользователь проверяет жесты/фразы, пока sheet открыт.
 - **F8.5.** Типографика: `.appBody()` / `.appFootnote()` / существующие toolbar text styles. Запрет `.font(.system` и SF из UI Kit макета.
 - **F8.6.** Dismiss: системный grabber / swipe. Кнопки Close нет. Заголовок sheet — в контенте, с переносом, без обрезки.
@@ -211,20 +211,20 @@ enum AwakeScrollAction: Equatable {
 - **F3.2.** Classifier whitelist — [contracts/voice-whitelist.md](./contracts/voice-whitelist.md).
 - **F3.3.** Partial results не fire; только final (или debounce stable partial ≥ N ms, N в data-model).
 - **F3.4.** 60s re-arm как идея 056.
-- **F3.5.** Live на sheet: fire `.up`/`.down` подсвечивает чип той фразы, которая совпала (если совпала EN-фраза при RU UI — подсветить смысловой близнец: `up` → «вверх», `scroll up` → «прокрути вверх», и наоборот).
+- **F3.5.** Live на sheet: fire `.up`/`.down` подсвечивает чип той фразы, которая совпала (если совпала EN-фраза при RU UI — подсветить смысловой близнец: `up` → «вверх», `higher` → «выше», `scroll up` → «прокрути вверх», и наоборот).
 - **F3.6.** Локаль `SFSpeechRecognizer` = язык приложения (`en` → `en_US`, `ru` → `ru_RU`). Чипы на sheet следуют UI-локали; whitelist по-прежнему принимает оба языка. Смена языка при armed voice → re-arm STT.
 
 #### F4. Hand (Vision)
 
 - **F4.1.** `VNDetectHumanHandPoseRequest`, front camera, max 1 hand.
 - **F4.2.** Pose thumbs-up; сектор по углу большого пальца — [contracts/gesture-mapping.md](./contracts/gesture-mapping.md).
-- **F4.3.** Hold ~200 ms, fire once, cooldown.
+- **F4.3.** Hold ~250 ms, fire once, cooldown.
 - **F4.4.** Используется iff F1.1 для hand-канала (pref ON, camera granted, Face pref OFF из-за XOR).
 - **F4.5.** Live: `.up` → thumbs-up icon accent; `.down` → thumbs-down icon accent.
 
 #### F5. Face (ARKit)
 
-- **F5.1.** Если TrueDepth: `eyeBlinkLeft` (мой левый) → `.up`, `eyeBlinkRight` (мой правый) → `.down` (edge + debounce). На sheet: слева вверх, справа вниз.
+- **F5.1.** Если TrueDepth: **мой** левый глаз → `.up`, мой правый → `.down` (edge + debounce). ARKit `eyeBlinkLeft`/`Right` на `.userFacing` зеркальны — un-mirror до классификатора. На sheet: слева вверх, справа вниз.
 - **F5.2.** `jawOpen` в v1 **не** используем.
 - **F5.3.** Используется iff F1.1 для face-канала AND TrueDepth available.
 - **F5.4.** Live: `.up` → левый глаз accent; `.down` → правый глаз accent.
@@ -251,9 +251,10 @@ enum AwakeScrollAction: Equatable {
 - N1. On-device STT default.
 - N2. Swift 6; Vision off MainActor.
 - N3. Не регрессить обычный scroll жестом пальца и keep-awake без каналов.
-- N4. Battery: ≤15–20 fps hand pose; stop when not armed. Не держать камеру, если оба камерных тумблера OFF.
+- N4. Battery: ≤15 fps hand pose; stop when not armed. Не держать камеру, если оба камерных тумблера OFF.
 - N5. Controller view-local у `YDocRecipeDetailView`, не `AppContainer` / не `.shared`.
 - N6. Sheet и баннер — проектный шрифт, не SF UI Kit.
+- N7. Thermal response: при `thermalState` `.serious`/`.critical` камерная семплинг-частота падает до 6 fps (и Vision, и ARKit-face), при возврате к `.nominal`/`.fair` — обратно 15 fps. Voice-канал не трогать.
 
 ---
 
@@ -263,7 +264,7 @@ enum AwakeScrollAction: Equatable {
 2. Тумблер при denied **snap-off** (pref false) и **disabled**, как кадр `404:4092`. Оранжевая подпись остаётся. После Settings пользователь включает канал снова.
 3. На устройстве без TrueDepth тумблер «Управление лицом» **скрыт**. Жесты — единственный камерный канал.
 4. Чипы фраз на sheet — только текущая UI-локаль; whitelist классификатора по-прежнему RU+EN.
-5. «Открыть параметры» смотрит на фактический status mic/camera (denied), а не на то, какие тумблеры сейчас ON. Если mic denied и camera granted — кнопка всё равно видна.
+5. «Открыть параметры» смотрит на фактический status mic/camera/speech (denied), а не на то, какие тумблеры сейчас ON. Если mic denied и camera granted — кнопка всё равно видна. То же для speech denied при granted mic.
 6. Иконки в баннере завязаны на **pref ON**. После snap-off из-за denied иконка канала из баннера пропадает.
 7. Миграция `awakeHandsFreeEnabled` (F1.9) нужна, чтобы уже включенный в rev 3 Hands-free не исчез молча.
 

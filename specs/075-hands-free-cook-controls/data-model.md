@@ -70,7 +70,7 @@ enum AwakeScrollCameraModality: Equatable {
 | `speechGranted` | `SFSpeechRecognizer` auth |
 | `cameraGranted` | video |
 
-Denied канал просто не стартует. Snapshot пересчитывать после каждого request и при `UIApplication.willEnterForeground` если F1.1.
+Denied канал просто не стартует. Snapshot пересчитывать после каждого request, при `scenePhase == .active` / `UIApplication.willEnterForeground` и при каждом `onAppear` help sheet. `showsOpenSettings` = micDenied \|\| cameraDenied \|\| speechDenied.
 
 ## AwakeScrollSession (in-memory, controller)
 
@@ -79,7 +79,8 @@ Denied канал просто не стартует. Snapshot пересчит�
 | `recipeId` | `String` | captured identity |
 | `sessionEpoch` | `UInt64` | ++ на любом teardown/start |
 | `voiceSessionId` | `UInt64` | ++ на каждом SF re-arm |
-| `isStarting` | `Bool` | single-flight; снять `defer` |
+| `isStarting` | `Bool` | single-flight; снять `defer` только если `startID` свой |
+| `startID` | `UInt64` | ++ на каждом `startIfNeeded` и `stop`; инвалидирует in-flight start |
 | `cooldownUntil` | `Date?` | 0.6 s default после fire (допуск 0.5…0.8) |
 | `cameraModality` | `AwakeScrollCameraModality` | |
 | `permissions` | `AwakeScrollPermissionSnapshot` | |
@@ -97,13 +98,13 @@ Denied канал просто не стартует. Snapshot пересчит�
 
 ## Hand pose input
 
-Нормализованные точки Vision (после зеркала preview, если применяем): thumbTip, thumbCMC (base). Hold 200 ms в том же секторе → один fire.
+Нормализованные точки Vision (после зеркала preview, если применяем): thumbTip, thumbCMC (base). Hold 250 ms в том же секторе → один fire.
 
 Секторы: [contracts/gesture-mapping.md](./contracts/gesture-mapping.md).
 
 ## Face blink input
 
-`eyeBlinkLeft` / `eyeBlinkRight` blend shapes 0…1. Edge: переход через порог (канон 0.6) из ниже порога. Одновременный double-blink → ignore (не два action).
+ARKit `.userFacing` отдаёт `eyeBlinkLeft` как глаз слева в кадре (= мой правый). Перед классификатором un-mirror: user-left = ARKit right. Дальше коэффициенты 0…1 анатомически (мой левый / мой правый). Edge: переход через порог 0.6 из ниже порога. Если второй глаз явно открыт (`< 0.35`) — сразу `.up`/`.down` (подмигивание). Если второй глаз уже прикрыт — pending 100 ms: второй rising edge в окне → ignore (естественный блинк), иначе fire.
 
 ## Arm predicate (F1.1) per channel
 

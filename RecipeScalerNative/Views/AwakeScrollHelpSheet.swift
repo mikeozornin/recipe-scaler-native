@@ -39,7 +39,7 @@ struct AwakeScrollHelpSheet: View {
                         titleKey: "recipe.awake-scroll.voice",
                         isOn: $voiceEnabled,
                         denied: controller.lastPermissions.voiceDenied,
-                        deniedKey: "recipe.awake-scroll.help.denied.mic",
+                        deniedKey: voiceDeniedKey,
                         identifier: AccessibilityIdentifiers.screenAwakeVoiceToggle
                     )
                     if voiceEnabled, !controller.lastPermissions.voiceDenied {
@@ -93,10 +93,16 @@ struct AwakeScrollHelpSheet: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .onAppear {
-                if controller.lastPermissions == .unknown {
-                    controller.refreshPermissions()
-                }
+                controller.refreshPermissions()
             }
+        }
+    }
+
+    private var voiceDeniedKey: LocalizedStringKey {
+        if controller.lastPermissions.speechDenied, !controller.lastPermissions.micDenied {
+            "recipe.awake-scroll.help.denied.speech"
+        } else {
+            "recipe.awake-scroll.help.denied.mic"
         }
     }
 

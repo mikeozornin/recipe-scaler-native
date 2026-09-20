@@ -41,6 +41,7 @@ final class AwakeScrollController {
     private var channelsRunning = false
     private var runningVoice = false
     private var runningModality: AwakeScrollCameraModality = .none
+    private var startID: UInt64 = 0
 
     var showsFaceChannel: Bool { prefersTrueDepthFace() }
 
@@ -144,6 +145,7 @@ final class AwakeScrollController {
 
     func stop(reason: String) {
         sessionEpoch += 1
+        startID += 1
         isStarting = false
         cooldownUntil = nil
         cameraModality = .none
@@ -163,17 +165,26 @@ final class AwakeScrollController {
         let wantModality = flags.desiredCameraModality(trueDepthAvailable: prefersTrueDepthFace())
         guard wantVoice || wantModality != .none, !channelsRunning, !isStarting else { return }
         isStarting = true
+        startID += 1
+        let thisStart = startID
         let epoch = sessionEpoch
         let requestVoice = wantVoice
         let requestCamera = wantModality != .none
         Task { @MainActor in
-            defer { isStarting = false }
+            defer {
+                if startID == thisStart {
+                    isStarting = false
+                }
+            }
             let permissions = await permissionRequester(requestVoice, requestCamera)
-            guard epoch == sessionEpoch else { return }
+            guard epoch == sessionEpoch, startID == thisStart else { return }
             lastPermissions = permissions
             applyDeniedSnapOff(permissions)
             guard flags.isArmed else { return }
             beginChannels(epoch: epoch, permissions: permissions)
+            if channelsRunning {
+                syncArmState()
+            }
         }
     }
 
@@ -204,23 +215,51 @@ final class AwakeScrollController {
         let cameraModality: AwakeScrollCameraModality =
             permissions.cameraGranted ? wantModality : .none
         guard wantVoice || cameraModality != .none else { return }
-        channelsRunning = true
-        runningVoice = wantVoice
-        runningModality = cameraModality
-        self.cameraModality = cameraModality
-        channelStartCount += 1
-        onStartChannels?(epoch, permissions)
-        guard startsRealEngines else { return }
+        guard startsRealEngines else {
+            commitRunning(
+                voice: wantVoice,
+                modality: cameraModality,
+                epoch: epoch,
+                permissions: permissions
+            )
+            return
+        }
+        var voiceStarted = false
         if wantVoice {
-            voiceEngine.start(epoch: epoch, locale: speechLocale()) { [weak self] action, voiceEpoch, phrase in
+            voiceStarted = voiceEngine.start(
+                epoch: epoch,
+                locale: speechLocale()
+            ) { [weak self] action, voiceEpoch, phrase in
                 self?.handleAction(action, epoch: voiceEpoch, channel: .voice, phrase: phrase)
             }
         }
+        var cameraStarted = false
         if cameraModality != .none {
             let channel: AwakeScrollInputChannel = cameraModality == .face ? .face : .hand
-            captureSession.start(modality: cameraModality, epoch: epoch) { [weak self] action, captureEpoch in
+            cameraStarted = captureSession.start(modality: cameraModality, epoch: epoch) { [weak self] action, captureEpoch in
                 self?.handleAction(action, epoch: captureEpoch, channel: channel)
             }
         }
+        guard voiceStarted || cameraStarted else { return }
+        commitRunning(
+            voice: voiceStarted,
+            modality: cameraStarted ? cameraModality : .none,
+            epoch: epoch,
+            permissions: permissions
+        )
+    }
+
+    private func commitRunning(
+        voice: Bool,
+        modality: AwakeScrollCameraModality,
+        epoch: UInt64,
+        permissions: AwakeScrollPermissionSnapshot
+    ) {
+        channelsRunning = true
+        runningVoice = voice
+        runningModality = modality
+        cameraModality = modality
+        channelStartCount += 1
+        onStartChannels?(epoch, permissions)
     }
 }

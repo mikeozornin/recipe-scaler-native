@@ -6,7 +6,7 @@
 ## Hand (Vision)
 
 - Request: `VNDetectHumanHandPoseRequest`, `maximumHandCount = 1`, front camera.
-- FPS ≤ 20.
+- FPS ≤ 15 (база N4; 6 fps при thermal `.serious`/`.critical` — N7).
 - Joints: thumb tip vs thumb CMC (base). Если joint confidence < 0.3 → ignore.
 - Thumbs-up gate: большой палец разогнут относительно кулака (tip дальше от wrist чем CMC по оси пальца). Если не thumbs-up → ignore (не маппить open palm).
 - Сектор:
@@ -14,14 +14,15 @@
   - `tip.y > base.y + deadZone` → `.down`.
   - иначе dead-zone (влево/вправо) → ignore.
 - `deadZone`: 0.08 в нормализованных координатах vision (подкрутить только тестом, одно место).
-- Hold 200 ms в том же секторе → один `.up`/`.down`, затем cooldown сессии.
+- Hold 250 ms в том же секторе → один `.up`/`.down`, затем cooldown сессии.
 - Mirror: классифицировать в координатах, согласованных с тем, что видит пользователь в preview; не путать yaw с pitch.
 
 ## Face (ARKit)
 
 - Только если TrueDepth (`ARFaceTrackingConfiguration.isSupported`).
-- `eyeBlinkLeft` rising edge ≥ 0.6 → `.up`.
-- `eyeBlinkRight` rising edge ≥ 0.6 → `.down`.
+- На фронтальной камере ARKit зеркалит имена: `eyeBlinkLeft` = глаз слева в кадре = **мой правый**. Перед классификатором свапать: user-left = ARKit right, user-right = ARKit left.
+- Мой левый (после un-mirror) rising edge ≥ 0.6 → `.up`.
+- Мой правый rising edge ≥ 0.6 → `.down`.
 - Live-иконки на sheet: слева up (левый глаз), справа down (правый глаз).
 - Оба глаза за один кадр / 100 ms → ignore.
 - `jawOpen` игнорировать.

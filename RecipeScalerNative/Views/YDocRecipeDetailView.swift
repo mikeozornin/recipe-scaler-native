@@ -648,6 +648,7 @@ struct YDocRecipeDetailView: View {
                 deactivateScreenAwake()
             case .active:
                 // Control Center / notification shade is `.inactive`, not `.background`.
+                awakeScrollController.refreshPermissions()
                 if isScreenAwakeActive {
                     ScreenAwakeController.setActive(true)
                 }
@@ -656,13 +657,18 @@ struct YDocRecipeDetailView: View {
             }
         }
         .onDisappear {
-            if showingAwakeScrollHelp { return }
+            let sheetOverlay = showingAwakeScrollHelp
+                && awakeScrollController.probe.host?.window != nil
+            if !sheetOverlay {
+                awakeScrollController.flags.detailVisible = false
+                awakeScrollController.syncArmState()
+            }
             timerManager.setSuppressPanelSafeAreaInset(false)
-            awakeScrollController.flags.detailVisible = false
-            awakeScrollController.syncArmState()
             guard !assistantRecipeContext.isAssistantSheetOpen else { return }
             assistantRecipeContext.clearVisibleRecipeId(recipeId)
-            deactivateScreenAwake()
+            if !sheetOverlay {
+                deactivateScreenAwake()
+            }
         }
         .task(id: recipeId) {
             deactivateScreenAwake()

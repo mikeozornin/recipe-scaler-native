@@ -41,7 +41,7 @@ struct AwakeScrollChromeModifier: ViewModifier {
                     handEnabled: $handEnabled,
                     faceEnabled: $faceEnabled
                 )
-                .presentationDetents([.large])
+                .appOpaqueSheetPresentationPlain(detents: [.large])
             }
             .onChange(of: isScreenAwakeActive) { _, active in
                 ScreenAwakeController.setActive(active)

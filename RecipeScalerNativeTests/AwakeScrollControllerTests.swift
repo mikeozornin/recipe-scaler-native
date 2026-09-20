@@ -258,4 +258,50 @@ final class AwakeScrollControllerTests: XCTestCase {
         XCTAssertEqual(stopped, 1)
         XCTAssertEqual(started, 2)
     }
+
+    func test_granted_snapshot_after_denied_reenables_toggles() {
+        let controller = makeController()
+        controller.applyPermissionSnapshot(.denied)
+        XCTAssertTrue(controller.lastPermissions.voiceDenied)
+        XCTAssertTrue(controller.lastPermissions.showsOpenSettings)
+        controller.applyPermissionSnapshot(
+            AwakeScrollPermissionSnapshot(
+                micGranted: true,
+                speechGranted: true,
+                cameraGranted: true
+            )
+        )
+        XCTAssertFalse(controller.lastPermissions.voiceDenied)
+        XCTAssertFalse(controller.lastPermissions.showsOpenSettings)
+    }
+
+    func test_shows_open_settings_includes_speech_denied() {
+        let snapshot = AwakeScrollPermissionSnapshot(
+            micGranted: true,
+            speechGranted: false,
+            cameraGranted: true,
+            speechDenied: true
+        )
+        XCTAssertTrue(snapshot.voiceDenied)
+        XCTAssertTrue(snapshot.showsOpenSettings)
+    }
+
+    func test_reconfigure_during_in_flight_start() async {
+        let controller = makeController()
+        controller.prefersTrueDepthFace = { false }
+        controller.permissionRequester = { _, _ in
+            try? await Task.sleep(nanoseconds: 80_000_000)
+            return AwakeScrollPermissionSnapshot(
+                micGranted: true,
+                speechGranted: true,
+                cameraGranted: true
+            )
+        }
+        controller.flags = armedFlags(voice: true, hand: false)
+        controller.syncArmState()
+        controller.flags.handEnabled = true
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertEqual(controller.channelStartCount, 1)
+        XCTAssertEqual(controller.cameraModality, .hand)
+    }
 }

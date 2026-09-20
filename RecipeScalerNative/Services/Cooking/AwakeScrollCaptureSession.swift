@@ -2,8 +2,44 @@ import ARKit
 import AVFoundation
 import CoreMedia
 import Foundation
+import QuartzCore
 import UIKit
 import Vision
+
+/// Non-MainActor owner so `deinit` stops camera/AR without a MainActor hop
+/// onto a freed `AwakeScrollCaptureSession`.
+final class AwakeScrollCaptureRuntime {
+    var capture: AVCaptureSession?
+    var arSession: ARSession?
+    var thermalObserver: NSObjectProtocol?
+    let visionQueue: DispatchQueue
+
+    init(visionQueue: DispatchQueue) {
+        self.visionQueue = visionQueue
+    }
+
+    deinit {
+        tearDown()
+    }
+
+    func tearDown() {
+        if let thermalObserver {
+            NotificationCenter.default.removeObserver(thermalObserver)
+        }
+        thermalObserver = nil
+        arSession?.delegate = nil
+        arSession?.pause()
+        arSession = nil
+        if let capture {
+            visionQueue.async {
+                if capture.isRunning {
+                    capture.stopRunning()
+                }
+            }
+        }
+        capture = nil
+    }
+}
 
 @MainActor
 final class AwakeScrollCaptureSession: NSObject {
@@ -11,85 +47,192 @@ final class AwakeScrollCaptureSession: NSObject {
         ARFaceTrackingConfiguration.isSupported
     }
 
-    private var capture: AVCaptureSession?
-    private var arSession: ARSession?
+    private let visionQueue = DispatchQueue(label: "ru.recipescaler.awake-scroll.vision")
+    private lazy var runtime = AwakeScrollCaptureRuntime(visionQueue: visionQueue)
     private var epoch: UInt64 = 0
     private var modality: AwakeScrollCameraModality = .none
     private var onAction: ((AwakeScrollAction, UInt64) -> Void)?
     private var hold = AwakeScrollHoldGate()
     private var blinkState = AwakeScrollBlinkState()
-    private let visionQueue = DispatchQueue(label: "ru.recipescaler.awake-scroll.vision")
-    nonisolated(unsafe) private let visionThrottle = AwakeScrollVisionThrottle(minInterval: 1.0 / 20.0)
+    /// Vision hand-pose sampling interval: 15 fps end-to-end (N4 battery budget).
+    static let handPoseSampleInterval: TimeInterval = 1.0 / 15.0
+    /// ARKit delivers face anchors at ~60 Hz. 30 Hz keeps wink rising-edges
+    /// (often <100 ms) visible without hopping on every anchor.
+    static let faceAnchorSampleInterval: TimeInterval = 1.0 / 30.0
+    nonisolated(unsafe) private let visionThrottle = AwakeScrollVisionThrottle(
+        minInterval: AwakeScrollCaptureSession.handPoseSampleInterval
+    )
+    nonisolated(unsafe) private let faceThrottle = AwakeScrollVisionThrottle(
+        minInterval: AwakeScrollCaptureSession.faceAnchorSampleInterval
+    )
 
     func start(
         modality: AwakeScrollCameraModality,
         epoch: UInt64,
         onAction: @escaping (AwakeScrollAction, UInt64) -> Void
-    ) {
+    ) -> Bool {
         stop()
-        guard modality != .none else { return }
+        guard modality != .none else { return false }
         self.modality = modality
         self.epoch = epoch
         self.onAction = onAction
         hold.reset()
         blinkState = AwakeScrollBlinkState()
+        let started: Bool
         switch modality {
         case .face:
-            startFace()
+            started = startFace()
         case .hand:
-            startHand()
+            started = startHand()
         case .none:
-            break
+            started = false
         }
+        if started {
+            startThermalObservation()
+        } else {
+            runtime.tearDown()
+            self.onAction = nil
+            self.modality = .none
+        }
+        return started
     }
 
     func stop() {
         onAction = nil
-        arSession?.pause()
-        arSession = nil
-        if let capture, capture.isRunning {
-            visionQueue.async {
-                capture.stopRunning()
-            }
-        }
-        capture = nil
+        modality = .none
+        runtime.tearDown()
         hold.reset()
         visionThrottle.reset()
+        faceThrottle.reset()
+        setThermalThrottle(nil)
+    }
+
+    /// Resets Vision/face sampling to the base budget (called from `stop()` and
+    /// when thermal state returns to `.nominal`/`.fair`).
+    nonisolated private func setThermalThrottle(_ fps: Double?) {
+        let baseVision = AwakeScrollCaptureSession.handPoseSampleInterval
+        let baseFace = AwakeScrollCaptureSession.faceAnchorSampleInterval
+        if let fps {
+            visionThrottle.updateMinInterval(Swift.max(baseVision, 1.0 / fps))
+            faceThrottle.updateMinInterval(Swift.max(baseFace, 1.0 / fps))
+        } else {
+            visionThrottle.updateMinInterval(baseVision)
+            faceThrottle.updateMinInterval(baseFace)
+        }
     }
 
     private func emit(_ action: AwakeScrollAction) {
         onAction?(action, epoch)
     }
 
-    private func startFace() {
-        guard ARFaceTrackingConfiguration.isSupported else { return }
+    private func startFace() -> Bool {
+        guard ARFaceTrackingConfiguration.isSupported else {
+            AppLog.debug(.gesture, "awake_scroll_face_unavailable")
+            return false
+        }
         let session = ARSession()
         session.delegate = self
         let config = ARFaceTrackingConfiguration()
         config.isLightEstimationEnabled = false
         session.run(config, options: [.resetTracking, .removeExistingAnchors])
-        arSession = session
+        runtime.arSession = session
+        return true
     }
 
-    private func startHand() {
+    private func startHand() -> Bool {
         let session = AVCaptureSession()
+        session.beginConfiguration()
+        defer { session.commitConfiguration() }
         session.sessionPreset = .vga640x480
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
               let input = try? AVCaptureDeviceInput(device: device)
-        else { return }
-        if session.canAddInput(input) {
-            session.addInput(input)
+        else {
+            AppLog.debug(.gesture, "awake_scroll_camera_unavailable")
+            return false
         }
+        guard session.canAddInput(input) else {
+            AppLog.debug(.gesture, "awake_scroll_camera_input_rejected")
+            return false
+        }
+        session.addInput(input)
         let output = AVCaptureVideoDataOutput()
         output.alwaysDiscardsLateVideoFrames = true
         output.setSampleBufferDelegate(self, queue: visionQueue)
-        if session.canAddOutput(output) {
-            session.addOutput(output)
+        guard session.canAddOutput(output) else {
+            AppLog.debug(.gesture, "awake_scroll_camera_output_rejected")
+            return false
         }
+        session.addOutput(output)
         output.connection(with: .video)?.isEnabled = true
-        capture = session
+        runtime.capture = session
+        // Battery (N4): stream frames at the same rate the Vision throttle
+        // consumes them, so the ISP is not delivering ~30 fps to have half
+        // dropped by the throttle.
+        configureDeviceFrameRate(device, fps: Int(thermalSampleFPS))
         visionQueue.async {
             session.startRunning()
+        }
+        return true
+    }
+
+    private var thermalSampleFPS: Double {
+        let state = ProcessInfo.processInfo.thermalState
+        return state == .serious || state == .critical ? 6 : 15
+    }
+
+    private func configureDeviceFrameRate(_ device: AVCaptureDevice, fps: Int) {
+        let duration = CMTime(value: 1, timescale: CMTimeScale(fps))
+        let supported = device.activeFormat.videoSupportedFrameRateRanges.contains { range in
+            CMTimeCompare(duration, range.minFrameDuration) >= 0
+                && CMTimeCompare(duration, range.maxFrameDuration) <= 0
+        }
+        guard supported else {
+            AppLog.debug(.gesture, "awake_scroll_frame_rate_unsupported")
+            return
+        }
+        do {
+            try device.lockForConfiguration()
+            device.activeVideoMinFrameDuration = duration
+            device.activeVideoMaxFrameDuration = duration
+            device.unlockForConfiguration()
+        } catch {
+            AppLog.debug(.gesture, "awake_scroll_frame_duration_failed")
+        }
+    }
+
+    /// Thermal response (N7): sampling slows to 6 fps while `thermalState`
+    /// is `.serious`/`.critical`; otherwise restore the base budgets
+    /// (hand 15 fps, face 30 fps).
+    private func handleThermalStateChange() {
+        let state = ProcessInfo.processInfo.thermalState
+        if state == .serious || state == .critical {
+            setThermalThrottle(6)
+        } else {
+            setThermalThrottle(nil)
+        }
+        if let device = currentVideoDevice() {
+            configureDeviceFrameRate(device, fps: Int(thermalSampleFPS))
+        }
+    }
+
+    private func currentVideoDevice() -> AVCaptureDevice? {
+        let inputs = runtime.capture?.inputs.compactMap { $0 as? AVCaptureDeviceInput } ?? []
+        return inputs.first?.device
+    }
+
+    private func startThermalObservation() {
+        if let thermalObserver = runtime.thermalObserver {
+            NotificationCenter.default.removeObserver(thermalObserver)
+            runtime.thermalObserver = nil
+        }
+        runtime.thermalObserver = NotificationCenter.default.addObserver(
+            forName: ProcessInfo.thermalStateDidChangeNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.handleThermalStateChange()
+            }
         }
     }
 }
@@ -97,14 +240,23 @@ final class AwakeScrollCaptureSession: NSObject {
 extension AwakeScrollCaptureSession: ARSessionDelegate {
     nonisolated func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
         guard let face = anchors.compactMap({ $0 as? ARFaceAnchor }).first else { return }
-        let left = face.blendShapes[.eyeBlinkLeft]?.floatValue ?? 0
-        let right = face.blendShapes[.eyeBlinkRight]?.floatValue ?? 0
+        // ARKit pushes anchors at ~60 Hz; sample at 30 fps (6 fps under
+        // thermal throttling) before any MainActor hop.
+        guard faceThrottle.shouldProcess(timestamp: CACurrentMediaTime()) else { return }
+        let arkitLeft = face.blendShapes[.eyeBlinkLeft]?.floatValue ?? 0
+        let arkitRight = face.blendShapes[.eyeBlinkRight]?.floatValue ?? 0
+        let blinks = AwakeScrollFaceClassifier.userSpaceBlinks(
+            arkitLeft: arkitLeft,
+            arkitRight: arkitRight
+        )
+        let now = Date()
         Task { @MainActor in
             guard self.modality == .face else { return }
             if let action = AwakeScrollFaceClassifier.action(
-                leftBlink: left,
-                rightBlink: right,
-                state: &self.blinkState
+                leftBlink: blinks.left,
+                rightBlink: blinks.right,
+                state: &self.blinkState,
+                now: now
             ) {
                 self.emit(action)
             }
@@ -156,14 +308,22 @@ extension AwakeScrollCaptureSession: AVCaptureVideoDataOutputSampleBufferDelegat
     }
 }
 
-/// Drops camera frames before Vision so the pose request stays ≤20 fps.
+/// Drops camera frames before Vision so the pose request stays within the
+/// battery budget (15 fps base, 6 fps under serious/critical thermal state).
 final class AwakeScrollVisionThrottle: @unchecked Sendable {
     private let lock = NSLock()
     private var lastTimestamp: TimeInterval = 0
-    private let minInterval: TimeInterval
+    private var minInterval: TimeInterval
 
     init(minInterval: TimeInterval) {
         self.minInterval = minInterval
+    }
+
+    /// Updates the sampling budget (thermal response raises it, recovery lowers it).
+    func updateMinInterval(_ newInterval: TimeInterval) {
+        lock.lock()
+        minInterval = newInterval
+        lock.unlock()
     }
 
     func shouldProcess(timestamp: TimeInterval) -> Bool {
