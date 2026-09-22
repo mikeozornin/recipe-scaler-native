@@ -187,7 +187,7 @@ Sheet открыт, канал armed. Распознанная фраза под
 - **F8.3.** Denied (третья строка): после отказа permission pref канала = false (snap-off). Тумблер **disabled**, пока permission этого канала denied (Figma `404:4092` `isEnabled=False`). Оранжевая подпись остаётся. После grant в Settings тумблер снова enabled и OFF — пользователь включает сам. Кнопка параметров — если **хотя бы одно** из {mic, camera, speech} denied (не undetermined). Undetermined без запроса — кнопки нет, подписей denied нет.
 - **F8.4.** Sheet не teardown'ит armed каналы: пользователь проверяет жесты/фразы, пока sheet открыт.
 - **F8.5.** Типографика: `.appBody()` / `.appFootnote()` / существующие toolbar text styles. Запрет `.font(.system` и SF из UI Kit макета.
-- **F8.6.** Dismiss: системный grabber / swipe. Кнопки Close нет. Заголовок sheet — в контенте, с переносом, без обрезки.
+- **F8.6.** Dismiss: системный grabber / swipe. Кнопки Close нет. Заголовок sheet — в контенте, `AppTypography.title2` (как «Инструкции»), с переносом, без обрезки.
 - **F8.7.** Запрос permission: в момент перехода тумблера false → true. Открытие sheet само по себе permissions не спрашивает.
 
 #### F2. Действия

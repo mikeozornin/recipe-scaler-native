@@ -156,6 +156,7 @@ enum UIA {
     static let screenAwakeHandToggle = "screen_awake_hand_toggle"
     static let screenAwakeFaceToggle = "screen_awake_face_toggle"
     static let screenAwakeOpenSettings = "screen_awake_open_settings"
+    static let screenAwakeHelpTitle = "screen_awake_help_title"
     static let screenAwakeHelpIconHandUp = "screen_awake_help_icon_hand_up"
     static let screenAwakeHelpIconHandDown = "screen_awake_help_icon_hand_down"
     static let screenAwakeHelpIconFaceUp = "screen_awake_help_icon_face_up"

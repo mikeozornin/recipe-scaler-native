@@ -8,14 +8,14 @@ struct AwakeScrollHelpSheet: View {
     @Binding var faceEnabled: Bool
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: AwakeScrollLayout.helpSheetSectionGap) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: AwakeScrollLayout.helpSheetSectionGap) {
                     Text("recipe.awake-scroll.help.title")
-                        .font(AppTypography.title3)
+                        .font(AppTypography.title2)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityAddTraits(.isHeader)
+                        .accessibilityIdentifier(AccessibilityIdentifiers.screenAwakeHelpTitle)
                     Text("recipe.awake-scroll.help.intro")
                         .appBody()
                         .frame(maxWidth: .infinity, minHeight: AwakeScrollLayout.helpIntroRowMinHeight, alignment: .leading)
@@ -91,12 +91,10 @@ struct AwakeScrollHelpSheet: View {
                 .padding(.top, AwakeScrollLayout.helpSheetTopPad)
                 .padding(.bottom, AwakeScrollLayout.helpSheetSectionGap)
             }
-            .toolbar(.hidden, for: .navigationBar)
             .onAppear {
                 controller.refreshPermissions()
             }
         }
-    }
 
     private var voiceDeniedKey: LocalizedStringKey {
         if controller.lastPermissions.speechDenied, !controller.lastPermissions.micDenied {
@@ -133,10 +131,6 @@ struct AwakeScrollHelpSheet: View {
     private var voiceLiveBlock: some View {
         VStack(alignment: .leading, spacing: AwakeScrollLayout.helpChipGap) {
             tryHint("recipe.awake-scroll.help.try-voice")
-            Text("recipe.awake-scroll.help.voice-listening")
-                .appFootnote()
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
             TimelineView(.periodic(from: .now, by: 0.1)) { timeline in
                 AwakeScrollChipFlow(spacing: AwakeScrollLayout.helpChipGap) {
                     ForEach(AwakeScrollVoiceChip.allCases, id: \.self) { chip in

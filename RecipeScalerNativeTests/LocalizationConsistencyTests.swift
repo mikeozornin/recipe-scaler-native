@@ -43,7 +43,6 @@ final class LocalizationConsistencyTests: XCTestCase {
             "recipe.awake-scroll.help.intro",
             "recipe.awake-scroll.help.energy",
             "recipe.awake-scroll.help.try-voice",
-            "recipe.awake-scroll.help.voice-listening",
             "recipe.awake-scroll.help.try-hand",
             "recipe.awake-scroll.help.try-face",
             "recipe.awake-scroll.help.chip.up",

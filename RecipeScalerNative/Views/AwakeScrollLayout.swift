@@ -15,7 +15,7 @@ enum AwakeScrollLayout {
     static let cameraPreviewBottomPad: CGFloat = 16
     static let helpSheetHorizontalPad: CGFloat = 16
     static let helpSheetSectionGap: CGFloat = 8
-    static let helpSheetTopPad: CGFloat = 16
+    static let helpSheetTopPad: CGFloat = 32
     static let helpIntroRowMinHeight: CGFloat = 66
     static let helpToggleRowHeight: CGFloat = 52
     static let helpDeniedRowMinHeight: CGFloat = 68

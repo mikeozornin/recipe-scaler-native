@@ -32,7 +32,7 @@
 
 ## Sheet
 
-- Title: `recipe.awake-scroll.help.title` — copy «Управление без рук» / EN-эквивалент. В контенте, перенос, не navbar.
+- Title: `recipe.awake-scroll.help.title` — copy «Управление без рук» / EN-эквивалент. В контенте, `AppTypography.title2` как «Инструкции», перенос, не navbar.
 - Intro + energy hint (декоративный `switch.2`, не интерактивный).
 - Три тумблера (лицо скрыть без TrueDepth).
 - Live-блоки только при ON && granted.
@@ -64,7 +64,7 @@
 | `recipe.awake-scroll.help.open-settings` | Открыть параметры |
 | `recipe.awake-scroll.menu` | a11y ellipsis |
 
-Устаревшие ключи rev 3 (`help.voice`, `help.camera`, `hands-free` пункт меню) удалены из каталога; UI использует только ключи из таблицы выше плюс `recipe.awake-scroll.help.voice-listening`.
+Устаревшие ключи rev 3 (`help.voice`, `help.camera`, `hands-free` пункт меню) и `recipe.awake-scroll.help.voice-listening` удалены из каталога; UI использует только ключи из таблицы выше.
 
 ## Binding ownership
 

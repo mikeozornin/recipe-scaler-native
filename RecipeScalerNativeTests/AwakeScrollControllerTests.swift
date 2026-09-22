@@ -421,6 +421,7 @@ final class AwakeScrollControllerTests: XCTestCase {
             AccessibilityIdentifiers.screenAwakeHandToggle,
             AccessibilityIdentifiers.screenAwakeFaceToggle,
             AccessibilityIdentifiers.screenAwakeOpenSettings,
+            AccessibilityIdentifiers.screenAwakeHelpTitle,
             AccessibilityIdentifiers.screenAwakeHelpIconHandUp,
             AccessibilityIdentifiers.screenAwakeHelpIconHandDown,
             AccessibilityIdentifiers.screenAwakeHelpIconFaceUp,

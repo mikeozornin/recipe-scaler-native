@@ -11487,23 +11487,6 @@
         }
       }
     },
-    "recipe.awake-scroll.help.voice-listening" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The microphone stays on while the voice channel is enabled"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Микрофон активен, пока включён голосовой канал"
-          }
-        }
-      }
-    },
     "recipe.awake-scroll.menu" : {
       "extractionState" : "manual",
       "localizations" : {

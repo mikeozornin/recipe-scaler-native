@@ -61,7 +61,7 @@
 | `cameraPreviewBottomPad` | 16 | над home indicator |
 | `helpSheetHorizontalPad` | 16 | Figma content inset |
 | `helpSheetSectionGap` | 8 | gap между intro / toggle-секциями |
-| `helpSheetTopPad` | 16 | content ниже toolbar |
+| `helpSheetTopPad` | 32 | 16 pt ниже grabber: 16 под индикатор sheet + 16 над заголовком |
 | `helpIntroRowMinHeight` | 66 | intro + energy |
 | `helpToggleRowHeight` | 52 | Regular row |
 | `helpDeniedRowMinHeight` | 68 | Tall row (title + subtitle) |
@@ -78,7 +78,7 @@
 
 | Роль Figma | В приложении |
 |------------|----------------|
-| Title3/Emphasized 20 sheet title | `Text` + `AppTypography.title3`, wrap |
+| Sheet title | `Text` + `AppTypography.title2` (как «Инструкции»), wrap |
 | Body/Regular intro | `.appBody()` |
 | Headline/Regular toggle title | `.appHeadline()` |
 | Body try-hint | `.appBody()` |
@@ -88,7 +88,7 @@
 
 Цвета live: idle chip — tertiary fill (`Color.secondary.opacity(0.12)` ≈ Figma chip); fired chip — `Color.green` fill, белый текст; fired glyph — `Color.green`; denied subtitle — `Color.orange`. Toggle ON — системный green switch, не кастомный tint баннера.
 
-Ellipsis **не** `AppToolbarStyle.iconOnly`. В баннере: `AppSymbol.image("ellipsis")` 16 pt, цвет `bannerText`.
+Ellipsis **не** `AppToolbarStyle.iconOnly`. В баннере: `AppSymbol.sizedImage("ellipsis")` 16 pt, `.buttonStyle(.plain)`, цвет `bannerText`.
 
 ---
 
@@ -156,7 +156,7 @@ overlay bottomTrailing: CameraPreview 48○
 
 ## State: Help / settings sheet
 
-Системный `.sheet`, large detent, grabber. Заголовок `recipe.awake-scroll.help.title` — **в контенте**, Martian title3 20, перенос строк, без обрезки. Navbar и Close нет; dismiss — grabber / swipe.
+Системный `.sheet`, large detent, grabber. Заголовок `recipe.awake-scroll.help.title` — **в контенте**, `AppTypography.title2` как секция «Инструкции», перенос строк, без обрезки. Navbar и Close нет; dismiss — grabber / swipe.
 
 Типографика: **не** SF. Sheet скроллится при XXXL / длинных RU.
 
@@ -166,8 +166,8 @@ overlay bottomTrailing: CameraPreview 48○
 Sheet
 ├─ grabber 60×4
 └─ ScrollView
-     └─ VStack alignment leading, spacing 8, pad H 16, top 16
-          ├─ Text title                         // title3 20, wrap, .isHeader
+     └─ VStack alignment leading, spacing 8, pad H 16, top 32
+          ├─ Text title                         // title2 22 display, wrap, .isHeader
           ├─ Text intro                         // minHeight 66, .appBody()
           ├─ HStack spacing 8                   // energy, minHeight 66
           │    ├─ AppSymbol switch.2 22×22      // декоративный, не интерактивный

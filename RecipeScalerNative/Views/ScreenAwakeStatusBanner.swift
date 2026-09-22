@@ -42,6 +42,7 @@ struct ScreenAwakeStatusBanner: View {
                     .appBody()
                     .foregroundStyle(bannerText)
                     .lineLimit(1)
+                    .truncationMode(.tail)
                 if voiceEnabled {
                     channelIcon(
                         "waveform",
@@ -67,26 +68,36 @@ struct ScreenAwakeStatusBanner: View {
                     )
                 }
             }
-            Spacer(minLength: 0)
+            .layoutPriority(0)
+            Spacer(minLength: 8)
             Button(action: onHelp) {
-                AppSymbol.image("ellipsis")
-                    .frame(
-                        width: AwakeScrollLayout.bannerAccessorySize,
-                        height: AwakeScrollLayout.bannerAccessorySize
-                    )
-                    .foregroundStyle(bannerText)
-                    .frame(
-                        width: AwakeScrollLayout.bannerAccessoryHit,
-                        height: AwakeScrollLayout.bannerAccessoryHit
-                    )
-                    .contentShape(Rectangle())
+                AppSymbol.sizedImage(
+                    "ellipsis",
+                    pointSize: AwakeScrollLayout.bannerAccessorySize,
+                    weight: .semibold
+                )
+                .resizable()
+                .scaledToFit()
+                .frame(
+                    width: AwakeScrollLayout.bannerAccessorySize,
+                    height: AwakeScrollLayout.bannerAccessorySize
+                )
+                .foregroundStyle(bannerText)
+                .frame(
+                    width: AwakeScrollLayout.bannerAccessoryHit,
+                    height: AwakeScrollLayout.bannerAccessoryHit
+                )
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .fixedSize()
+            .layoutPriority(1)
             .accessibilityLabel("recipe.awake-scroll.menu")
             .accessibilityIdentifier(AccessibilityIdentifiers.screenAwakeBannerMenu)
         }
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity)
-        .frame(height: 44)
+        .frame(minHeight: 44, maxHeight: 48)
         .background(bannerBackground)
         .background(Color(.systemBackground))
         .overlay(alignment: .bottom) {
@@ -94,6 +105,7 @@ struct ScreenAwakeStatusBanner: View {
                 .fill(bannerBorder)
                 .frame(height: 0.5)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityIdentifiers.screenAwakeBanner)
         .onAppear {
             withAnimation(.easeInOut(duration: 1).repeatForever(autoreverses: true)) {

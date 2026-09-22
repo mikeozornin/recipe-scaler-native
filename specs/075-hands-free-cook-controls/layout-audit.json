@@ -96,6 +96,14 @@
       ]
     },
     {
+      "id": "help-sheet-content-title",
+      "description": "Help sheet title is in-content title2 like recipe Instructions",
+      "pattern": "AppTypography\\.title2",
+      "paths": [
+        "RecipeScalerNative/Views/AwakeScrollHelpSheet.swift"
+      ]
+    },
+    {
       "id": "banner-ellipsis",
       "description": "Banner hosts trailing ellipsis that opens the sheet",
       "pattern": "ellipsis",
