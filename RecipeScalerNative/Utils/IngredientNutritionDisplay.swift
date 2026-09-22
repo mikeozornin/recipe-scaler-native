@@ -15,6 +15,18 @@ enum IngredientNutritionDisplay {
         viewServings: Int,
         mode: IngredientNutritionViewMode
     ) -> Double {
+        let baseS = max(1, baseServings)
+        let factor = Double(max(1, viewServings)) / Double(baseS)
+        return value(base, ingredient: ingredient, baseServings: baseServings, scaleFactor: factor, mode: mode)
+    }
+
+    static func value(
+        _ base: Double,
+        ingredient: IngredientData,
+        baseServings: Int,
+        scaleFactor: Double,
+        mode: IngredientNutritionViewMode
+    ) -> Double {
         guard base != 0 else { return 0 }
 
         switch mode {
@@ -27,9 +39,8 @@ enum IngredientNutritionDisplay {
             let servings = max(1, baseServings)
             return base / Double(servings)
         case .scaled:
-            let baseS = max(1, baseServings)
-            let factor = Double(max(1, viewServings)) / Double(baseS)
-            return base * factor
+            let scale = scaleFactor.isFinite && scaleFactor > 0 ? scaleFactor : 1
+            return base * scale
         case .dish:
             return base
         }
@@ -41,11 +52,22 @@ enum IngredientNutritionDisplay {
         viewServings: Int,
         mode: IngredientNutritionViewMode = .dish
     ) -> String? {
+        let baseS = max(1, baseServings)
+        let factor = Double(max(1, viewServings)) / Double(baseS)
+        return summaryLine(ingredient: ingredient, baseServings: baseServings, scaleFactor: factor, mode: mode)
+    }
+
+    static func summaryLine(
+        ingredient: IngredientData,
+        baseServings: Int,
+        scaleFactor: Double,
+        mode: IngredientNutritionViewMode = .dish
+    ) -> String? {
         guard ingredient.hasCompleteNutrition, !ingredient.isNutritionAllZero else { return nil }
-        let cal = value(ingredient.calories ?? 0, ingredient: ingredient, baseServings: baseServings, viewServings: viewServings, mode: mode)
-        let pro = value(ingredient.protein ?? 0, ingredient: ingredient, baseServings: baseServings, viewServings: viewServings, mode: mode)
-        let fat = value(ingredient.fat ?? 0, ingredient: ingredient, baseServings: baseServings, viewServings: viewServings, mode: mode)
-        let carbs = value(ingredient.carbs ?? 0, ingredient: ingredient, baseServings: baseServings, viewServings: viewServings, mode: mode)
+        let cal = value(ingredient.calories ?? 0, ingredient: ingredient, baseServings: baseServings, scaleFactor: scaleFactor, mode: mode)
+        let pro = value(ingredient.protein ?? 0, ingredient: ingredient, baseServings: baseServings, scaleFactor: scaleFactor, mode: mode)
+        let fat = value(ingredient.fat ?? 0, ingredient: ingredient, baseServings: baseServings, scaleFactor: scaleFactor, mode: mode)
+        let carbs = value(ingredient.carbs ?? 0, ingredient: ingredient, baseServings: baseServings, scaleFactor: scaleFactor, mode: mode)
 
         // TP14 [review #14]: NaN/Inf-safe rounding before Int cast.
         let calText = String(intRoundedClamped(cal))

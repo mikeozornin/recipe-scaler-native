@@ -41,9 +41,37 @@ enum RecipeServings {
         normalized(from: map, txn: txn) ?? 1
     }
 
-    static func scaledServings(base: Int, scaleFactor: Double) -> Int {
-        let normalizedBase = max(1, base)
+    /// Continuous servings = base × scale (web `getCurrentServings`). Not integer-rounded.
+    static func currentServings(base: Int, scaleFactor: Double) -> Double {
+        let normalizedBase = Double(max(1, base))
         let scale = scaleFactor.isFinite && scaleFactor > 0 ? scaleFactor : 1
-        return max(1, Int(clampingFinite: (Double(normalizedBase) * scale).rounded()))
+        return normalizedBase * scale
+    }
+
+    /// Web `roundServingsForDisplay` — one decimal for UI label.
+    static func roundForDisplay(_ value: Double) -> Double {
+        guard value.isFinite else { return 1 }
+        return (value * 10).rounded() / 10
+    }
+
+    static func formatDisplay(_ value: Double) -> String {
+        let rounded = roundForDisplay(value)
+        let nearest = rounded.rounded()
+        if abs(rounded - nearest) < 0.001, abs(nearest) < Double(Int.max) {
+            return String(Int(nearest))
+        }
+        return AppNumberFormat.string(rounded, maximumFractionDigits: 1)
+    }
+
+    /// Integer servings snap — only for legacy call sites; prefer `currentServings` + stepper.
+    static func scaledServings(base: Int, scaleFactor: Double) -> Int {
+        let current = currentServings(base: base, scaleFactor: scaleFactor)
+        return max(1, Int(clampingFinite: roundForDisplay(current).rounded()))
+    }
+
+    /// Next/previous whole serving (web increment/decrement: `Math.round(current) ± 1`).
+    static func steppedServings(base: Int, scaleFactor: Double, delta: Int) -> Int {
+        let roundedCurrent = roundForDisplay(currentServings(base: base, scaleFactor: scaleFactor))
+        return max(1, min(99, Int(clampingFinite: roundedCurrent.rounded()) + delta))
     }
 }

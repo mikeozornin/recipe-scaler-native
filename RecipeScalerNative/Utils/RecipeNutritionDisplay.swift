@@ -61,6 +61,25 @@ enum RecipeNutritionDisplay {
         totalWeight: Double?,
         mode: IngredientNutritionViewMode
     ) -> Macros {
+        let baseS = max(1, baseServings)
+        let factor = Double(max(1, viewServings)) / Double(baseS)
+        return displayMacros(
+            effective: effective,
+            recipeServings: recipeServings,
+            totalWeight: totalWeight,
+            scaleFactor: factor,
+            mode: mode
+        )
+    }
+
+    /// Continuous scale path (web nutrition-block uses `scaleFactor` directly).
+    static func displayMacros(
+        effective: Macros,
+        recipeServings: Int,
+        totalWeight: Double?,
+        scaleFactor: Double,
+        mode: IngredientNutritionViewMode
+    ) -> Macros {
         var cal = effective.calories
         var pro = effective.protein
         var fat = effective.fat
@@ -85,12 +104,11 @@ enum RecipeNutritionDisplay {
         }
 
         if mode == .scaled {
-            let baseS = max(1, baseServings)
-            let factor = Double(max(1, viewServings)) / Double(baseS)
-            cal *= factor
-            pro *= factor
-            fat *= factor
-            carbs *= factor
+            let scale = scaleFactor.isFinite && scaleFactor > 0 ? scaleFactor : 1
+            cal *= scale
+            pro *= scale
+            fat *= scale
+            carbs *= scale
         }
 
         return Macros(

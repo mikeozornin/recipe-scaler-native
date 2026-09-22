@@ -22,18 +22,13 @@ struct RecipeNutritionBlockView: View {
         return hasWeight || hasServings
     }
 
-    private var scaledServings: Int {
-        max(1, Int((Double(max(1, baseServings)) * scaleFactor).rounded()))
-    }
-
     private var displayedMacros: RecipeNutritionDisplay.Macros? {
         guard let effective = RecipeNutritionDisplay.effectiveMacros(from: recipe) else { return nil }
         return RecipeNutritionDisplay.displayMacros(
             effective: effective,
-            baseServings: baseServings,
-            viewServings: scaledServings,
             recipeServings: max(1, recipe.servings),
             totalWeight: totalWeight,
+            scaleFactor: scaleFactor,
             mode: viewMode
         )
     }

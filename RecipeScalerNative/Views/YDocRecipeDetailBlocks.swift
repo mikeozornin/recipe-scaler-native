@@ -138,18 +138,34 @@ extension YDocRecipeDetailView {
 
     @ViewBuilder
     func servingsBlock(recipe: RecipeData) -> some View {
+        let base = max(1, recipe.servings)
         ServingsStepperView(
-            servings: scaledServingsBinding(base: max(1, recipe.servings)),
-            accentColor: accentColor
+            currentServings: RecipeServings.currentServings(base: base, scaleFactor: scaleFactor),
+            accentColor: accentColor,
+            onDecrement: { stepServings(base: base, delta: -1) },
+            onIncrement: { stepServings(base: base, delta: 1) }
         )
     }
 
+    /// Continuous servings for labels (web `getCurrentServings`).
+    func currentServingsValue(base: Int) -> Double {
+        RecipeServings.currentServings(base: base, scaleFactor: scaleFactor)
+    }
+
+    /// Integer snap only where a whole-serving index is still required.
     func scaledServingsCount(base: Int) -> Int {
+        RecipeServings.scaledServings(base: base, scaleFactor: scaleFactor)
+    }
+
+    func stepServings(base: Int, delta: Int) {
         let normalizedBase = max(1, base)
-        return max(1, Int((Double(normalizedBase) * scaleFactor).rounded()))
+        let next = RecipeServings.steppedServings(base: normalizedBase, scaleFactor: scaleFactor, delta: delta)
+        scaleFactor = max(1.0 / Double(normalizedBase), Double(next) / Double(normalizedBase))
+        RecipeScaleStorage.saveScaleFactor(recipeId: recipeId, scaleFactor: scaleFactor)
     }
 
     /// View-mode scaled qty edit recalculates UI scale (web `useRecipeScale.handleAmountChange`).
+    /// Keeps fractional scale (e.g. 40→60 ⇒ 1.5); does not round through integer servings.
     func applyViewModeScaledQuantityEdit(ingredient: IngredientData, text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }

@@ -134,11 +134,18 @@ struct IngredientData: Identifiable, Sendable {
         return originalAmount.isEmpty ? amount : originalAmount
     }
 
-    func scaledQuantityText(targetServings: Int, baseServings: Int) -> String {
+    /// Prefer this — matches web `originalAmount * scaleFactor` (no integer-servings snap).
+    func scaledQuantityText(scaleFactor: Double) -> String {
         guard !isHeaderRow, let value = numericValue else { return "" }
+        let scale = scaleFactor.isFinite && scaleFactor > 0 ? scaleFactor : 1
+        return Self.formatScalarNumber(value * scale)
+    }
+
+    /// Legacy servings-ratio helper. Avoid for view-mode scale — snaps fractional factors (e.g. 1.5 → 2 when base=1).
+    func scaledQuantityText(targetServings: Int, baseServings: Int) -> String {
         let base = max(1, baseServings)
         let factor = Double(max(1, targetServings)) / Double(base)
-        return Self.formatScalarNumber(value * factor)
+        return scaledQuantityText(scaleFactor: factor)
     }
 
     var editableQuantity: String {

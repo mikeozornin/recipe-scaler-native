@@ -285,7 +285,7 @@ struct YDocRecipeDetailView: View {
                                     set: { editViewModel.draftServings = max(1, min(99, $0)) }
                                 ),
                                 baseServings: max(1, recipe.servings),
-                                viewServings: scaledServingsCount(base: max(1, editViewModel.draftServings)),
+                                scaleFactor: scaleFactor,
                                 accentColor: accentColor,
                                 nutritionEnabled: showNutritionGlobal,
                                 nutritionViewMode: nutritionViewMode,
@@ -338,7 +338,7 @@ struct YDocRecipeDetailView: View {
                             YDocIngredientsSection(
                                 ingredients: ingredientsForDisplay,
                                 baseServings: max(1, recipe.servings),
-                                viewServings: scaledServingsCount(base: max(1, recipe.servings)),
+                                scaleFactor: scaleFactor,
                                 accentColor: accentColor,
                                 onScaledQuantityEdited: { ingredient, text in
                                     applyViewModeScaledQuantityEdit(ingredient: ingredient, text: text)
