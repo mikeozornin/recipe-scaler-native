@@ -390,4 +390,69 @@ enum DebugLaunchOptions {
         return nil
     }
 }
+
+#else
+/// Release stubs — launch flags and screenshot capture are DEBUG-only.
+enum DebugLaunchOptions {
+    static var shouldSkipSplash: Bool { false }
+    static var screenshotCapture: Bool { false }
+    static var openShoppingShare: Bool { false }
+    static var shoppingShareAutoCopyText: Bool { false }
+    static var showAssistant: Bool { false }
+    static var screenshotAssistantFixture: Bool { false }
+    static var openGuideMediaScene: String? { nil }
+    static var guideMediaSequence: String? { nil }
+    static var mobileTimerPanelExpanded: Bool { false }
+    static var scrollToNewIngredient: Bool { false }
+    static var startInEditMode: Bool { false }
+    static var showRecipeShare: Bool { false }
+    static var openRecipeId: String? { nil }
+    static var openRecipeName: String? { nil }
+    static var openDiscoverProfileUsername: String? { nil }
+    static var openDiscoverCollectionSlug: String? { nil }
+    static var screenshotScaleFactor: Double? { nil }
+    static var screenshotScreenAwake: Bool { false }
+    static var screenshotScrollToNutrition: Bool { false }
+    static var screenshotTimerSeconds: TimeInterval? { nil }
+    static var screenshotTimerName: String? { nil }
+    static var screenshotShoppingSeed: String? { nil }
+    static var startDescriptionEdit: Bool { false }
+    static var descriptionEditorFocus: String { "end" }
+    static var simulateDescriptionEditorText: String? { nil }
+    static var simulateDescriptionEditorCommand: String? { nil }
+    static var simulateErrorAlert: Bool { false }
+    static var openTab: AppTab? { nil }
+
+    static func applyScreenshotPreferences() {}
+
+    @MainActor
+    static func applyScreenshotTimerIfNeeded(timerManager: TimerManager) {
+        _ = timerManager
+    }
+
+    @MainActor
+    static func applyScreenshotShoppingSeedIfNeeded(syncService: YjsSyncService) async {
+        _ = syncService
+    }
+
+    @MainActor
+    static func signalScreenshotListMediaReadyIfNeeded(entries: [CollectionEntry]) async {
+        _ = entries
+    }
+
+    @MainActor
+    static func signalScreenshotRecipeMediaReadyIfNeeded(
+        recipeId: String,
+        imageUrl: String?
+    ) async {
+        _ = (recipeId, imageUrl)
+    }
+
+    @MainActor
+    static func signalScreenshotDiscoverProfileMediaReadyIfNeeded(
+        response: PublicProfileResponseDTO
+    ) async {
+        _ = response
+    }
+}
 #endif
