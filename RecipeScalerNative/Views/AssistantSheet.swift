@@ -348,7 +348,7 @@ struct AssistantSheet: View {
                     let displayText = AssistantMessageCopyText.text(for: message)
                     if !displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         Text(displayText)
-                            .appBodySelectable(multilineTextAlignment: .trailing)
+                            .appBodySelectable()
                     }
                 }
                 if !attachments.isEmpty {
