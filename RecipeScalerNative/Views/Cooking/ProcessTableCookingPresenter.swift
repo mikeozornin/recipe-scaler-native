@@ -73,6 +73,7 @@ final class ProcessTableCookingCoordinator {
         allowsRebuild: Bool,
         restoreAwakeOnDismiss: Bool
     ) {
+        guard FeatureFlags.processTableCookingEnabled else { return }
         presentation = ProcessTableCookingPresentation(
             recipe: recipe,
             scaleFactor: scaleFactor,

@@ -59,6 +59,7 @@ struct RecipeDescriptionEditorBlock: View {
     }
 
     private var bannerKind: ProcessTableStatusBanner.Kind? {
+        guard FeatureFlags.processTableCookingEnabled else { return nil }
         guard let recipe = processTableRecipe else { return nil }
         if recipe.processTable == nil { return .missing }
         if recipe.isProcessTableStale { return .outdated }

@@ -114,6 +114,23 @@ final class ProcessTableCookingSceneTests: XCTestCase {
         )
     }
 
+    func testPresentIsNoOpWhenProcessTableFlagIsOff() {
+        UserDefaults.standard.set(false, forKey: FeatureFlags.processTableCookingKey)
+        defer { UserDefaults.standard.removeObject(forKey: FeatureFlags.processTableCookingKey) }
+
+        let cooking = ProcessTableCookingCoordinator()
+        cooking.present(
+            recipe: makeRecipe(),
+            scaleFactor: 1,
+            allowsRebuild: false,
+            restoreAwakeOnDismiss: false
+        )
+        XCTAssertNil(
+            cooking.presentation,
+            "Release 1.0.9 hides process-table cooking; present must not open the cover"
+        )
+    }
+
     // MARK: - Fixture
 
     private func makeCookingView() -> ProcessTableCookingView {

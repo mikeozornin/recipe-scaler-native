@@ -211,7 +211,7 @@ struct StepsSection: View {
                     .truncationMode(.tail)
                     .layoutPriority(0)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                if canStartCooking {
+                if FeatureFlags.processTableCookingEnabled && canStartCooking {
                     ProcessTableStartButton {
                         presentCookingCover()
                     }
@@ -220,7 +220,7 @@ struct StepsSection: View {
             .frame(minHeight: ProcessTableLayout.ctaMinHit)
             .padding(.horizontal)
 
-            if showsMissingBanner, let recipeId {
+            if FeatureFlags.processTableCookingEnabled && showsMissingBanner, let recipeId {
                 ProcessTableMissingCardBanner(
                     recipeId: recipeId,
                     syncService: syncService

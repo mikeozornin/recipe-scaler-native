@@ -19,7 +19,23 @@ enum FeatureFlags {
         UserDefaults.standard.object(forKey: Self.featureAdoptionGuidesKey) as? Bool ?? false
     }
 
+    /// Spec 074 — «Начать готовить» / process-table chrome.
+    /// Hidden in Release (1.0.9). Debug stays on unless overridden:
+    ///   `defaults write ru.recipescaler.RecipeScaler processTableCooking -bool NO`
+    static var processTableCookingEnabled: Bool {
+        if let override = UserDefaults.standard.object(forKey: Self.processTableCookingKey) as? Bool {
+            return override
+        }
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
+
     /// UserDefaults key. Callers should not read it directly — use
     /// `featureAdoptionGuidesEnabled` for clarity.
     static let featureAdoptionGuidesKey = "featureAdoptionGuides"
+
+    static let processTableCookingKey = "processTableCooking"
 }

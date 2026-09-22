@@ -35,7 +35,9 @@ python3 scripts/asc-pull-app-store-metadata.py   # read-only sync из ASC → s
 bash scripts/asc-iap-inventory.sh                # read-only IAP inventory
 ```
 
-Workflow перевода: добавить `listing/app-info/ru.json`, `listing/versions/1.0/ru.json` рядом с master (`en-GB`); push-скрипт — TODO.
+What's New с 1.0.9 пишем сразу на двух языках: `store/drafts/whats-new-<version>-ru.txt` и `-en.txt` (сводка — `whats-new-<version>.md`).
+
+Workflow перевода listing: добавить `listing/app-info/ru.json`, `listing/versions/{version}/ru.json` рядом с master (`en-GB`). Push: `python3 scripts/asc-push-app-store-version-metadata.py`.
 
 ---
 
