@@ -9,9 +9,10 @@
 delta = fraction * boundsHeight
 fraction = 0.75
 
-maxOffset = max(0, contentHeight - boundsHeight + adjustedInsetTop + adjustedInsetBottom)
+maxOffset = max(-adjustedInsetTop, contentHeight - boundsHeight + adjustedInsetBottom)
+minOffset = -adjustedInsetTop
 
-up:   y' = max(0, y - delta)
+up:   y' = max(minOffset, y - delta)
 down: y' = min(maxOffset, y + delta)
 ```
 
@@ -31,4 +32,5 @@ down: y' = min(maxOffset, y + delta)
 ## Тесты
 
 Фикстуры без UIKit: struct чисел. `400 / 0 / 0 / 0 / 0` + down → `300`.  
-Контент `500`, bounds `400` → maxOffset `100`; down с `0` → `100` не `300`.
+Контент `500`, bounds `400` → maxOffset `100`; down с `0` → `100` не `300`.  
+С top inset `88` и bottom `34` maxOffset = `500 - 400 + 34` = `134`, **без** прибавления top (иначе жест уезжает ниже пальцевого края).

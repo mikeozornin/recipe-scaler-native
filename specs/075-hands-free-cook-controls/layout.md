@@ -1,28 +1,44 @@
 # Layout: Hands-free scroll при keep-awake
 
 **Spec**: [spec.md](./spec.md)  
-**Figma**: нет — минимальный chrome на существующей карточке + `ScreenAwakeStatusBanner`.  
+**Figma**: `rVzFwMDS5SECfIq4HRLHya` · секция [Hand free `404:4872`](https://www.figma.com/design/rVzFwMDS5SECfIq4HRLHya/recipe-scaler-files?node-id=404-4872)  
 **Аудит**: [layout-audit.json](./layout-audit.json)
 
-> Rev 3: **нет** второй toolbar-кнопки Hands-free. Opt-in — ellipsis **внутри** баннера keep-awake + help sheet.  
-> Черновик для ревью человеком перед кодом UI.
+> Rev 4: единый sheet настроек+справки; иконки каналов в баннере; без `Menu` из двух пунктов.  
+> Шрифты макета — SF Pro из UI Kit. **Не копировать**: только Martian через `.appBody()` / `.appHeadline()` / `.appFootnote()` / `.localizedNavigationTitle`.  
+> Черновик для **ревью человеком** перед правками banner/sheet.
 
 ---
 
 ## Canvas
 
-Тот же portrait (и iPad) recipe detail, что `YDocRecipeDetailView`.
+Тот же portrait (и iPad) recipe detail, что `YDocRecipeDetailView`. Sheet — системный large detent поверх карточки.
 
-| Параметр | Значение |
-|----------|----------|
-| Scroll host | основной `ScrollView` карточки |
-| Awake control | toolbar `ScreenAwakeToggle` (`sun.max`, без изменений позиции) |
-| Banner | существующий `ScreenAwakeStatusBanner` sticky top (`safeAreaInset` edge top) при awake ON |
-| Banner menu | trailing ellipsis в баннере |
-| Help | `.sheet` поверх detail |
-| HF chrome | optional 48○ camera preview overlay, только если Hands-free armed + camera granted |
+| Параметр | Значение | Figma |
+|----------|----------|-------|
+| Scroll host | основной `ScrollView` карточки | — |
+| Awake control | toolbar `ScreenAwakeToggle` (`play.circle.fill`) | без изменений |
+| Banner | sticky top `ScreenAwakeStatusBanner`, height 44 (допуск +4) | не в этой секции Figma |
+| Banner trailing | ellipsis **кнопка** → sheet | spec F1.3–F1.4 |
+| Banner channel icons | после title, до ellipsis | spec F1.7 |
+| Sheet | `.sheet` large detent, grabber 60×4, top radius системный | `404:3351` и варианты |
+| Sheet content width | full; horizontal pad **16** | все кадры |
+| HF chrome | optional 48○ camera preview overlay | не в Figma 404; оставить как rev 3 |
 
-**Критично:** не добавлять вторую toolbar-кнопку Hands-free. Не менять layout матрицы 074. Preview не через `safeAreaInset`.
+**Критично:** не добавлять вторую toolbar-кнопку. Keep-awake — `play.circle.fill`. Не `Menu` Hands-free + Help. Preview не через `safeAreaInset`. Title баннера и иконки каналов — соседи по HStack, не overlay-колонка на весь баннер.
+
+### Figma frames (sheet)
+
+| Node | Имя / роль |
+|------|------------|
+| `404:4872` | секция «Hand free» (все состояния) |
+| `404:3351` | все каналы OFF |
+| `404:3179` | голос+лицо idle |
+| `404:3270` | голос+жесты idle |
+| `404:3818` | голос live (чип «вверх») |
+| `404:3923` | жесты live (like) |
+| `404:3713` | лицо live (правый глаз) |
+| `404:4092` | permissions denied + «Открыть параметры» |
 
 ---
 
@@ -32,47 +48,71 @@
 
 | Token | Значение | Зачем |
 |-------|----------|--------|
-| `scrollViewportFraction` | 0.75 | логика engine (дублировать в layout constants для audit) |
-| `bannerAccessorySize` | 16 | ellipsis glyph в баннере |
-| `bannerAccessoryHit` | 44 | минимальная hit area ellipsis (HIG), визуал 16 |
-| `bannerAccessoryGap` | 8 | gap текст ↔ ellipsis |
-| `bannerMaxExtraHeight` | 4 | баннер сейчас 44; после ellipsis ≤ 48 |
-| `cameraPreviewDiameter` | 48 | overlay, только HF+camera |
-| `cameraPreviewTrailingPad` | 16 | bottomTrailing на detail |
+| `scrollViewportFraction` | 0.75 | engine |
+| `bannerAccessorySize` | 16 | ellipsis glyph |
+| `bannerAccessoryHit` | 44 | hit ellipsis |
+| `bannerAccessoryGap` | 8 | pulse ↔ текст, ellipsis |
+| `bannerTitleIconGap` | 6 | текст баннера ↔ иконки каналов |
+| `bannerChannelIconSize` | 16 | waveform / hand / face в баннере |
+| `bannerChannelPulseScale` | 1.8 | scale при fire канала |
+| `bannerChannelPulseDuration` | 0.5 s | easeInOut туда и обратно |
+| `cameraPreviewDiameter` | 48 | overlay |
+| `cameraPreviewTrailingPad` | 16 | bottomTrailing |
 | `cameraPreviewBottomPad` | 16 | над home indicator |
-| `helpSheetHorizontalPad` | 16 | padding body справки |
-| `helpSheetSectionGap` | 16 | gap между блоками справки |
-| `cooldownFlashOpacity` | 0.0 | v1 без action flash |
+| `helpSheetHorizontalPad` | 16 | Figma content inset |
+| `helpSheetSectionGap` | 8 | gap между intro / toggle-секциями |
+| `helpSheetTopPad` | 16 | content ниже toolbar |
+| `helpIntroRowMinHeight` | 66 | intro + energy |
+| `helpToggleRowHeight` | 52 | Regular row |
+| `helpDeniedRowMinHeight` | 68 | Tall row (title + subtitle) |
+| `helpEnergyGlyphSize` | 22 | декоративный switch в energy hint |
+| `helpChipHeight` | 34 | голосовые чипы |
+| `helpChipHorizontalPad` | 11 | inset текста чипа |
+| `helpChipGap` | 8 | wrap gap |
+| `helpTryHintHeight` | 22 | «Попробуйте сказать/показать» |
+| `helpGestureIconSize` | 64 | like/dislike и глаза |
+| `helpGestureRowHeight` | 96 | 16 + 64 + 16 |
+| `helpDebugFiredDuration` | 0.8 | длительность accent live |
 
-Шрифты баннера — как сейчас у `ScreenAwakeStatusBanner` (`.appBody()`). Справка: заголовок существующий navigation/sheet title style; body `.appBody()` / `.appFootnote()`. Не вводить `.font(.system`.
+Шрифты:
 
-Ellipsis **не** `AppToolbarStyle.iconOnly` (это toolbar chrome). В баннере: `AppSymbol.image("ellipsis")` или эквивалент 16 pt, цвет как `bannerText` баннера.
+| Роль Figma | В приложении |
+|------------|----------------|
+| Title3/Emphasized 20 sheet title | `Text` + `AppTypography.title3`, wrap |
+| Body/Regular intro | `.appBody()` |
+| Headline/Regular toggle title | `.appHeadline()` |
+| Body try-hint | `.appBody()` |
+| Chip label | `.appFootnote()` |
+| Subheadline denied | `.appFootnote()` + orange |
+| Settings button | `.appBody()` + tint `accent` |
+
+Цвета live: idle chip — tertiary fill (`Color.secondary.opacity(0.12)` ≈ Figma chip); fired chip — `Color.green` fill, белый текст; fired glyph — `Color.green`; denied subtitle — `Color.orange`. Toggle ON — системный green switch, не кастомный tint баннера.
+
+Ellipsis **не** `AppToolbarStyle.iconOnly`. В баннере: `AppSymbol.image("ellipsis")` 16 pt, цвет `bannerText`.
 
 ---
 
 ## State: Awake OFF
 
-Без изменений относительно сегодняшнего detail. Нет баннера, нет menu, нет camera preview, нет listening.
+Без изменений. Нет баннера, нет sheet, нет preview.
 
 ---
 
-## State: Awake ON — Hands-free OFF (default)
+## State: Awake ON — каналы OFF (default)
 
 ### Дерево
 
 ```text
 YDocRecipeDetailView
-├─ toolbar: ScreenAwakeToggle (ON)          // existing, unchanged
-├─ ScreenAwakeStatusBanner                  // existing sticky, height 44…48
-│    └─ HStack spacing 8
-│         ├─ Circle 8×8 (pulse)             // existing
-│         ├─ Text common.screen-always-on   // existing, lineLimit 1, hug leading
+├─ toolbar: ScreenAwakeToggle (ON)
+├─ ScreenAwakeStatusBanner                  // height 44…48
+│    └─ HStack spacing bannerAccessoryGap (8)
+│         ├─ Circle 8×8 (pulse)
+│         ├─ HStack spacing 6
+│         │    └─ Text recipe.awake-scroll.banner
 │         ├─ Spacer minLength 0
-│         └─ Menu                           // NEW
-│              label: ellipsis 16×16 in 44×44 hit
-│              ├─ Toggle Hands-free         // unchecked
-│              └─ Button Help
-├─ ScrollView (recipe)                      // existing
+│         └─ Button ellipsis
+├─ ScrollView (recipe)
 └─ (нет camera preview)
 ```
 
@@ -80,62 +120,105 @@ YDocRecipeDetailView
 
 | Элемент | W×H | Примечание |
 |---------|-----|------------|
-| Banner | full width × 44 (допуск +4) | ellipsis не должен форсировать вторую строку title |
-| Title | flexible, compress | `.lineLimit(1)` как сейчас; truncate если конфликт с ellipsis |
-| Ellipsis visual | 16×16 | trailing, не перекрывает pulse |
-| Ellipsis hit | ≥44×44 | не меньше HIG |
-| Toolbar | unchanged | только один sun.max для awake |
-
-**Критично:** title и ellipsis — соседи по HStack; ellipsis **не** в отдельной колонке, которая отнимает ширину у всего баннера через overlay-баг. Spacer между текстом и меню.
-
-### SwiftUI notes
-
-- `Menu` + `Toggle` (iOS 17): флажок в меню, не отдельный switch в баннере.
-- Help: `.sheet` с `AwakeScrollHelpSheet`; dismiss системный grabber + Close `common.close` если в проекте так принято для informational sheets.
-- Wire scroll через UIScrollView **probe**, не через лишний `ScrollViewReader` jump to id.
+| Banner | full × 44 (+4) | иконки каналов не форсируют wrap title |
+| Title | flexible, compress | `.lineLimit(1)` |
+| Ellipsis visual | 16×16 | trailing |
+| Ellipsis hit | ≥44×44 | HIG |
 
 ---
 
-## State: Awake ON — Hands-free ON
+## State: Awake ON — каналы ON
 
 То же дерево, плюс:
 
 ```text
-└─ overlay bottomTrailing: CameraPreview 48○
-       only if camera granted AND (Face or Hand) armed
-       allowsHitTesting(false)
+HStack spacing 8
+├─ pulse 8×8
+├─ HStack spacing 6 (hug)
+│    ├─ Text recipe.awake-scroll.banner
+│    ├─ waveform 16×16                 // если voice ON
+│    ├─ hand glyph 16×16               // если hand ON
+│    └─ face.smiling 16×16             // если face ON
+├─ Spacer
+└─ Button ellipsis
+overlay bottomTrailing: CameraPreview 48○
 ```
 
-Toggle в меню — checked. Preview **не** inset: высота/ширина ScrollView не меняются.
+Порядок иконок фиксирован: голос → жесты → лицо; выключенные **пропускать** (не пустые слоты). Цвет = `bannerText`.
 
 ---
 
-## State: Permission denied (HF ON)
+## State: Permission denied (баннер)
 
-Баннер как Awake ON. Preview нет, если camera denied. Справка остаётся доступна. Опционально одна footnote-строка в баннере **не** добавлять в v1, чтобы не растить высоту: отказ объясняется в справке и системном Settings. Если всё же показывать — truncate одна строка, высота баннера всё ещё ≤ 48.
+Баннер как Awake ON. Иконок канала нет (snap-off pref). Preview нет. Sheet объясняет отказ.
 
 ---
 
-## State: Help sheet
+## State: Help / settings sheet
 
-### Дерево
+Системный `.sheet`, large detent, grabber. Заголовок `recipe.awake-scroll.help.title` — **в контенте**, Martian title3 20, перенос строк, без обрезки. Navbar и Close нет; dismiss — grabber / swipe.
+
+Типографика: **не** SF. Sheet скроллится при XXXL / длинных RU.
+
+### Дерево (канон `404:3351` + условные секции)
 
 ```text
 Sheet
-├─ navigationTitle recipe.awake-scroll.help.title
-├─ toolbar trailing: common.close (если нужен для a11y / iPad)
+├─ grabber 60×4
 └─ ScrollView
-     └─ VStack alignment leading, gap helpSheetSectionGap, pad 16
-          ├─ section Voice: title + body (фразы RU/EN)
-          ├─ section Hand: thumbs-up up/down
-          ├─ section Face: blink left/right, TrueDepth
-          ├─ section XOR: камера либо лицо, либо рука
-          └─ section Permissions: mic/speech/camera только после Hands-free
+     └─ VStack alignment leading, spacing 8, pad H 16, top 16
+          ├─ Text title                         // title3 20, wrap, .isHeader
+          ├─ Text intro                         // minHeight 66, .appBody()
+          ├─ HStack spacing 8                   // energy, minHeight 66
+          │    ├─ AppSymbol switch.2 22×22      // декоративный, не интерактивный
+          │    └─ Text energy hint              // .appBody() / footnote, wrap
+          ├─ channel Voice
+          │    ├─ HStack toggle row 52
+          │    │    ├─ Text title .appHeadline()
+          │    │    └─ Toggle
+          │    ├─ (denied) Text orange footnote // row → min 68
+          │    └─ (ON && granted) live voice block
+          │         ├─ Text try-hint 22
+          │         └─ Wrapping chips 34h, gap 8
+          ├─ channel Hand                       // то же
+          │    └─ (ON && granted) live hand block
+          │         ├─ Text try-hint
+          │         └─ HStack 2× 64 icons, row 96, equal width
+          ├─ channel Face                       // скрыть, если нет TrueDepth
+          │    └─ (ON && granted) live face block — два глаза 64
+          └─ (если ≥1 permission denied)
+               Button settings                  // 52h, leading, accent
 ```
 
-Ширина: системный sheet. Не modal loop, не блокирует карточка за sheet: HF сессия может оставаться armed (справка — не teardown).
+**Критично:** live-блоки **не** соседи, делящие ширину с тумблером. Тумблер — полная ширина row 52; live — **следующий** блок на всю ширину контента (Figma: чипы и иконки ниже switch). Energy glyph **не** наследует ширину intro-текста.
 
-Worst-case stub: длинные RU строки Dynamic Type XXXL — sheet скроллится, баннер ellipsis не обрезается sheet'ом.
+### Чипы голоса
+
+RU (locale): `вверх` · `выше` · `прокрути вверх` · `вниз` · `ниже` · `прокрути вниз`  
+EN: `up` · `higher` · `scroll up` · `down` · `lower` · `scroll down`
+
+Idle: нейтральный fill, primary label. Fired 0.8 s: green fill, white label, только совпавший чип (Figma `404:3818`).
+
+### Жесты / лицо live
+
+Idle: primary/label fill. Fired: `Color.green` на **одной** иконке (`404:3923` like; `404:3713` глаз). Сосед остаётся idle. Лицо: слева вверх, справа вниз.
+
+Sheet **не** teardown: проверка идёт при открытом sheet.
+
+### Denied `404:4092`
+
+- Toggle OFF (snap-off).
+- Figma: `isEnabled=False` — **disabled**, пока permission этого канала denied. После grant в Settings тумблер снова enabled и OFF; пользователь включает сам.
+- Orange subtitle под title (mic vs camera).
+- «Открыть параметры» если denied хотя бы mic **или** camera.
+- Face-ряд на non-TrueDepth не показывать даже в denied (нет тумблера).
+
+### SwiftUI notes
+
+- `Toggle` системный, не кастомный switch.
+- Чипы: `FlowLayout` / wrap; не горизонтальный scroll, который прячет «прокрути вниз».
+- Не `.font(.system`.
+- Не `List` insetGrouped с серыми карточками: Figma — плоский белый sheet, 16 pt insets, без separators-обязательности. Допустимы скрытые separators.
 
 ---
 
@@ -144,10 +227,12 @@ Worst-case stub: длинные RU строки Dynamic Type XXXL — sheet ск
 | Примитив | Файл | Ответственность |
 |----------|------|-----------------|
 | `AwakeScrollLayout` | `AwakeScrollLayout.swift` | токены |
-| Banner `Menu` | extend `ScreenAwakeStatusBanner` | ellipsis, toggle, help trigger |
-| `AwakeScrollHelpSheet` | `AwakeScrollHelpSheet.swift` | copy справки |
+| Banner chrome | `ScreenAwakeStatusBanner` | pulse, title, channel icons, ellipsis Button |
+| `AwakeScrollHelpSheet` | `AwakeScrollHelpSheet.swift` | intro, 3 тумблера, live, denied, settings |
+| Voice chips | тот же sheet / маленькая View | wrap + fired color |
+| Gesture/face icons | тот же sheet | 64 pt, fired color |
 | `AwakeScrollCameraPreview` | optional | 48○ overlay |
-| `DetailScrollViewProbe` | рядом со scroll support | weak UIScrollView host |
+| `DetailScrollViewProbe` | рядом | weak UIScrollView host |
 
 ---
 
@@ -156,11 +241,16 @@ Worst-case stub: длинные RU строки Dynamic Type XXXL — sheet ск
 | State | Light | Dark | Edge |
 |-------|-------|------|------|
 | Awake off | ☐ | ☐ | нет баннера, нет preview |
-| Awake on, HF off | ☐ | ☐ | ellipsis виден; нет green camera dot |
-| Awake on, HF on, voice | ☐ | ☐ | menu checked |
-| Awake on, HF on, camera preview | ☐ | ☐ | 48○, SE home indicator clear |
-| Help sheet | ☐ | ☐ | XXXL scroll |
-| Camera denied | ☐ | ☐ | нет preview; scroll ручной жив |
+| Awake on, каналы off | ☐ | ☐ | ellipsis; нет иконок каналов; нет camera dot |
+| Voice ON | ☐ | ☐ | `waveform` в баннере; чипы на sheet |
+| Voice live chip | ☐ | ☐ | только совпавший чип зелёный 0.8s |
+| Hand ON | ☐ | ☐ | banner hand glyph; 64 like/dislike |
+| Face ON (TrueDepth) | ☐ | ☐ | `face.smiling`; два глаза |
+| Нет TrueDepth | ☐ | ☐ | нет ряда «лицо» |
+| XOR hand→face | ☐ | ☐ | hand OFF, face ON, одна камера |
+| Camera preview | ☐ | ☐ | 48○, SE home indicator clear |
+| Denied | ☐ | ☐ | orange captions, disabled OFF, Settings |
+| XXXL sheet | ☐ | ☐ | scroll, чипы wrap |
 | Cooking cover | ☐ | ☐ | нет preview поверх матрицы |
 
 ---
@@ -168,28 +258,35 @@ Worst-case stub: длинные RU строки Dynamic Type XXXL — sheet ск
 ## Falsifiable claims
 
 1. **Claim:** Один voice/gesture down сдвигает contentOffset на 0.75×`bounds.height` (±1 pt) пока не clamp.  
-2. **Claim:** При awake ON и Hands-free OFF нет AVCapture session (нет green camera dot).  
-3. **Claim:** Camera preview 48 pt overlay; scroll view frame height не меняется при появлении preview.  
-4. **Claim:** Нет новой toolbar button кроме существующего sun.max.  
-5. **Claim:** Ellipsis находится в баннере справа; высота баннера ≤ 48 pt.  
-6. **Claim:** Справка открывается пунктом меню, не отдельной toolbar-кнопкой.
+2. **Claim:** При awake ON и всех каналах OFF нет AVCapture session (нет green camera dot). Voice-only — тоже нет camera dot.  
+3. **Claim:** Camera preview 48 pt overlay; высота ScrollView не меняется.  
+4. **Claim:** Нет новой toolbar button кроме `play.circle.fill`.  
+5. **Claim:** Ellipsis в баннере справа; высота баннера ≤ 48 pt; это Button, не двухпунктный Menu.  
+6. **Claim:** Sheet открывается ellipsis, не toolbar.  
+7. **Claim:** После title баннера видны только иконки каналов с pref true, порядок voice→hand→face, 16 pt.  
+8. **Claim:** Live: меняется цвет одного чипа или одной 64 pt иконки, не всего ряда.  
+9. **Claim:** Denied: тумблер OFF+disabled, orange caption, Settings если ≥1 denied.  
+10. **Claim:** Sheet и баннер без `.font(.system`.  
+11. **Claim:** Face-ряд отсутствует, если TrueDepth unsupported.
 
 ---
 
 ## Platform constraints
 
-- UIScrollView must be reachable from SwiftUI detail via probe.  
-- Front camera green dot expected while Hand/Face armed.  
-- Face XOR Hand if both would need camera.  
-- Banner Menu должен работать с VoiceOver: label `recipe.awake-scroll.menu`.
+- UIScrollView через probe.  
+- Front camera green dot пока Hand/Face armed.  
+- Face XOR Hand — пользовательские тумблеры, не auto TrueDepth.  
+- `hand.thumbsdown.hand.thumbsup.filled` есть в SF Symbols 8, **не** гарантирован на iOS 17. Канон баннера: этот symbol, если `UIImage(systemName:)` ≠ nil; иначе fallback `hand.thumbsup.fill` (один глиф, не пустой слот). Sheet like/dislike: `hand.thumbsup.fill` / `hand.thumbsdown.fill` (iOS 17).  
+- Banner VoiceOver: ellipsis `recipe.awake-scroll.menu`; иконки каналов — accessibility elements с существующими `help.icon.*` или отдельными banner keys.  
+- Sheet VoiceOver: каждый тумблер + Settings button.
 
 ---
 
 ## Stub data
 
-Long recipe (20+ steps) для manual 75% verification.  
-Banner: длинная RU `common.screen-always-on` + ellipsis на SE width.  
-Help sheet: полный набор секций, Dynamic Type accessibility5.
+Long recipe (20+ steps) для 75% verification.  
+Banner SE: длинная RU `common.screen-always-on` + 3 иконки + ellipsis.  
+Sheet previews: all-off; voice+hand idle; voice fired chip; hand fired; face fired; denied; Dynamic Type accessibility5.
 
 ---
 
@@ -198,5 +295,6 @@ Help sheet: полный набор секций, Dynamic Type accessibility5.
 | Дата | Изменение |
 |------|-----------|
 | 2026-09-14 | Rev 1 cook-matrix HF chrome |
-| 2026-09-14 | Rev 2 pivot: awake-linked scroll ±75%; strip cook overlays |
-| 2026-09-14 | **Rev 3** opt-in: banner ellipsis (Hands-free + Help); камера не с sun.max |
+| 2026-09-14 | Rev 2 pivot: awake-linked scroll ±75% |
+| 2026-09-19 | Rev 3 help debug icons |
+| 2026-09-19 | Rev 4 Figma `404:4872`: settings+help sheet, banner channel icons |

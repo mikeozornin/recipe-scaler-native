@@ -35,7 +35,8 @@ private func numberedIngredientRows(from ingredients: [IngredientData]) -> [(num
 struct YDocIngredientsSection: View {
     let ingredients: [IngredientData]
     let baseServings: Int
-    let viewServings: Int
+    /// Continuous UI scale (web). Prefer over viewServings/base ratio for quantities.
+    let scaleFactor: Double
     let accentColor: Color
     var onScaledQuantityEdited: ((IngredientData, String) -> Void)?
     var onAddIngredientToShopping: ((IngredientData) -> Void)?
@@ -84,7 +85,7 @@ struct YDocIngredientsSection: View {
                             YDocIngredientViewRow(
                                 ingredient: row.ingredient,
                                 baseServings: baseServings,
-                                viewServings: viewServings,
+                                scaleFactor: scaleFactor,
                                 accentColor: accentColor,
                                 onScaledQuantityEdited: onScaledQuantityEdited,
                                 nutritionEnabled: nutritionEnabled,
@@ -141,20 +142,19 @@ struct YDocIngredientsSection: View {
     }
 }
 
-private func scaledQuantityPreview(amount: String, baseServings: Int, viewServings: Int) -> String {
+private func scaledQuantityPreview(amount: String, scaleFactor: Double) -> String {
     let trimmed = amount.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { return "" }
     let normalized = trimmed.replacingOccurrences(of: ",", with: ".")
     guard let value = Double(normalized), value.isFinite, value > 0 else { return "" }
-    let base = max(1, baseServings)
-    let factor = Double(max(1, viewServings)) / Double(base)
-    return IngredientData.formatScalarNumber(value * factor)
+    let scale = scaleFactor.isFinite && scaleFactor > 0 ? scaleFactor : 1
+    return IngredientData.formatScalarNumber(value * scale)
 }
 
 private struct YDocIngredientViewRow: View {
     let ingredient: IngredientData
     let baseServings: Int
-    let viewServings: Int
+    let scaleFactor: Double
     let accentColor: Color
     var onScaledQuantityEdited: ((IngredientData, String) -> Void)?
     let nutritionEnabled: Bool
@@ -172,7 +172,7 @@ private struct YDocIngredientViewRow: View {
     }
 
     private var scaledQuantityText: String {
-        ingredient.scaledQuantityText(targetServings: viewServings, baseServings: max(1, baseServings))
+        ingredient.scaledQuantityText(scaleFactor: scaleFactor)
     }
 
     private var nutritionSummary: String? {
@@ -180,7 +180,7 @@ private struct YDocIngredientViewRow: View {
         return IngredientNutritionDisplay.summaryLine(
             ingredient: ingredient,
             baseServings: baseServings,
-            viewServings: viewServings,
+            scaleFactor: scaleFactor,
             mode: nutritionViewMode
         )
     }
@@ -324,7 +324,7 @@ struct YDocIngredientsEditSection: View {
     let recipe: RecipeData
     @Binding var draftServings: Int
     let baseServings: Int
-    let viewServings: Int
+    let scaleFactor: Double
     let accentColor: Color
     var nutritionEnabled: Bool = false
     var nutritionViewMode: IngredientNutritionViewMode = .dish
@@ -594,7 +594,7 @@ struct YDocIngredientsEditSection: View {
             name: bindingName(for: ingredient.id, fallback: draft.name),
             amount: bindingAmount(for: ingredient.id, fallback: draft.amount),
             baseServings: baseServings,
-            viewServings: viewServings,
+            scaleFactor: scaleFactor,
             accentColor: accentColor,
             nutritionEnabled: nutritionEnabled,
             nutritionViewMode: nutritionViewMode,
@@ -1062,7 +1062,7 @@ struct YDocIngredientEditRow: View {
     @Binding var name: String
     @Binding var amount: String
     let baseServings: Int
-    let viewServings: Int
+    let scaleFactor: Double
     let accentColor: Color
     let nutritionEnabled: Bool
     let nutritionViewMode: IngredientNutritionViewMode
@@ -1076,7 +1076,7 @@ struct YDocIngredientEditRow: View {
         return IngredientNutritionDisplay.summaryLine(
             ingredient: ingredient,
             baseServings: baseServings,
-            viewServings: viewServings,
+            scaleFactor: scaleFactor,
             mode: nutritionViewMode
         )
     }

@@ -1,0 +1,114 @@
+import Foundation
+
+struct AwakeScrollArmFlags: Equatable, Sendable {
+    var recipeId: String = ""
+    var detailVisible: Bool = false
+    var isScreenAwakeActive: Bool = false
+    var voiceEnabled: Bool = false
+    var handEnabled: Bool = false
+    var faceEnabled: Bool = false
+    var cookingPresented: Bool = false
+    var assistantSheetOpen: Bool = false
+
+    var isAnyChannelEnabled: Bool {
+        voiceEnabled || handEnabled || faceEnabled
+    }
+
+    var isBaseArmed: Bool {
+        detailVisible
+            && isScreenAwakeActive
+            && !cookingPresented
+            && !assistantSheetOpen
+    }
+
+    var isArmed: Bool {
+        isBaseArmed && isAnyChannelEnabled
+    }
+
+    var wantsVoice: Bool {
+        isBaseArmed && voiceEnabled
+    }
+
+    func desiredCameraModality(trueDepthAvailable: Bool) -> AwakeScrollCameraModality {
+        guard isBaseArmed else { return .none }
+        if faceEnabled, trueDepthAvailable { return .face }
+        if handEnabled { return .hand }
+        return .none
+    }
+}
+
+enum AwakeScrollCameraModality: Equatable, Sendable {
+    case none
+    case hand
+    case face
+}
+
+struct AwakeScrollPermissionSnapshot: Equatable, Sendable {
+    var micGranted: Bool
+    var speechGranted: Bool
+    var cameraGranted: Bool
+    var micDenied: Bool = false
+    var speechDenied: Bool = false
+    var cameraDenied: Bool = false
+    var speechRestricted: Bool = false
+    var cameraRestricted: Bool = false
+
+    static let denied = AwakeScrollPermissionSnapshot(
+        micGranted: false,
+        speechGranted: false,
+        cameraGranted: false,
+        micDenied: true,
+        speechDenied: true,
+        cameraDenied: true
+    )
+
+    static let unknown = AwakeScrollPermissionSnapshot(
+        micGranted: false,
+        speechGranted: false,
+        cameraGranted: false
+    )
+
+    var voiceDenied: Bool { micDenied || speechDenied }
+    var voiceRestricted: Bool { speechRestricted }
+    var voiceBlocked: Bool { voiceDenied || voiceRestricted }
+    var cameraBlocked: Bool { cameraDenied || cameraRestricted }
+    var showsOpenSettings: Bool { micDenied || cameraDenied || speechDenied }
+}
+
+enum AwakeScrollVoiceChip: String, Equatable, CaseIterable, Sendable {
+    case up
+    case higher
+    case scrollUp
+    case down
+    case lower
+    case scrollDown
+
+    var localizationKey: String {
+        switch self {
+        case .up: "recipe.awake-scroll.help.chip.up"
+        case .higher: "recipe.awake-scroll.help.chip.higher"
+        case .scrollUp: "recipe.awake-scroll.help.chip.scroll-up"
+        case .down: "recipe.awake-scroll.help.chip.down"
+        case .lower: "recipe.awake-scroll.help.chip.lower"
+        case .scrollDown: "recipe.awake-scroll.help.chip.scroll-down"
+        }
+    }
+
+    var accessibilityToken: String {
+        switch self {
+        case .up: "up"
+        case .higher: "higher"
+        case .scrollUp: "scroll-up"
+        case .down: "down"
+        case .lower: "lower"
+        case .scrollDown: "scroll-down"
+        }
+    }
+
+    var action: AwakeScrollAction {
+        switch self {
+        case .up, .higher, .scrollUp: .up
+        case .down, .lower, .scrollDown: .down
+        }
+    }
+}

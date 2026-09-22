@@ -3,7 +3,7 @@
 **Spec**: [spec.md](./spec.md)  
 **Plan**: [plan.md](./plan.md)
 
-Сервер и Y.Doc **не** участвуют. Модель — in-memory сессия карточки + один Bool в UserDefaults.
+Сервер и Y.Doc **не** участвуют. Модель — in-memory сессия карточки + три Bool каналов в UserDefaults.
 
 ## AwakeScrollAction
 
@@ -34,13 +34,21 @@ enum AwakeScrollAction: Equatable {
 
 ## AwakeHandsFreeStorage
 
-| Поле | Тип | Правила |
-|------|-----|---------|
-| key | `"awakeHandsFreeEnabled"` | UserDefaults.standard |
-| default | `false` | отсутствует ключ → OFF |
-| writer | только UI toggle в banner Menu | teardown awake **не** пишет false |
+Три ключа, `UserDefaults.standard`, default `false`:
+
+| Key | Канал |
+|-----|--------|
+| `awakeHandsFreeVoiceEnabled` | голос |
+| `awakeHandsFreeHandEnabled` | жесты |
+| `awakeHandsFreeFaceEnabled` | лицо |
+
+Писатели: тумблеры sheet; XOR (hand ON → face false и наоборот); snap-off при denied **и при отказе старта движка канала** (нет on-device speech / камера недоступна — иначе `syncArmState` после partial commit крутит stop/start). Teardown awake **не** пишет false.
+
+Миграция один раз: если новых ключей ещё нет и `awakeHandsFreeEnabled == true` → voice=true и (TrueDepth → face, иначе hand). После миграции старый ключ не source of truth.
 
 Не Codable versioning. Не App Group.
+
+Derived: `isAnyChannelEnabled` = voice \|\| hand \|\| face. Мастер-флага в UI нет.
 
 ## AwakeScrollModality
 
@@ -52,7 +60,7 @@ enum AwakeScrollCameraModality: Equatable {
 }
 ```
 
-Резолв: если не armed или camera denied → `.none`. Иначе TrueDepth → `.face`, иначе `.hand`. Voice — отдельный канал, не case этого enum.
+Резолв: `.none` если не armed / camera denied / оба камерных pref false. Иначе если `awakeHandsFreeFaceEnabled` AND TrueDepth → `.face`. Иначе если `awakeHandsFreeHandEnabled` → `.hand`. Voice — отдельный канал.
 
 ## AwakeScrollPermissionSnapshot
 
@@ -62,16 +70,17 @@ enum AwakeScrollCameraModality: Equatable {
 | `speechGranted` | `SFSpeechRecognizer` auth |
 | `cameraGranted` | video |
 
-Denied канал просто не стартует. Snapshot пересчитывать после каждого request и при `UIApplication.willEnterForeground` если F1.1.
+Denied канал не стартует. `micDenied`/`speechDenied`/`cameraDenied` — только `.denied` (кнопка Settings). `.restricted` попадает в `speechRestricted`/`cameraRestricted`: тумблер disabled, **pref не snap-off**. Snapshot пересчитывать после каждого request, при `scenePhase == .active` / `UIApplication.willEnterForeground` и при каждом `onAppear` help sheet. `showsOpenSettings` = micDenied \|\| cameraDenied \|\| speechDenied.
 
 ## AwakeScrollSession (in-memory, controller)
 
 | Поле | Тип | Правила |
 |------|-----|---------|
 | `recipeId` | `String` | captured identity |
-| `sessionEpoch` | `UInt64` | ++ на любом teardown/start |
+| `sessionEpoch` | `UInt64` | ++ на полном teardown (все каналы idle); stop только speech при живой камере epoch не рвёт |
 | `voiceSessionId` | `UInt64` | ++ на каждом SF re-arm |
-| `isStarting` | `Bool` | single-flight; снять `defer` |
+| `isStarting` | `Bool` | single-flight; снять `defer` только если `startID` свой |
+| `startID` | `UInt64` | ++ на каждом `startIfNeeded` и `stop`; инвалидирует in-flight start |
 | `cooldownUntil` | `Date?` | 0.6 s default после fire (допуск 0.5…0.8) |
 | `cameraModality` | `AwakeScrollCameraModality` | |
 | `permissions` | `AwakeScrollPermissionSnapshot` | |
@@ -89,40 +98,40 @@ Denied канал просто не стартует. Snapshot пересчит�
 
 ## Hand pose input
 
-Нормализованные точки Vision (после зеркала preview, если применяем): thumbTip, thumbCMC (base). Hold 200 ms в том же секторе → один fire.
+Нормализованные точки Vision (после зеркала preview, если применяем): thumbTip, thumbCMC (base). Hold 250 ms в том же секторе → один fire.
 
 Секторы: [contracts/gesture-mapping.md](./contracts/gesture-mapping.md).
 
 ## Face blink input
 
-`eyeBlinkLeft` / `eyeBlinkRight` blend shapes 0…1. Edge: переход через порог (канон 0.6) из ниже порога. Одновременный double-blink → ignore (не два action).
+ARKit `.userFacing` отдаёт `eyeBlinkLeft` как глаз слева в кадре (= мой правый). Перед классификатором un-mirror: user-left = ARKit right. Дальше коэффициенты 0…1 анатомически (мой левый / мой правый). Edge: переход через порог 0.6 из ниже порога. Если второй глаз явно открыт (`< 0.35`) — сразу `.up`/`.down` (подмигивание). Если второй глаз уже прикрыт — pending 100 ms: второй rising edge в окне → ignore (естественный блинк), иначе fire.
 
-## Arm predicate (F1.1)
+## Arm predicate (F1.1) per channel
 
 ```text
 detailVisible
 && isScreenAwakeActive
-&& handsFreeEnabled
+&& channelPref
+&& channelPermissionsGranted
+&& (face ⇒ TrueDepth)
 && cookingPresentation == nil
 && assistantSheetOpen == false
 ```
 
-Тест обязан подставлять каждый терм.
+Тест обязан подставлять каждый терм. Voice и camera-канал армятся независимо (кроме XOR hand/face).
 
 ## State transitions
 
 ```mermaid
 stateDiagram-v2
   [*] --> AwakeOff
-  AwakeOff --> AwakeOn: sun.max ON
-  AwakeOn --> HandsFreeArmed: banner Hands-free ON and F1.1
-  HandsFreeArmed --> AwakeOn: Hands-free OFF
-  HandsFreeArmed --> AwakeOff: sun.max OFF or leave or background
-  HandsFreeArmed --> CoverDisarmed: cooking cover or assistant
-  CoverDisarmed --> HandsFreeArmed: dismiss and F1.1
+  AwakeOff --> AwakeOn: play.circle.fill ON
+  AwakeOn --> ChannelArmed: channel pref ON, permission granted, F1.1
+  ChannelArmed --> AwakeOn: channel pref OFF or denied snap-off
+  ChannelArmed --> AwakeOff: play.circle.fill OFF or leave or background
+  ChannelArmed --> CoverDisarmed: cooking cover or assistant
+  CoverDisarmed --> ChannelArmed: dismiss and F1.1
   CoverDisarmed --> AwakeOff: awake deactivated while covered
-  HandsFreeArmed --> HandsFreeNoop: both permissions denied
-  HandsFreeNoop --> HandsFreeArmed: permission granted on retry
 ```
 
 ## Validation
@@ -135,4 +144,4 @@ stateDiagram-v2
 | dead-zone thumb | hand | ignore |
 | epoch mismatch | controller | drop |
 
-Нет миграций БД.
+Нет миграций БД. Миграция только UserDefaults F1.9.

@@ -1067,6 +1067,20 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertEqual(RecipeServings.normalize("0"), nil)
         XCTAssertEqual(RecipeServings.scaledServings(base: 1, scaleFactor: 10), 10)
         XCTAssertEqual(RecipeServings.scaledServings(base: 4, scaleFactor: 2.5), 10)
+        // Continuous path: 40→60 must keep 1.5, not snap via integer servings when base=1.
+        XCTAssertEqual(RecipeServings.currentServings(base: 1, scaleFactor: 1.5), 1.5, accuracy: 0.0001)
+        let display15 = RecipeServings.formatDisplay(1.5)
+        XCTAssertTrue(display15 == "1.5" || display15 == "1,5", display15)
+        XCTAssertEqual(RecipeServings.steppedServings(base: 1, scaleFactor: 1.5, delta: 1), 3) // round(1.5)+1
+        XCTAssertEqual(RecipeServings.steppedServings(base: 1, scaleFactor: 1.5, delta: -1), 1) // round(1.5)-1
+    }
+
+    func testIngredientScaledQuantityKeepsFractionalScaleFactor() {
+        let flour = IngredientData(id: "1", name: "Мука", originalAmount: "40", unit: "г")
+        XCTAssertEqual(flour.scaledQuantityText(scaleFactor: 1.5), "60")
+        // Bug: targetServings = round(1*1.5)=2 would show 80; continuous path must not.
+        XCTAssertEqual(flour.scaledQuantityText(targetServings: 2, baseServings: 1), "80")
+        XCTAssertNotEqual(flour.scaledQuantityText(scaleFactor: 1.5), flour.scaledQuantityText(targetServings: 2, baseServings: 1))
     }
 
     func testIngredientNutritionSummaryLineScaledMode() {
@@ -1252,8 +1266,8 @@ final class RecipeScalerNativeTests: XCTestCase {
         }
         XCTAssertNotNil(UIImage(systemName: "globe"))
         XCTAssertNotNil(
-            UIImage(systemName: "sun.max"),
-            "Missing SF Symbol for keep-awake toolbar: sun.max"
+            UIImage(systemName: "play.circle.fill"),
+            "Missing SF Symbol for keep-awake toolbar: play.circle.fill"
         )
         // Sanity check: a deliberately-invalid symbol name must yield `nil`.
         // We use this to ensure `UIImage(systemName:)` actually fails for unknown symbols.

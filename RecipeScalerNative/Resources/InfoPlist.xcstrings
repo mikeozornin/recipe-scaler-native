@@ -1,98 +1,126 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "CFBundleDisplayName" : {
-      "comment" : "Bundle display name",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Recipe Scaler"
+  "sourceLanguage": "en",
+  "strings": {
+    "CFBundleDisplayName": {
+      "comment": "Bundle display name",
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Recipe Scaler"
           }
         }
       }
     },
-    "CFBundleName" : {
-      "comment" : "Bundle name",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "RecipeScalerNative"
+    "CFBundleName": {
+      "comment": "Bundle name",
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "RecipeScalerNative"
           }
         }
       }
     },
-    "NSCameraUsageDescription" : {
-      "comment" : "Privacy - Camera Usage Description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Recipe Scaler uses the camera to scan QR codes to log in with your seed phrase."
-          }
-        }
-      }
-    },
-    "NSMicrophoneUsageDescription" : {
-      "comment" : "Privacy - Microphone Usage Description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Recipe Scaler uses the microphone so you can dictate messages to the AI assistant."
-          }
-        }
-      }
-    },
-    "NSRemindersFullAccessUsageDescription" : {
-      "comment" : "Privacy - Reminders Full Access Usage Description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Recipe Scaler syncs your shopping list with Apple Reminders so you can check off items on Apple Watch, ask Siri, and access your list from any Apple device."
-          }
-        }
-      }
-    },
-    "NSRemindersUsageDescription" : {
-      "comment" : "Privacy - Reminders Usage Description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Recipe Scaler syncs your shopping list with Apple Reminders so you can check off items on Apple Watch, ask Siri, and access your list from any Apple device."
-          }
-        }
-      }
-    },
-    "Recipe Scaler recipe" : {
-
-    },
-    "spotlight.action.addToShopping.title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to Shopping"
+    "NSCameraUsageDescription": {
+      "comment": "Privacy - Camera Usage Description",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recipe Scaler uses the camera to scan QR codes to log in with your seed phrase, and for hands-free recipe scrolling while the screen is kept awake."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавить в покупки"
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recipe Scaler использует камеру, чтобы сканировать QR-код для входа по seed-фразе и для hands-free прокрутки рецепта, пока экран не гаснет."
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription": {
+      "comment": "Privacy - Microphone Usage Description",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recipe Scaler uses the microphone so you can dictate messages to the AI assistant and speak scroll commands while cooking with Hands-free on."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recipe Scaler использует микрофон, чтобы диктовать сообщения ассистенту и голосовые команды прокрутки в режиме Hands-free."
+          }
+        }
+      }
+    },
+    "NSRemindersFullAccessUsageDescription": {
+      "comment": "Privacy - Reminders Full Access Usage Description",
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Recipe Scaler syncs your shopping list with Apple Reminders so you can check off items on Apple Watch, ask Siri, and access your list from any Apple device."
+          }
+        }
+      }
+    },
+    "NSRemindersUsageDescription": {
+      "comment": "Privacy - Reminders Usage Description",
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Recipe Scaler syncs your shopping list with Apple Reminders so you can check off items on Apple Watch, ask Siri, and access your list from any Apple device."
+          }
+        }
+      }
+    },
+    "Recipe Scaler recipe": {},
+    "spotlight.action.addToShopping.title": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to Shopping"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавить в покупки"
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription": {
+      "comment": "Privacy - Speech Recognition Usage Description",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recipe Scaler uses on-device speech recognition for Hands-free up and down scroll commands while you cook."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recipe Scaler распознаёт речь на устройстве для команд прокрутки вверх и вниз в режиме Hands-free."
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

@@ -12,13 +12,10 @@ enum RecipeDetailScaling {
         from recipe: RecipeData,
         scaleFactor: Double
     ) -> [DisplayIngredient] {
-        let base = max(1, recipe.servings)
-        let target = targetServings(baseServings: base, scaleFactor: scaleFactor)
-
         return recipe.ingredients
             .sorted { $0.order < $1.order }
             .map { ingredient in
-                let scaledText = ingredient.scaledDisplay(targetServings: target, baseServings: base)
+                let scaledText = ingredient.scaledQuantityText(scaleFactor: scaleFactor)
                 let (amount, unit) = splitAmountAndUnit(scaledText)
                 return DisplayIngredient(
                     id: ingredient.id,

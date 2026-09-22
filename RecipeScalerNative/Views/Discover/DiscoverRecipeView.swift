@@ -56,15 +56,17 @@ struct DiscoverRecipeView: View {
 
                         if recipe.servings > 0 {
                             ServingsStepperView(
-                                servings: scaledServingsBinding(base: max(1, recipe.servings)),
-                                accentColor: accentColor
+                                currentServings: RecipeServings.currentServings(base: max(1, recipe.servings), scaleFactor: scaleFactor),
+                                accentColor: accentColor,
+                                onDecrement: { stepDiscoverServings(base: max(1, recipe.servings), delta: -1) },
+                                onIncrement: { stepDiscoverServings(base: max(1, recipe.servings), delta: 1) }
                             )
                         }
 
                         YDocIngredientsSection(
                             ingredients: recipe.ingredients,
                             baseServings: max(1, recipe.servings),
-                            viewServings: scaledServingsCount(base: max(1, recipe.servings)),
+                            scaleFactor: scaleFactor,
                             accentColor: accentColor,
                             onScaledQuantityEdited: { ingredient, text in
                                 applyViewModeScaledQuantityEdit(ingredient: ingredient, text: text)
@@ -263,8 +265,13 @@ struct DiscoverRecipeView: View {
     }
 
     private func scaledServingsCount(base: Int) -> Int {
+        RecipeServings.scaledServings(base: base, scaleFactor: scaleFactor)
+    }
+
+    private func stepDiscoverServings(base: Int, delta: Int) {
         let normalizedBase = max(1, base)
-        return max(1, Int((Double(normalizedBase) * scaleFactor).rounded()))
+        let next = RecipeServings.steppedServings(base: normalizedBase, scaleFactor: scaleFactor, delta: delta)
+        scaleFactor = max(1.0 / Double(normalizedBase), Double(next) / Double(normalizedBase))
     }
 
     private func scaledServingsBinding(base: Int) -> Binding<Int> {
