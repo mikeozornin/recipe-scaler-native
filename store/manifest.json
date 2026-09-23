@@ -1,11 +1,11 @@
 {
   "source": "app-store-connect-api",
-  "pulledAt": "2026-08-30T15:35:10+00:00",
+  "pulledAt": "2026-09-23T00:02:27+00:00",
   "appId": "6798054474",
   "bundleId": "ru.recipescaler.RecipeScaler",
   "name": "Recipe Scaler: Recipes manager",
   "sku": "recipe-scaler-app",
   "primaryLocale": "en-GB",
   "masterLocale": "en-GB",
-  "appInfoId": "61e38cb8-b307-42bd-952a-8ad5ec4c75a6"
+  "appInfoId": "e9eae942-3557-4815-bd07-ffe0f4aee616"
 }

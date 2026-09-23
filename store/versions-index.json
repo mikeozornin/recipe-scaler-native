@@ -1,8 +1,14 @@
 [
   {
+    "id": "5aff73e0-1873-44d8-879e-93eae86047e2",
+    "version": "1.0.10",
+    "state": "PREPARE_FOR_SUBMISSION",
+    "platform": "IOS"
+  },
+  {
     "id": "4989ca12-36b8-4930-a96b-c586c8d8359a",
     "version": "1.0.9",
-    "state": "PREPARE_FOR_SUBMISSION",
+    "state": "READY_FOR_SALE",
     "platform": "IOS"
   },
   {
