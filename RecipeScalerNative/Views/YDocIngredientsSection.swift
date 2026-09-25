@@ -682,12 +682,11 @@ struct YDocIngredientsEditSection: View {
         guard let ingredient = sorted.first(where: { $0.id == rowKey }),
               let draft = drafts[rowKey] else { return }
         let base = currentIngredient(for: ingredient.id) ?? ingredient
-        let parsed = IngredientData.parsedQuantity(draft.amount)
-        let unchanged =
-            draft.name.trimmingCharacters(in: .whitespacesAndNewlines) == base.name &&
-            draft.amount.trimmingCharacters(in: .whitespacesAndNewlines) == base.editableQuantity &&
-            parsed.originalAmount == (base.originalAmount.isEmpty ? base.amount : base.originalAmount)
-        guard !unchanged else { return }
+        guard !IngredientData.focusTraversalIsUnchanged(
+            name: draft.name,
+            amount: draft.amount,
+            base: base
+        ) else { return }
         await commitIngredient(ingredient, name: draft.name, amount: draft.amount)
     }
 
@@ -1001,7 +1000,8 @@ struct IngredientDraft {
 
     init(ingredient: IngredientData) {
         name = ingredient.name
-        amount = ingredient.editableQuantity
+        let stored = ingredient.originalAmount.isEmpty ? ingredient.amount : ingredient.originalAmount
+        amount = stored
     }
 
     init(name: String, amount: String) {

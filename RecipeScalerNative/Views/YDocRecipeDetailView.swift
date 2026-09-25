@@ -36,7 +36,14 @@ struct YDocRecipeDetailView: View {
     @State var titleSaveTask: Task<Void, Never>?
     @State var isFinishingEdit = false
     @State var isScreenAwakeActive = false
+    /// Screen-scoped owner of the camera, mic, and speech session.
+    /// ASYNC-LIFECYCLE §3 judgment call: logout pops this screen, so
+    /// `onDisappear` → `stopIfViewRemoved()` tears the hardware down, and the
+    /// controller `deinit` backstops a release that skips that callback.
+    /// `isViewInHierarchy` stops a help-sheet dismiss from re-arming after the
+    /// detail was popped while the sheet was still open.
     @State private var awakeScrollController = AwakeScrollController()
+    @State private var isViewInHierarchy = false
     @AppStorage(AwakeHandsFreeStorage.voiceKey) private var awakeVoiceEnabled = false
     @AppStorage(AwakeHandsFreeStorage.handKey) private var awakeHandEnabled = false
     @AppStorage(AwakeHandsFreeStorage.faceKey) private var awakeFaceEnabled = false
@@ -593,6 +600,7 @@ struct YDocRecipeDetailView: View {
             timerManager.setSuppressPanelSafeAreaInset(editing)
         }
         .onAppear {
+            isViewInHierarchy = true
             timerManager.setSuppressPanelSafeAreaInset(isEditing)
             awakeScrollController.flags.detailVisible = true
             // Capture Bindings only — capturing `self` / the view method would
@@ -666,12 +674,11 @@ struct YDocRecipeDetailView: View {
             }
         }
         .onDisappear {
+            isViewInHierarchy = false
             let sheetOverlay = showingAwakeScrollHelp
                 && awakeScrollController.probe.host?.window != nil
             if !sheetOverlay {
-                awakeScrollController.onChannelPrefsChanged = nil
-                awakeScrollController.flags.detailVisible = false
-                awakeScrollController.syncArmState()
+                awakeScrollController.stopIfViewRemoved()
             }
             timerManager.setSuppressPanelSafeAreaInset(false)
             guard !assistantRecipeContext.isAssistantSheetOpen else { return }
@@ -791,6 +798,11 @@ struct YDocRecipeDetailView: View {
     }
 
     func syncAwakeScrollArm() {
+        guard isViewInHierarchy else {
+            awakeScrollController.stopIfViewRemoved()
+            deactivateScreenAwake()
+            return
+        }
         AwakeHandsFreeStorage.migrateIfNeeded(
             trueDepthAvailable: AwakeScrollCaptureSession.supportsFaceTracking
         )

@@ -211,7 +211,7 @@ flowchart TB
 
 ### Prep
 
-Стек **над** гридом, порядок `kind == prep`. Текст: `recipe.process-table.prep` + `: ` + `column.title`. Несколько prep — gap 8.
+Стек **над** гридом, порядок `kind == prep`. Текст: format-ключ `recipe.process-table.prep-with-column %@` (`column.title`). Несколько prep — gap 8.
 
 ### Грид
 

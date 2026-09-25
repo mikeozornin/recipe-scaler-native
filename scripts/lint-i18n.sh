@@ -31,10 +31,15 @@
 #   - LocalizedStringKey: Text("common.ok"), Button("recipes.title.edit")
 #       detected by: presence of `.` or snake_case or kebab-case
 #   - String(localized: "…")
-#   - Interpolation: Text("\(count) items")
+#   - Interpolation with an empty or punctuation-only prefix: Text("\(count)")
+#   - Interpolation whose static prefix is key-shaped:
+#       Text("recipe.process-table.prep-with-column \(title)")
 #   - Text(verbatim: "…")
 #   - Single-word literals without spaces (assume token)
 #   - Numbers / punctuation-only
+#
+# Flagged interpolation: Text("Prep: \(title)") — the static prefix is
+# non-empty, contains a letter, and is not key-shaped.
 #
 # Two-pass scan:
 #   1) regex per Swift line (catches the construct shape)
@@ -137,6 +142,17 @@ extract_xcstrings_values > "$XCVALUES_TMP" || true
 # Construct pattern for the constructs we flag.
 # Match `(Name|Name2|…)\("…"` where the literal is a normal quoted string.
 CONSTRUCTS_RE='(Text|Button|Label|navigationTitle|navigationSubtitle|accessibilityLabel|accessibilityHint|accessibilityValue|confirmationDialog|alert|help|prompt|overlayText|Menu|Section)\("([^"]*)"'
+# Static prefix of an interpolated literal: Text("prefix \(expr)")
+INTERP_RE='(Text|Button|Label|navigationTitle|navigationSubtitle|accessibilityLabel|accessibilityHint|accessibilityValue|confirmationDialog|alert|help|prompt|overlayText|Menu|Section)\("([^"\\]*)\\\('
+
+# Flag a sentence prefix. Empty, punctuation-only, and key-shaped prefixes stay allowed.
+interpolation_prefix_is_user_text() {
+  local s="$1"
+  [[ -z "$s" ]] && return 1
+  [[ "$s" =~ [[:alpha:]] ]] || return 1
+  looks_like_key "$s" && return 1
+  return 0
+}
 
 violation_lines=()
 
@@ -151,6 +167,14 @@ scan_file() {
     local content="${raw#*:*:}"
     content="${content#*:*:}"  # strip path and lineno
     [[ "$content" == *"Text(verbatim:"* ]] && continue
+
+    if [[ "$raw" =~ $INTERP_RE ]]; then
+      local prefix="${BASH_REMATCH[2]}"
+      if interpolation_prefix_is_user_text "$prefix"; then
+        violation_lines+=("$raw")
+      fi
+      continue
+    fi
 
     if [[ "$raw" =~ $CONSTRUCTS_RE ]]; then
       local literal="${BASH_REMATCH[2]}"

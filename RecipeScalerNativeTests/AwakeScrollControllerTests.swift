@@ -435,4 +435,18 @@ final class AwakeScrollControllerTests: XCTestCase {
             "missing UI-test mirror for voice chips"
         )
     }
+
+    func test_stopIfViewRemoved_stops_channels_and_drops_callback() async {
+        let controller = makeController()
+        controller.flags = armedFlags()
+        controller.syncArmState()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertGreaterThan(controller.channelStartCount, 0)
+        let stopsBefore = controller.channelStopCount
+        controller.onChannelPrefsChanged = {}
+        controller.stopIfViewRemoved()
+        XCTAssertGreaterThan(controller.channelStopCount, stopsBefore)
+        XCTAssertNil(controller.onChannelPrefsChanged)
+        XCTAssertFalse(controller.flags.detailVisible)
+    }
 }

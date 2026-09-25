@@ -10,9 +10,6 @@
     "—" : {
 
     },
-    ": %@" : {
-
-    },
     "·" : {
 
     },
@@ -12149,19 +12146,19 @@
         }
       }
     },
-    "recipe.process-table.prep" : {
+    "recipe.process-table.prep-with-column %@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prep"
+            "value" : "Prep: %@"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Подготовка"
+            "value" : "Подготовка: %@"
           }
         }
       }

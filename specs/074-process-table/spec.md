@@ -271,7 +271,7 @@ Prep — ряды над гридом. Cook — колонки. Подряд з�
 - `recipe.process-table.toggle.classic` — tooltip/aria Close / «к классике», если нужен icon-only
 - `recipe.process-table.measured` — aria чекбокса ингредиента
 - `recipe.process-table.column-done` — aria чекбокса ячейки
-- `recipe.process-table.prep` — если нужен префикс prep-ряда
+- `recipe.process-table.prep-with-column %@` — prep-ряд: «Подготовка: %@» / «Prep: %@»
 - `recipe.process-table.may-be-outdated`
 - `recipe.process-table.not-built`
 - `recipe.process-table.build`

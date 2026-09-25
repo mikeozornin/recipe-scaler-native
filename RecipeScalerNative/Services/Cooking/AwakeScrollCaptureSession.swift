@@ -148,6 +148,16 @@ final class AwakeScrollCaptureSession: NSObject {
         session.delegate = self
         let config = ARFaceTrackingConfiguration()
         config.isLightEstimationEnabled = false
+        // Hand path matches device FPS to the sampler (`configureDeviceFrameRate`).
+        // Face classification consumes 30 Hz. The iOS 26 SDK has no
+        // `ARConfiguration.frameRate`; pick a 30 fps video format at the same
+        // resolution so ARKit does not deliver the default ~60 Hz.
+        let defaultResolution = config.videoFormat.imageResolution
+        if let format = ARFaceTrackingConfiguration.supportedVideoFormats.first(where: {
+            $0.framesPerSecond == 30 && $0.imageResolution == defaultResolution
+        }) {
+            config.videoFormat = format
+        }
         session.run(config, options: [.resetTracking, .removeExistingAnchors])
         runtime.arSession = session
         return true

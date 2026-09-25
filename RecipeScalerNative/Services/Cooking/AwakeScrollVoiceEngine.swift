@@ -66,6 +66,14 @@ final class AwakeScrollVoiceEngine {
     private var recognitionAttempt: UInt64 = 0
     private(set) var audioEngineBuildCount = 0
     private(set) var recognitionTaskCount = 0
+    private(set) var isRunning = false
+    /// Test seam: sleep this long instead of `restartDelay` after a failed restart.
+    var testRestartDelayOverride: TimeInterval?
+    /// Test seam: when set, `startSession()` returns this and skips hardware.
+    var testStartSessionResult: Bool?
+    /// True only while `testStartSessionResult == true` stands in for a live engine,
+    /// so `isFinal` can rotate recognition without an `AVAudioEngine`.
+    private var testSessionStandIn = false
     var now: () -> Date = { Date() }
 
     /// Errors that mean "this task was superseded", not "the session is sick".
@@ -98,6 +106,10 @@ final class AwakeScrollVoiceEngine {
         if !started {
             runtime.tearDown()
             self.onAction = nil
+            isRunning = false
+            testSessionStandIn = false
+        } else {
+            isRunning = true
         }
         return started
     }
@@ -106,12 +118,22 @@ final class AwakeScrollVoiceEngine {
         recognitionAttempt += 1
         runtime.tearDown()
         onAction = nil
+        isRunning = false
+        testSessionStandIn = false
         lastEmittedAction = nil
         lastFireTokenCount = 0
         fireGate.reset()
     }
 
     private func startSession() -> Bool {
+        if let forced = testStartSessionResult {
+            testSessionStandIn = forced
+            if forced {
+                recognitionTaskCount += 1
+            }
+            return forced
+        }
+        testSessionStandIn = false
         let recognizer = SFSpeechRecognizer(locale: locale)
             ?? SFSpeechRecognizer(locale: Locale(identifier: "en_US"))
             ?? SFSpeechRecognizer(locale: Locale(identifier: "ru_RU"))
@@ -195,6 +217,9 @@ final class AwakeScrollVoiceEngine {
                         isFinal: result.isFinal,
                         epoch: epoch
                     )
+                    if result.isFinal {
+                        self.rotateRecognitionIfCurrent(epoch: epoch)
+                    }
                 }
                 if let error {
                     guard !Self.isIgnorableRecognitionError(error) else { return }
@@ -220,8 +245,27 @@ final class AwakeScrollVoiceEngine {
         rotateRecognitionIfCurrent(epoch: epoch)
     }
 
+    /// Test seam: a final recognition result, without a live `SFSpeechRecognitionTask`.
+    func deliverRecognitionResultForTesting(transcript: String, isFinal: Bool) {
+        considerTranscript(transcript, isFinal: isFinal, epoch: epoch)
+        if isFinal {
+            rotateRecognitionIfCurrent(epoch: epoch)
+        }
+    }
+
+    /// Test seam: the error-restart path, using the current epoch and callback.
+    func failRestartForTesting() {
+        restartIfCurrent(epoch: epoch)
+    }
+
     private func rotateRecognitionIfCurrent(epoch: UInt64) {
         guard self.epoch == epoch, onAction != nil else { return }
+        if testSessionStandIn {
+            recognitionAttempt += 1
+            recognitionTaskCount += 1
+            scheduleRearm(epoch: epoch)
+            return
+        }
         guard runtime.audioEngine?.isRunning == true,
               let recognizer = runtime.recognizer
         else {
@@ -287,12 +331,38 @@ final class AwakeScrollVoiceEngine {
     }
 
     private func restartIfCurrent(epoch: UInt64) {
-        guard self.epoch == epoch, onAction != nil else { return }
-        let callback = onAction
-        let locale = locale
+        guard self.epoch == epoch, let callback = onAction else { return }
+        let capturedLocale = locale
         runtime.tearDown()
-        if let callback {
-            _ = start(epoch: epoch, locale: locale, onAction: callback)
+        let started = start(epoch: epoch, locale: capturedLocale, onAction: callback)
+        if !started {
+            scheduleFailedRestart(epoch: epoch, locale: capturedLocale, callback: callback)
+        }
+    }
+
+    /// `start` nils `onAction` when it fails, so the retry keeps the callback
+    /// captured here instead of reading `onAction` again.
+    private func scheduleFailedRestart(
+        epoch: UInt64,
+        locale: Locale,
+        callback: @escaping (AwakeScrollAction, UInt64, String) -> Void
+    ) {
+        restartDelay = min(restartDelay * 2, 30)
+        let delay = testRestartDelayOverride ?? restartDelay
+        AppLog.debug(
+            .gesture,
+            "awake_scroll_speech_restart_failed",
+            data: ["delayMs": String(Int(delay * 1000))]
+        )
+        runtime.restartBackoffTask?.cancel()
+        runtime.restartBackoffTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            guard let self, self.epoch == epoch else { return }
+            let started = self.start(epoch: epoch, locale: locale, onAction: callback)
+            if !started {
+                self.scheduleFailedRestart(epoch: epoch, locale: locale, callback: callback)
+            }
         }
     }
 }

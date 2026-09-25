@@ -33,4 +33,35 @@ final class AwakeScrollVoiceEngineTests: XCTestCase {
         XCTAssertEqual(engine.audioEngineBuildCount, 0)
         XCTAssertEqual(engine.recognitionTaskCount, 0)
     }
+
+    @MainActor
+    func test_final_result_rotates_recognition() {
+        let engine = AwakeScrollVoiceEngine()
+        engine.testStartSessionResult = true
+        XCTAssertTrue(engine.start(epoch: 1, onAction: { _, _, _ in }))
+        let before = engine.recognitionTaskCount
+        engine.deliverRecognitionResultForTesting(transcript: "вниз", isFinal: false)
+        XCTAssertEqual(engine.recognitionTaskCount, before)
+        engine.deliverRecognitionResultForTesting(transcript: "вниз", isFinal: true)
+        XCTAssertGreaterThan(engine.recognitionTaskCount, before)
+        engine.stop()
+    }
+
+    @MainActor
+    func test_failed_restart_retries_until_start_succeeds() async {
+        let engine = AwakeScrollVoiceEngine()
+        engine.testRestartDelayOverride = 0.02
+        engine.testStartSessionResult = true
+        XCTAssertTrue(engine.start(epoch: 1, onAction: { _, _, _ in }))
+        engine.testStartSessionResult = false
+        engine.failRestartForTesting()
+        XCTAssertFalse(engine.isRunning)
+        engine.testStartSessionResult = true
+        let deadline = Date().addingTimeInterval(1)
+        while !engine.isRunning, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 20_000_000)
+        }
+        XCTAssertTrue(engine.isRunning)
+        engine.stop()
+    }
 }

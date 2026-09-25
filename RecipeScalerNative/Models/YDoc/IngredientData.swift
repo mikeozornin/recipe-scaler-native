@@ -177,6 +177,18 @@ struct IngredientData: Identifiable, Sendable {
         return value
     }
 
+    /// Focus traversal (toolbar ↑/↓, Done, field switch) must not write the Y.Doc
+    /// when the draft still matches the stored row. Compares the parsed amount
+    /// to the raw stored string — `editableQuantity` is capped at 2 fraction
+    /// digits, so `"33.333"` would look changed next to `"33.33"`.
+    static func focusTraversalIsUnchanged(name: String, amount: String, base: IngredientData) -> Bool {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedName == base.name else { return false }
+        let parsed = parsedQuantity(amount)
+        let stored = base.originalAmount.isEmpty ? base.amount : base.originalAmount
+        return parsed.originalAmount == stored
+    }
+
     /// Parse quantity field (digits only in UI; unit kept separately in Y.Doc).
     static func parsedQuantity(_ text: String) -> (originalAmount: String, hasQuantity: Bool) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)

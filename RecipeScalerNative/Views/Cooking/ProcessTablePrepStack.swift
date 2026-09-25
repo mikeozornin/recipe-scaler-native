@@ -6,12 +6,8 @@ struct ProcessTablePrepStack: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ProcessTableLayout.prepRowSpacing) {
             ForEach(columns, id: \.id) { column in
-                HStack(alignment: .firstTextBaseline, spacing: 0) {
-                    Text("recipe.process-table.prep")
-                        .appBody()
-                    Text(": \(column.title)")
-                        .appBody()
-                }
+                Text("recipe.process-table.prep-with-column \(column.title)")
+                    .appBody()
             }
         }
     }

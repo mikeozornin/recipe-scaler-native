@@ -135,6 +135,15 @@ final class AwakeScrollController {
         )
     }
 
+    /// Detail left the hierarchy (including a pop that raced a help sheet).
+    /// Drops the prefs callback and disarms so a later sheet `onDismiss`
+    /// cannot restart the camera or mic.
+    func stopIfViewRemoved() {
+        onChannelPrefsChanged = nil
+        flags.detailVisible = false
+        syncArmState()
+    }
+
     func syncArmState() {
         let wantVoice = effectiveWantVoice()
         let wantModality = effectiveWantModality()

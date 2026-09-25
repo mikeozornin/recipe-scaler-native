@@ -13,20 +13,24 @@ import Foundation
 
 enum FeatureFlags {
     /// Spec 040 — per-item drill-in guides on the Feature Adoption screen.
-    /// OFF by default. Enable for development:
+    /// Release is always off. Debug reads UserDefaults (default off):
     ///   `defaults write ru.recipescaler.RecipeScaler featureAdoptionGuides -bool YES`
     static var featureAdoptionGuidesEnabled: Bool {
-        UserDefaults.standard.object(forKey: Self.featureAdoptionGuidesKey) as? Bool ?? false
+        #if DEBUG
+        return UserDefaults.standard.object(forKey: Self.featureAdoptionGuidesKey) as? Bool ?? false
+        #else
+        return false
+        #endif
     }
 
     /// Spec 074 — «Начать готовить» / process-table chrome.
-    /// Hidden in Release (1.0.9). Debug stays on unless overridden:
+    /// Release is always off. Debug stays on unless overridden:
     ///   `defaults write ru.recipescaler.RecipeScaler processTableCooking -bool NO`
     static var processTableCookingEnabled: Bool {
+        #if DEBUG
         if let override = UserDefaults.standard.object(forKey: Self.processTableCookingKey) as? Bool {
             return override
         }
-        #if DEBUG
         return true
         #else
         return false
