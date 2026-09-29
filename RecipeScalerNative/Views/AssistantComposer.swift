@@ -440,7 +440,6 @@ struct AssistantComposer: View {
     let syncService: YjsSyncService
 
     @Environment(\.locale) private var locale
-    @FocusState private var isInputFocused: Bool
     /// Mirrored from `AssistantComposerChrome.voiceRecorder` (which owns voice
     /// state) so the field can lock during transcription like it did before the
     /// Chrome/wrapper split.
@@ -466,16 +465,6 @@ struct AssistantComposer: View {
                 .padding(.top, attachments.isEmpty ? 12 : 4)
                 .padding(.bottom, 4)
         }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("edit.done") {
-                    isInputFocused = false
-                }
-                .appToolbarTextButton()
-                .accessibilityIdentifier(AccessibilityIdentifiers.assistantKeyboardDone)
-            }
-        }
     }
 
     private var messageInput: some View {
@@ -483,7 +472,6 @@ struct AssistantComposer: View {
             .appBodyFieldTypography()
             .lineLimit(1...6)
             .frame(maxWidth: .infinity, minHeight: Self.inputMinHeight, alignment: .topLeading)
-            .focused($isInputFocused)
             .disabled(isSending || isVoiceTranscribing)
             .accessibilityIdentifier(AccessibilityIdentifiers.assistantMessageInput)
     }
