@@ -9,8 +9,9 @@ struct CollectionsRootView: View {
     /// Injected (not `@Environment`): iOS 26 re-measures navigation chrome in a
     /// fallback environment after the assistant sheet dismisses; see `RecipeListView`.
     let syncService: YjsSyncService
-    @Environment(TimerManager.self) private var timerManager
-    @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
+    let timerManager: TimerManager
+    let systemBannerStore: SystemBannerStore
+    let mobileTimerPanelIsCollapsed: Bool
     @Binding var navigationPath: NavigationPath
 
     @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)
@@ -59,7 +60,7 @@ struct CollectionsRootView: View {
     @ViewBuilder
     private var listContent: some View {
         List {
-            SystemBannerListRow()
+            SystemBannerListRow(systemBannerStore: systemBannerStore)
             ReleaseNotesListRow()
 
             collectionRow(
@@ -130,7 +131,7 @@ struct CollectionsRootView: View {
     @ViewBuilder
     private var gridContent: some View {
         ScrollView {
-            SystemBannerChrome()
+            SystemBannerChrome(systemBannerStore: systemBannerStore)
             ReleaseNotesChrome()
 
             let columns = [

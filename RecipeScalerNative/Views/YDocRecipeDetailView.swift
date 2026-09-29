@@ -9,15 +9,21 @@ struct YDocRecipeDetailView: View {
     var startDescriptionEdit: Bool = false
     /// Injected (not `@Environment`): iOS 26 builds the pushed destination's
     /// body while measuring bar items in a fallback environment (no injected
-    /// observables); an `@Environment(YjsSyncService.self)` field on the pushed
-    /// root traps during `EnvironmentValues.subscript.getter`.
+    /// observables); `@Environment(SomeObservable.self)` on the pushed root
+    /// traps during `EnvironmentValues.subscript.getter` (assistant dismiss →
+    /// recipe push repro).
     let syncService: YjsSyncService
-
-    @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
-    @Environment(TimerManager.self) var timerManager
-    @Environment(\.appContainer) private var appContainer
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.scenePhase) private var scenePhase
+    let assistantRecipeContext: AssistantRecipeContext
+    let timerManager: TimerManager
+    let apiClient: APIClient
+    /// Injected (not `@Environment`): same iOS 26 toolbar fallback-env rule as
+    /// other observables — Entry lookup is usually safe, but keep the pushed
+    /// root free of `@Environment` storage that participates in bar sizing.
+    let appContainer: AppContainer?
+    /// Injected dismiss — avoid `@Environment(\.dismiss)` on the pushed root
+    /// (bar-item sizing after assistant dismiss uses a fallback environment).
+    var onDismiss: (() -> Void)? = nil
+    var scenePhase: ScenePhase = .active
     /// UI-only scale (web `recipe-scale:{id}` in localStorage). Not written to Y.Doc.
     @State var scaleFactor: Double = 1
     @AppStorage(NutritionSettings.globalEnabledKey) private var showNutritionGlobal = true
@@ -246,6 +252,13 @@ struct YDocRecipeDetailView: View {
         )
     }
 
+
+    private func performDismiss() {
+        if let onDismiss {
+            onDismiss()
+        }
+    }
+
     var body: some View {
         RecipeDetailToolbarHost(
             recipeId: recipeId,
@@ -254,7 +267,7 @@ struct YDocRecipeDetailView: View {
             canEnterEditMode: canEnterEditMode,
             isPinned: syncService.collectionEntries.first { $0.id == recipeId }?.isPinned ?? false,
             syncService: syncService,
-            apiClient: appContainer?.api ?? .shared,
+            apiClient: apiClient,
             isScreenAwakeActive: $isScreenAwakeActive,
             onToggleEdit: { Task { await toggleEditMode() } }
         ) {
@@ -619,7 +632,7 @@ struct YDocRecipeDetailView: View {
         .onChange(of: syncService.activeRecipeWasRemoved) { _, removed in
             if removed {
                 syncService.acknowledgeRecipeRemoved()
-                dismiss()
+                performDismiss()
             }
         }
         .onChange(of: syncService.connectionState) { _, newState in
@@ -822,7 +835,6 @@ private struct RecipeDetailToolbarHost<Content: View>: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     trailingToolbarItems
-                        .environment(syncService)
                 }
             }
     }

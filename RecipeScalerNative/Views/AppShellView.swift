@@ -71,8 +71,11 @@ private struct AppTabBarLabel: View {
 }
 
 /// Red new-content dot (spec 072 US4) overlaid on the Discover tab icon.
+/// `feedBadgeStore` is injected — tab labels are measured as bar items; after
+/// assistant dismiss iOS 26 uses a fallback environment and
+/// `@Environment(FeedBadgeStore.self)` traps.
 private struct FeedBadgeTabLabel: View {
-    @Environment(FeedBadgeStore.self) private var feedBadgeStore
+    let feedBadgeStore: FeedBadgeStore
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -96,6 +99,7 @@ struct AppShellView: View {
     @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
     @Environment(VkusvillSettingsStore.self) private var vkusvillSettings
     @Environment(OfflineBannerGate.self) private var offlineGate
+    @Environment(FeedBadgeStore.self) private var feedBadgeStore
     @Environment(\.scenePhase) private var scenePhase
     @State private var showAssistant = false
     @State private var assistantContextRecipeId: String?
@@ -435,18 +439,18 @@ struct AppShellView: View {
     }
 
     private var mobileTimerPanel: some View {
-        MobileTimerPanel(isCollapsed: mobileTimerPanelCollapsedBinding, presentation: .legacy)
+        MobileTimerPanel(timerManager: timerManager, isCollapsed: mobileTimerPanelCollapsedBinding, presentation: .legacy)
             .environment(timerManager)
     }
 
     private var mobileTimerPanelAccessory: some View {
-        MobileTimerPanel(isCollapsed: mobileTimerPanelCollapsedBinding, presentation: .accessoryCollapsed)
+        MobileTimerPanel(timerManager: timerManager, isCollapsed: mobileTimerPanelCollapsedBinding, presentation: .accessoryCollapsed)
             .environment(timerManager)
             .environment(\.mobileTimerPanelChevronNamespace, mobileTimerPanelChevronNamespace)
     }
 
     private var mobileTimerPanelExpandedInset: some View {
-        MobileTimerPanel(isCollapsed: mobileTimerPanelCollapsedBinding, presentation: .insetExpanded)
+        MobileTimerPanel(timerManager: timerManager, isCollapsed: mobileTimerPanelCollapsedBinding, presentation: .insetExpanded)
             .environment(timerManager)
             .environment(\.mobileTimerPanelChevronNamespace, mobileTimerPanelChevronNamespace)
     }
@@ -500,13 +504,21 @@ struct AppShellView: View {
             Tab(value: AppTab.discover) {
                 modernTabRoot(DiscoverRootView(path: $coordinator.discoverPath))
             } label: {
-                FeedBadgeTabLabel()
+                FeedBadgeTabLabel(feedBadgeStore: feedBadgeStore)
             }
 
             Tab(value: AppTab.recipes) {
                 modernTabRoot(RecipeListView(
                     navigationPath: $coordinator.recipesPath,
-                    syncService: syncService
+                    syncService: syncService,
+                    coordinator: coordinator,
+                    assistantRecipeContext: assistantRecipeContext,
+                    timerManager: timerManager,
+                    apiClient: appContainer?.api ?? .shared,
+                    appContainer: appContainer,
+                    systemBannerStore: appContainer?.systemBanner ?? SystemBannerStore(),
+                    mobileTimerPanelIsCollapsed: mobileTimerPanelCollapsed,
+                    scenePhase: scenePhase
                 ))
             } label: {
                 AppTabBarLabel(tab: .recipes)
@@ -561,13 +573,21 @@ struct AppShellView: View {
 
     private var legacyTabBar: some View {
         TabView(selection: tabSelection) {
-            tabRoot(DiscoverRootView(path: $coordinator.discoverPath)) { FeedBadgeTabLabel() }
+            tabRoot(DiscoverRootView(path: $coordinator.discoverPath)) { FeedBadgeTabLabel(feedBadgeStore: feedBadgeStore) }
                 .tag(AppTab.discover)
                 .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
 
             tabRoot(RecipeListView(
                 navigationPath: $coordinator.recipesPath,
-                syncService: syncService
+                syncService: syncService,
+                coordinator: coordinator,
+                assistantRecipeContext: assistantRecipeContext,
+                timerManager: timerManager,
+                apiClient: appContainer?.api ?? .shared,
+                appContainer: appContainer,
+                systemBannerStore: appContainer?.systemBanner ?? SystemBannerStore(),
+                mobileTimerPanelIsCollapsed: mobileTimerPanelCollapsed,
+                scenePhase: scenePhase
             )) {
                 AppTabBarLabel(tab: .recipes)
             }

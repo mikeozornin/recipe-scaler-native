@@ -9,9 +9,9 @@ struct CollectionFolderView: View {
     /// Injected (not `@Environment`): toolbar hosts trap in iOS 26 fallback env
     /// during `NavigationStack` push after assistant dismiss — see `RecipeListView`.
     let syncService: YjsSyncService
-    @Environment(AppShellCoordinator.self) private var coordinator
-    @Environment(TimerManager.self) private var timerManager
-    @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
+    let coordinator: AppShellCoordinator
+    let timerManager: TimerManager
+    let mobileTimerPanelIsCollapsed: Bool
     @Binding var navigationPath: NavigationPath
 
     @State private var isEditingName = false

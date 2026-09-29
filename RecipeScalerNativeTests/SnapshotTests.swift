@@ -24,8 +24,15 @@ final class SnapshotTests: XCTestCase {
         let database = try YrsDatabase()
         let store = YDocStore(dbQueue: database.dbQueue)
         let syncService = YjsSyncService.makeForTesting(store: store)
+        let coordinator = AppShellCoordinator(syncService: syncService, deepLinkRouter: DeepLinkRouter())
 
-        let view = RecipeListView(syncService: syncService)
+        let view = RecipeListView(
+            syncService: syncService,
+            coordinator: coordinator,
+            assistantRecipeContext: AssistantRecipeContext(),
+            timerManager: .shared,
+            systemBannerStore: SystemBannerStore()
+        )
             .modelContainer(container)
 
         assertSnapshot(
