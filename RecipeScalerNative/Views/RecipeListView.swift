@@ -132,17 +132,19 @@ struct RecipeListView: View {
     }
 
     var body: some View {
-        RecipeListToolbarHost(
-            isCreatingRecipe: isCreatingRecipe,
-            onCreateRecipe: {
-                Task { @MainActor in
-                    await handleCreateRecipe(folderId: nil)
-                }
-            },
-            onImport: { coordinator.presentImport() },
-            viewModeMenu: { viewModeMenu }
-        ) {
+        // Toolbar host must sit *inside* NavigationStack (ShoppingListView pattern).
+        // Wrapping the stack from outside left .toolbar off the nav bar — switcher vanished.
         NavigationStack(path: $navigationPath) {
+            RecipeListToolbarHost(
+                isCreatingRecipe: isCreatingRecipe,
+                onCreateRecipe: {
+                    Task { @MainActor in
+                        await handleCreateRecipe(folderId: nil)
+                    }
+                },
+                onImport: { coordinator.presentImport() },
+                viewModeMenu: { viewModeMenu }
+            ) {
             VStack(spacing: 0) {
                 if showsDatabaseInitFailedBanner {
                     DatabaseInitFailedBanner()
@@ -371,7 +373,7 @@ struct RecipeListView: View {
                 }
             }
 
-        }
+            }
         }
     }
 
@@ -910,9 +912,10 @@ extension Color {
 }
 
 
-/// Outermost toolbar host — no `@Environment`. iOS 26 measures `ToolbarItem`
-/// hosts in a fallback environment after assistant dismiss; a `ViewModifier` on
-/// a view that owns `@Environment` still traps — the host must wrap content.
+/// Toolbar host inside NavigationStack — no `@Environment`. iOS 26 measures
+/// `ToolbarItem` hosts in a fallback environment after assistant dismiss; a
+/// `ViewModifier` on a view that owns `@Environment` still traps — the host
+/// must wrap content *inside* the stack (wrapping the stack hides the bar items).
 private struct RecipeListToolbarHost<Menu: View, Content: View>: View {
     let isCreatingRecipe: Bool
     let onCreateRecipe: () -> Void
