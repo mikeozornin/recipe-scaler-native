@@ -14,9 +14,11 @@ struct DiscoverRecipeReturnContext: Hashable, Sendable {
 
 struct DiscoverRootView: View {
     @Binding var path: NavigationPath
+    /// Injected (not `@Environment`): sibling-tab chrome remasure after assistant
+    /// dismiss on iOS 26 traps on `@Environment(Observable.self)`.
+    let feedBadgeStore: FeedBadgeStore
+    let coordinator: AppShellCoordinator
     @Environment(\.apiClient) private var apiClient
-    @Environment(FeedBadgeStore.self) private var feedBadgeStore
-    @Environment(AppShellCoordinator.self) private var coordinator
     @State private var model: DiscoverRootModel?
     /// Ephemeral segment state (spec 072): not persisted, Discover always
     /// enters on «Подборки». A digest push bump (see `.task`/`.onChange`
@@ -26,7 +28,7 @@ struct DiscoverRootView: View {
     var body: some View {
         NavigationStack(path: $path) {
             VStack(spacing: 0) {
-                DiscoverFeedSegmentPicker(segment: $segment)
+                DiscoverFeedSegmentPicker(segment: $segment, feedBadgeStore: feedBadgeStore)
                 Group {
                     switch segment {
                     case .collections:
@@ -94,7 +96,7 @@ struct DiscoverRootView: View {
 /// A SwiftUI overlay carries the badge — not per-label overlays inside segments.
 struct DiscoverFeedSegmentPicker: View {
     @Binding var segment: DiscoverFeedSegment
-    @Environment(FeedBadgeStore.self) private var feedBadgeStore
+    let feedBadgeStore: FeedBadgeStore
 
     private static let newDotSize: CGFloat = 7
     private static let newDotTrailingInset: CGFloat = 12

@@ -502,7 +502,11 @@ struct AppShellView: View {
     private var modernTabBar: some View {
         TabView(selection: modernTabSelection) {
             Tab(value: AppTab.discover) {
-                modernTabRoot(DiscoverRootView(path: $coordinator.discoverPath))
+                modernTabRoot(DiscoverRootView(
+                    path: $coordinator.discoverPath,
+                    feedBadgeStore: feedBadgeStore,
+                    coordinator: coordinator
+                ))
             } label: {
                 FeedBadgeTabLabel(feedBadgeStore: feedBadgeStore)
             }
@@ -525,7 +529,15 @@ struct AppShellView: View {
             }
 
             Tab(value: AppTab.shopping) {
-                modernTabRoot(ShoppingListView(path: $coordinator.shoppingPath))
+                modernTabRoot(ShoppingListView(
+                    path: $coordinator.shoppingPath,
+                    syncService: syncService,
+                    timerManager: timerManager,
+                    coordinator: coordinator,
+                    authService: authService,
+                    vkusvillSettings: vkusvillSettings,
+                    mobileTimerPanelIsCollapsed: mobileTimerPanelCollapsed
+                ))
             } label: {
                 AppTabBarLabel(tab: .shopping)
             }
@@ -573,7 +585,11 @@ struct AppShellView: View {
 
     private var legacyTabBar: some View {
         TabView(selection: tabSelection) {
-            tabRoot(DiscoverRootView(path: $coordinator.discoverPath)) { FeedBadgeTabLabel(feedBadgeStore: feedBadgeStore) }
+            tabRoot(DiscoverRootView(
+                    path: $coordinator.discoverPath,
+                    feedBadgeStore: feedBadgeStore,
+                    coordinator: coordinator
+                )) { FeedBadgeTabLabel(feedBadgeStore: feedBadgeStore) }
                 .tag(AppTab.discover)
                 .accessibilityIdentifier(AccessibilityIdentifiers.tabDiscover)
 
@@ -594,7 +610,15 @@ struct AppShellView: View {
             .tag(AppTab.recipes)
             .accessibilityIdentifier(AccessibilityIdentifiers.tabRecipes)
 
-            tabRoot(ShoppingListView(path: $coordinator.shoppingPath)) {
+            tabRoot(ShoppingListView(
+                    path: $coordinator.shoppingPath,
+                    syncService: syncService,
+                    timerManager: timerManager,
+                    coordinator: coordinator,
+                    authService: authService,
+                    vkusvillSettings: vkusvillSettings,
+                    mobileTimerPanelIsCollapsed: mobileTimerPanelCollapsed
+                )) {
                 AppTabBarLabel(tab: .shopping)
             }
             .tag(AppTab.shopping)
