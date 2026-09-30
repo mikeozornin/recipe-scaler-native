@@ -22,6 +22,8 @@ struct AssistantComposerChrome: View {
     @Binding var text: String
     @Binding var attachments: [AssistantRecipeAttachment]
     @Binding var isVoiceTranscribing: Bool
+    /// Spec 078 — one-shot: when set true by the sheet, start recording and clear.
+    @Binding var autoStartVoice: Bool
     let isSending: Bool
     let contextRecipeId: String?
     let onSend: () -> Void
@@ -32,6 +34,7 @@ struct AssistantComposerChrome: View {
         text: Binding<String>,
         attachments: Binding<[AssistantRecipeAttachment]>,
         isVoiceTranscribing: Binding<Bool>,
+        autoStartVoice: Binding<Bool> = .constant(false),
         isSending: Bool,
         contextRecipeId: String?,
         onSend: @escaping () -> Void,
@@ -41,6 +44,7 @@ struct AssistantComposerChrome: View {
         _text = text
         _attachments = attachments
         _isVoiceTranscribing = isVoiceTranscribing
+        _autoStartVoice = autoStartVoice
         self.isSending = isSending
         self.contextRecipeId = contextRecipeId
         self.onSend = onSend
@@ -81,12 +85,17 @@ struct AssistantComposerChrome: View {
                     await transcribeCapturedAudio(data)
                 }
                 isVoiceTranscribing = voiceRecorder.state == .transcribing
+                consumeAutoStartVoiceIfNeeded()
             }
             .onDisappear {
                 voiceRecorder.cancel()
             }
             .onChange(of: voiceRecorder.state) { _, newState in
                 isVoiceTranscribing = newState == .transcribing
+            }
+            .onChange(of: autoStartVoice) { _, shouldStart in
+                guard shouldStart else { return }
+                consumeAutoStartVoiceIfNeeded()
             }
             .errorAlert(title: "assistant.error-unavailable", message: $voiceErrorMessage)
     }
@@ -361,6 +370,13 @@ struct AssistantComposerChrome: View {
         attachments.removeAll { recipeIdsMatch($0.recipeId, attachment.recipeId) }
     }
 
+    private func consumeAutoStartVoiceIfNeeded() {
+        guard autoStartVoice else { return }
+        autoStartVoice = false
+        guard voiceRecorder.state == .idle, !isSending else { return }
+        Task { await startVoiceRecording() }
+    }
+
     private func startVoiceRecording() async {
         voiceLimitAlertVisible = false
         do {
@@ -434,6 +450,7 @@ struct AssistantComposer: View {
     let isSending: Bool
     let inputPlaceholderVariantIndex: Int
     let contextRecipeId: String?
+    @Binding var autoStartVoice: Bool
     let onSend: () -> Void
     /// Injected through to `AssistantComposerChrome` — no `@Environment` in the
     /// composer subtree (iOS 26 fallback-env measurement during sheet dismiss).
@@ -455,6 +472,7 @@ struct AssistantComposer: View {
             text: $text,
             attachments: $attachments,
             isVoiceTranscribing: $isVoiceTranscribing,
+            autoStartVoice: $autoStartVoice,
             isSending: isSending,
             contextRecipeId: contextRecipeId,
             onSend: onSend,
