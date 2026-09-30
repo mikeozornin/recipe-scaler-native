@@ -191,9 +191,10 @@ struct StepsSection: View {
         _timerPopover = timerPopover
     }
 
-    private var canStartCooking: Bool {
-        ProcessTableClassicChrome.canStartCooking(cookingRecipe)
-    }
+    // TODO(074): restore «Начать готовить» / Start cooking CTA when cooking entry is ready.
+    // private var canStartCooking: Bool {
+    //     ProcessTableClassicChrome.canStartCooking(cookingRecipe)
+    // }
 
     private var showsMissingBanner: Bool {
         ProcessTableClassicChrome.showsMissingBanner(
@@ -211,11 +212,12 @@ struct StepsSection: View {
                     .truncationMode(.tail)
                     .layoutPriority(0)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                if FeatureFlags.processTableCookingEnabled && canStartCooking {
-                    ProcessTableStartButton {
-                        presentCookingCover()
-                    }
-                }
+                // TODO(074): restore «Начать готовить» / Start cooking CTA when cooking entry is ready.
+                // if FeatureFlags.processTableCookingEnabled && canStartCooking {
+                //     ProcessTableStartButton {
+                //         presentCookingCover()
+                //     }
+                // }
             }
             .frame(minHeight: ProcessTableLayout.ctaMinHit)
             .padding(.horizontal)
@@ -251,15 +253,16 @@ struct StepsSection: View {
         }
     }
 
-    private func presentCookingCover() {
-        guard let cookingRecipe else { return }
-        container?.cooking.present(
-            recipe: cookingRecipe,
-            scaleFactor: scaleFactor,
-            allowsRebuild: allowsRebuild,
-            restoreAwakeOnDismiss: restoreAwakeOnDismiss
-        )
-    }
+    // TODO(074): restore with Start cooking CTA.
+    // private func presentCookingCover() {
+    //     guard let cookingRecipe else { return }
+    //     container?.cooking.present(
+    //         recipe: cookingRecipe,
+    //         scaleFactor: scaleFactor,
+    //         allowsRebuild: allowsRebuild,
+    //         restoreAwakeOnDismiss: restoreAwakeOnDismiss
+    //     )
+    // }
 
     private func startTimer(from reference: RecipeDescriptionTimerReference) {
         guard reference.isStartable else { return }

@@ -26,14 +26,15 @@ struct AwakeScrollChromeModifier: ViewModifier {
                     )
                 }
             }
-            .overlay(alignment: .bottomTrailing) {
-                if isScreenAwakeActive,
-                   cameraModality != .none {
-                    AwakeScrollCameraPreview()
-                        .padding(.trailing, AwakeScrollLayout.cameraPreviewTrailingPad)
-                        .padding(.bottom, AwakeScrollLayout.cameraPreviewBottomPad)
-                }
-            }
+            // TODO(074): restore floating camera preview when cook-mode chrome is redesigned (hides on iOS 18 awake).
+            // .overlay(alignment: .bottomTrailing) {
+            //     if isScreenAwakeActive,
+            //        cameraModality != .none {
+            //         AwakeScrollCameraPreview()
+            //             .padding(.trailing, AwakeScrollLayout.cameraPreviewTrailingPad)
+            //             .padding(.bottom, AwakeScrollLayout.cameraPreviewBottomPad)
+            //     }
+            // }
             .sheet(isPresented: $showingHelp, onDismiss: onArmFlagsChanged) {
                 AwakeScrollHelpSheet(
                     controller: controller,
