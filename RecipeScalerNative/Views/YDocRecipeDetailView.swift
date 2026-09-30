@@ -502,20 +502,6 @@ struct YDocRecipeDetailView: View {
         ))
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .modifier(
-            AwakeScrollChromeModifier(
-                controller: awakeScrollController,
-                isScreenAwakeActive: isScreenAwakeActive,
-                cameraModality: awakeScrollController.cameraModality,
-                assistantSheetOpen: assistantRecipeContext.isAssistantSheetOpen,
-                cookingCoverPresented: appContainer?.cooking.presentation != nil,
-                voiceEnabled: $awakeVoiceEnabled,
-                handEnabled: $awakeHandEnabled,
-                faceEnabled: $awakeFaceEnabled,
-                showingHelp: $showingAwakeScrollHelp,
-                onArmFlagsChanged: syncAwakeScrollArm
-            )
-        )
         .safeAreaInset(edge: .bottom, spacing: 0) {
             formattingBarInset
         }
@@ -766,6 +752,25 @@ struct YDocRecipeDetailView: View {
             )
         }
         }
+        // Cooking-mode chrome (awake banner + hands-free) must sit *outside*
+        // RecipeDetailToolbarHost so the top safeAreaInset is applied after
+        // `.toolbar`. Inside the host, iOS 26 Liquid Glass nav capsules share
+        // the top safe-area band with that inset and ride up under the Dynamic
+        // Island; on iOS 18 the banner can end up under the opaque nav bar.
+        .modifier(
+            AwakeScrollChromeModifier(
+                controller: awakeScrollController,
+                isScreenAwakeActive: isScreenAwakeActive,
+                cameraModality: awakeScrollController.cameraModality,
+                assistantSheetOpen: assistantRecipeContext.isAssistantSheetOpen,
+                cookingCoverPresented: appContainer?.cooking.presentation != nil,
+                voiceEnabled: $awakeVoiceEnabled,
+                handEnabled: $awakeHandEnabled,
+                faceEnabled: $awakeFaceEnabled,
+                showingHelp: $showingAwakeScrollHelp,
+                onArmFlagsChanged: syncAwakeScrollArm
+            )
+        )
     }
 
     @ViewBuilder
