@@ -221,8 +221,11 @@ struct ProcessTableCookingView: View {
                     .background(.bar)
                 }
                 if let timerManager {
-                    MobileTimerPanel(isCollapsed: $isTimerPanelCollapsed, presentation: .legacy)
-                        .environment(timerManager)
+                    MobileTimerPanel(
+                        timerManager: timerManager,
+                        isCollapsed: $isTimerPanelCollapsed,
+                        presentation: .legacy
+                    )
                 }
             }
         }
