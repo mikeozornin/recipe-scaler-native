@@ -16,14 +16,14 @@ struct RecipesAddToolbarMenu: View {
             Button {
                 onCreateRecipe()
             } label: {
-                AppLabel.make(String(localized: "recipe.create.new"), symbol: "plus")
+                AppLabel.make("recipe.create.new", symbol: "plus")
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.recipeListAddNew)
 
             Button {
                 onImport()
             } label: {
-                AppLabel.make(String(localized: "recipes.import-button"), symbol: "square.and.arrow.down")
+                AppLabel.make("recipes.import-button", symbol: "square.and.arrow.down")
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.recipeListImport)
         } label: {

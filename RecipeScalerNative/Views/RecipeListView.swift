@@ -536,35 +536,24 @@ struct RecipeListView: View {
                 Button {
                     Task { await addRecipeToShopping(item) }
                 } label: {
-                    Label(
-                        String(localized: "shopping.detail-add-all"),
-                        systemImage: "cart.badge.plus"
-                    )
+                    AppLabel.make("shopping.detail-add-all", symbol: "cart.badge.plus")
                 }
                 .tint(.green)
 
                 Button {
                     presentedSheet = .assign(recipeId: item.id, recipeName: item.displayName)
                 } label: {
-                    Label(
-                        String(localized: "collections.assign-tooltip"),
-                        systemImage: "folder.badge.plus"
-                    )
+                    AppLabel.make("collections.assign-tooltip", symbol: "folder.badge.plus")
                 }
                 .tint(.orange)
 
                 Button {
                     Task { await togglePin(for: item) }
                 } label: {
-                    Label {
-                        Text(
-                            item.isPinned
-                                ? String(localized: "recipe.list.unpin")
-                                : String(localized: "recipe.list.pin")
-                        )
-                    } icon: {
-                        AppSymbol.image(item.isPinned ? "pin.slash" : "pin")
-                    }
+                    AppLabel.make(
+                        item.isPinned ? "recipe.list.unpin" : "recipe.list.pin",
+                        symbol: item.isPinned ? "pin.slash" : "pin"
+                    )
                 }
                 .tint(.blue)
             }
@@ -572,7 +561,7 @@ struct RecipeListView: View {
                 Button {
                     presentedAlert = .deleteRecipe(item)
                 } label: {
-                    AppLabel.make(String(localized: "recipe.list.delete"), symbol: "trash")
+                    AppLabel.make("recipe.list.delete", symbol: "trash")
                 }
                 .tint(.red)
             }
