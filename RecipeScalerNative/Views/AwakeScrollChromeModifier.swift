@@ -3,7 +3,6 @@ import SwiftUI
 struct AwakeScrollChromeModifier: ViewModifier {
     var controller: AwakeScrollController
     var isScreenAwakeActive: Bool
-    var cameraModality: AwakeScrollCameraModality
     var assistantSheetOpen: Bool
     var cookingCoverPresented: Bool
     @Binding var voiceEnabled: Bool
@@ -26,15 +25,6 @@ struct AwakeScrollChromeModifier: ViewModifier {
                     )
                 }
             }
-            // TODO(074): restore floating camera preview when cook-mode chrome is redesigned (hides on iOS 18 awake).
-            // .overlay(alignment: .bottomTrailing) {
-            //     if isScreenAwakeActive,
-            //        cameraModality != .none {
-            //         AwakeScrollCameraPreview()
-            //             .padding(.trailing, AwakeScrollLayout.cameraPreviewTrailingPad)
-            //             .padding(.bottom, AwakeScrollLayout.cameraPreviewBottomPad)
-            //     }
-            // }
             .sheet(isPresented: $showingHelp, onDismiss: onArmFlagsChanged) {
                 AwakeScrollHelpSheet(
                     controller: controller,

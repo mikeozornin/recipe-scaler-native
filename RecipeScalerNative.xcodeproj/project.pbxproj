@@ -21,7 +21,6 @@
 		P075V01B /* DetailScrollViewProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V01A /* DetailScrollViewProbe.swift */; };
 		P075V02B /* AwakeScrollLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V02A /* AwakeScrollLayout.swift */; };
 		P075V03B /* AwakeScrollHelpSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V03A /* AwakeScrollHelpSheet.swift */; };
-		P075V04B /* AwakeScrollCameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V04A /* AwakeScrollCameraPreview.swift */; };
 		P075V05B /* AwakeScrollChromeModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V05A /* AwakeScrollChromeModifier.swift */; };
 		P075T01B /* AwakeScrollEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075T01A /* AwakeScrollEngineTests.swift */; };
 		P075T02B /* AwakeScrollVoiceClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075T02A /* AwakeScrollVoiceClassifierTests.swift */; };
@@ -829,7 +828,6 @@
 		P075V01A /* DetailScrollViewProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailScrollViewProbe.swift; sourceTree = "<group>"; };
 		P075V02A /* AwakeScrollLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollLayout.swift; sourceTree = "<group>"; };
 		P075V03A /* AwakeScrollHelpSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollHelpSheet.swift; sourceTree = "<group>"; };
-		P075V04A /* AwakeScrollCameraPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollCameraPreview.swift; sourceTree = "<group>"; };
 		P075V05A /* AwakeScrollChromeModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollChromeModifier.swift; sourceTree = "<group>"; };
 		P075T01A /* AwakeScrollEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollEngineTests.swift; sourceTree = "<group>"; };
 		P075T02A /* AwakeScrollVoiceClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollVoiceClassifierTests.swift; sourceTree = "<group>"; };
@@ -1744,7 +1742,6 @@
 				P075V01A /* DetailScrollViewProbe.swift */,
 				P075V02A /* AwakeScrollLayout.swift */,
 				P075V03A /* AwakeScrollHelpSheet.swift */,
-				P075V04A /* AwakeScrollCameraPreview.swift */,
 				P075V05A /* AwakeScrollChromeModifier.swift */,
 				E5F60718293A4B707F3A30E0 /* TransientStatusBanner.swift */,
 				076A0001A293A4B701000005 /* ClipboardImportBannerLayout.swift */,
@@ -3224,7 +3221,6 @@
 				P075V01B /* DetailScrollViewProbe.swift in Sources */,
 				P075V02B /* AwakeScrollLayout.swift in Sources */,
 				P075V03B /* AwakeScrollHelpSheet.swift in Sources */,
-				P075V04B /* AwakeScrollCameraPreview.swift in Sources */,
 				P075V05B /* AwakeScrollChromeModifier.swift in Sources */,
 				P074A05B293A4B701000001 /* ProcessTableLayout.swift in Sources */,
 				P074A06B293A4B701000001 /* ProcessTableStartButton.swift in Sources */,

@@ -761,7 +761,6 @@ struct YDocRecipeDetailView: View {
             AwakeScrollChromeModifier(
                 controller: awakeScrollController,
                 isScreenAwakeActive: isScreenAwakeActive,
-                cameraModality: awakeScrollController.cameraModality,
                 assistantSheetOpen: assistantRecipeContext.isAssistantSheetOpen,
                 cookingCoverPresented: appContainer?.cooking.presentation != nil,
                 voiceEnabled: $awakeVoiceEnabled,
