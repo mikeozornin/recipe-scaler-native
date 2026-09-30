@@ -1,10 +1,20 @@
 import SwiftUI
 import UIKit
+import RecipeScalerCore
 
 struct RecipeListView: View {
-    @Environment(YjsSyncService.self) private var syncService
-    @Environment(TimerManager.self) private var timerManager
-    @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
+    /// Injected (not `@Environment`): after the assistant sheet dismisses on iOS 26,
+    /// `NavigationStack` push re-measures bar chrome in a fallback environment;
+    /// `@Environment(SomeObservable.self)` on this tab root traps during the transition.
+    let syncService: YjsSyncService
+    let coordinator: AppShellCoordinator
+    let assistantRecipeContext: AssistantRecipeContext
+    let timerManager: TimerManager
+    let apiClient: APIClient
+    let appContainer: AppContainer?
+    let systemBannerStore: SystemBannerStore
+    let mobileTimerPanelIsCollapsed: Bool
+    let scenePhase: ScenePhase
     @Binding var navigationPath: NavigationPath
     @State private var searchText = ""
     @State private var presentedSheet: RecipeListSheet?
@@ -23,8 +33,28 @@ struct RecipeListView: View {
         RecipeFolderRoutes.ViewMode(rawValue: viewModeRaw) ?? .collections
     }
 
-    init(navigationPath: Binding<NavigationPath> = .constant(NavigationPath())) {
+    init(
+        navigationPath: Binding<NavigationPath> = .constant(NavigationPath()),
+        syncService: YjsSyncService,
+        coordinator: AppShellCoordinator,
+        assistantRecipeContext: AssistantRecipeContext,
+        timerManager: TimerManager,
+        apiClient: APIClient = .shared,
+        appContainer: AppContainer? = nil,
+        systemBannerStore: SystemBannerStore,
+        mobileTimerPanelIsCollapsed: Bool = true,
+        scenePhase: ScenePhase = .active
+    ) {
         _navigationPath = navigationPath
+        self.syncService = syncService
+        self.coordinator = coordinator
+        self.assistantRecipeContext = assistantRecipeContext
+        self.timerManager = timerManager
+        self.apiClient = apiClient
+        self.appContainer = appContainer
+        self.systemBannerStore = systemBannerStore
+        self.mobileTimerPanelIsCollapsed = mobileTimerPanelIsCollapsed
+        self.scenePhase = scenePhase
     }
     #if DEBUG
     @State private var didOpenDebugRecipe = false
@@ -34,8 +64,7 @@ struct RecipeListView: View {
     /// cold-start loading spinner, which would otherwise spin forever because
     /// `AppContainer.bootstrap` short-circuits sync startup in those hosts.
     private var isUITestingHost: Bool {
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-            || ProcessInfo.processInfo.arguments.contains("ui-testing")
+        DebugLaunchOptions.usesReducedTestingHostBehavior
     }
 
     private var isSearching: Bool {
@@ -91,8 +120,7 @@ struct RecipeListView: View {
         // for those hosts; production users still see the real failure.
         // Store screenshot mode (`-ScreenshotCapture=1`) likewise must not show
         // recovery chrome on marketing frames.
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-            || ProcessInfo.processInfo.arguments.contains("ui-testing") {
+        if DebugLaunchOptions.usesReducedTestingHostBehavior {
             return false
         }
         #if DEBUG
@@ -104,7 +132,19 @@ struct RecipeListView: View {
     }
 
     var body: some View {
+        // Toolbar host must sit *inside* NavigationStack (ShoppingListView pattern).
+        // Wrapping the stack from outside left .toolbar off the nav bar — switcher vanished.
         NavigationStack(path: $navigationPath) {
+            RecipeListToolbarHost(
+                isCreatingRecipe: isCreatingRecipe,
+                onCreateRecipe: {
+                    Task { @MainActor in
+                        await handleCreateRecipe(folderId: nil)
+                    }
+                },
+                onImport: { coordinator.presentImport() },
+                viewModeMenu: { viewModeMenu }
+            ) {
             VStack(spacing: 0) {
                 if showsDatabaseInitFailedBanner {
                     DatabaseInitFailedBanner()
@@ -112,13 +152,19 @@ struct RecipeListView: View {
 
                 Group {
                 if showsCollectionsRoot {
-                    CollectionsRootView(navigationPath: $navigationPath)
+                    CollectionsRootView(
+                        syncService: syncService,
+                        timerManager: timerManager,
+                        systemBannerStore: systemBannerStore,
+                        mobileTimerPanelIsCollapsed: mobileTimerPanelIsCollapsed,
+                        navigationPath: $navigationPath
+                    )
                 } else if !isUITestingHost && !syncService.isLocalDataLoaded
                             || (!isUITestingHost
                                 && syncService.connectionState == .connecting
                                 && syncService.collectionEntries.isEmpty) {
                     VStack(spacing: 0) {
-                        SystemBannerChrome()
+                        SystemBannerChrome(systemBannerStore: systemBannerStore)
                         ReleaseNotesChrome()
                         ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
                             .mobileTimerPanelBottomPadding()
@@ -126,7 +172,7 @@ struct RecipeListView: View {
                 } else if !hasAnyRows {
                     if isSearching {
                         VStack(spacing: 0) {
-                            SystemBannerChrome()
+                            SystemBannerChrome(systemBannerStore: systemBannerStore)
                             ReleaseNotesChrome()
                             ContentUnavailableView {
                                 AppEmptyState.label("recipe.list.search-empty.title", symbol: "magnifyingglass")
@@ -136,7 +182,7 @@ struct RecipeListView: View {
                         }
                     } else {
                         VStack(spacing: 0) {
-                            SystemBannerChrome()
+                            SystemBannerChrome(systemBannerStore: systemBannerStore)
                             ReleaseNotesChrome()
                             ContentUnavailableView {
                                 VStack(spacing: 12) {
@@ -155,7 +201,7 @@ struct RecipeListView: View {
                 } else {
                     List {
                         // Scrolls away with recipe rows (not sticky above the List).
-                        SystemBannerListRow()
+                        SystemBannerListRow(systemBannerStore: systemBannerStore)
                         ReleaseNotesListRow()
 
                         if !pinnedRowItems.isEmpty {
@@ -191,6 +237,46 @@ struct RecipeListView: View {
             .searchable(text: $searchText, prompt: Text("search.recipes"))
             .onAppear {
                 searchStore.bind(syncService: syncService)
+                #if DEBUG
+                // #region agent log
+                AgentSyncDebugLog.assistantLayout(
+                    hypothesisId: "H4",
+                    location: "RecipeListView.onAppear",
+                    message: "recipes_tab_visible",
+                    data: [
+                        "selectedTab": coordinator.selectedTab.rawValue,
+                        "assistantSheetOpen": assistantRecipeContext.isAssistantSheetOpen ? "true" : "false",
+                        "viewMode": viewMode.rawValue
+                    ]
+                )
+                AgentSyncDebugLog.logNavigationBarState(
+                    hypothesisId: "H2",
+                    location: "RecipeListView.onAppear",
+                    tag: "recipes_onAppear"
+                )
+                // #endregion
+                #endif
+            }
+            .background {
+                GeometryReader { geo in
+                    Color.clear
+                        .onChange(of: geo.safeAreaInsets.top) { _, top in
+                            #if DEBUG
+                            // #region agent log
+                            guard top > 0 else { return }
+                            AgentSyncDebugLog.assistantLayout(
+                                hypothesisId: "H4",
+                                location: "RecipeListView.safeArea",
+                                message: "safe_area_top_changed",
+                                data: [
+                                    "safeTop": String(format: "%.1f", top),
+                                    "assistantSheetOpen": assistantRecipeContext.isAssistantSheetOpen ? "true" : "false"
+                                ]
+                            )
+                            // #endregion
+                            #endif
+                        }
+                }
             }
             .onChange(of: searchText) { _, query in
                 // Tokens computed once per change (was: 16–26× per render).
@@ -206,12 +292,27 @@ struct RecipeListView: View {
                 case .folder(let folderId):
                     CollectionFolderView(
                         folderId: folderId,
+                        syncService: syncService,
+                        coordinator: coordinator,
+                        timerManager: timerManager,
+                        mobileTimerPanelIsCollapsed: mobileTimerPanelIsCollapsed,
                         navigationPath: $navigationPath
                     )
                 case .recipe(let recipeId, _, let openInEditMode):
                     YDocRecipeDetailView(
                         recipeId: recipeId,
-                        startInEditMode: openInEditMode
+                        startInEditMode: openInEditMode,
+                        syncService: syncService,
+                        assistantRecipeContext: assistantRecipeContext,
+                        timerManager: timerManager,
+                        apiClient: apiClient,
+                        appContainer: appContainer,
+                        onDismiss: {
+                            if !navigationPath.isEmpty {
+                                navigationPath.removeLast()
+                            }
+                        },
+                        scenePhase: scenePhase
                     )
                 }
             }
@@ -236,28 +337,14 @@ struct RecipeListView: View {
                 )
             }
             #endif
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    viewModeMenu
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task { @MainActor in
-                            await handleCreateRecipe(folderId: nil)
-                        }
-                    } label: {
-                        AppToolbarStyle.iconOnly(systemName: "plus")
-                    }
-                    .appToolbarIconButton()
-                    .disabled(isCreatingRecipe)
-                    .accessibilityLabel("recipes.add-button")
-                    .accessibilityIdentifier(AccessibilityIdentifiers.recipeListAdd)
-                }
-            }
             .sheet(item: $presentedSheet) { sheet in
                 switch sheet {
                 case .assign(let recipeId, let recipeName):
-                    CollectionAssignSheet(recipeId: recipeId, recipeName: recipeName)
+                    CollectionAssignSheet(
+                        recipeId: recipeId,
+                        recipeName: recipeName,
+                        syncService: syncService
+                    )
                 }
             }
             .alert(item: $presentedAlert) { alert in
@@ -286,6 +373,7 @@ struct RecipeListView: View {
                 }
             }
 
+            }
         }
     }
 
@@ -448,35 +536,24 @@ struct RecipeListView: View {
                 Button {
                     Task { await addRecipeToShopping(item) }
                 } label: {
-                    Label(
-                        String(localized: "shopping.detail-add-all"),
-                        systemImage: "cart.badge.plus"
-                    )
+                    AppLabel.make("shopping.detail-add-all", symbol: "cart.badge.plus")
                 }
                 .tint(.green)
 
                 Button {
                     presentedSheet = .assign(recipeId: item.id, recipeName: item.displayName)
                 } label: {
-                    Label(
-                        String(localized: "collections.assign-tooltip"),
-                        systemImage: "folder.badge.plus"
-                    )
+                    AppLabel.make("collections.assign-tooltip", symbol: "folder.badge.plus")
                 }
                 .tint(.orange)
 
                 Button {
                     Task { await togglePin(for: item) }
                 } label: {
-                    Label {
-                        Text(
-                            item.isPinned
-                                ? String(localized: "recipe.list.unpin")
-                                : String(localized: "recipe.list.pin")
-                        )
-                    } icon: {
-                        AppSymbol.image(item.isPinned ? "pin.slash" : "pin")
-                    }
+                    AppLabel.make(
+                        item.isPinned ? "recipe.list.unpin" : "recipe.list.pin",
+                        symbol: item.isPinned ? "pin.slash" : "pin"
+                    )
                 }
                 .tint(.blue)
             }
@@ -484,7 +561,7 @@ struct RecipeListView: View {
                 Button {
                     presentedAlert = .deleteRecipe(item)
                 } label: {
-                    AppLabel.make(String(localized: "recipe.list.delete"), symbol: "trash")
+                    AppLabel.make("recipe.list.delete", symbol: "trash")
                 }
                 .tint(.red)
             }
@@ -823,11 +900,46 @@ extension Color {
     }
 }
 
+
+/// Toolbar host inside NavigationStack — no `@Environment`. iOS 26 measures
+/// `ToolbarItem` hosts in a fallback environment after assistant dismiss; a
+/// `ViewModifier` on a view that owns `@Environment` still traps — the host
+/// must wrap content *inside* the stack (wrapping the stack hides the bar items).
+private struct RecipeListToolbarHost<Menu: View, Content: View>: View {
+    let isCreatingRecipe: Bool
+    let onCreateRecipe: () -> Void
+    let onImport: () -> Void
+    @ViewBuilder let viewModeMenu: () -> Menu
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        content()
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    viewModeMenu()
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    RecipesAddToolbarMenu(
+                        isCreatingRecipe: isCreatingRecipe,
+                        onCreateRecipe: onCreateRecipe,
+                        onImport: onImport
+                    )
+                }
+            }
+    }
+}
+
 #Preview {
-    RecipeListView()
-        .environment({
-            let database = try! YrsDatabase()
-            let store = YDocStore(dbQueue: database.dbQueue)
-            return YjsSyncService.makeForTesting(store: store)
-        }())
+    let database = try! YrsDatabase()
+    let store = YDocStore(dbQueue: database.dbQueue)
+    let syncService = YjsSyncService.makeForTesting(store: store)
+    let coordinator = AppShellCoordinator(syncService: syncService, deepLinkRouter: DeepLinkRouter())
+    return RecipeListView(
+        navigationPath: .constant(NavigationPath()),
+        syncService: syncService,
+        coordinator: coordinator,
+        assistantRecipeContext: AssistantRecipeContext(),
+        timerManager: .shared,
+        systemBannerStore: SystemBannerStore()
+    )
 }

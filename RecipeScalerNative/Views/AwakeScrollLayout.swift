@@ -10,9 +10,6 @@ enum AwakeScrollLayout {
     static let bannerChannelIconSize: CGFloat = 16
     static let bannerChannelPulseScale: CGFloat = 1.8
     static let bannerChannelPulseDuration: TimeInterval = 0.5
-    static let cameraPreviewDiameter: CGFloat = 48
-    static let cameraPreviewTrailingPad: CGFloat = 16
-    static let cameraPreviewBottomPad: CGFloat = 16
     static let helpSheetHorizontalPad: CGFloat = 16
     static let helpSheetSectionGap: CGFloat = 8
     static let helpSheetTopPad: CGFloat = 32

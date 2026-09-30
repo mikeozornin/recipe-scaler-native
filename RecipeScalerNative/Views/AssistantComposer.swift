@@ -10,40 +10,62 @@
 import SwiftUI
 import RecipeScalerCore
 
-struct AssistantComposer: View {
-    private static let shellCornerRadius: CGFloat = 16
-    /// Web `min-h-12` — keeps the field height stable when placeholder disappears.
-    private static let inputMinHeight: CGFloat = 48
+// MARK: - Morph chrome strip (attach / voice / send)
+
+/// Shared composer chrome: attachment chips, voice UI, and action toolbar.
+/// Used inside legacy modal `AssistantComposer` (field + toolbar card).
+/// Reports the voice transcribing state through `isVoiceTranscribing` so the
+/// wrapper (which owns the text field) can disable input during transcription.
+struct AssistantComposerChrome: View {
+    fileprivate static let shellCornerRadius: CGFloat = 16
 
     @Binding var text: String
     @Binding var attachments: [AssistantRecipeAttachment]
+    @Binding var isVoiceTranscribing: Bool
     let isSending: Bool
-    let inputPlaceholderVariantIndex: Int
     let contextRecipeId: String?
     let onSend: () -> Void
 
-    @Environment(\.locale) private var locale
-    @Environment(YjsSyncService.self) private var syncService
+    @ViewBuilder var topContent: () -> AnyView
+
+    init(
+        text: Binding<String>,
+        attachments: Binding<[AssistantRecipeAttachment]>,
+        isVoiceTranscribing: Binding<Bool>,
+        isSending: Bool,
+        contextRecipeId: String?,
+        onSend: @escaping () -> Void,
+        syncService: YjsSyncService,
+        @ViewBuilder topContent: @escaping () -> some View = { EmptyView() }
+    ) {
+        _text = text
+        _attachments = attachments
+        _isVoiceTranscribing = isVoiceTranscribing
+        self.isSending = isSending
+        self.contextRecipeId = contextRecipeId
+        self.onSend = onSend
+        self.syncService = syncService
+        self.topContent = { AnyView(topContent()) }
+    }
+
+    /// Injected (not `@Environment`): the composer chrome can outlive the
+    /// sheet presentation (dismiss animation) while iOS 26 re-measures bar
+    /// items in a fallback environment that has no injected observables.
+    /// `@Environment(YjsSyncService.self)` in that subtree traps.
+    let syncService: YjsSyncService
     @Environment(AssistantRecipeContext.self) private var recipeContext
     @State private var showAttachSheet = false
     @State private var voiceRecorder = AssistantVoiceRecorder()
     @State private var voiceLimitAlertVisible = false
     @State private var voiceErrorMessage: String?
-    @FocusState private var isInputFocused: Bool
 
-    /// Snapshot from sheet open, with live fallback while the recipe screen stays mounted.
     private var effectiveContextRecipeId: String? {
         _ = recipeContext.visibleRecipeId
         return contextRecipeId ?? recipeContext.visibleRecipeId
     }
 
-    private var inputPlaceholder: String {
-        _ = locale
-        return AssistantInputPlaceholder.localizedVariant(index: inputPlaceholderVariantIndex)
-    }
-
     var body: some View {
-        composerShell
+        chromeShell
             .accessibilityIdentifier(AccessibilityIdentifiers.assistantComposerShell)
             .sheet(isPresented: $showAttachSheet) {
                 AssistantRecipePicker(
@@ -58,26 +80,18 @@ struct AssistantComposer: View {
                 voiceRecorder.onAutoStopCapture = { data in
                     await transcribeCapturedAudio(data)
                 }
+                isVoiceTranscribing = voiceRecorder.state == .transcribing
             }
             .onDisappear {
                 voiceRecorder.cancel()
             }
-            .errorAlert(title: "assistant.error-unavailable", message: $voiceErrorMessage)
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("edit.done") {
-                        isInputFocused = false
-                    }
-                    .appToolbarTextButton()
-                    .accessibilityIdentifier(AccessibilityIdentifiers.assistantKeyboardDone)
-                }
+            .onChange(of: voiceRecorder.state) { _, newState in
+                isVoiceTranscribing = newState == .transcribing
             }
+            .errorAlert(title: "assistant.error-unavailable", message: $voiceErrorMessage)
     }
 
-    // MARK: - Shell
-
-    private var composerShell: some View {
+    private var chromeShell: some View {
         VStack(alignment: .leading, spacing: 0) {
             if voiceLimitAlertVisible {
                 voiceLimitAlert
@@ -92,12 +106,10 @@ struct AssistantComposer: View {
                     .padding(.bottom, 4)
             }
 
-            messageInput
-                .padding(.horizontal, 16)
-                .padding(.top, attachments.isEmpty ? 12 : 4)
-                .padding(.bottom, 4)
+            topContent()
 
             composerToolbar
+                .padding(.horizontal, 8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
@@ -123,8 +135,6 @@ struct AssistantComposer: View {
         isVoiceActive ? .clear : Color(.separator)
     }
 
-    // MARK: - Subviews
-
     private var attachmentsRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
@@ -135,20 +145,6 @@ struct AssistantComposer: View {
                 }
             }
         }
-    }
-
-    private var messageInput: some View {
-        TextField(inputPlaceholder, text: $text, axis: .vertical)
-            .appBodyFieldTypography()
-            .lineLimit(1...6)
-            .frame(maxWidth: .infinity, minHeight: Self.inputMinHeight, alignment: .topLeading)
-            .focused($isInputFocused)
-            .disabled(isComposerInputDisabled)
-            .accessibilityIdentifier(AccessibilityIdentifiers.assistantMessageInput)
-    }
-
-    private var isComposerInputDisabled: Bool {
-        isSending || voiceRecorder.state == .transcribing
     }
 
     private var composerToolbar: some View {
@@ -273,7 +269,7 @@ struct AssistantComposer: View {
 
     private var attachButton: some View {
         Button {
-            showAssistantAttachOpen()
+            showAttachSheet = true
         } label: {
             composerIconOnly(systemName: "plus")
         }
@@ -358,15 +354,7 @@ struct AssistantComposer: View {
     }
 
     private var availableEntries: [CollectionEntry] {
-        // Pinned-first → alphabetical by display name (emoji ignored) → id, same rule as "All Recipes".
-        // Reads the memoized `collectionIndex.live` (rebuilt on sync deltas) instead of re-sorting on every render.
         syncService.collectionIndex.live
-    }
-
-    // MARK: - Actions
-
-    private func showAssistantAttachOpen() {
-        showAttachSheet = true
     }
 
     private func removeAttachment(_ attachment: AssistantRecipeAttachment) {
@@ -389,7 +377,6 @@ struct AssistantComposer: View {
     private func stopVoiceRecording() async {
         do {
             let audioData = try await voiceRecorder.stopCapture()
-            // Owned by the recorder so cancel() can abort an in-flight upload.
             let task = Task { [weak voiceRecorder] in
                 await self.transcribeCapturedAudio(audioData)
                 await MainActor.run { voiceRecorder?.transcriptionTask = nil }
@@ -408,7 +395,6 @@ struct AssistantComposer: View {
     private func transcribeCapturedAudio(_ audioData: Data) async {
         do {
             let transcribed = try await AssistantAPI.transcribe(audioData: audioData, mimeType: "audio/mp4")
-            // cancel() may have flipped state to .idle mid-flight; in that case drop the result.
             guard !Task.isCancelled, voiceRecorder.state == .transcribing else { return }
             voiceRecorder.markIdle()
             appendTranscription(transcribed)
@@ -434,6 +420,60 @@ struct AssistantComposer: View {
         } else {
             text += " \(trimmed)"
         }
+    }
+}
+
+// MARK: - Legacy modal composer (field + chrome)
+
+struct AssistantComposer: View {
+    /// Web `min-h-12` — keeps the field height stable when placeholder disappears.
+    private static let inputMinHeight: CGFloat = 48
+
+    @Binding var text: String
+    @Binding var attachments: [AssistantRecipeAttachment]
+    let isSending: Bool
+    let inputPlaceholderVariantIndex: Int
+    let contextRecipeId: String?
+    let onSend: () -> Void
+    /// Injected through to `AssistantComposerChrome` — no `@Environment` in the
+    /// composer subtree (iOS 26 fallback-env measurement during sheet dismiss).
+    let syncService: YjsSyncService
+
+    @Environment(\.locale) private var locale
+    /// Mirrored from `AssistantComposerChrome.voiceRecorder` (which owns voice
+    /// state) so the field can lock during transcription like it did before the
+    /// Chrome/wrapper split.
+    @State private var isVoiceTranscribing = false
+
+    private var inputPlaceholder: String {
+        _ = locale
+        return AssistantInputPlaceholder.localizedVariant(index: inputPlaceholderVariantIndex)
+    }
+
+    var body: some View {
+        AssistantComposerChrome(
+            text: $text,
+            attachments: $attachments,
+            isVoiceTranscribing: $isVoiceTranscribing,
+            isSending: isSending,
+            contextRecipeId: contextRecipeId,
+            onSend: onSend,
+            syncService: syncService
+        ) {
+            messageInput
+                .padding(.horizontal, 16)
+                .padding(.top, attachments.isEmpty ? 12 : 4)
+                .padding(.bottom, 4)
+        }
+    }
+
+    private var messageInput: some View {
+        TextField(inputPlaceholder, text: $text, axis: .vertical)
+            .appBodyFieldTypography()
+            .lineLimit(1...6)
+            .frame(maxWidth: .infinity, minHeight: Self.inputMinHeight, alignment: .topLeading)
+            .disabled(isSending || isVoiceTranscribing)
+            .accessibilityIdentifier(AccessibilityIdentifiers.assistantMessageInput)
     }
 }
 

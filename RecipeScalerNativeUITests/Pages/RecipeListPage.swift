@@ -20,8 +20,14 @@ struct RecipeListPage: Page {
         app.descendants(matching: .any)[UIA.recipeList].firstMatch
     }
 
-    /// "+" button to create a new recipe (always present on Recipes tab).
+    /// "+" menu trigger on the Recipes tab (create / import).
     var addButton: XCUIElement { app.buttons[UIA.recipeListAdd] }
+
+    /// "New recipe" item inside the add menu.
+    var addNewRecipeButton: XCUIElement { app.buttons[UIA.recipeListAddNew] }
+
+    /// "Import recipe" item inside the add menu.
+    var importRecipeButton: XCUIElement { app.buttons[UIA.recipeListImport] }
 
     /// Virtual "All recipes" grid tile (always present on collections grid).
     var allCollectionsTile: XCUIElement {
@@ -58,17 +64,18 @@ struct RecipeListPage: Page {
     func awaitReady(timeout: TimeInterval = Wait.firstPaint) -> Self {
         let add = addButton
         let allTile = allCollectionsTile
-        let ready = NSPredicate { _, _ in add.exists || allTile.exists }
+        let anyRow = firstRecipeRow
+        let ready = NSPredicate { _, _ in add.exists || allTile.exists || anyRow.exists }
         let expectation = XCTNSPredicateExpectation(predicate: ready, object: nil)
         let result = XCTWaiter().wait(for: [expectation], timeout: timeout)
         if result == .completed {
             return self
         }
-        if add.exists || allTile.exists {
+        if add.exists || allTile.exists || anyRow.exists {
             return self
         }
         XCTFail(
-            "Recipes tab not ready within \(Int(timeout))s — need recipe_list_add or collection_grid_all"
+            "Recipes tab not ready within \(Int(timeout))s — need recipe_list_add, collection_grid_all, or a recipe row"
         )
         return self
     }
@@ -80,11 +87,36 @@ struct RecipeListPage: Page {
             XCTFail("No recipe row to tap")
             return RecipeDetailPage(app: app)
         }
-        firstRecipeRow.tap()
+        let row = firstRecipeRow
+        if app.tables.firstMatch.exists {
+            app.tables.firstMatch.swipeUp()
+        } else if list.exists {
+            list.swipeUp()
+        }
+        for attempt in 0..<4 {
+            if row.isHittable {
+                row.tap()
+                return RecipeDetailPage(app: app)
+            }
+            if app.tables.firstMatch.exists {
+                app.tables.firstMatch.swipeUp()
+            } else if list.exists {
+                list.swipeUp()
+            }
+            _ = row.waitForExistence(timeout: 0.5)
+            if attempt == 3 {
+                if row.isHittable {
+                    row.tap()
+                } else {
+                    row.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+                }
+                return RecipeDetailPage(app: app)
+            }
+        }
         return RecipeDetailPage(app: app)
     }
 
-    /// Tap the "+" button to start the new-recipe flow.
+    /// Tap the "+" menu and choose "New recipe".
     @discardableResult
     func tapAddRecipe() -> Self {
         guard addButton.waitForExistence(timeout: Wait.element) else {
@@ -92,6 +124,27 @@ struct RecipeListPage: Page {
             return self
         }
         addButton.tap()
+        guard addNewRecipeButton.waitForExistence(timeout: Wait.element) else {
+            XCTFail("Recipe list add-new menu item missing")
+            return self
+        }
+        addNewRecipeButton.tap()
+        return self
+    }
+
+    /// Tap the "+" menu and choose "Import recipe".
+    @discardableResult
+    func tapImportRecipe() -> Self {
+        guard addButton.waitForExistence(timeout: Wait.element) else {
+            XCTFail("Recipe list add button missing")
+            return self
+        }
+        addButton.tap()
+        guard importRecipeButton.waitForExistence(timeout: Wait.element) else {
+            XCTFail("Recipe list import menu item missing")
+            return self
+        }
+        importRecipeButton.tap()
         return self
     }
 

@@ -48,7 +48,7 @@ private struct LocalizedNavigationTitleModifier: ViewModifier {
         let title = Bundle.currentLocalizedString(key)
         return content
             .navigationTitle(Text(verbatim: title))
-            .background(NavigationBackTitleSetter(title: title))
+            .background(NavigationBackTitleSetter(title: title, probeTag: key))
     }
 }
 
@@ -58,7 +58,7 @@ private struct LocalizedNavigationBackTitleModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         _ = locale
-        return content.background(NavigationBackTitleSetter(title: title))
+        return content.background(NavigationBackTitleSetter(title: title, probeTag: title))
     }
 }
 
@@ -66,22 +66,70 @@ private struct LocalizedNavigationBackTitleModifier: ViewModifier {
 /// pushed screens when the destination uses an empty inline title.
 private struct NavigationBackTitleSetter: UIViewControllerRepresentable {
     let title: String
+    /// H6 probe tag (which screen the setter is mounted on), logged with the render rate.
+    let probeTag: String
+
+    init(title: String, probeTag: String = "untagged") {
+        self.title = title
+        self.probeTag = probeTag
+    }
 
     func makeUIViewController(context: Context) -> NavigationBackTitleViewController {
-        NavigationBackTitleViewController(title: title)
+        NavigationBackTitleViewController(title: title, probeTag: probeTag)
     }
 
     func updateUIViewController(_ uiViewController: NavigationBackTitleViewController, context: Context) {
         uiViewController.backTitle = title
+        uiViewController.debugUpdateTick()
         uiViewController.applyBackTitleIfNeeded()
     }
 }
 
 private final class NavigationBackTitleViewController: UIViewController {
     var backTitle: String
+    private let probeTag: String
 
-    init(title: String) {
+    /// Last title actually written to `backBarButtonItem`. `updateUIViewController`
+    /// runs on every SwiftUI render; unconditional UIBarButtonItem reassignment
+    /// restarts UIKit nav-bar layout each time (per-frame `onAppear` churn seen
+    /// after the assistant sheet dismissed — session 25add8, log 9).
+    private var appliedTitle: String?
+
+    /// H6 probe: increments once per SwiftUI render of the owning view. A count
+    /// growing every frame (~50/s) over seconds would indicate a relayout loop.
+    private(set) var updateCount = 0
+
+    private var rateProbeScheduled = false
+
+    func debugUpdateTick() {
+        updateCount &+= 1
+        scheduleRateProbeIfNeeded()
+    }
+
+    /// One-shot sampler: 1 s after the first render, log the render delta.
+    /// Healthy UI: a few renders per sample. Relayout loop: tens per second.
+    private func scheduleRateProbeIfNeeded() {
+        guard !rateProbeScheduled else { return }
+        rateProbeScheduled = true
+        let baseline = updateCount
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self else { return }
+            let delta = self.updateCount - baseline
+            AgentSyncDebugLog.write(
+                hypothesisId: "H6",
+                location: "NavigationBackTitleViewController",
+                message: "back_title_render_rate",
+                data: [
+                    "screen": probeTag,
+                    "rendersPerSecond": String(delta)
+                ]
+            )
+        }
+    }
+
+    init(title: String, probeTag: String) {
         backTitle = title
+        self.probeTag = probeTag
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -109,11 +157,13 @@ private final class NavigationBackTitleViewController: UIViewController {
     func applyBackTitleIfNeeded(on parent: UIViewController? = nil) {
         let host = parent ?? self.parent
         let item = host?.navigationItem ?? navigationItem
+        guard appliedTitle != backTitle else { return }
         item.backBarButtonItem = UIBarButtonItem(
             title: backTitle,
             style: .plain,
             target: nil,
             action: nil
         )
+        appliedTitle = backTitle
     }
 }

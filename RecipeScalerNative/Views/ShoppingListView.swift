@@ -23,13 +23,16 @@ enum VkusvillUIVisibility {
 }
 
 struct ShoppingListView: View {
-    @Environment(YjsSyncService.self) private var syncService
-    @Environment(TimerManager.self) private var timerManager
-    @Environment(AppShellCoordinator.self) private var coordinator
-    @Environment(AuthService.self) private var authService
-    @Environment(VkusvillSettingsStore.self) private var vkusvillSettings
+    /// Injected (not `@Environment`): sibling tabs remasure nav chrome after
+    /// assistant dismiss on iOS 26; `@Environment(SomeObservable.self)` traps
+    /// in the fallback environment (same rule as RecipeListView).
+    let syncService: YjsSyncService
+    let timerManager: TimerManager
+    let coordinator: AppShellCoordinator
+    let authService: AuthService
+    let vkusvillSettings: VkusvillSettingsStore
+    let mobileTimerPanelIsCollapsed: Bool
     @Environment(\.locale) private var locale
-    @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Binding var path: NavigationPath
     @State private var bottomDraft = ""
     @State private var inlineEditItemId: String?
@@ -44,6 +47,24 @@ struct ShoppingListView: View {
     private enum Field: Hashable {
         case bottom
         case inline(String)
+    }
+
+    init(
+        path: Binding<NavigationPath>,
+        syncService: YjsSyncService,
+        timerManager: TimerManager,
+        coordinator: AppShellCoordinator,
+        authService: AuthService,
+        vkusvillSettings: VkusvillSettingsStore,
+        mobileTimerPanelIsCollapsed: Bool = true
+    ) {
+        _path = path
+        self.syncService = syncService
+        self.timerManager = timerManager
+        self.coordinator = coordinator
+        self.authService = authService
+        self.vkusvillSettings = vkusvillSettings
+        self.mobileTimerPanelIsCollapsed = mobileTimerPanelIsCollapsed
     }
 
     private var snapshot: ShoppingListSnapshot {
@@ -76,44 +97,21 @@ struct ShoppingListView: View {
     }
 
     private var shoppingListScreen: some View {
-        Group {
+        ShoppingListToolbarHost(
+            showsVkusvillBuyButton: showsVkusvillBuyButton,
+            isOnline: isOnline,
+            onBuy: {
+                coordinator.openAssistantWithMessage(
+                    Bundle.currentLocalizedString("vkusvill.assistant-prompt")
+                )
+            },
+            onShare: { showShareSheet = true }
+        ) {
             shoppingList
         }
         .localizedNavigationTitle("shopping.title")
+        .navigationBarTitleDisplayMode(.large)
         .appListBodyTypography()
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 0) {
-                    if showsVkusvillBuyButton {
-                        Button {
-                            coordinator.openAssistantWithMessage(
-                                Bundle.currentLocalizedString("vkusvill.assistant-prompt")
-                            )
-                        } label: {
-                            AppToolbarStyle.labeledIcon(
-                                systemName: "banknote",
-                                title: "vkusvill.buy-button"
-                            )
-                        }
-                        .appToolbarIconButton()
-                        .disabled(!isOnline)
-                        .accessibilityIdentifier(AccessibilityIdentifiers.vkusvillBuyButton)
-                        .accessibilityLabel(Text("vkusvill.buy-button"))
-                        .accessibilityHint(
-                            isOnline ? Text("") : Text("vkusvill.offline")
-                        )
-                    }
-                    Button {
-                        showShareSheet = true
-                    } label: {
-                        AppToolbarStyle.iconOnly(systemName: "square.and.arrow.up")
-                    }
-                    .appToolbarIconButton()
-                    .accessibilityLabel(Text("shopping.share-button"))
-                    .accessibilityIdentifier(AccessibilityIdentifiers.shoppingShareButton)
-                }
-            }
-        }
         .accessibilityIdentifier(AccessibilityIdentifiers.shoppingList)
         #if DEBUG
         .onAppear {
@@ -622,6 +620,48 @@ private struct ShoppingRemindersTipBanner: View {
 }
 
 // MARK: - Share sheet
+
+
+/// Toolbar host with no `@Environment(Observable.self)` — required so iOS 26
+/// bar remasure after assistant dismiss does not trap in fallback env.
+private struct ShoppingListToolbarHost<Content: View>: View {
+    let showsVkusvillBuyButton: Bool
+    let isOnline: Bool
+    let onBuy: () -> Void
+    let onShare: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        content()
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 0) {
+                        if showsVkusvillBuyButton {
+                            Button(action: onBuy) {
+                                AppToolbarStyle.labeledIcon(
+                                    systemName: "banknote",
+                                    title: "vkusvill.buy-button"
+                                )
+                            }
+                            .appToolbarIconButton()
+                            .disabled(!isOnline)
+                            .accessibilityIdentifier(AccessibilityIdentifiers.vkusvillBuyButton)
+                            .accessibilityLabel(Text("vkusvill.buy-button"))
+                            .accessibilityHint(
+                                isOnline ? Text("") : Text("vkusvill.offline")
+                            )
+                        }
+                        Button(action: onShare) {
+                            AppToolbarStyle.iconOnly(systemName: "square.and.arrow.up")
+                        }
+                        .appToolbarIconButton()
+                        .accessibilityLabel(Text("shopping.share-button"))
+                        .accessibilityIdentifier(AccessibilityIdentifiers.shoppingShareButton)
+                    }
+                }
+            }
+    }
+}
 
 private struct ShoppingListShareSheet: View {
     @Environment(YjsSyncService.self) private var syncService

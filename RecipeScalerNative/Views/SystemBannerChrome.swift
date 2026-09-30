@@ -8,10 +8,14 @@
 
 import SwiftUI
 
-/// Renders the active system banner when present. Reads `SystemBannerStore`
-/// from the environment; no-op when there is nothing to show.
+/// Renders the active system banner when present.
+///
+/// `systemBannerStore` is injected (not `@Environment`) on the recipes
+/// navigation path — after the assistant sheet dismisses, iOS 26 measures nav
+/// chrome in a fallback environment and `@Environment(SystemBannerStore.self)`
+/// traps.
 struct SystemBannerChrome: View {
-    @Environment(SystemBannerStore.self) private var systemBannerStore
+    let systemBannerStore: SystemBannerStore
 
     private var bannerToShow: SystemBannerDTO? {
         guard let banner = systemBannerStore.activeBanner else { return nil }
@@ -32,8 +36,10 @@ struct SystemBannerChrome: View {
 
 /// List-row wrapper so the banner sits inside a `List` and scrolls with rows.
 struct SystemBannerListRow: View {
+    let systemBannerStore: SystemBannerStore
+
     var body: some View {
-        SystemBannerChrome()
+        SystemBannerChrome(systemBannerStore: systemBannerStore)
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)

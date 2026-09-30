@@ -29,7 +29,9 @@ extension EnvironmentValues {
 }
 
 struct MobileTimerPanel: View {
-    @Environment(TimerManager.self) private var timerManager
+    /// Injected (not `@Environment`): lives in `tabViewBottomAccessory` / bar-like
+    /// slots that iOS 26 measures in a fallback environment after assistant dismiss.
+    let timerManager: TimerManager
     @Environment(\.mobileTimerPanelChevronNamespace) private var chevronNamespace
     @Binding var isCollapsed: Bool
     var presentation: MobileTimerPanelPresentation = .legacy
@@ -92,7 +94,7 @@ struct MobileTimerPanel: View {
             ScrollView {
                 VStack(spacing: 0) {
                     ForEach(timerManager.activeTimers, id: \.id) { timer in
-                        MobileTimerRow(timer: timer)
+                        MobileTimerRow(timerManager: timerManager, timer: timer)
                         if timer.id != timerManager.activeTimers.last?.id {
                             Divider().padding(.leading, MobileTimerPanelLayout.barHeight)
                         }
@@ -116,7 +118,7 @@ struct MobileTimerPanel: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(timerManager.activeTimers, id: \.id) { timer in
-                            MobileTimerRow(timer: timer)
+                            MobileTimerRow(timerManager: timerManager, timer: timer)
                             if timer.id != timerManager.activeTimers.last?.id {
                                 Divider().padding(.leading, MobileTimerPanelLayout.barHeight)
                             }
@@ -367,7 +369,7 @@ private enum TimerPanelIcon {
 }
 
 private struct MobileTimerRow: View {
-    @Environment(TimerManager.self) private var timerManager
+    let timerManager: TimerManager
     let timer: RecipeTimer
 
     var body: some View {

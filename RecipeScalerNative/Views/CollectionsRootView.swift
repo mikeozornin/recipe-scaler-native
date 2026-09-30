@@ -6,9 +6,12 @@ import SwiftUI
 /// with recipe counts, and an inline "New collection" create row.
 /// Supports two layouts: plain list and folder grid (configurable in Profile).
 struct CollectionsRootView: View {
-    @Environment(YjsSyncService.self) private var syncService
-    @Environment(TimerManager.self) private var timerManager
-    @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
+    /// Injected (not `@Environment`): iOS 26 re-measures navigation chrome in a
+    /// fallback environment after the assistant sheet dismisses; see `RecipeListView`.
+    let syncService: YjsSyncService
+    let timerManager: TimerManager
+    let systemBannerStore: SystemBannerStore
+    let mobileTimerPanelIsCollapsed: Bool
     @Binding var navigationPath: NavigationPath
 
     @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)
@@ -35,8 +38,7 @@ struct CollectionsRootView: View {
     /// Mirrors `RecipeListView.isUITestingHost` — skip the cold-start spinner when
     /// `AppContainer.bootstrap` short-circuits sync under XCTest/UI-test hosts.
     private var isUITestingHost: Bool {
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-            || ProcessInfo.processInfo.arguments.contains("ui-testing")
+        DebugLaunchOptions.usesReducedTestingHostBehavior
     }
 
     var body: some View {
@@ -58,7 +60,7 @@ struct CollectionsRootView: View {
     @ViewBuilder
     private var listContent: some View {
         List {
-            SystemBannerListRow()
+            SystemBannerListRow(systemBannerStore: systemBannerStore)
             ReleaseNotesListRow()
 
             collectionRow(
@@ -129,7 +131,7 @@ struct CollectionsRootView: View {
     @ViewBuilder
     private var gridContent: some View {
         ScrollView {
-            SystemBannerChrome()
+            SystemBannerChrome(systemBannerStore: systemBannerStore)
             ReleaseNotesChrome()
 
             let columns = [

@@ -47,6 +47,23 @@ enum DebugLaunchOptions {
         boolFlag("ShoppingShareAutoCopyText")
     }
 
+    /// `-FullBootstrapUnderXCTest=1` — UI repro tests: run real bootstrap/sync under
+    /// XCTest (default skips it). Use only in crash-repro specs that must mirror Dev.
+    static var allowBootstrapUnderXCTest: Bool {
+        boolFlag("FullBootstrapUnderXCTest")
+    }
+
+    /// XCTest runner and/or `-ui-testing` launch arg.
+    static var isUnderXCTestOrUITesting: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || ProcessInfo.processInfo.arguments.contains("ui-testing")
+    }
+
+    /// Short-circuited bootstrap, in-memory DB, instant `isLocalDataLoaded`, etc.
+    static var usesReducedTestingHostBehavior: Bool {
+        isUnderXCTestOrUITesting && !allowBootstrapUnderXCTest
+    }
+
     /// `-ShowAssistant=1` — opens assistant sheet on launch (verify 015).
     static var showAssistant: Bool {
         boolFlag("ShowAssistant")
@@ -188,7 +205,7 @@ enum DebugLaunchOptions {
         boolFlag("SimulateErrorAlert")
     }
 
-    /// `-OpenTab=shopping|discover|recipes|profile|import`
+    /// `-OpenTab=shopping|discover|recipes|profile|import|assistant`
     static var openTab: AppTab? {
         guard let raw = stringValue("OpenTab") else { return nil }
         switch raw {
@@ -197,6 +214,7 @@ enum DebugLaunchOptions {
         case "recipes": return .recipes
         case "shopping": return .shopping
         case "profile": return .profile
+        case "assistant": return .assistant
         default: return nil
         }
     }

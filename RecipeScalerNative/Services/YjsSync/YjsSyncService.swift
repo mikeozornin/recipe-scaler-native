@@ -3978,8 +3978,7 @@ final class YjsSyncService {
     /// so collection views would spin forever on `isLocalDataLoaded == false`. Mark ready
     /// at construction time for those hosts only.
     private func markLocalDataLoadedIfTestingHost() {
-        let isTestingHost = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-            || ProcessInfo.processInfo.arguments.contains("ui-testing")
+        let isTestingHost = DebugLaunchOptions.usesReducedTestingHostBehavior
         if isTestingHost {
             isLocalDataLoaded = true
         }

@@ -17,6 +17,7 @@ struct AccountView: View {
     @Environment(RemindersSyncService.self) private var remindersService
     @Environment(FeatureAdoptionStore.self) private var featureAdoptionStore
     @Environment(AppShellCoordinator.self) private var coordinator
+    @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Environment(\.locale) private var locale
     @Environment(OfflineBannerGate.self) private var offlineGate
@@ -167,6 +168,7 @@ struct AccountView: View {
                     }
                 }
                 .localizedNavigationTitle("account.title")
+                .navigationBarTitleDisplayMode(.inline)
                 .listSectionSpacing(12)
                 .appListBodyTypography()
                 .environment(

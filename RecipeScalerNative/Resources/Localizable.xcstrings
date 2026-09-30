@@ -12399,6 +12399,23 @@
         }
       }
     },
+    "recipes.import-button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import recipe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировать рецепт"
+          }
+        }
+      }
+    },
     "recipes.ingredient-header" : {
       "extractionState" : "manual",
       "localizations" : {

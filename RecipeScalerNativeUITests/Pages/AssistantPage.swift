@@ -11,13 +11,13 @@ struct AssistantPage: Page {
         self.app = app
     }
 
-    /// Prefer `assistant_fab` id. Fall back to the localized FAB label when
-    /// SwiftUI collapses the overlay id onto `root_content` (observed on
-    /// iOS 26 simulator: button label "Assistant", id "root_content").
-    var fab: XCUIElement {
-        let byId = app.descendants(matching: .any)[UIA.assistantFab].firstMatch
+    /// Spec 074 — assistant opens from the tab-bar button (`tab-assistant`).
+    /// Fall back to the localized tab label when SwiftUI collapses the id onto
+    /// an inner container.
+    var tabButton: XCUIElement {
+        let byId = app.buttons[UIA.assistantTab].firstMatch
         if byId.exists { return byId }
-        return app.descendants(matching: .any).matching(
+        return app.buttons.matching(
             NSPredicate(format: "label == %@ OR label CONTAINS[c] %@", "Assistant", "Assistant")
         ).firstMatch
     }
@@ -32,12 +32,12 @@ struct AssistantPage: Page {
     var historyButton: XCUIElement { app.buttons[UIA.assistantHistoryButton] }
 
     @discardableResult
-    func openViaFab() -> Self {
-        guard fab.waitForExistence(timeout: Wait.element) else {
-            XCTFail("Assistant FAB missing")
+    func openViaTab() -> Self {
+        guard tabButton.waitForExistence(timeout: Wait.element) else {
+            XCTFail("Assistant tab button missing")
             return self
         }
-        fab.tap()
+        tabButton.tap()
         return self
     }
 
@@ -45,5 +45,40 @@ struct AssistantPage: Page {
     func awaitSheet(timeout: TimeInterval = Wait.element) -> Self {
         awaitRoot(sheet, timeout: timeout, "Assistant sheet")
         return self
+    }
+
+    /// PI-3 (spec 074) — dismiss the sheet with a swipe down and wait until it
+    /// is gone, so a follow-up open starts from a clean presentation state.
+    /// The sheet root id can survive dismissal as a zombie presentation
+    /// element on iOS 26 (`exists` stays true), so completion is asserted on
+    /// the concrete composer shell inside the sheet.
+    func dismissViaSwipe(timeout: TimeInterval = Wait.element) {
+        let target = sheet.firstMatch
+        guard target.waitForExistence(timeout: Wait.element) else {
+            XCTFail("Assistant sheet not present to dismiss")
+            return
+        }
+        target.swipeDown()
+        // `isHittable == false` is not enough: the dismissed sheet can linger in
+        // the a11y hierarchy and swallow touches on the list underneath. Require
+        // full disappearance; fall back to a tab switch (spec 074 dismiss path).
+        func sheetGone() -> Bool {
+            !composerShell.exists && !target.exists
+        }
+        let gone = NSPredicate { [composerShell, target] _, _ in
+            !composerShell.exists && !target.exists
+        }
+        let expectation = XCTNSPredicateExpectation(predicate: gone, object: nil)
+        let result = XCTWaiter().wait(for: [expectation], timeout: timeout)
+        if result != .completed {
+            Navigation.openTab(.recipes, in: app)
+            // Re-create the expectation: XCTNSPredicateExpectation is one-shot.
+            let retry = XCTNSPredicateExpectation(predicate: gone, object: nil)
+            _ = XCTWaiter().wait(for: [retry], timeout: timeout)
+        }
+        XCTAssertTrue(
+            sheetGone(),
+            "Assistant sheet still in hierarchy after dismiss — it swallows list taps"
+        )
     }
 }

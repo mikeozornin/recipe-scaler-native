@@ -277,8 +277,13 @@ class AuthService {
     init() {
         let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
         let isUITesting = ProcessInfo.processInfo.arguments.contains("ui-testing")
+        #if DEBUG
+        let allowFullBootstrap = DebugLaunchOptions.allowBootstrapUnderXCTest
+        #else
+        let allowFullBootstrap = false
+        #endif
 
-        if isTesting || isUITesting {
+        if (isTesting || isUITesting) && !allowFullBootstrap {
             isAuthenticated = false
             userId = nil
             token = nil

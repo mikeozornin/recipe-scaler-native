@@ -19,9 +19,11 @@ enum Wait {
     /// Performance Medium.
     static let firstPaint: TimeInterval = 25
 
+    /// Full prod bootstrap under XCTest (`-FullBootstrapUnderXCTest=1`): socket +
+    /// SQLite hydrate on cold launch. Used only by crash-repro specs.
+    static let fullBootstrapFirstPaint: TimeInterval = 90
+
     /// Sync round-trip timeout (after REST seed → app should reflect it).
-    /// Calibrated from 30s → 20s. Slower flows (Discover, PushNotifications)
-    /// override via `timeout:` argument. See review finding Performance Medium.
     static let syncRoundTrip: TimeInterval = 20
 
     /// Wait for `element` to exist, failing the test with `message` if not.

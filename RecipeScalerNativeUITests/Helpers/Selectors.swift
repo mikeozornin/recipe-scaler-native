@@ -19,8 +19,8 @@ enum UIA {
     static let authQRCodeButton = "auth_qr_code_button"
 
     // MARK: - Tabs
+    // Legacy tab identifiers use snake_case; new spec-074 identifiers are kebab-case.
     static let tabDiscover = "tab_discover"
-    static let tabImport = "tab_import"
     static let tabRecipes = "tab_recipes"
     static let tabShopping = "tab_shopping"
     static let tabProfile = "tab_profile"
@@ -88,12 +88,11 @@ enum UIA {
     static let deleteAccountCancelButton = "delete_account_cancel_button"
     static let deleteAccountError = "delete_account_error"
 
-    // MARK: - Assistant (015/021)
-    static let assistantFab = "assistant_fab"
+    // MARK: - Assistant (015/021/074)
+    static let assistantTab = "tab-assistant"
     static let assistantSheet = "assistant_sheet"
     static let assistantComposerShell = "assistant_composer_shell"
     static let assistantMessageInput = "assistant_message_input"
-    static let assistantKeyboardDone = "assistant_keyboard_done"
     static let assistantAttachmentButton = "assistant_attachment_button"
     static let assistantVoiceRecordButton = "assistant_voice_record_button"
     static let assistantSendButton = "assistant_send_button"
@@ -117,6 +116,8 @@ enum UIA {
     // MARK: - Recipe list / detail (002)
     static let recipeList = "recipe_list"
     static let recipeListAdd = "recipe_list_add"
+    static let recipeListAddNew = "recipe-list-add-new"
+    static let recipeListImport = "recipe-list-import"
     static let recipeRowPrefix = "recipe_row_"
     static let profileButton = "profile_button"
     static let scaleMinusButton = "scale_minus_button"

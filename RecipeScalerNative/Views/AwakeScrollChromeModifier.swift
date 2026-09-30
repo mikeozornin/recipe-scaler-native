@@ -3,7 +3,6 @@ import SwiftUI
 struct AwakeScrollChromeModifier: ViewModifier {
     var controller: AwakeScrollController
     var isScreenAwakeActive: Bool
-    var cameraModality: AwakeScrollCameraModality
     var assistantSheetOpen: Bool
     var cookingCoverPresented: Bool
     @Binding var voiceEnabled: Bool
@@ -24,14 +23,6 @@ struct AwakeScrollChromeModifier: ViewModifier {
                         lastPulseByChannel: controller.lastPulseByChannel,
                         onHelp: { showingHelp = true }
                     )
-                }
-            }
-            .overlay(alignment: .bottomTrailing) {
-                if isScreenAwakeActive,
-                   cameraModality != .none {
-                    AwakeScrollCameraPreview()
-                        .padding(.trailing, AwakeScrollLayout.cameraPreviewTrailingPad)
-                        .padding(.bottom, AwakeScrollLayout.cameraPreviewBottomPad)
                 }
             }
             .sheet(isPresented: $showingHelp, onDismiss: onArmFlagsChanged) {

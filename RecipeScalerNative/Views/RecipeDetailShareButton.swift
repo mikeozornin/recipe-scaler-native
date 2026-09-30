@@ -3,6 +3,7 @@
 //  RecipeScalerNative
 //
 
+import RecipeScalerCore
 import SwiftUI
 import UIKit
 
@@ -11,6 +12,10 @@ struct RecipeDetailShareButton: View {
     let isPublic: Bool
     let hasImage: Bool
     let hasSteps: Bool
+    /// Injected (not `@Environment`): toolbar subtree is measured in iOS 26's
+    /// fallback environment; `.sheet` content is still type-checked/sized with it.
+    let syncService: YjsSyncService
+    let apiClient: APIClient
 
     @State private var showShare = false
 
@@ -34,7 +39,9 @@ struct RecipeDetailShareButton: View {
                 recipeId: recipeId,
                 initialIsPublic: isPublic,
                 hasImage: hasImage,
-                hasSteps: hasSteps
+                hasSteps: hasSteps,
+                syncService: syncService,
+                apiClient: apiClient
             )
         }
     }
@@ -43,13 +50,12 @@ struct RecipeDetailShareButton: View {
 // MARK: - Sheet
 
 private struct RecipeShareSheet: View {
-    @Environment(YjsSyncService.self) private var syncService
-    @Environment(\.apiClient) private var apiClient
-
     let recipeId: String
     let initialIsPublic: Bool
     let hasImage: Bool
     let hasSteps: Bool
+    let syncService: YjsSyncService
+    let apiClient: APIClient
 
     @State private var model: RecipeShareModel?
 
@@ -61,7 +67,8 @@ private struct RecipeShareSheet: View {
                     recipeId: recipeId,
                     initialIsPublic: initialIsPublic,
                     hasImage: hasImage,
-                    hasSteps: hasSteps
+                    hasSteps: hasSteps,
+                    syncService: syncService
                 )
             } else {
                 NavigationStack {
@@ -81,7 +88,6 @@ private struct RecipeShareSheet: View {
 }
 
 private struct RecipeShareSheetContent: View {
-    @Environment(YjsSyncService.self) private var syncService
     @Environment(\.dismiss) private var dismiss
 
     let model: RecipeShareModel
@@ -89,6 +95,7 @@ private struct RecipeShareSheetContent: View {
     let initialIsPublic: Bool
     let hasImage: Bool
     let hasSteps: Bool
+    let syncService: YjsSyncService
 
     @State private var isPublic: Bool
     @State private var isUpdating = false
@@ -99,12 +106,20 @@ private struct RecipeShareSheetContent: View {
     @State private var showFileActivitySheet = false
     @State private var fileErrorMessage: LocalizedStringKey?
 
-    init(model: RecipeShareModel, recipeId: String, initialIsPublic: Bool, hasImage: Bool, hasSteps: Bool) {
+    init(
+        model: RecipeShareModel,
+        recipeId: String,
+        initialIsPublic: Bool,
+        hasImage: Bool,
+        hasSteps: Bool,
+        syncService: YjsSyncService
+    ) {
         self.model = model
         self.recipeId = recipeId
         self.initialIsPublic = initialIsPublic
         self.hasImage = hasImage
         self.hasSteps = hasSteps
+        self.syncService = syncService
         _isPublic = State(initialValue: initialIsPublic)
     }
 

@@ -10,12 +10,16 @@ import SwiftUI
 import RecipeScalerCore
 
 struct AssistantSheet: View {
-    @Environment(YjsSyncService.self) private var syncService
     @Environment(AppShellCoordinator.self) private var coordinator
     @Environment(OfflineBannerGate.self) private var offlineGate
+    @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
 
     let contextRecipeId: String?
     let openRequest: AssistantOpenRequest?
+    /// Injected (not `@Environment`): the sheet subtree can be re-measured by
+    /// iOS 26 in a fallback environment (bar-item sizing) after dismissal
+    /// starts; `@Environment(YjsSyncService.self)` traps there.
+    let syncService: YjsSyncService
 
     @State private var threadId: String?
     @State private var threads: [AssistantThreadDTO] = []
@@ -46,9 +50,14 @@ struct AssistantSheet: View {
     /// logout/account-switch bump means this sheet must tear itself down.
     @State private var observedSessionEpoch = 0
 
-    init(contextRecipeId: String?, openRequest: AssistantOpenRequest? = nil) {
+    init(
+        contextRecipeId: String?,
+        openRequest: AssistantOpenRequest? = nil,
+        syncService: YjsSyncService
+    ) {
         self.contextRecipeId = contextRecipeId
         self.openRequest = openRequest
+        self.syncService = syncService
         _pendingExternalRequest = State(initialValue: openRequest)
     }
 
@@ -69,6 +78,10 @@ struct AssistantSheet: View {
 
     var body: some View {
         NavigationStack {
+            AssistantSheetToolbarHost(
+                onShowHistory: { showHistorySheet = true },
+                onStartNewChat: { startNewChat() }
+            ) {
             VStack(spacing: 0) {
                 if showsOnlineContent {
                     messageList
@@ -78,7 +91,8 @@ struct AssistantSheet: View {
                         isSending: isSending,
                         inputPlaceholderVariantIndex: inputPlaceholderVariantIndex,
                         contextRecipeId: contextRecipeId,
-                        onSend: { launchSend() }
+                        onSend: { launchSend() },
+                        syncService: syncService
                     )
                     .padding(.horizontal, 12)
                     .padding(.top, 6)
@@ -96,27 +110,6 @@ struct AssistantSheet: View {
             }
             .background(Color(.systemBackground))
             .localizedNavigationTitle("assistant.title")
-            .toolbar {
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button {
-                        showHistorySheet = true
-                    } label: {
-                        AppToolbarStyle.iconOnly(systemName: "clock.arrow.circlepath")
-                    }
-                    .appToolbarIconButton()
-                    .accessibilityLabel(Text("assistant.threads-title"))
-                    .accessibilityIdentifier(AccessibilityIdentifiers.assistantHistoryButton)
-
-                    Button {
-                        startNewChat()
-                    } label: {
-                        AppToolbarStyle.iconOnly(systemName: "plus")
-                    }
-                    .appToolbarIconButton()
-                    .accessibilityLabel(Text("assistant.new-chat"))
-                    .accessibilityIdentifier(AccessibilityIdentifiers.assistantNewThreadButton)
-                }
-            }
             .overlay {
                 if isBootstrapping {
                     ProgressView()
@@ -177,6 +170,21 @@ struct AssistantSheet: View {
                 #endif
             }
             .onDisappear {
+                #if DEBUG
+                // #region agent log
+                AgentSyncDebugLog.assistantLayout(
+                    hypothesisId: "H1",
+                    location: "AssistantSheet.onDisappear",
+                    message: "assistant_sheet_disappeared",
+                    data: ["has_thread_id": threadId != nil ? "true" : "false"]
+                )
+                AgentSyncDebugLog.logNavigationBarState(
+                    hypothesisId: "H2",
+                    location: "AssistantSheet.onDisappear",
+                    tag: "sheet_disappear"
+                )
+                // #endregion
+                #endif
                 persistSession()
                 bootstrapTask?.cancel()
                 externalSendTask?.cancel()
@@ -188,8 +196,8 @@ struct AssistantSheet: View {
                 undeliveredPrompt = nil
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.assistantSheet)
+            }
         }
-        .appOpaqueSheetPresentationPlain()
     }
 
     /// Logout / account switch while the sheet is open: cancel every in-flight
@@ -977,5 +985,33 @@ struct AssistantSheet: View {
 
     private func stampSession() {
         persistSession()
+    }
+}
+
+/// Toolbar host without `@Environment` — iOS 26 fallback env during sheet dismiss.
+private struct AssistantSheetToolbarHost<Content: View>: View {
+    let onShowHistory: () -> Void
+    let onStartNewChat: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        content()
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button(action: onShowHistory) {
+                        AppToolbarStyle.iconOnly(systemName: "clock.arrow.circlepath")
+                    }
+                    .appToolbarIconButton()
+                    .accessibilityLabel(Text("assistant.threads-title"))
+                    .accessibilityIdentifier(AccessibilityIdentifiers.assistantHistoryButton)
+
+                    Button(action: onStartNewChat) {
+                        AppToolbarStyle.iconOnly(systemName: "plus")
+                    }
+                    .appToolbarIconButton()
+                    .accessibilityLabel(Text("assistant.new-chat"))
+                    .accessibilityIdentifier(AccessibilityIdentifiers.assistantNewThreadButton)
+                }
+            }
     }
 }

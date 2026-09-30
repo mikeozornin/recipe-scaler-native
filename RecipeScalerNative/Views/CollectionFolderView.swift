@@ -6,10 +6,12 @@ import SwiftUI
 /// plus an overflow menu for user folders (rename, select recipes, delete).
 struct CollectionFolderView: View {
     let folderId: String
-
-    @Environment(YjsSyncService.self) private var syncService
-    @Environment(TimerManager.self) private var timerManager
-    @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
+    /// Injected (not `@Environment`): toolbar hosts trap in iOS 26 fallback env
+    /// during `NavigationStack` push after assistant dismiss — see `RecipeListView`.
+    let syncService: YjsSyncService
+    let coordinator: AppShellCoordinator
+    let timerManager: TimerManager
+    let mobileTimerPanelIsCollapsed: Bool
     @Binding var navigationPath: NavigationPath
 
     @State private var isEditingName = false
@@ -195,7 +197,11 @@ struct CollectionFolderView: View {
         .sheet(item: $presentedSheet) { sheet in
             switch sheet {
             case .assign(let recipeId, let recipeName):
-                CollectionAssignSheet(recipeId: recipeId, recipeName: recipeName)
+                CollectionAssignSheet(
+                    recipeId: recipeId,
+                    recipeName: recipeName,
+                    syncService: syncService
+                )
             case .manageRecipes:
                 ManageCollectionRecipesSheet(folderId: folderId)
             }
@@ -244,19 +250,19 @@ struct CollectionFolderView: View {
             Button {
                 startRename()
             } label: {
-                AppLabel.make(String(localized: "collections.rename"), symbol: "pencil")
+                AppLabel.make("collections.rename", symbol: "pencil")
             }
 
             Button {
                 presentedSheet = .manageRecipes
             } label: {
-                AppLabel.make(String(localized: "collections.select-recipes"), symbol: "folder.badge.plus")
+                AppLabel.make("collections.select-recipes", symbol: "folder.badge.plus")
             }
 
             Button(role: .destructive) {
                 presentedAlert = .deleteFolder
             } label: {
-                AppLabel.make(String(localized: "collections.delete"), symbol: "trash")
+                AppLabel.make("collections.delete", symbol: "trash")
             }
         } label: {
             AppToolbarStyle.iconOnly(systemName: "ellipsis")
@@ -266,17 +272,17 @@ struct CollectionFolderView: View {
 
     @ViewBuilder
     private var createRecipeButton: some View {
-        Button {
-            Task { @MainActor in
-                await handleCreateRecipe()
+        RecipesAddToolbarMenu(
+            isCreatingRecipe: isCreatingRecipe,
+            onCreateRecipe: {
+                Task { @MainActor in
+                    await handleCreateRecipe()
+                }
+            },
+            onImport: {
+                coordinator.presentImport()
             }
-        } label: {
-            AppToolbarStyle.iconOnly(systemName: "plus")
-        }
-        .appToolbarIconButton()
-        .disabled(isCreatingRecipe)
-        .accessibilityLabel("recipes.add-button")
-        .accessibilityIdentifier(AccessibilityIdentifiers.recipeListAdd)
+        )
     }
 
     // MARK: - Inline rename
@@ -495,35 +501,24 @@ struct CollectionFolderView: View {
             Button {
                 Task { await addRecipeToShopping(item) }
             } label: {
-                Label(
-                    String(localized: "shopping.detail-add-all"),
-                    systemImage: "cart.badge.plus"
-                )
+                AppLabel.make("shopping.detail-add-all", symbol: "cart.badge.plus")
             }
             .tint(.green)
 
             Button {
                 presentedSheet = .assign(recipeId: item.id, recipeName: item.displayName)
             } label: {
-                Label(
-                    String(localized: "collections.assign-tooltip"),
-                    systemImage: "folder.badge.plus"
-                )
+                AppLabel.make("collections.assign-tooltip", symbol: "folder.badge.plus")
             }
             .tint(.orange)
 
             Button {
                 Task { await togglePin(for: item) }
             } label: {
-                Label {
-                    Text(
-                        item.isPinned
-                            ? String(localized: "recipe.list.unpin")
-                            : String(localized: "recipe.list.pin")
-                    )
-                } icon: {
-                    AppSymbol.image(item.isPinned ? "pin.slash" : "pin")
-                }
+                AppLabel.make(
+                    item.isPinned ? "recipe.list.unpin" : "recipe.list.pin",
+                    symbol: item.isPinned ? "pin.slash" : "pin"
+                )
             }
             .tint(.blue)
         }
@@ -531,7 +526,7 @@ struct CollectionFolderView: View {
             Button {
                 presentedAlert = .deleteRecipe(item)
             } label: {
-                AppLabel.make(String(localized: "recipe.list.delete"), symbol: "trash")
+                AppLabel.make("recipe.list.delete", symbol: "trash")
             }
             .tint(.red)
         }

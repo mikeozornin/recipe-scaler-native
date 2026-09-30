@@ -21,7 +21,6 @@
 		P075V01B /* DetailScrollViewProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V01A /* DetailScrollViewProbe.swift */; };
 		P075V02B /* AwakeScrollLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V02A /* AwakeScrollLayout.swift */; };
 		P075V03B /* AwakeScrollHelpSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V03A /* AwakeScrollHelpSheet.swift */; };
-		P075V04B /* AwakeScrollCameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V04A /* AwakeScrollCameraPreview.swift */; };
 		P075V05B /* AwakeScrollChromeModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075V05A /* AwakeScrollChromeModifier.swift */; };
 		P075T01B /* AwakeScrollEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075T01A /* AwakeScrollEngineTests.swift */; };
 		P075T02B /* AwakeScrollVoiceClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075T02A /* AwakeScrollVoiceClassifierTests.swift */; };
@@ -311,7 +310,6 @@
 		B3RACLRT02B293A4B70100002 /* RecipeAccentColorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3RACLRT02A293A4B70100001 /* RecipeAccentColorTests.swift */; };
 		B3SNAP01B293A4B701000004 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = B3SNAP01A293A4B701000003 /* SnapshotTesting */; };
 		B3SYNCERR0010 /* SyncErrorCodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3SYNCERR0020 /* SyncErrorCodeTests.swift */; };
-		B3TBDISC01B293A4B70100001 /* TabBarDiscoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TBDISC01A293A4B70100001 /* TabBarDiscoveryTests.swift */; };
 		B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TESTERR0020 /* ErrorLocalizationTests.swift */; };
 		B3TIMENOTIF01B293A4B70100001 /* TimerNotificationActionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */; };
 		B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */; };
@@ -480,7 +478,7 @@
 		E5F60718293A4B70A1TBR001 /* AppToolbarStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A1TBR002 /* AppToolbarStyle.swift */; };
 		E5F60718293A4B70AAV01234 /* AuthAvatarImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70AAV00001 /* AuthAvatarImage.swift */; };
 		E5F60718293A4B70ACE05678 /* AccountProfileEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70ACE01234 /* AccountProfileEditView.swift */; };
-		E5F60718293A4B70AFAB0001 /* AssistantFabStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70AFAB0002 /* AssistantFabStyle.swift */; };
+		R5AMEN0293A4B7010000002 /* RecipesAddToolbarMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = R5AMEN0293A4B7010000001 /* RecipesAddToolbarMenu.swift */; };
 		E5F60718293A4B70B3900847 /* RecipeDetailActionsMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B709EBF9E6E /* RecipeDetailActionsMenu.swift */; };
 		E5F60718293A4B70C1A2B3D4 /* RecipeDetailImageSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70C1A2B3D3 /* RecipeDetailImageSection.swift */; };
 		E5F60718293A4B70C2E684EE /* DiscoverRecipeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70D1881049 /* DiscoverRecipeView.swift */; };
@@ -830,7 +828,6 @@
 		P075V01A /* DetailScrollViewProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailScrollViewProbe.swift; sourceTree = "<group>"; };
 		P075V02A /* AwakeScrollLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollLayout.swift; sourceTree = "<group>"; };
 		P075V03A /* AwakeScrollHelpSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollHelpSheet.swift; sourceTree = "<group>"; };
-		P075V04A /* AwakeScrollCameraPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollCameraPreview.swift; sourceTree = "<group>"; };
 		P075V05A /* AwakeScrollChromeModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollChromeModifier.swift; sourceTree = "<group>"; };
 		P075T01A /* AwakeScrollEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollEngineTests.swift; sourceTree = "<group>"; };
 		P075T02A /* AwakeScrollVoiceClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollVoiceClassifierTests.swift; sourceTree = "<group>"; };
@@ -1114,7 +1111,6 @@
 		B3PUBURL01A293A4B701000001 /* PublicURLBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicURLBuilderTests.swift; sourceTree = "<group>"; };
 		B3RACLRT02A293A4B70100001 /* RecipeAccentColorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeAccentColorTests.swift; sourceTree = "<group>"; };
 		B3SYNCERR0020 /* SyncErrorCodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorCodeTests.swift; sourceTree = "<group>"; };
-		B3TBDISC01A293A4B70100001 /* TabBarDiscoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarDiscoveryTests.swift; sourceTree = "<group>"; };
 		B3TESTERR0020 /* ErrorLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorLocalizationTests.swift; sourceTree = "<group>"; };
 		B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerNotificationActionsTests.swift; sourceTree = "<group>"; };
 		B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPanelRefreshTests.swift; sourceTree = "<group>"; };
@@ -1272,6 +1268,7 @@
 		E5F60718293A4B708354CFBC /* RecipeDetailShareButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailShareButton.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70898823B7 /* PublicURLBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicURLBuilder.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7097235780 /* RecipeImageUploadAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeImageUploadAPI.swift; sourceTree = "<group>"; };
+		R5AMEN0293A4B7010000001 /* RecipesAddToolbarMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipesAddToolbarMenu.swift; sourceTree = "<group>"; };
 		E5F60718293A4B709EBF9E6E /* RecipeDetailActionsMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailActionsMenu.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A0433F17 /* TimerSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSyncService.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A0770F71 /* LiveActivityPushRegistrar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityPushRegistrar.swift; sourceTree = "<group>"; };
@@ -1285,7 +1282,6 @@
 		FF072FEEDVIEWREFB293A4B70 /* DiscoverFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverFeedView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70AAV00001 /* AuthAvatarImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthAvatarImage.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70ACE01234 /* AccountProfileEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountProfileEditView.swift; sourceTree = "<group>"; };
-		E5F60718293A4B70AFAB0002 /* AssistantFabStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantFabStyle.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppThemePreference.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70C1A2B3D3 /* RecipeDetailImageSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailImageSection.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70CD094870 /* AppLanguagePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguagePreference.swift; sourceTree = "<group>"; };
@@ -1709,7 +1705,6 @@
 				E5F60718293A4B700A5738C7 /* ShoppingListView.swift */,
 				E5F60718293A4B7060097EA7 /* ImportRecipeSheet.swift */,
 				E5F60718293A4B70A1TBR002 /* AppToolbarStyle.swift */,
-				E5F60718293A4B70AFAB0002 /* AssistantFabStyle.swift */,
 				E5F60718293A4B7017DF9B12 /* DiscoverRootView.swift */,
 				E5F60718293A4B701A1B2001 /* Discover */,
 				E5F60718293A4B70344FA5B3 /* AccountView.swift */,
@@ -1738,6 +1733,7 @@
 				A5VLM02293A4B7010000002 /* AssistantVoiceLevelMeter.swift */,
 				E5F60718293A4B70220BC4FC /* AssistantComposer.swift */,
 				E5F60718293A4B70E374EEFC /* MobileTimerPanel.swift */,
+				R5AMEN0293A4B7010000001 /* RecipesAddToolbarMenu.swift */,
 				E5F60718293A4B709EBF9E6E /* RecipeDetailActionsMenu.swift */,
 				E5F60718293A4B70C1A2B3D3 /* RecipeDetailImageSection.swift */,
 				E5F60718293A4B708354CFBC /* RecipeDetailShareButton.swift */,
@@ -1746,7 +1742,6 @@
 				P075V01A /* DetailScrollViewProbe.swift */,
 				P075V02A /* AwakeScrollLayout.swift */,
 				P075V03A /* AwakeScrollHelpSheet.swift */,
-				P075V04A /* AwakeScrollCameraPreview.swift */,
 				P075V05A /* AwakeScrollChromeModifier.swift */,
 				E5F60718293A4B707F3A30E0 /* TransientStatusBanner.swift */,
 				076A0001A293A4B701000005 /* ClipboardImportBannerLayout.swift */,
@@ -2033,7 +2028,6 @@
 				B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */,
 				B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */,
 				B3TIMESYNC01A293A4B70100001 /* TimerSyncQueueTests.swift */,
-				B3TBDISC01A293A4B70100001 /* TabBarDiscoveryTests.swift */,
 				B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */,
 				B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */,
 				B3LAINTT01A293A4B70100001 /* TimerLiveActivityIntentSnapshotTests.swift */,
@@ -3227,7 +3221,6 @@
 				P075V01B /* DetailScrollViewProbe.swift in Sources */,
 				P075V02B /* AwakeScrollLayout.swift in Sources */,
 				P075V03B /* AwakeScrollHelpSheet.swift in Sources */,
-				P075V04B /* AwakeScrollCameraPreview.swift in Sources */,
 				P075V05B /* AwakeScrollChromeModifier.swift in Sources */,
 				P074A05B293A4B701000001 /* ProcessTableLayout.swift in Sources */,
 				P074A06B293A4B701000001 /* ProcessTableStartButton.swift in Sources */,
@@ -3336,7 +3329,6 @@
 				E5F60718293A4B7078685F7E /* ShoppingListView.swift in Sources */,
 				E5F60718293A4B70CD074276 /* ImportRecipeSheet.swift in Sources */,
 				E5F60718293A4B70A1TBR001 /* AppToolbarStyle.swift in Sources */,
-				E5F60718293A4B70AFAB0001 /* AssistantFabStyle.swift in Sources */,
 				E5F60718293A4B7076429294 /* DiscoverRootView.swift in Sources */,
 				E5F60718293A4B70F9B21071 /* DiscoverSearch.swift in Sources */,
 				E5F60718293A4B703E9C5471 /* DiscoverCollectionView.swift in Sources */,
@@ -3366,6 +3358,7 @@
 				A5ATCH18293A4B7010000001 /* AssistantAttachmentChip.swift in Sources */,
 				E5F60718293A4B702B6FFEC2 /* AssistantComposer.swift in Sources */,
 				E5F60718293A4B70E66E63B1 /* MobileTimerPanel.swift in Sources */,
+				R5AMEN0293A4B7010000002 /* RecipesAddToolbarMenu.swift in Sources */,
 				E5F60718293A4B70B3900847 /* RecipeDetailActionsMenu.swift in Sources */,
 				E5F60718293A4B70C1A2B3D4 /* RecipeDetailImageSection.swift in Sources */,
 				E5F60718293A4B70E425B385 /* RecipeDetailShareButton.swift in Sources */,
@@ -3580,7 +3573,6 @@
 				B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */,
 				B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */,
 				B3TIMESYNC01B293A4B70100001 /* TimerSyncQueueTests.swift in Sources */,
-				B3TBDISC01B293A4B70100001 /* TabBarDiscoveryTests.swift in Sources */,
 				B3TIMENOTIF01B293A4B70100001 /* TimerNotificationActionsTests.swift in Sources */,
 				B3TIMEWIDGET01B293A4B70100001 /* TimerWidgetTimelineTests.swift in Sources */,
 				B3LAINTT01B293A4B70100001 /* TimerLiveActivityIntentSnapshotTests.swift in Sources */,
