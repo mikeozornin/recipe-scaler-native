@@ -16,6 +16,8 @@ struct AssistantSheet: View {
 
     let contextRecipeId: String?
     let openRequest: AssistantOpenRequest?
+    /// Spec 078 — shake entry (auto-attach / new chat / voice).
+    let shakeOpenRequest: AssistantShakeOpenRequest?
     /// Injected (not `@Environment`): the sheet subtree can be re-measured by
     /// iOS 26 in a fallback environment (bar-item sizing) after dismissal
     /// starts; `@Environment(YjsSyncService.self)` traps there.
@@ -39,6 +41,9 @@ struct AssistantSheet: View {
     @State private var inputPlaceholderVariantIndex = Int.random(in: 0..<AssistantInputPlaceholder.variantCount)
     @State private var pendingExternalRequest: AssistantOpenRequest?
     @State private var handledExternalRequestId: Int?
+    @State private var pendingShakeRequest: AssistantShakeOpenRequest?
+    @State private var handledShakeRequestId: Int?
+    @State private var autoStartVoice = false
     @State private var externalSendTask: Task<Void, Never>?
     @State private var bootstrapTask: Task<Void, Never>?
     @State private var interactionGeneration = 0
@@ -53,12 +58,15 @@ struct AssistantSheet: View {
     init(
         contextRecipeId: String?,
         openRequest: AssistantOpenRequest? = nil,
+        shakeOpenRequest: AssistantShakeOpenRequest? = nil,
         syncService: YjsSyncService
     ) {
         self.contextRecipeId = contextRecipeId
         self.openRequest = openRequest
+        self.shakeOpenRequest = shakeOpenRequest
         self.syncService = syncService
         _pendingExternalRequest = State(initialValue: openRequest)
+        _pendingShakeRequest = State(initialValue: shakeOpenRequest)
     }
 
     private var isOnline: Bool {
@@ -91,6 +99,7 @@ struct AssistantSheet: View {
                         isSending: isSending,
                         inputPlaceholderVariantIndex: inputPlaceholderVariantIndex,
                         contextRecipeId: contextRecipeId,
+                        autoStartVoice: $autoStartVoice,
                         onSend: { launchSend() },
                         syncService: syncService
                     )
@@ -152,6 +161,9 @@ struct AssistantSheet: View {
             .onChange(of: openRequest) { _, request in
                 receiveExternalRequest(request)
             }
+            .onChange(of: shakeOpenRequest) { _, request in
+                receiveShakeRequest(request)
+            }
             .onChange(of: showHistorySheet) { _, isOpen in
                 if isOpen {
                     threadsRefreshTask?.cancel()
@@ -161,6 +173,7 @@ struct AssistantSheet: View {
             .onAppear {
                 inputPlaceholderVariantIndex = Int.random(in: 0..<AssistantInputPlaceholder.variantCount)
                 observedSessionEpoch = coordinator.assistantSessionEpoch
+                receiveShakeRequest(shakeOpenRequest)
                 #if DEBUG
                 AgentSyncDebugLog.sync(
                     location: "AssistantSheet.onAppear",
@@ -401,6 +414,9 @@ struct AssistantSheet: View {
             hasTriedSessionRestore = false
             return
         }
+        if let shake = pendingShakeRequest {
+            applyShakeSideEffects(shake)
+        }
         scheduleExternalSendIfNeeded()
         deliverUndeliveredPromptIfReady()
     }
@@ -441,6 +457,11 @@ struct AssistantSheet: View {
         if let pendingExternalRequest {
             handledExternalRequestId = pendingExternalRequest.requestId
             startNewChat(clearExternalRequest: false)
+            return
+        }
+
+        if let shake = pendingShakeRequest, shake.forceNewChat {
+            applyShakeSideEffects(shake)
             return
         }
 
@@ -529,6 +550,47 @@ struct AssistantSheet: View {
         if hasTriedSessionRestore, isOnline, !isBootstrapping {
             scheduleExternalSendIfNeeded()
         }
+    }
+
+    /// Spec 078 — queue shake intent; apply immediately once bootstrap finished.
+    private func receiveShakeRequest(_ request: AssistantShakeOpenRequest?) {
+        guard let request else { return }
+        guard handledShakeRequestId != request.requestId else { return }
+        pendingShakeRequest = request
+        if hasTriedSessionRestore {
+            applyShakeSideEffects(request)
+        }
+    }
+
+    private func applyShakeSideEffects(_ request: AssistantShakeOpenRequest) {
+        guard handledShakeRequestId != request.requestId else { return }
+        handledShakeRequestId = request.requestId
+        if request.forceNewChat {
+            startNewChat()
+        }
+        if let recipeId = request.attachRecipeId {
+            autoAttachRecipe(recipeId)
+        }
+        if request.startVoiceRecording {
+            autoStartVoice = true
+        }
+    }
+
+    private func autoAttachRecipe(_ recipeId: String) {
+        let alreadyAttached = attachments.contains {
+            $0.recipeId.caseInsensitiveCompare(recipeId) == .orderedSame
+        }
+        guard !alreadyAttached, attachments.count < 10 else { return }
+        guard let entry = syncService.collectionEntries.first(where: {
+            !$0.deleted && $0.id.caseInsensitiveCompare(recipeId) == .orderedSame
+        }) else { return }
+        attachments.append(
+            AssistantRecipeAttachment(
+                recipeId: entry.id,
+                recipeName: entry.name,
+                recipeColor: entry.color
+            )
+        )
     }
 
     private func scheduleExternalSendIfNeeded() {

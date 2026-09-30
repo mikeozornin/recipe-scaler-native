@@ -73,6 +73,7 @@ enum AccessibilityIdentifiers {
     static let accountTelegramRefresh = "account_telegram_refresh"
     static let vkusvillToggle = "vkusvill_toggle"
     static let accountTimerNotificationsToggle = "account_timer_notifications_toggle"
+    static let accountShakeOpenAssistantToggle = "account_shake_open_assistant_toggle"
     static let accountTipsSection = "account_tips_section"
     static let accountTipsMenu = "account_tips_menu"
     static let accountTipsRetry = "account_tips_retry"

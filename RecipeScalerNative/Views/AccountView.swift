@@ -66,6 +66,8 @@ struct AccountView: View {
     @State private var isDeletingAccount = false
     @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)
     private var collectionsLayoutRaw: String = RecipeFolderRoutes.defaultCollectionsRootLayout.rawValue
+    @AppStorage(ShakeToOpenAssistantPreference.storageKey)
+    private var shakeToOpenAssistant = false
     @State private var isTelegramConnected = false
     @State private var showRemindersListPicker = false
     /// Incremented on every pull-to-refresh so child views (Telegram status,
@@ -573,6 +575,17 @@ struct AccountView: View {
                         .padding(.top, 2)
                 }
             }
+
+            Toggle(isOn: $shakeToOpenAssistant) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("account.shake-open-assistant.label").appBody()
+                    Text("account.shake-open-assistant.footer")
+                        .appFootnote()
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 2)
+                }
+            }
+            .accessibilityIdentifier(AccessibilityIdentifiers.accountShakeOpenAssistantToggle)
 
         } header: {
             AppSectionHeader("account.section.preferences")

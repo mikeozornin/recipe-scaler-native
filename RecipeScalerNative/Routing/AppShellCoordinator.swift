@@ -21,6 +21,31 @@ struct AssistantOpenRequest: Equatable, Sendable {
     let message: String
 }
 
+/// Spec 078 — one-shot shake entry: optional recipe auto-attach + voice start.
+struct AssistantShakeOpenRequest: Equatable, Sendable {
+    let requestId: Int
+    /// When non-nil, auto-attach this recipe after the sheet presents.
+    let attachRecipeId: String?
+    /// When true (no open recipe), clear thread / start a fresh chat.
+    let forceNewChat: Bool
+    let startVoiceRecording: Bool
+
+    static func make(
+        requestId: Int,
+        visibleRecipeId: String?,
+        startVoiceRecording: Bool = true
+    ) -> AssistantShakeOpenRequest {
+        let trimmed = visibleRecipeId?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let recipeId = (trimmed?.isEmpty == false) ? trimmed : nil
+        return AssistantShakeOpenRequest(
+            requestId: requestId,
+            attachRecipeId: recipeId,
+            forceNewChat: recipeId == nil,
+            startVoiceRecording: startVoiceRecording
+        )
+    }
+}
+
 @MainActor
 @Observable
 final class AppShellCoordinator {
@@ -60,9 +85,27 @@ final class AppShellCoordinator {
     /// selection itself never changes (fake tab, same pattern as `importTab`).
     private(set) var pendingAssistantTabOpen = false
 
+    /// Spec 078 — shake-to-open queued until AppShellView presents / updates the sheet.
+    private(set) var pendingShakeAssistantOpenRequest: AssistantShakeOpenRequest?
+
     /// Consumes the pending tab-open flag after AppShellView presented the sheet.
     func consumeAssistantTabOpen() {
         pendingAssistantTabOpen = false
+    }
+
+    /// Queues a shake open. Idempotent against double presentation via requestId.
+    func requestShakeAssistantOpen(visibleRecipeId: String?) {
+        nextAssistantRequestId += 1
+        pendingShakeAssistantOpenRequest = AssistantShakeOpenRequest.make(
+            requestId: nextAssistantRequestId,
+            visibleRecipeId: visibleRecipeId,
+            startVoiceRecording: true
+        )
+    }
+
+    func consumeShakeAssistantOpenRequest(_ request: AssistantShakeOpenRequest) {
+        guard pendingShakeAssistantOpenRequest?.requestId == request.requestId else { return }
+        pendingShakeAssistantOpenRequest = nil
     }
 
     private var nextAssistantRequestId = 0
@@ -424,6 +467,7 @@ final class AppShellCoordinator {
         assistantSessionEpoch &+= 1
         pendingAssistantOpenRequest = nil
         pendingAssistantTabOpen = false
+        pendingShakeAssistantOpenRequest = nil
         discoverListState?.clearAll()
         selectedTab = .recipes
         recipesPath = NavigationPath()

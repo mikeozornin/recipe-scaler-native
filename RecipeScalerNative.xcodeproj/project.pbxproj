@@ -684,6 +684,9 @@
 		076A0001A293A4B701000008 /* ClipboardImportBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 076A0001A293A4B701000007 /* ClipboardImportBanner.swift */; };
 		076A0001A293A4B70100000A /* ClipboardImportStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 076A0001A293A4B701000009 /* ClipboardImportStoreTests.swift */; };
 		076A0001A293A4B70100000C /* ClipboardImportCandidateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 076A0001A293A4B70100000B /* ClipboardImportCandidateTests.swift */; };
+		078A8D7E69B582F332CF4EDE /* ShakeToOpenAssistantPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 078AE93C85D8CCEEB78C7438 /* ShakeToOpenAssistantPreference.swift */; };
+		078A1A049E3DD14F0D6264A3 /* DeviceShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 078A64A48644CA61C18BF5AB /* DeviceShakeDetector.swift */; };
+		078AF6B65D1FB7CE786B581E /* ShakeToOpenAssistantPreferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 078ADBE067920C2FC75DE772 /* ShakeToOpenAssistantPreferenceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1475,6 +1478,9 @@
 		076A0001A293A4B701000007 /* ClipboardImportBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardImportBanner.swift; sourceTree = "<group>"; };
 		076A0001A293A4B701000009 /* ClipboardImportStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardImportStoreTests.swift; sourceTree = "<group>"; };
 		076A0001A293A4B70100000B /* ClipboardImportCandidateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardImportCandidateTests.swift; sourceTree = "<group>"; };
+		078AE93C85D8CCEEB78C7438 /* ShakeToOpenAssistantPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShakeToOpenAssistantPreference.swift; sourceTree = "<group>"; };
+		078A64A48644CA61C18BF5AB /* DeviceShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceShakeDetector.swift; sourceTree = "<group>"; };
+		078ADBE067920C2FC75DE772 /* ShakeToOpenAssistantPreferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShakeToOpenAssistantPreferenceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1971,6 +1977,7 @@
 				FB065TS00000000000000004 /* AccountFeedbackSubmitTests.swift */,
 				B347C656005186097A24DAD5 /* OfflineBannerGateTests.swift */,
 				076A0001A293A4B701000009 /* ClipboardImportStoreTests.swift */,
+				078ADBE067920C2FC75DE772 /* ShakeToOpenAssistantPreferenceTests.swift */,
 				076A0001A293A4B70100000B /* ClipboardImportCandidateTests.swift */,
 				2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */,
 				P074T01A293A4B701000001 /* ProcessTableHashTests.swift */,
@@ -2270,6 +2277,8 @@
 				B3DOTKEYLOC002 /* DotKeyLocalizer.swift */,
 				B3APIELOC002 /* APIError+Localization.swift */,
 				E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */,
+				078A64A48644CA61C18BF5AB /* DeviceShakeDetector.swift */,
+				078AE93C85D8CCEEB78C7438 /* ShakeToOpenAssistantPreference.swift */,
 				E5F60718293A4B7000000002 /* IngredientNutritionDisplay.swift */,
 				E5F60718293A4B700000000F /* RecipeNutritionDisplay.swift */,
 				E5F60718293A4B70000A002 /* RecipeServings.swift */,
@@ -3381,6 +3390,8 @@
 				E5TELEVM01A293A4B70100001 /* TelegramConnectionViewModel.swift in Sources */,
 				FB065MD00000000000000003 /* AccountFeedbackModel.swift in Sources */,
 				E5F60718293A4B70F68BDA71 /* AppThemePreference.swift in Sources */,
+				078A1A049E3DD14F0D6264A3 /* DeviceShakeDetector.swift in Sources */,
+				078A8D7E69B582F332CF4EDE /* ShakeToOpenAssistantPreference.swift in Sources */,
 				E5F60718293A4B70E6687EC7 /* AppLanguagePreference.swift in Sources */,
 				E5F60718293A4B70E6687EC8 /* Bundle+Language.swift in Sources */,
 				E5F60718293A4B70CD094881 /* LocalizedNavigationTitle.swift in Sources */,
@@ -3515,6 +3526,7 @@
 				FB065TS00000000000000003 /* AccountFeedbackSubmitTests.swift in Sources */,
 				485C79BA3D9AE14EB0BCFF27 /* OfflineBannerGateTests.swift in Sources */,
 				076A0001A293A4B70100000A /* ClipboardImportStoreTests.swift in Sources */,
+				078AF6B65D1FB7CE786B581E /* ShakeToOpenAssistantPreferenceTests.swift in Sources */,
 				076A0001A293A4B70100000C /* ClipboardImportCandidateTests.swift in Sources */,
 				8F456A08EB9C75FA14DAD625 /* LocalizationConsistencyTests.swift in Sources */,
 				P074T01B293A4B701000001 /* ProcessTableHashTests.swift in Sources */,

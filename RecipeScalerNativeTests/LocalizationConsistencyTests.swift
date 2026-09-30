@@ -60,6 +60,8 @@ final class LocalizationConsistencyTests: XCTestCase {
             "recipe.process-table.not-built",
             "time.short.minutes",
             "recipes.add-button",
+            "account.shake-open-assistant.label",
+            "account.shake-open-assistant.footer",
             "release-notes.account.row",
             "release-notes.banner.dismiss",
             "release-notes.banner.label",

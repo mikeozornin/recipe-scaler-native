@@ -106,6 +106,8 @@ struct AppShellView: View {
     @State private var showAssistant = false
     @State private var assistantContextRecipeId: String?
     @State private var assistantOpenRequest: AssistantOpenRequest?
+    /// Spec 078 — shake open payload delivered into the presented sheet.
+    @State private var assistantShakeOpenRequest: AssistantShakeOpenRequest?
     @State private var transientStatus: TransientStatusPayload?
     @State private var transientStatusDismissTask: Task<Void, Never>?
     @State private var mobileTimerPanelCollapsed = true
@@ -178,6 +180,7 @@ struct AppShellView: View {
         guard let request = coordinator.pendingAssistantOpenRequest else { return }
         coordinator.consumeAssistantOpenRequest(request)
         assistantOpenRequest = request
+        assistantShakeOpenRequest = nil
         assistantContextRecipeId = nil
         assistantRecipeContext.isAssistantSheetOpen = true
         showAssistant = true
@@ -188,10 +191,33 @@ struct AppShellView: View {
     /// so a stale request from a previous presentation cannot leak in.
     private func openAssistantManually() {
         assistantOpenRequest = nil
+        assistantShakeOpenRequest = nil
         assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
         assistantRecipeContext.isAssistantSheetOpen = true
         showAssistant = true
         resyncTabViewSelectionAfterAssistantInteraction()
+    }
+
+    /// Spec 078 — shake-to-open: attach visible recipe when present, else new chat + voice.
+    private func routePendingShakeAssistantOpenRequest() {
+        guard let request = coordinator.pendingShakeAssistantOpenRequest else { return }
+        coordinator.consumeShakeAssistantOpenRequest(request)
+        guard ShakeToOpenAssistantPreference.isEnabled else { return }
+        assistantOpenRequest = nil
+        assistantShakeOpenRequest = request
+        assistantContextRecipeId = request.attachRecipeId ?? assistantRecipeContext.visibleRecipeId
+        assistantRecipeContext.isAssistantSheetOpen = true
+        showAssistant = true
+        resyncTabViewSelectionAfterAssistantInteraction()
+    }
+
+    private func handleDeviceShake() {
+        guard scenePhase == .active else { return }
+        guard ShakeToOpenAssistantPreference.isEnabled else { return }
+        guard DeviceShakeDetector.shouldAcceptShake() else { return }
+        coordinator.requestShakeAssistantOpen(
+            visibleRecipeId: assistantRecipeContext.visibleRecipeId
+        )
     }
 
     /// Keep TabView on the real tab; the assistant entry is a fake tab (sheet only).
@@ -401,6 +427,7 @@ struct AppShellView: View {
                 isPresented: $showAssistant,
                 contextRecipeId: assistantContextRecipeId ?? assistantRecipeContext.visibleRecipeId,
                 openRequest: assistantOpenRequest,
+                shakeOpenRequest: assistantShakeOpenRequest,
                 onDismiss: {
                     #if DEBUG
                     // #region agent log
@@ -422,6 +449,7 @@ struct AppShellView: View {
                     #endif
                     assistantRecipeContext.isAssistantSheetOpen = false
                     assistantContextRecipeId = nil
+                    assistantShakeOpenRequest = nil
                     resyncTabViewSelectionAfterAssistantInteraction()
                 },
                 environmentCoordinator: coordinator,
@@ -501,8 +529,14 @@ struct AppShellView: View {
 
     private func assistantObservers(on base: some View) -> some View {
         base
+            .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
+                handleDeviceShake()
+            }
             .onChange(of: coordinator.pendingAssistantOpenRequest) { _, _ in
                 routePendingAssistantOpenRequest()
+            }
+            .onChange(of: coordinator.pendingShakeAssistantOpenRequest) { _, _ in
+                routePendingShakeAssistantOpenRequest()
             }
             .onChange(of: coordinator.pendingAssistantTabOpen) { _, isPending in
                 guard isPending else { return }
@@ -1013,6 +1047,7 @@ private struct AssistantSheetModifier: ViewModifier {
     @Binding var isPresented: Bool
     let contextRecipeId: String?
     let openRequest: AssistantOpenRequest?
+    let shakeOpenRequest: AssistantShakeOpenRequest?
     let onDismiss: () -> Void
     let environmentCoordinator: AppShellCoordinator
     let syncService: YjsSyncService
@@ -1025,6 +1060,7 @@ private struct AssistantSheetModifier: ViewModifier {
                 AssistantSheet(
                     contextRecipeId: contextRecipeId,
                     openRequest: openRequest,
+                    shakeOpenRequest: shakeOpenRequest,
                     syncService: syncService
                 )
                 .environment(environmentCoordinator)
