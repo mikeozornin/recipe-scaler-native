@@ -22,7 +22,7 @@
 | **Share / Action** | [025](../specs/025-share-extension/spec.md) | ✅ + Keychain Sharing / deep link fixes | App Group + Keychain на main/Share/Action | ✅ device smoke 2026-08-05 |
 | **Universal Links** | [059](../specs/059-universal-links/spec.md) | ✅ + AASA на prod | Associated Domains `applinks:recipe-scaler.ru` | ✅ device QA 2026-08-05 |
 | **watchOS timers** | [039](../specs/039-watchos-timers/spec.md) | ✅ companion v1 | App ID + App Group watch | ⏸️ нет Apple Watch у владельца — отложено |
-| **TestFlight / App Store** | [060](../specs/060-app-store-screenshots/spec.md) | ✅ screenshot pipeline + iPhone-only | Distribution profiles | ⬜ archive smoke; **v1 без Watch**, iPhone-only |
+| **TestFlight / App Store** | [060](../specs/060-app-store-screenshots/spec.md) | ✅ screenshot pipeline + iPhone; Watch companion в архиве | Distribution profiles, включая `…watchkitapp` | ⬜ archive smoke; iPhone-only UI, Watch внутри того же IPA |
 | Associated Domains / iCloud / Sign in with Apple (прочее) | — | UL только | по необходимости | — |
 
 **Не блокер кода:** milestone «production push после Activity Charts / Live Activities» (DECISIONS 2026-06-08) **закрыт** — LA shipped; push capability включать и проверять сейчас.
@@ -73,7 +73,7 @@ Entitlements в репо (должны совпасть с порталом):
 | `…Share` / `…Action` | App Groups + Keychain Sharing (**без** Associated Domains / без Push) |
 | `…HomeWidget` | App Groups (+ Push, если нужен WidgetKit push token path) |
 | `…TimerLiveActivity` | App Groups |
-| `…watchkitapp` | App Groups |
+| `…watchkitapp` | App Groups + Keychain Sharing `ru.recipescaler.RecipeScaler` |
 
 Share/Action (025): креды (`SharedAuthStore.token` / `userId`) в **Keychain access group**, не в App Group UserDefaults.
 
@@ -125,7 +125,7 @@ App Group → два аккаунта, две иконки. Обычные Debug
 | `…debug.Share` / `…debug.Action` | App Groups + Keychain Sharing |
 | `…debug.HomeWidget` | App Groups + Keychain + aps-environment |
 | `…debug.TimerLiveActivity` | App Groups + Keychain |
-| `…debug.watchkitapp` | App Groups |
+| `…debug.watchkitapp` | App Groups + Keychain Sharing `.debug` |
 
 3. Signing: остаётся Automatic — профили подтянутся при первой сборке схемы
    RecipeScalerNative-Dev на устройство (`-allowProvisioningUpdates`).
@@ -205,11 +205,11 @@ Widget: `specs/030-timer-widget/quickstart.md`.
 
 Сборка с production `aps-environment` + Distribution; smoke Share + push на чужом устройстве.
 
-v1 App Store:
+App Store:
 
-- iPhone-only (`TARGETED_DEVICE_FAMILY = 1`) — иначе ASC потребует iPad-скрины.
-- Не эмбедить Watch companion (039 device QA нет; кадры Watch не снимаем).
-- Скрины 6.9″: [store/README.md](../store/README.md).
+- iPhone-only UI (`TARGETED_DEVICE_FAMILY = 1` у main) — иначе ASC потребует iPad-скрины.
+- Watch companion эмбедится в тот же архив (`Embed Watch Content`). Отдельного приложения в ASC нет.
+- Скрины iPhone 6.9″: [store/README.md](../store/README.md). Скрины Apple Watch — отдельный слот в Media Manager, пайплайн 060 их не снимает.
 
 ---
 

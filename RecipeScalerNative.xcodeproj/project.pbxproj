@@ -65,6 +65,7 @@
 		10AE8D2219942D6669E5AEA2 /* WidgetTimerRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D4EBB2F7F9C3A13495BA50D /* WidgetTimerRing.swift */; };
 		10BCBB2DF22F499D73F18C5F /* YrsText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AAC7B96B6455F2AD36DDE9 /* YrsText.swift */; };
 		11F36940A7114E969A0F066F /* Services/WatchTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C8EF72AC8C4D5B906502B7 /* Services/WatchTimer.swift */; };
+		A060WSHOT02A293A4B701001 /* Services/WatchScreenshotFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A060WSHOT01A293A4B701001 /* Services/WatchScreenshotFixture.swift */; };
 		126EE49222CD4A93BE7F127C /* Views/TimerListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDD0E475D09241E9BE80A18E /* Views/TimerListView.swift */; };
 		14A5C50E38B64318A3F88B55 /* Services/WatchCredentialsBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46BF5AD0548A4829A7C387F9 /* Services/WatchCredentialsBridge.swift */; };
 		14D3BD00201333243554AB3B /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 0A5A136ADBF870BFBD1C3902 /* Localizable.xcstrings */; };
@@ -125,6 +126,7 @@
 		707D54FE171149CA97F0B654 /* Views/NotAuthorizedStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F07333AE4345FD8D008AA4 /* Views/NotAuthorizedStateView.swift */; };
 		711E81C4539A491DB7D14D4A /* MartianGrotesk-NrMd.otf in Resources */ = {isa = PBXBuildFile; fileRef = FEA658D7E63AC1DAEBDA6361 /* MartianGrotesk-NrMd.otf */; };
 		71CAB2BC8DEAA67F922BBE3C /* HomeWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = AB5158806FFCC3EBE0204F87 /* HomeWidgetExtension.appex */; };
+		A039E4B01D8F4A2C9B6E1101 /* RecipeScalerNativeWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 8F19F53FEC2043319894598C /* RecipeScalerNativeWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		726546A91291B7DF93D0CC9F /* TimerWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B45B89CCA2BD6814320CF091 /* TimerWidget.swift */; };
 		72BCE454FF7ECB782A54D4ED /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA4BEBE2780DE29A70E2D8AC /* ContentView.swift */; };
 		730FC828FF72591FCFF338C7 /* MartianMono-NrLt.otf in Resources */ = {isa = PBXBuildFile; fileRef = DE1ABB28709A39ED21AF2C28 /* MartianMono-NrLt.otf */; };
@@ -767,6 +769,13 @@
 			remoteGlobalIDString = 695F475A36604E0F9469767B;
 			remoteInfo = TimerLiveActivityExtension;
 		};
+		A039E4B01D8F4A2C9B6E1103 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5EE18DEE47E00A9648AA02B9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 866BA601812C4838B9F36F4A;
+			remoteInfo = RecipeScalerNativeWatch;
+		};
 		UITESTTGTPROXY10000000 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 5EE18DEE47E00A9648AA02B9 /* Project object */;
@@ -812,6 +821,17 @@
 				71CAB2BC8DEAA67F922BBE3C /* HomeWidgetExtension.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A039E4B01D8F4A2C9B6E1102 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				A039E4B01D8F4A2C9B6E1101 /* RecipeScalerNativeWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -1146,6 +1166,7 @@
 		C62A87AD94EF44749A3FF476 /* TimerLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerLiveActivityWidget.swift; sourceTree = "<group>"; };
 		C72EF414B1E9D2F706A7CE30 /* RecipeScalerNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RecipeScalerNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9C8EF72AC8C4D5B906502B7 /* Services/WatchTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchTimer.swift; sourceTree = "<group>"; };
+		A060WSHOT01A293A4B701001 /* Services/WatchScreenshotFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchScreenshotFixture.swift; sourceTree = "<group>"; };
 		CC0001AA0001BB0001CC0001 /* PushRegistrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushRegistrationService.swift; sourceTree = "<group>"; };
 		CC0003AA0003BB0003CC0003 /* PushScheduleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushScheduleService.swift; sourceTree = "<group>"; };
 		CC0005AA0005BB0005CC0005 /* RecipeScalerNative.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RecipeScalerNative.entitlements; sourceTree = "<group>"; };
@@ -2212,6 +2233,7 @@
 				AEF0BA379A0541E7A602633D /* Services/WatchTimerService.swift */,
 				WATCHFAD01A293A4B70100001 /* Services/WatchFeatureAdoptionReporter.swift */,
 				C9C8EF72AC8C4D5B906502B7 /* Services/WatchTimer.swift */,
+				A060WSHOT01A293A4B701001 /* Services/WatchScreenshotFixture.swift */,
 				062WATCH001F293A4B701000A0 /* Services/WatchExpiryNotificationsPrefs.swift */,
 				062WATCH002F293A4B701000A0 /* Services/WatchExpiryNotificationScheduler.swift */,
 				14F80D392681406AA341801C /* Haptics/WatchHaptics.swift */,
@@ -2791,6 +2813,7 @@
 				B723C003B318C8956FF9B79E /* Frameworks */,
 				27380E66AD33499FA150A543 /* Embed Frameworks */,
 				D91A88FEF44E45399F512C8A /* Embed App Extensions */,
+				A039E4B01D8F4A2C9B6E1102 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
@@ -2801,6 +2824,7 @@
 				AD1A0E2678C64A9EAEE3024F /* PBXTargetDependency */,
 				91C74A3333B66AC0291B9254 /* PBXTargetDependency */,
 				267D41EA1D8E43739B630CBC /* PBXTargetDependency */,
+				A039E4B01D8F4A2C9B6E1104 /* PBXTargetDependency */,
 			);
 			name = RecipeScalerNative;
 			packageProductDependencies = (
@@ -3477,6 +3501,7 @@
 				2E78895F06BE488B972621DF /* Services/WatchTimerService.swift in Sources */,
 				WATCHFAD02B293A4B70100001 /* Services/WatchFeatureAdoptionReporter.swift in Sources */,
 				11F36940A7114E969A0F066F /* Services/WatchTimer.swift in Sources */,
+				A060WSHOT02A293A4B701001 /* Services/WatchScreenshotFixture.swift in Sources */,
 				062WATCH001A293A4B701000A1 /* Services/WatchExpiryNotificationsPrefs.swift in Sources */,
 				062WATCH002A293A4B701000A1 /* Services/WatchExpiryNotificationScheduler.swift in Sources */,
 				4E83476823C74D84AEB17BEA /* Haptics/WatchHaptics.swift in Sources */,
@@ -3749,6 +3774,11 @@
 			isa = PBXTargetDependency;
 			target = 695F475A36604E0F9469767B /* TimerLiveActivityExtension */;
 			targetProxy = FAD54EF36DEE449ABE1AAABC /* PBXContainerItemProxy */;
+		};
+		A039E4B01D8F4A2C9B6E1104 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 866BA601812C4838B9F36F4A /* RecipeScalerNativeWatch */;
+			targetProxy = A039E4B01D8F4A2C9B6E1103 /* PBXContainerItemProxy */;
 		};
 		DEEADF5AB830A8DDA5F7B3EE /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;

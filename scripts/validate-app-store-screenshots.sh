@@ -31,8 +31,10 @@ families = {value.strip().strip('"') for value in main_family}
 if families != {"1"}:
     errors.append(f"main app TARGETED_DEVICE_FAMILY must be 1, got {sorted(families) or 'missing'}")
 
-if "RecipeScalerNativeWatch.app in Embed Watch App" in pbxproj:
-    print("note: Watch is still embedded for Debug dual-sim. Strip Embed Watch App before the v1 store archive.")
+if "RecipeScalerNativeWatch.app in Embed Watch Content" not in pbxproj:
+    errors.append(
+        "store archive must embed RecipeScalerNativeWatch via Embed Watch Content"
+    )
 
 pngs = sorted(out_root.glob("*/*/*.png"))
 if not pngs:

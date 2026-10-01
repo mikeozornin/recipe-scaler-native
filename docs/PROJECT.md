@@ -35,7 +35,7 @@
 
 - Paid Apple Developer Program ($99/yr): **active** (team `ZBPX4JYT24`). Portal + device smoke — [PAID-APPLE-DEVELOPER-REQUIRED.md](PAID-APPLE-DEVELOPER-REQUIRED.md). Timer push toggle registers APNs; silent push wakes widget timelines; Universal Links (`059`) + Share/Action (`025`) need device verification.
 - Share Extension + Action Extension targets exist for URL/text import (`specs/025-share-extension`); full on-device Share Sheet testing needs paid program + App Group provisioning.
-- **App Store screenshots** (raw 6.9″, ru/en × light/dark): [store/README.md](../store/README.md), spec [060](../specs/060-app-store-screenshots/spec.md). v1 store: iPhone-only, без Watch.
+- **App Store screenshots** (raw 6.9″, ru/en × light/dark): [store/README.md](../store/README.md), spec [060](../specs/060-app-store-screenshots/spec.md). Архив iPhone включает companion для часов. Кадры часов: `scripts/capture-watch-screenshots.sh`, Ultra 3 `422×514`.
 
 ## Экспорт и импорт данных (native)
 

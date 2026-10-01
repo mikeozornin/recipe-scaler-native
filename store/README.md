@@ -95,6 +95,15 @@ bash scripts/validate-app-store-screenshots.sh
 Выход: `store/screenshots/iphone-6.9/{ru,en}/{light,dark}/0N-*.png`  
 Размер PNG: `1260×2736` (Air) или `1320×2868` (Pro Max). PNG в git не коммитим.
 
+Часы (два кадра: три таймера и пустой список), размер Ultra 3 `422×514`:
+
+```bash
+bash scripts/capture-watch-screenshots.sh
+bash scripts/capture-watch-screenshots.sh --locale ru --appearance light --shot timers
+```
+
+Выход: `store/screenshots/watch/{ru,en}/{light}/01-timers.png` и `02-empty.png`. Тот же размер для всех локалей. PNG в git не коммитим.
+
 ## Загрузка в App Store Connect
 
 1. Media Manager → **iPhone 6.9" Display** (не 6.5″). 6.5″ нужен только если 6.9″ нет.
@@ -102,11 +111,12 @@ bash scripts/validate-app-store-screenshots.sh
 3. Порядок файлов = номер префикса `01`…`08`.
 4. Виджет на Springboard симулятор сам не ставит: кадр `06-widget` свайпает **вправо до последней страницы** Springboard (не Today слева). Виджет нужно добавить вручную один раз именно туда.
 5. App Review: в ASC Demo Account укажите seed из `users.yaml` → `app-store-review` (вход по seed phrase).
+6. Media Manager → **Apple Watch**: два PNG `01-timers` и `02-empty` из `store/screenshots/watch/{locale}/light/`, размер `422×514` (Ultra 3). Один и тот же размер для всех локалей.
 
 ## Гейты релиза
 
 - **iPhone-only:** `TARGETED_DEVICE_FAMILY = 1` у main app / iOS extensions. Иначе ASC потребует iPad-скрины.
-- **Watch v1:** не шипим companion. Перед Archive снимите Embed Watch App у `RecipeScalerNative`. Local Debug dual-sim может оставить embed.
+- **Watch:** companion `RecipeScalerNativeWatch` входит в архив схемы `RecipeScalerNative` (`Watch/RecipeScalerNativeWatch.app`). ASC потребует скриншоты Apple Watch отдельно от кадров iPhone 6.9″.
 - **Debug chrome:** на кадрах нет seed, splash, DB-init banner, feature-adoption оверлеев.
 
 ## Чеклист кадра

@@ -140,7 +140,7 @@ flowchart LR
 | WCSession недоступен на iPad-only build | `if WCSession.isSupported() { ... }` вокруг activate. |
 | `RecipeScalerCore` тянет что-то iOS-only | Audit Core перед стартом; при необходимости `#if os(iOS)` guards. |
 | Timer expiration в фоне | Без push не работает. Документированный trade-off. При открытии приложения — repeated haptic pattern + exceeded-state в UI. |
-| Embed Watch App отключён в dev-сборке | main app target не имеет embed-фазы для watch app в текущей конфигурации (чтобы iOS Simulator build не пытался собрать watch под iOS). Для TestFlight/Release нужно включить: PBXCopyFilesBuildPhase "Embed Watch App" + target dependency. Задача → spec v1.1. |
+| Embed Watch Content | Фаза `Embed Watch Content` и target dependency есть у `RecipeScalerNative`. Архив схемы кладёт `Watch/RecipeScalerNativeWatch.app` в IPA. `WKCompanionAppBundleIdentifier` берётся из `WK_COMPANIONAppBundleIdentifier` конфигурации. |
 | watchOS Simulator runtime не установлен | Manual QA на paired simulator deferred до установки runtime через Xcode → Settings → Platforms. Build на generic watchOS device верифицирует компиляцию. |
 
 ## Критерии успеха

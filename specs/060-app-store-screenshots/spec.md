@@ -60,11 +60,9 @@ Primary рецепт: Штрудель / Strudel (`5928ae97-2e6e-4f86-8bbc-6f038
 
 `TARGETED_DEVICE_FAMILY = 1` у main app и iOS-расширений. Значение `"1,2"` заставит ASC требовать iPad-скрины неадаптированного UI.
 
-### G2 — Watch не в v1 store
+### G2 — Watch companion в архиве, кадры Watch вне этого пайплайна
 
-Companion (039) есть, device QA нет. В список кадров Watch не входит. **Store-архив v1 не должен эмбедить** `RecipeScalerNativeWatch`. Local Debug dual-sim по-прежнему может эмбедить Watch для QA.
-
-Перед Archive в ASC: снять Embed Watch App у `RecipeScalerNative` (или собрать store-схему без watch). Проверка: в `.ipa`/`.xcarchive` нет `Watch/RecipeScalerNativeWatch.app`.
+Схема `RecipeScalerNative` архивирует iPhone-приложение вместе с `RecipeScalerNativeWatch` (`Embed Watch Content` → `Watch/RecipeScalerNativeWatch.app`). Список кадров этой спеки по-прежнему только iPhone 6.9″. Скриншоты Apple Watch снимает `scripts/capture-watch-screenshots.sh` (Ultra 3, `422×514`): `01-timers` и `02-empty`. Без них ASC не даст отправить версию на ревью.
 
 ### G3 — Debug chrome checklist
 

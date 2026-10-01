@@ -7,7 +7,7 @@
 1. **Fixtures** — отфильтровать RU zip и собрать EN (нет зависимостей от съёмки).
 2. **Манифест + README** — контракт локалей/тем/кадров.
 3. **DEBUG launch hooks** — import zip, язык/тема, scale, awake, timer, assistant fixture, discover slug, shopping seed.
-4. **Гейты** — iPhone-only (`TARGETED_DEVICE_FAMILY = 1`); Watch не в v1 store (документировано, Debug dual-sim без изменений).
+4. **Гейты** — iPhone-only UI (`TARGETED_DEVICE_FAMILY = 1`). Watch companion входит в архив; кадры Apple Watch этой спекой не снимаются.
 5. **Capture script** — цикл locale × appearance.
 6. **Validate** — размеры PNG + `xcodebuild build`.
 

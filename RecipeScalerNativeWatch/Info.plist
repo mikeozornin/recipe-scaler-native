@@ -27,7 +27,7 @@
 	<key>WKApplication</key>
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>ru.recipescaler.RecipeScaler</string>
+	<string>$(WK_COMPANIONAppBundleIdentifier)</string>
 	<key>WKWatchOnly</key>
 	<false/>
 </dict>

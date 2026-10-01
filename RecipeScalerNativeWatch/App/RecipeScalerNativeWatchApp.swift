@@ -19,6 +19,9 @@ struct RecipeScalerNativeWatchApp: App {
 
     init() {
         WatchExpiryNotificationsPrefs.registerDefaults()
+        #if DEBUG
+        if WatchScreenshotFixture.isEnabled { return }
+        #endif
         if let userId = WatchCredentialsStore.userId {
             if let token = WatchCredentialsStore.token, !token.isEmpty {
                 APIClient.shared.configure(authToken: token)

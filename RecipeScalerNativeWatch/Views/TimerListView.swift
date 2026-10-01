@@ -91,13 +91,24 @@ struct TimerListView: View {
                     }
                 }
 
-                Section {
-                    SettingsRow()
-                        .listRowBackground(Color.clear)
+                if showsSettings {
+                    Section {
+                        SettingsRow()
+                            .listRowBackground(Color.clear)
+                    }
                 }
             }
             .listStyle(.plain)
         }
+    }
+
+    /// Store frame of three timers leaves the settings row off so all three
+    /// names stay on screen. Empty / error / signed-out keep the real row.
+    private var showsSettings: Bool {
+        #if DEBUG
+        if WatchScreenshotFixture.scene == .timers { return false }
+        #endif
+        return true
     }
 }
 

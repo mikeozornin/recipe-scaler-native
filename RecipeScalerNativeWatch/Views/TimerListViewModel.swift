@@ -73,6 +73,12 @@ final class TimerListViewModel: ObservableObject {
 
     /// Initial load on app launch / wake. Safe to call repeatedly.
     func bootstrap() async {
+        #if DEBUG
+        if WatchScreenshotFixture.isEnabled {
+            state = WatchScreenshotFixture.loadState
+            return
+        }
+        #endif
         if WatchCredentialsStore.userId == nil {
             state = .notAuthorized
             return
@@ -82,6 +88,9 @@ final class TimerListViewModel: ObservableObject {
     }
 
     func refresh() async {
+        #if DEBUG
+        if WatchScreenshotFixture.isEnabled { return }
+        #endif
         await service.refresh()
         // Re-check credentials after the await — a purge may have landed
         // while the fetch was in flight (review M3).
