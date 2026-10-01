@@ -577,13 +577,7 @@ struct AccountView: View {
             }
 
             Toggle(isOn: $shakeToOpenAssistant) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("account.shake-open-assistant.label").appBody()
-                    Text("account.shake-open-assistant.footer")
-                        .appFootnote()
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 2)
-                }
+                Text("account.shake-open-assistant.label").appBody()
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.accountShakeOpenAssistantToggle)
 

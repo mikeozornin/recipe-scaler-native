@@ -15604,23 +15604,6 @@
           }
         }
       }
-    },
-    "account.shake-open-assistant.footer": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shake the phone anywhere in the app to open the assistant and start voice"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Встряхните телефон в любом месте приложения, чтобы открыть ассистента и начать запись голоса"
-          }
-        }
-      }
     }
   },
   "version": "1.0"
