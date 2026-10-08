@@ -3930,6 +3930,7 @@
 				RS_RECIPE_UTTYPE = ru.recipescaler.recipe;
 				RS_URL_SCHEME = recipe-scaler;
 				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = RS_DEV_FLAVOR;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
@@ -4920,6 +4921,7 @@
 				SDKROOT = auto;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator watchos watchsimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = RS_DEV_FLAVOR;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;

@@ -29,9 +29,10 @@ final class RecipeListSearchStore {
     private(set) var filteredSnapshot: [CollectionEntry] = []
     private(set) var highlights: [String: RecipeRowHighlight] = [:]
 
-    /// Cached `normalizeForSearch(name)` per recipe id. Names are immutable for a
-    /// given id, so this persists across queries.
-    private var normalizedNames: [String: String] = [:]
+    /// Cached `normalizeForSearch(name)` per recipe id, stored with the source
+    /// name: recipes can be renamed while the store lives, so a cached value is
+    /// reused only while the name is unchanged.
+    private var normalizedNames: [String: (name: String, normalized: String)] = [:]
     /// Loaded lightweight search projections, keyed by id. Persists across queries.
     private(set) var loadedSearchIndexes: [String: RecipeSearchIndex] = [:]
     /// Whether search is currently active (non-empty token list).
@@ -84,9 +85,9 @@ final class RecipeListSearchStore {
 
         isActive = true
 
-        // Ensure every entry has a cached normalized name.
-        for entry in entries where normalizedNames[entry.id] == nil {
-            normalizedNames[entry.id] = RecipeSearchUtils.normalizeForSearch(entry.name)
+        // Ensure every entry has an up-to-date cached normalized name.
+        for entry in entries where normalizedNames[entry.id]?.name != entry.name {
+            normalizedNames[entry.id] = (entry.name, RecipeSearchUtils.normalizeForSearch(entry.name))
         }
 
         // Synchronous snapshot: name matches + already-loaded content matches.
@@ -111,7 +112,7 @@ final class RecipeListSearchStore {
         syncService: YjsSyncService
     ) {
         let candidatesToLoad = entries.filter { entry in
-            guard let normalized = normalizedNames[entry.id] else { return false }
+            guard let normalized = normalizedNames[entry.id]?.normalized else { return false }
             if RecipeSearchUtils.matchesName(normalized: normalized, tokens: tokens) {
                 return false
             }
@@ -152,7 +153,7 @@ final class RecipeListSearchStore {
         newHighlights.reserveCapacity(entries.count)
 
         for entry in entries {
-            guard let normalized = normalizedNames[entry.id] else { continue }
+            guard let normalized = normalizedNames[entry.id]?.normalized else { continue }
             let nameMatches = RecipeSearchUtils.matchesName(normalized: normalized, tokens: tokens)
 
             var snippetString: String? = nil

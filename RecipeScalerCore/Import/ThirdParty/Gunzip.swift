@@ -43,9 +43,14 @@ public enum Gunzip {
 
             var buffer = [UInt8](repeating: 0, count: chunkSize)
             repeat {
-                stream.next_out = UnsafeMutablePointer<Bytef>(&buffer)
-                stream.avail_out = uInt(chunkSize)
-                status = inflate(&stream, Z_SYNC_FLUSH)
+                // `next_out` must stay valid for the whole `inflate` call, so
+                // the pointer is scoped to the closure (`&buffer` would dangle).
+                status = buffer.withUnsafeMutableBufferPointer { outBuffer in
+                    stream.next_out = outBuffer.baseAddress
+                    stream.avail_out = uInt(chunkSize)
+                    defer { stream.next_out = nil }
+                    return inflate(&stream, Z_SYNC_FLUSH)
+                }
                 if status != Z_OK && status != Z_STREAM_END {
                     throw ThirdPartyImportError.gzipFailed(fileName: fileName)
                 }

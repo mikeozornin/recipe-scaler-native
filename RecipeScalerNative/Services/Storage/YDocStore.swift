@@ -56,6 +56,25 @@ actor YDocStore {
         }
     }
 
+    /// Save local state without touching `lastSyncedAt`: only the server
+    /// confirms sync. Atomic upsert — no read-modify-write window in which a
+    /// concurrent `sync_confirmed` write could be clobbered by a stale value.
+    func saveLocalSnapshot(docKey: String, state: Data) throws {
+        let now = ISO8601DateFormatter().string(from: Date())
+        try dbQueue.write { db in
+            try db.execute(
+                sql: """
+                INSERT INTO ydoc_snapshots (docKey, state, lastSyncedAt, updatedAt)
+                VALUES (?, ?, NULL, ?)
+                ON CONFLICT(docKey) DO UPDATE SET
+                    state = excluded.state,
+                    updatedAt = excluded.updatedAt
+                """,
+                arguments: [docKey, state, now]
+            )
+        }
+    }
+
     /// Delete a snapshot by document key.
     func deleteSnapshot(docKey: String) throws {
         try dbQueue.write { db in

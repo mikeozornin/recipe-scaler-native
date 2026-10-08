@@ -164,8 +164,10 @@ struct ContentView: View {
                 // so the countdown stays correct while the app isn't foreground.
                 WidgetCenter.shared.reloadAllTimelines()
             case .inactive:
-                // Transient (app switcher, notification shade) — persist but keep the socket.
-                Task { await container.sync.persistAll() }
+                // Transient (app switcher, notification shade, Face ID) — keep the
+                // socket. Mutations are already persisted as they happen; only flush
+                // debounced writes instead of re-encoding every loaded doc.
+                Task { await container.sync.flushPendingSnapshots() }
             case .active:
                 TimerLiveActivityActionQueue.drainIfNeeded()
                 if let syncService {

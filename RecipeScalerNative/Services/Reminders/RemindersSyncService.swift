@@ -132,24 +132,27 @@ final class RemindersSyncService {
         stopObserving()
 
         // CRDT → Reminders: react to every snapshot change via Observation.
+        // The loop suspends until the snapshot actually changes; the old
+        // `withObservationTracking`-in-a-loop never waited and reconciled
+        // EventKit every 300ms for as long as sync was enabled.
         crdtObserveTask?.cancel()
         crdtObserveTask = Task { @MainActor [weak self, weak syncService] in
-            var hasFirstSnapshot = false
-            while !Task.isCancelled {
-                guard let self, let syncService else { return }
-                let snapshot: ShoppingListSnapshot = withObservationTracking {
-                    syncService.shoppingSnapshot
-                } onChange: { [weak self] in
-                    Task { @MainActor [weak self] in self?.restartCRDTObservation(syncService: syncService) }
-                }
-                if hasFirstSnapshot {
-                    // Debounce: web parity with Combine .debounce(300ms).
-                    try? await Task.sleep(for: .milliseconds(300))
-                    guard !Task.isCancelled else { return }
-                    await self.reconcileCRDTToReminders(snapshot: snapshot)
-                } else {
-                    hasFirstSnapshot = true
-                }
+            let (changes, continuation) = AsyncStream.makeStream(
+                of: Void.self,
+                bufferingPolicy: .bufferingNewest(1)
+            )
+            defer { continuation.finish() }
+            if let observed = syncService {
+                Self.trackShoppingSnapshot(of: observed, continuation: continuation)
+            } else {
+                return
+            }
+            for await _ in changes {
+                // Debounce: web parity with Combine .debounce(300ms). Changes
+                // landing meanwhile coalesce into the one buffered element.
+                try? await Task.sleep(for: .milliseconds(300))
+                guard !Task.isCancelled, let self, let syncService else { return }
+                await self.reconcileCRDTToReminders(snapshot: syncService.shoppingSnapshot)
             }
         }
 
@@ -168,9 +171,21 @@ final class RemindersSyncService {
         }
     }
 
-    /// Restart the CRDT observation loop after a change notification fires.
-    private func restartCRDTObservation(syncService: YjsSyncService) {
-        startObserving(syncService: syncService)
+    /// Re-arms one-shot Observation tracking after every change until the
+    /// stream is finished (observer task cancelled).
+    private static func trackShoppingSnapshot(
+        of syncService: YjsSyncService,
+        continuation: AsyncStream<Void>.Continuation
+    ) {
+        withObservationTracking {
+            _ = syncService.shoppingSnapshot
+        } onChange: { [weak syncService] in
+            if case .terminated = continuation.yield() { return }
+            Task { @MainActor [weak syncService] in
+                guard let syncService else { return }
+                trackShoppingSnapshot(of: syncService, continuation: continuation)
+            }
+        }
     }
 
     private func stopObserving() {

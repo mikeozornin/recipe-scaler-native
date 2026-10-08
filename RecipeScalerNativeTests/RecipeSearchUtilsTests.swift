@@ -122,3 +122,33 @@ final class RecipeSearchUtilsTests: XCTestCase {
         XCTAssertGreaterThan(highlightCount, 0)
     }
 }
+
+@MainActor
+final class RecipeListSearchStoreTests: XCTestCase {
+    private func entry(id: String, name: String) -> CollectionEntry {
+        CollectionEntry(
+            id: id,
+            name: name,
+            color: "",
+            imageUrl: nil,
+            updatedAt: "",
+            deleted: false,
+            isPinned: false
+        )
+    }
+
+    /// The normalized-name cache outlives queries; a rename must not leave
+    /// the recipe searchable only by its old name.
+    func testRenamedRecipeIsSearchedByNewName() {
+        let store = RecipeListSearchStore()
+        store.refresh(entries: [entry(id: "r1", name: "Борщ")], query: "борщ")
+        XCTAssertEqual(store.filteredSnapshot.map(\.id), ["r1"])
+
+        let renamed = [entry(id: "r1", name: "Солянка")]
+        store.refresh(entries: renamed, query: "солянка")
+        XCTAssertEqual(store.filteredSnapshot.map(\.id), ["r1"])
+
+        store.refresh(entries: renamed, query: "борщ")
+        XCTAssertTrue(store.filteredSnapshot.isEmpty)
+    }
+}

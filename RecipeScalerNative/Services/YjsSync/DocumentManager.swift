@@ -437,7 +437,8 @@ actor DocumentManager {
     func persistAll() async {
         for (key, doc) in self.docs {
             if let state = await doc.encodeStateAsUpdate() {
-                try? await self.store.saveSnapshot(docKey: key, state: state, lastSyncedAt: nil)
+                // Local safety net: must not reset the server sync marker.
+                try? await self.store.saveLocalSnapshot(docKey: key, state: state)
             }
         }
         Self.logger.info("Persisted \(self.docs.count) documents to SQLite")
@@ -689,9 +690,8 @@ actor DocumentManager {
         guard let doc = docs[docKey],
               let state = await doc.encodeStateAsUpdate(),
               !state.isEmpty else { return }
-        let lastSyncedAt = try? await store.loadSnapshot(docKey: docKey)?.lastSyncedAt
         do {
-            try await store.saveSnapshot(docKey: docKey, state: state, lastSyncedAt: lastSyncedAt)
+            try await store.saveLocalSnapshot(docKey: docKey, state: state)
         } catch {
             Self.logger.warning("Failed to persist snapshot for \(UserIdFormatter.redactDocKey(docKey)): \(error)")
         }
@@ -721,10 +721,9 @@ actor DocumentManager {
         // Drop any cached HTML/plain text so the next read sees the new state.
         htmlCache.removeValue(forKey: docKey)
         plainTextCache.removeValue(forKey: docKey)
-        let lastSyncedAt = try? await store.loadSnapshot(docKey: docKey)?.lastSyncedAt
         guard isCurrentContext(capturedContext) else { return }
         do {
-            try await store.saveSnapshot(docKey: docKey, state: state, lastSyncedAt: lastSyncedAt)
+            try await store.saveLocalSnapshot(docKey: docKey, state: state)
         } catch {
             Self.logger.warning("Failed to persist snapshot for \(UserIdFormatter.redactDocKey(docKey)): \(error)")
         }
@@ -740,6 +739,15 @@ actor DocumentManager {
             try? await Task.sleep(nanoseconds: Self.snapshotPersistDebounceNs)
             guard !Task.isCancelled else { return }
             await self.persistSnapshot(docKey: docKey)
+        }
+    }
+
+    /// Flush every pending debounced snapshot (scene going `.inactive`: the
+    /// app may be killed from the switcher without reaching `.background`).
+    func flushAllScheduledSnapshotPersists() async {
+        let pending = Array(snapshotPersistTasks.keys)
+        for docKey in pending {
+            await flushScheduledSnapshotPersist(docKey: docKey)
         }
     }
 

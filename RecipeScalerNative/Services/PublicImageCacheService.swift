@@ -92,14 +92,20 @@ actor PublicImageCacheService {
         throw URLError(.timedOut)
     }
 
-    private func performFetch(url: URL, key: String) async throws -> PublicCachedImageResult {
+    private func performFetch(
+        url: URL,
+        key: String,
+        sendValidators: Bool = true
+    ) async throws -> PublicCachedImageResult {
         let localURL = PublicImageDiskCache.fileURL(for: url)
         var request = URLRequest(url: url)
         request.cachePolicy = .reloadIgnoringLocalCacheData
-        if let etag = storedEtag(for: key), !etag.isEmpty {
-            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
-        } else if let lastModified = storedLastModified(for: key), !lastModified.isEmpty {
-            request.setValue(lastModified, forHTTPHeaderField: "If-Modified-Since")
+        if sendValidators {
+            if let etag = storedEtag(for: key), !etag.isEmpty {
+                request.setValue(etag, forHTTPHeaderField: "If-None-Match")
+            } else if let lastModified = storedLastModified(for: key), !lastModified.isEmpty {
+                request.setValue(lastModified, forHTTPHeaderField: "If-Modified-Since")
+            }
         }
 
         let (data, response) = try await AppURLSession.shared.data(for: request)
@@ -115,10 +121,11 @@ actor PublicImageCacheService {
 
         if statusCode == 304 {
             if !fileManager.fileExists(atPath: localURL.path) {
-                var retry = request
-                retry.setValue(nil, forHTTPHeaderField: "If-None-Match")
-                retry.setValue(nil, forHTTPHeaderField: "If-Modified-Since")
-                return try await performFetch(url: url, key: key)
+                // File evicted but validators survived — refetch once without
+                // them. A 304 to an unconditional GET is a server bug, not a
+                // reason to recurse.
+                guard sendValidators else { throw URLError(.badServerResponse) }
+                return try await performFetch(url: url, key: key, sendValidators: false)
             }
             storeMetadata(
                 key: key,

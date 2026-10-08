@@ -121,7 +121,10 @@ enum AssistantAPI {
             path: "/api/assistant/threads/\(threadId)/respond-stream",
             method: "POST",
             body: body,
-            headers: languageHeaders(language)
+            headers: languageHeaders(language),
+            // Idle gap between NDJSON lines: the model may think before the
+            // first delta, same budget as other LLM endpoints.
+            timeoutInterval: APIClient.llmRequestTimeout
         )
         request.setValue("application/x-ndjson", forHTTPHeaderField: "Accept")
 
@@ -129,7 +132,7 @@ enum AssistantAPI {
             let task = Task {
                 defer { continuation.finish() }
                 do {
-                    let (bytes, response) = try await AppURLSession.shared.bytes(for: request)
+                    let (bytes, response) = try await AppURLSession.streaming.bytes(for: request)
                     let http = response as? HTTPURLResponse
                     let status = http?.statusCode ?? -1
                     if !(200...299).contains(status) {

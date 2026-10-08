@@ -771,41 +771,36 @@ final class YjsSyncService {
             if let sessionContext {
                 guard self.isCurrentSession(sessionContext) else { return false }
             }
-            let result = await withTaskGroup(of: Bool.self) { group in
-                group.addTask { @MainActor in
-                    await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
-                        self.documentLoadContinuations[recipeId] = continuation
-                        if let sessionContext {
-                            self.documentLoadContexts[recipeId] = sessionContext
-                        } else {
-                            self.documentLoadContexts.removeValue(forKey: recipeId)
-                        }
-                        guard let userId = sessionContext?.userId ?? self.userId else {
-                            continuation.resume(returning: false)
-                            return
-                        }
-                        let docKey = self.docKeyFor(recipeId: recipeId, userId: userId)
-                        self.emitSyncStep1(
-                            recipeId: recipeId,
-                            docKey: docKey,
-                            documentKind: nil,
-                            sessionContext: sessionContext
-                        )
-                        self.logger.info("Emitted sync_step1 for merge \(recipeId)")
-                    }
-                }
-                group.addTask {
-                    do {
-                        try await Task.sleep(nanoseconds: 10_000_000_000)
-                    } catch {
-                        return false
-                    }
-                    return false
-                }
-                let res = await group.next() ?? false
-                group.cancelAll()
-                return res
+            // The timeout resumes the continuation itself: a task group would
+            // wait for the continuation child (which ignores cancellation), so
+            // a lost `sync_step2` used to hang until socket teardown.
+            let timeout = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
+                guard !Task.isCancelled else { return }
+                self.documentLoadContinuations.removeValue(forKey: recipeId)?.resume(returning: false)
             }
+            let result = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+                self.documentLoadContinuations[recipeId] = continuation
+                if let sessionContext {
+                    self.documentLoadContexts[recipeId] = sessionContext
+                } else {
+                    self.documentLoadContexts.removeValue(forKey: recipeId)
+                }
+                guard let userId = sessionContext?.userId ?? self.userId else {
+                    self.documentLoadContinuations.removeValue(forKey: recipeId)
+                    continuation.resume(returning: false)
+                    return
+                }
+                let docKey = self.docKeyFor(recipeId: recipeId, userId: userId)
+                self.emitSyncStep1(
+                    recipeId: recipeId,
+                    docKey: docKey,
+                    documentKind: nil,
+                    sessionContext: sessionContext
+                )
+                self.logger.info("Emitted sync_step1 for merge \(recipeId)")
+            }
+            timeout.cancel()
             if let sessionContext {
                 guard self.isCurrentSession(sessionContext) else {
                     self.completePendingDocumentLoad(
@@ -4247,6 +4242,12 @@ final class YjsSyncService {
     /// Persist all loaded documents to SQLite. Called on app backgrounding.
     func persistAll() async {
         await documentManager.persistAll()
+    }
+
+    /// Cheap `.inactive` counterpart of `persistAll`: writes only the
+    /// debounced snapshots that are still pending.
+    func flushPendingSnapshots() async {
+        await documentManager.flushAllScheduledSnapshotPersists()
     }
 
     // MARK: - Helpers

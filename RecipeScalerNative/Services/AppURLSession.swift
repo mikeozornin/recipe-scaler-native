@@ -14,6 +14,11 @@ enum AppURLSession {
     static let productionTimeoutIntervalForResource: TimeInterval = 30
     static let productionTimeoutIntervalForRequest: TimeInterval = 15
 
+    /// Whole-response cap for long-lived streams (assistant NDJSON). The 30s
+    /// production cap above cut assistant answers mid-stream; idle stalls are
+    /// still bounded by the request's own `timeoutInterval`.
+    static let streamingTimeoutIntervalForResource: TimeInterval = 10 * 60
+
     /// Per-request upper bound when running under XCTest/UI-test hosts.
     /// Short on purpose: a stalled network should fail fast, not park the host.
     static let testingTimeoutIntervalForResource: TimeInterval = 5
@@ -40,6 +45,17 @@ enum AppURLSession {
         return productionSession
     }
 
+    /// Session for streaming responses that legitimately outlive
+    /// `productionTimeoutIntervalForResource`. Test host: same stubbed
+    /// `URLSession.shared` as `shared`.
+    static var streaming: URLSession {
+        if isTestingHost {
+            configureSharedSessionForTesting()
+            return URLSession.shared
+        }
+        return productionStreamingSession
+    }
+
     private static var didConfigureSharedForTesting = false
 
     private static func configureSharedSessionForTesting() {
@@ -59,6 +75,14 @@ enum AppURLSession {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = productionTimeoutIntervalForRequest
         configuration.timeoutIntervalForResource = productionTimeoutIntervalForResource
+        configuration.waitsForConnectivity = false
+        return URLSession(configuration: configuration)
+    }()
+
+    private static let productionStreamingSession: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = productionTimeoutIntervalForRequest
+        configuration.timeoutIntervalForResource = streamingTimeoutIntervalForResource
         configuration.waitsForConnectivity = false
         return URLSession(configuration: configuration)
     }()
