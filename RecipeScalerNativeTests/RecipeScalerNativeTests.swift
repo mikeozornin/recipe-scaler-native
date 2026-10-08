@@ -1454,6 +1454,16 @@ final class RecipeScalerNativeTests: XCTestCase {
         )
     }
 
+    func testRecipeFolderRoutesEffectiveViewModeDefaultsToFlatWithoutUserFolders() {
+        XCTAssertEqual(RecipeFolderRoutes.effectiveViewMode(storedRaw: nil, hasUserFolders: false), .flat)
+        XCTAssertEqual(RecipeFolderRoutes.effectiveViewMode(storedRaw: nil, hasUserFolders: true), .collections)
+        XCTAssertEqual(RecipeFolderRoutes.effectiveViewMode(storedRaw: "garbage", hasUserFolders: false), .flat)
+        XCTAssertEqual(RecipeFolderRoutes.effectiveViewMode(storedRaw: "garbage", hasUserFolders: true), .collections)
+        // Explicit pick wins over the folder heuristic.
+        XCTAssertEqual(RecipeFolderRoutes.effectiveViewMode(storedRaw: "collections", hasUserFolders: false), .collections)
+        XCTAssertEqual(RecipeFolderRoutes.effectiveViewMode(storedRaw: "flat", hasUserFolders: true), .flat)
+    }
+
     func testRecipeFolderRoutesShouldUseFolderRecipePathMatchesWeb() {
         let flat = RecipeFolderRoutes.ViewMode.flat
         let collections = RecipeFolderRoutes.ViewMode.collections

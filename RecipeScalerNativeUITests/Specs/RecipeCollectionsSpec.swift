@@ -6,6 +6,11 @@ import XCTest
 ///
 ///   - US1 — Recipes tab renders collections grid (yjs, not REST seed).
 final class RecipeCollectionsSpec: BaseTestCase {
+    /// A fresh user has no collections, so the Recipes tab defaults to the flat list.
+    override func extraLaunchArguments() -> [String] {
+        super.extraLaunchArguments() + ["-recipe-list-view-mode", "collections"]
+    }
+
     func test_US1_recipeListRenders() {
         Navigation.openTab(.recipes, in: app)
         _ = recipeListPage.awaitReady()

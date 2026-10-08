@@ -25,12 +25,15 @@ struct RecipeListView: View {
     /// Tokens derived from `searchText` once per change, not per render.
     @State private var searchTokens: [String] = []
 
-    /// Persisted view mode: `nil` = default (collections).
+    /// Explicitly picked view mode: `nil` = automatic (see `effectiveViewMode`).
     @AppStorage(RecipeFolderRoutes.viewModeStorageKey)
-    private var viewModeRaw: String = RecipeFolderRoutes.ViewMode.collections.rawValue
+    private var viewModeRaw: String?
 
     private var viewMode: RecipeFolderRoutes.ViewMode {
-        RecipeFolderRoutes.ViewMode(rawValue: viewModeRaw) ?? .collections
+        RecipeFolderRoutes.effectiveViewMode(
+            storedRaw: viewModeRaw,
+            hasUserFolders: syncService.folders.contains { !$0.deleted }
+        )
     }
 
     init(

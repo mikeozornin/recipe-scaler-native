@@ -4,7 +4,8 @@ import XCTest
 ///
 /// Web parity: `recipeList` namespace in `helpers/selectors.ts`.
 ///
-/// Default Recipes-tab UI is the **collections grid**, not a plain list.
+/// Recipes-tab UI is the plain list until the user has a collection of their
+/// own (or picks a mode explicitly), then the **collections grid**.
 /// `recipe_list` only exists when the flat recipe List is shown — do not
 /// use it as the "tab ready" signal.
 struct RecipeListPage: Page {

@@ -15,8 +15,19 @@ enum RecipeFolderRoutes {
         case collections
     }
 
-    /// `UserDefaults` key for the saved view mode (default `collections`).
+    /// `UserDefaults` key for the view mode the user picked explicitly.
+    /// Absent until the user touches the switcher — see `effectiveViewMode`.
     static let viewModeStorageKey = "recipe-list-view-mode"
+
+    /// Mode to show: the user's explicit pick wins; otherwise collections only
+    /// once the user has a collection of their own. With none, the grid holds
+    /// just «All recipes» and «Uncategorized» — an extra tap to reach recipes.
+    static func effectiveViewMode(storedRaw: String?, hasUserFolders: Bool) -> ViewMode {
+        if let storedRaw, let stored = ViewMode(rawValue: storedRaw) {
+            return stored
+        }
+        return hasUserFolders ? .collections : .flat
+    }
 
     /// How the collections root is displayed: plain list or folder grid.
     enum CollectionsRootLayout: String, CaseIterable, Identifiable, Hashable {

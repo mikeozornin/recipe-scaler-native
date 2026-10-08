@@ -11,6 +11,11 @@ import XCTest
 /// They are covered indirectly by manual QA + unit tests on the yjs
 /// mutation helpers (`shared/utils/folders-yjs.ts`).
 final class CollectionMutationsSpec: BaseTestCase {
+    /// A fresh user has no collections, so the Recipes tab defaults to the flat list.
+    override func extraLaunchArguments() -> [String] {
+        super.extraLaunchArguments() + ["-recipe-list-view-mode", "collections"]
+    }
+
     @MainActor
     func test_US1_createFolderViaUI() {
         Navigation.openTab(.recipes, in: app)
