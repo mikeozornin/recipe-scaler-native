@@ -184,6 +184,7 @@ struct ImportRecipeSheet: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                 clipboardCheck += 1
+                if mode == .photo { Task { await photoLibrary.refreshAccess() } }
             }
             .onChange(of: mode) { _, _ in
                 // Only wipe transient state on user-initiated tab switches.
@@ -578,26 +579,27 @@ struct ImportRecipeSheet: View {
         }
     }
 
-    /// Spec 080 — library photos are read only now, in pick order (iCloud originals download here).
+    /// Spec 080 — library photos are read only now (iCloud originals download here), all at once;
+    /// they come back in pick order. The first failure cancels the other downloads.
     private func loadPhotoItems() async throws -> [ImportPhotoItem] {
-        var items: [ImportPhotoItem] = []
-        for pick in photoSelection {
-            try Task.checkCancellation()
-            switch pick {
-            case let .item(item):
-                items.append(item)
-            case let .asset(asset):
-                guard let item = await ImportPhotoAssets.importItem(for: asset) else {
-                    throw NSError(
-                        domain: "ImportRecipeSheet",
-                        code: -2,
-                        userInfo: [NSLocalizedDescriptionKey: "import.error-photo-corrupt"]
-                    )
+        let picks = photoSelection
+        return try await withThrowingTaskGroup(of: (Int, ImportPhotoItem).self) { group in
+            for (index, pick) in picks.enumerated() {
+                group.addTask {
+                    switch pick {
+                    case let .item(item):
+                        return (index, item)
+                    case let .asset(asset):
+                        return (index, try await ImportPhotoAssets.importItem(for: asset))
+                    }
                 }
-                items.append(item)
             }
+            var items = [ImportPhotoItem?](repeating: nil, count: picks.count)
+            for try await (index, item) in group {
+                items[index] = item
+            }
+            return items.compactMap { $0 }
         }
-        return items
     }
 
     /// Spec 076 — seed after `resetState()` so empty `bodyText` does not wipe URLs.

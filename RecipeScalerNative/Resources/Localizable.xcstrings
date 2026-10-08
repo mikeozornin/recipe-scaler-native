@@ -9294,6 +9294,22 @@
         }
       }
     },
+    "import.error-photo-download": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not download one of the photos from iCloud. Check your internet connection and try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось загрузить одну из фотографий из iCloud. Проверьте подключение к интернету и попробуйте ещё раз."
+          }
+        }
+      }
+    },
     "import.error-photo-invalid-type": {
       "extractionState": "stale",
       "localizations": {

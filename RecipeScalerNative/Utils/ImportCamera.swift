@@ -22,7 +22,6 @@ final class ImportCameraPreview {
     /// to a running session blocked the main thread for ~9 s on an iPhone.
     @ObservationIgnored let previewView = ImportPreviewLayerView()
     @ObservationIgnored private let queue = DispatchQueue(label: "app.recipe-scaler.import-camera-preview")
-    @ObservationIgnored private var configured = false
     /// Stop can come before the session finishes starting; then the feed must not show.
     @ObservationIgnored private var wanted = false
 
@@ -36,15 +35,15 @@ final class ImportCameraPreview {
         guard AVCaptureDevice.authorizationStatus(for: .video) == .authorized,
               let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
         let session = session
-        let configure = !configured
-        configured = true
         queue.async {
-            if configure, let input = try? AVCaptureDeviceInput(device: device), session.canAddInput(input) {
+            // Retried on every start until the input is in: the camera can be busy the first time.
+            if session.inputs.isEmpty, let input = try? AVCaptureDeviceInput(device: device), session.canAddInput(input) {
                 session.beginConfiguration()
                 session.sessionPreset = .medium
                 session.addInput(input)
                 session.commitConfiguration()
             }
+            guard !session.inputs.isEmpty else { return }
             if !session.isRunning { session.startRunning() }
             let running = session.isRunning
             DispatchQueue.main.async {
@@ -116,7 +115,12 @@ final class ImportCameraCapture: NSObject, UIImagePickerControllerDelegate, UINa
     private weak var picker: UIImagePickerController?
 
     func present(onCancel: @escaping () -> Void, onCapture: @escaping (Data) -> Void) {
-        guard picker == nil, let top = UIApplication.topViewController() else { return }
+        // Already up (a second tap): its own dismissal hands the camera back.
+        guard picker == nil else { return }
+        guard let top = UIApplication.topViewController() else {
+            onCancel()
+            return
+        }
         let picker = UIImagePickerController()
         // The simulator has no camera; the library stands in so the flow can be tried there.
         picker.sourceType = UIImagePickerController.isSourceTypeAvailable(.camera) ? .camera : .photoLibrary

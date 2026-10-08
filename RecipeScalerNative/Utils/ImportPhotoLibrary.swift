@@ -34,6 +34,9 @@ final class ImportPhotoLibrary {
     }
     @ObservationIgnored private var collections: [String: PHAssetCollection] = [:]
     @ObservationIgnored private var observer: ChangeObserver?
+    /// Only the newest fetch may land: an older one finishing last would bring back a stale album.
+    @ObservationIgnored private var fetchTask: Task<Void, Never>?
+    @ObservationIgnored private var reloadTask: Task<Void, Never>?
 
     var title: String {
         albums.first { $0.id == albumID }?.title ?? ""
@@ -44,21 +47,36 @@ final class ImportPhotoLibrary {
     }
 
     func load() async {
+        status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         if status == .notDetermined {
             status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
         }
         guard hasAccess else { return }
         if observer == nil {
             // Limited access: photos added via "Manage" arrive as a library change.
-            observer = ChangeObserver { [weak self] in Task { await self?.reload() } }
+            observer = ChangeObserver { [weak self] in self?.scheduleReload() }
         }
         await reload(refetch: false)
+    }
+
+    /// Access can change in Settings while the sheet is open; the grid follows on return.
+    /// Skipped while the first request is still on screen: `load()` is handling it.
+    func refreshAccess() async {
+        let current = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        guard status != .notDetermined, current != status else { return }
+        await load()
+    }
+
+    private func scheduleReload() {
+        reloadTask?.cancel()
+        reloadTask = Task { await reload() }
     }
 
     /// PhotoKit fetches block for long on a big library, so they run off the main thread:
     /// first the current album's photos, then the album list (which counts every album).
     private func reload(refetch: Bool = true) async {
         if albumID == nil, let recents = await ImportPhotoAssets.recents() {
+            guard !Task.isCancelled else { return }
             collections[recents.localIdentifier] = recents
             albums = [Album(recents)]
             albumID = recents.localIdentifier
@@ -66,6 +84,7 @@ final class ImportPhotoLibrary {
             fetchAssets()
         }
         let found = await ImportPhotoAssets.albums()
+        guard !Task.isCancelled else { return }
         collections = Dictionary(found.map { ($0.localIdentifier, $0) }, uniquingKeysWith: { first, _ in first })
         albums = found.map(Album.init)
         if albumID.flatMap({ collections[$0] }) == nil {
@@ -74,10 +93,12 @@ final class ImportPhotoLibrary {
     }
 
     private func fetchAssets() {
+        fetchTask?.cancel()
         guard let id = albumID, let album = collections[id] else { return }
-        Task {
+        fetchTask = Task {
             let fetched = await ImportPhotoAssets.images(in: album)
-            if albumID == id { assets = fetched }
+            guard !Task.isCancelled else { return }
+            assets = fetched
         }
     }
 
@@ -181,19 +202,94 @@ enum ImportPhotoAssets {
     }
 
     /// The original file with edits applied, downloaded from iCloud if needed, ready for
-    /// `RecipeImportAPI.importImages`.
-    static func importItem(for asset: PHAsset) async -> ImportPhotoItem? {
-        let (data, uti): (Data?, String?) = await withCheckedContinuation { continuation in
+    /// `RecipeImportAPI.importImages`. Cancelling the task stops the download.
+    static func importItem(for asset: PHAsset) async throws -> ImportPhotoItem {
+        let request = OriginalRequest()
+        let (data, uti) = try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                request.start(for: asset, continuation: continuation)
+            }
+        } onCancel: {
+            request.cancel()
+        }
+        guard let item = await ImportPhotoEncoding.item(data: data, utType: uti.flatMap(UTType.init)) else {
+            throw ImportPhotoLoadError.unreadable
+        }
+        return item
+    }
+
+    /// One original-data request. Whichever comes first, the result or a cancel, resumes the caller.
+    private final class OriginalRequest: @unchecked Sendable {
+        private let lock = NSLock()
+        private var continuation: CheckedContinuation<(Data, String?), Error>?
+        private var requestID: PHImageRequestID?
+        private var isCancelled = false
+
+        func start(for asset: PHAsset, continuation: CheckedContinuation<(Data, String?), Error>) {
+            lock.lock()
+            guard !isCancelled else {
+                lock.unlock()
+                continuation.resume(throwing: CancellationError())
+                return
+            }
+            self.continuation = continuation
+            lock.unlock()
+
             let options = PHImageRequestOptions()
             options.deliveryMode = .highQualityFormat
             options.version = .current
             options.isNetworkAccessAllowed = true
-            PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) { data, uti, _, _ in
-                continuation.resume(returning: (data, uti))
+            let id = PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) { data, uti, _, info in
+                if let data {
+                    self.finish(.success((data, uti)))
+                } else if info?[PHImageCancelledKey] as? Bool == true {
+                    self.finish(.failure(CancellationError()))
+                } else if info?[PHImageErrorKey] != nil || info?[PHImageResultIsInCloudKey] as? Bool == true {
+                    self.finish(.failure(ImportPhotoLoadError.download))
+                } else {
+                    self.finish(.failure(ImportPhotoLoadError.unreadable))
+                }
             }
+
+            lock.lock()
+            requestID = id
+            let cancelNow = isCancelled
+            lock.unlock()
+            if cancelNow { PHImageManager.default().cancelImageRequest(id) }
         }
-        guard let data else { return nil }
-        return await ImportPhotoEncoding.item(data: data, utType: uti.flatMap(UTType.init))
+
+        func cancel() {
+            lock.lock()
+            isCancelled = true
+            let id = requestID
+            lock.unlock()
+            if let id { PHImageManager.default().cancelImageRequest(id) }
+            finish(.failure(CancellationError()))
+        }
+
+        private func finish(_ result: Result<(Data, String?), Error>) {
+            lock.lock()
+            let continuation = continuation
+            self.continuation = nil
+            lock.unlock()
+            continuation?.resume(with: result)
+        }
+    }
+}
+
+/// Why a library photo couldn't be read for import. `errorDescription` is the string key,
+/// as with `ImportPhotoValidator.ValidationError`.
+enum ImportPhotoLoadError: LocalizedError {
+    /// The original is in iCloud and didn't download.
+    case download
+    /// Photos gave back something that isn't an image.
+    case unreadable
+
+    var errorDescription: String? {
+        switch self {
+        case .download: "import.error-photo-download"
+        case .unreadable: "import.error-photo-corrupt"
+        }
     }
 }
 
@@ -207,10 +303,24 @@ enum ImportPhotoEncoding {
             return ImportPhotoItem(data: data, fileName: fileName(for: type), utType: type)
         }
         let jpeg = await Task.detached(priority: .userInitiated) {
-            UIImage(data: data)?.jpegData(compressionQuality: 0.85)
+            jpegWithinLimit(data)
         }.value
         guard let jpeg else { return nil }
         return ImportPhotoItem(data: jpeg, fileName: fileName(for: .jpeg), utType: .jpeg)
+    }
+
+    /// JPEG at the import's quality, scaled down while still over the size limit (huge panoramas).
+    static func jpegWithinLimit(_ data: Data, limit: Int = ImportPhotoValidator.maxImageBytes) -> Data? {
+        guard var image = UIImage(data: data), var jpeg = image.jpegData(compressionQuality: 0.85) else { return nil }
+        while jpeg.count > limit {
+            let factor = (Double(limit) / Double(jpeg.count)).squareRoot() * 0.9
+            let size = CGSize(width: image.size.width * factor, height: image.size.height * factor)
+            guard let smaller = image.preparingThumbnail(of: size),
+                  let next = smaller.jpegData(compressionQuality: 0.85) else { return nil }
+            image = smaller
+            jpeg = next
+        }
+        return jpeg
     }
 
     static func fileName(for utType: UTType) -> String {

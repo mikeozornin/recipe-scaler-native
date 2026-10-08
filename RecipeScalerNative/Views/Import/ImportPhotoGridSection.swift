@@ -267,15 +267,19 @@ struct ImportPhotoGridSection: View {
     }
 
     /// The camera opens over the sheet and needs the device to itself; the shot comes back picked.
+    /// It goes through the same encoding as library photos, so an oversize shot can't fail at submit.
     private func openCamera() {
         camera?.stop()
         capture.present(onCancel: { camera?.start() }) { data in
-            let item = ImportPhotoItem(data: data, fileName: ImportPhotoEncoding.fileName(for: .jpeg), utType: .jpeg)
-            withAnimation(.snappy(duration: 0.2)) {
-                extras.insert(item, at: 0)
-                if !isFull { selection.append(.item(item)) }
+            Task {
+                if let item = await ImportPhotoEncoding.item(data: data, utType: .jpeg) {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        extras.insert(item, at: 0)
+                        if !isFull { selection.append(.item(item)) }
+                    }
+                }
+                camera?.start()
             }
-            camera?.start()
         }
     }
 

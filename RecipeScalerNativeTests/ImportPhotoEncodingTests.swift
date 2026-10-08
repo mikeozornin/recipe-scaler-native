@@ -37,6 +37,33 @@ final class ImportPhotoEncodingTests: XCTestCase {
         XCTAssertNil(item)
     }
 
+    func testOversizeImageIsScaledDownUnderTheLimit() throws {
+        // Noise doesn't compress, so the first JPEG is well over the limit.
+        let size = CGSize(width: 400, height: 400)
+        let noise = UIGraphicsImageRenderer(size: size, format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; return f }()).image { context in
+            for x in stride(from: 0, to: 400, by: 2) {
+                for y in stride(from: 0, to: 400, by: 2) {
+                    UIColor(hue: .random(in: 0...1), saturation: 1, brightness: .random(in: 0...1), alpha: 1).setFill()
+                    context.fill(CGRect(x: x, y: y, width: 2, height: 2))
+                }
+            }
+        }
+        let data = try XCTUnwrap(noise.pngData())
+        let limit = 20_000
+        XCTAssertGreaterThan(try XCTUnwrap(noise.jpegData(compressionQuality: 0.85)).count, limit)
+        let jpeg = try XCTUnwrap(ImportPhotoEncoding.jpegWithinLimit(data, limit: limit))
+        XCTAssertLessThanOrEqual(jpeg.count, limit)
+        XCTAssertEqual(Array(jpeg.prefix(2)), [0xFF, 0xD8], "JPEG SOI marker")
+    }
+
+    func testLoadErrorsHaveTheirOwnMessages() {
+        let download = ImportErrorLocalizer.localize(ImportPhotoLoadError.download)
+        let unreadable = ImportErrorLocalizer.localize(ImportPhotoLoadError.unreadable)
+        XCTAssertFalse(download.hasPrefix("import."), "resolved, not the raw key")
+        XCTAssertFalse(unreadable.hasPrefix("import."), "resolved, not the raw key")
+        XCTAssertNotEqual(download, unreadable, "a failed iCloud download isn't reported as a corrupt photo")
+    }
+
     func testFileNameFollowsType() {
         XCTAssertEqual(ImportPhotoEncoding.fileName(for: .jpeg), "image.jpg")
         XCTAssertEqual(ImportPhotoEncoding.fileName(for: .png), "image.png")
