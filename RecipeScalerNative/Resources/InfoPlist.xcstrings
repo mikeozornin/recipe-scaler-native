@@ -32,13 +32,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recipe Scaler uses the camera to scan QR codes to log in with your seed phrase, and for hands-free recipe scrolling while the screen is kept awake."
+            "value": "Recipe Scaler uses the camera to photograph recipes for import, to scan QR codes to log in with your seed phrase, and for hands-free recipe scrolling while the screen is kept awake."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recipe Scaler использует камеру, чтобы сканировать QR-код для входа по seed-фразе и для hands-free прокрутки рецепта, пока экран не гаснет."
+            "value": "Recipe Scaler использует камеру, чтобы фотографировать рецепты для импорта, сканировать QR-код для входа по seed-фразе и для hands-free прокрутки рецепта, пока экран не гаснет."
           }
         }
       }
@@ -117,6 +117,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recipe Scaler распознаёт речь на устройстве для команд прокрутки вверх и вниз в режиме Hands-free."
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recipe Scaler shows your photos so you can pick recipe photos and screenshots to import."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recipe Scaler показывает ваши фото, чтобы вы могли выбрать снимки и скриншоты рецептов для импорта."
           }
         }
       }

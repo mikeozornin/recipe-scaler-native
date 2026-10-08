@@ -414,6 +414,8 @@ enum DebugLaunchOptions {
 enum DebugLaunchOptions {
     static var shouldSkipSplash: Bool { false }
     static var screenshotCapture: Bool { false }
+    /// XCTest short-circuit is DEBUG-only. Release always runs the real bootstrap.
+    static var usesReducedTestingHostBehavior: Bool { false }
     static var openShoppingShare: Bool { false }
     static var shoppingShareAutoCopyText: Bool { false }
     static var showAssistant: Bool { false }

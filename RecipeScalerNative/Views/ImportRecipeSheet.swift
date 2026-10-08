@@ -4,7 +4,6 @@
 //
 
 import SwiftUI
-import PhotosUI
 import UniformTypeIdentifiers
 import RecipeScalerCore
 
@@ -31,8 +30,15 @@ struct ImportRecipeSheet: View {
 
     @State private var mode: ImportMode = .text
     @State private var bodyText = ""
-    @State private var photoItems: [PhotosPickerItem] = []
-    @State private var photoPreviews: [ImportPhotoItem] = []
+    @State private var photoLibrary = ImportPhotoLibrary()
+    /// Spec 080 — picked photos in pick order; loaded into `ImportPhotoItem`s on submit.
+    @State private var photoSelection: [ImportPhotoPick] = []
+    /// Spec 080 — camera shots and system-picker photos shown in the grid after the camera cell.
+    @State private var photoExtras: [ImportPhotoItem] = []
+    /// Spec 080 — the clipboard holds a link (pattern check only, no paste prompt).
+    @State private var clipboardHasURL = false
+    @State private var clipboardCheck = 0
+    @AppStorage(ImportShareHintPreferences.dismissedKey) private var shareHintDismissed = false
     @State private var isProcessing = false
     @State private var errorMessage: String?
     @State private var photoWarning: String?
@@ -165,6 +171,21 @@ struct ImportRecipeSheet: View {
                     ])
                 }
             }
+            .task(id: mode) {
+                if mode == .photo { await photoLibrary.load() }
+            }
+            .task(id: clipboardCheck) {
+                let hasURL = await SystemClipboardImportPasteboard().hasProbableWebURL()
+                guard !Task.isCancelled else { return }
+                clipboardHasURL = hasURL
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
+                clipboardCheck += 1
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                clipboardCheck += 1
+                if mode == .photo { Task { await photoLibrary.refreshAccess() } }
+            }
             .onChange(of: mode) { _, _ in
                 // Only wipe transient state on user-initiated tab switches.
                 // System-driven fallback (offline auto-switch in
@@ -197,7 +218,16 @@ struct ImportRecipeSheet: View {
 
     // MARK: - Text mode
 
+    /// Spec 080 — paste banner while the clipboard holds a link and the field is empty,
+    /// the field, then the Share hint until it is closed.
+    @ViewBuilder
     private var textSection: some View {
+        if clipboardHasURL, bodyText.isEmpty {
+            Section {
+                ImportPasteBanner(isDisabled: isProcessing, onPaste: handlePaste)
+            }
+        }
+
         Section {
             ZStack(alignment: .topLeading) {
                 if bodyText.isEmpty {
@@ -223,36 +253,40 @@ struct ImportRecipeSheet: View {
                 .appFootnote()
                 .foregroundStyle(.secondary)
         }
+
+        if !shareHintDismissed {
+            Section {
+                ImportShareHintCard {
+                    withAnimation { shareHintDismissed = true }
+                }
+            }
+        }
+    }
+
+    /// Spec 080 — a pasted link imports right away, like the clipboard seed (spec 076).
+    /// Anything else lands in the field for review.
+    private func handlePaste(_ text: String) {
+        let pasted = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !pasted.isEmpty, !isProcessing else { return }
+        bodyText = pasted
+        errorMessage = nil
+        guard ImportContentClassifier.classify(pasted).isUrlOnly,
+              canSubmit,
+              canShowSubmit else { return }
+        isProcessing = true
+        importTask?.cancel()
+        importTask = Task { await submit() }
     }
 
     // MARK: - Photo mode
 
     private var photoSection: some View {
-        Section {
-            PhotosPicker(
-                selection: $photoItems,
-                maxSelectionCount: ImportPhotoValidator.maxImages,
-                matching: .images
-            ) {
-                AppLabel.make(LocalizedStringKey("import.choose-photos"), symbol: "photo")
-            }
-            .disabled(isProcessing)
-            .onChange(of: photoItems) { _, newItems in
-                Task { await reloadPhotoPreviews(from: newItems) }
-            }
-
-            if !photoPreviews.isEmpty {
-                photoPreviewStrip
-            }
-
-            Text(photoCountLabel)
-                .appFootnote()
-                .foregroundStyle(.secondary)
-        } footer: {
-            Text("import.photo-helper")
-                .appFootnote()
-                .foregroundStyle(.secondary)
-        }
+        ImportPhotoGridSection(
+            library: photoLibrary,
+            selection: $photoSelection,
+            extras: $photoExtras,
+            isDisabled: isProcessing
+        )
     }
 
     // MARK: - File mode
@@ -277,91 +311,6 @@ struct ImportRecipeSheet: View {
                 .appFootnote()
                 .foregroundStyle(.secondary)
         }
-    }
-
-    private var photoPreviewStrip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(Array(photoPreviews.enumerated()), id: \.offset) { index, item in
-                    photoThumbnail(for: item, index: index)
-                }
-            }
-            .padding(.vertical, 4)
-        }
-    }
-
-    private func photoThumbnail(for item: ImportPhotoItem, index: Int) -> some View {
-        ZStack(alignment: .topTrailing) {
-            Group {
-                if let uiImage = UIImage(data: item.data) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(.tertiarySystemFill))
-                        .overlay {
-                            Image(systemName: "photo")
-                                .foregroundStyle(.secondary)
-                        }
-                }
-            }
-            .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-            Button {
-                removePhoto(at: index)
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.white, .black.opacity(0.6))
-                    .font(.system(size: 20))
-            }
-            .disabled(isProcessing)
-            .offset(x: 6, y: -6)
-            .accessibilityLabel(Text("common.delete-image"))
-        }
-    }
-
-    private var photoCountLabel: String {
-        let template = Bundle.currentLocalizedString("import.photo-count")
-        return String(
-            format: template,
-            locale: AppLanguagePreference.current.locale,
-            photoPreviews.count,
-            ImportPhotoValidator.maxImages
-        )
-    }
-
-    private func removePhoto(at index: Int) {
-        guard photoPreviews.indices.contains(index) else { return }
-        photoPreviews.remove(at: index)
-        if photoItems.indices.contains(index) {
-            photoItems.remove(at: index)
-        }
-        errorMessage = nil
-    }
-
-    @MainActor
-    private func reloadPhotoPreviews(from items: [PhotosPickerItem]) async {
-        var previews: [ImportPhotoItem] = []
-        for item in items {
-            do {
-                guard let data = try await item.loadTransferable(type: Data.self) else { continue }
-                let supported = item.supportedContentTypes.first ?? .jpeg
-                previews.append(ImportPhotoItem(data: data, fileName: imageName(for: supported), utType: supported))
-            } catch {
-                continue
-            }
-        }
-        photoPreviews = previews
-        errorMessage = nil
-    }
-
-    private func imageName(for utType: UTType) -> String {
-        if utType.conforms(to: .png) { return "image.png" }
-        if utType.conforms(to: .webP) { return "image.webp" }
-        if utType.conforms(to: .heic) { return "image.heic" }
-        return "image.jpg"
     }
 
     private static var importFileTypes: [UTType] {
@@ -395,7 +344,7 @@ struct ImportRecipeSheet: View {
         case .text:
             !bodyText.trimmingCharacters(in: .whitespaces).isEmpty
         case .photo:
-            !photoPreviews.isEmpty
+            !photoSelection.isEmpty
         case .file:
             selectedFileURL != nil
         }
@@ -619,13 +568,37 @@ struct ImportRecipeSheet: View {
             return try await RecipeImportAPI.importText(trimmed)
 
         case .photo:
-            if let validationError = ImportPhotoValidator.validate(items: photoPreviews) {
+            let items = try await loadPhotoItems()
+            if let validationError = ImportPhotoValidator.validate(items: items) {
                 throw validationError
             }
-            return try await RecipeImportAPI.importImages(photoPreviews)
+            return try await RecipeImportAPI.importImages(items)
 
         case .file:
             throw ThirdPartyImportError.unsupportedFormat
+        }
+    }
+
+    /// Spec 080 — library photos are read only now (iCloud originals download here), all at once;
+    /// they come back in pick order. The first failure cancels the other downloads.
+    private func loadPhotoItems() async throws -> [ImportPhotoItem] {
+        let picks = photoSelection
+        return try await withThrowingTaskGroup(of: (Int, ImportPhotoItem).self) { group in
+            for (index, pick) in picks.enumerated() {
+                group.addTask {
+                    switch pick {
+                    case let .item(item):
+                        return (index, item)
+                    case let .asset(asset):
+                        return (index, try await ImportPhotoAssets.importItem(for: asset))
+                    }
+                }
+            }
+            var items = [ImportPhotoItem?](repeating: nil, count: picks.count)
+            for try await (index, item) in group {
+                items[index] = item
+            }
+            return items.compactMap { $0 }
         }
     }
 
@@ -660,8 +633,8 @@ struct ImportRecipeSheet: View {
             applySystemMode(targetMode)
         }
         bodyText = ""
-        photoItems = []
-        photoPreviews = []
+        photoSelection = []
+        photoExtras = []
         selectedFileURL = nil
         selectedFileName = ""
         errorMessage = nil
