@@ -30,6 +30,22 @@ enum IOSReleaseNotesCatalog {
 
             По списку покупок можно собрать корзину во Вкусвилле в один клик. Вам останется только оформить заказ.
             """
+        ),
+        IOSReleaseNote(
+            version: 2,
+            date: releaseDate(year: 2026, month: 10, day: 2),
+            titleEn: "Watch out. Watch a nice release to cook.",
+            titleRu: "Recipe Scaler теперь работает на Apple Watch.",
+            bodyEn: """
+            Recipe Scaler now supports Apple Watch. Select what to cook on your iPhone and cook with your watch on: the timers sit on your wrist. Pause one, delete one, or watch the clock. When time is up, the watch lets you know.
+
+            Shake your phone to open the cooking assistant. Turn on “Shake to open assistant” in your profile, then give the phone a shake.
+            """,
+            bodyRu: """
+            На часах можно смотреть все запущенные таймеры, не надо будет тянуться к телефону. Вж-вж-вж, — скажут часы, когда таймер закончится.
+
+            Встряхните телефон, чтобы открыть ассистента.
+            """
         )
     ]
 
