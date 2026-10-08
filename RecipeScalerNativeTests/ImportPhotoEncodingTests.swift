@@ -56,6 +56,22 @@ final class ImportPhotoEncodingTests: XCTestCase {
         XCTAssertEqual(Array(jpeg.prefix(2)), [0xFF, 0xD8], "JPEG SOI marker")
     }
 
+    func testThumbnailIsDecodedAtCellSize() throws {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let shot = UIGraphicsImageRenderer(size: CGSize(width: 1200, height: 800), format: format).image { context in
+            UIColor.orange.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 1200, height: 800))
+        }
+        let data = try XCTUnwrap(shot.jpegData(compressionQuality: 0.9))
+        let thumbnail = try XCTUnwrap(ImportPhotoEncoding.thumbnail(of: data, minPixelSide: 100))
+        let cgImage = try XCTUnwrap(thumbnail.cgImage)
+        // Short side fills the square cell, aspect kept, nowhere near the 1200×800 original.
+        XCTAssertEqual(cgImage.height, 100, accuracy: 1)
+        XCTAssertEqual(cgImage.width, 150, accuracy: 1)
+        XCTAssertNil(ImportPhotoEncoding.thumbnail(of: Data([0x00, 0x01]), minPixelSide: 100))
+    }
+
     func testLoadErrorsHaveTheirOwnMessages() {
         let download = ImportErrorLocalizer.localize(ImportPhotoLoadError.download)
         let unreadable = ImportErrorLocalizer.localize(ImportPhotoLoadError.unreadable)

@@ -15781,6 +15781,38 @@
         }
       }
     },
+    "import.photos.photo-dated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo, %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото, %@"
+          }
+        }
+      }
+    },
+    "import.photos.pick-order": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Number %lld"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Номер %lld"
+          }
+        }
+      }
+    },
     "import.photos.limited": {
       "localizations": {
         "en": {

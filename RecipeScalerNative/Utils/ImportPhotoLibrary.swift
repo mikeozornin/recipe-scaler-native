@@ -6,6 +6,7 @@
 //  Ported from scrapp's `AddSheet` (PhotoLibrary / PhotoAssets).
 //
 
+import ImageIO
 import Photos
 import PhotosUI
 import RecipeScalerCore
@@ -16,7 +17,7 @@ import UniformTypeIdentifiers
 @MainActor
 @Observable
 final class ImportPhotoLibrary {
-    struct Album: Identifiable {
+    struct Album: Identifiable, Equatable {
         let id: String
         let title: String
 
@@ -47,6 +48,7 @@ final class ImportPhotoLibrary {
     }
 
     func load() async {
+        let previous = status
         status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         if status == .notDetermined {
             status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
@@ -54,9 +56,10 @@ final class ImportPhotoLibrary {
         guard hasAccess else { return }
         if observer == nil {
             // Limited access: photos added via "Manage" arrive as a library change.
-            observer = ChangeObserver { [weak self] in self?.scheduleReload() }
+            observer = ChangeObserver { [weak self] change in self?.libraryDidChange(change) }
         }
-        await reload(refetch: false)
+        // Re-entering the tab keeps the album; the observer has kept it current.
+        await reload(refetch: status != previous)
     }
 
     /// Access can change in Settings while the sheet is open; the grid follows on return.
@@ -67,14 +70,26 @@ final class ImportPhotoLibrary {
         await load()
     }
 
-    private func scheduleReload() {
+    /// iCloud sync and new screenshots fire this often: the open album is patched from the
+    /// change itself, and the album list (which counts every album) is rebuilt once things settle.
+    private func libraryDidChange(_ change: PHChange) {
+        if fetchTask != nil {
+            // A fetch still in flight may predate the change.
+            fetchAssets()
+        } else if let assets, let details = change.changeDetails(for: assets) {
+            self.assets = details.fetchResultAfterChanges
+        }
         reloadTask?.cancel()
-        reloadTask = Task { await reload() }
+        reloadTask = Task {
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            await reloadAlbums()
+        }
     }
 
     /// PhotoKit fetches block for long on a big library, so they run off the main thread:
-    /// first the current album's photos, then the album list (which counts every album).
-    private func reload(refetch: Bool = true) async {
+    /// first the current album's photos, then the album list.
+    private func reload(refetch: Bool) async {
         if albumID == nil, let recents = await ImportPhotoAssets.recents() {
             guard !Task.isCancelled else { return }
             collections[recents.localIdentifier] = recents
@@ -83,10 +98,16 @@ final class ImportPhotoLibrary {
         } else if refetch {
             fetchAssets()
         }
+        await reloadAlbums()
+    }
+
+    private func reloadAlbums() async {
         let found = await ImportPhotoAssets.albums()
         guard !Task.isCancelled else { return }
         collections = Dictionary(found.map { ($0.localIdentifier, $0) }, uniquingKeysWith: { first, _ in first })
-        albums = found.map(Album.init)
+        // Same list: leave `albums` alone so the header menu isn't rebuilt.
+        let updated = found.map(Album.init)
+        if updated != albums { albums = updated }
         if albumID.flatMap({ collections[$0] }) == nil {
             albumID = albums.first?.id
         }
@@ -94,11 +115,13 @@ final class ImportPhotoLibrary {
 
     private func fetchAssets() {
         fetchTask?.cancel()
+        fetchTask = nil
         guard let id = albumID, let album = collections[id] else { return }
         fetchTask = Task {
             let fetched = await ImportPhotoAssets.images(in: album)
             guard !Task.isCancelled else { return }
             assets = fetched
+            fetchTask = nil
         }
     }
 
@@ -108,9 +131,9 @@ final class ImportPhotoLibrary {
     }
 
     private final class ChangeObserver: NSObject, PHPhotoLibraryChangeObserver {
-        private let onChange: @MainActor () -> Void
+        private let onChange: @MainActor (PHChange) -> Void
 
-        init(onChange: @escaping @MainActor () -> Void) {
+        init(onChange: @escaping @MainActor (PHChange) -> Void) {
             self.onChange = onChange
             super.init()
             PHPhotoLibrary.shared().register(self)
@@ -121,13 +144,13 @@ final class ImportPhotoLibrary {
         }
 
         func photoLibraryDidChange(_ changeInstance: PHChange) {
-            Task { @MainActor in onChange() }
+            Task { @MainActor in onChange(changeInstance) }
         }
     }
 }
 
 enum ImportPhotoAssets {
-    private static let imageManager = PHCachingImageManager()
+    private static let imageManager = PHImageManager.default()
 
     static func recents() async -> PHAssetCollection? {
         await Task.detached(priority: .userInitiated) {
@@ -184,11 +207,6 @@ enum ImportPhotoAssets {
         }
     }
 
-    static func stopCachingThumbnails() {
-        imageManager.stopCachingImagesForAllAssets()
-    }
-
-    /// The cache only serves requests with the same size and options.
     private static func thumbnailSize(_ scale: CGFloat) -> CGSize {
         CGSize(width: 160 * scale, height: 160 * scale)
     }
@@ -321,6 +339,29 @@ enum ImportPhotoEncoding {
             jpeg = next
         }
         return jpeg
+    }
+
+    /// A thumbnail whose short side is `minPixelSide`, decoded at that size by ImageIO —
+    /// a camera shot is 12–48 MP, and `UIImage(data:)` would decode all of it.
+    static func thumbnail(of data: Data, minPixelSide: CGFloat) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        var maxPixelSide = minPixelSide
+        if let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+           let width = properties[kCGImagePropertyPixelWidth] as? Int,
+           let height = properties[kCGImagePropertyPixelHeight] as? Int,
+           min(width, height) > 0 {
+            // ImageIO bounds the long side; capped so a panorama stays a thumbnail.
+            let aspect = min(CGFloat(max(width, height)) / CGFloat(min(width, height)), 4)
+            maxPixelSide = minPixelSide * aspect
+        }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSide,
+        ]
+        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        return UIImage(cgImage: image)
     }
 
     static func fileName(for utType: UTType) -> String {

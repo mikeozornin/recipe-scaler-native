@@ -214,18 +214,15 @@ struct ImportPhotoGridSection: View {
                     if camera == nil { camera = ImportCameraPreview() }
                     camera?.start()
                 }
-                .onDisappear {
-                    camera?.stop()
-                    ImportPhotoAssets.stopCachingThumbnails()
-                }
+                .onDisappear { camera?.stop() }
         } else if index <= extras.count {
             let item = extras[index - 1]
-            pickCell(.item(item)) {
+            pickCell(.item(item), label: Text("import.photos.photo")) {
                 ImportExtraPhotoThumbnail(item: item)
             }
         } else if let assets = library.assets {
             let asset = assets.object(at: index - 1 - extras.count)
-            pickCell(.asset(asset)) {
+            pickCell(.asset(asset), label: assetLabel(asset)) {
                 ImportAssetThumbnail(asset: asset)
             }
         }
@@ -233,6 +230,7 @@ struct ImportPhotoGridSection: View {
 
     private func pickCell<Thumbnail: View>(
         _ pick: ImportPhotoPick,
+        label: Text,
         @ViewBuilder thumbnail: () -> Thumbnail
     ) -> some View {
         let number = selection.firstIndex(of: pick).map { $0 + 1 }
@@ -252,8 +250,26 @@ struct ImportPhotoGridSection: View {
         }
         .buttonStyle(.plain)
         .disabled(isDisabled || isBlocked)
-        .accessibilityLabel(Text("import.photos.photo"))
+        .accessibilityLabel(label)
+        // The badge number is the upload order; VoiceOver hears it, not just "selected".
+        .accessibilityValue(number.map { Text(verbatim: localized("import.photos.pick-order", $0)) } ?? Text(verbatim: ""))
         .accessibilityAddTraits(number != nil ? .isSelected : [])
+    }
+
+    /// Cells told apart by date, as in Photos.
+    private func assetLabel(_ asset: PHAsset) -> Text {
+        guard let date = asset.creationDate else { return Text("import.photos.photo") }
+        let locale = AppLanguagePreference.current.locale
+        let dated = date.formatted(Date.FormatStyle(date: .long, time: .shortened, locale: locale))
+        return Text(verbatim: localized("import.photos.photo-dated", dated))
+    }
+
+    private func localized(_ key: String, _ arguments: CVarArg...) -> String {
+        String(
+            format: Bundle.currentLocalizedString(key),
+            locale: AppLanguagePreference.current.locale,
+            arguments: arguments
+        )
     }
 
     private func toggle(_ pick: ImportPhotoPick) {
@@ -354,6 +370,9 @@ private struct ImportAssetThumbnail: View {
 }
 
 private struct ImportExtraPhotoThumbnail: View {
+    /// Decoded once per shot: the cell reappears on every scroll.
+    private static let cache = NSCache<NSString, UIImage>()
+
     let item: ImportPhotoItem
     @State private var image: UIImage?
     @Environment(\.displayScale) private var displayScale
@@ -366,13 +385,18 @@ private struct ImportExtraPhotoThumbnail: View {
                 }
             }
             .task(id: item.id) {
+                let key = item.id.uuidString as NSString
+                if let cached = Self.cache.object(forKey: key) {
+                    image = cached
+                    return
+                }
                 let data = item.data
                 let side = 160 * displayScale
-                image = await Task.detached(priority: .userInitiated) {
-                    guard let full = UIImage(data: data), full.size.width > 0, full.size.height > 0 else { return nil }
-                    let factor = side / min(full.size.width, full.size.height)
-                    return full.preparingThumbnail(of: CGSize(width: full.size.width * factor, height: full.size.height * factor))
+                let thumbnail = await Task.detached(priority: .userInitiated) {
+                    ImportPhotoEncoding.thumbnail(of: data, minPixelSide: side)
                 }.value
+                if let thumbnail { Self.cache.setObject(thumbnail, forKey: key) }
+                image = thumbnail
             }
     }
 }
