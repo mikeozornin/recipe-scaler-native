@@ -73,7 +73,11 @@
 		<string>$(RS_ALLOWS_LOCAL_NETWORKING)</string>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Recipe Scaler uses the camera to scan QR codes to log in with your seed phrase, and for hands-free recipe scrolling while the screen is kept awake.</string>
+	<string>Recipe Scaler uses the camera to photograph recipes for import, to scan QR codes to log in with your seed phrase, and for hands-free recipe scrolling while the screen is kept awake.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Recipe Scaler shows your photos so you can pick recipe photos and screenshots to import.</string>
+	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
+	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Recipe Scaler uses the microphone so you can dictate messages to the AI assistant and speak scroll commands while cooking with Hands-free on.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

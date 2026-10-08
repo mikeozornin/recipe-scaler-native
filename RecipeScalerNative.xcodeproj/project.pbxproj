@@ -210,6 +210,7 @@
 		A029031000314 /* NativeRecipeImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000304 /* NativeRecipeImporterTests.swift */; };
 		A029031000315 /* NativeFormatHtmlImportRoundtripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000305 /* NativeFormatHtmlImportRoundtripTests.swift */; };
 		A029031000316 /* NativeImportImageSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029031000306 /* NativeImportImageSelectionTests.swift */; };
+		A080080000116 /* ImportPhotoEncodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A080080000106 /* ImportPhotoEncodingTests.swift */; };
 		A05700000101 /* Import/ThirdParty/UTTypeRecipeScaler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A05700000102 /* Import/ThirdParty/UTTypeRecipeScaler.swift */; };
 		A05700000200 /* UTTypeRecipeScalerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A05700000201 /* UTTypeRecipeScalerTests.swift */; };
 		A05700000210 /* NativeFormatDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A05700000202 /* NativeFormatDetectorTests.swift */; };
@@ -689,6 +690,11 @@
 		078A8D7E69B582F332CF4EDE /* ShakeToOpenAssistantPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 078AE93C85D8CCEEB78C7438 /* ShakeToOpenAssistantPreference.swift */; };
 		078A1A049E3DD14F0D6264A3 /* DeviceShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 078A64A48644CA61C18BF5AB /* DeviceShakeDetector.swift */; };
 		078AF6B65D1FB7CE786B581E /* ShakeToOpenAssistantPreferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 078ADBE067920C2FC75DE772 /* ShakeToOpenAssistantPreferenceTests.swift */; };
+		E5F60718293A4B70C207F0C4 /* ImportPhotoLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B701BB919F9 /* ImportPhotoLibrary.swift */; };
+		E5F60718293A4B70264F17F3 /* ImportCamera.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7078CFC6C8 /* ImportCamera.swift */; };
+		E5F60718293A4B705F99AF8D /* ImportPhotoGridSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B709F128272 /* ImportPhotoGridSection.swift */; };
+		E5F60718293A4B7007E0FA8C /* ImportPasteBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70808746E4 /* ImportPasteBanner.swift */; };
+		E5F60718293A4B70270B63A6 /* ImportShareHintCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70D3CE0E4F /* ImportShareHintCard.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1036,6 +1042,7 @@
 		A029031000304 /* NativeRecipeImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRecipeImporterTests.swift; sourceTree = "<group>"; };
 		A029031000305 /* NativeFormatHtmlImportRoundtripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatHtmlImportRoundtripTests.swift; sourceTree = "<group>"; };
 		A029031000306 /* NativeImportImageSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeImportImageSelectionTests.swift; sourceTree = "<group>"; };
+		A080080000106 /* ImportPhotoEncodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPhotoEncodingTests.swift; sourceTree = "<group>"; };
 		A05700000102 /* Import/ThirdParty/UTTypeRecipeScaler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Import/ThirdParty/UTTypeRecipeScaler.swift; sourceTree = "<group>"; };
 		A05700000201 /* UTTypeRecipeScalerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTTypeRecipeScalerTests.swift; sourceTree = "<group>"; };
 		A05700000202 /* NativeFormatDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFormatDetectorTests.swift; sourceTree = "<group>"; };
@@ -1502,6 +1509,11 @@
 		078AE93C85D8CCEEB78C7438 /* ShakeToOpenAssistantPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShakeToOpenAssistantPreference.swift; sourceTree = "<group>"; };
 		078A64A48644CA61C18BF5AB /* DeviceShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceShakeDetector.swift; sourceTree = "<group>"; };
 		078ADBE067920C2FC75DE772 /* ShakeToOpenAssistantPreferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShakeToOpenAssistantPreferenceTests.swift; sourceTree = "<group>"; };
+		E5F60718293A4B701BB919F9 /* ImportPhotoLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPhotoLibrary.swift; sourceTree = "<group>"; };
+		E5F60718293A4B7078CFC6C8 /* ImportCamera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportCamera.swift; sourceTree = "<group>"; };
+		E5F60718293A4B709F128272 /* ImportPhotoGridSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Import/ImportPhotoGridSection.swift"; sourceTree = "<group>"; };
+		E5F60718293A4B70808746E4 /* ImportPasteBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Import/ImportPasteBanner.swift"; sourceTree = "<group>"; };
+		E5F60718293A4B70D3CE0E4F /* ImportShareHintCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Import/ImportShareHintCard.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1692,6 +1704,9 @@
 			children = (
 				C38C9866A5142170D549D605 /* AuthView.swift */,
 				C46C342D35721B88D83D58BB /* QRScannerView.swift */,
+				E5F60718293A4B709F128272 /* ImportPhotoGridSection.swift */,
+				E5F60718293A4B70808746E4 /* ImportPasteBanner.swift */,
+				E5F60718293A4B70D3CE0E4F /* ImportShareHintCard.swift */,
 				F1A2B3C4D5E60718293A4C02 /* RecipeStepsSection.swift */,
 				P074GRP0293A4B701000001 /* Cooking */,
 				DD2201AABB000200000003 /* YDocRecipeDetailView.swift */,
@@ -2098,6 +2113,7 @@
 				A029031000304 /* NativeRecipeImporterTests.swift */,
 				A029031000305 /* NativeFormatHtmlImportRoundtripTests.swift */,
 				A029031000306 /* NativeImportImageSelectionTests.swift */,
+				A080080000106 /* ImportPhotoEncodingTests.swift */,
 				YRSDOC01A293A4B701000002 /* YrsDocument+TestSupport.swift */,
 				YJSOFF01A293A4B701000002 /* YjsOfflineSyncTests.swift */,
 				ATGATE01A293A4B701000002 /* AsyncTestGate.swift */,
@@ -2310,6 +2326,8 @@
 				E5F60718293A4B7000000007 /* RecipeTitleEmoji.swift */,
 				E5F60718293A4B700000000B /* RecipeCollectionMerge.swift */,
 				E5F60718293A4B700000005D /* DebugLaunchOptions.swift */,
+				E5F60718293A4B701BB919F9 /* ImportPhotoLibrary.swift */,
+				E5F60718293A4B7078CFC6C8 /* ImportCamera.swift */,
 				E5F60718293A4B7000000091 /* RecipeSearchUtils.swift */,
 				A5TH048293A4B7010000004 /* AssistantThreadSearch.swift */,
 				A5TST02293A4B7010000002 /* AssistantToolStatusI18n.swift */,
@@ -3464,7 +3482,12 @@
 				BB0000000000000000000008 /* OpenShoppingListIntent.swift in Sources */,
 				BB0000000000000000000007 /* RecipeScalerShortcuts.swift in Sources */,
 				A5FCB870243125B620B8D992 /* TimerSnapshot+RecipeTimer.swift in Sources */,
-			);
+			
+				E5F60718293A4B70C207F0C4 /* ImportPhotoLibrary.swift in Sources */,
+				E5F60718293A4B70264F17F3 /* ImportCamera.swift in Sources */,
+				E5F60718293A4B705F99AF8D /* ImportPhotoGridSection.swift in Sources */,
+				E5F60718293A4B7007E0FA8C /* ImportPasteBanner.swift in Sources */,
+				E5F60718293A4B70270B63A6 /* ImportShareHintCard.swift in Sources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		765DED83F9F2B66BB32C2CBB /* Sources */ = {
@@ -3648,6 +3671,7 @@
 				A029031000314 /* NativeRecipeImporterTests.swift in Sources */,
 				A029031000315 /* NativeFormatHtmlImportRoundtripTests.swift in Sources */,
 				A029031000316 /* NativeImportImageSelectionTests.swift in Sources */,
+				A080080000116 /* ImportPhotoEncodingTests.swift in Sources */,
 				YRSDOC01A293A4B701000001 /* YrsDocument+TestSupport.swift in Sources */,
 				YJSOFF01A293A4B701000001 /* YjsOfflineSyncTests.swift in Sources */,
 				ATGATE01A293A4B701000001 /* AsyncTestGate.swift in Sources */,

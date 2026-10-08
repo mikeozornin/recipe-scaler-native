@@ -9734,13 +9734,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recipe text or a link to a website (even several links)"
+            "value": "Several links work too, one per line"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Текст рецепта или ссылка на сайт (даже несколько ссылок)"
+            "value": "Можно несколько ссылок — каждую с новой строки"
           }
         }
       }
@@ -15601,6 +15601,230 @@
           "stringUnit": {
             "state": "translated",
             "value": "Встряхнуть, чтобы открыть ассистента"
+          }
+        }
+      }
+    },
+    "import.share-hint.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send links straight from your browser"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отправляйте ссылки прямо из браузера"
+          }
+        }
+      }
+    },
+    "import.share-hint.body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap **Share** on the recipe page in your browser and send it to Recipe Scaler"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажмите **Поделиться** на странице рецепта в браузере и отправьте его в Recipe Scaler"
+          }
+        }
+      }
+    },
+    "import.share-hint.page": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bbcgoodfood.com — Beef borscht"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "eda.ru — Борщ с говядиной"
+          }
+        }
+      }
+    },
+    "import.share-hint.airdrop": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AirDrop"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AirDrop"
+          }
+        }
+      }
+    },
+    "import.share-hint.messages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщения"
+          }
+        }
+      }
+    },
+    "import.share-hint.app": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recipe Scaler"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recipe Scaler"
+          }
+        }
+      }
+    },
+    "import.share-hint.notes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заметки"
+          }
+        }
+      }
+    },
+    "import.photos.album": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Album"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Альбом"
+          }
+        }
+      }
+    },
+    "import.photos.camera": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Камера"
+          }
+        }
+      }
+    },
+    "import.photos.photo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото"
+          }
+        }
+      }
+    },
+    "import.photos.limited": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the photos you allowed are shown"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видны только разрешённые фото"
+          }
+        }
+      }
+    },
+    "import.photos.limited-manage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Изменить"
+          }
+        }
+      }
+    },
+    "import.photos.no-access": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow access to Photos to pick pictures here, or choose them in the system picker."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрешите доступ к Фото, чтобы выбирать снимки здесь, или выберите их в системном окне."
+          }
+        }
+      }
+    },
+    "import.photos.open-settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть настройки"
           }
         }
       }

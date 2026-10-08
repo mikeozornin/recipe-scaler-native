@@ -63,6 +63,11 @@ enum AccessibilityIdentifiers {
     static let shoppingRemindersTipDismiss = "shopping_reminders_tip_dismiss"
     static let importSheet = "import_sheet"
     static let importFilePickButton = "import_file_pick_button"
+    // Spec 080
+    static let importPasteBanner = "import-paste-banner"
+    static let importShareHint = "import-share-hint"
+    static let importShareHintDismiss = "import-share-hint-dismiss"
+    static let importPhotoCamera = "import-photo-camera"
     static let accountRoot = "account_root"
     static let accountExportLogsMissing = "account_export_logs_missing"
     static let accountClearLogs = "account_clear_logs"
