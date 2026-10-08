@@ -75,6 +75,10 @@ store/drafts/*
 store/asc.env.local
 .test-fast-results.xcresult
 .test-fast.log
+# scripts/verify-ui-smoke.sh + sim-verify-lib.sh run artifacts
+.ui-smoke*.ndjson
+.verify-build-manifest.json
+specs/_ui-smoke/
 
 # Python
 __pycache__/
