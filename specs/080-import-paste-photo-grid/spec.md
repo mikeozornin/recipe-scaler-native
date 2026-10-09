@@ -2,7 +2,7 @@
 
 **Feature Branch**: `080-import-paste-photo-grid`  
 **Created**: 2026-10-08  
-**Status**: Draft — реализовано, ждёт human review  
+**Status**: Принято (human review пройден)  
 **Input**: «Сложно понять, куда вставлять ссылку» (скриншот вкладки «Текст»). Выбраны варианты A + B + W5 из `tmp/mockups/import-link-affordance.html`. Вкладку «Фото» сделать как выбор фото в scrapp (`scrapp-ios/Scrapp/AddSheet.swift`).
 
 **Зависимости**:

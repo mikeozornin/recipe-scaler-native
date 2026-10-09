@@ -12,6 +12,7 @@
 #   bash scripts/mark-ios-release.sh 1.0.8
 #   bash scripts/mark-ios-release.sh 1.0.8 --commit 04cd4458
 #   bash scripts/mark-ios-release.sh 1.0.9 --notes-file store/drafts/whats-new-1.0.9.txt
+#   bash scripts/mark-ios-release.sh 1.0.9 --date 2026-08-30   # задним числом
 #   bash scripts/mark-ios-release.sh 1.0.9 --dry-run
 
 
@@ -27,6 +28,7 @@ die() { echo "mark-ios-release: $*" >&2; exit 1; }
 VERSION=""
 COMMIT="HEAD"
 NOTES_FILE=""
+DATE=""
 DRY_RUN=0
 
 while [[ $# -gt 0 ]]; do
@@ -34,6 +36,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help) usage 0 ;;
     --commit) [[ $# -ge 2 ]] || die "--commit требует SHA"; COMMIT="$2"; shift 2 ;;
     --notes-file) [[ $# -ge 2 ]] || die "--notes-file требует путь"; NOTES_FILE="$2"; shift 2 ;;
+    --date) [[ $# -ge 2 ]] || die "--date требует YYYY-MM-DD"; DATE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
     -*) die "неизвестный флаг: $1 (см. --help)" ;;
     *) 
@@ -44,6 +47,7 @@ done
 
 [[ -n "$VERSION" ]] || usage 1
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "версия '$VERSION' не в формате X.Y.Z"
+[[ -z "$DATE" || "$DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || die "дата '$DATE' не в формате YYYY-MM-DD"
 [[ "$COMMIT" != -* ]] || die "коммит '${COMMIT}' не может начинаться с '-'"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -74,16 +78,16 @@ fi
 
 SHORT_SHA="$(git rev-parse --short "${COMMIT}")"
 COMMIT_SUBJECT="$(git log -1 --format=%s "${COMMIT}")"
-DATE="$(TZ=UTC date +%Y-%m-%d)"
+[[ -n "$DATE" ]] || DATE="$(TZ=UTC date +%Y-%m-%d)"
 
 if [[ "$HAS_ENTRY" != "1" ]]; then
-  # Literal block scalar: контент с отступом 4, табы расширяются (иначе парсер падает).
+  # Literal block scalar: контент с отступом 6 (глубже ключа notes:), табы расширяются (иначе парсер падает).
   # Собираем простым присваиванием: command substitution съел бы переводы строк.
   NOTES_BLOCK=""
   if [[ -n "$NOTES_FILE" ]]; then
     [[ -f "$NOTES_FILE" ]] || die "notes-файл не найден: ${NOTES_FILE}"
     while IFS= read -r line || [[ -n "$line" ]]; do
-      NOTES_BLOCK="${NOTES_BLOCK}$(sed -e 's/\t/    /g' -e 's/^/    /' <<< "$line")
+      NOTES_BLOCK="${NOTES_BLOCK}$(sed -e 's/\t/    /g' -e 's/^/      /' <<< "$line")
 "
     done < "$NOTES_FILE"
   fi

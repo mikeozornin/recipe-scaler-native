@@ -31,10 +31,11 @@ In-app новости (баннер на Recipes, архив в Профиле) 
 ### Фиксация релиза
 
 ```bash
-bash scripts/mark-ios-release.sh 1.0.9 [--commit <sha>] [--notes-file <file>] [--dry-run]
+bash scripts/mark-ios-release.sh 1.0.9 [--commit <sha>] [--date YYYY-MM-DD] [--notes-file <file>] [--dry-run]
 ```
 
 - Создаёт annotated tag `ios/1.0.9` на `--commit` (по умолчанию HEAD).
+- `--date` — дата релиза в реестре (по умолчанию сегодня, UTC); нужна при фиксации задним числом.
 - Дописывает запись в `store/releases.yaml`; запись атомарная (temp + mv).
 - Тег **не пушится** автоматически.
 - Повторный запуск безопасен: если есть только тег или только запись —
