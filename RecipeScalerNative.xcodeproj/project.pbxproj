@@ -443,6 +443,7 @@
 		E5F60718293A4B701757B9DA /* ScreenAwakeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B701A6B5339 /* ScreenAwakeController.swift */; };
 		E5F60718293A4B7018FB5571 /* AssistantMessageFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B706CC8B6CE /* AssistantMessageFooter.swift */; };
 		E5F60718293A4B70267CA7BD /* ShoppingListData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A32A1501 /* ShoppingListData.swift */; };
+		A5RSHM01293A4B7010000002 /* AssistantRecordingShimmer.metal in Sources */ = {isa = PBXBuildFile; fileRef = A5RSHM01293A4B7010000001 /* AssistantRecordingShimmer.metal */; };
 		E5F60718293A4B702B6FFEC2 /* AssistantComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70220BC4FC /* AssistantComposer.swift */; };
 		E5F60718293A4B703037711D /* DescriptionTimerPopoverState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70309B38A2 /* DescriptionTimerPopoverState.swift */; };
 		E5F60718293A4B70321FB5DD /* ScreenAwakeStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7050C160BA /* ScreenAwakeStatusBanner.swift */; };
@@ -1277,6 +1278,7 @@
 		E5F60718293A4B701A6B5339 /* ScreenAwakeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenAwakeController.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70219947AF /* ShoppingListConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListConstants.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7021C6B1A2 /* AccountCheckmarkSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountCheckmarkSelectionView.swift; sourceTree = "<group>"; };
+		A5RSHM01293A4B7010000001 /* AssistantRecordingShimmer.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = AssistantRecordingShimmer.metal; sourceTree = "<group>"; };
 		E5F60718293A4B70220BC4FC /* AssistantComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantComposer.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7024E554ED /* ShoppingSmokeTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingSmokeTest.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7024E554FD /* TimerNotificationSmokeTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerNotificationSmokeTest.swift; sourceTree = "<group>"; };
@@ -1774,6 +1776,7 @@
 				A5ATCH18293A4B7010000002 /* AssistantAttachmentChip.swift */,
 				A5VLM02293A4B7010000002 /* AssistantVoiceLevelMeter.swift */,
 				E5F60718293A4B70220BC4FC /* AssistantComposer.swift */,
+				A5RSHM01293A4B7010000001 /* AssistantRecordingShimmer.metal */,
 				E5F60718293A4B70E374EEFC /* MobileTimerPanel.swift */,
 				R5AMEN0293A4B7010000001 /* RecipesAddToolbarMenu.swift */,
 				E5F60718293A4B709EBF9E6E /* RecipeDetailActionsMenu.swift */,
@@ -3408,6 +3411,7 @@
 				E5F60718293A4B7018FB5571 /* AssistantMessageFooter.swift in Sources */,
 				A5ATCH18293A4B7010000001 /* AssistantAttachmentChip.swift in Sources */,
 				E5F60718293A4B702B6FFEC2 /* AssistantComposer.swift in Sources */,
+				A5RSHM01293A4B7010000002 /* AssistantRecordingShimmer.metal in Sources */,
 				E5F60718293A4B70E66E63B1 /* MobileTimerPanel.swift in Sources */,
 				R5AMEN0293A4B7010000002 /* RecipesAddToolbarMenu.swift in Sources */,
 				E5F60718293A4B70B3900847 /* RecipeDetailActionsMenu.swift in Sources */,

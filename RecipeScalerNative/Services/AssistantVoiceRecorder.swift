@@ -58,6 +58,9 @@ final class AssistantVoiceRecorder {
     /// Precomputed tape-meter bar heights in pt, newest last. Each bar keeps its
     /// height once recorded (web parity: peak RMS scrolls right→left, stable height).
     private(set) var barHeights: [CGFloat] = []
+    /// Latest normalized input level (0…1), refreshed every meter poll. Drives the
+    /// recording shimmer; read it only from views that redraw per frame anyway.
+    private(set) var level: CGFloat = 0
 
     private var recorder: AVAudioRecorder?
     private var recordingURL: URL?
@@ -200,6 +203,7 @@ final class AssistantVoiceRecorder {
         peakSinceLastBar = Self.meterMinScale
         state = .idle
         barHeights = []
+        level = 0
     }
 
     private func startMetering() {
@@ -223,6 +227,7 @@ final class AssistantVoiceRecorder {
         recorder.updateMeters()
         let power = recorder.averagePower(forChannel: 0)
         let normalized = CGFloat(max((power - Self.minPowerDb) / -Self.minPowerDb, 0))
+        level = min(normalized, 1)
         let clamped = min(max(normalized, Self.meterMinScale), 1)
         if clamped > peakSinceLastBar {
             peakSinceLastBar = clamped
