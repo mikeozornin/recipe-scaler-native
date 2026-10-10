@@ -35,6 +35,11 @@ public final class IngredientIllustrationCatalog: @unchecked Sendable {
     private let pickerViewRu: [IngredientIllustrationPickerEntry]
     private let pickerViewEn: [IngredientIllustrationPickerEntry]
     private lazy var cachedAliasIndex: [IngredientIllustrationAliasEntry] = Self.buildAliasIndex(entries: entries)
+    /// Name matcher results by trimmed name. A miss scans the whole alias index,
+    /// and shopping rows re-match their labels on every render.
+    private let matchCacheLock = NSLock()
+    private var matchCache: [String: String?] = [:]
+    private static let maxMatchCacheEntries = 4096
 
     public var entryCount: Int { entries.count }
 
@@ -46,6 +51,18 @@ public final class IngredientIllustrationCatalog: @unchecked Sendable {
     /// Precomputed alias index for `IngredientIllustrationNameMatcher` (built once per catalog).
     public func aliasIndexForMatching() -> [IngredientIllustrationAliasEntry] {
         cachedAliasIndex
+    }
+
+    func cachedMatch(trimmedName: String, compute: () -> String?) -> String? {
+        if let hit = matchCacheLock.withLock({ matchCache[trimmedName] }) {
+            return hit
+        }
+        let result = compute()
+        matchCacheLock.withLock {
+            if matchCache.count >= Self.maxMatchCacheEntries { matchCache.removeAll() }
+            matchCache[trimmedName] = result
+        }
+        return result
     }
 
     public init(bundle: Bundle = Bundle(for: IngredientIllustrationCatalog.self)) {

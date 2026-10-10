@@ -183,7 +183,7 @@ struct DescriptionEditorWebView: UIViewRepresentable {
         func sendInit(state: Data) {
             let payload: [String: Any] = [
                 "type": "init",
-                "state": state.map { NSNumber(value: $0) },
+                "state": state.base64EncodedString(),
             ]
             sendToJS(payload)
         }
@@ -191,7 +191,7 @@ struct DescriptionEditorWebView: UIViewRepresentable {
         func sendApplyUpdate(_ update: Data) {
             let payload: [String: Any] = [
                 "type": "applyUpdate",
-                "update": update.map { NSNumber(value: $0) },
+                "update": update.base64EncodedString(),
             ]
             sendToJS(payload)
         }

@@ -95,11 +95,14 @@ actor YDocStore {
     func existingSnapshotKeys(docKeys: [String]) throws -> Set<String> {
         guard !docKeys.isEmpty else { return [] }
         return try dbQueue.read { db in
+            // `x'0000'` is an empty Y.Doc (older builds persisted docs only peeked for
+            // search): it must not count as a downloaded recipe.
             let keys = try String.fetchAll(
                 db,
                 sql: """
                 SELECT docKey FROM ydoc_snapshots
                 WHERE docKey IN (\(docKeys.map { _ in "?" }.joined(separator: ",")))
+                  AND state <> x'0000'
                 """,
                 arguments: StatementArguments(docKeys)
             )

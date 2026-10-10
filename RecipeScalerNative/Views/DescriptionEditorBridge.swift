@@ -191,6 +191,21 @@ final class DescriptionEditorBridge {
         }
     }
 
+    /// Yjs bytes from `description-editor-bridge.js`: a base64 string (array of
+    /// numbers is still accepted). Nil when missing, malformed or empty.
+    nonisolated static func updateBytes(from value: Any?) -> Data? {
+        let data: Data?
+        if let base64 = value as? String {
+            data = Data(base64Encoded: base64)
+        } else if let numbers = value as? [NSNumber] {
+            data = Data(numbers.map { UInt8(truncating: $0) })
+        } else {
+            data = nil
+        }
+        guard let data, !data.isEmpty else { return nil }
+        return data
+    }
+
     func handleWebMessage(_ body: Any) {
         guard let dict = body as? [String: Any],
               let type = dict["type"] as? String else { return }
@@ -215,12 +230,10 @@ final class DescriptionEditorBridge {
             }
             #endif
         case "syncState":
-            guard let numbers = dict["update"] as? [NSNumber], !numbers.isEmpty else { return }
-            let data = Data(numbers.map { UInt8(truncating: $0) })
+            guard let data = Self.updateBytes(from: dict["update"]) else { return }
             enqueueDescriptionSyncState(data)
         case "update":
-            guard let numbers = dict["update"] as? [NSNumber], !numbers.isEmpty else { return }
-            let data = Data(numbers.map { UInt8(truncating: $0) })
+            guard let data = Self.updateBytes(from: dict["update"]) else { return }
             enqueueDescriptionUpdate(data)
         case "outboundFlushed":
             resumeOutboundFlushWaiters()

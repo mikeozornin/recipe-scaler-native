@@ -85,15 +85,6 @@ enum CollectionRecipesIndexBuilder {
     /// Pinned first, then A–Z (case-insensitive, ignoring leading emoji), then id.
     /// Matches web `sortRecipesForListDisplay`.
     private static func sortForDisplay(_ entries: [CollectionEntry]) -> [CollectionEntry] {
-        entries.sorted { lhs, rhs in
-            if lhs.isPinned != rhs.isPinned {
-                return lhs.isPinned && !rhs.isPinned
-            }
-            let nameOrder = RecipeTitleEmoji.compareNames(lhs.name, rhs.name)
-            if nameOrder != .orderedSame {
-                return nameOrder == .orderedAscending
-            }
-            return lhs.id.localizedStandardCompare(rhs.id) == .orderedAscending
-        }
+        RecipeTitleEmoji.sortCollectionEntries(entries)
     }
 }

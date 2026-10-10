@@ -28,13 +28,15 @@ enum RecipeSearchUtils {
     }
 
     /// Latin text: NFKD + strip combining marks + lowercase.
-    /// Cyrillic: lowercase only — NFKD decomposes `й` into `и` + breve and breaks search.
+    /// Cyrillic: NFC + lowercase — NFKD would turn `й` into `и` + breve and break
+    /// search; NFC folds a pasted decomposed `й` into the precomposed one, so a
+    /// literal (byte-wise) substring search stays correct.
     private static func normalizeSearchCharacter(_ character: Character) -> String {
         if isCyrillicCharacter(character) {
-            return String(character).lowercased()
+            return String(character).precomposedStringWithCanonicalMapping.lowercased()
         }
         return String(character)
-            .decomposedStringWithCanonicalMapping
+            .decomposedStringWithCompatibilityMapping
             .unicodeScalars
             .filter { !combiningDiacritics.contains($0) }
             .map { String($0).lowercased() }
@@ -120,14 +122,13 @@ enum RecipeSearchUtils {
 
     /// First ingredient whose normalized name contains every token.
     static func findIngredientMatch(in index: RecipeSearchIndex, tokens: [String]) -> (name: String, amount: String)? {
-        for (offset, name) in index.ingredientNames.enumerated() {
-            let normalized = normalizeForSearch(name)
+        for (offset, normalized) in index.normalizedIngredientNames.enumerated() {
             guard !normalized.isEmpty else { continue }
             if tokens.allSatisfy({ normalized.contains($0) }) {
                 let amount = offset < index.ingredientAmounts.count
                     ? index.ingredientAmounts[offset]
                     : ""
-                return (name, amount)
+                return (index.ingredientNames[offset], amount)
             }
         }
         return nil
@@ -148,25 +149,28 @@ enum RecipeSearchUtils {
     /// Description plain text where every token occurs (AND), with the earliest
     /// match index used to anchor the snippet window.
     static func findDescriptionMatch(in index: RecipeSearchIndex, tokens: [String]) -> (text: String, matchIndex: Int)? {
-        findDescriptionMatch(inPlainText: index.descriptionPlainText, tokens: tokens)
+        findDescriptionMatch(inPlainText: index.descriptionPlainText, normalized: index.normalizedDescription, tokens: tokens)
     }
 
     /// Description plain text where every token occurs (AND), with the earliest
     /// match index used to anchor the snippet window.
     static func findDescriptionMatch(in recipe: RecipeData, tokens: [String]) -> (text: String, matchIndex: Int)? {
         let plain = plainText(fromDescriptionHTML: recipe.description)
-        return findDescriptionMatch(inPlainText: plain, tokens: tokens)
+        return findDescriptionMatch(inPlainText: plain, normalized: normalizeForSearch(plain), tokens: tokens)
     }
 
-    private static func findDescriptionMatch(inPlainText plain: String, tokens: [String]) -> (text: String, matchIndex: Int)? {
+    private static func findDescriptionMatch(
+        inPlainText plain: String,
+        normalized: String,
+        tokens: [String]
+    ) -> (text: String, matchIndex: Int)? {
         guard !plain.isEmpty else { return nil }
 
-        let normalized = normalizeForSearch(plain)
         var checks: [(found: Bool, index: Int)] = []
         checks.reserveCapacity(tokens.count)
 
         for token in tokens {
-            let index = (normalized as NSString).range(of: token).location
+            let index = (normalized as NSString).range(of: token, options: .literal).location
             checks.append((index != NSNotFound, index == NSNotFound ? 0 : index))
         }
 
@@ -236,7 +240,9 @@ enum RecipeSearchUtils {
         let mapping = buildNormalizedWithMap(text)
         guard !mapping.map.isEmpty else { return 0 }
         let clamped = min(max(normalizedIndex, 0), mapping.map.count - 1)
-        return mapping.map[clamped]
+        // `map` stores UTF-16 offsets; `snippetWindow` works in Characters.
+        let utf16Offset = mapping.map[clamped]
+        return text.distance(from: text.startIndex, to: String.Index(utf16Offset: utf16Offset, in: text))
     }
 
     private static func snippetWindow(in text: String, matchIndex: Int) -> String {
@@ -402,8 +408,8 @@ enum RecipeSearchUtils {
 
     private struct NormalizedMap {
         let normalized: String
-        /// For each character of `normalized`, the corresponding UTF-16 offset
-        /// in the original string.
+        /// For each UTF-16 unit of `normalized` (matches come from NSString), the
+        /// UTF-16 offset of the source Character in the original string.
         let map: [Int]
     }
 
@@ -417,13 +423,15 @@ enum RecipeSearchUtils {
         for character in value {
             let segmentStart = utf16Index
             if isCyrillicCharacter(character) {
-                normalized.append(String(character).lowercased())
-                map.append(segmentStart)
+                let lowered = String(character).precomposedStringWithCanonicalMapping.lowercased()
+                normalized.append(lowered)
+                map.append(contentsOf: repeatElement(segmentStart, count: lowered.utf16.count))
             } else {
-                let decomposed = String(character).decomposedStringWithCanonicalMapping
+                let decomposed = String(character).decomposedStringWithCompatibilityMapping
                 for scalar in decomposed.unicodeScalars where !combiningDiacritics.contains(scalar) {
-                    normalized.append(String(scalar).lowercased())
-                    map.append(segmentStart)
+                    let lowered = String(scalar).lowercased()
+                    normalized.append(lowered)
+                    map.append(contentsOf: repeatElement(segmentStart, count: lowered.utf16.count))
                 }
             }
             utf16Index += character.utf16.count

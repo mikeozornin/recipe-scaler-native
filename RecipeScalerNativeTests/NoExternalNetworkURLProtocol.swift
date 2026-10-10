@@ -1,4 +1,5 @@
 import Foundation
+import XCTest
 
 /// `URLProtocol` that fails any unexpected network request made from a
 /// unit/integration test bundle.
@@ -42,9 +43,24 @@ final class NoExternalNetworkURLProtocol: URLProtocol {
         request
     }
 
+    private static let blockedLock = NSLock()
+    nonisolated(unsafe) private static var blocked: [String] = []
+
+    /// URLs blocked since the last call (reported per test by `TestBundleSetup`).
+    static func drainBlocked() -> [String] {
+        blockedLock.lock()
+        defer { blockedLock.unlock() }
+        let drained = blocked
+        blocked.removeAll()
+        return drained
+    }
+
     override func startLoading() {
         let url = request.url
         let host = url?.host?.lowercased()
+        Self.blockedLock.lock()
+        Self.blocked.append("\(request.httpMethod ?? "GET") \(url?.path ?? "<nil>")")
+        Self.blockedLock.unlock()
         if let host, Self.allowedLoopbackHosts.contains(host) {
             // Loopback requests are left to a real or stubbed transport; we do
             // not synthesise a response here. The test owns the next hop.
@@ -64,5 +80,24 @@ final class NoExternalNetworkURLProtocol: URLProtocol {
 
     override func stopLoading() {
         // No-op; we never start a real connection.
+    }
+}
+
+/// Principal class of the test bundle (`NSPrincipalClass` in Info.plist): XCTest
+/// instantiates it before the first test. The test host is the real app sharing
+/// the simulator keychain, so without this `AppContainer`-based tests schedule real
+/// pushes / Live Activity registrations for the signed-in user. Stubs registered
+/// later in `setUp` still win: URLProtocol classes are consulted newest-first.
+final class TestBundleSetup: NSObject, XCTestObservation {
+    override init() {
+        super.init()
+        URLProtocol.registerClass(NoExternalNetworkURLProtocol.self)
+        XCTestObservationCenter.shared.addTestObserver(self)
+    }
+
+    func testCaseDidFinish(_ testCase: XCTestCase) {
+        let blocked = NoExternalNetworkURLProtocol.drainBlocked()
+        guard !blocked.isEmpty else { return }
+        print("BLOCKED NETWORK \(testCase.name): \(blocked.joined(separator: ", "))")
     }
 }

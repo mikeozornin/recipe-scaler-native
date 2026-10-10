@@ -111,35 +111,37 @@ final class RecipeListSearchStore {
         tokens: [String],
         syncService: YjsSyncService
     ) {
-        let candidatesToLoad = entries.filter { entry in
+        let nameMisses = entries.filter { entry in
             guard let normalized = normalizedNames[entry.id]?.normalized else { return false }
-            if RecipeSearchUtils.matchesName(normalized: normalized, tokens: tokens) {
-                return false
-            }
-            return loadedSearchIndexes[entry.id] == nil
-        }.prefix(100)
+            return !RecipeSearchUtils.matchesName(normalized: normalized, tokens: tokens)
+        }
+        // Already-loaded indexes are re-peeked too, so an edit (local, remote or
+        // from the description editor) replaces the old content. That is cheap:
+        // `readSearchIndex` returns its cached projection while the doc's state
+        // vector is unchanged.
+        let loaded = nameMisses.filter { loadedSearchIndexes[$0.id] != nil }
+        let unloaded = nameMisses.filter { loadedSearchIndexes[$0.id] == nil }.prefix(100)
+        let candidates = loaded + unloaded
 
-        guard !candidatesToLoad.isEmpty else { return }
+        guard !candidates.isEmpty else { return }
 
         loadTask = Task { [weak self, weak syncService] in
-            guard let self else { return }
-
-            var newlyLoaded: [String: RecipeSearchIndex] = [:]
-            for entry in candidatesToLoad {
+            var fetched: [String: RecipeSearchIndex] = [:]
+            for entry in candidates {
                 if Task.isCancelled { return }
                 guard let syncService,
                       let index = await syncService.peekSearchIndex(recipeId: entry.id) else {
                     continue
                 }
-                newlyLoaded[entry.id] = index
+                fetched[entry.id] = index
             }
 
-            guard !Task.isCancelled, !newlyLoaded.isEmpty else { return }
+            guard let self, !Task.isCancelled else { return }
+            let changed = fetched.filter { self.loadedSearchIndexes[$0.key] != $0.value }
+            guard !changed.isEmpty else { return }
 
-            await MainActor.run {
-                self.loadedSearchIndexes.merge(newlyLoaded) { _, new in new }
-                self.publishSnapshot(entries: entries, tokens: tokens)
-            }
+            self.loadedSearchIndexes.merge(changed) { _, new in new }
+            self.publishSnapshot(entries: entries, tokens: tokens)
         }
     }
 
@@ -172,7 +174,7 @@ final class RecipeListSearchStore {
             }
 
             let title = RecipeSearchUtils.highlightedAttributedString(
-                RecipeTitleEmoji.displayName(for: entry.name),
+                entry.displayName,
                 tokens: tokens,
                 font: AppTypography.bodyUIFont,
                 foregroundColor: .label

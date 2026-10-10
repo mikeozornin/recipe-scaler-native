@@ -51,6 +51,9 @@ final class TimerManager: NSObject {
 
     private let notificationCenter = UNUserNotificationCenter.current()
     private let timerUpdateInterval: TimeInterval = 1.0
+    /// Tick cadence once every running timer has completed: nothing is left to
+    /// detect, only the overdue Live Activity text ("-12m") to keep roughly fresh.
+    private let overdueUpdateInterval: TimeInterval = 30
 
     private let timerSync: TimerSyncService
     private let liveActivity: TimerLiveActivityCoordinator
@@ -458,10 +461,10 @@ final class TimerManager: NSObject {
         scheduleBackgroundTask()
     }
 
+    /// Re-evaluates the tick cadence: stops with no running timers, slows down
+    /// when every running timer has already completed.
     func stopUpdateLoopIfIdle() {
-        if !timers.contains(where: \.isRunning) {
-            stopUpdateTimer()
-        }
+        startUpdateTimer()
     }
 
     // MARK: - Panel
@@ -539,9 +542,22 @@ final class TimerManager: NSObject {
 
     // MARK: - Update loop
 
+    /// `nil` when nothing is running.
+    private var desiredUpdateInterval: TimeInterval? {
+        if timers.contains(where: { $0.isRunning && !$0.hasCompleted }) { return timerUpdateInterval }
+        if timers.contains(where: \.isRunning) { return overdueUpdateInterval }
+        return nil
+    }
+
+    /// Starts, retunes, or stops the tick to match `desiredUpdateInterval`.
     private func startUpdateTimer() {
-        guard updateTimer == nil else { return }
-        updateTimer = Timer.scheduledTimer(withTimeInterval: timerUpdateInterval, repeats: true) { [weak self] _ in
+        guard let interval = desiredUpdateInterval else {
+            stopUpdateTimer()
+            return
+        }
+        if let updateTimer, updateTimer.isValid, updateTimer.timeInterval == interval { return }
+        updateTimer?.invalidate()
+        updateTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             self?.updateRunningTimers()
         }
     }
@@ -642,6 +658,8 @@ final class TimerManager: NSObject {
         refreshPanelTimers()
         sendCompletionNotification(for: timer)
         syncLiveActivity(for: timer, policy: .userAction)
+        // Nothing left to detect for this timer; drop to the overdue cadence if it was the last.
+        stopUpdateLoopIfIdle()
     }
 
     // MARK: - Push schedule helpers
@@ -979,6 +997,11 @@ final class TimerManager: NSObject {
     @MainActor
     func tickUpdateRunningTimersForTests() {
         updateRunningTimers()
+    }
+
+    /// Current tick interval, `nil` when the loop is stopped.
+    var updateLoopIntervalForTests: TimeInterval? {
+        updateTimer?.isValid == true ? updateTimer?.timeInterval : nil
     }
     #endif
 

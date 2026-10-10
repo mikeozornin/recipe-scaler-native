@@ -55,18 +55,23 @@ final class YjsMergeHelper: NSObject {
         guard !parts.isEmpty else { return Data() }
         if parts.count == 1 { return parts[0] }
         try await ensureReady()
-        let arrays = parts.map { $0.map { NSNumber(value: $0) } }
-        let script = "window.__yjsMerge.mergeUpdates(\(Self.jsonArray(arrays)))"
-        return try await evaluateByteArray(script: script)
+        return try await evaluateBase64(
+            operation: "mergeUpdates",
+            body: "return window.__yjsMerge.mergeUpdates(parts);",
+            arguments: ["parts": parts.map { $0.base64EncodedString() }]
+        )
     }
 
     func encodeFullState(bootstrap: Data?, updates: [Data]) async throws -> Data {
         try await ensureReady()
-        let bootstrapArray = bootstrap?.map { NSNumber(value: $0) } ?? []
-        let updateArrays = updates.map { $0.map { NSNumber(value: $0) } }
-        let script =
-            "window.__yjsMerge.encodeFullState(\(Self.jsonArray(bootstrapArray)), \(Self.jsonArray(updateArrays)))"
-        return try await evaluateByteArray(script: script)
+        return try await evaluateBase64(
+            operation: "encodeFullState",
+            body: "return window.__yjsMerge.encodeFullState(bootstrap, updates);",
+            arguments: [
+                "bootstrap": bootstrap?.base64EncodedString() ?? "",
+                "updates": updates.map { $0.base64EncodedString() },
+            ]
+        )
     }
 
     private func ensureReady() async throws {
@@ -120,29 +125,26 @@ final class YjsMergeHelper: NSObject {
         }
     }
 
-    private func evaluateByteArray(script: String) async throws -> Data {
+    /// Bytes go in and out as base64 strings passed as call arguments: no
+    /// per-byte `NSNumber` boxing and no multi-megabyte JSON script on the main thread.
+    /// Failures are logged because every caller falls back silently via `try?`.
+    private func evaluateBase64(operation: String, body: String, arguments: [String: Any]) async throws -> Data {
         guard let webView else { throw YjsMergeHelperError.notReady }
-        let value = try await webView.evaluateJavaScript(script)
-        guard let numbers = value as? [NSNumber], !numbers.isEmpty else {
-            throw YjsMergeHelperError.invalidResult
+        do {
+            let value = try await webView.callAsyncJavaScript(body, arguments: arguments, contentWorld: .page)
+            guard let base64 = value as? String,
+                  let data = Data(base64Encoded: base64),
+                  !data.isEmpty else {
+                throw YjsMergeHelperError.invalidResult
+            }
+            return data
+        } catch {
+            AppLog.notice(.sync, "yjs_merge_helper_eval_failed", data: [
+                "operation": operation,
+                "error": String(describing: error).prefix(200).description,
+            ])
+            throw error
         }
-        return Data(numbers.map { UInt8(truncating: $0) })
-    }
-
-    private static func jsonArray(_ arrays: [[NSNumber]]) -> String {
-        guard let data = try? JSONSerialization.data(withJSONObject: arrays),
-              let string = String(data: data, encoding: .utf8) else {
-            return "[]"
-        }
-        return string
-    }
-
-    private static func jsonArray(_ numbers: [NSNumber]) -> String {
-        guard let data = try? JSONSerialization.data(withJSONObject: numbers),
-              let string = String(data: data, encoding: .utf8) else {
-            return "[]"
-        }
-        return string
     }
 
     private func markReady() {

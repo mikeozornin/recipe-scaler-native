@@ -14,6 +14,11 @@ struct CollectionEntry: Identifiable, Sendable, Equatable {
     /// Empty when the underlying Y.Map has no `folderIds` key
     /// (native 008 compat) or an empty array after normalization.
     let folderIds: [String]
+    /// `name` without its leading emoji, and that emoji. Derived once here —
+    /// entries are built in `DocumentManager`, off the main actor — instead of
+    /// running the title regexes on every sort comparison and row render.
+    let displayName: String
+    let leadingEmoji: String?
 
     init(
         id: String,
@@ -33,6 +38,8 @@ struct CollectionEntry: Identifiable, Sendable, Equatable {
         self.deleted = deleted
         self.isPinned = isPinned
         self.folderIds = folderIds
+        self.displayName = RecipeTitleEmoji.displayName(for: name)
+        self.leadingEmoji = RecipeTitleEmoji.leadingEmoji(in: name)
     }
 
     /// Sort entries: pinned first, then alphabetically by display name (emoji ignored), then id.

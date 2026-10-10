@@ -16,5 +16,7 @@
     <string>$(MARKETING_VERSION).$(CURRENT_PROJECT_VERSION)</string>
     <key>CFBundleVersion</key>
     <string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>NSPrincipalClass</key>
+    <string>$(PRODUCT_MODULE_NAME).TestBundleSetup</string>
 </dict>
 </plist>

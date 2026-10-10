@@ -628,6 +628,46 @@ final class RecipeScalerNativeTests: XCTestCase {
         XCTAssertEqual(sorted, ["Apple Pie", "☕ Coffee", "🍕 Pizza"])
     }
 
+    func testCollectionEntryPrecomputesTitleEmoji() {
+        let entry = CollectionEntry(
+            id: "a", name: "  👨‍👩‍👧 Family dinner", color: "", imageUrl: nil,
+            updatedAt: "", deleted: false, isPinned: false
+        )
+        XCTAssertEqual(entry.leadingEmoji, "👨‍👩‍👧")
+        XCTAssertEqual(entry.displayName, "Family dinner")
+    }
+
+    /// Sorting on the precomputed display names keeps the regex-per-comparison order.
+    func testSortCollectionEntriesMatchesCompareNamesOrder() {
+        let names = [
+            "🍕 Pizza", "Pizza", "pizza", "🍕Pizza", "Apple Pie", "☕ Coffee", "👨‍👩‍👧 Family",
+            "Family", "🇮🇹 Pasta", "Pasta 🍝", "1️⃣ First", "Item 10", "Item 2", "", "🍰",
+            "Éclair", "eclair", "Борщ", "🥣 Борщ",
+        ]
+        var entries: [CollectionEntry] = []
+        for (offset, name) in names.enumerated() {
+            entries.append(CollectionEntry(
+                id: "id-\(offset)", name: name, color: "", imageUrl: nil,
+                updatedAt: "", deleted: false, isPinned: offset % 5 == 0
+            ))
+            entries.append(CollectionEntry(
+                id: "dup-\(offset)", name: name, color: "", imageUrl: nil,
+                updatedAt: "", deleted: false, isPinned: false
+            ))
+        }
+        let expected = entries.sorted { lhs, rhs in
+            if lhs.isPinned != rhs.isPinned { return lhs.isPinned }
+            let order = RecipeTitleEmoji.compareNames(lhs.name, rhs.name)
+            if order != .orderedSame { return order == .orderedAscending }
+            return lhs.id.localizedStandardCompare(rhs.id) == .orderedAscending
+        }
+        XCTAssertEqual(RecipeTitleEmoji.sortCollectionEntries(entries.shuffled()).map(\.id), expected.map(\.id))
+        XCTAssertEqual(
+            CollectionRecipesIndexBuilder.build(from: entries.shuffled()).live.map(\.id),
+            expected.map(\.id)
+        )
+    }
+
     func testRapidIngredientUpdatesDoNotCrash() async throws {
         let userId = "user-rapid"
         let ingredientId = "ing-rapid"
@@ -1816,5 +1856,15 @@ final class DescriptionEditorScrollInsetTests: XCTestCase {
 
         XCTAssertEqual(bridge.contentHeight, 64, accuracy: 0.01)
         XCTAssertEqual(bridge.paintedContentBottom, 64, accuracy: 0.01)
+    }
+
+    func testDescriptionEditorUpdateBytesDecodesBase64AndLegacyArrays() {
+        let bytes = Data([1, 0, 255, 7, 128])
+        XCTAssertEqual(DescriptionEditorBridge.updateBytes(from: bytes.base64EncodedString()), bytes)
+        XCTAssertEqual(DescriptionEditorBridge.updateBytes(from: bytes.map { NSNumber(value: $0) }), bytes)
+        XCTAssertNil(DescriptionEditorBridge.updateBytes(from: ""))
+        XCTAssertNil(DescriptionEditorBridge.updateBytes(from: "not base64!"))
+        XCTAssertNil(DescriptionEditorBridge.updateBytes(from: [NSNumber]()))
+        XCTAssertNil(DescriptionEditorBridge.updateBytes(from: nil))
     }
 }

@@ -6,32 +6,49 @@
 <body>
   <script src="yjs.bundle.js"></script>
   <script>
-    function toUint8Array(parts) {
-      return parts.map(function (p) { return new Uint8Array(p); });
+    // The bundle is an IIFE exposing `YjsBundle` (scripts/build-yjs-bundle.mjs), not a global `Y`.
+    var Y = window.YjsBundle && window.YjsBundle.Y;
+
+    // Bytes cross the Swift bridge as base64 strings: number arrays cost one
+    // boxed value per byte plus a JSON round trip on the main thread.
+    function fromBase64(s) {
+      var bin = atob(s || '');
+      var out = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    }
+
+    function toBase64(bytes) {
+      var s = '';
+      for (var i = 0; i < bytes.length; i += 0x8000) {
+        s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      }
+      return btoa(s);
     }
 
     function mergeUpdates(parts) {
-      var arrays = toUint8Array(parts || []);
-      if (!arrays.length) return [];
-      if (arrays.length === 1) return Array.from(arrays[0]);
-      return Array.from(Y.mergeUpdates(arrays));
+      var arrays = (parts || []).map(fromBase64);
+      if (!arrays.length) return '';
+      if (arrays.length === 1) return toBase64(arrays[0]);
+      return toBase64(Y.mergeUpdates(arrays));
     }
 
     function encodeFullState(bootstrap, parts) {
       var doc = new Y.Doc();
-      if (bootstrap && bootstrap.length > 2) {
-        Y.applyUpdate(doc, new Uint8Array(bootstrap), 'remote');
+      var bootstrapBytes = fromBase64(bootstrap);
+      if (bootstrapBytes.length > 2) {
+        Y.applyUpdate(doc, bootstrapBytes, 'remote');
       }
-      var arrays = toUint8Array(parts || []);
+      var arrays = (parts || []).map(fromBase64);
       for (var i = 0; i < arrays.length; i++) {
         if (arrays[i].length > 2) {
           Y.applyUpdate(doc, arrays[i], 'remote');
         }
       }
-      return Array.from(Y.encodeStateAsUpdate(doc));
+      return toBase64(Y.encodeStateAsUpdate(doc));
     }
 
-    window.__yjsMergeReady = true;
+    window.__yjsMergeReady = !!Y;
     window.__yjsMerge = {
       mergeUpdates: mergeUpdates,
       encodeFullState: encodeFullState,

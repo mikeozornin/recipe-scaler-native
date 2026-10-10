@@ -225,6 +225,9 @@ final class YjsSyncService {
     /// removing the false "local ahead" that wedged a doc into perpetual skip-pull after a merge.
     private var unsyncedRecipeIds: Set<String> = []
 
+    /// Live collection `sync_update`s not yet acknowledged by `sync_confirmed`.
+    private var unconfirmedCollectionEmits = 0
+
     /// docKey → offline queue row IDs included in the last emitted drain batch awaiting `sync_confirmed`.
     private var inFlightOfflineEntryIdsByDocKey: [String: Set<Int64>] = [:]
     private var inFlightOfflineSessionIdsByDocKey: [String: UUID] = [:]
@@ -849,9 +852,15 @@ final class YjsSyncService {
         sessionContext: SyncSocketSessionContext
     ) async {
         guard self.userId == userId, isCurrentSession(sessionContext) else { return }
+        // One queue read for the whole batch instead of a per-recipe SQL probe.
+        let queue = (try? await offlineQueue.fetchAll()) ?? []
+        guard self.userId == userId, isCurrentSession(sessionContext) else { return }
+        let ownedPrefix = "\(userId):"
+        let queuedRecipeIds = Set(queue.filter { $0.docKey.hasPrefix(ownedPrefix) }.map(\.recipeId))
         for recipeId in recipeIds where isRecipeDocument(recipeId: recipeId) {
             guard await hasUnsyncedLocalChanges(
                 recipeId: recipeId,
+                queuedRecipeIds: queuedRecipeIds,
                 userId: userId
             ) else { continue }
             guard self.userId == userId, isCurrentSession(sessionContext) else { return }
@@ -1365,6 +1374,7 @@ final class YjsSyncService {
             localSessionId = UUID()
             writeSyncStates = [:]
             unsyncedRecipeIds = []
+            unconfirmedCollectionEmits = 0
         }
         let sessionUserId = userId
         self.userId = userId
@@ -1538,6 +1548,7 @@ final class YjsSyncService {
     func clearSessionForLogout() async {
         localSessionId = UUID()
         unsyncedRecipeIds = []
+        unconfirmedCollectionEmits = 0
         stop()
         collectionEntries = []
         folders = []
@@ -2490,9 +2501,9 @@ final class YjsSyncService {
         guard isCurrentDocumentUpdate(context, recipeId: recipeId) else { return }
         if !canSendLiveSync() {
             writeSyncStates[recipeId] = .queued
+            // The queue row is the durable copy (replayed by `loadLocalSnapshots` on launch);
+            // the yrs snapshot stays on the debounced `scheduleSnapshotPersist` like online edits.
             try? await offlineQueue.enqueue(docKey: docKey, recipeId: recipeId, yjsUpdate: update)
-            guard isCurrentDocumentUpdate(context, recipeId: recipeId) else { return }
-            await documentManager.persistSnapshot(docKey: docKey)
             guard isCurrentDocumentUpdate(context, recipeId: recipeId) else { return }
             scheduleWireSnapshotRefresh(recipeId: recipeId, userId: userId)
             logger.info("Eager offline enqueue for description \(recipeId) (\(update.count) bytes)")
@@ -2555,7 +2566,23 @@ final class YjsSyncService {
         if let sessionContext {
             guard isCurrentSession(sessionContext) else { return }
         }
-        let docKeys = candidates.map { docKeyFor(recipeId: $0, userId: userId) }
+        // Filter first: on a typical reconnect nothing is unsynced, and reading every
+        // collection snapshot (hundreds of KB each) just to skip it was pure waste.
+        var unsyncedIds: [String] = []
+        for recipeId in candidates {
+            if let sessionContext {
+                guard isCurrentSession(sessionContext) else { return }
+            }
+            if await hasUnsyncedLocalChanges(
+                recipeId: recipeId,
+                queuedRecipeIds: queuedRecipeIds,
+                userId: userId
+            ) {
+                unsyncedIds.append(recipeId)
+            }
+        }
+        guard !unsyncedIds.isEmpty, self.userId == userId else { return }
+        let docKeys = unsyncedIds.map { docKeyFor(recipeId: $0, userId: userId) }
         let wireSnapshots = (try? await store.loadYjsWireSnapshots(docKeys: docKeys)) ?? [:]
         let snapshots = (try? await store.loadSnapshots(docKeys: docKeys)) ?? [:]
         guard self.userId == userId else { return }
@@ -2567,15 +2594,10 @@ final class YjsSyncService {
             guard entry.docKey.hasPrefix(ownedPrefix) else { continue }
             queueByRecipeId[entry.recipeId, default: []].append(entry)
         }
-        for recipeId in candidates {
+        for recipeId in unsyncedIds {
             if let sessionContext {
                 guard isCurrentSession(sessionContext) else { return }
             }
-            guard await hasUnsyncedLocalChanges(
-                recipeId: recipeId,
-                queuedRecipeIds: queuedRecipeIds,
-                userId: userId
-            ) else { continue }
             let docKey = docKeyFor(recipeId: recipeId, userId: userId)
             await refreshWireSnapshotForRecipe(
                 recipeId: recipeId,
@@ -2633,6 +2655,9 @@ final class YjsSyncService {
         try? await store.saveYjsWireSnapshot(docKey: docKey, state: full)
     }
 
+    /// Every update reaching the debouncer was already persisted by
+    /// `DocumentManager` (immediately for yrs mutations, debounced + flushed on
+    /// `.inactive` for description-editor bytes) — no extra full encode here.
     private func sendDebouncedUpdate(
         userId: String,
         localSessionId: UUID? = nil,
@@ -2647,13 +2672,14 @@ final class YjsSyncService {
         if recipeId == "collection", !canSendCollectionSync() {
             writeSyncStates[recipeId] = .queued
             try? await offlineQueue.enqueue(docKey: docKey, recipeId: recipeId, yjsUpdate: update)
-            guard self.userId == userId, self.localSessionId == capturedLocalSessionId else { return }
-            await documentManager.persistSnapshot(docKey: docKey)
             return
         }
 
         if canSendLiveSync() {
             writeSyncStates[recipeId] = .syncing
+            if recipeId == "collection" {
+                unconfirmedCollectionEmits += 1
+            }
             let emitted = await emitSyncUpdate(
                 recipeId: recipeId,
                 update: update,
@@ -2669,16 +2695,35 @@ final class YjsSyncService {
                     yjsUpdate: update
                 )
             }
-            // Web parity: persist local state on every outbound attempt, not only on sync_confirmed.
-            guard self.userId == userId, self.localSessionId == capturedLocalSessionId else { return }
-            await documentManager.persistSnapshot(docKey: docKey)
         } else {
             writeSyncStates[recipeId] = .queued
             try? await offlineQueue.enqueue(docKey: docKey, recipeId: recipeId, yjsUpdate: update)
-            guard self.userId == userId, self.localSessionId == capturedLocalSessionId else { return }
-            await documentManager.persistSnapshot(docKey: docKey)
             logger.info("Queued offline update for \(recipeId) (\(update.count) bytes)")
         }
+    }
+
+    /// Collection deltas have no unsynced flag / wire snapshot. If a live emit
+    /// was never confirmed (socket died mid-flight, server error), push the full
+    /// local collection after the next handshake so the server cannot keep a gap.
+    /// Runs before the offline drain: the local doc already contains queued edits,
+    /// and drain confirmations must not clear the counter for the lost emit.
+    private func pushUnconfirmedCollectionState(sessionContext: SyncSocketSessionContext) async {
+        guard unconfirmedCollectionEmits > 0,
+              isCurrentSession(sessionContext),
+              canSendCollectionSync() else { return }
+        let docKey = docKeyFor(recipeId: "collection", userId: sessionContext.userId)
+        guard let doc = await documentManager.getDoc(key: docKey),
+              let state = await doc.encodeStateAsUpdate(),
+              state.count > 2,
+              isCurrentSession(sessionContext) else { return }
+        unconfirmedCollectionEmits = 1
+        let emitted = await emitSyncUpdate(
+            recipeId: "collection",
+            update: state,
+            docKey: docKey,
+            sessionContext: sessionContext
+        )
+        logger.info("Pushed unconfirmed collection state (\(state.count) bytes, emitted=\(emitted))")
     }
 
     private func handleLocalShoppingUpdate(context: DocumentUpdateContext, update: Data) async {
@@ -2840,6 +2885,9 @@ final class YjsSyncService {
         )
         guard sessionIsValid() else { return }
         lastSuccessfulSyncAt = Date()
+        if recipeId == "collection" {
+            unconfirmedCollectionEmits = max(0, unconfirmedCollectionEmits - 1)
+        }
 
         if let doc = await documentManager.getDoc(key: docKey),
            let state = await doc.encodeStateAsUpdate() {
@@ -3052,6 +3100,9 @@ final class YjsSyncService {
             }
             if parts.count == 1 { return parts[0] }
             if let merged = try? await yjsMergeHelper.mergeUpdates(parts) { return merged }
+            // Queue entries are deltas, so sending only the last one would drop the
+            // others. The local yrs snapshot is persisted on every edit and holds them all.
+            if let yrsBootstrap, yrsBootstrap.count > 2 { return yrsBootstrap }
             return parts.last
         }
 
@@ -3219,6 +3270,7 @@ final class YjsSyncService {
             // release collection writes for backward-compatible servers.
             collectionHandshakeState = .ready
             collectionHandshakeContext = context
+            await pushUnconfirmedCollectionState(sessionContext: context)
             await drainOfflineQueue(sessionContext: context)
         }
     }
@@ -3309,6 +3361,7 @@ final class YjsSyncService {
             if recipeId == "collection" {
                 collectionHandshakeState = .ready
                 collectionHandshakeContext = context
+                await pushUnconfirmedCollectionState(sessionContext: context)
                 await drainOfflineQueue(sessionContext: context)
             }
             return
@@ -3374,6 +3427,7 @@ final class YjsSyncService {
         if recipeId == "collection", mergeSucceeded {
             collectionHandshakeState = .ready
             collectionHandshakeContext = context
+            await pushUnconfirmedCollectionState(sessionContext: context)
             await drainOfflineQueue(sessionContext: context)
         }
     }
@@ -3673,6 +3727,7 @@ final class YjsSyncService {
         if (try? await documentManager.getOrCreateDoc(key: collectionKey)) != nil,
            let entries = try? await documentManager.readCollectionEntries() {
             collectionEntries = entries.filter { !$0.deleted }
+            collectionIndex = CollectionRecipesIndexBuilder.build(from: collectionEntries)
         }
         ShoppingSmokeTest.writeProgress(
             "prepareCollection",
@@ -3874,14 +3929,14 @@ final class YjsSyncService {
             // This collapses the three refresh paths (setRecipePinned,
             // debounced observer, server echo) into one visual update when
             // they all produce the same entries.
+            // The index derives only from these entries, so echoes that leave them
+            // unchanged skip the rebuild (sorts of every folder) on the main actor.
             if collectionEntries != filtered {
                 collectionEntries = filtered
-            }
-            // Idempotent: skip reassignment when the derived index is unchanged so
-            // observers (list / collections root) do not re-render on echo refreshes.
-            let newIndex = CollectionRecipesIndexBuilder.build(from: filtered)
-            if collectionIndex != newIndex {
-                collectionIndex = newIndex
+                let newIndex = CollectionRecipesIndexBuilder.build(from: filtered)
+                if collectionIndex != newIndex {
+                    collectionIndex = newIndex
+                }
             }
             await refreshFolders(sessionContext: sessionContext)
             guard self.userId == capturedUserId else { return }
@@ -4421,6 +4476,13 @@ extension YjsSyncService {
         await drainOfflineQueue(sessionContext: nil)
     }
 
+    /// Payload the offline drain would emit for `recipeId`'s queued entries.
+    func test_resolveQueuedPushPayload(recipeId: String) async throws -> Data? {
+        let docKey = docKeyFor(recipeId: recipeId)
+        let entries = try await offlineQueue.fetch(forRecipeId: recipeId).filter { $0.docKey == docKey }
+        return await resolveYjsPushPayload(recipeId: recipeId, docKey: docKey, queueEntries: entries)
+    }
+
     func test_handleSyncConfirmed(recipeId: String, lastSyncedAt: String?) async {
         guard let userId else { return }
         await handleSyncConfirmed(
@@ -4452,6 +4514,22 @@ extension YjsSyncService {
     func test_setUserIdForOfflineTests(_ userId: String) async {
         self.userId = userId
         await documentManager.setSession(userId: userId, sessionId: localSessionId)
+    }
+
+    func test_refreshWireSnapshotsForRecipes(recipeIds: [String]) async {
+        await refreshWireSnapshotsForRecipes(recipeIds: recipeIds)
+    }
+
+    func test_scheduleDescriptionWireExportIfNeeded(
+        recipeIds: [String],
+        sessionContext: SyncSocketSessionContext
+    ) async {
+        guard let userId else { return }
+        await scheduleDescriptionWireExportIfNeeded(
+            recipeIds: recipeIds,
+            userId: userId,
+            sessionContext: sessionContext
+        )
     }
 
     func test_markInFlightForTests(docKey: String, entryIds: Set<Int64>) {

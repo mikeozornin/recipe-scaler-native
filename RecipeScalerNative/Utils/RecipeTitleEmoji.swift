@@ -62,21 +62,34 @@ enum RecipeTitleEmoji {
 
     /// Same ordering as web `compareRecipeNamesIgnoringLeadingEmoji`.
     static func compareNames(_ a: String?, _ b: String?) -> ComparisonResult {
-        let displayA = displayName(for: a)
-        let displayB = displayName(for: b)
+        compare(
+            display: displayName(for: a), name: a ?? "",
+            with: displayName(for: b), name: b ?? ""
+        )
+    }
+
+    private static func compare(
+        display displayA: String, name nameA: String,
+        with displayB: String, name nameB: String
+    ) -> ComparisonResult {
         let byDisplay = displayA.localizedStandardCompare(displayB)
         if byDisplay != .orderedSame {
             return byDisplay
         }
-        return (a ?? "").localizedStandardCompare(b ?? "")
+        return nameA.localizedStandardCompare(nameB)
     }
 
+    /// Pinned first, then `compareNames` order, then id. Matches web
+    /// `sortRecipesForListDisplay`. Uses the entries' precomputed display names.
     static func sortCollectionEntries(_ entries: [CollectionEntry]) -> [CollectionEntry] {
         entries.sorted { lhs, rhs in
             if lhs.isPinned != rhs.isPinned {
                 return lhs.isPinned && !rhs.isPinned
             }
-            let nameOrder = compareNames(lhs.name, rhs.name)
+            let nameOrder = compare(
+                display: lhs.displayName, name: lhs.name,
+                with: rhs.displayName, name: rhs.name
+            )
             if nameOrder != .orderedSame {
                 return nameOrder == .orderedAscending
             }

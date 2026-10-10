@@ -44,6 +44,24 @@
     }
   }
 
+  // Yjs bytes cross the Swift bridge as base64 strings: number arrays cost one
+  // boxed NSNumber per byte plus a JSON round trip on the main thread.
+  function toBase64(bytes) {
+    let s = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(s);
+  }
+
+  function fromBase64(value) {
+    if (Array.isArray(value)) return new Uint8Array(value);
+    const bin = atob(value || '');
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
   function editorDom() {
     return editor && editor.view ? editor.view.dom : editorEl;
   }
@@ -360,7 +378,7 @@
         ? pendingOutboundUpdates[0]
         : Y.mergeUpdates(pendingOutboundUpdates);
     pendingOutboundUpdates = [];
-    post('update', { update: Array.from(merged) });
+    post('update', { update: toBase64(merged) });
   }
 
   function scheduleOutboundUpdate(update) {
@@ -683,7 +701,7 @@
           try {
             var fullState = Y.encodeStateAsUpdate(ydoc);
             if (fullState && fullState.length > 2) {
-              post('syncState', { update: Array.from(fullState) });
+              post('syncState', { update: toBase64(fullState) });
             }
           } catch (_flushErr) {
             /* keep outboundFlushed */
@@ -805,7 +823,7 @@
         break;
       case 'init': {
         try {
-          const state = new Uint8Array(msg.state || []);
+          const state = fromBase64(msg.state);
           destroyEditor();
           ydoc = new Y.Doc();
           ydoc.on('update', function (update, origin) {
@@ -843,7 +861,7 @@
         if (!ydoc) return;
         applyingRemote = true;
         try {
-          Y.applyUpdate(ydoc, new Uint8Array(msg.update || []), 'remote');
+          Y.applyUpdate(ydoc, fromBase64(msg.update), 'remote');
           measureContentHeight();
         } finally {
           applyingRemote = false;

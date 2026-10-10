@@ -7,7 +7,12 @@ public enum IngredientIllustrationNameMatcher {
     public static func match(rawName: String, catalog: IngredientIllustrationCatalog = .shared) -> String? {
         let trimmedQuery = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedQuery.isEmpty else { return nil }
+        return catalog.cachedMatch(trimmedName: trimmedQuery) {
+            uncachedMatch(trimmedQuery: trimmedQuery, catalog: catalog)
+        }
+    }
 
+    private static func uncachedMatch(trimmedQuery: String, catalog: IngredientIllustrationCatalog) -> String? {
         let normalizedQuery = IngredientIllustrationSearchNormalization.normalizeForSearch(trimmedQuery)
         guard !normalizedQuery.isEmpty else { return nil }
 

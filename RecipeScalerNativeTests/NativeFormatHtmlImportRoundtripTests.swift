@@ -182,3 +182,50 @@ final class NativeFormatHtmlImportRoundtripTests: XCTestCase {
         return result ?? ""
     }
 }
+
+/// `RecipeDescriptionParser` must keep block/inline boundaries for graphemes
+/// longer than one UTF-16 unit (emoji, flags, ZWJ, decomposed letters).
+final class RecipeDescriptionParserUnicodeTests: XCTestCase {
+    private func runs(of block: RecipeDescriptionBlock) -> [RecipeDescriptionInlineRun] {
+        switch block {
+        case .paragraph(_, let r), .orderedStep(_, _, let r), .bullet(_, let r), .heading(_, _, let r): return r
+        }
+    }
+
+    func testInlineEmojiInBoldKeepsTrailingText() {
+        XCTAssertEqual(RecipeDescriptionParser.parseInline("<b>🍕</b>ab"), [.strong("🍕"), .plain("ab")])
+    }
+
+    func testEmojiParagraphFollowedByParagraph() {
+        let doc = RecipeDescriptionParser.parse("<p>🍕</p><p>ab</p>")
+        XCTAssertEqual(doc.blocks.map { runs(of: $0) }, [[.plain("🍕")], [.plain("ab")]])
+    }
+
+    func testEmojiBeforeBlockKeepsTrailingText() {
+        let doc = RecipeDescriptionParser.parse("🍕<p>a</p>x")
+        XCTAssertEqual(doc.blocks.map { runs(of: $0) }, [[.plain("🍕")], [.plain("a")], [.plain("x")]])
+    }
+
+    func testLastBlockWithMultiUnitGraphemesDoesNotCrash() {
+        let cases: [(String, String)] = [
+            ("<p>Пицца 🍕</p>", "Пицца 🍕"),
+            ("<p>Италия 🇮🇹</p>", "Италия 🇮🇹"),
+            ("<p>Семья 👨‍👩‍👧</p>", "Семья 👨‍👩‍👧"),
+            ("<p>е\u{308}ж</p>", "е\u{308}ж"),
+        ]
+        for (html, text) in cases {
+            let doc = RecipeDescriptionParser.parse(html)
+            XCTAssertEqual(doc.blocks.map { runs(of: $0) }, [[.plain(text)]], html)
+        }
+    }
+
+    func testOrderedStepWithEmojiAndTimerDoesNotCrash() {
+        let html = #"<ol><li><p>Жарить ⏲️ <span class="timer-reference" data-duration="300" data-type="minutes">5 минут</span></p></li></ol>"#
+        let doc = RecipeDescriptionParser.parse(html)
+        XCTAssertEqual(doc.blocks.count, 1)
+        guard case .orderedStep(_, let number, let r) = doc.blocks.first else { return XCTFail("\(doc.blocks)") }
+        XCTAssertEqual(number, 1)
+        XCTAssertEqual(r.first, .plain("Жарить ⏲️ "))
+        XCTAssertEqual(r.count, 2)
+    }
+}

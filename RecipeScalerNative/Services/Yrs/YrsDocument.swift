@@ -9,10 +9,11 @@ private final class UpdateObserverBox: @unchecked Sendable {
         self?.append(data)
     }
 
+    /// Suppression only stops capturing; already-captured local updates stay
+    /// pending so a remote apply cannot drop an unsent local delta.
     func setSuppress(_ value: Bool) {
         lock.lock()
         suppress = value
-        if value { pending.removeAll() }
         lock.unlock()
     }
 
@@ -31,13 +32,18 @@ private final class UpdateObserverBox: @unchecked Sendable {
     }
 
     func consumePending() -> Data? {
+        let batch = consumePendingParts()
+        guard !batch.isEmpty else { return nil }
+        if batch.count == 1 { return batch[0] }
+        return mergeYjsUpdates(batch)
+    }
+
+    func consumePendingParts() -> [Data] {
         lock.lock()
         let batch = pending
         pending.removeAll()
         lock.unlock()
-        guard !batch.isEmpty else { return nil }
-        if batch.count == 1 { return batch[0] }
-        return mergeYjsUpdates(batch)
+        return batch
     }
 }
 
@@ -167,6 +173,14 @@ actor YrsDocument {
         updateObserverBoxRef?.consumePending()
     }
 
+    /// Local transaction deltas in commit order, unmerged. Incremental updates
+    /// depend on the existing doc, so merging them on an empty yrs doc (as
+    /// `consumePendingLocalUpdates` does) can yield a no-op; merge with
+    /// `Y.mergeUpdates` (`YjsMergeHelper`) instead.
+    func consumePendingLocalUpdateParts() -> [Data] {
+        updateObserverBoxRef?.consumePendingParts() ?? []
+    }
+
     func pendingLocalUpdateByteCount() -> Int {
         updateObserverBoxRef?.pendingByteCount() ?? 0
     }
@@ -248,15 +262,15 @@ actor YrsDocument {
 
     func applyUpdate(_ data: Data) throws {
         updateObserverBoxRef?.setSuppress(true)
-        defer {
-            _ = updateObserverBoxRef?.consumePending()
-            updateObserverBoxRef?.setSuppress(false)
-        }
+        defer { updateObserverBoxRef?.setSuppress(false) }
         try Self.applyState(data, to: doc)
     }
 
-    /// Apply a local edit and let `ydoc_observe_updates_v1` capture outbound sync bytes (yjs v1).
+    /// Apply a local edit whose bytes the caller forwards to sync itself
+    /// (description editor yjs wire bytes), so it is not captured as pending.
     func applyLocalUpdate(_ data: Data) throws {
+        updateObserverBoxRef?.setSuppress(true)
+        defer { updateObserverBoxRef?.setSuppress(false) }
         try Self.applyState(data, to: doc)
     }
 

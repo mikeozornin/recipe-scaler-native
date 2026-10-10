@@ -105,21 +105,33 @@ enum RecipeDescriptionParser {
         let range: Range<String.Index>
     }
 
+    // NSRegularExpression reports UTF-16 offsets; always map them back with Range(_:in:),
+    // never with String.index(_:offsetBy:) (Character offsets) — emoji/flags/ZWJ would shift or crash.
+    private static let blockTagRegex = try! NSRegularExpression(
+        pattern: #"<(ol|ul|p|h[1-6])(?:\s[^>]*)?>([\s\S]*?)</\1>"#,
+        options: [.caseInsensitive]
+    )
+    private static let inlineElementRegex = try! NSRegularExpression(
+        pattern: #"<([a-zA-Z][a-zA-Z0-9]*)(?:\s[^>]*)?>([\s\S]*?)</\1>"#,
+        options: [.caseInsensitive]
+    )
+    private static let listItemRegex = try! NSRegularExpression(
+        pattern: #"<li[^>]*>([\s\S]*?)</li>"#,
+        options: [.caseInsensitive]
+    )
+    private static let wrappedParagraphRegex = try! NSRegularExpression(
+        pattern: #"^<p[^>]*>([\s\S]*?)</p>$"#,
+        options: [.caseInsensitive]
+    )
+    private static let tagNameRegex = try! NSRegularExpression(pattern: #"^<([a-zA-Z][a-zA-Z0-9]*)"#)
+
     private static func firstBlockTag(in html: String, from start: String.Index) -> BlockTagMatch? {
-        let pattern = #"<(ol|ul|p|h[1-6])(?:\s[^>]*)?>([\s\S]*?)</\1>"#
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
-            return nil
-        }
-        let substring = String(html[start...])
-        let subNS = substring as NSString
-        guard let match = regex.firstMatch(in: substring, range: NSRange(location: 0, length: subNS.length)) else {
-            return nil
-        }
-        let name = subNS.substring(with: match.range(at: 1)).lowercased()
-        let inner = subNS.substring(with: match.range(at: 2))
-        let rangeStart = html.index(start, offsetBy: match.range.location)
-        let rangeEnd = html.index(rangeStart, offsetBy: match.range.length)
-        return BlockTagMatch(name: name, inner: inner, range: rangeStart..<rangeEnd)
+        guard let match = blockTagRegex.firstMatch(in: html, range: NSRange(start..<html.endIndex, in: html)),
+              let range = Range(match.range, in: html),
+              let name = Range(match.range(at: 1), in: html),
+              let inner = Range(match.range(at: 2), in: html)
+        else { return nil }
+        return BlockTagMatch(name: html[name].lowercased(), inner: String(html[inner]), range: range)
     }
 
     private static func parseOrderedList(_ html: String, stepOffset: inout Int) -> [RecipeDescriptionBlock] {
@@ -138,21 +150,15 @@ enum RecipeDescriptionParser {
     }
 
     private static func liContents(_ html: String) -> [String] {
-        let pattern = #"<li[^>]*>([\s\S]*?)</li>"#
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
-            return []
-        }
         let ns = html as NSString
-        return regex.matches(in: html, range: NSRange(location: 0, length: ns.length)).map {
+        return listItemRegex.matches(in: html, range: NSRange(location: 0, length: ns.length)).map {
             ns.substring(with: $0.range(at: 1))
         }
     }
 
     private static func unwrapParagraph(_ html: String) -> String {
         let trimmed = html.trimmingCharacters(in: .whitespacesAndNewlines)
-        let pattern = #"^<p[^>]*>([\s\S]*?)</p>$"#
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
-              let match = regex.firstMatch(in: trimmed, range: NSRange(location: 0, length: (trimmed as NSString).length)),
+        guard let match = wrappedParagraphRegex.firstMatch(in: trimmed, range: NSRange(location: 0, length: (trimmed as NSString).length)),
               match.numberOfRanges > 1
         else { return trimmed }
         return (trimmed as NSString).substring(with: match.range(at: 1))
@@ -210,17 +216,20 @@ enum RecipeDescriptionParser {
                 continue
             }
 
-            let pattern = #"<\#(tagName)(?:\s[^>]*)?>([\s\S]*?)</\#(tagName)>"#
-            let search = String(html[tagStart...])
-            guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
-                  let match = regex.firstMatch(in: search, range: NSRange(location: 0, length: (search as NSString).length))
+            guard let match = inlineElementRegex.firstMatch(
+                      in: html,
+                      options: [.anchored],
+                      range: NSRange(tagStart..<html.endIndex, in: html)
+                  ),
+                  let elementRange = Range(match.range, in: html),
+                  let innerRange = Range(match.range(at: 2), in: html)
             else {
                 appendPlain(tagSource, into: &runs)
                 index = close.upperBound
                 continue
             }
-            let inner = (search as NSString).substring(with: match.range(at: 1))
-            index = html.index(tagStart, offsetBy: match.range.length)
+            let inner = String(html[innerRange])
+            index = elementRange.upperBound
 
             switch tagName.lowercased() {
             case "a":
@@ -272,9 +281,7 @@ enum RecipeDescriptionParser {
     }
 
     private static func tagName(from tag: String) -> String? {
-        let pattern = #"^<([a-zA-Z][a-zA-Z0-9]*)"#
-        guard let regex = try? NSRegularExpression(pattern: pattern),
-              let match = regex.firstMatch(in: tag, range: NSRange(location: 0, length: (tag as NSString).length)),
+        guard let match = tagNameRegex.firstMatch(in: tag, range: NSRange(location: 0, length: (tag as NSString).length)),
               match.numberOfRanges > 1
         else { return nil }
         return (tag as NSString).substring(with: match.range(at: 1))

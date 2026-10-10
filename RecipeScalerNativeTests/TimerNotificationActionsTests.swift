@@ -6,6 +6,16 @@ import XCTest
 @MainActor
 final class TimerNotificationActionsTests: XCTestCase {
 
+    override func setUp() {
+        super.setUp()
+        TestSupport.clearQueuedTimerSyncEvents()
+    }
+
+    override func tearDown() {
+        TestSupport.clearQueuedTimerSyncEvents()
+        super.tearDown()
+    }
+
     private func makeTimerManager() throws -> TimerManager {
         let modelContainer = try TestSupport.makeInMemoryContainer()
         let context = ModelContext(modelContainer)

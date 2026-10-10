@@ -6,6 +6,7 @@
 import ActivityKit
 import Foundation
 import os
+import RecipeScalerCore
 import UIKit
 
 /// Why a Live Activity sync was requested (spec 058).
@@ -67,6 +68,42 @@ final class TimerLiveActivityCoordinator {
     private var pushTokenEmissionReceived: Set<String> = []
     /// One-shot migration: end restored activities that never emit a push token.
     private var legacyMigrationTasks: [String: Task<Void, Never>] = [:]
+    /// Clock-derived render key last pushed per timer, tagged with the activity id
+    /// it was pushed to. See `rendersIdentically`.
+    private var lastRenderKeys: [String: (activityId: String, key: RenderKey)] = [:]
+
+    /// What the widget computes from the clock at render time rather than reading
+    /// from `ContentState`: the accent colour and the AOD compact text ("44m").
+    struct RenderKey: Equatable {
+        let accent: TimerLiveActivityAccent
+        let compactText: String
+
+        init(state: RecipeTimerActivityAttributes.ContentState, now: Date = Date()) {
+            let remaining = state.remainingSeconds(now: now)
+            accent = TimerLiveActivityAccent.resolve(
+                remainingSeconds: remaining,
+                totalDuration: state.totalDuration
+            )
+            compactText = TimerFormatting.compactRemaining(seconds: remaining)
+        }
+    }
+
+    /// Whether pushing `next` would render the same card as what is shown. The
+    /// periodic ticks (3–5 s) otherwise re-send identical content that differs
+    /// only in `syncedAt`. `shown` is the activity's live content, so APNs updates
+    /// from other devices are compared against too. `lastKey == nil` (nothing
+    /// pushed by this process yet) always updates, so a new extension build re-renders.
+    static func rendersIdentically(
+        shown: RecipeTimerActivityAttributes.ContentState,
+        next: RecipeTimerActivityAttributes.ContentState,
+        lastKey: RenderKey?,
+        now: Date = Date()
+    ) -> Bool {
+        guard let lastKey else { return false }
+        var shown = shown
+        shown.syncedAt = next.syncedAt
+        return shown == next && lastKey == RenderKey(state: next, now: now)
+    }
 
     /// How long to wait for a push-token emission before treating a restored
     /// activity as pre-058 (`pushType: nil`) and recreating it.
@@ -195,13 +232,22 @@ final class TimerLiveActivityCoordinator {
         }
 
         if let activity = activityByTimerId[timer.id] {
-            await activity.update(
-                ActivityContent(
-                    state: contentState,
-                    staleDate: staleDate(for: timer, contentState: contentState)
-                ),
-                alertConfiguration: nil
+            let lastKey = lastRenderKeys[timer.id].flatMap { $0.activityId == activity.id ? $0.key : nil }
+            let unchanged = policy != .userAction && Self.rendersIdentically(
+                shown: activity.content.state,
+                next: contentState,
+                lastKey: lastKey
             )
+            if !unchanged {
+                await activity.update(
+                    ActivityContent(
+                        state: contentState,
+                        staleDate: staleDate(for: timer, contentState: contentState)
+                    ),
+                    alertConfiguration: nil
+                )
+                lastRenderKeys[timer.id] = (activity.id, RenderKey(state: contentState))
+            }
             let needsMigration = !createdWithPushTypeToken.contains(timer.id)
             startObservingPushToken(
                 for: activity,
@@ -227,6 +273,7 @@ final class TimerLiveActivityCoordinator {
                 ),
                 alertConfiguration: nil
             )
+            lastRenderKeys[timer.id] = (existing.id, RenderKey(state: contentState))
             return
         }
 
@@ -258,6 +305,7 @@ final class TimerLiveActivityCoordinator {
                 pushType: .token
             )
             activityByTimerId[timer.id] = activity
+            lastRenderKeys[timer.id] = (activity.id, RenderKey(state: contentState))
             // A successful request invalidates any stale negative-cache entry.
             failureTimestamps.removeValue(forKey: timer.id)
             createdWithPushTypeToken.insert(timer.id)
@@ -275,6 +323,7 @@ final class TimerLiveActivityCoordinator {
 
     func end(timerId: String) async {
         failureTimestamps.removeValue(forKey: timerId)
+        lastRenderKeys.removeValue(forKey: timerId)
         createdWithPushTypeToken.remove(timerId)
         stopObservingPushToken(timerId: timerId)
         await pushRegistrar.unregister(timerId: timerId)
@@ -318,6 +367,7 @@ final class TimerLiveActivityCoordinator {
     private func end(activity: Activity<RecipeTimerActivityAttributes>, timerId: String) async {
         activityByTimerId.removeValue(forKey: timerId)
         failureTimestamps.removeValue(forKey: timerId)
+        lastRenderKeys.removeValue(forKey: timerId)
         createdWithPushTypeToken.remove(timerId)
         stopObservingPushToken(timerId: timerId)
         await pushRegistrar.unregister(timerId: timerId)

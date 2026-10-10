@@ -53,8 +53,12 @@ actor DocumentManager {
     /// (locally or via `applyUpdate`), the next read will see a fresh vector
     /// and recompute. Bounds memory by evicting entries past `maxHtmlCacheEntries`.
     private var htmlCache: [String: (stateVector: Data, html: String?)] = [:]
-    private var plainTextCache: [String: (stateVector: Data, plainText: String)] = [:]
+    /// Search projections keyed by state vector, like `htmlCache`. Sized for a
+    /// whole library: list search revalidates every loaded index per query, and
+    /// the store holds the same (copy-on-write) strings anyway.
+    private var searchIndexCache: [String: (stateVector: Data, index: RecipeSearchIndex)] = [:]
     private let maxHtmlCacheEntries = 64
+    private let maxSearchIndexCacheEntries = 1024
     private static let snapshotPersistDebounceNs: UInt64 = 500_000_000
 
     init(store: YDocStore) {
@@ -163,7 +167,7 @@ actor DocumentManager {
             docs.removeValue(forKey: key)
             observerTokens.removeValue(forKey: key)
             htmlCache.removeValue(forKey: key)
-            plainTextCache.removeValue(forKey: key)
+            searchIndexCache.removeValue(forKey: key)
             throw YrsError.applyFailed(context: "test-forced apply failure")
         }
         #endif
@@ -180,14 +184,14 @@ actor DocumentManager {
             docs.removeValue(forKey: key)
             observerTokens.removeValue(forKey: key)
             htmlCache.removeValue(forKey: key)
-            plainTextCache.removeValue(forKey: key)
+            searchIndexCache.removeValue(forKey: key)
             throw error
         }
 
         // State vector changed: any cached HTML is now stale. Drop it so the
         // next read recomputes (and re-caches with the new vector).
         htmlCache.removeValue(forKey: key)
-        plainTextCache.removeValue(forKey: key)
+        searchIndexCache.removeValue(forKey: key)
 
         if let state = await doc.encodeStateAsUpdate() {
             try? await store.saveSnapshot(docKey: key, state: state, lastSyncedAt: lastSyncedAt)
@@ -199,7 +203,7 @@ actor DocumentManager {
         docs.removeValue(forKey: key)
         observerTokens.removeValue(forKey: key)
         htmlCache.removeValue(forKey: key)
-        plainTextCache.removeValue(forKey: key)
+        searchIndexCache.removeValue(forKey: key)
         let doc = try YrsDocument(state: state)
         docs[key] = doc
         if key.hasSuffix(":collection") {
@@ -361,14 +365,9 @@ actor DocumentManager {
             return nil
         }
 
-        let cachedPlainText: String?
         let currentSV: Data? = await doc.stateVector()
-        if let currentSV,
-           let cached = plainTextCache[key],
-           cached.stateVector == currentSV {
-            cachedPlainText = cached.plainText
-        } else {
-            cachedPlainText = nil
+        if let currentSV, let cached = searchIndexCache[key], cached.stateVector == currentSV {
+            return cached.index
         }
 
         let index: RecipeSearchIndex? = try await doc.withReadTransaction { _, txn in
@@ -378,9 +377,7 @@ actor DocumentManager {
             let ingredients = RecipeYjsCodec.readSearchIngredients(from: map, txn: txn, version: version)
 
             let descriptionPlain: String
-            if let cached = cachedPlainText {
-                descriptionPlain = cached
-            } else if version == .v3 {
+            if version == .v3 {
                 if let fragment = doc.xmlFragment(txn: txn, name: "description") {
                     descriptionPlain = XmlFragmentToPlainText.plainText(from: fragment, txn: txn)
                 } else {
@@ -400,10 +397,10 @@ actor DocumentManager {
             )
         }
 
-        if let currentSV, cachedPlainText == nil, let index {
-            plainTextCache[key] = (stateVector: currentSV, plainText: index.descriptionPlainText)
-            if plainTextCache.count > maxHtmlCacheEntries {
-                evictOldestPlainTextCacheEntries()
+        if let currentSV, let index {
+            searchIndexCache[key] = (stateVector: currentSV, index: index)
+            if searchIndexCache.count > maxSearchIndexCacheEntries {
+                evictOldestSearchIndexCacheEntries()
             }
         }
 
@@ -423,12 +420,12 @@ actor DocumentManager {
         }
     }
 
-    private func evictOldestPlainTextCacheEntries() {
-        let drop = plainTextCache.count - maxHtmlCacheEntries
+    private func evictOldestSearchIndexCacheEntries() {
+        let drop = searchIndexCache.count - maxSearchIndexCacheEntries
         guard drop > 0 else { return }
-        let keys = Array(plainTextCache.keys.prefix(drop))
+        let keys = Array(searchIndexCache.keys.prefix(drop))
         for key in keys {
-            plainTextCache.removeValue(forKey: key)
+            searchIndexCache.removeValue(forKey: key)
         }
     }
 
@@ -436,7 +433,9 @@ actor DocumentManager {
 
     func persistAll() async {
         for (key, doc) in self.docs {
-            if let state = await doc.encodeStateAsUpdate() {
+            // An empty Y.Doc encodes to 2 bytes. Persisting it (e.g. a recipe only peeked for
+            // search before download) would make `existingSnapshotKeys` treat it as cached.
+            if let state = await doc.encodeStateAsUpdate(), state.count > Self.emptyDocUpdateByteCount {
                 // Local safety net: must not reset the server sync marker.
                 try? await self.store.saveLocalSnapshot(docKey: key, state: state)
             }
@@ -686,10 +685,13 @@ actor DocumentManager {
         Self.logger.info("Applied \(sorted.count) offline queue updates to local docs")
     }
 
+    /// `encodeStateAsUpdate` of a Y.Doc with no structs and no delete set: `[0, 0]`.
+    static let emptyDocUpdateByteCount = 2
+
     func persistSnapshot(docKey: String) async {
         guard let doc = docs[docKey],
               let state = await doc.encodeStateAsUpdate(),
-              !state.isEmpty else { return }
+              state.count > Self.emptyDocUpdateByteCount else { return }
         do {
             try await store.saveLocalSnapshot(docKey: docKey, state: state)
         } catch {
@@ -697,10 +699,12 @@ actor DocumentManager {
         }
     }
 
-    /// Encode the document state ONCE, persist to SQLite, and forward the same
-    /// bytes to the local-update handler. Avoids the double `encodeStateAsUpdate`
-    /// that happens when calling `persistSnapshot` + `deliverPendingLocalUpdate`
-    /// separately on every mutation.
+    /// Persist the snapshot and forward the local transaction deltas to the sync
+    /// handler. Sending deltas keeps the network/offline-queue cost O(change)
+    /// instead of O(document): server and web merge with `Y.applyUpdate`, and
+    /// lost deltas are recovered by the unsynced/wire-snapshot reconnect push.
+    /// The snapshot stays synchronous: an apply failure evicts the in-memory doc,
+    /// so a not-yet-persisted local edit would be lost.
     ///
     /// Also invalidates the HTML serialization cache for this docKey — after a
     /// mutation the state vector changes and any cached HTML is stale.
@@ -712,24 +716,24 @@ actor DocumentManager {
         guard let capturedContext = context ?? updateContext(docKey: docKey, recipeId: recipeId),
               isCurrentContext(capturedContext),
               let doc = docs[docKey] else { return }
-        _ = await doc.consumePendingLocalUpdates()
+        let updates = await doc.consumePendingLocalUpdateParts().filter { $0.count > 2 }
         guard isCurrentContext(capturedContext) else { return }
-        guard let state = await doc.encodeStateAsUpdate(), !state.isEmpty else {
+        // Drop any cached HTML/plain text so the next read sees the new state.
+        htmlCache.removeValue(forKey: docKey)
+        searchIndexCache.removeValue(forKey: docKey)
+        await persistSnapshot(docKey: docKey)
+        guard isCurrentContext(capturedContext) else { return }
+        guard !updates.isEmpty else {
             Self.logger.warning("No local Yjs update to sync for \(UserIdFormatter.redactDocKey(docKey))")
             return
         }
-        // Drop any cached HTML/plain text so the next read sees the new state.
-        htmlCache.removeValue(forKey: docKey)
-        plainTextCache.removeValue(forKey: docKey)
-        guard isCurrentContext(capturedContext) else { return }
-        do {
-            try await store.saveLocalSnapshot(docKey: docKey, state: state)
-        } catch {
-            Self.logger.warning("Failed to persist snapshot for \(UserIdFormatter.redactDocKey(docKey)): \(error)")
-        }
-        guard isCurrentContext(capturedContext), let handler = onLocalRecipeUpdate else { return }
+        guard let handler = onLocalRecipeUpdate else { return }
         // Do not await: handler hops to @MainActor YjsSyncService while caller may be blocked on this actor.
-        Task { await handler(capturedContext, state) }
+        Task {
+            for update in updates {
+                await handler(capturedContext, update)
+            }
+        }
     }
 
     /// Schedule a debounced snapshot write (coalesces rapid description-editor keystrokes).
@@ -1495,7 +1499,7 @@ actor DocumentManager {
             docs.removeValue(forKey: key)
             observerTokens.removeValue(forKey: key)
             htmlCache.removeValue(forKey: key)
-            plainTextCache.removeValue(forKey: key)
+            searchIndexCache.removeValue(forKey: key)
             throw YrsError.applyFailed(context: "test-forced apply failure (description editor)")
         }
         #endif
@@ -1511,18 +1515,17 @@ actor DocumentManager {
             docs.removeValue(forKey: key)
             observerTokens.removeValue(forKey: key)
             htmlCache.removeValue(forKey: key)
-            plainTextCache.removeValue(forKey: key)
+            searchIndexCache.removeValue(forKey: key)
             throw error
         }
         guard isCurrentContext(context) else { throw RecipeEditError.documentNotLoaded }
         // Description was just mutated; cached HTML/plain text for this recipe is stale.
         htmlCache.removeValue(forKey: key)
-        plainTextCache.removeValue(forKey: key)
+        searchIndexCache.removeValue(forKey: key)
         // Hot path: debounce SQLite encode; network debouncer + flushPendingEdits persist on Done.
         scheduleSnapshotPersist(docKey: key)
         // Description renders in WebView during edit — skip recipe observer refresh per keystroke.
 
-        _ = await doc.consumePendingLocalUpdates()
         // Forward yjs wire bytes from WebView — yrs re-encode breaks web XmlFragment parsing.
         if forwardToSync,
            isCurrentContext(context),
@@ -1548,7 +1551,6 @@ actor DocumentManager {
         recipeId: String,
         context: DocumentUpdateContext? = nil
     ) async {
-        guard let handler = onLocalRecipeUpdate else { return }
         let capturedContext: DocumentUpdateContext
         if let context {
             capturedContext = context
@@ -1560,17 +1562,11 @@ actor DocumentManager {
             guard let currentContext = updateContext(docKey: key, recipeId: recipeId) else { return }
             capturedContext = currentContext
         }
-        guard isCurrentContext(capturedContext), let doc = docs[capturedContext.docKey] else { return }
-        _ = await doc.consumePendingLocalUpdates()
-        guard isCurrentContext(capturedContext) else { return }
-        let encodePayload = await doc.encodeStateAsUpdate()
-        guard let update = encodePayload, !update.isEmpty else {
-            Self.logger.warning("No local Yjs update to sync for \(UserIdFormatter.redactDocKey(capturedContext.docKey))")
-            return
-        }
-        // Do not await: handler hops to @MainActor YjsSyncService while caller may be blocked on this actor.
-        guard isCurrentContext(capturedContext) else { return }
-        Task { await handler(capturedContext, update) }
+        await persistAndDeliver(
+            recipeId: recipeId,
+            docKey: capturedContext.docKey,
+            context: capturedContext
+        )
     }
 
     private func notifyRecipeChangedIfNeeded(

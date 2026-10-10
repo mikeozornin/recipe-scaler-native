@@ -284,8 +284,8 @@ struct RecipeListView: View {
             .onChange(of: searchText) { _, query in
                 // Tokens computed once per change (was: 16–26× per render).
                 searchTokens = RecipeSearchUtils.tokenizeQuery(query)
-                let sorted = RecipeTitleEmoji.sortCollectionEntries(syncService.collectionEntries)
-                searchStore.refresh(entries: sorted, query: query)
+                // `live` is already in display order (same comparator); no re-sort per keystroke.
+                searchStore.refresh(entries: syncService.collectionIndex.live, query: query)
             }
             .localizedNavigationTitle("Recipes")
             .navigationBarTitleDisplayMode(.inline)
@@ -877,8 +877,8 @@ struct RecipeRowData: Identifiable, Equatable {
     init(entry: CollectionEntry) {
         id = entry.id
         name = entry.name
-        leadingEmoji = RecipeTitleEmoji.leadingEmoji(in: entry.name)
-        displayName = RecipeTitleEmoji.displayName(for: entry.name)
+        leadingEmoji = entry.leadingEmoji
+        displayName = entry.displayName
         color = entry.color
         imageUrl = entry.imageUrl
         isPinned = entry.isPinned

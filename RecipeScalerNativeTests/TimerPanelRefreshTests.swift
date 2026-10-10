@@ -9,6 +9,16 @@ final class TimerPanelRefreshTests: XCTestCase {
 
     private let anchor = Date(timeIntervalSince1970: 1_700_000_000)
 
+    override func setUp() {
+        super.setUp()
+        TestSupport.clearQueuedTimerSyncEvents()
+    }
+
+    override func tearDown() {
+        TestSupport.clearQueuedTimerSyncEvents()
+        super.tearDown()
+    }
+
     // MARK: - Panel refresh cadence (TimerManager backend)
 
     func testPanelDisplayedSecond_decreasesEverySecondWhileCountdownRunning() {
@@ -243,6 +253,34 @@ final class TimerPanelRefreshTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    // MARK: - Update loop cadence (review 2026.10.09 №4c)
+
+    /// A completed (overdue) timer has nothing left to detect, so it must not keep
+    /// the 1 Hz loop alive until the user deletes it.
+    func testUpdateLoop_slowsDownOnceEveryRunningTimerCompleted() throws {
+        let manager = try makeTimerManager()
+        let first = manager.createAndStartTimer(name: "Pasta", duration: 120, type: .seconds)
+        let second = manager.createAndStartTimer(name: "Sauce", duration: 300, type: .seconds)
+        XCTAssertEqual(manager.updateLoopIntervalForTests, 1)
+
+        first.endTime = Date().addingTimeInterval(-1)
+        manager.tickUpdateRunningTimersForTests()
+        XCTAssertTrue(first.hasCompleted)
+        XCTAssertEqual(manager.updateLoopIntervalForTests, 1, "Second timer still counts down")
+
+        second.endTime = Date().addingTimeInterval(-1)
+        manager.tickUpdateRunningTimersForTests()
+        XCTAssertTrue(second.hasCompleted)
+        XCTAssertEqual(manager.updateLoopIntervalForTests, 30)
+
+        manager.addTime(id: second.id, minutes: 1)
+        XCTAssertEqual(manager.updateLoopIntervalForTests, 1, "Adding time re-arms completion detection")
+
+        manager.deleteTimer(id: first.id)
+        manager.deleteTimer(id: second.id)
+        XCTAssertNil(manager.updateLoopIntervalForTests)
+    }
 
     private func makeTimerManager(snapshotStore: TimerSnapshotStoring? = nil) throws -> TimerManager {
         let modelContainer = try TestSupport.makeInMemoryContainer()
