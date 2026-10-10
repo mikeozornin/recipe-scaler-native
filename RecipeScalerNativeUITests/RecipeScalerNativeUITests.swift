@@ -268,3 +268,54 @@ final class RecipeScalerNativeUITests: XCTestCase {
         }
     }
 }
+
+/// Runs against the account already signed in on the simulator (debug user),
+/// not a register-auto user: it creates its own recipe and deletes it.
+final class SearchDeletedRecipeSpec: XCTestCase {
+    func testRecipeDeletedFromSearchResultIsGoneAfterGoingBack() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-SkipSplash=1", "-OpenTab=recipes"]
+        app.launch()
+
+        let list = RecipeListPage(app: app)
+        guard list.addButton.waitForExistence(timeout: 20) else {
+            throw XCTSkip("Simulator app is not signed in")
+        }
+        let name = "Zzstale \(Int.random(in: 100_000...999_999))"
+        list.tapAddRecipe()
+        let detail = RecipeDetailPage(app: app)
+        XCTAssertTrue(detail.titleField.waitForExistence(timeout: 10), "new recipe opens in edit mode")
+        detail.titleField.tap()
+        detail.titleField.typeText(name)
+        detail.tapDone()
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+
+        let search = app.searchFields.firstMatch
+        if !search.waitForExistence(timeout: 3) {
+            app.swipeDown()
+        }
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "search field")
+        search.tap()
+        search.typeText(name)
+
+        let found = app.descendants(matching: .any).matching(NSPredicate(
+            format: "identifier BEGINSWITH %@ AND label CONTAINS %@", UIA.recipeRowPrefix, name
+        )).firstMatch
+        XCTAssertTrue(found.waitForExistence(timeout: 10), "created recipe is found by search")
+        let row = app.buttons[found.identifier]
+        row.tap()
+
+        detail.tapMenu()
+        let delete = app.buttons[UIA.recipeDetailMenuDelete]
+        XCTAssertTrue(delete.waitForExistence(timeout: 5), "delete menu item")
+        delete.tap()
+        let confirm = app.buttons[UIA.recipeDetailDeleteConfirm].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "delete confirmation")
+        confirm.tap()
+
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertEqual(search.value as? String, name, "still searching for the same query")
+        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: row)
+        XCTAssertEqual(XCTWaiter().wait(for: [gone], timeout: 5), .completed, "deleted recipe left the search results")
+    }
+}

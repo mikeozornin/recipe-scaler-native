@@ -50,6 +50,7 @@ struct RecipeDetailActionsMenu: View {
                 } label: {
                     AppLabel.make("recipe.list.delete", symbol: "trash")
                 }
+                .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailMenuDelete)
             }
         } label: {
             AppToolbarStyle.iconOnly(systemName: "ellipsis")
@@ -71,6 +72,7 @@ struct RecipeDetailActionsMenu: View {
             Button(Bundle.currentLocalizedString("recipe.list.delete.confirm.action"), role: .destructive) {
                 Task { await deleteRecipe() }
             }
+            .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailDeleteConfirm)
             Button(Bundle.currentLocalizedString("recipe.list.delete.confirm.cancel"), role: .cancel) { }
         } message: {
             Text(

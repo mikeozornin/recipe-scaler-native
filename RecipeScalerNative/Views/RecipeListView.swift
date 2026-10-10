@@ -287,6 +287,12 @@ struct RecipeListView: View {
                 // `live` is already in display order (same comparator); no re-sort per keystroke.
                 searchStore.refresh(entries: syncService.collectionIndex.live, query: query)
             }
+            .onChange(of: syncService.collectionIndex.live) { _, live in
+                // The search snapshot is frozen per query; deletes, renames and pins
+                // made while searching (e.g. from the detail screen) must re-filter it.
+                guard isSearching else { return }
+                searchStore.refresh(entries: live, query: searchText)
+            }
             .localizedNavigationTitle("Recipes")
             .navigationBarTitleDisplayMode(.inline)
             .appListBodyTypography()
