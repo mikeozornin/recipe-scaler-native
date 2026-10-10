@@ -9,6 +9,11 @@ import RecipeScalerCore
 /// that layouts then dismisses itself.
 @MainActor
 final class ProcessTableCookingLayoutTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        MainActor.assumeIsolated { TestSupport.enableAccessibilityAutomation() }
+    }
+
     func testCookingViewLaysOutFiniteFramesAndShowsGrid() {
         let host = UIHostingController(rootView: makeCookingView())
         let window = makeWindow(size: CGSize(width: 420, height: 756))
@@ -22,10 +27,12 @@ final class ProcessTableCookingLayoutTests: XCTestCase {
             "Cooking layout must keep every UIView frame finite (no inf/NaN origin)"
         )
         XCTAssertTrue(
-            containsAccessibilityIdentifier(
-                AccessibilityIdentifiers.recipeProcessTableGrid,
-                in: host.view
-            ),
+            eventually {
+                containsAccessibilityIdentifier(
+                    AccessibilityIdentifiers.recipeProcessTableGrid,
+                    in: host.view
+                )
+            },
             "After layout the process-table grid must be in the hierarchy"
         )
         XCTAssertTrue(
@@ -179,10 +186,12 @@ final class ProcessTableCookingLayoutTests: XCTestCase {
             "Presented cooking view must layout with finite frames"
         )
         XCTAssertTrue(
-            containsAccessibilityIdentifier(
-                AccessibilityIdentifiers.recipeProcessTableGrid,
-                in: host.view
-            )
+            eventually {
+                containsAccessibilityIdentifier(
+                    AccessibilityIdentifiers.recipeProcessTableGrid,
+                    in: host.view
+                )
+            }
         )
     }
 
@@ -284,6 +293,16 @@ final class ProcessTableCookingLayoutTests: XCTestCase {
 
     private func pumpMain(seconds: TimeInterval) {
         RunLoop.main.run(until: Date().addingTimeInterval(seconds))
+    }
+
+    /// SwiftUI publishes accessibility elements a run-loop turn or two after layout.
+    private func eventually(timeout: TimeInterval = 2, _ condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() {
+            guard Date() < deadline else { return false }
+            pumpMain(seconds: 0.02)
+        }
+        return true
     }
 
     private func viewTreeHasFiniteFrames(_ view: UIView) -> Bool {

@@ -7,6 +7,11 @@ import RecipeScalerCore
 /// Orientation lock and presentation on the live `UIWindowScene`.
 @MainActor
 final class ProcessTableCookingSceneTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        MainActor.assumeIsolated { TestSupport.enableAccessibilityAutomation() }
+    }
+
     override func tearDown() {
         AppContainer.shared?.cooking.dismissForLogout()
         super.tearDown()
@@ -93,13 +98,12 @@ final class ProcessTableCookingSceneTests: XCTestCase {
             "Start cooking must set the cooking presentation"
         )
         XCTAssertTrue(
-            containsAccessibilityIdentifier(
-                AccessibilityIdentifiers.recipeProcessTableGrid,
-                in: host.view
-            ) || containsAccessibilityIdentifier(
-                AccessibilityIdentifiers.recipeProcessTableGrid,
-                in: host
-            ),
+            eventually {
+                containsAccessibilityIdentifier(
+                    AccessibilityIdentifiers.recipeProcessTableGrid,
+                    in: host
+                )
+            },
             "Presented cooking cover must show the process-table grid"
         )
         XCTAssertTrue(
@@ -176,6 +180,16 @@ final class ProcessTableCookingSceneTests: XCTestCase {
 
     private func pumpMain(seconds: TimeInterval) {
         RunLoop.main.run(until: Date().addingTimeInterval(seconds))
+    }
+
+    /// SwiftUI publishes accessibility elements a run-loop turn or two after layout.
+    private func eventually(timeout: TimeInterval = 2, _ condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() {
+            guard Date() < deadline else { return false }
+            pumpMain(seconds: 0.02)
+        }
+        return true
     }
 
     private func containsAccessibilityIdentifier(_ id: String, in view: UIView?) -> Bool {
