@@ -34,7 +34,7 @@
   - `--capture-baseline` записывает эталон.
 
   Эталон снять **на текущем `master` до любых изменений Swift-кода**. — все 24 состояния, `#recipes/sidebar` … `#menubar/view` (layout.md §Карта состояний)
-- [ ] T003 В `RecipeScalerNative.xcodeproj/project.pbxproj` поставить `TARGETED_DEVICE_FAMILY = "1,2"` для таргета `RecipeScalerNative` во всех конфигурациях (строки ~4158, ~4397, ~4419, ~4442).
+- [x] T003 В `RecipeScalerNative.xcodeproj/project.pbxproj` поставить `TARGETED_DEVICE_FAMILY = "1,2"` для таргета `RecipeScalerNative` во всех конфигурациях (строки ~4158, ~4397, ~4419, ~4442).
   - Собрать для iPad и iPhone.
   - Проверить `plutil -extract UIDeviceFamily json -o - <app>/Info.plist` → `[1,2]`.
   - Ориентации `UISupportedInterfaceOrientations~ipad` в `RecipeScalerNative/Info.plist` уже есть — только проверить.

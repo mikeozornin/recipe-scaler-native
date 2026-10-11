@@ -4155,7 +4155,7 @@
 				RS_RECIPE_UTTYPE = ru.recipescaler.recipe;
 				RS_URL_SCHEME = recipe-scaler;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -4394,7 +4394,7 @@
 				RS_RECIPE_UTTYPE = ru.recipescaler.recipe.debug;
 				RS_URL_SCHEME = recipe-scaler-dev;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = DebugDevice;
 		};
@@ -4416,7 +4416,7 @@
 				RS_RECIPE_UTTYPE = ru.recipescaler.recipe.debug;
 				RS_URL_SCHEME = recipe-scaler-dev;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = ReleaseDevice;
 		};
@@ -4439,7 +4439,7 @@
 				RS_RECIPE_UTTYPE = ru.recipescaler.recipe;
 				RS_URL_SCHEME = recipe-scaler;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
