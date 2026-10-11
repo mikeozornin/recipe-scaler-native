@@ -219,6 +219,29 @@ enum DebugLaunchOptions {
         }
     }
 
+    // MARK: - iPad layout (spec 081)
+
+    /// `-IPadSidebarHidden=1` — `.padRegular` starts with the sidebar hidden (layout.md `#recipes/tabs`).
+    static var iPadSidebarHidden: Bool {
+        boolFlag("IPadSidebarHidden")
+    }
+
+    /// `-IPadListHidden=1` — `.padRegular` starts with the recipe list column hidden (`#recipes/focus`).
+    static var iPadListHidden: Bool {
+        boolFlag("IPadListHidden")
+    }
+
+    /// `-DebugWindowWidth=<pt>` (or `-DebugWindowWidth <pt>`) — narrows the root container to
+    /// this width and sets the horizontal size class by `IPadLayoutMetrics.regularMinWidth`.
+    /// For the layout policy matrix only: no real window resize, no system size class transition.
+    static var debugWindowWidth: CGFloat? {
+        guard let raw = stringValue("DebugWindowWidth"),
+              let value = Double(raw),
+              value.isFinite,
+              value > 0 else { return nil }
+        return CGFloat(value)
+    }
+
     /// Apply `-AppLanguage=` / `-AppTheme=` before SwiftUI bodies evaluate localized strings.
     static func applyScreenshotPreferences() {
         if let raw = stringValue("AppLanguage"),
@@ -442,6 +465,9 @@ enum DebugLaunchOptions {
     static var simulateDescriptionEditorCommand: String? { nil }
     static var simulateErrorAlert: Bool { false }
     static var openTab: AppTab? { nil }
+    static var iPadSidebarHidden: Bool { false }
+    static var iPadListHidden: Bool { false }
+    static var debugWindowWidth: CGFloat? { nil }
 
     static func applyScreenshotPreferences() {}
 

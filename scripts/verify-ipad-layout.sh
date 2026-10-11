@@ -129,14 +129,15 @@ BASELINE_PASSES="${IPAD_VERIFY_BASELINE_PASSES:-3}"
 RETRIES="${IPAD_VERIFY_RETRIES:-1}"
 
 # ---------------------------------------------------------------------------
-# States. Names are <step>-<state> from layout.md §Карта состояний. Only launch
-# arguments that already exist on master are used, so the iPhone baseline can be
-# captured before any Swift change. States that need typing, long press, menus or
+# States. Names are <step>-<state> from layout.md §Карта состояний. COMMON_STATES
+# use only launch arguments that already exist on master, so the iPhone baseline
+# can be captured before any Swift change. States that need typing, long press, menus or
 # a menu bar (recipes-search, recipes-context, recipes-collections,
 # assistant-history, import-photo, menubar-*) are not reachable by arguments and
 # are reviewed manually; assistant-new / profile-private depend on server data.
-# On the phone recipes-tabs / recipes-focus collapse into recipes-sidebar (recipe
-# on top of the stack); T011 adds iPad-only arguments for them.
+# recipes-tabs / recipes-focus are iPad-only (DEBUG -IPadSidebarHidden /
+# -IPadListHidden, T011); on the phone they collapse into recipes-sidebar (recipe
+# on top of the stack), so the iPhone regression does not list them.
 # ---------------------------------------------------------------------------
 COMMON_STATES=(
   recipes-list
@@ -159,7 +160,7 @@ if [[ "${IPAD_VERIFY_INCLUDE_TIMERS:-0}" == "1" ]]; then
   COMMON_STATES+=(recipes-timers)
 fi
 IPHONE_STATES=("${COMMON_STATES[@]}")
-IPAD_STATES=("${COMMON_STATES[@]}")
+IPAD_STATES=("${COMMON_STATES[@]}" recipes-tabs recipes-focus)
 
 STATE_ARGS=()
 STATE_WAIT="ready"
@@ -177,6 +178,16 @@ state_spec() {
     recipes-sidebar)
       STATE_NOTE="recipe «${RECIPE_NAME}» open (phone: on top of the stack)"
       STATE_ARGS=("${recipe_args[@]}")
+      STATE_WAIT="media"
+      ;;
+    recipes-tabs)
+      STATE_NOTE="recipe «${RECIPE_NAME}» open, sidebar hidden (iPad only)"
+      STATE_ARGS=("${recipe_args[@]}" "-IPadSidebarHidden=1")
+      STATE_WAIT="media"
+      ;;
+    recipes-focus)
+      STATE_NOTE="recipe «${RECIPE_NAME}» open, sidebar and list hidden (iPad only)"
+      STATE_ARGS=("${recipe_args[@]}" "-IPadSidebarHidden=1" "-IPadListHidden=1")
       STATE_WAIT="media"
       ;;
     recipes-collection)

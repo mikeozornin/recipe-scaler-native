@@ -256,6 +256,25 @@ enum AccessibilityIdentifiers {
         return "description_timer_\(slug.prefix(40))"
     }
 
+    // MARK: - iPad (081)
+
+    static let ipadSidebar = "ipad-sidebar"
+    /// Account row at the bottom of the sidebar.
+    static let ipadSidebarFooter = "ipad-sidebar-footer"
+    /// «Коллекции» section of the sidebar; rows use `ipadSidebarCollection(folderId:)`.
+    static let ipadSidebarCollections = "ipad-sidebar-collections"
+    static let ipadSidebarCollectionPrefix = "ipad-sidebar-collection-"
+    static let ipadRecipeListColumn = "ipad-recipe-list-column"
+    /// «Список рецептов» — shows the hidden list column.
+    static let ipadShowRecipeListButton = "ipad-show-recipe-list-button"
+    static let ipadAssistantInspector = "ipad-assistant-inspector"
+    /// ✦ — opens and closes the assistant inspector.
+    static let ipadAssistantToolbarButton = "ipad-assistant-toolbar-button"
+
+    static func ipadSidebarCollection(folderId: String) -> String {
+        "\(ipadSidebarCollectionPrefix)\(folderId)"
+    }
+
     static func recipeRow(id: String) -> String {
         "\(recipeRowPrefix)\(id)"
     }

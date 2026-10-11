@@ -104,7 +104,7 @@
   - `.iPadFormSheet()` — `.presentationSizing(.form)` на iOS 18+.
 
   `#Preview` для обоих режимов. — `#recipes/collections`, `#shopping/recipe`, `#import/text`
-- [ ] T011 [P] Идентификаторы и DEBUG-аргументы.
+- [x] T011 [P] Идентификаторы и DEBUG-аргументы.
   - Добавить идентификаторы сайдбара, футера, коллекций сайдбара, колонки списка, кнопки «Список рецептов», инспектора, ✦ в `RecipeScalerNative/AccessibilityIdentifiers.swift` и `RecipeScalerNativeUITests/Helpers/Selectors.swift`.
   - Добавить DEBUG-аргументы `-IPadSidebarHidden`, `-IPadListHidden`, `-DebugWindowWidth <pt>` в `RecipeScalerNative/Utils/DebugLaunchOptions.swift` (только `#if DEBUG`; `-DebugWindowWidth` сужает корневой контейнер и подменяет `horizontalSizeClass` — для матрицы политики, не для системных переходов).
   - Расширить `scripts/verify-ipad-layout.sh` (T002): состояния со скрытым сайдбаром и скрытым списком через `-IPadSidebarHidden` / `-IPadListHidden`. Матрицу окон добавит T049.
