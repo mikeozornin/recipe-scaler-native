@@ -697,6 +697,8 @@
 		E5F60718293A4B705F99AF8D /* ImportPhotoGridSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B709F128272 /* ImportPhotoGridSection.swift */; };
 		E5F60718293A4B7007E0FA8C /* ImportPasteBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70808746E4 /* ImportPasteBanner.swift */; };
 		E5F60718293A4B70270B63A6 /* ImportShareHintCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70D3CE0E4F /* ImportShareHintCard.swift */; };
+		0810DCCABA89756E7E1BDE8D /* IPadLayoutPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0816F0EFDB2ED67463882638 /* IPadLayoutPolicy.swift */; };
+		08134801A22C4C63BE0EC9B4 /* IPadLayoutPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0812DD142741F8E6919BCE3D /* IPadLayoutPolicyTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1518,6 +1520,8 @@
 		E5F60718293A4B709F128272 /* ImportPhotoGridSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Import/ImportPhotoGridSection.swift"; sourceTree = "<group>"; };
 		E5F60718293A4B70808746E4 /* ImportPasteBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Import/ImportPasteBanner.swift"; sourceTree = "<group>"; };
 		E5F60718293A4B70D3CE0E4F /* ImportShareHintCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Import/ImportShareHintCard.swift"; sourceTree = "<group>"; };
+		0816F0EFDB2ED67463882638 /* IPadLayoutPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadLayoutPolicy.swift; sourceTree = "<group>"; };
+		0812DD142741F8E6919BCE3D /* IPadLayoutPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadLayoutPolicyTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1706,6 +1710,7 @@
 		2C4753BF21C7787912B3866F /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				081CBD7997AADC6843B621D9 /* IPad */,
 				C38C9866A5142170D549D605 /* AuthView.swift */,
 				C46C342D35721B88D83D58BB /* QRScannerView.swift */,
 				E5F60718293A4B709F128272 /* ImportPhotoGridSection.swift */,
@@ -2007,6 +2012,7 @@
 		93D42941605BAA5DD8D2035A /* RecipeScalerNativeTests */ = {
 			isa = PBXGroup;
 			children = (
+				0812DD142741F8E6919BCE3D /* IPadLayoutPolicyTests.swift */,
 				94F6EEB0522CF5E6241A73B1 /* Info.plist */,
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
 				A14001A00000000000000001A /* FeatureAdoptionGuideContentTests.swift */,
@@ -2691,6 +2697,14 @@
 			path = Config;
 			sourceTree = "<group>";
 		};
+		081CBD7997AADC6843B621D9 /* IPad */ = {
+			isa = PBXGroup;
+			children = (
+				0816F0EFDB2ED67463882638 /* IPadLayoutPolicy.swift */,
+			);
+			path = IPad;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -3147,6 +3161,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0810DCCABA89756E7E1BDE8D /* IPadLayoutPolicy.swift in Sources */,
 				53C6C4665C2B6A4D1D005AE3 /* AccessibilityIdentifiers.swift in Sources */,
 				E24F486705A0B9C40D05595B /* AppFonts.swift in Sources */,
 				A1TYPOG1A2B3C4D5E6F7080902 /* AppTypography.swift in Sources */,
@@ -3572,6 +3587,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				08134801A22C4C63BE0EC9B4 /* IPadLayoutPolicyTests.swift in Sources */,
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
 				A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */,
 				VKSTOR001A2B3C4D5E6F70801 /* VkusvillSettingsStoreTests.swift in Sources */,

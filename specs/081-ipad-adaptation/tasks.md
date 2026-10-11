@@ -74,7 +74,7 @@
 
 ### Основы
 
-- [ ] T007 [P] Создать `RecipeScalerNative/Views/IPad/IPadLayoutPolicy.swift`:
+- [x] T007 [P] Создать `RecipeScalerNative/Views/IPad/IPadLayoutPolicy.swift`:
   - `IPadLayoutMetrics` — все константы из layout.md §Токены;
   - чистая `IPadLayoutPolicy.resolve(contentWidth:listCollapsedByUser:isEditing:) -> IPadLayout` (`listShown`, `detailWidth`, `twoColumns`, `toolbarStyle`, `showsListButton`, `shopVkusvillIconOnly`);
   - чистая `IPadLayoutPolicy.detailLeftWidth(preferred: CGFloat?, detailWidth:) -> CGFloat?` — формула `leftWidth` из layout.md §Токены; `nil` при одной колонке.
