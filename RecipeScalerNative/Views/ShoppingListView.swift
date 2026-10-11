@@ -130,7 +130,6 @@ struct ShoppingListView: View {
         }
         .errorAlert(message: $errorMessage)
         .task {
-            shoppingModel.recompute(snapshot: snapshot, purchasePhases: purchasePhases)
             refreshRemindersTipVisibility()
             await vkusvillSettings.refresh(
                 userId: authService.userId,
@@ -138,6 +137,7 @@ struct ShoppingListView: View {
             )
         }
         .onAppear {
+            seedShoppingModel()
             refreshRemindersTipVisibility()
         }
         .onChange(of: snapshot) { _, newValue in
@@ -191,7 +191,10 @@ struct ShoppingListView: View {
             }
 
             if toBuy.isEmpty {
-                emptyToBuyRow
+                // Not seeded yet → buckets are a placeholder; don't flash "basket empty".
+                if shoppingModel.isSeeded {
+                    emptyToBuyRow
+                }
             } else {
                 Section {
                     AppSectionHeader("shopping.section.to-buy")
@@ -240,6 +243,19 @@ struct ShoppingListView: View {
             Text("shopping.sort.az").tag(ShoppingSortMode.alphabet)
         }
         .pickerStyle(.segmented)
+    }
+
+    /// Fills the buckets synchronously on appear (before the first frame) and
+    /// without animation. The snapshot is already in memory (`YjsSyncService`
+    /// loads it at launch); seeding it from `.task` showed the empty state for
+    /// a frame and then ran the 0.4 s list animation (`[] → items`), which
+    /// looked like a ~0.5 s load on every first open of the tab.
+    private func seedShoppingModel() {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            shoppingModel.recompute(snapshot: snapshot, purchasePhases: purchasePhases)
+        }
     }
 
     private func refreshRemindersTipVisibility() {
