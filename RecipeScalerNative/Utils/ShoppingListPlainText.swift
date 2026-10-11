@@ -24,7 +24,7 @@ enum ShoppingListPlainText {
 
         if sortMode == .alphabet {
             return nonEmpty
-                .map { "- \($0.label.trimmingCharacters(in: .whitespacesAndNewlines))" }
+                .map { "- \(ShoppingListFromRecipe.displayLabel(for: $0.label.trimmingCharacters(in: .whitespacesAndNewlines)))" }
                 .joined(separator: "\n")
         }
 
@@ -56,7 +56,9 @@ enum ShoppingListPlainText {
             let lines = groupItems
                 .map { item in
                     (
-                        label: item.label.trimmingCharacters(in: .whitespacesAndNewlines),
+                        label: ShoppingListFromRecipe.displayLabel(
+                            for: item.label.trimmingCharacters(in: .whitespacesAndNewlines)
+                        ),
                         sortLabel: ShoppingListFromRecipe.sortName(for: item.label).lowercased(),
                         id: item.id
                     )

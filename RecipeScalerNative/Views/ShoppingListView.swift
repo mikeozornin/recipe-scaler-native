@@ -461,7 +461,7 @@ struct ShoppingListView: View {
             .opacity(showChecked ? 0.8 : 1)
 
             VStack(alignment: .leading, spacing: RecipeRowLayoutMetrics.searchSnippetSpacing) {
-                Text(item.label)
+                Text(ShoppingListFromRecipe.displayLabel(for: item.label))
                     .appBody()
                     .strikethrough(showChecked)
                 if hasRecipeSubtitle {

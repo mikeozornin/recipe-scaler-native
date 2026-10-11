@@ -617,6 +617,7 @@
 		SCTA00002AA000200000002 /* ShortcutItemsUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */; };
 		SRTIPPREF0001AA0001BB01 /* ShoppingRemindersTipPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRTIPPREF0002AA0002BB02 /* ShoppingRemindersTipPreferences.swift */; };
 		SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */; };
+		SHGRPTEST001AA0001BB01 /* ShoppingListPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHGRPTEST002AA0002BB02 /* ShoppingListPresentationTests.swift */; };
 		TP14SAFE01A293A4B70100001 /* SafeIntCasts.swift in Sources */ = {isa = PBXBuildFile; fileRef = TP14SAFE01A293A4B70100002 /* SafeIntCasts.swift */; };
 		NUMFMT0001A293A4B70100001 /* AppNumberFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = NUMFMT0001A293A4B70100002 /* AppNumberFormat.swift */; };
 		UIT018898C9CB55D28DA5 /* AuthPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = UIT960324BAA0FDC8FD99 /* AuthPage.swift */; };
@@ -1437,6 +1438,7 @@
 		SCTA00001AA000100000001 /* ShortcutItemsUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutItemsUpdater.swift; sourceTree = "<group>"; };
 		SRTIPPREF0002AA0002BB02 /* ShoppingRemindersTipPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingRemindersTipPreferences.swift; sourceTree = "<group>"; };
 		SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingRemindersTipPreferencesTests.swift; sourceTree = "<group>"; };
+		SHGRPTEST002AA0002BB02 /* ShoppingListPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListPresentationTests.swift; sourceTree = "<group>"; };
 		TP14SAFE01A293A4B70100002 /* SafeIntCasts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeIntCasts.swift; sourceTree = "<group>"; };
 		NUMFMT0001A293A4B70100002 /* AppNumberFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNumberFormat.swift; sourceTree = "<group>"; };
 		UIT00DC9B186ADBD3C32D /* ImportPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPage.swift; sourceTree = "<group>"; };
@@ -2013,6 +2015,7 @@
 				A05700000202 /* NativeFormatDetectorTests.swift */,
 				A05700000203 /* RecipeFileImportCoordinatorTests.swift */,
 				SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */,
+				SHGRPTEST002AA0002BB02 /* ShoppingListPresentationTests.swift */,
 				FB065TS00000000000000004 /* AccountFeedbackSubmitTests.swift */,
 				B347C656005186097A24DAD5 /* OfflineBannerGateTests.swift */,
 				076A0001A293A4B701000009 /* ClipboardImportStoreTests.swift */,
@@ -3575,6 +3578,7 @@
 				A05700000210 /* NativeFormatDetectorTests.swift in Sources */,
 				A05700000220 /* RecipeFileImportCoordinatorTests.swift in Sources */,
 				SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */,
+				SHGRPTEST001AA0001BB01 /* ShoppingListPresentationTests.swift in Sources */,
 				FB065TS00000000000000003 /* AccountFeedbackSubmitTests.swift in Sources */,
 				485C79BA3D9AE14EB0BCFF27 /* OfflineBannerGateTests.swift in Sources */,
 				076A0001A293A4B70100000A /* ClipboardImportStoreTests.swift in Sources */,
