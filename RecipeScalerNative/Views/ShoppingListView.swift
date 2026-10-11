@@ -195,17 +195,19 @@ struct ShoppingListView: View {
                 if shoppingModel.isSeeded {
                     emptyToBuyRow
                 }
-            } else {
+            } else if shoppingModel.toBuyGroups.isEmpty {
                 Section {
                     AppSectionHeader("shopping.section.to-buy")
                         .shoppingSectionLabelRow()
                     ForEach(toBuy) { item in
-                        toBuyRow(item)
+                        toBuyRow(item, showsRecipeSubtitle: true)
                     }
                     .onDelete(perform: deleteToBuy)
                     addItemRow
                         .shoppingListItemRowInsets()
                 }
+            } else {
+                toBuyRecipeSections
             }
 
             if !purchased.isEmpty {
@@ -213,7 +215,7 @@ struct ShoppingListView: View {
                     purchasedSectionHeader
                         .shoppingSectionLabelRow()
                     ForEach(purchased) { item in
-                        shoppingRow(item, allowsInlineEdit: false, purchasePhase: nil)
+                        shoppingRow(item, allowsInlineEdit: false, purchasePhase: nil, showsRecipeSubtitle: true)
                             .shoppingListItemRowInsets()
                     }
                     .onDelete(perform: deletePurchased)
@@ -235,6 +237,51 @@ struct ShoppingListView: View {
         .animation(.easeInOut(duration: ShoppingPurchaseTiming.exitSeconds), value: shoppingModel.sortedPurchased)
         .scrollContentBackground(.hidden)
         .background(Color(.systemGroupedBackground))
+    }
+
+    /// Recipe mode: one section per recipe titled with its name (rows drop the
+    /// recipe subtitle), manual items last. The add field always lives in the
+    /// manual section so a new item appears where it was typed.
+    @ViewBuilder
+    private var toBuyRecipeSections: some View {
+        let groups = shoppingModel.toBuyGroups
+        let miscTitle: LocalizedStringKey = groups.contains(where: { !$0.isMisc })
+            ? "shopping.copy-text-misc"
+            : "shopping.section.to-buy"
+        ForEach(groups) { group in
+            Section {
+                Group {
+                    if let recipeTitle = group.recipeTitle {
+                        if recipeTitle.isEmpty {
+                            AppSectionHeader("shopping.copy-text-untitled-recipe")
+                        } else {
+                            AppSectionHeader(verbatim: recipeTitle)
+                        }
+                    } else {
+                        AppSectionHeader(miscTitle)
+                    }
+                }
+                .shoppingSectionLabelRow()
+                ForEach(group.items) { item in
+                    toBuyRow(item, showsRecipeSubtitle: false)
+                }
+                .onDelete { offsets in
+                    delete(items: group.items, at: offsets)
+                }
+                if group.isMisc {
+                    addItemRow
+                        .shoppingListItemRowInsets()
+                }
+            }
+        }
+        if !groups.contains(where: \.isMisc) {
+            Section {
+                AppSectionHeader(miscTitle)
+                    .shoppingSectionLabelRow()
+                addItemRow
+                    .shoppingListItemRowInsets()
+            }
+        }
     }
 
     private var shoppingSortControl: some View {
@@ -312,13 +359,13 @@ struct ShoppingListView: View {
     // MARK: - Rows
 
     @ViewBuilder
-    private func toBuyRow(_ item: ShoppingListItem) -> some View {
+    private func toBuyRow(_ item: ShoppingListItem, showsRecipeSubtitle: Bool) -> some View {
         let phase = purchasePhases[item.id]
         Group {
             if inlineEditItemId == item.id, isManualItem(item) {
                 inlineEditRow(item)
             } else {
-                shoppingRow(item, allowsInlineEdit: true, purchasePhase: phase)
+                shoppingRow(item, allowsInlineEdit: true, purchasePhase: phase, showsRecipeSubtitle: showsRecipeSubtitle)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         guard isManualItem(item), phase == nil else { return }
@@ -381,10 +428,11 @@ struct ShoppingListView: View {
     private func shoppingRow(
         _ item: ShoppingListItem,
         allowsInlineEdit: Bool,
-        purchasePhase: ToBuyPurchasePhase?
+        purchasePhase: ToBuyPurchasePhase?,
+        showsRecipeSubtitle: Bool
     ) -> some View {
         let showChecked = item.purchased || purchasePhase == .staging || purchasePhase == .exiting
-        let hasRecipeSubtitle = !item.recipeName.isEmpty
+        let hasRecipeSubtitle = showsRecipeSubtitle && !item.recipeName.isEmpty
         HStack(alignment: hasRecipeSubtitle ? .top : .center, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
             Button {
                 handlePurchaseToggle(item: item, phase: purchasePhase)

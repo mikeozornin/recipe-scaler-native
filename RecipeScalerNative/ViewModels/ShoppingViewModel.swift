@@ -23,6 +23,9 @@ import SwiftUI
 final class ShoppingViewModel {
     private(set) var sortedToBuy: [ShoppingListItem] = []
     private(set) var sortedPurchased: [ShoppingListItem] = []
+    /// `sortedToBuy` split into per-recipe sections (manual items last).
+    /// Empty in alphabet mode — the view then renders one flat section.
+    private(set) var toBuyGroups: [ShoppingRecipeGroup] = []
     /// False until the first `recompute` — the empty buckets above are a
     /// placeholder, not "the list is empty".
     private(set) var isSeeded = false
@@ -54,6 +57,7 @@ final class ShoppingViewModel {
 
         self.sortedToBuy = sort(toBuy, mode: snapshot.meta.sortMode)
         self.sortedPurchased = sort(purchased, mode: snapshot.meta.sortMode)
+        self.toBuyGroups = snapshot.meta.sortMode == .recipe ? Self.groupByRecipe(sortedToBuy) : []
         if !isSeeded { isSeeded = true }
     }
 
@@ -73,4 +77,44 @@ final class ShoppingViewModel {
             }
         }
     }
+
+    /// Keeps the incoming order (already sorted by recipe name, then label);
+    /// the manual-items group always goes last.
+    private static func groupByRecipe(_ items: [ShoppingListItem]) -> [ShoppingRecipeGroup] {
+        var order: [String] = []
+        var byKey: [String: [ShoppingListItem]] = [:]
+        for item in items {
+            let key: String
+            if let recipeId = item.recipeId {
+                key = "id:\(recipeId)"
+            } else if !item.recipeName.isEmpty {
+                key = "name:\(item.recipeName)"
+            } else {
+                key = ShoppingRecipeGroup.miscId
+            }
+            if byKey[key] == nil { order.append(key) }
+            byKey[key, default: []].append(item)
+        }
+        if let miscIndex = order.firstIndex(of: ShoppingRecipeGroup.miscId) {
+            order.append(order.remove(at: miscIndex))
+        }
+        return order.map { key in
+            let groupItems = byKey[key] ?? []
+            let title = key == ShoppingRecipeGroup.miscId
+                ? nil
+                : groupItems.lazy.map(\.recipeName).first(where: { !$0.isEmpty }) ?? ""
+            return ShoppingRecipeGroup(id: key, recipeTitle: title, items: groupItems)
+        }
+    }
+}
+
+struct ShoppingRecipeGroup: Identifiable, Equatable {
+    static let miscId = "__misc__"
+
+    let id: String
+    /// `nil` for manually added items; empty when the recipe has no name.
+    let recipeTitle: String?
+    let items: [ShoppingListItem]
+
+    var isMisc: Bool { recipeTitle == nil }
 }

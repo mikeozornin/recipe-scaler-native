@@ -129,14 +129,19 @@ extension Text {
 /// List/Form section title. iOS < 26 uses iOS Settings legacy (footnote, ALL CAPS, tracking 0.8);
 /// iOS 26+ matches Apple Settings/Notes (title case, no tracking).
 struct AppSectionHeader: View {
-    let title: LocalizedStringKey
+    private let title: Text
 
     init(_ title: LocalizedStringKey) {
-        self.title = title
+        self.title = Text(title)
+    }
+
+    /// User content (e.g. a recipe name) — shown as is, never looked up in the string catalog.
+    init(verbatim title: String) {
+        self.title = Text(verbatim: title)
     }
 
     var body: some View {
-        Text(title)
+        title
             .font(AppTypography.footnote)
             .foregroundStyle(Color(.secondaryLabel))
             .tracking(Self.usesUpperCase ? AppSectionHeader.letterSpacing : 0)
