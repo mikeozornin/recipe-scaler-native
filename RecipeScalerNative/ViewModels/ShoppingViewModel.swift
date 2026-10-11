@@ -15,13 +15,26 @@ import SwiftUI
 /// `recompute(...)` does a single pass to split items into to-buy / purchased
 /// buckets, then sorts each. `ShoppingListView` only reads `sortedToBuy` /
 /// `sortedPurchased`.
+///
+/// Repeated calls with unchanged inputs are no-ops, so the view can call
+/// `recompute` on every appear (tab switch) without re-sorting.
 @MainActor
 @Observable
 final class ShoppingViewModel {
     private(set) var sortedToBuy: [ShoppingListItem] = []
     private(set) var sortedPurchased: [ShoppingListItem] = []
+    /// False until the first `recompute` — the empty buckets above are a
+    /// placeholder, not "the list is empty".
+    private(set) var isSeeded = false
+
+    @ObservationIgnored private var lastSnapshot: ShoppingListSnapshot?
+    @ObservationIgnored private var lastPurchasePhases: [String: ToBuyPurchasePhase] = [:]
 
     func recompute(snapshot: ShoppingListSnapshot, purchasePhases: [String: ToBuyPurchasePhase]) {
+        if isSeeded, lastSnapshot == snapshot, lastPurchasePhases == purchasePhases { return }
+        lastSnapshot = snapshot
+        lastPurchasePhases = purchasePhases
+
         var toBuy: [ShoppingListItem] = []
         var purchased: [ShoppingListItem] = []
         toBuy.reserveCapacity(snapshot.items.count)
@@ -41,6 +54,7 @@ final class ShoppingViewModel {
 
         self.sortedToBuy = sort(toBuy, mode: snapshot.meta.sortMode)
         self.sortedPurchased = sort(purchased, mode: snapshot.meta.sortMode)
+        if !isSeeded { isSeeded = true }
     }
 
     private func sort(_ items: [ShoppingListItem], mode: ShoppingSortMode) -> [ShoppingListItem] {
