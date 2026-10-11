@@ -17,13 +17,13 @@
 
 **Purpose**: собирать, запускать и снимать приложение на iPad-симуляторе; включить семейство устройств iPad.
 
-- [ ] T001 [P] Создать `scripts/resolve-ipad-simulator.sh` по образцу `scripts/resolve-simulator.sh`:
+- [x] T001 [P] Создать `scripts/resolve-ipad-simulator.sh` по образцу `scripts/resolve-simulator.sh`:
   - выбирать доступный iPad-симулятор на самом новом runtime (предпочтение — «iPad Pro 11-inch (M4)», затем «iPad Air 11-inch»);
   - уважать переопределение `IPAD_SIM_ID`;
   - печатать UDID.
 
   Описать запуск в шапке скрипта. — `#recipes/sidebar`
-- [ ] T002 [P] Создать `scripts/verify-ipad-layout.sh`:
+- [x] T002 [P] Создать `scripts/verify-ipad-layout.sh`:
   - собирает приложение и ставит его на симулятор;
   - запускает только с уже существующими DEBUG-аргументами (`-OpenTab`, `-OpenRecipeId`, `-ShowAssistant`, `-StartInEditMode` и др. из `RecipeScalerNative/Utils/DebugLaunchOptions.swift`), чтобы эталон снимался на `master` без изменений Swift-кода. Скрипт расширят позже: T011 — состояния с `-IPadSidebarHidden` / `-IPadListHidden`, T049 — матрица окон через `-DebugWindowWidth`;
   - снимает скриншоты в `tmp/ipad-verify/<step>-<state>-<orient>-<window>.png`;

@@ -21,6 +21,7 @@ run() {
 
 run "shell-self-tests-sim-verify" bash scripts/tests/test-sim-verify-lib.sh
 run "shell-self-tests-verify-all-lock" bash scripts/tests/test-verify-all-lock.sh
+run "shell-self-tests-verify-ipad-layout" bash scripts/tests/test-verify-ipad-layout.sh
 run "verify-plan-state" bash scripts/verify-plan-state.sh
 run "verify-plan-policy-template" python3 scripts/verify-plan-policy.py .specify/templates/overrides/plan-template.md
 run "test-quarantine" python3 scripts/check-test-quarantine.py scripts/test-quarantine.json

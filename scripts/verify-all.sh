@@ -8,6 +8,7 @@ cd "$ROOT"
 # Self-tests first: fail closed before spending time on simulator work.
 bash "$ROOT/scripts/tests/test-sim-verify-lib.sh"
 bash "$ROOT/scripts/tests/test-verify-all-lock.sh"
+bash "$ROOT/scripts/tests/test-verify-ipad-layout.sh"
 
 # One shared Debug build for the whole pipeline.
 VERIFY_SKIP_BUILD=0 "$ROOT/scripts/build-for-verify.sh"

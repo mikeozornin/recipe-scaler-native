@@ -53,6 +53,9 @@ entitlements, plist, extension targets, `Package.resolved`, Xcode version и SDK
 - `scripts/tests/test-sim-verify-lib.sh` — readiness timeout + marker
   accept/reject.
 - `scripts/tests/test-verify-all-lock.sh` — portable atomic-directory lock.
+- `scripts/tests/test-verify-ipad-layout.sh` — pixel-сравнение iPhone-регрессии
+  (spec 081): падает на изменённом, пропавшем или повёрнутом скриншоте и на
+  пустом baseline; box-маска нестабильных областей.
 
 Новый verifier-скрипт обязан добавить fixture-тест, который доказывает, что
 скрипт падает на сломанной среде/входе.
