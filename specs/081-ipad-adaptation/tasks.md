@@ -98,7 +98,7 @@
   - Прогнать `RecipeScalerNativeTests/AppShellCoordinatorTests` и `verify-ipad-layout.sh --iphone-regression`.
 
   — `#recipes/collection`
-- [ ] T010 [P] Создать `RecipeScalerNative/Views/IPad/AdaptivePresentation.swift`:
+- [x] T010 [P] Создать `RecipeScalerNative/Views/IPad/AdaptivePresentation.swift`:
   - `.adaptivePopover(isPresented:arrowEdge:content:)` — при `.phone` ровно существующий `.sheet` с `appOpaqueSheetPresentation()` (`RecipeScalerNative/Utils/AppSheetChrome.swift`);
   - `.iPadReadableWidth(_:)` через `.contentMargins` / `frame(maxWidth:)` — при `.phone` без эффекта;
   - `.iPadFormSheet()` — `.presentationSizing(.form)` на iOS 18+.

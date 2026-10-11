@@ -703,6 +703,7 @@
 		08175422ECD11B896922424D /* AppLayoutModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081618DB1CDED04A80B55285 /* AppLayoutModeTests.swift */; };
 		08128BC24B81042524D0AAC9 /* RecipesSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081A55F5FF0E5C98209BD431 /* RecipesSelection.swift */; };
 		0814BC5B70E8459EA6013499 /* RecipesSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081F1FD029328F7EFA3D8048 /* RecipesSelectionTests.swift */; };
+		081A346C3661632089C45D82 /* AdaptivePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0814E0D2483E00934194D4F1 /* AdaptivePresentation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1530,6 +1531,7 @@
 		081618DB1CDED04A80B55285 /* AppLayoutModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLayoutModeTests.swift; sourceTree = "<group>"; };
 		081A55F5FF0E5C98209BD431 /* RecipesSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipesSelection.swift; sourceTree = "<group>"; };
 		081F1FD029328F7EFA3D8048 /* RecipesSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipesSelectionTests.swift; sourceTree = "<group>"; };
+		0814E0D2483E00934194D4F1 /* AdaptivePresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptivePresentation.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2711,6 +2713,7 @@
 		081CBD7997AADC6843B621D9 /* IPad */ = {
 			isa = PBXGroup;
 			children = (
+				0814E0D2483E00934194D4F1 /* AdaptivePresentation.swift */,
 				08152918E48DFC678658FC60 /* AppLayoutMode.swift */,
 				0816F0EFDB2ED67463882638 /* IPadLayoutPolicy.swift */,
 			);
@@ -3173,6 +3176,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				081A346C3661632089C45D82 /* AdaptivePresentation.swift in Sources */,
 				08128BC24B81042524D0AAC9 /* RecipesSelection.swift in Sources */,
 				081AEEC5524E5337DFA2E444 /* AppLayoutMode.swift in Sources */,
 				0810DCCABA89756E7E1BDE8D /* IPadLayoutPolicy.swift in Sources */,
