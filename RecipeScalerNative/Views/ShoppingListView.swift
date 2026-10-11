@@ -343,7 +343,7 @@ struct ShoppingListView: View {
                     onTap: nil
                 )
             )
-            TextField(String(localized: "shopping.add.placeholder"), text: $inlineEditDraft)
+            TextField(Bundle.currentLocalizedString("shopping.add.placeholder"), text: $inlineEditDraft)
                 .font(AppTypography.body)
                 .frame(height: RecipeRowLayoutMetrics.titleLineHeight)
                 .focused($focusedField, equals: .inline(item.id))
@@ -361,7 +361,7 @@ struct ShoppingListView: View {
     private var addItemRow: some View {
         HStack(alignment: .center, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
             shoppingRowMarker(systemName: "plus", foreground: .secondary)
-            TextField(String(localized: "shopping.add.placeholder"), text: $bottomDraft)
+            TextField(Bundle.currentLocalizedString("shopping.add.placeholder"), text: $bottomDraft)
                 .font(AppTypography.body)
                 .frame(height: RecipeRowLayoutMetrics.titleLineHeight)
                 .focused($focusedField, equals: .bottom)
