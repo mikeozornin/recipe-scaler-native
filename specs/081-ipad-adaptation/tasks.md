@@ -85,7 +85,7 @@
   - `testLeftColumnClamp`: без сохранённой ширины — 400; 200 → 320; 600 → 480; панель 720 → не шире 399, панель 760 → не шире 439 (правой ≥ 320); панель 719 → `nil`.
 
   — `#recipes/sidebar`, `#recipes/tabs`, `#assistant/chat`
-- [ ] T008 [P] Создать `RecipeScalerNative/Views/IPad/AppLayoutMode.swift`:
+- [x] T008 [P] Создать `RecipeScalerNative/Views/IPad/AppLayoutMode.swift`:
   - `enum AppLayoutMode { case phone, padRegular }`;
   - `EnvironmentValues.appLayoutMode`, по умолчанию `.phone`;
   - чистая `AppLayoutMode.resolve(idiom:horizontalSizeClass:)`.

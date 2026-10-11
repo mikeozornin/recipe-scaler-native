@@ -699,6 +699,8 @@
 		E5F60718293A4B70270B63A6 /* ImportShareHintCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70D3CE0E4F /* ImportShareHintCard.swift */; };
 		0810DCCABA89756E7E1BDE8D /* IPadLayoutPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0816F0EFDB2ED67463882638 /* IPadLayoutPolicy.swift */; };
 		08134801A22C4C63BE0EC9B4 /* IPadLayoutPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0812DD142741F8E6919BCE3D /* IPadLayoutPolicyTests.swift */; };
+		081AEEC5524E5337DFA2E444 /* AppLayoutMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08152918E48DFC678658FC60 /* AppLayoutMode.swift */; };
+		08175422ECD11B896922424D /* AppLayoutModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081618DB1CDED04A80B55285 /* AppLayoutModeTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1522,6 +1524,8 @@
 		E5F60718293A4B70D3CE0E4F /* ImportShareHintCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Import/ImportShareHintCard.swift"; sourceTree = "<group>"; };
 		0816F0EFDB2ED67463882638 /* IPadLayoutPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadLayoutPolicy.swift; sourceTree = "<group>"; };
 		0812DD142741F8E6919BCE3D /* IPadLayoutPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadLayoutPolicyTests.swift; sourceTree = "<group>"; };
+		08152918E48DFC678658FC60 /* AppLayoutMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLayoutMode.swift; sourceTree = "<group>"; };
+		081618DB1CDED04A80B55285 /* AppLayoutModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLayoutModeTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2012,6 +2016,7 @@
 		93D42941605BAA5DD8D2035A /* RecipeScalerNativeTests */ = {
 			isa = PBXGroup;
 			children = (
+				081618DB1CDED04A80B55285 /* AppLayoutModeTests.swift */,
 				0812DD142741F8E6919BCE3D /* IPadLayoutPolicyTests.swift */,
 				94F6EEB0522CF5E6241A73B1 /* Info.plist */,
 				2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */,
@@ -2700,6 +2705,7 @@
 		081CBD7997AADC6843B621D9 /* IPad */ = {
 			isa = PBXGroup;
 			children = (
+				08152918E48DFC678658FC60 /* AppLayoutMode.swift */,
 				0816F0EFDB2ED67463882638 /* IPadLayoutPolicy.swift */,
 			);
 			path = IPad;
@@ -3161,6 +3167,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				081AEEC5524E5337DFA2E444 /* AppLayoutMode.swift in Sources */,
 				0810DCCABA89756E7E1BDE8D /* IPadLayoutPolicy.swift in Sources */,
 				53C6C4665C2B6A4D1D005AE3 /* AccessibilityIdentifiers.swift in Sources */,
 				E24F486705A0B9C40D05595B /* AppFonts.swift in Sources */,
@@ -3587,6 +3594,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				08175422ECD11B896922424D /* AppLayoutModeTests.swift in Sources */,
 				08134801A22C4C63BE0EC9B4 /* IPadLayoutPolicyTests.swift in Sources */,
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
 				A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */,

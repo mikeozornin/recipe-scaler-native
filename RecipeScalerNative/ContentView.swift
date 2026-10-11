@@ -188,25 +188,28 @@ struct ContentView: View {
         }
     }
 
-    @ViewBuilder
+    /// Root of every screen: resolves `AppLayoutMode` once for the whole app (spec 081).
     private func rootChrome(container: AppContainer?) -> some View {
-        if showSplash {
-            SplashView()
-        } else if isAuthenticated, let container {
-            #if DEBUG
-            if RecipeDescriptionFixture.showsPreview {
-                DescriptionFixturePreviewView()
-            } else {
+        Group {
+            if showSplash {
+                SplashView()
+            } else if isAuthenticated, let container {
+                #if DEBUG
+                if RecipeDescriptionFixture.showsPreview {
+                    DescriptionFixturePreviewView()
+                } else {
+                    appShell(container: container)
+                }
+                #else
                 appShell(container: container)
+                #endif
+            } else if container != nil {
+                AuthView()
+            } else {
+                ProgressView()
             }
-            #else
-            appShell(container: container)
-            #endif
-        } else if container != nil {
-            AuthView()
-        } else {
-            ProgressView()
         }
+        .appLayoutModeRoot()
     }
 
     @ViewBuilder
