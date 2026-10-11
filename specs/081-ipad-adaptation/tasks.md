@@ -91,7 +91,7 @@
   - чистая `AppLayoutMode.resolve(idiom:horizontalSizeClass:)`.
 
   Подключить в `RecipeScalerNative/ContentView.swift` (`rootChrome`, ~:192-210). Создать `RecipeScalerNativeTests/AppLayoutModeTests.swift` (`testPhoneIdiomIsAlwaysPhone`, `testPadCompactIsPhone`, `testPadRegularIsPadRegular`). — `#recipes/tabs` в окне ½ против всего экрана
-- [ ] T009 Перевести `AppShellCoordinator.recipesPath` с `NavigationPath` на `[RecipesRoute]` (`RecipeScalerNative/Routing/AppShellCoordinator.swift:68`).
+- [x] T009 Перевести `AppShellCoordinator.recipesPath` с `NavigationPath` на `[RecipesRoute]` (`RecipeScalerNative/Routing/AppShellCoordinator.swift:68`).
   - Обновить привязки в `RecipeScalerNative/Views/RecipeListView.swift` (:18, :40 и места использования), `RecipeScalerNative/Views/CollectionsRootView.swift`, `RecipeScalerNative/Views/CollectionFolderView.swift`, `RecipeScalerNative/Views/AppShellView.swift` (~:724, ~:805).
   - Убедиться, что путь нигде не сериализуется (`NavigationPath.CodableRepresentation`).
   - Создать `RecipeScalerNative/Routing/RecipesSelection.swift` (путь ↔ выбор, plan.md Р4) и `RecipeScalerNativeTests/RecipesSelectionTests.swift`: `testPathRoundTrip`, `testSelectingCollectionOpensFirstRecipe`, `testSelectionSurvivesModeSwitch`, `testDeletedSelectionFallsBack`.

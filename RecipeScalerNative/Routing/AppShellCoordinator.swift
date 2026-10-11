@@ -65,7 +65,9 @@ final class AppShellCoordinator {
 
     var selectedTab: AppTab = .recipes
     var importPresentation: ImportPresentation?
-    var recipesPath = NavigationPath()
+    /// Recipes stack. Typed (not `NavigationPath`) so the iPad columns can read and write
+    /// the same selection through `RecipesSelection` (spec 081, plan.md Р4). Never serialized.
+    var recipesPath: [RecipesRoute] = []
     var discoverPath = NavigationPath()
     var shoppingPath = NavigationPath()
     private(set) var pendingSpotlightRecipeId: String?
@@ -258,7 +260,7 @@ final class AppShellCoordinator {
         switch link {
         case .openRecipe(let recipeId):
             selectedTab = .recipes
-            recipesPath = NavigationPath()
+            recipesPath = []
             if syncService.collectionEntries.contains(where: { $0.id == recipeId && !$0.deleted }) {
                 pendingSpotlightRecipeId = nil
                 recipesPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
@@ -286,7 +288,7 @@ final class AppShellCoordinator {
             deepLinkRouter.clear()
         case .openHome:
             selectedTab = .recipes
-            recipesPath = NavigationPath()
+            recipesPath = []
             deepLinkRouter.clear()
         case .openPublicProfile(let username):
             selectedTab = .discover
@@ -417,7 +419,7 @@ final class AppShellCoordinator {
         guard let recipeId else { return }
         didOpenDebugLaunchRecipe = true
         selectedTab = .recipes
-        recipesPath = NavigationPath()
+        recipesPath = []
         recipesPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
         AppLog.info(.app, "debug_open_recipe_shell", data: ["recipeId": recipeId])
     }
@@ -470,7 +472,7 @@ final class AppShellCoordinator {
         pendingShakeAssistantOpenRequest = nil
         discoverListState?.clearAll()
         selectedTab = .recipes
-        recipesPath = NavigationPath()
+        recipesPath = []
         discoverPath = NavigationPath()
         shoppingPath = NavigationPath()
         deepLinkRouter.clear()
@@ -488,7 +490,7 @@ final class AppShellCoordinator {
                 discoverListState?.clearAll()
             }
         case .recipes:
-            if !recipesPath.isEmpty { recipesPath = NavigationPath() }
+            if !recipesPath.isEmpty { recipesPath = [] }
         case .shopping:
             if !shoppingPath.isEmpty { shoppingPath = NavigationPath() }
         case .assistant:

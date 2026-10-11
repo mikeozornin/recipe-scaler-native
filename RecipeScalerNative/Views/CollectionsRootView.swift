@@ -12,7 +12,7 @@ struct CollectionsRootView: View {
     let timerManager: TimerManager
     let systemBannerStore: SystemBannerStore
     let mobileTimerPanelIsCollapsed: Bool
-    @Binding var navigationPath: NavigationPath
+    @Binding var navigationPath: [RecipesRoute]
 
     @AppStorage(RecipeFolderRoutes.collectionsRootLayoutStorageKey)
     private var layoutRaw: String = RecipeFolderRoutes.defaultCollectionsRootLayout.rawValue

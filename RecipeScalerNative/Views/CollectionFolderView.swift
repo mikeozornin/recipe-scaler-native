@@ -12,7 +12,7 @@ struct CollectionFolderView: View {
     let coordinator: AppShellCoordinator
     let timerManager: TimerManager
     let mobileTimerPanelIsCollapsed: Bool
-    @Binding var navigationPath: NavigationPath
+    @Binding var navigationPath: [RecipesRoute]
 
     @State private var isEditingName = false
     @State private var editingName = ""

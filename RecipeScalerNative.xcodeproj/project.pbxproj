@@ -701,6 +701,8 @@
 		08134801A22C4C63BE0EC9B4 /* IPadLayoutPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0812DD142741F8E6919BCE3D /* IPadLayoutPolicyTests.swift */; };
 		081AEEC5524E5337DFA2E444 /* AppLayoutMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08152918E48DFC678658FC60 /* AppLayoutMode.swift */; };
 		08175422ECD11B896922424D /* AppLayoutModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081618DB1CDED04A80B55285 /* AppLayoutModeTests.swift */; };
+		08128BC24B81042524D0AAC9 /* RecipesSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081A55F5FF0E5C98209BD431 /* RecipesSelection.swift */; };
+		0814BC5B70E8459EA6013499 /* RecipesSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081F1FD029328F7EFA3D8048 /* RecipesSelectionTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1526,6 +1528,8 @@
 		0812DD142741F8E6919BCE3D /* IPadLayoutPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadLayoutPolicyTests.swift; sourceTree = "<group>"; };
 		08152918E48DFC678658FC60 /* AppLayoutMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLayoutMode.swift; sourceTree = "<group>"; };
 		081618DB1CDED04A80B55285 /* AppLayoutModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLayoutModeTests.swift; sourceTree = "<group>"; };
+		081A55F5FF0E5C98209BD431 /* RecipesSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipesSelection.swift; sourceTree = "<group>"; };
+		081F1FD029328F7EFA3D8048 /* RecipesSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipesSelectionTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2016,6 +2020,7 @@
 		93D42941605BAA5DD8D2035A /* RecipeScalerNativeTests */ = {
 			isa = PBXGroup;
 			children = (
+				081F1FD029328F7EFA3D8048 /* RecipesSelectionTests.swift */,
 				081618DB1CDED04A80B55285 /* AppLayoutModeTests.swift */,
 				0812DD142741F8E6919BCE3D /* IPadLayoutPolicyTests.swift */,
 				94F6EEB0522CF5E6241A73B1 /* Info.plist */,
@@ -2199,6 +2204,7 @@
 		B3EE97F98D203CDB04111240 /* Routing */ = {
 			isa = PBXGroup;
 			children = (
+				081A55F5FF0E5C98209BD431 /* RecipesSelection.swift */,
 				0EF2B3F0EB5A4599AE467921 /* DeepLinkRouter.swift */,
 				A1B2C3D4E5F60718293A4C01 /* AppShellCoordinator.swift */,
 			);
@@ -3167,6 +3173,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				08128BC24B81042524D0AAC9 /* RecipesSelection.swift in Sources */,
 				081AEEC5524E5337DFA2E444 /* AppLayoutMode.swift in Sources */,
 				0810DCCABA89756E7E1BDE8D /* IPadLayoutPolicy.swift in Sources */,
 				53C6C4665C2B6A4D1D005AE3 /* AccessibilityIdentifiers.swift in Sources */,
@@ -3594,6 +3601,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0814BC5B70E8459EA6013499 /* RecipesSelectionTests.swift in Sources */,
 				08175422ECD11B896922424D /* AppLayoutModeTests.swift in Sources */,
 				08134801A22C4C63BE0EC9B4 /* IPadLayoutPolicyTests.swift in Sources */,
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,

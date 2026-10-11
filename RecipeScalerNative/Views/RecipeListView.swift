@@ -15,7 +15,7 @@ struct RecipeListView: View {
     let systemBannerStore: SystemBannerStore
     let mobileTimerPanelIsCollapsed: Bool
     let scenePhase: ScenePhase
-    @Binding var navigationPath: NavigationPath
+    @Binding var navigationPath: [RecipesRoute]
     @State private var searchText = ""
     @State private var presentedSheet: RecipeListSheet?
     @State private var presentedAlert: RecipeListAlert?
@@ -37,7 +37,7 @@ struct RecipeListView: View {
     }
 
     init(
-        navigationPath: Binding<NavigationPath> = .constant(NavigationPath()),
+        navigationPath: Binding<[RecipesRoute]> = .constant([]),
         syncService: YjsSyncService,
         coordinator: AppShellCoordinator,
         assistantRecipeContext: AssistantRecipeContext,
@@ -472,7 +472,7 @@ struct RecipeListView: View {
         do {
             try await syncService.deleteRecipeFromCollection(recipeId: item.id)
             if !navigationPath.isEmpty {
-                navigationPath = NavigationPath()
+                navigationPath = []
             }
         } catch {
             presentedAlert = .error(UserFacingAPIError.message(for: error))
@@ -944,7 +944,7 @@ private struct RecipeListToolbarHost<Menu: View, Content: View>: View {
     let syncService = YjsSyncService.makeForTesting(store: store)
     let coordinator = AppShellCoordinator(syncService: syncService, deepLinkRouter: DeepLinkRouter())
     return RecipeListView(
-        navigationPath: .constant(NavigationPath()),
+        navigationPath: .constant([]),
         syncService: syncService,
         coordinator: coordinator,
         assistantRecipeContext: AssistantRecipeContext(),
