@@ -124,7 +124,7 @@
 **Goal**: сайдбар, верхний и нижний таб-бары, телефонные экраны по центру, профиль «Моё всё» листом в широком окне (Q7), импорт в form sheet, без встряхивания.  
 **Independent Test**: spec.md US1.
 
-- [ ] T012 [US1] Создать `RecipeScalerNative/Views/IPad/IPadShellItem.swift`:
+- [x] T012 [US1] Создать `RecipeScalerNative/Views/IPad/IPadShellItem.swift`:
   - `enum IPadShellItem { case tab(AppTab), collection(String) }`;
   - вычисляемая привязка поверх `coordinator.selectedTab` и `coordinator.recipesPath` (plan.md Р2), перехват `.tab(.assistant)`;
   - чтение принимает плейсмент (`@Environment(\.tabBarPlacement)`, plan.md Р2): `.collection(id)` отдаётся `TabView` только при `.sidebar`; при `.topBar` и в compact выбранная коллекция читается как `.tab(.recipes)`, папка остаётся в пути (спайк S1 обход 4: иначе в верхний бар вылезает вся группа «Коллекции»);
@@ -135,6 +135,8 @@
 - [ ] T014 [US1] Создать `RecipeScalerNative/Views/IPad/IPadAdaptiveTabView.swift`.
 
   **Первый шаг — проверка, не подтверждённая спайком** (plan.md §Непроверенное): «Профиль» и «Ассистент» с `.tabPlacement(.pinned)` + динамическим `.defaultVisibility(placement == .sidebar ? .hidden : .automatic, for: .sidebar)`. Переключить сайдбар туда и обратно на iPad-симуляторе: строк нет в сайдбаре, иконки у правого края верхнего бара есть. Если не работает — остановиться и спросить (строки рядом с футером или другой обход). Результат записать в задаче.
+
+  **Результат проверки (iPad Pro 11" M4, iPadOS 26.3, портрет): работает.** Сайдбар показан — строк «Профиль» и «Ассистент» нет ни сверху, ни после «Коллекций» (прокрутка до конца); сайдбар скрыт — `tab_profile` и `tab_assistant` иконками у правого края верхнего бара. Три цикла показать/скрыть, `tabBarPlacement` переключался каждый раз (7 переходов `sidebarShown` в логе). Скриншоты `tmp/ipad-verify/us1/check-*.png`.
 
   - `TabView(selection:)` + `.tabViewStyle(.sidebarAdaptable)`;
   - вкладки «Подборки», «Рецепты» (счётчик `syncService.collectionIndex.live.count`), «Покупки» (бейдж — число пунктов «купить» из данных покупок; если источника нет без новых подписок — бейдж отложить и записать в задаче);

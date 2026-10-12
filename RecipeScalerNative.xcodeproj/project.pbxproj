@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0813D7E109D730012D3486F8 /* IPadShellItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0812ADFF8D274A1D2F3A8515 /* IPadShellItemTests.swift */; };
+		0817F221D6F3F98265461EF9 /* IPadShellItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081886D29CEE86686D583F2F /* IPadShellItem.swift */; };
 		P075S01B /* AwakeScrollAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S01A /* AwakeScrollAction.swift */; };
 		P075S02B /* AwakeHandsFreeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S02A /* AwakeHandsFreeStorage.swift */; };
 		P075S03B /* AwakeScrollEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S03A /* AwakeScrollEngine.swift */; };
@@ -852,6 +854,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0812ADFF8D274A1D2F3A8515 /* IPadShellItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadShellItemTests.swift; sourceTree = "<group>"; };
+		081886D29CEE86686D583F2F /* IPadShellItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadShellItem.swift; sourceTree = "<group>"; };
 		P075S01A /* AwakeScrollAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollAction.swift; sourceTree = "<group>"; };
 		P075S02A /* AwakeHandsFreeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeHandsFreeStorage.swift; sourceTree = "<group>"; };
 		P075S03A /* AwakeScrollEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollEngine.swift; sourceTree = "<group>"; };
@@ -2022,6 +2026,7 @@
 		93D42941605BAA5DD8D2035A /* RecipeScalerNativeTests */ = {
 			isa = PBXGroup;
 			children = (
+				0812ADFF8D274A1D2F3A8515 /* IPadShellItemTests.swift */,
 				081F1FD029328F7EFA3D8048 /* RecipesSelectionTests.swift */,
 				081618DB1CDED04A80B55285 /* AppLayoutModeTests.swift */,
 				0812DD142741F8E6919BCE3D /* IPadLayoutPolicyTests.swift */,
@@ -2713,6 +2718,7 @@
 		081CBD7997AADC6843B621D9 /* IPad */ = {
 			isa = PBXGroup;
 			children = (
+				081886D29CEE86686D583F2F /* IPadShellItem.swift */,
 				0814E0D2483E00934194D4F1 /* AdaptivePresentation.swift */,
 				08152918E48DFC678658FC60 /* AppLayoutMode.swift */,
 				0816F0EFDB2ED67463882638 /* IPadLayoutPolicy.swift */,
@@ -3176,6 +3182,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0817F221D6F3F98265461EF9 /* IPadShellItem.swift in Sources */,
 				081A346C3661632089C45D82 /* AdaptivePresentation.swift in Sources */,
 				08128BC24B81042524D0AAC9 /* RecipesSelection.swift in Sources */,
 				081AEEC5524E5337DFA2E444 /* AppLayoutMode.swift in Sources */,
@@ -3605,6 +3612,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0813D7E109D730012D3486F8 /* IPadShellItemTests.swift in Sources */,
 				0814BC5B70E8459EA6013499 /* RecipesSelectionTests.swift in Sources */,
 				08175422ECD11B896922424D /* AppLayoutModeTests.swift in Sources */,
 				08134801A22C4C63BE0EC9B4 /* IPadLayoutPolicyTests.swift in Sources */,
