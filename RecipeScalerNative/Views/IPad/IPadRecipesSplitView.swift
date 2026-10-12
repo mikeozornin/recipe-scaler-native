@@ -21,6 +21,9 @@ struct IPadRecipesSplitView: View {
     let scenePhase: ScenePhase
     /// The tab bar is the top bar (sidebar hidden): the column title becomes the collection menu.
     let showsCollectionMenu: Bool
+    /// ✦ in the recipe toolbar: the sidebar is shown, so the pinned «Ассистент» tab is not
+    /// (`IPadLayoutPolicy.showsAssistantToolbarButton`).
+    let showsAssistantToolbarButton: Bool
 
     @State private var searchText = ""
     @State private var isOverlayShown = false
@@ -174,7 +177,7 @@ struct IPadRecipesSplitView: View {
                         padPanel: RecipeDetailPadPanel(
                             detailWidth: layout.detailWidth,
                             toolbarStyle: layout.toolbarStyle,
-                            coordinator: coordinator
+                            assistantCoordinator: showsAssistantToolbarButton ? coordinator : nil
                         )
                     )
                     .id(recipeId)

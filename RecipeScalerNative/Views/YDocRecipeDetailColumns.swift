@@ -6,8 +6,9 @@ struct RecipeDetailPadPanel {
     /// Width of the recipe panel (`IPadLayout.detailWidth`).
     let detailWidth: CGFloat
     let toolbarStyle: IPadDetailToolbarStyle
-    /// ✦ in the toolbar opens the assistant (`IPadAssistantToolbarButton`).
-    let coordinator: AppShellCoordinator
+    /// ✦ in the toolbar opens the assistant (`IPadAssistantToolbarButton`); `nil` while the
+    /// top tab bar shows the pinned «Ассистент» tab (`IPadLayoutPolicy.showsAssistantToolbarButton`).
+    let assistantCoordinator: AppShellCoordinator?
 }
 
 /// The recipe in two columns (T025, FR-012, FR-012a, plan.md Р6): photo, title, servings,

@@ -559,3 +559,11 @@ The suite also has no recorded reference snapshots (`isRecording = false`, no co
 **Rationale:** Layout verification (`verify-ipad-layout.sh`, `#recipes-sidebar` and the threshold matrix) needs the portrait-with-sidebar state without a tap sequence. The flag goes through the same `IPadSidebarControl.setSidebarHidden` path as the user's button, so the captured layout is the real one.
 
 ---
+
+### 2026-10-12 — iPad: one assistant entry on screen, ✦ only while the sidebar is shown (spec 081 FR-021)
+
+**Decision:** On `.padRegular` the toolbar ✦ (`IPadAssistantToolbarButton`) on «Покупки», «Подборки» and the recipe panel shows only while the tab bar is the sidebar. In the top tab bar the pinned «Ассистент» tab is the only entry, so there is no toolbar ✦ anywhere. A compact window and the iPadOS 17.0–26.1 system tab bar have no ✦, as on the iPhone. `IPadAdaptiveTabView` decides once from `\.tabBarPlacement == .sidebar` (`IPadLayoutPolicy.showsAssistantToolbarButton`) and passes a plain `Bool` to the tab roots; toolbars never read the placement or an `@Observable` from the environment.
+
+**Rationale:** With the sidebar hidden the top bar already shows the pinned «Ассистент» tab, so a toolbar ✦ put two assistant buttons on screen at once. The sidebar hides «Профиль» and «Ассистент», so there ✦ is the only way in. One shell-level value keeps all three screens consistent and avoids the iOS 26 fallback-environment trap in toolbar content. The recipe toolbar also gets shorter in the top bar, where its row is shared with the tab bar.
+
+---

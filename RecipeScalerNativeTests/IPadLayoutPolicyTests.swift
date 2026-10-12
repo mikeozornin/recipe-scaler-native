@@ -197,6 +197,18 @@ final class IPadLayoutPolicyTests: XCTestCase {
         XCTAssertEqual(IPadLayoutPolicy.detailLeftWidth(preferred: .infinity, detailWidth: 873), 400)
     }
 
+    // MARK: - One assistant entry (FR-021)
+
+    func testAssistantToolbarButtonOnlyBesideTheSidebar() {
+        // Sidebar shown: it hides the pinned «Ассистент» tab, ✦ is the entry.
+        XCTAssertTrue(IPadLayoutPolicy.showsAssistantToolbarButton(layoutMode: .padRegular, tabBarIsSidebar: true))
+        // Top tab bar: the pinned «Ассистент» tab is the entry, no second ✦.
+        XCTAssertFalse(IPadLayoutPolicy.showsAssistantToolbarButton(layoutMode: .padRegular, tabBarIsSidebar: false))
+        // Compact window and the iPhone: the phone bars, never ✦.
+        XCTAssertFalse(IPadLayoutPolicy.showsAssistantToolbarButton(layoutMode: .phone, tabBarIsSidebar: false))
+        XCTAssertFalse(IPadLayoutPolicy.showsAssistantToolbarButton(layoutMode: .phone, tabBarIsSidebar: true))
+    }
+
     func testFormSheetHeight() {
         XCTAssertEqual(IPadLayoutMetrics.formSheetHeight(containerHeight: 1194), 720)
         XCTAssertEqual(IPadLayoutMetrics.formSheetHeight(containerHeight: 744), 664)

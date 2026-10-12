@@ -32,6 +32,9 @@ struct ShoppingListView: View {
     let authService: AuthService
     let vkusvillSettings: VkusvillSettingsStore
     let mobileTimerPanelIsCollapsed: Bool
+    /// Spec 081 — ✦ in the toolbar: the iPad sidebar is shown, so the pinned «Ассистент»
+    /// tab is not (`IPadLayoutPolicy.showsAssistantToolbarButton`, decided by the shell).
+    let showsAssistantToolbarButton: Bool
     @Environment(\.locale) private var locale
     @Environment(\.appLayoutMode) private var layoutMode
     @Binding var path: NavigationPath
@@ -63,7 +66,8 @@ struct ShoppingListView: View {
         coordinator: AppShellCoordinator,
         authService: AuthService,
         vkusvillSettings: VkusvillSettingsStore,
-        mobileTimerPanelIsCollapsed: Bool = true
+        mobileTimerPanelIsCollapsed: Bool = true,
+        showsAssistantToolbarButton: Bool = false
     ) {
         _path = path
         self.syncService = syncService
@@ -72,6 +76,7 @@ struct ShoppingListView: View {
         self.authService = authService
         self.vkusvillSettings = vkusvillSettings
         self.mobileTimerPanelIsCollapsed = mobileTimerPanelIsCollapsed
+        self.showsAssistantToolbarButton = showsAssistantToolbarButton
     }
 
     private var snapshot: ShoppingListSnapshot {
@@ -120,7 +125,7 @@ struct ShoppingListView: View {
             showsVkusvillBuyButton: showsVkusvillBuyButton,
             vkusvillIconOnly: vkusvillIconOnly,
             isOnline: isOnline,
-            assistantCoordinator: layoutMode == .padRegular ? coordinator : nil,
+            assistantCoordinator: showsAssistantToolbarButton ? coordinator : nil,
             onBuy: {
                 coordinator.openAssistantWithMessage(
                     Bundle.currentLocalizedString("vkusvill.assistant-prompt")

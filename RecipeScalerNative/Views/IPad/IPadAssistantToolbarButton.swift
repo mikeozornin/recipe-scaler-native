@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// ✦ in the toolbars of «Покупки» and «Подборки» on `.padRegular` (spec 081, FR-007).
-/// Opens the assistant the same way as the «Ассистент» tab: on these screens no recipe
-/// is visible, so the chat starts empty. Until the inspector lands (US5) that is the
-/// phone sheet.
+/// ✦ in the toolbars of «Покупки», «Подборки» and the recipe panel on `.padRegular`
+/// (spec 081, FR-007, FR-013), only while the sidebar is shown: in the top tab bar the
+/// pinned «Ассистент» tab is the one entry (`IPadLayoutPolicy.showsAssistantToolbarButton`).
+/// Opens the assistant the same way as the «Ассистент» tab. Until the inspector lands
+/// (US3) that is the phone sheet.
 ///
 /// Toolbar content: the coordinator is passed in, never read with
 /// `@Environment(SomeObservable.self)` (plan.md, the iOS 26 trap).

@@ -18,6 +18,9 @@ struct DiscoverRootView: View {
     /// dismiss on iOS 26 traps on `@Environment(Observable.self)`.
     let feedBadgeStore: FeedBadgeStore
     let coordinator: AppShellCoordinator
+    /// Spec 081 — ✦ in the toolbar: the iPad sidebar is shown, so the pinned «Ассистент»
+    /// tab is not (`IPadLayoutPolicy.showsAssistantToolbarButton`, decided by the shell).
+    var showsAssistantToolbarButton = false
     @Environment(\.apiClient) private var apiClient
     @Environment(\.appLayoutMode) private var layoutMode
     @State private var model: DiscoverRootModel?
@@ -59,7 +62,7 @@ struct DiscoverRootView: View {
             // The title lives in `DiscoverPadTitleRow`; the bar keeps it for «‹ Подборки».
             .modifier(DiscoverBarTitleRemoval(isRemoved: layoutMode == .padRegular))
             .toolbar {
-                if layoutMode == .padRegular {
+                if showsAssistantToolbarButton {
                     ToolbarItem(placement: .topBarTrailing) {
                         IPadAssistantToolbarButton(coordinator: coordinator)
                     }

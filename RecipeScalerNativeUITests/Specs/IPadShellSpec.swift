@@ -40,6 +40,9 @@ final class IPadShellSpec: BaseTestCase {
             // Window ½ stand-in (IPadLayoutMetrics.regularMinWidth is 680).
             return ["-OpenTab=recipes", "-DebugWindowWidth=400"]
         }
+        if name.contains("testAssistantEntry") {
+            return ["-OpenTab=shopping", "-IPadSidebarHidden=1"]
+        }
         if name.contains("testTopBarHasNoBadges") {
             return ["-OpenTab=shopping", "-IPadSidebarHidden=1"]
         }
@@ -206,6 +209,26 @@ final class IPadShellSpec: BaseTestCase {
             waitUntil { self.hasDigits(self.element(UIA.tabShopping).label) },
             "The sidebar «Покупки» row lost its badge: «\(element(UIA.tabShopping).label)»"
         )
+    }
+
+    /// FR-021: one assistant entry on screen. The top bar has the pinned «Ассистент» tab,
+    /// so «Покупки» has no toolbar ✦.
+    func testAssistantEntryInTopBar() {
+        shoppingListPage.awaitReady()
+        XCTAssertTrue(topBarTab(UIA.assistantTab).waitForExistence(timeout: Wait.element), "«Ассистент» missing from the top bar")
+        XCTAssertFalse(element(UIA.ipadAssistantToolbarButton).exists, "A toolbar ✦ next to the «Ассистент» tab")
+    }
+
+    /// FR-021: the sidebar hides «Ассистент», so «Покупки» gets the toolbar ✦.
+    func testAssistantEntryBesideSidebar() {
+        shoppingListPage.awaitReady()
+        XCTAssertFalse(element(UIA.ipadAssistantToolbarButton).exists, "A toolbar ✦ next to the «Ассистент» tab")
+        showSidebar()
+        XCTAssertTrue(
+            element(UIA.ipadAssistantToolbarButton).waitForExistence(timeout: Wait.element),
+            "No toolbar ✦ while the sidebar hides «Ассистент»"
+        )
+        XCTAssertFalse(element(UIA.assistantTab).exists, "«Ассистент» is a sidebar row")
     }
 
     func testCompactHasNoMoreTab() {

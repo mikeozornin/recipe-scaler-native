@@ -24,11 +24,13 @@ struct AppShellTabRoots {
     let showsMobileTimerPanelExpandedInset: Bool
     let mobileTimerPanelChevronNamespace: Namespace.ID
 
-    func discover() -> some View {
+    /// `showsAssistantToolbarButton`: ✦ in the toolbar, iPad sidebar only (spec 081, FR-007).
+    func discover(showsAssistantToolbarButton: Bool = false) -> some View {
         modernTabRoot(DiscoverRootView(
             path: $coordinator.discoverPath,
             feedBadgeStore: feedBadgeStore,
-            coordinator: coordinator
+            coordinator: coordinator,
+            showsAssistantToolbarButton: showsAssistantToolbarButton
         ))
     }
 
@@ -48,7 +50,7 @@ struct AppShellTabRoots {
     }
 
     /// Spec 081 (T024) — the Recipes section on `.padRegular`: list column + recipe panel.
-    func recipesSplit(showsCollectionMenu: Bool) -> some View {
+    func recipesSplit(showsCollectionMenu: Bool, showsAssistantToolbarButton: Bool) -> some View {
         modernTabRoot(IPadRecipesSplitView(
             coordinator: coordinator,
             syncService: syncService,
@@ -59,11 +61,13 @@ struct AppShellTabRoots {
             systemBannerStore: appContainer?.systemBanner ?? SystemBannerStore(),
             mobileTimerPanelIsCollapsed: mobileTimerPanelCollapsed,
             scenePhase: scenePhase,
-            showsCollectionMenu: showsCollectionMenu
+            showsCollectionMenu: showsCollectionMenu,
+            showsAssistantToolbarButton: showsAssistantToolbarButton
         ))
     }
 
-    func shopping() -> some View {
+    /// `showsAssistantToolbarButton`: ✦ in the toolbar, iPad sidebar only (spec 081, FR-007).
+    func shopping(showsAssistantToolbarButton: Bool = false) -> some View {
         modernTabRoot(ShoppingListView(
             path: $coordinator.shoppingPath,
             syncService: syncService,
@@ -71,7 +75,8 @@ struct AppShellTabRoots {
             coordinator: coordinator,
             authService: authService,
             vkusvillSettings: vkusvillSettings,
-            mobileTimerPanelIsCollapsed: mobileTimerPanelCollapsed
+            mobileTimerPanelIsCollapsed: mobileTimerPanelCollapsed,
+            showsAssistantToolbarButton: showsAssistantToolbarButton
         ))
     }
 

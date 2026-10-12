@@ -56,7 +56,7 @@ struct IPadAdaptiveTabView: View {
         let current = selection.item
         return TabView(selection: selection.binding) {
             Tab(value: IPadShellItem.tab(.discover)) {
-                page(tabRoots.discover())
+                page(tabRoots.discover(showsAssistantToolbarButton: showsAssistantToolbarButton))
             } label: {
                 FeedBadgeTabLabel(feedBadgeStore: feedBadgeStore)
             }
@@ -74,7 +74,7 @@ struct IPadAdaptiveTabView: View {
             .badge(sidebarBadge(syncService.collectionIndex.live.count))
 
             Tab(value: IPadShellItem.tab(.shopping)) {
-                page(tabRoots.shopping())
+                page(tabRoots.shopping(showsAssistantToolbarButton: showsAssistantToolbarButton))
             } label: {
                 AppTabBarLabel(tab: .shopping)
             }
@@ -204,10 +204,22 @@ struct IPadAdaptiveTabView: View {
     @ViewBuilder
     private func recipesPage() -> some View {
         if layoutMode == .padRegular {
-            page(tabRoots.recipesSplit(showsCollectionMenu: !sidebarShown))
+            page(tabRoots.recipesSplit(
+                showsCollectionMenu: !sidebarShown,
+                showsAssistantToolbarButton: showsAssistantToolbarButton
+            ))
         } else {
             page(tabRoots.recipes())
         }
+    }
+
+    /// ✦ in the page toolbars only while the sidebar hides the pinned «Ассистент» tab:
+    /// one assistant entry on screen (`IPadLayoutPolicy.showsAssistantToolbarButton`).
+    private var showsAssistantToolbarButton: Bool {
+        IPadLayoutPolicy.showsAssistantToolbarButton(
+            layoutMode: layoutMode,
+            tabBarIsSidebar: sidebarShown && !isCompact
+        )
     }
 
     private func sidebarBadge(_ count: Int) -> Int {

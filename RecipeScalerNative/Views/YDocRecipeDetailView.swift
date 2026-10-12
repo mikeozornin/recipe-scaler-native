@@ -918,7 +918,7 @@ private struct RecipeDetailToolbarHost<Content: View>: View {
         content()
             .modifier(RecipeDetailTrailingToolbar(
                 main: trailingToolbarItems,
-                assistantCoordinator: padActions?.coordinator,
+                assistantCoordinator: padActions?.assistantCoordinator,
                 edit: padEdit.map { editButton(showsTitle: $0.toolbarStyle == .padWide) }
             ))
     }

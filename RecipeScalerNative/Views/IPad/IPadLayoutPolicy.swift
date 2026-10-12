@@ -70,6 +70,7 @@ enum IPadLayoutMetrics {
 }
 
 /// Recipe detail toolbar on `.padRegular` (T026). The phone keeps its own toolbar.
+/// ✦ is not part of the style: see `IPadLayoutPolicy.showsAssistantToolbarButton`.
 enum IPadDetailToolbarStyle: Equatable {
     /// «…», «Поделиться», «Не гасить экран», ✦, «Изменить» with text.
     case padWide
@@ -112,6 +113,15 @@ enum IPadLayoutPolicy {
             showsListButton: !listShown,
             shopVkusvillIconOnly: contentWidth < IPadLayoutMetrics.shopLabeledMinContent
         )
+    }
+
+    /// ✦ in the toolbars of «Покупки», «Подборки» and the recipe panel (FR-007, FR-013,
+    /// FR-021): exactly one assistant entry on screen. The top tab bar carries the pinned
+    /// «Ассистент» tab, so ✦ shows only while the tab bar is the sidebar, which hides
+    /// «Профиль» and «Ассистент». A compact window keeps the phone bars, without ✦.
+    /// `tabBarIsSidebar` is `\.tabBarPlacement == .sidebar`, read by the shell.
+    static func showsAssistantToolbarButton(layoutMode: AppLayoutMode, tabBarIsSidebar: Bool) -> Bool {
+        layoutMode == .padRegular && tabBarIsSidebar
     }
 
     /// Left recipe column width, or `nil` for one column.
