@@ -15910,6 +15910,23 @@
           }
         }
       }
+    },
+    "ipad.recipe.context.add-to-collection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to Collection"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В коллекцию"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

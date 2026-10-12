@@ -145,6 +145,44 @@ struct RecipeColumnRowSelection: ViewModifier {
     }
 }
 
+/// The recipe row menu on the iPad (T027, FR-017, prototype `#recipes/context`), on the
+/// same handlers as the row swipes; in a compact iPad window too. The phone has no menu.
+///
+/// «Поделиться» is deferred: `RecipeShareSheet` needs `isPublic` and `hasSteps`, and the
+/// list rows (`CollectionEntry`) carry neither (FR-017, tasks.md T027).
+struct RecipeRowContextMenu: ViewModifier {
+    let isPinned: Bool
+    let togglePin: () -> Void
+    let assignToCollection: () -> Void
+    let addToShopping: () -> Void
+    let delete: () -> Void
+
+    func body(content: Content) -> some View {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            content.contextMenu {
+                Button(action: togglePin) {
+                    AppLabel.make(
+                        isPinned ? "recipe.list.unpin" : "recipe.list.pin",
+                        symbol: isPinned ? "pin.slash" : "pin"
+                    )
+                }
+                Button(action: assignToCollection) {
+                    AppLabel.make("ipad.recipe.context.add-to-collection", symbol: "folder.badge.plus")
+                }
+                Button(action: addToShopping) {
+                    AppLabel.make("shopping.detail-add-all", symbol: "cart.badge.plus")
+                }
+                Divider()
+                Button(role: .destructive, action: delete) {
+                    AppLabel.make("recipe.list.delete", symbol: "trash")
+                }
+            }
+        } else {
+            content
+        }
+    }
+}
+
 private enum RecipeColumnRowMetrics {
     static let selectionCornerRadius: CGFloat = 14
     static let selectionInset: CGFloat = 8

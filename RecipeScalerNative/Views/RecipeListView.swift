@@ -629,6 +629,13 @@ struct RecipeListView: View {
                 }
                 .tint(.red)
             }
+            .modifier(RecipeRowContextMenu(
+                isPinned: item.isPinned,
+                togglePin: { Task { await togglePin(for: item) } },
+                assignToCollection: { presentedSheet = .assign(recipeId: item.id, recipeName: item.displayName) },
+                addToShopping: { Task { await addRecipeToShopping(item) } },
+                delete: { presentedAlert = .deleteRecipe(item) }
+            ))
             .task(id: item.id) {
                 guard item.hasThumbnail,
                       let fileURL = RecipeImageDiskCache.existingFileURL(recipeId: item.id, variant: .full) else {
