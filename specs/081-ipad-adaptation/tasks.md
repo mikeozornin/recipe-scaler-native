@@ -117,7 +117,7 @@
 
 ## Phase 3: User Story 1 — Нативная оболочка iPad (P1) — MVP
 
-**Goal**: сайдбар, верхний и нижний таб-бары, телефонные экраны по центру, импорт в form sheet, без встряхивания.  
+**Goal**: сайдбар, верхний и нижний таб-бары, телефонные экраны по центру, профиль «Моё всё» листом в широком окне (Q7), импорт в form sheet, без встряхивания.  
 **Independent Test**: spec.md US1.
 
 - [ ] T012 [US1] Создать `RecipeScalerNative/Views/IPad/IPadShellItem.swift`:
@@ -129,7 +129,9 @@
 - [ ] T013 [US1] Вынести корни вкладок из `modernTabBar` (`RecipeScalerNative/Views/AppShellView.swift` ~:709-770) в `RecipeScalerNative/Views/AppShellTabRoots.swift`. Только перенос: iPhone-дерево не меняется. Проверка — `verify-ipad-layout.sh --iphone-regression` и `AppShellNavigationSpec` на iPhone. — `#recipes/tabs` на iPhone (рефакторинг, вид не меняется)
 - [ ] T014 [US1] Создать `RecipeScalerNative/Views/IPad/IPadAdaptiveTabView.swift`:
   - `TabView(selection:)` + `.tabViewStyle(.sidebarAdaptable)`;
-  - вкладки «Подборки», «Рецепты» (счётчик `syncService.collectionIndex.live.count`), «Покупки» (бейдж — число пунктов «купить» из данных покупок; если источника нет без новых подписок — бейдж отложить и записать в задаче), «Профиль» и «Ассистент» скрыты в сайдбаре;
+  - вкладки «Подборки», «Рецепты» (счётчик `syncService.collectionIndex.live.count`), «Покупки» (бейдж — число пунктов «купить» из данных покупок; если источника нет без новых подписок — бейдж отложить и записать в задаче);
+  - «Профиль» и «Ассистент» скрыты в сайдбаре и видны в верхнем баре: `.defaultVisibility(sidebarShown ? .hidden : .automatic, for: .sidebar)`, `sidebarShown` — из `@Environment(\.tabBarPlacement) == .sidebar` на странице вкладки (plan.md Р2, образец Scrapp `RootView.swift:240-244`, `:311-327`); просто `.hidden` прячет вкладку и из верхнего бара;
+  - содержимое `Tab` «Профиль»: в `.phone` (compact) — телефонный `AccountView` из `AppShellTabRoots`, в `.padRegular` — `Color.clear` (там профиль — лист, T019a);
   - `TabSection` «Коллекции» из `RecipeFolder.sortedActive(syncService.folders)` со счётчиками `collectionIndex.countByFolder`, без «Без коллекции», скрыт в таб-баре;
   - таймеры — тот же `MobileTimerAccessoryModifier`.
 
@@ -140,11 +142,13 @@
   - узора, как в прототипе, нет ни на iPad, ни на iPhone (spec.md Q6, FR-005).
 
   Проверка — `verify-ipad-layout.sh --iphone-regression` (профиль) без отличий; логики нет, unit-тест не нужен. — `#profile/public`, `#profile/private`
-- [ ] T016 [US1] Создать `RecipeScalerNative/Views/IPad/IPadSidebarProfileFooter.swift` и подключить через `.tabViewSidebarBottomBar`.
+- [ ] T016 [US1] Создать `RecipeScalerNative/Views/IPad/IPadSidebarProfileFooter.swift` и подключить через `.tabViewSidebarBottomBar` только при `.padRegular` (образец — `SidebarProfileRow`, Scrapp `RootView.swift:329-362`).
+  - `Button` во всю ширину строки, `.hoverEffect`, идентификатор футера из T011; выбранным не бывает.
   - Аватар — `AccountAvatarView` (T015) размером 36 (`footerAvatarSize`): фото, если есть, иначе `person.circle.fill` — как в `AccountView` на iPhone.
   - Подпись: публичный профиль с именем → имя; иначе → номер аккаунта (`UserIdFormatter`, моноширинный).
-  - Данные — `AccountSettingsViewModel` с `.task(id: userId)` и проверкой `userId` после `await`.
-  - Тап → вкладка «Профиль».
+  - Данные — `AccountSettingsViewModel` с `.task(id: FooterKey(userId, coordinator.profileSheetRevision))` и проверкой `userId` после `await`: после закрытия листа футер перечитывает профиль (plan.md Р2a, §Async lifecycle).
+  - Тап → `coordinator.presentProfileSheet()` (лист — T019a); выбранный раздел сайдбара не меняется.
+  - Зависимости передавать явно (ловушка iOS 26).
 
   — `#profile/public`, `#profile/private`
 - [ ] T017 [US1] «Новая коллекция» в сайдбаре: `.sectionActions` → системный алерт с `TextField` → обрезка пробелов, пустое имя не сохраняется, single-flight `isSaving` → `syncService.createFolder(name:)`. Общий помощник вынести из `CollectionsRootView.commitNewFolder` (`RecipeScalerNative/Views/CollectionsRootView.swift` ~:458-484) и использовать в обоих местах. — `#recipes/sidebar`
@@ -155,22 +159,53 @@
 
   — `#shopping/recipe`, `#shopping/az`
 - [ ] T019 [P] [US1] Профиль и встряхивание.
-  - `RecipeScalerNative/Views/AccountView.swift`: `.iPadReadableWidth(720)`, строка встряхивания (~:579-585) скрыта при `idiom == .pad`; строка «Аккаунт» — как на iPhone (`AccountAvatarView` из T015).
+  - `RecipeScalerNative/Views/AccountView.swift`: строка встряхивания (~:579-585) скрыта при `idiom == .pad` (в листе и во вкладке compact); строка «Аккаунт» — как на iPhone (`AccountAvatarView` из T015). Ограничение ширины не ставить: в `.padRegular` профиль — лист (T019a), в compact — телефонная страница.
   - `RecipeScalerNative/Utils/ShakeToOpenAssistantPreference.swift`: `isActive(idiom:)`; использовать в `AppShellView` (~:205, ~:214).
   - Тесты `testPhoneHonorsPreference`, `testPadIgnoresShake` в `RecipeScalerNativeTests/ShakeToOpenAssistantPreferenceTests.swift`.
 
   — `#profile/public`
+- [ ] T019a [US1] Профиль «Моё всё» — form sheet в широком окне (spec.md Q7, FR-004a, FR-004b; plan.md Р2a; образец — Scrapp `RootView.swift:55`, `:113-137`, `:163-178`).
+  - Создать `RecipeScalerNative/Routing/IPadProfileSheetPolicy.swift`: чистая `resolve(selected:previous:layoutMode:) -> (selected, presentsSheet)` — `.profile` в `.padRegular` → (`previous ?? .recipes`, `true`), иначе без изменений.
+  - `RecipeScalerNative/Routing/AppShellCoordinator.swift`:
+    - `isProfileSheetPresented`, `lastNonProfileTab` (по умолчанию `.recipes`), `profileSheetRevision`;
+    - `presentProfileSheet()`, `profileSheetDidDismiss()`, `normalizeProfileSelection(previous:layoutMode:)`;
+    - сброс листа и `lastNonProfileTab` в `resetShellStateForLogout` (~:461).
+  - `IPadShellItem` (T012): запись `.tab(.profile)` в `.padRegular` → `presentProfileSheet()`, `selectedTab` не меняется.
+  - `IPadAdaptiveTabView` (T014) и `legacyTabView` в `RecipeScalerNative/Views/AppShellView.swift` (~:790, только при `.padRegular`, старый путь Q1):
+    - `.onChange(of: coordinator.selectedTab)` → нормализация с `previous: old` (тап по вкладке, `requestRemindersSetup` ~:203-206, ⌘4, `-OpenTab=profile`);
+    - `.onChange(of: layoutMode, initial: true)` → при `.padRegular` нормализация с `previous: lastNonProfileTab`; при `.phone` лист не трогать (остаётся, как в Scrapp).
+  - На симуляторе проверить урок Scrapp (`RootView.swift:113-114`): если отказ в привязке оставляет на экране пустую страницу «Профиля», привязка пропускает выбор, а `onChange` его возвращает. Записать, какой вариант остался.
+  - Лист: `.sheet(isPresented: $coordinator.isProfileSheetPresented, onDismiss: profileSheetDidDismiss)` → `AccountView(…, onDone:)` + `.iPadFormSheet()` (`RecipeScalerNative/Views/IPad/AdaptivePresentation.swift`).
+    - Второй `NavigationStack` не добавлять: у `AccountView` свой (`:113`) и заголовок «Моё всё» (`account.title`, `:172`).
+  - `RecipeScalerNative/Views/AccountView.swift`:
+    - необязательный `onDone: (() -> Void)?` → `ToolbarItem(placement: .confirmationAction) { Button("common.done") }`; на iPhone и во вкладке `nil`, дерево не меняется;
+    - `pendingRemindersSetup` обрабатывается и при появлении листа (`onChange(…, initial: true)` или `.task`), поведение на iPhone прежнее.
+  - Идентификатор кнопки «Готово» листа — в `RecipeScalerNative/AccessibilityIdentifiers.swift` и `RecipeScalerNativeUITests/Helpers/Selectors.swift`.
+  - Тесты:
+    - создать `RecipeScalerNativeTests/IPadProfileSheetPolicyTests.swift`: `testRegularProfilePresentsSheetAndKeepsPrevious`, `testRegularProfileWithoutPreviousFallsBackToRecipes`, `testPhoneProfileSelectsTab`, `testNonProfileSelectionUnchanged`;
+    - в `RecipeScalerNativeTests/AppShellCoordinatorTests.swift`: `testWideningOnProfileTabRestoresPreviousAndPresentsSheet`, `testNarrowingKeepsProfileSheet`, `testRemindersSetupInRegularPresentsSheet`, `testLogoutDismissesProfileSheet`;
+    - в `RecipeScalerNativeTests/IPadShellItemTests.swift`: `testProfileInRegularDoesNotChangeSelection`.
+  - `scripts/verify-ipad-layout.sh`: состояния `profile-public` / `profile-private` — лист поверх `#recipes/sidebar` и (с `-IPadSidebarHidden=1`) `#recipes/tabs` через `-OpenTab=profile`; в окне ½ — страница вкладки.
+  - iPhone: `verify-ipad-layout.sh --iphone-regression` (профиль) — 0 отличий.
+
+  — `#profile/public`, `#profile/private` (`b4-profile-public-landscape`, `b4-profile-private-sidebar-hidden`, `b4-profile-window-half`)
 - [ ] T020 [P] [US1] Импорт: на iPad-симуляторе проверить, как `RecipeScalerNative/Views/ImportRecipeSheet.swift` (detents `[.large]`, ~:216) показывается в широком окне. Если не form sheet около 560 × 720 — добавить `.iPadFormSheet()` при `.padRegular`. В compact — без изменений. — `#import/text`, `#import/photo`
 - [ ] T021 [US1] Подборки.
   - `RecipeScalerNative/Views/DiscoverRootView.swift`: при `.padRegular` заголовок и `DiscoverFeedSegmentPicker` (ширина 320) в одной строке вместо пикера под large title (~:29-31); лента `.iPadReadableWidth(720)`; ✦ (`IPadAssistantToolbarButton` из T018).
   - `RecipeScalerNative/Views/Discover/DiscoverPublicProfileView.swift`: `.iPadReadableWidth(1100)`, сетка `DiscoverRecipeCardGrid` как есть.
 
   — `#discover/feed`, `#discover/author`
-- [ ] T022 [US1] Создать `RecipeScalerNativeUITests/Specs/IPadShellSpec.swift` (`XCTSkipUnless` iPad): `testSidebarContents`, `testFooterPrivateShowsAccountId`, `testProfileHasNoShakeRow`, `testCollectionTapOpensRecipes`, `testNewCollectionFromSidebar`. Прогнать на iPad; на iPhone — `AppShellNavigationSpec` и `verify-ui-smoke.sh`. — `#recipes/sidebar`, `#profile/private`
+- [ ] T022 [US1] Создать `RecipeScalerNativeUITests/Specs/IPadShellSpec.swift` (`XCTSkipUnless` iPad):
+  - `testSidebarContents`, `testFooterPrivateShowsAccountId`, `testCollectionTapOpensRecipes`, `testNewCollectionFromSidebar`;
+  - `testProfileHasNoShakeRow` — в листе;
+  - `testFooterOpensProfileSheet`: «Моё всё» и «Готово», выбор сайдбара прежний, «Готово» закрывает; переключение «Публичный профиль» обновляет футер после закрытия;
+  - `testTopBarProfileOpensSheet` (`-IPadSidebarHidden=1`), `testSidebarHasNoProfileTab`.
+
+  Прогнать на iPad; на iPhone — `AppShellNavigationSpec` и `verify-ui-smoke.sh`. — `#recipes/sidebar`, `#recipes/tabs`, `#profile/public`, `#profile/private`
 
 **Checkpoint (US1)**:
 - iPad iPadOS 26.2+: сайдбар, верхний бар, нижний бар в ½ и ⅓ — по layout.md §Карта состояний.
-- Покупки, профиль, подборки по центру; импорт в form sheet; встряхивание не работает.
+- Покупки и подборки по центру; профиль «Моё всё» — лист из футера и верхнего бара, выбор не меняется, в ½ и ⅓ — вкладка; импорт в form sheet; встряхивание не работает.
 - iPhone: 0 отличий скриншотов, smoke и `AppShellNavigationSpec` зелёные.
 - Ручной проход человека по `#recipes/sidebar`, `#recipes/tabs`, `#shopping/*`, `#discover/*`, `#import/*`, `#profile/*`.
 - Можно выпускать.
@@ -386,8 +421,8 @@
 
 - **Setup (T001–T004)** → **Foundational (T005–T011)** → истории.
 - **T005, T006** блокируют всю вёрстку. T007, T008, T010, T011 можно делать параллельно со спайком, T009 — после T008.
-- **US1 (T012–T022)** блокирует остальные истории.
-  - Внутри: T012 → T013 → T014 → (T016, T017); T015 → T016; T015 → T019 (оба трогают `AccountView` / `AccountAvatarView`); T018–T020 параллельно после T014; T021 после T018; T022 последней.
+- **US1 (T012–T022, T019a)** блокирует остальные истории.
+  - Внутри: T012 → T013 → T014 → (T016, T017); T015 → T016; T015 → T019 (оба трогают `AccountView` / `AccountAvatarView`); T018–T020 параллельно после T014; T021 после T018; T019a после T012, T014, T015, T016, T019 (все трогают `AppShellCoordinator` / оболочку / `AccountView`); T022 последней, после T019a.
 - **US2 (T023–T031)** после US1.
   - T023 → T024 → T025 → T026; T027 параллельно с T025; T028 после T024; T029 после T023–T028. Разделитель T025 опирается на `detailLeftWidth` из T007.
 - **US3, US4, US5** после US2, независимы друг от друга.
@@ -402,7 +437,7 @@
 |------|--------|-----------|
 | 1 Setup | T001–T004 | 4 |
 | 2 Foundational | T005–T011 | 7 |
-| 3 US1 Оболочка (P1) | T012–T022 | 11 |
+| 3 US1 Оболочка (P1) | T012–T022, T019a | 12 |
 | 4 US2 Рецепты (P1) | T023–T031 | 9 |
 | 5 US3 Ассистент (P2) | T032–T035 | 4 |
 | 6 US4 Готовка и действия (P2) | T036–T040 | 5 |
@@ -410,4 +445,4 @@
 | 8 US6 Клавиатура и меню (P3) | T045–T048 | 4 |
 | 9 US7 Многозадачность (P3) | T049–T052 | 4 |
 | 10 Polish | T053–T057 | 5 |
-| **Всего** | | **57** |
+| **Всего** | | **58** |
