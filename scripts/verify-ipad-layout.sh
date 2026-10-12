@@ -56,7 +56,9 @@
 #   IPAD_VERIFY_SETTLE_PIXELS          frame-to-frame change treated as still (default 0.5% of pixels)
 #   IPAD_VERIFY_INCLUDE_TIMERS=1       add recipes-timers (needs the notification alert answered once)
 #   IPAD_VERIFY_BASELINE_PASSES        launches per state when capturing the baseline (default 3)
-#   IPAD_VERIFY_RETRIES                re-captures of a differing state before FAILED (default 1)
+#   IPAD_VERIFY_RETRIES                re-captures of a differing state before FAILED (default 2:
+#                                      glass edges next to a mask flip 1–2 px by 3 levels now and then;
+#                                      a real change repeats on every capture)
 
 set -euo pipefail
 
@@ -126,7 +128,7 @@ export IPAD_VERIFY_CHANNEL_TOLERANCE="${IPAD_VERIFY_CHANNEL_TOLERANCE:-2}"
 MAX_MASK_FRACTION="${IPAD_VERIFY_MAX_MASK_FRACTION:-0.10}"
 SETTLE_TIMEOUT="${IPAD_VERIFY_SETTLE_TIMEOUT:-25}"
 BASELINE_PASSES="${IPAD_VERIFY_BASELINE_PASSES:-3}"
-RETRIES="${IPAD_VERIFY_RETRIES:-1}"
+RETRIES="${IPAD_VERIFY_RETRIES:-2}"
 
 # ---------------------------------------------------------------------------
 # States. Names are <step>-<state> from layout.md §Карта состояний. COMMON_STATES
@@ -686,6 +688,13 @@ run_iphone_regression() {
       if compare_one "$BASELINE_DIR" "$REGRESSION_DIR" "$REGRESSION_DIR/diff" "$state"; then
         matched=1
         break
+      fi
+      # A retry overwrites the screenshot and the diff; keep this attempt for review.
+      if ((attempt < RETRIES)); then
+        mkdir -p "$REGRESSION_DIR/retried"
+        cp "$REGRESSION_DIR/$state.png" "$REGRESSION_DIR/retried/$state.attempt$attempt.png" 2>/dev/null || true
+        cp "$REGRESSION_DIR/diff/$state.diff.png" "$REGRESSION_DIR/retried/$state.attempt$attempt.diff.png" 2>/dev/null || true
+        echo "       kept attempt $attempt in $REGRESSION_DIR/retried/"
       fi
     done
     if ((!matched)); then
