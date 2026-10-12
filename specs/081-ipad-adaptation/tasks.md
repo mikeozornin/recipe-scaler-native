@@ -178,12 +178,15 @@
 
   **Сделано и проверено:** общий помощник `RecipeScalerNative/Views/NewCollectionCommit.swift` (обрезка, пустое имя → `nil`, single-flight) — в `CollectionsRootView.commitNewFolder` и в сайдбаре. Строка «+ Новая коллекция» — в конце секции «Коллекции»; алерт «Новая коллекция» / «Название коллекции» / «Отмена» / «Создать», «Создать» неактивна для пустого имени и одних пробелов. На симуляторе создана и сразу удалена тестовая коллекция DEBUG-пользователя «iPad 081 test.»; она появилась в сайдбаре и в сетке. iPhone `--iphone-regression` `recipes-collection`, `recipes-list` — 0 отличий. Скриншот `tmp/ipad-verify/us1/t017-01-sidebar-new-collection.png`.
   **Отклонение:** `accessibilityIdentifier` не доходит ни до строки действия секции, ни до поля алерта (iPadOS 26.3) — идентификаторы не добавлены, UI-тест ищет по подписи.
-- [ ] T018 [P] [US1] Создать `RecipeScalerNative/Views/IPad/IPadAssistantToolbarButton.swift` (✦; в US1 открывает телефонный лист ассистента, новый чат). Покупки (`RecipeScalerNative/Views/ShoppingListView.swift`):
+- [x] T018 [P] [US1] Создать `RecipeScalerNative/Views/IPad/IPadAssistantToolbarButton.swift` (✦; в US1 открывает телефонный лист ассистента, новый чат). Покупки (`RecipeScalerNative/Views/ShoppingListView.swift`):
   - `.iPadReadableWidth(720)`;
   - «Купить во Вкусвилле» только иконкой (`AppToolbarStyle.iconOnly`), если ширина контента < 640 — только при `.padRegular`; в compact как на iPhone (`labeledIcon`, ~:704);
   - ✦ справа при `.padRegular`.
 
   — `#shopping/recipe`, `#shopping/az`
+
+  **Сделано и проверено:** `IPadAssistantToolbarButton` (координатор передаётся явно) — справа в тулбаре покупок, в одной «капсуле» с «Купить во Вкусвилле» и «Поделиться»; тап открывает телефонный лист ассистента с пустым чатом. Список — колонка 720 по центру, фон `systemGroupedBackground` и по бокам. Проверено на iPad Pro 11: портрет (верхний бар и плавающий сайдбар), альбом (сайдбар рядом и верхний бар). iPhone `--iphone-regression` `shopping-az` — 0 отличий. В `verify-ipad-layout.sh` перед каждым запуском пишется нейтральный текст в буфер симулятора (Simulator копирует туда буфер Mac; ссылка показывает баннер импорта и ломает сравнение), буфер Mac не трогается. Скриншоты `tmp/ipad-verify/us1/t018-01-shopping-tabs.png`, `t018-02-shopping-sidebar.png`, `t018-04-landscape-shopping.png`, `t018-05-landscape-tabs.png`, `t018-06-assistant-sheet.png`.
+  **Отклонение:** правило «< 640» не спасает: в верхнем баре (и под плавающим сайдбаром в портрете) подпись выталкивает тулбар в «…». Подпись только при сайдбаре рядом со страницей (`tabBarPlacement == .sidebar` и страница сдвинута, `minX > 0`) и ширине ≥ 640; иначе иконка. `ToolbarSpacer` между ✦ и остальными не поставлен — с ним ✦ уходит в «…».
 - [ ] T019 [P] [US1] Профиль и встряхивание.
   - `RecipeScalerNative/Views/AccountView.swift`: строка встряхивания (~:579-585) скрыта при `idiom == .pad` (в листе и во вкладке compact); строка «Аккаунт» — как на iPhone (`AccountAvatarView` из T015). Ограничение ширины не ставить: в `.padRegular` профиль — лист (T019a), в compact — телефонная страница.
   - `RecipeScalerNative/Utils/ShakeToOpenAssistantPreference.swift`: `isActive(idiom:)`; использовать в `AppShellView` (~:205, ~:214).

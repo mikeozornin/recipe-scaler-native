@@ -380,6 +380,10 @@ launch_state() {
   }
   export LOG_FILE="$log"
   capture_override_status_bar
+  # The Simulator copies the Mac clipboard into the device; a URL there shows the
+  # «Импортировать сайт из буфера обмена?» banner over the page. Only the simulator
+  # pasteboard is overwritten, the Mac clipboard stays as is.
+  printf 'ipad-verify' | xcrun simctl pbcopy "$SIM_ID" >/dev/null 2>&1 || true
   sim_launch -SkipSplash=1 -ScreenshotCapture=1 -AppLanguage=ru -AppTheme=light "${STATE_ARGS[@]}" >/dev/null
   if ! sim_wait_ready 30; then
     echo "  FAIL $state: no readiness marker (app_shell_start|container_constructed|contentview_init)" >&2

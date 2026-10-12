@@ -33,7 +33,14 @@ struct ShoppingListView: View {
     let vkusvillSettings: VkusvillSettingsStore
     let mobileTimerPanelIsCollapsed: Bool
     @Environment(\.locale) private var locale
+    @Environment(\.appLayoutMode) private var layoutMode
     @Binding var path: NavigationPath
+    /// Page frame in window coordinates (spec 081): «Купить во Вкусвилле» drops its text
+    /// below 640 pt, and `minX` tells a side-by-side sidebar from an overlay one.
+    @State private var pageFrame: CGRect = .zero
+    /// Spec 081 — the iPad sidebar is on screen; otherwise the top tab bar shares the row
+    /// with the toolbar.
+    @State private var iPadSidebarShown = false
     @State private var bottomDraft = ""
     @State private var inlineEditItemId: String?
     @State private var inlineEditDraft = ""
@@ -96,10 +103,24 @@ struct ShoppingListView: View {
         }
     }
 
+    /// Spec 081, `.padRegular` only (the phone keeps the label): the page is narrower than
+    /// 640 pt, or the toolbar row is shared — with the top tab bar, or under the overlay
+    /// sidebar (the page does not move). The labeled button pushes the toolbar into the
+    /// «…» overflow there (iPadOS 26.3, portrait).
+    private var vkusvillIconOnly: Bool {
+        guard layoutMode == .padRegular else { return false }
+        let narrowPage = pageFrame.width > 0
+            && pageFrame.width < IPadLayoutMetrics.shopLabeledMinContent
+        let sidebarBesidePage = iPadSidebarShown && pageFrame.minX > 0
+        return narrowPage || !sidebarBesidePage
+    }
+
     private var shoppingListScreen: some View {
         ShoppingListToolbarHost(
             showsVkusvillBuyButton: showsVkusvillBuyButton,
+            vkusvillIconOnly: vkusvillIconOnly,
             isOnline: isOnline,
+            assistantCoordinator: layoutMode == .padRegular ? coordinator : nil,
             onBuy: {
                 coordinator.openAssistantWithMessage(
                     Bundle.currentLocalizedString("vkusvill.assistant-prompt")
@@ -108,6 +129,11 @@ struct ShoppingListView: View {
             onShare: { showShareSheet = true }
         ) {
             shoppingList
+                .iPadReadableWidth(IPadLayoutMetrics.readablePageWidth)
+                // The margins around the 720 pt page share the list background (no-op on the phone).
+                .background(Color(.systemGroupedBackground))
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { pageFrame = $0 }
+                .reportsIPadSidebarShown($iPadSidebarShown)
         }
         .localizedNavigationTitle("shopping.title")
         .navigationBarTitleDisplayMode(.large)
@@ -690,7 +716,11 @@ private struct ShoppingRemindersTipBanner: View {
 /// bar remasure after assistant dismiss does not trap in fallback env.
 private struct ShoppingListToolbarHost<Content: View>: View {
     let showsVkusvillBuyButton: Bool
+    /// Spec 081 — `.padRegular` page narrower than 640 pt.
+    let vkusvillIconOnly: Bool
     let isOnline: Bool
+    /// Spec 081 — ✦ on `.padRegular`; `nil` on the phone.
+    let assistantCoordinator: AppShellCoordinator?
     let onBuy: () -> Void
     let onShare: () -> Void
     @ViewBuilder let content: () -> Content
@@ -702,10 +732,14 @@ private struct ShoppingListToolbarHost<Content: View>: View {
                     HStack(spacing: 0) {
                         if showsVkusvillBuyButton {
                             Button(action: onBuy) {
-                                AppToolbarStyle.labeledIcon(
-                                    systemName: "banknote",
-                                    title: "vkusvill.buy-button"
-                                )
+                                if vkusvillIconOnly {
+                                    AppToolbarStyle.iconOnly(systemName: "banknote")
+                                } else {
+                                    AppToolbarStyle.labeledIcon(
+                                        systemName: "banknote",
+                                        title: "vkusvill.buy-button"
+                                    )
+                                }
                             }
                             .appToolbarIconButton()
                             .disabled(!isOnline)
@@ -721,6 +755,11 @@ private struct ShoppingListToolbarHost<Content: View>: View {
                         .appToolbarIconButton()
                         .accessibilityLabel(Text("shopping.share-button"))
                         .accessibilityIdentifier(AccessibilityIdentifiers.shoppingShareButton)
+                    }
+                }
+                if let assistantCoordinator {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        IPadAssistantToolbarButton(coordinator: assistantCoordinator)
                     }
                 }
             }

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0816FFE16E7751247F2308B4 /* IPadAssistantToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0810E433F234D38B47531CE0 /* IPadAssistantToolbarButton.swift */; };
 		08185F4A30518177E69C62A0 /* NewCollectionCommit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081D040ECE4EA13E423B0050 /* NewCollectionCommit.swift */; };
 		0815F1A68158B1AA39854C93 /* IPadSidebarProfileFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081314D04499DC956CD13A0B /* IPadSidebarProfileFooter.swift */; };
 		0815ACE2D755816A5D51FE1E /* AccountAvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081A7F962A0092E70734257D /* AccountAvatarView.swift */; };
@@ -860,6 +861,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0810E433F234D38B47531CE0 /* IPadAssistantToolbarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadAssistantToolbarButton.swift; sourceTree = "<group>"; };
 		081D040ECE4EA13E423B0050 /* NewCollectionCommit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCollectionCommit.swift; sourceTree = "<group>"; };
 		081314D04499DC956CD13A0B /* IPadSidebarProfileFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadSidebarProfileFooter.swift; sourceTree = "<group>"; };
 		081A7F962A0092E70734257D /* AccountAvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountAvatarView.swift; sourceTree = "<group>"; };
@@ -2733,6 +2735,7 @@
 		081CBD7997AADC6843B621D9 /* IPad */ = {
 			isa = PBXGroup;
 			children = (
+				0810E433F234D38B47531CE0 /* IPadAssistantToolbarButton.swift */,
 				081314D04499DC956CD13A0B /* IPadSidebarProfileFooter.swift */,
 				081886D29CEE86686D583F2F /* IPadShellItem.swift */,
 				081743BF54FB4ED7D43904BF /* IPadAdaptiveTabView.swift */,
@@ -3200,6 +3203,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0816FFE16E7751247F2308B4 /* IPadAssistantToolbarButton.swift in Sources */,
 				08185F4A30518177E69C62A0 /* NewCollectionCommit.swift in Sources */,
 				0815F1A68158B1AA39854C93 /* IPadSidebarProfileFooter.swift in Sources */,
 				0815ACE2D755816A5D51FE1E /* AccountAvatarView.swift in Sources */,
