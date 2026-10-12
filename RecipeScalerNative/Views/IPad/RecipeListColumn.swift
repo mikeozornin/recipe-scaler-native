@@ -151,7 +151,8 @@ struct RecipeColumnRowSelection: ViewModifier {
 }
 
 /// The recipe row menu on the iPad (T027, FR-017, prototype `#recipes/context`), on the
-/// same handlers as the row swipes; in a compact iPad window too. The phone has no menu.
+/// same handlers as the row swipes. Only in a regular window (`.padRegular`): a compact
+/// iPad window is the phone, and the phone has no menu.
 ///
 /// «Поделиться» is deferred: `RecipeShareSheet` needs `isPublic` and `hasSteps`, and the
 /// list rows (`CollectionEntry`) carry neither (FR-017, tasks.md T027).
@@ -162,8 +163,10 @@ struct RecipeRowContextMenu: ViewModifier {
     let addToShopping: () -> Void
     let delete: () -> Void
 
+    @Environment(\.appLayoutMode) private var layoutMode
+
     func body(content: Content) -> some View {
-        if UIDevice.current.userInterfaceIdiom == .pad {
+        if layoutMode == .padRegular {
             content.contextMenu {
                 Button(action: togglePin) {
                     AppLabel.make(
