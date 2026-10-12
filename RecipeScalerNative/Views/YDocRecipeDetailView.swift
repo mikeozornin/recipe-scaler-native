@@ -24,6 +24,9 @@ struct YDocRecipeDetailView: View {
     /// (bar-item sizing after assistant dismiss uses a fallback environment).
     var onDismiss: (() -> Void)? = nil
     var scenePhase: ScenePhase = .active
+    /// Spec 081 — the panel of the iPad split: two columns and the iPad toolbar.
+    /// `nil` on the phone and in a compact iPad window.
+    var padPanel: RecipeDetailPadPanel? = nil
     /// UI-only scale (web `recipe-scale:{id}` in localStorage). Not written to Y.Doc.
     @State var scaleFactor: Double = 1
     @AppStorage(NutritionSettings.globalEnabledKey) private var showNutritionGlobal = true
@@ -272,165 +275,7 @@ struct YDocRecipeDetailView: View {
             onToggleEdit: { Task { await toggleEditMode() } }
         ) {
         ScrollViewReader { scrollProxy in
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                DetailScrollViewProbe(box: awakeScrollController.probe)
-                    .frame(width: 1, height: 1)
-                    .accessibilityHidden(true)
-                if showsRecipeImageSection {
-                    RecipeDetailImageSection(
-                        recipeId: recipeId,
-                        imageUrl: headerImageUrl,
-                        imageAspectRatio: recipe?.imageAspectRatio.map { CGFloat($0) },
-                        isEditing: isEditing && canEnterEditMode,
-                        allowsNetworkRefresh: allowsImageNetworkRefresh,
-                        syncService: syncService
-                    )
-                }
-
-                VStack(alignment: .leading, spacing: 16) {
-                    if isLoading && recipe == nil {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                    }
-
-                    if isLegacyReadOnly {
-                        RecipeLegacyBanner()
-                    }
-
-                    if isEditing, let editViewModel, let recipe {
-                        editHeader(editViewModel, recipe: recipe)
-                    } else {
-                        Text(recipe?.name ?? "")
-                            .font(AppTypography.display(AppTypography.recipeTitleSize))
-                            .lineLimit(nil)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal)
-                    }
-
-                    if let recipe {
-                        if !isEditing {
-                            servingsBlock(recipe: recipe)
-                        }
-
-                        if isEditing, let editViewModel {
-                            YDocIngredientsEditSection(
-                                recipe: recipeWithDisplayIngredients(recipe),
-                                draftServings: Binding(
-                                    get: { editViewModel.draftServings },
-                                    set: { editViewModel.draftServings = max(1, min(99, $0)) }
-                                ),
-                                baseServings: max(1, recipe.servings),
-                                scaleFactor: scaleFactor,
-                                accentColor: accentColor,
-                                nutritionEnabled: showNutritionGlobal,
-                                nutritionViewMode: nutritionViewMode,
-                                onCommit: { ingredient in
-                                    await saveIngredient(ingredient, existing: recipe.ingredients.first { $0.id == ingredient.id })
-                                },
-                                onSaveNutrition: { ingredientId, calories, protein, fat, carbs in
-                                    await saveIngredientNutrition(
-                                        ingredientId: ingredientId,
-                                        calories: calories,
-                                        protein: protein,
-                                        fat: fat,
-                                        carbs: carbs,
-                                        editViewModel: editViewModel
-                                    )
-                                },
-                                onDelete: { id in
-                                    await deleteIngredient(id: id)
-                                },
-                                onAdd: { name, amount in
-                                    await addIngredient(name: name, amount: amount, in: recipe, editViewModel: editViewModel)
-                                },
-                                onReorder: { from, to in
-                                    await reorderIngredients(from: from, to: to)
-                                },
-                                onIllustrationPickerSelect: { ingredientId, illustrationId in
-                                    await applyIngredientIllustrationSelection(
-                                        ingredientId: ingredientId,
-                                        illustrationId: illustrationId,
-                                        editViewModel: editViewModel
-                                    )
-                                },
-                                onIllustrationPickerClear: { ingredientId in
-                                    await applyIngredientIllustrationClear(
-                                        ingredientId: ingredientId,
-                                        editViewModel: editViewModel
-                                    )
-                                },
-                                onIngredientFieldFocusChanged: { focused in
-                                    ingredientFieldsFocused = focused
-                                    syncDescriptionChromeSuppression()
-                                },
-                                onKeyboardDone: {
-                                    descriptionChrome.blurEditor()
-                                    dismissRecipeTitleKeyboard = true
-                                },
-                                clearFocusToken: clearIngredientFocusToken
-                            )
-                        } else {
-                            YDocIngredientsSection(
-                                ingredients: ingredientsForDisplay,
-                                baseServings: max(1, recipe.servings),
-                                scaleFactor: scaleFactor,
-                                accentColor: accentColor,
-                                onScaledQuantityEdited: { ingredient, text in
-                                    applyViewModeScaledQuantityEdit(ingredient: ingredient, text: text)
-                                },
-                                onAddIngredientToShopping: isLegacyReadOnly
-                                    ? nil
-                                    : { ingredient in
-                                        Task { await addIngredientToShopping(ingredient) }
-                                    },
-                                nutritionEnabled: showNutritionGlobal,
-                                nutritionViewMode: nutritionViewMode
-                            )
-                        }
-
-                        if !isEditing,
-                           showNutritionGlobal,
-                           RecipeNutritionDisplay.effectiveMacros(from: recipe) != nil {
-                            nutritionBlock(recipe: recipe)
-                                .id("recipe_nutrition")
-                        }
-
-                        if isEditing, canEnterEditMode {
-                            RecipeDescriptionEditorBlock(
-                                recipeId: recipeId,
-                                accentColor: accentColor,
-                                syncService: syncService,
-                                scaleFactor: scaleFactor,
-                                ingredients: recipe.ingredients,
-                                chrome: descriptionChrome,
-                                onNodeClick: { click in
-                                    handleDescriptionNodeClick(click)
-                                },
-                                processTableRecipe: recipe
-                            )
-                            .id("recipe_instructions")
-                        } else if let description = recipe.description, !description.isEmpty {
-                            StepsSection(
-                                htmlContent: description,
-                                accentColor: accentColor,
-                                recipeId: recipeId,
-                                cookingRecipe: recipe,
-                                scaleFactor: scaleFactor,
-                                restoreAwakeOnDismiss: isScreenAwakeActive,
-                                allowsRebuild: canEnterEditMode,
-                                syncService: syncService,
-                                timerPopover: $descriptionTimerPopover
-                            )
-                                .id("recipe_instructions")
-                        }
-
-                    }
-                }
-                .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
-            }
-            .padding(.bottom, descriptionEditorScrollBottomInset)
-        }
+        detailScroll
         .mobileTimerPanelBottomPadding(suppress: isEditing)
         .dismissPopoverOnVerticalDrag(isActive: descriptionTimerPopover != nil) {
             descriptionTimerPopover = nil
@@ -787,6 +632,228 @@ struct YDocRecipeDetailView: View {
                     Task { await runDescriptionLLMParse(bridge: bridge) }
                 }
             )
+        }
+    }
+
+    // MARK: - Columns (spec 081, T025)
+
+    /// Two columns in the iPad split panel ≥ 720 pt; edit mode keeps one column (US5).
+    private var showsTwoColumns: Bool {
+        guard let padPanel, !isEditing else { return false }
+        return padPanel.detailWidth >= IPadLayoutMetrics.twoColumnMinDetail
+    }
+
+    /// The phone column, or `YDocRecipeDetailColumns` on a wide iPad panel.
+    @ViewBuilder
+    private var detailScroll: some View {
+        if showsTwoColumns, let padPanel {
+            YDocRecipeDetailColumns(detailWidth: padPanel.detailWidth) {
+                VStack(alignment: .leading, spacing: 0) {
+                    detailImageSection
+                    VStack(alignment: .leading, spacing: 16) {
+                        detailHeaderSections
+                        if let recipe {
+                            detailLeftSections(recipe: recipe)
+                        }
+                    }
+                    .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
+                }
+            } right: {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Hands-free scrolling moves the steps (FR-026).
+                    detailScrollProbe
+                    VStack(alignment: .leading, spacing: 16) {
+                        if let recipe {
+                            detailStepsSection(recipe: recipe)
+                        }
+                    }
+                    .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
+                }
+            }
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    detailScrollProbe
+                    detailImageSection
+                    VStack(alignment: .leading, spacing: 16) {
+                        detailHeaderSections
+                        if let recipe {
+                            detailLeftSections(recipe: recipe)
+                            detailStepsSection(recipe: recipe)
+                        }
+                    }
+                    .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
+                }
+                .padding(.bottom, descriptionEditorScrollBottomInset)
+                .modifier(RecipeDetailSingleColumnWidth(isPadPanel: padPanel != nil))
+            }
+        }
+    }
+
+    private var detailScrollProbe: some View {
+        DetailScrollViewProbe(box: awakeScrollController.probe)
+            .frame(width: 1, height: 1)
+            .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var detailImageSection: some View {
+        if showsRecipeImageSection {
+            RecipeDetailImageSection(
+                recipeId: recipeId,
+                imageUrl: headerImageUrl,
+                imageAspectRatio: recipe?.imageAspectRatio.map { CGFloat($0) },
+                isEditing: isEditing && canEnterEditMode,
+                allowsNetworkRefresh: allowsImageNetworkRefresh,
+                syncService: syncService
+            )
+        }
+    }
+
+    /// Loading, the legacy banner and the title (or the edit header).
+    @ViewBuilder
+    private var detailHeaderSections: some View {
+        if isLoading && recipe == nil {
+            ProgressView()
+                .frame(maxWidth: .infinity)
+        }
+
+        if isLegacyReadOnly {
+            RecipeLegacyBanner()
+        }
+
+        if isEditing, let editViewModel, let recipe {
+            editHeader(editViewModel, recipe: recipe)
+        } else {
+            Text(recipe?.name ?? "")
+                .font(AppTypography.display(AppTypography.recipeTitleSize))
+                .lineLimit(nil)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+        }
+    }
+
+    /// Servings, ingredients and nutrition: the left column.
+    @ViewBuilder
+    private func detailLeftSections(recipe: RecipeData) -> some View {
+        if !isEditing {
+            servingsBlock(recipe: recipe)
+        }
+
+        if isEditing, let editViewModel {
+            YDocIngredientsEditSection(
+                recipe: recipeWithDisplayIngredients(recipe),
+                draftServings: Binding(
+                    get: { editViewModel.draftServings },
+                    set: { editViewModel.draftServings = max(1, min(99, $0)) }
+                ),
+                baseServings: max(1, recipe.servings),
+                scaleFactor: scaleFactor,
+                accentColor: accentColor,
+                nutritionEnabled: showNutritionGlobal,
+                nutritionViewMode: nutritionViewMode,
+                onCommit: { ingredient in
+                    await saveIngredient(ingredient, existing: recipe.ingredients.first { $0.id == ingredient.id })
+                },
+                onSaveNutrition: { ingredientId, calories, protein, fat, carbs in
+                    await saveIngredientNutrition(
+                        ingredientId: ingredientId,
+                        calories: calories,
+                        protein: protein,
+                        fat: fat,
+                        carbs: carbs,
+                        editViewModel: editViewModel
+                    )
+                },
+                onDelete: { id in
+                    await deleteIngredient(id: id)
+                },
+                onAdd: { name, amount in
+                    await addIngredient(name: name, amount: amount, in: recipe, editViewModel: editViewModel)
+                },
+                onReorder: { from, to in
+                    await reorderIngredients(from: from, to: to)
+                },
+                onIllustrationPickerSelect: { ingredientId, illustrationId in
+                    await applyIngredientIllustrationSelection(
+                        ingredientId: ingredientId,
+                        illustrationId: illustrationId,
+                        editViewModel: editViewModel
+                    )
+                },
+                onIllustrationPickerClear: { ingredientId in
+                    await applyIngredientIllustrationClear(
+                        ingredientId: ingredientId,
+                        editViewModel: editViewModel
+                    )
+                },
+                onIngredientFieldFocusChanged: { focused in
+                    ingredientFieldsFocused = focused
+                    syncDescriptionChromeSuppression()
+                },
+                onKeyboardDone: {
+                    descriptionChrome.blurEditor()
+                    dismissRecipeTitleKeyboard = true
+                },
+                clearFocusToken: clearIngredientFocusToken
+            )
+        } else {
+            YDocIngredientsSection(
+                ingredients: ingredientsForDisplay,
+                baseServings: max(1, recipe.servings),
+                scaleFactor: scaleFactor,
+                accentColor: accentColor,
+                onScaledQuantityEdited: { ingredient, text in
+                    applyViewModeScaledQuantityEdit(ingredient: ingredient, text: text)
+                },
+                onAddIngredientToShopping: isLegacyReadOnly
+                    ? nil
+                    : { ingredient in
+                        Task { await addIngredientToShopping(ingredient) }
+                    },
+                nutritionEnabled: showNutritionGlobal,
+                nutritionViewMode: nutritionViewMode
+            )
+        }
+
+        if !isEditing,
+           showNutritionGlobal,
+           RecipeNutritionDisplay.effectiveMacros(from: recipe) != nil {
+            nutritionBlock(recipe: recipe)
+                .id("recipe_nutrition")
+        }
+    }
+
+    /// The steps or the steps editor: the right column.
+    @ViewBuilder
+    private func detailStepsSection(recipe: RecipeData) -> some View {
+        if isEditing, canEnterEditMode {
+            RecipeDescriptionEditorBlock(
+                recipeId: recipeId,
+                accentColor: accentColor,
+                syncService: syncService,
+                scaleFactor: scaleFactor,
+                ingredients: recipe.ingredients,
+                chrome: descriptionChrome,
+                onNodeClick: { click in
+                    handleDescriptionNodeClick(click)
+                },
+                processTableRecipe: recipe
+            )
+            .id("recipe_instructions")
+        } else if let description = recipe.description, !description.isEmpty {
+            StepsSection(
+                htmlContent: description,
+                accentColor: accentColor,
+                recipeId: recipeId,
+                cookingRecipe: recipe,
+                scaleFactor: scaleFactor,
+                restoreAwakeOnDismiss: isScreenAwakeActive,
+                allowsRebuild: canEnterEditMode,
+                syncService: syncService,
+                timerPopover: $descriptionTimerPopover
+            )
+                .id("recipe_instructions")
         }
     }
 

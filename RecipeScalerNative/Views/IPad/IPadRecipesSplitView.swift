@@ -170,7 +170,12 @@ struct IPadRecipesSplitView: View {
                         appContainer: appContainer,
                         // A deleted recipe is replaced by the next one (`repairSelection`).
                         onDismiss: {},
-                        scenePhase: scenePhase
+                        scenePhase: scenePhase,
+                        padPanel: RecipeDetailPadPanel(
+                            detailWidth: layout.detailWidth,
+                            toolbarStyle: layout.toolbarStyle,
+                            coordinator: coordinator
+                        )
                     )
                     .id(recipeId)
                 } else {

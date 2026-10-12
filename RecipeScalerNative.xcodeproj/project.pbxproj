@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0813971944D613633CE0F999 /* YDocRecipeDetailColumns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0810E26824E331FAC2A2A356 /* YDocRecipeDetailColumns.swift */; };
 		081BACD5F55A1B03061EB394 /* IPadShellSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */; };
 		081A15CAD06242AEB73277A9 /* IPadProfileSheetPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0817B80AFD53CD65E53B0BEA /* IPadProfileSheetPolicyTests.swift */; };
 		081D48A0C5792DA6C6306F66 /* IPadProfileSheetModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081B3845856DC980503EE6A8 /* IPadProfileSheetModifier.swift */; };
@@ -867,6 +868,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0810E26824E331FAC2A2A356 /* YDocRecipeDetailColumns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YDocRecipeDetailColumns.swift; sourceTree = "<group>"; };
 		08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadShellSpec.swift; sourceTree = "<group>"; };
 		0817B80AFD53CD65E53B0BEA /* IPadProfileSheetPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetPolicyTests.swift; sourceTree = "<group>"; };
 		081B3845856DC980503EE6A8 /* IPadProfileSheetModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetModifier.swift; sourceTree = "<group>"; };
@@ -1750,6 +1752,7 @@
 		2C4753BF21C7787912B3866F /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				0810E26824E331FAC2A2A356 /* YDocRecipeDetailColumns.swift */,
 				081D040ECE4EA13E423B0050 /* NewCollectionCommit.swift */,
 				081A7F962A0092E70734257D /* AccountAvatarView.swift */,
 				081435AA90949164D95209FA /* AppShellTabRoots.swift */,
@@ -3221,6 +3224,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0813971944D613633CE0F999 /* YDocRecipeDetailColumns.swift in Sources */,
 				081D48A0C5792DA6C6306F66 /* IPadProfileSheetModifier.swift in Sources */,
 				081E76BD3B8AF81943CFF690 /* IPadProfileSheetPolicy.swift in Sources */,
 				0816FFE16E7751247F2308B4 /* IPadAssistantToolbarButton.swift in Sources */,

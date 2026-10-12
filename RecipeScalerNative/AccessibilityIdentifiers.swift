@@ -277,6 +277,10 @@ enum AccessibilityIdentifiers {
     static let ipadShowRecipeListButton = "ipad-show-recipe-list-button"
     /// The recipe panel next to the list column (empty when the list is empty).
     static let ipadRecipeDetailPanel = "ipad-recipe-detail-panel"
+    /// Two-column recipe: the left column (photo, ingredients), the divider, the steps.
+    static let ipadRecipeDetailLeftColumn = "ipad-recipe-detail-left-column"
+    static let ipadRecipeColumnDivider = "ipad-recipe-column-divider"
+    static let ipadRecipeDetailRightColumn = "ipad-recipe-detail-right-column"
     static let ipadAssistantInspector = "ipad-assistant-inspector"
     /// ✦ — opens and closes the assistant inspector.
     static let ipadAssistantToolbarButton = "ipad-assistant-toolbar-button"
