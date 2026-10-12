@@ -92,6 +92,12 @@ struct RecipesSelection: Equatable {
         ))
     }
 
+    /// «Все рецепты» with the open recipe kept (prototype: the sidebar row «Рецепты» and
+    /// the title menu); edit mode is dropped.
+    static func selectingAllRecipes(in path: [RecipesRoute]) -> [RecipesRoute] {
+        self.path(for: RecipesSelection(recipeId: selection(from: path).recipeId))
+    }
+
     // MARK: - Remote deletions
 
     /// Repairs a selection after a sync removed what it points to (spec.md edge cases):
@@ -129,5 +135,57 @@ struct RecipesSelection: Equatable {
         resolved.recipeFolderContext = replacement == nil ? nil : resolved.recipeFolderContext
         resolved.openInEditMode = false
         return resolved
+    }
+
+    // MARK: - iPad split (T028)
+
+    /// The path the iPad split writes back, or `nil` when `path` stays as it is.
+    ///
+    /// - A path the shared phone code appended to (deep links, Spotlight, import:
+    ///   `[.folder, .recipe, .recipe]`) becomes canonical; a recipe outside the selected
+    ///   collection opens in «Все рецепты», so its row is highlighted.
+    /// - The selected collection is gone → «Все рецепты».
+    /// - The open recipe was deleted (it was in `previousLiveRecipeIds` and is not in
+    ///   `liveRecipeIds`) → `resolvingDeletions` over the list as it was. A recipe that has
+    ///   not reached the list yet (just created) or only left the collection stays open.
+    /// - Nothing open → the first recipe of the list (pinned first).
+    ///
+    /// `listRecipeIds` gives a list as the column shows it: `nil` is «Все рецепты».
+    static func splitRepairedPath(
+        _ path: [RecipesRoute],
+        userFolderIds: [String],
+        liveRecipeIds: Set<String>,
+        previousLiveRecipeIds: Set<String>,
+        listRecipeIds: (_ collectionId: String?) -> [String],
+        previousListRecipeIds: [String]
+    ) -> [RecipesRoute]? {
+        var selection = selection(from: path)
+        let isCanonical = self.path(for: selection) == path
+        if let collectionId = selection.collectionId {
+            let isGone = !RecipeFolderRoutes.isValidFolderId(collectionId, userFolderIds: userFolderIds)
+            let isOutside = !isCanonical
+                && selection.recipeId.map { !listRecipeIds(collectionId).contains($0) } == true
+            if isGone || isOutside {
+                selection.collectionId = nil
+                selection.recipeFolderContext = nil
+            }
+        }
+        let list = listRecipeIds(selection.collectionId)
+        if let recipeId = selection.recipeId {
+            if !liveRecipeIds.contains(recipeId), previousLiveRecipeIds.contains(recipeId) {
+                selection = resolvingDeletions(
+                    selection,
+                    userFolderIds: userFolderIds,
+                    recipeIds: list,
+                    previousRecipeIds: previousListRecipeIds
+                )
+            }
+        } else if let first = list.first {
+            selection.recipeId = first
+            selection.recipeFolderContext = selection.collectionId
+            selection.openInEditMode = false
+        }
+        let repaired = self.path(for: selection)
+        return repaired == path ? nil : repaired
     }
 }

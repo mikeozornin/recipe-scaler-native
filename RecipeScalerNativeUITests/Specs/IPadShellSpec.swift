@@ -90,10 +90,7 @@ final class IPadShellSpec: BaseTestCase {
         let (row, name) = createCollectionFromSidebar()
         showSidebar()
         row.tap()
-        XCTAssertTrue(
-            app.navigationBars[name].waitForExistence(timeout: Wait.element),
-            "Collection «\(name)» did not open in Recipes"
-        )
+        XCTAssertTrue(collectionOpened(name), "Collection «\(name)» did not open in Recipes")
         showSidebar()
         XCTAssertTrue(waitUntil { row.isSelected }, "The collection row is not selected in the sidebar")
     }
@@ -111,7 +108,7 @@ final class IPadShellSpec: BaseTestCase {
         row.tap()
         // A tap closes the overlay sidebar: the top bar is back.
         XCTAssertTrue(waitUntil { !self.footer.exists }, "Overlay sidebar stayed open after a collection tap")
-        XCTAssertTrue(app.navigationBars[name].waitForExistence(timeout: Wait.element), "Collection «\(name)» did not open")
+        XCTAssertTrue(collectionOpened(name), "Collection «\(name)» did not open")
         let recipes = topBarTab(UIA.tabRecipes)
         XCTAssertTrue(waitUntil { recipes.isSelected }, "«Рецепты» is not selected in the top bar")
         let collectionInBar = app.descendants(matching: .any)
@@ -235,6 +232,18 @@ final class IPadShellSpec: BaseTestCase {
     }
 
     private var footer: XCUIElement { element(UIA.ipadSidebarFooter) }
+
+    /// The collection is open in Recipes: the list column title (US2 split, an empty
+    /// collection keeps the list over the empty panel) or the phone navigation bar.
+    private func collectionOpened(_ name: String) -> Bool {
+        let columnTitle = app.descendants(matching: .any).matching(NSPredicate(
+            format: "identifier IN %@ AND label CONTAINS %@",
+            [UIA.ipadRecipeListTitle, UIA.ipadRecipeListTitleMenu],
+            name
+        )).firstMatch
+        let navigationBar = app.navigationBars[name]
+        return waitUntil { columnTitle.exists || navigationBar.exists }
+    }
 
     private var sidebarToggle: XCUIElement {
         app.buttons

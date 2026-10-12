@@ -24,6 +24,19 @@ struct CollectionRecipesIndex: Sendable, Equatable {
         folderRecipesById: [:]
     )
 
+    /// Recipes of one list in display order (pinned first), as the iPad list column
+    /// shows them (spec 081): `nil` is «Все рецепты», otherwise a user collection or a
+    /// virtual folder (`CollectionVirtualFolders`).
+    func entries(inList collectionId: String?) -> [CollectionEntry] {
+        guard let collectionId, collectionId != CollectionVirtualFolders.allRecipesFolderId else {
+            return live
+        }
+        if collectionId == CollectionVirtualFolders.uncategorizedFolderId {
+            return uncategorized
+        }
+        return folderRecipesById[collectionId] ?? []
+    }
+
     /// Split a pin-first sorted list in one pass (no dual `filter`).
     /// Requires entries already ordered with all pinned items first (display sort).
     static func partitionPinned(

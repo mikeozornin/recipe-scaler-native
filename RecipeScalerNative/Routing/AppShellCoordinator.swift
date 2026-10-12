@@ -103,6 +103,10 @@ final class AppShellCoordinator {
     /// source of truth for that sheet. The selected section does not change.
     var isProfileSheetPresented = false
 
+    /// Spec 081 (T024) — the user hid the recipe list column of the iPad split; the
+    /// «Список рецептов» button shows it again. DEBUG `-IPadListHidden=1` starts hidden.
+    var recipesListHiddenByUser = DebugLaunchOptions.iPadListHidden
+
     /// Spec 081 — bumped each time the profile sheet closes, so the iPad sidebar footer
     /// reloads the name and avatar that may have changed in the sheet.
     private(set) var profileSheetRevision = 0
@@ -519,6 +523,7 @@ final class AppShellCoordinator {
         pendingAssistantTabOpen = false
         pendingShakeAssistantOpenRequest = nil
         isProfileSheetPresented = false
+        recipesListHiddenByUser = false
         discoverListState?.clearAll()
         selectedTab = .recipes
         lastNonProfileTab = .recipes

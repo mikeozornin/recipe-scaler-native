@@ -50,6 +50,10 @@ struct IPadShellSelection {
             coordinator.presentProfileSheet()
         case .newCollection:
             onNewCollection()
+        case .tab(.recipes) where isSplitActive && coordinator.selectedTab == .recipes:
+            // The split has no stack to pop: «Рецепты» again is «Все рецепты» with the
+            // open recipe kept.
+            coordinator.recipesPath = RecipesSelection.selectingAllRecipes(in: coordinator.recipesPath)
         case .tab(let tab):
             // «Ассистент» keeps the selection (pending open, as on the iPhone);
             // a second tap on the current section pops it to the root.

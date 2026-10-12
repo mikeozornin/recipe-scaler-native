@@ -42,7 +42,9 @@ struct IPadAdaptiveTabView: View {
         IPadShellSelection(
             coordinator: coordinator,
             sidebarShown: sidebarShown && !isCompact,
+            isSplitActive: layoutMode == .padRegular,
             collectionIds: Set(collections.map(\.id)),
+            firstRecipeId: { syncService.collectionIndex.entries(inList: $0).first?.id },
             layoutMode: layoutMode,
             onNewCollection: presentNewCollectionAlert
         )
@@ -60,11 +62,11 @@ struct IPadAdaptiveTabView: View {
             }
 
             Tab(value: IPadShellItem.tab(.recipes)) {
-                // One `RecipeListView` at a time: a selected collection row hosts it.
+                // One Recipes root at a time: a selected collection row hosts it.
                 if case .collection = current {
                     page(Color.clear)
                 } else {
-                    page(tabRoots.recipes())
+                    recipesPage()
                 }
             } label: {
                 AppTabBarLabel(tab: .recipes)
@@ -108,7 +110,7 @@ struct IPadAdaptiveTabView: View {
                         let count = syncService.collectionIndex.countByFolder[folder.id] ?? 0
                         Tab(value: item) {
                             if current == item {
-                                page(tabRoots.recipes())
+                                recipesPage()
                             } else {
                                 page(Color.clear)
                             }
@@ -195,6 +197,17 @@ struct IPadAdaptiveTabView: View {
     /// Every page reports the tab bar placement; only the selected one is on screen.
     private func page<Content: View>(_ content: Content) -> some View {
         content.reportsIPadSidebarShown($sidebarShown)
+    }
+
+    /// `.padRegular`: the list column and the recipe panel (T024); the title of the column
+    /// is the collection menu while the tab bar is the top bar. Else the phone stack.
+    @ViewBuilder
+    private func recipesPage() -> some View {
+        if layoutMode == .padRegular {
+            page(tabRoots.recipesSplit(showsCollectionMenu: !sidebarShown))
+        } else {
+            page(tabRoots.recipes())
+        }
     }
 
     private func sidebarBadge(_ count: Int) -> Int {

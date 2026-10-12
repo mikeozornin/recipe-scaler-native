@@ -47,6 +47,22 @@ struct AppShellTabRoots {
         ))
     }
 
+    /// Spec 081 (T024) — the Recipes section on `.padRegular`: list column + recipe panel.
+    func recipesSplit(showsCollectionMenu: Bool) -> some View {
+        modernTabRoot(IPadRecipesSplitView(
+            coordinator: coordinator,
+            syncService: syncService,
+            assistantRecipeContext: assistantRecipeContext,
+            timerManager: timerManager,
+            apiClient: appContainer?.api ?? .shared,
+            appContainer: appContainer,
+            systemBannerStore: appContainer?.systemBanner ?? SystemBannerStore(),
+            mobileTimerPanelIsCollapsed: mobileTimerPanelCollapsed,
+            scenePhase: scenePhase,
+            showsCollectionMenu: showsCollectionMenu
+        ))
+    }
+
     func shopping() -> some View {
         modernTabRoot(ShoppingListView(
             path: $coordinator.shoppingPath,

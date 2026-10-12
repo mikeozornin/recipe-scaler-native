@@ -238,8 +238,19 @@ enum UIA {
     static let ipadSidebarNewCollection = "ipad-sidebar-new-collection"
     static let ipadNewCollectionNameField = "ipad-new-collection-name-field"
     static let ipadRecipeListColumn = "ipad-recipe-list-column"
+    /// Title of the list column next to the sidebar; in the top bar the title is a menu.
+    static let ipadRecipeListTitle = "ipad-recipe-list-title"
+    static let ipadRecipeListTitleMenu = "ipad-recipe-list-title-menu"
+    /// Dimming behind the list shown over the recipe; a tap hides the list.
+    static let ipadRecipeListDim = "ipad-recipe-list-dim"
     /// «Список рецептов» — shows the hidden list column.
     static let ipadShowRecipeListButton = "ipad-show-recipe-list-button"
+    /// The recipe panel next to the list column (empty when the list is empty).
+    static let ipadRecipeDetailPanel = "ipad-recipe-detail-panel"
+    /// Two-column recipe: the left column (photo, ingredients), the divider, the steps.
+    static let ipadRecipeDetailLeftColumn = "ipad-recipe-detail-left-column"
+    static let ipadRecipeColumnDivider = "ipad-recipe-column-divider"
+    static let ipadRecipeDetailRightColumn = "ipad-recipe-detail-right-column"
     static let ipadAssistantInspector = "ipad-assistant-inspector"
     /// ✦ — opens and closes the assistant inspector.
     static let ipadAssistantToolbarButton = "ipad-assistant-toolbar-button"
