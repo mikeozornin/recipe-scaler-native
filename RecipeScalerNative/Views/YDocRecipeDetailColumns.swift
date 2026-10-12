@@ -42,6 +42,12 @@ struct YDocRecipeDetailColumns<Left: View, Right: View>: View {
         dragWidth ?? layoutLeftWidth
     }
 
+    /// The divider's VoiceOver value: the left column's share of the panel.
+    private var leftColumnPercent: Int {
+        guard detailWidth > 0 else { return 0 }
+        return Int((leftWidth / detailWidth * 100).rounded())
+    }
+
     private func clamped(_ preferred: CGFloat?) -> CGFloat {
         IPadLayoutPolicy.detailLeftWidth(preferred: preferred, detailWidth: detailWidth)
             ?? IPadLayoutMetrics.detailLeftWidth
@@ -92,7 +98,10 @@ struct YDocRecipeDetailColumns<Left: View, Right: View>: View {
             .gesture(dragGesture)
             .accessibilityElement()
             .accessibilityLabel(Text("ipad.recipe.columnDivider"))
-            .accessibilityValue(Text(verbatim: "\(Int(leftWidth.rounded())) pt"))
+            .accessibilityValue(Text(String(
+                format: Bundle.currentLocalizedString("ipad.recipe.columnDivider.value"),
+                leftColumnPercent
+            )))
             .accessibilityAdjustableAction { direction in
                 let step = IPadLayoutMetrics.columnDividerAccessibilityStep
                 switch direction {

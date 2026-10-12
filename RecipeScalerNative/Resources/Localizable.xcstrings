@@ -15928,6 +15928,23 @@
         }
       }
     },
+    "ipad.recipe.columnDivider.value": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left column %lld%%"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Левая колонка — %lld%%"
+          }
+        }
+      }
+    },
     "ipad.recipe.context.add-to-collection": {
       "extractionState": "manual",
       "localizations": {
