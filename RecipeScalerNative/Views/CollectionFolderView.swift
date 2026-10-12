@@ -13,6 +13,8 @@ struct CollectionFolderView: View {
     let timerManager: TimerManager
     let mobileTimerPanelIsCollapsed: Bool
     @Binding var navigationPath: [RecipesRoute]
+    /// Spec 081 (T023) — the list column of the iPad split; `nil` on the phone.
+    var column: RecipeListColumn? = nil
 
     @State private var isEditingName = false
     @State private var editingName = ""
@@ -72,6 +74,20 @@ struct CollectionFolderView: View {
 
     private var isSearching: Bool {
         !searchTokens.isEmpty
+    }
+
+    /// The column keeps its query in the split, outside the column `NavigationStack`.
+    private var searchQuery: Binding<String> {
+        column?.searchText ?? $searchText
+    }
+
+    /// The leading title of the iPad column: the collection name with its emoji.
+    private var columnTitle: RecipeListColumnTitle? {
+        guard let column else { return nil }
+        let title = [folderPresentation.leadingEmoji, displayName]
+            .compactMap { $0 }
+            .joined(separator: " ")
+        return RecipeListColumnTitle(title: title, menu: column.collectionMenu)
     }
 
     /// Entries to render: precomputed filtered snapshot when searching, full
@@ -159,19 +175,31 @@ struct CollectionFolderView: View {
                 .id(pinStateSignature)
             }
         }
-        .searchable(text: $searchText, prompt: Text("search.recipes"))
+        .searchable(
+            text: searchQuery,
+            // The column: a field under the title (prototype); the phone keeps its placement.
+            placement: column == nil ? .automatic : .navigationBarDrawer(displayMode: .always),
+            prompt: Text("search.recipes")
+        )
         .onAppear {
             searchStore.bind(syncService: syncService)
+            if column != nil, !searchQuery.wrappedValue.isEmpty {
+                // The column came back (inline ↔ over the recipe) with a query.
+                let query = searchQuery.wrappedValue
+                searchTokens = RecipeSearchUtils.tokenizeQuery(query)
+                searchStore.refresh(entries: folderRecipes, query: query)
+            }
         }
-        .onChange(of: searchText) { _, query in
+        .onChange(of: searchQuery.wrappedValue) { _, query in
             searchTokens = RecipeSearchUtils.tokenizeQuery(query)
             searchStore.refresh(entries: folderRecipes, query: query)
         }
         .onChange(of: folderRecipes.map(\.id)) { _, _ in
             guard isSearching else { return }
-            searchStore.refresh(entries: folderRecipes, query: searchText)
+            searchStore.refresh(entries: folderRecipes, query: searchQuery.wrappedValue)
         }
         .modifier(FolderNavigationTitleModifier(
+            columnTitle: columnTitle,
             isEditingName: isEditingName,
             editingName: $editingName,
             editingColor: $editingColor,
@@ -344,7 +372,10 @@ struct CollectionFolderView: View {
     private func deleteFolder() async {
         do {
             try await syncService.deleteFolder(id: folderId)
-            navigationPath.removeLast()
+            // The iPad column has no stack to pop: the split falls back to «Все рецепты».
+            if !navigationPath.isEmpty {
+                navigationPath.removeLast()
+            }
         } catch {
             presentedAlert = .error(UserFacingAPIError.message(for: error))
         }
@@ -367,6 +398,10 @@ struct CollectionFolderView: View {
                 }
             }
 
+            if let column {
+                column.selectRecipe(recipeId, folderId, true)
+                return
+            }
             navigationPath.append(
                 RecipesRoute.recipe(
                     recipeId: recipeId,
@@ -471,32 +506,43 @@ struct CollectionFolderView: View {
 
     @ViewBuilder
     private func recipeRowView(for item: RecipeRowData) -> some View {
-        let route = RecipesRoute.recipe(
-            recipeId: item.id,
-            folderContext: RecipeFolderRoutes.shouldUseFolderRecipePath(
-                activeFolderId: folderId,
-                viewMode: .collections,
-                recipeFolderIds: syncService.collectionEntries
-                    .first { $0.id == item.id }?.folderIds
-            ) ? folderId : nil
-        )
+        let folderContext = RecipeFolderRoutes.shouldUseFolderRecipePath(
+            activeFolderId: folderId,
+            viewMode: .collections,
+            recipeFolderIds: syncService.collectionEntries
+                .first { $0.id == item.id }?.folderIds
+        ) ? folderId : nil
+        let route = RecipesRoute.recipe(recipeId: item.id, folderContext: folderContext)
+        let isSelected = column?.selectedRecipeId == item.id
         ZStack(alignment: .leading) {
             RecipeRow(
                 data: item,
                 highlight: isSearching ? searchStore.highlights[item.id] : nil,
-                allowsNetworkRefresh: allowsImageNetworkRefresh
+                allowsNetworkRefresh: allowsImageNetworkRefresh,
+                isSelected: isSelected
             )
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            NavigationLink(value: route) {
-                Color.clear
+            if let column {
+                Button {
+                    column.selectRecipe(item.id, folderContext, false)
+                } label: {
+                    Color.clear
+                }
+                .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
+                .opacity(0.01)
+            } else {
+                NavigationLink(value: route) {
+                    Color.clear
+                }
+                .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
+                .opacity(0.01)
             }
-            .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
-            .opacity(0.01)
         }
         .buttonStyle(.plain)
         .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
         .accessibilityIdentifier(AccessibilityIdentifiers.recipeRow(id: item.id))
+        .modifier(RecipeColumnRowSelection(isColumn: column != nil, isSelected: isSelected))
         .swipeActions(edge: .leading, allowsFullSwipe: false) {
             Button {
                 Task { await addRecipeToShopping(item) }
@@ -546,6 +592,8 @@ struct CollectionFolderView: View {
 // MARK: - Navigation title modifier (supports inline rename)
 
 private struct FolderNavigationTitleModifier: ViewModifier {
+    /// The iPad column shows the name as a leading title (T023), not centered.
+    let columnTitle: RecipeListColumnTitle?
     let isEditingName: Bool
     @Binding var editingName: String
     @Binding var editingColor: Color
@@ -555,55 +603,76 @@ private struct FolderNavigationTitleModifier: ViewModifier {
     let onCommit: () -> Void
     let onCancel: () -> Void
 
+    private var title: String {
+        isEditingName || columnTitle != nil ? "" : displayName
+    }
+
     func body(content: Content) -> some View {
         content
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(isEditingName)
-            .navigationTitle(Text(verbatim: isEditingName ? "" : displayName))
+            .navigationTitle(Text(verbatim: title))
             .localizedNavigationBackTitle(verbatim: displayName)
-            .toolbar {
-                if isEditingName {
-                    ToolbarItem(placement: .principal) {
-                        HStack(spacing: 8) {
-                            RenameTextField(
-                                text: $editingName,
-                                isFocused: $isNameFieldFocused,
-                                onSubmit: onCommit
-                            )
-                            .frame(maxWidth: .infinity)
+            .toolbar { titleItems }
+            .modifier(RecipeListColumnTitleToolbar(title: isEditingName ? nil : columnTitle))
+    }
 
-                            ColorPicker(
-                                String(localized: "collections.collection-color"),
-                                selection: $editingColor,
-                                supportsOpacity: false
-                            )
-                            .labelsHidden()
-                            .frame(width: 30, height: 30)
-                        }
-                    }
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(String(localized: "recipe.list.delete.confirm.cancel")) {
-                            onCancel()
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(String(localized: "collections.done")) {
-                            onCommit()
-                        }
-                    }
-                } else if let leadingEmoji {
-                    ToolbarItem(placement: .principal) {
-                        HStack(spacing: 6) {
-                            Text(leadingEmoji)
-                                .font(AppTypography.body)
-                                .fixedSize()
-                            Text(displayName)
-                                .appBody()
-                                .lineLimit(1)
-                        }
-                    }
-                }
+    @ToolbarContentBuilder
+    private var titleItems: some ToolbarContent {
+        if isEditingName {
+            renameItems
+        } else if columnTitle == nil, let leadingEmoji {
+            ToolbarItem(placement: .principal) {
+                emojiTitle(leadingEmoji)
             }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var renameItems: some ToolbarContent {
+        ToolbarItem(placement: .principal) {
+            renameField
+        }
+        ToolbarItem(placement: .cancellationAction) {
+            Button(String(localized: "recipe.list.delete.confirm.cancel")) {
+                onCancel()
+            }
+        }
+        ToolbarItem(placement: .confirmationAction) {
+            Button(String(localized: "collections.done")) {
+                onCommit()
+            }
+        }
+    }
+
+    private var renameField: some View {
+        HStack(spacing: 8) {
+            RenameTextField(
+                text: $editingName,
+                isFocused: $isNameFieldFocused,
+                onSubmit: onCommit
+            )
+            .frame(maxWidth: .infinity)
+
+            ColorPicker(
+                String(localized: "collections.collection-color"),
+                selection: $editingColor,
+                supportsOpacity: false
+            )
+            .labelsHidden()
+            .frame(width: 30, height: 30)
+        }
+    }
+
+    private func emojiTitle(_ leadingEmoji: String) -> some View {
+        HStack(spacing: 6) {
+            Text(leadingEmoji)
+                .font(AppTypography.body)
+                .fixedSize()
+            Text(displayName)
+                .appBody()
+                .lineLimit(1)
+        }
     }
 }
 

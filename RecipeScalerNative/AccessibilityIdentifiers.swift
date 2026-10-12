@@ -268,6 +268,9 @@ enum AccessibilityIdentifiers {
     static let ipadSidebarNewCollection = "ipad-sidebar-new-collection"
     static let ipadNewCollectionNameField = "ipad-new-collection-name-field"
     static let ipadRecipeListColumn = "ipad-recipe-list-column"
+    /// Title of the list column next to the sidebar; in the top bar the title is a menu.
+    static let ipadRecipeListTitle = "ipad-recipe-list-title"
+    static let ipadRecipeListTitleMenu = "ipad-recipe-list-title-menu"
     /// «Список рецептов» — shows the hidden list column.
     static let ipadShowRecipeListButton = "ipad-show-recipe-list-button"
     static let ipadAssistantInspector = "ipad-assistant-inspector"

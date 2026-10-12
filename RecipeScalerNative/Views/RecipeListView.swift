@@ -15,6 +15,8 @@ struct RecipeListView: View {
     let systemBannerStore: SystemBannerStore
     let mobileTimerPanelIsCollapsed: Bool
     let scenePhase: ScenePhase
+    /// Spec 081 (T023) — the list column of the iPad split; `nil` on the phone.
+    let column: RecipeListColumn?
     @Binding var navigationPath: [RecipesRoute]
     @State private var searchText = ""
     @State private var presentedSheet: RecipeListSheet?
@@ -46,7 +48,8 @@ struct RecipeListView: View {
         appContainer: AppContainer? = nil,
         systemBannerStore: SystemBannerStore,
         mobileTimerPanelIsCollapsed: Bool = true,
-        scenePhase: ScenePhase = .active
+        scenePhase: ScenePhase = .active,
+        column: RecipeListColumn? = nil
     ) {
         _navigationPath = navigationPath
         self.syncService = syncService
@@ -58,6 +61,7 @@ struct RecipeListView: View {
         self.systemBannerStore = systemBannerStore
         self.mobileTimerPanelIsCollapsed = mobileTimerPanelIsCollapsed
         self.scenePhase = scenePhase
+        self.column = column
     }
     #if DEBUG
     @State private var didOpenDebugRecipe = false
@@ -72,6 +76,11 @@ struct RecipeListView: View {
 
     private var isSearching: Bool {
         !searchTokens.isEmpty
+    }
+
+    /// The column keeps its query in the split, outside the column `NavigationStack`.
+    private var searchQuery: Binding<String> {
+        column?.searchText ?? $searchText
     }
 
     /// Entries to render: precomputed filtered snapshot when searching, the
@@ -109,6 +118,8 @@ struct RecipeListView: View {
 
     /// Whether we should show the collections root instead of the flat list.
     private var showsCollectionsRoot: Bool {
+        // The iPad column lists recipes; collections are sidebar rows or the title menu.
+        if column != nil { return false }
         #if DEBUG
         if DebugLaunchOptions.openRecipeName != nil || DebugLaunchOptions.openRecipeId != nil {
             return false
@@ -137,252 +148,277 @@ struct RecipeListView: View {
     var body: some View {
         // Toolbar host must sit *inside* NavigationStack (ShoppingListView pattern).
         // Wrapping the stack from outside left .toolbar off the nav bar — switcher vanished.
-        NavigationStack(path: $navigationPath) {
-            RecipeListToolbarHost(
-                isCreatingRecipe: isCreatingRecipe,
-                onCreateRecipe: {
-                    Task { @MainActor in
-                        await handleCreateRecipe(folderId: nil)
-                    }
-                },
-                onImport: { coordinator.presentImport() },
-                viewModeMenu: { viewModeMenu }
-            ) {
-            VStack(spacing: 0) {
-                if showsDatabaseInitFailedBanner {
-                    DatabaseInitFailedBanner()
-                }
+        if column != nil {
+            // The iPad split hosts the column in its own `NavigationStack`.
+            listScreen
+        } else {
+            NavigationStack(path: $navigationPath) {
+                listScreen
+            }
+        }
+    }
 
-                Group {
-                if showsCollectionsRoot {
-                    CollectionsRootView(
-                        syncService: syncService,
-                        timerManager: timerManager,
-                        systemBannerStore: systemBannerStore,
-                        mobileTimerPanelIsCollapsed: mobileTimerPanelIsCollapsed,
-                        navigationPath: $navigationPath
-                    )
-                } else if !isUITestingHost && !syncService.isLocalDataLoaded
-                            || (!isUITestingHost
-                                && syncService.connectionState == .connecting
-                                && syncService.collectionEntries.isEmpty) {
+    private var listScreen: some View {
+        RecipeListToolbarHost(
+            isCreatingRecipe: isCreatingRecipe,
+            onCreateRecipe: {
+                Task { @MainActor in
+                    await handleCreateRecipe(folderId: nil)
+                }
+            },
+            onImport: { coordinator.presentImport() },
+            columnTitle: column.map { column in
+                RecipeListColumnTitle(
+                    title: Bundle.currentLocalizedString("collections.all-recipes"),
+                    menu: column.collectionMenu
+                )
+            },
+            viewModeMenu: { viewModeMenu }
+        ) {
+        VStack(spacing: 0) {
+            if showsDatabaseInitFailedBanner {
+                DatabaseInitFailedBanner()
+            }
+
+            Group {
+            if showsCollectionsRoot {
+                CollectionsRootView(
+                    syncService: syncService,
+                    timerManager: timerManager,
+                    systemBannerStore: systemBannerStore,
+                    mobileTimerPanelIsCollapsed: mobileTimerPanelIsCollapsed,
+                    navigationPath: $navigationPath
+                )
+            } else if !isUITestingHost && !syncService.isLocalDataLoaded
+                        || (!isUITestingHost
+                            && syncService.connectionState == .connecting
+                            && syncService.collectionEntries.isEmpty) {
+                VStack(spacing: 0) {
+                    SystemBannerChrome(systemBannerStore: systemBannerStore)
+                    ReleaseNotesChrome()
+                    ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
+                        .mobileTimerPanelBottomPadding()
+                }
+            } else if !hasAnyRows {
+                if isSearching {
                     VStack(spacing: 0) {
                         SystemBannerChrome(systemBannerStore: systemBannerStore)
                         ReleaseNotesChrome()
-                        ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
-                            .mobileTimerPanelBottomPadding()
-                    }
-                } else if !hasAnyRows {
-                    if isSearching {
-                        VStack(spacing: 0) {
-                            SystemBannerChrome(systemBannerStore: systemBannerStore)
-                            ReleaseNotesChrome()
-                            ContentUnavailableView {
-                                AppEmptyState.label("recipe.list.search-empty.title", symbol: "magnifyingglass")
-                            }
-                            .font(AppTypography.body)
-                            .mobileTimerPanelBottomPadding()
+                        ContentUnavailableView {
+                            AppEmptyState.label("recipe.list.search-empty.title", symbol: "magnifyingglass")
                         }
-                    } else {
-                        VStack(spacing: 0) {
-                            SystemBannerChrome(systemBannerStore: systemBannerStore)
-                            ReleaseNotesChrome()
-                            ContentUnavailableView {
-                                VStack(spacing: 12) {
-                                    AppEmptyStateIllustration(asset: .recipeNotebookEmpty)
-                                    Text("recipe.list.empty.title")
-                                        .appBody()
-                                }
-                            } description: {
-                                Text("recipe.list.empty.description")
-                                    .appBody()
-                            }
-                            .font(AppTypography.body)
-                            .mobileTimerPanelBottomPadding()
-                        }
+                        .font(AppTypography.body)
+                        .mobileTimerPanelBottomPadding()
                     }
                 } else {
-                    List {
-                        // Scrolls away with recipe rows (not sticky above the List).
-                        SystemBannerListRow(systemBannerStore: systemBannerStore)
-                        ReleaseNotesListRow()
-
-                        if !pinnedRowItems.isEmpty {
-                            RecipeListSectionHeader(isPinnedSection: true)
-                                .recipeListSectionHeaderRow()
-
-                            recipeRows(pinnedRowItems)
-                        }
-
-                        if !unpinnedRowItems.isEmpty {
-                            if !pinnedRowItems.isEmpty {
-                                RecipeListSectionHeader(isPinnedSection: false)
-                                    .recipeListSectionHeaderRow()
+                    VStack(spacing: 0) {
+                        SystemBannerChrome(systemBannerStore: systemBannerStore)
+                        ReleaseNotesChrome()
+                        ContentUnavailableView {
+                            VStack(spacing: 12) {
+                                AppEmptyStateIllustration(asset: .recipeNotebookEmpty)
+                                Text("recipe.list.empty.title")
+                                    .appBody()
                             }
-
-                            recipeRows(unpinnedRowItems)
+                        } description: {
+                            Text("recipe.list.empty.description")
+                                .appBody()
                         }
-
-                        if MobileTimerPanelListChrome.needsSpacer(
-                            timerManager: timerManager,
-                            isCollapsed: mobileTimerPanelIsCollapsed
-                        ) {
-                            MobileTimerPanelListSpacerRow()
-                        }
+                        .font(AppTypography.body)
+                        .mobileTimerPanelBottomPadding()
                     }
-                    .listStyle(.plain)
-                    .listSectionSpacing(0)
-                    .environment(\.defaultMinListRowHeight, 1)
-                    .accessibilityIdentifier(AccessibilityIdentifiers.recipeList)
                 }
-                }
-            }
-            .searchable(text: $searchText, prompt: Text("search.recipes"))
-            .onAppear {
-                searchStore.bind(syncService: syncService)
-                #if DEBUG
-                // #region agent log
-                AgentSyncDebugLog.assistantLayout(
-                    hypothesisId: "H4",
-                    location: "RecipeListView.onAppear",
-                    message: "recipes_tab_visible",
-                    data: [
-                        "selectedTab": coordinator.selectedTab.rawValue,
-                        "assistantSheetOpen": assistantRecipeContext.isAssistantSheetOpen ? "true" : "false",
-                        "viewMode": viewMode.rawValue
-                    ]
-                )
-                AgentSyncDebugLog.logNavigationBarState(
-                    hypothesisId: "H2",
-                    location: "RecipeListView.onAppear",
-                    tag: "recipes_onAppear"
-                )
-                // #endregion
-                #endif
-            }
-            .background {
-                GeometryReader { geo in
-                    Color.clear
-                        .onChange(of: geo.safeAreaInsets.top) { _, top in
-                            #if DEBUG
-                            // #region agent log
-                            guard top > 0 else { return }
-                            AgentSyncDebugLog.assistantLayout(
-                                hypothesisId: "H4",
-                                location: "RecipeListView.safeArea",
-                                message: "safe_area_top_changed",
-                                data: [
-                                    "safeTop": String(format: "%.1f", top),
-                                    "assistantSheetOpen": assistantRecipeContext.isAssistantSheetOpen ? "true" : "false"
-                                ]
-                            )
-                            // #endregion
-                            #endif
+            } else {
+                List {
+                    // Scrolls away with recipe rows (not sticky above the List).
+                    SystemBannerListRow(systemBannerStore: systemBannerStore)
+                    ReleaseNotesListRow()
+
+                    if !pinnedRowItems.isEmpty {
+                        RecipeListSectionHeader(isPinnedSection: true)
+                            .recipeListSectionHeaderRow()
+
+                        recipeRows(pinnedRowItems)
+                    }
+
+                    if !unpinnedRowItems.isEmpty {
+                        if !pinnedRowItems.isEmpty {
+                            RecipeListSectionHeader(isPinnedSection: false)
+                                .recipeListSectionHeaderRow()
                         }
+
+                        recipeRows(unpinnedRowItems)
+                    }
+
+                    if MobileTimerPanelListChrome.needsSpacer(
+                        timerManager: timerManager,
+                        isCollapsed: mobileTimerPanelIsCollapsed
+                    ) {
+                        MobileTimerPanelListSpacerRow()
+                    }
                 }
+                .listStyle(.plain)
+                .listSectionSpacing(0)
+                .environment(\.defaultMinListRowHeight, 1)
+                .accessibilityIdentifier(AccessibilityIdentifiers.recipeList)
             }
-            .onChange(of: searchText) { _, query in
-                // Tokens computed once per change (was: 16–26× per render).
+            }
+        }
+        .searchable(
+            text: searchQuery,
+            // The column: a field under the title (prototype); the phone keeps its placement.
+            placement: column == nil ? .automatic : .navigationBarDrawer(displayMode: .always),
+            prompt: Text("search.recipes")
+        )
+        .onAppear {
+            searchStore.bind(syncService: syncService)
+            if column != nil, !searchQuery.wrappedValue.isEmpty {
+                // The column came back (inline ↔ over the recipe) with a query.
+                let query = searchQuery.wrappedValue
                 searchTokens = RecipeSearchUtils.tokenizeQuery(query)
-                // `live` is already in display order (same comparator); no re-sort per keystroke.
                 searchStore.refresh(entries: syncService.collectionIndex.live, query: query)
             }
-            .onChange(of: syncService.collectionIndex.live) { _, live in
-                // The search snapshot is frozen per query; deletes, renames and pins
-                // made while searching (e.g. from the detail screen) must re-filter it.
-                guard isSearching else { return }
-                searchStore.refresh(entries: live, query: searchText)
-            }
-            .localizedNavigationTitle("Recipes")
-            .navigationBarTitleDisplayMode(.inline)
-            .appListBodyTypography()
-            .navigationDestination(for: RecipesRoute.self) { route in
-                switch route {
-                case .folder(let folderId):
-                    CollectionFolderView(
-                        folderId: folderId,
-                        syncService: syncService,
-                        coordinator: coordinator,
-                        timerManager: timerManager,
-                        mobileTimerPanelIsCollapsed: mobileTimerPanelIsCollapsed,
-                        navigationPath: $navigationPath
-                    )
-                case .recipe(let recipeId, _, let openInEditMode):
-                    YDocRecipeDetailView(
-                        recipeId: recipeId,
-                        startInEditMode: openInEditMode,
-                        syncService: syncService,
-                        assistantRecipeContext: assistantRecipeContext,
-                        timerManager: timerManager,
-                        apiClient: apiClient,
-                        appContainer: appContainer,
-                        onDismiss: {
-                            if !navigationPath.isEmpty {
-                                navigationPath.removeLast()
-                            }
-                        },
-                        scenePhase: scenePhase
-                    )
-                }
-            }
             #if DEBUG
-            .onChange(of: syncService.collectionEntries.count) { _, _ in
-                openDebugRecipeIfNeeded()
+            // #region agent log
+            AgentSyncDebugLog.assistantLayout(
+                hypothesisId: "H4",
+                location: "RecipeListView.onAppear",
+                message: "recipes_tab_visible",
+                data: [
+                    "selectedTab": coordinator.selectedTab.rawValue,
+                    "assistantSheetOpen": assistantRecipeContext.isAssistantSheetOpen ? "true" : "false",
+                    "viewMode": viewMode.rawValue
+                ]
+            )
+            AgentSyncDebugLog.logNavigationBarState(
+                hypothesisId: "H2",
+                location: "RecipeListView.onAppear",
+                tag: "recipes_onAppear"
+            )
+            // #endregion
+            #endif
+        }
+        .background {
+            GeometryReader { geo in
+                Color.clear
+                    .onChange(of: geo.safeAreaInsets.top) { _, top in
+                        #if DEBUG
+                        // #region agent log
+                        guard top > 0 else { return }
+                        AgentSyncDebugLog.assistantLayout(
+                            hypothesisId: "H4",
+                            location: "RecipeListView.safeArea",
+                            message: "safe_area_top_changed",
+                            data: [
+                                "safeTop": String(format: "%.1f", top),
+                                "assistantSheetOpen": assistantRecipeContext.isAssistantSheetOpen ? "true" : "false"
+                            ]
+                        )
+                        // #endregion
+                        #endif
+                    }
             }
-            .onChange(of: debugOpenRecipeIsAvailable) { _, available in
-                guard available else { return }
-                openDebugRecipeIfNeeded()
-            }
-            .task {
-                for _ in 0..<40 {
-                    openDebugRecipeIfNeeded()
-                    if didOpenDebugRecipe { return }
-                    try? await Task.sleep(nanoseconds: 250_000_000)
-                }
-            }
-            .task(id: syncService.collectionEntries.count) {
-                await DebugLaunchOptions.signalScreenshotListMediaReadyIfNeeded(
-                    entries: syncService.collectionEntries
+        }
+        .onChange(of: searchQuery.wrappedValue) { _, query in
+            // Tokens computed once per change (was: 16–26× per render).
+            searchTokens = RecipeSearchUtils.tokenizeQuery(query)
+            // `live` is already in display order (same comparator); no re-sort per keystroke.
+            searchStore.refresh(entries: syncService.collectionIndex.live, query: query)
+        }
+        .onChange(of: syncService.collectionIndex.live) { _, live in
+            // The search snapshot is frozen per query; deletes, renames and pins
+            // made while searching (e.g. from the detail screen) must re-filter it.
+            guard isSearching else { return }
+            searchStore.refresh(entries: live, query: searchQuery.wrappedValue)
+        }
+        .modifier(RecipeListNavigationTitle(isColumn: column != nil))
+        .appListBodyTypography()
+        .navigationDestination(for: RecipesRoute.self) { route in
+            switch route {
+            case .folder(let folderId):
+                CollectionFolderView(
+                    folderId: folderId,
+                    syncService: syncService,
+                    coordinator: coordinator,
+                    timerManager: timerManager,
+                    mobileTimerPanelIsCollapsed: mobileTimerPanelIsCollapsed,
+                    navigationPath: $navigationPath
+                )
+            case .recipe(let recipeId, _, let openInEditMode):
+                YDocRecipeDetailView(
+                    recipeId: recipeId,
+                    startInEditMode: openInEditMode,
+                    syncService: syncService,
+                    assistantRecipeContext: assistantRecipeContext,
+                    timerManager: timerManager,
+                    apiClient: apiClient,
+                    appContainer: appContainer,
+                    onDismiss: {
+                        if !navigationPath.isEmpty {
+                            navigationPath.removeLast()
+                        }
+                    },
+                    scenePhase: scenePhase
                 )
             }
-            #endif
-            .sheet(item: $presentedSheet) { sheet in
-                switch sheet {
-                case .assign(let recipeId, let recipeName):
-                    CollectionAssignSheet(
-                        recipeId: recipeId,
-                        recipeName: recipeName,
-                        syncService: syncService
-                    )
-                }
+        }
+        #if DEBUG
+        .onChange(of: syncService.collectionEntries.count) { _, _ in
+            openDebugRecipeIfNeeded()
+        }
+        .onChange(of: debugOpenRecipeIsAvailable) { _, available in
+            guard available else { return }
+            openDebugRecipeIfNeeded()
+        }
+        .task {
+            for _ in 0..<40 {
+                openDebugRecipeIfNeeded()
+                if didOpenDebugRecipe { return }
+                try? await Task.sleep(nanoseconds: 250_000_000)
             }
-            .alert(item: $presentedAlert) { alert in
-                switch alert {
-                case .error(let message):
-                    Alert(
-                        title: Text(verbatim: Bundle.currentLocalizedString("common.error")),
-                        message: Text(message),
-                        dismissButton: .cancel(Text(verbatim: Bundle.currentLocalizedString("common.ok")))
-                    )
-                case .deleteRecipe(let item):
-                    Alert(
-                        title: Text(String(localized: "recipe.list.delete.confirm.title")),
-                        message: Text(
-                            String(
-                                format: String(localized: "recipe.list.delete.confirm.message"),
-                                locale: .current,
-                                item.displayName
-                            )
-                        ),
-                        primaryButton: .destructive(Text(String(localized: "recipe.list.delete.confirm.action"))) {
-                            Task { await confirmDeleteRecipe(item) }
-                        },
-                        secondaryButton: .cancel(Text(String(localized: "recipe.list.delete.confirm.cancel")))
-                    )
-                }
+        }
+        .task(id: syncService.collectionEntries.count) {
+            await DebugLaunchOptions.signalScreenshotListMediaReadyIfNeeded(
+                entries: syncService.collectionEntries
+            )
+        }
+        #endif
+        .sheet(item: $presentedSheet) { sheet in
+            switch sheet {
+            case .assign(let recipeId, let recipeName):
+                CollectionAssignSheet(
+                    recipeId: recipeId,
+                    recipeName: recipeName,
+                    syncService: syncService
+                )
             }
+        }
+        .alert(item: $presentedAlert) { alert in
+            switch alert {
+            case .error(let message):
+                Alert(
+                    title: Text(verbatim: Bundle.currentLocalizedString("common.error")),
+                    message: Text(message),
+                    dismissButton: .cancel(Text(verbatim: Bundle.currentLocalizedString("common.ok")))
+                )
+            case .deleteRecipe(let item):
+                Alert(
+                    title: Text(String(localized: "recipe.list.delete.confirm.title")),
+                    message: Text(
+                        String(
+                            format: String(localized: "recipe.list.delete.confirm.message"),
+                            locale: .current,
+                            item.displayName
+                        )
+                    ),
+                    primaryButton: .destructive(Text(String(localized: "recipe.list.delete.confirm.action"))) {
+                        Task { await confirmDeleteRecipe(item) }
+                    },
+                    secondaryButton: .cancel(Text(String(localized: "recipe.list.delete.confirm.cancel")))
+                )
+            }
+        }
 
-            }
         }
     }
 
@@ -498,6 +534,10 @@ struct RecipeListView: View {
                 }
             }
 
+            if let column {
+                column.selectRecipe(recipeId, folderId, true)
+                return
+            }
             navigationPath.append(
                 RecipesRoute.recipe(
                     recipeId: recipeId,
@@ -527,20 +567,35 @@ struct RecipeListView: View {
                     content: RecipeRowEquatable(
                         data: item,
                         highlight: isSearching ? searchStore.highlights[item.id] : nil,
-                        allowsNetworkRefresh: allowsImageNetworkRefresh
+                        allowsNetworkRefresh: allowsImageNetworkRefresh,
+                        isSelected: column?.selectedRecipeId == item.id
                     )
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                NavigationLink(value: RecipesRoute.recipe(recipeId: item.id, folderContext: nil)) {
-                    Color.clear
+                if let column {
+                    Button {
+                        column.selectRecipe(item.id, nil, false)
+                    } label: {
+                        Color.clear
+                    }
+                    .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
+                    .opacity(0.01)
+                } else {
+                    NavigationLink(value: RecipesRoute.recipe(recipeId: item.id, folderContext: nil)) {
+                        Color.clear
+                    }
+                    .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
+                    .opacity(0.01)
                 }
-                .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
-                .opacity(0.01)
             }
             .buttonStyle(.plain)
             .listRowInsets(RecipeRowLayoutMetrics.listRowInsets)
             .accessibilityIdentifier(AccessibilityIdentifiers.recipeRow(id: item.id))
+            .modifier(RecipeColumnRowSelection(
+                isColumn: column != nil,
+                isSelected: column?.selectedRecipeId == item.id
+            ))
             .swipeActions(edge: .leading, allowsFullSwipe: false) {
                 Button {
                     Task { await addRecipeToShopping(item) }
@@ -594,7 +649,8 @@ struct RecipeListView: View {
     }
 
     private func openDebugRecipeIfNeeded() {
-        guard !didOpenDebugRecipe else { return }
+        // The iPad split opens it through the shell path (`AppShellCoordinator`).
+        guard column == nil, !didOpenDebugRecipe else { return }
         let entries = syncService.collectionEntries.filter { !$0.deleted }
         let recipeId: String?
         if let explicitId = DebugLaunchOptions.openRecipeId,
@@ -713,6 +769,8 @@ extension View {
 private struct RecipeRowMarkerSlot: View {
     let emoji: String?
     let color: String?
+    /// White ring around the dot on the accent row of the iPad column (prototype `.row.is-on .dot`).
+    var isSelected = false
 
     var body: some View {
         ZStack {
@@ -727,6 +785,13 @@ private struct RecipeRowMarkerSlot: View {
                         width: RecipeListMetrics.colorDotSide,
                         height: RecipeListMetrics.colorDotSide
                     )
+                    .background {
+                        if isSelected {
+                            Circle()
+                                .fill(Color.white)
+                                .padding(-2)
+                        }
+                    }
             }
         }
         .frame(
@@ -769,12 +834,14 @@ private struct RecipeRowEquatable: View, Equatable {
     let data: RecipeRowData
     let highlight: RecipeRowHighlight?
     let allowsNetworkRefresh: Bool
+    var isSelected = false
 
     var body: some View {
         RecipeRow(
             data: data,
             highlight: highlight,
-            allowsNetworkRefresh: allowsNetworkRefresh
+            allowsNetworkRefresh: allowsNetworkRefresh,
+            isSelected: isSelected
         )
     }
 }
@@ -786,6 +853,8 @@ struct RecipeRow: View {
     /// inactive — the row renders a plain `Text` title.
     var highlight: RecipeRowHighlight? = nil
     var allowsNetworkRefresh: Bool = true
+    /// The open recipe of the iPad list column: white text on the accent row (T023).
+    var isSelected = false
 
     private var hasThumbnail: Bool { data.hasThumbnail }
 
@@ -808,7 +877,8 @@ struct RecipeRow: View {
         HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.rowMarkerSpacing) {
             RecipeRowMarkerSlot(
                 emoji: data.leadingEmoji,
-                color: data.color
+                color: data.color,
+                isSelected: isSelected
             )
 
             VStack(alignment: .leading, spacing: snippetSpacing) {
@@ -845,7 +915,7 @@ struct RecipeRow: View {
         } else {
             Text(titleText)
                 .appBody()
-                .foregroundColor(.primary)
+                .foregroundColor(isSelected ? .white : .primary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .multilineTextAlignment(.leading)
@@ -918,14 +988,18 @@ private struct RecipeListToolbarHost<Menu: View, Content: View>: View {
     let isCreatingRecipe: Bool
     let onCreateRecipe: () -> Void
     let onImport: () -> Void
+    /// iPad list column: a leading title instead of the view mode menu.
+    var columnTitle: RecipeListColumnTitle? = nil
     @ViewBuilder let viewModeMenu: () -> Menu
     @ViewBuilder let content: () -> Content
 
     var body: some View {
         content()
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    viewModeMenu()
+                if columnTitle == nil {
+                    ToolbarItem(placement: .principal) {
+                        viewModeMenu()
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     RecipesAddToolbarMenu(
@@ -935,6 +1009,24 @@ private struct RecipeListToolbarHost<Menu: View, Content: View>: View {
                     )
                 }
             }
+            .modifier(RecipeListColumnTitleToolbar(title: columnTitle))
+    }
+}
+
+/// The phone list keeps its centered «Рецепты»; the iPad column shows its title as a
+/// leading bar item (`RecipeListColumnTitle`) and has no centered title.
+private struct RecipeListNavigationTitle: ViewModifier {
+    let isColumn: Bool
+
+    func body(content: Content) -> some View {
+        if isColumn {
+            content
+                .navigationBarTitleDisplayMode(.inline)
+        } else {
+            content
+                .localizedNavigationTitle("Recipes")
+                .navigationBarTitleDisplayMode(.inline)
+        }
     }
 }
 
