@@ -64,12 +64,21 @@ private struct IPadReadableWidthModifier: ViewModifier {
 
     let width: CGFloat
 
+    @ViewBuilder
     func body(content: Content) -> some View {
-        // `nil` frames pass the proposal and the size through unchanged.
-        let isPad = layoutMode == .padRegular
-        content
-            .frame(maxWidth: isPad ? width : nil)
-            .frame(maxWidth: isPad ? .infinity : nil)
+        // The iPhone gets the content untouched: even `nil` frames shift a scroll view's
+        // content by a fraction of a point there, and the author page images re-render
+        // (`--iphone-regression`). The idiom never changes while the app runs, so this
+        // branch keeps its identity; on the iPad only the frame inputs change (FR-018).
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            // `nil` frames pass the proposal and the size through unchanged.
+            let isPad = layoutMode == .padRegular
+            content
+                .frame(maxWidth: isPad ? width : nil)
+                .frame(maxWidth: isPad ? .infinity : nil)
+        } else {
+            content
+        }
     }
 }
 

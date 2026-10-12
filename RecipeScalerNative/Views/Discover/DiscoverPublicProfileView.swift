@@ -140,6 +140,8 @@ struct DiscoverPublicProfileView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
                 .mobileTimerPanelBottomPadding()
+                // Spec 081 — author page column on `.padRegular`; the grid stays as is.
+                .iPadReadableWidth(IPadLayoutMetrics.authorPageWidth)
             }
             .onAppear {
                 restoreAnchorIfNeeded(

@@ -227,11 +227,15 @@
 - [x] T020 [P] [US1] Импорт: на iPad-симуляторе проверить, как `RecipeScalerNative/Views/ImportRecipeSheet.swift` (detents `[.large]`, ~:216) показывается в широком окне. Если не form sheet около 560 × 720 — добавить `.iPadFormSheet()` при `.padRegular`. В compact — без изменений. — `#import/text`, `#import/photo`
 
   **Проверено (iPad Pro 11", портрет, верхний бар):** `-OpenTab=import` — лист импорта уже form sheet по центру, около 580 × 650 pt, с ручкой, фон затемнён; вкладки «Текст» и «Фото» — телефонные экраны как есть. Код не менялся: `.iPadFormSheet()` не нужен. Окно ½ на симуляторе не воспроизводится (`-DebugWindowWidth` сужает только корень, лист показывает окно), в compact код тот же, что на iPhone. Скриншоты `tmp/ipad-verify/us1/t020-01-import-before.png`, `t020-02-import-photo.png`.
-- [ ] T021 [US1] Подборки.
+- [x] T021 [US1] Подборки.
   - `RecipeScalerNative/Views/DiscoverRootView.swift`: при `.padRegular` заголовок и `DiscoverFeedSegmentPicker` (ширина 320) в одной строке вместо пикера под large title (~:29-31); лента `.iPadReadableWidth(720)`; ✦ (`IPadAssistantToolbarButton` из T018).
   - `RecipeScalerNative/Views/Discover/DiscoverPublicProfileView.swift`: `.iPadReadableWidth(1100)`, сетка `DiscoverRecipeCardGrid` как есть.
 
   — `#discover/feed`, `#discover/author`
+
+  **Сделано и проверено (iPad Pro 11", портрет):** «Подборки» крупным заголовком слева и сегменты 320 справа в одной строке (как `.lt-row` прототипа), лента и «Моя лента» в колонке 720, ✦ справа открывает лист ассистента; со сдвинутым сайдбаром то же; страница автора — колонка 1100 (в портрете 834 на всю ширину), сетка без изменений; `-DebugWindowWidth=400` — телефонный вид (пикер под large title, без ✦). iPhone: `--iphone-regression --only discover-feed,discover-author,shopping-az` — 0 отличий. Скриншоты `tmp/ipad-verify/us1/t021-*.png`.
+
+  **Отклонение:** заголовок бара на iPad убран через `toolbar(removing: .title)` (iOS 18+), чтобы «Подборки» не дублировались в баре; `navigationTitle` остаётся для кнопки «Назад». `DiscoverFeedSegmentPicker` получил параметр `horizontalPadding` (по умолчанию 16, как было). `iPadReadableWidth` на iPhone (по идиоме) теперь возвращает содержимое без рамок: даже `nil`-рамки сдвигали содержимое `ScrollView` автора на доли точки, и картинки отличались от базы (120 642 пикселя).
 - [ ] T022 [US1] Создать `RecipeScalerNativeUITests/Specs/IPadShellSpec.swift` (`XCTSkipUnless` iPad):
   - `testSidebarContents`, `testFooterPrivateShowsAccountId`, `testCollectionTapOpensRecipes`, `testNewCollectionFromSidebar`;
   - `testProfileHasNoShakeRow` — в листе;

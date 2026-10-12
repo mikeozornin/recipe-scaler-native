@@ -19,6 +19,7 @@ struct DiscoverRootView: View {
     let feedBadgeStore: FeedBadgeStore
     let coordinator: AppShellCoordinator
     @Environment(\.apiClient) private var apiClient
+    @Environment(\.appLayoutMode) private var layoutMode
     @State private var model: DiscoverRootModel?
     /// Ephemeral segment state (spec 072): not persisted, Discover always
     /// enters on «Подборки». A digest push bump (see `.task`/`.onChange`
@@ -28,7 +29,11 @@ struct DiscoverRootView: View {
     var body: some View {
         NavigationStack(path: $path) {
             VStack(spacing: 0) {
-                DiscoverFeedSegmentPicker(segment: $segment, feedBadgeStore: feedBadgeStore)
+                if layoutMode == .padRegular {
+                    DiscoverPadTitleRow(segment: $segment, feedBadgeStore: feedBadgeStore)
+                } else {
+                    DiscoverFeedSegmentPicker(segment: $segment, feedBadgeStore: feedBadgeStore)
+                }
                 Group {
                     switch segment {
                     case .collections:
@@ -47,8 +52,19 @@ struct DiscoverRootView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            // Spec 081 — on `.padRegular` the title row and the feed share a 720 pt column.
+            .iPadReadableWidth(IPadLayoutMetrics.readablePageWidth)
             .localizedNavigationTitle("discover.title")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(layoutMode == .padRegular ? .inline : .large)
+            // The title lives in `DiscoverPadTitleRow`; the bar keeps it for «‹ Подборки».
+            .modifier(DiscoverBarTitleRemoval(isRemoved: layoutMode == .padRegular))
+            .toolbar {
+                if layoutMode == .padRegular {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        IPadAssistantToolbarButton(coordinator: coordinator)
+                    }
+                }
+            }
             .navigationDestination(for: DiscoverRoute.self) { route in
                 switch route {
                 case .collection(let slug):
@@ -88,6 +104,42 @@ struct DiscoverRootView: View {
     }
 }
 
+/// Spec 081 (layout.md `.lt-row`) — «Подборки» and the segments in one row on
+/// `.padRegular`, inside the 720 pt column, instead of the picker under the large title.
+private struct DiscoverPadTitleRow: View {
+    @Binding var segment: DiscoverFeedSegment
+    let feedBadgeStore: FeedBadgeStore
+
+    var body: some View {
+        HStack(spacing: 20) {
+            Text("discover.title")
+                .font(Font(AppTypography.displayLargeTitleUIFont))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .accessibilityAddTraits(.isHeader)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            DiscoverFeedSegmentPicker(segment: $segment, feedBadgeStore: feedBadgeStore, horizontalPadding: 0)
+                .frame(width: IPadLayoutMetrics.discoverSegmentWidth)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
+    }
+}
+
+/// `toolbar(removing: .title)` exists from iOS 18; the iPad shell needs iPadOS 26.2.
+private struct DiscoverBarTitleRemoval: ViewModifier {
+    let isRemoved: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.toolbar(removing: isRemoved ? .title : nil)
+        } else {
+            content
+        }
+    }
+}
+
 /// «Подборки | Моя лента» header control (spec 072). Segmented picker under
 /// the navigation title; the «Моя лента» segment carries the red new-content
 /// dot while unread (US4), matching the tab-bar dot semantics.
@@ -97,6 +149,8 @@ struct DiscoverRootView: View {
 struct DiscoverFeedSegmentPicker: View {
     @Binding var segment: DiscoverFeedSegment
     let feedBadgeStore: FeedBadgeStore
+    /// 0 in the iPad title row, where the row owns the inset.
+    var horizontalPadding: CGFloat = 16
 
     private static let newDotSize: CGFloat = 7
     private static let newDotTrailingInset: CGFloat = 12
@@ -112,7 +166,7 @@ struct DiscoverFeedSegmentPicker: View {
                 followingSegmentNewDot
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, horizontalPadding)
         .padding(.vertical, 8)
         .background(Color(.systemBackground))
         .accessibilityIdentifier(AccessibilityIdentifiers.discoverFeedSegment)
