@@ -50,7 +50,11 @@ struct IPadRecipesSplitView: View {
             split(layout: IPadLayoutPolicy.resolve(
                 contentWidth: proxy.size.width,
                 listCollapsedByUser: coordinator.recipesListHiddenByUser,
-                isEditing: false
+                isEditing: false,
+                toolbarBesideTabBar: IPadLayoutPolicy.toolbarSharesTabBarRow(
+                    tabBarOnTop: showsCollectionMenu,
+                    splitTop: proxy.frame(in: .global).minY
+                )
             ))
         }
         .onAppear {

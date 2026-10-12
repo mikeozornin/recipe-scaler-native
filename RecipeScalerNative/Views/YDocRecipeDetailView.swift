@@ -910,8 +910,10 @@ private struct RecipeDetailToolbarHost<Content: View>: View {
         return padPanel
     }
 
+    /// «Изменить» as its own capsule; `.padBesideTabBar` keeps the pencil in the group.
     private var padEdit: RecipeDetailPadPanel? {
-        canEnterEditMode ? padActions : nil
+        guard canEnterEditMode, let padActions, padActions.toolbarStyle != .padBesideTabBar else { return nil }
+        return padActions
     }
 
     var body: some View {
@@ -939,7 +941,7 @@ private struct RecipeDetailToolbarHost<Content: View>: View {
                     isPinned: isPinned,
                     syncService: syncService
                 )
-                if padPanel?.toolbarStyle != .padNarrow {
+                if padPanel.map({ $0.toolbarStyle == .padWide }) ?? true {
                     RecipeDetailShareButton(
                         recipeId: recipeId,
                         isPublic: recipe.isPublic,
@@ -952,6 +954,8 @@ private struct RecipeDetailToolbarHost<Content: View>: View {
                 ScreenAwakeToggle(isActive: $isScreenAwakeActive)
                 if canEnterEditMode, padPanel == nil {
                     editButton(showsTitle: true)
+                } else if canEnterEditMode, padPanel?.toolbarStyle == .padBesideTabBar {
+                    editButton(showsTitle: false)
                 }
             }
         }

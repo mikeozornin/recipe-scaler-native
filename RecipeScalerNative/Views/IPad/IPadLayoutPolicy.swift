@@ -38,6 +38,13 @@ enum IPadLayoutMetrics {
     static let singleColumnMaxWidth: CGFloat = 720
     /// «Поделиться» and «Изменить» get text labels from this panel width.
     static let wideToolbarMinDetail: CGFloat = 600
+    /// Top edge of the Recipes split in the window. Below it the panel toolbars share the
+    /// row of the floating top tab bar (status bar + 8, as «Покупки» does); at or above it
+    /// they sit in their own row under the tab bar (status bar + tab bar + 20 ≈ 96).
+    static let separateToolbarRowMinTop: CGFloat = 64
+    /// Sharing the tab bar row, the wide recipe toolbar fits beside the tab bar only from
+    /// this content width (landscape); narrower windows get `.padBesideTabBar`.
+    static let wideToolbarBesideTabBarMinContent: CGFloat = 1100
     /// «Купить во Вкусвилле» keeps its text label from this content width.
     static let shopLabeledMinContent: CGFloat = 640
     /// «Покупки», «Профиль», the «Подборки» feed.
@@ -76,6 +83,9 @@ enum IPadDetailToolbarStyle: Equatable {
     case padWide
     /// «…», «Не гасить экран», ✦, a pencil without text.
     case padNarrow
+    /// One capsule «…», «Не гасить экран», pencil: the toolbar shares the row of the
+    /// floating top tab bar and only the room beside it is left (no ✦ there, FR-021).
+    case padBesideTabBar
 }
 
 /// What the Recipes section shows at a given content width (layout.md §Токены, formulas).
@@ -99,20 +109,43 @@ enum IPadLayoutPolicy {
             - (inspectorVisible ? IPadLayoutMetrics.inspectorWidth : 0)
     }
 
-    static func resolve(contentWidth: CGFloat, listCollapsedByUser: Bool, isEditing: Bool) -> IPadLayout {
+    /// `toolbarBesideTabBar`: the panel toolbar shares the row of the floating top tab bar
+    /// (`toolbarSharesTabBarRow`), so only the room beside the tab bar is left for it.
+    static func resolve(
+        contentWidth: CGFloat,
+        listCollapsedByUser: Bool,
+        isEditing: Bool,
+        toolbarBesideTabBar: Bool = false
+    ) -> IPadLayout {
         let listShown = !listCollapsedByUser
             && !isEditing
             && contentWidth - IPadLayoutMetrics.listColumnTotalWidth >= IPadLayoutMetrics.minDetailWithList
         let detailWidth = contentWidth - (listShown ? IPadLayoutMetrics.listColumnTotalWidth : 0)
+        let toolbarStyle: IPadDetailToolbarStyle
+        if toolbarBesideTabBar, contentWidth < IPadLayoutMetrics.wideToolbarBesideTabBarMinContent {
+            toolbarStyle = .padBesideTabBar
+        } else if detailWidth >= IPadLayoutMetrics.wideToolbarMinDetail {
+            toolbarStyle = .padWide
+        } else {
+            toolbarStyle = .padNarrow
+        }
         return IPadLayout(
             contentWidth: contentWidth,
             listShown: listShown,
             detailWidth: detailWidth,
             twoColumns: detailWidth >= IPadLayoutMetrics.twoColumnMinDetail,
-            toolbarStyle: detailWidth >= IPadLayoutMetrics.wideToolbarMinDetail ? .padWide : .padNarrow,
+            toolbarStyle: toolbarStyle,
             showsListButton: !listShown,
             shopVkusvillIconOnly: contentWidth < IPadLayoutMetrics.shopLabeledMinContent
         )
+    }
+
+    /// iPadOS 26 puts a page's navigation bar into the row of the floating top tab bar
+    /// (as on «Покупки»). The two stacks of the Recipes split get that row only after the
+    /// scene reactivates or the sidebar toggles; on a fresh launch they keep their own row.
+    /// `splitTop` is the split's top edge in the window.
+    static func toolbarSharesTabBarRow(tabBarOnTop: Bool, splitTop: CGFloat) -> Bool {
+        tabBarOnTop && splitTop < IPadLayoutMetrics.separateToolbarRowMinTop
     }
 
     /// ✦ in the toolbars of «Покупки», «Подборки» and the recipe panel (FR-007, FR-013,

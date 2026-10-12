@@ -567,3 +567,11 @@ The suite also has no recorded reference snapshots (`isRecording = false`, no co
 **Rationale:** With the sidebar hidden the top bar already shows the pinned «Ассистент» tab, so a toolbar ✦ put two assistant buttons on screen at once. The sidebar hides «Профиль» and «Ассистент», so there ✦ is the only way in. One shell-level value keeps all three screens consistent and avoids the iOS 26 fallback-environment trap in toolbar content. The recipe toolbar also gets shorter in the top bar, where its row is shared with the tab bar.
 
 ---
+
+### 2026-10-12 — iPad: the recipe toolbar beside the floating tab bar (spec 081 T026, variant B)
+
+**Decision:** When the Recipes split's top edge is in the row of the floating top tab bar (`IPadLayoutPolicy.toolbarSharesTabBarRow`, split top < `IPadLayoutMetrics.separateToolbarRowMinTop`), the recipe toolbar uses `IPadDetailToolbarStyle.padBesideTabBar` below a 1100 pt content width: one capsule «…», «Не гасить экран», pencil; like the narrow toolbar (FR-013) it has no «Поделиться». From 1100 pt (landscape) the usual wide/narrow thresholds apply. The split measures its top edge with the `GeometryReader` it already has for the content width.
+
+**Rationale:** iPadOS 26.3 puts a page's navigation bar into the tab bar row, as it does on «Покупки». The two `NavigationStack`s of variant B get their own row under the tab bar on a fresh launch (top 96) and move into the tab bar row after the scene reactivates or the sidebar toggles (top 32). In portrait only about 150 pt is left beside the tab bar, so the wide toolbar overflowed into the system «⋯», and the shared phone group (a custom view in one bar item) vanished from it. Padding or `safeAreaPadding` moved the bar down but UIKit kept the overflow, and `additionalSafeAreaInsets` (spike) overshot. Fitting the items keeps every action visible in both states without fighting UIKit.
+
+---

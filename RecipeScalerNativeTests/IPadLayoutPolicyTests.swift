@@ -209,6 +209,39 @@ final class IPadLayoutPolicyTests: XCTestCase {
         XCTAssertFalse(IPadLayoutPolicy.showsAssistantToolbarButton(layoutMode: .phone, tabBarIsSidebar: true))
     }
 
+    // MARK: - Recipe toolbar in the row of the top tab bar
+
+    func testToolbarSharesTheTabBarRowOnlyUnderTheTopTabBar() {
+        // iPad Pro 11": fresh launch 96 (own row), after reactivation 32 (the tab bar row).
+        XCTAssertFalse(IPadLayoutPolicy.toolbarSharesTabBarRow(tabBarOnTop: true, splitTop: 96))
+        XCTAssertTrue(IPadLayoutPolicy.toolbarSharesTabBarRow(tabBarOnTop: true, splitTop: 32))
+        XCTAssertFalse(IPadLayoutPolicy.toolbarSharesTabBarRow(tabBarOnTop: true, splitTop: 64))
+        XCTAssertTrue(IPadLayoutPolicy.toolbarSharesTabBarRow(tabBarOnTop: true, splitTop: 63))
+        // Sidebar shown: there is no top tab bar to share a row with.
+        XCTAssertFalse(IPadLayoutPolicy.toolbarSharesTabBarRow(tabBarOnTop: false, splitTop: 32))
+    }
+
+    func testToolbarBesideTheTabBarIsOneCapsuleBelow1100() {
+        func style(_ width: CGFloat, beside: Bool) -> IPadDetailToolbarStyle {
+            IPadLayoutPolicy.resolve(
+                contentWidth: width,
+                listCollapsedByUser: false,
+                isEditing: false,
+                toolbarBesideTabBar: beside
+            ).toolbarStyle
+        }
+        // Portrait 11" and 13": no room beside the tab bar for the wide toolbar.
+        XCTAssertEqual(style(834, beside: true), .padBesideTabBar)
+        XCTAssertEqual(style(1032, beside: true), .padBesideTabBar)
+        XCTAssertEqual(style(1099, beside: true), .padBesideTabBar)
+        // Landscape: the usual thresholds.
+        XCTAssertEqual(style(1100, beside: true), .padWide)
+        XCTAssertEqual(style(1194, beside: true), .padWide)
+        // Own row: the usual thresholds at any width.
+        XCTAssertEqual(style(834, beside: false), .padWide)
+        XCTAssertEqual(style(599, beside: false), .padNarrow)
+    }
+
     func testFormSheetHeight() {
         XCTAssertEqual(IPadLayoutMetrics.formSheetHeight(containerHeight: 1194), 720)
         XCTAssertEqual(IPadLayoutMetrics.formSheetHeight(containerHeight: 744), 664)
