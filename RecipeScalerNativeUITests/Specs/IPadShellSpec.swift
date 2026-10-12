@@ -282,8 +282,10 @@ final class IPadShellSpec: BaseTestCase {
     }
 
     private func scrollAccount(until target: XCUIElement) {
+        // `accountRoot` also marks a wrapper of the list: swipe the list itself.
+        let list = app.collectionViews.matching(identifier: UIA.accountRoot).firstMatch
         for _ in 0..<8 where !target.exists {
-            accountPage.root.swipeUp()
+            list.swipeUp()
         }
     }
 
