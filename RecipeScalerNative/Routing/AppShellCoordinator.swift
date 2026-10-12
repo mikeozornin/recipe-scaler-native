@@ -96,6 +96,10 @@ final class AppShellCoordinator {
     /// selection itself never changes (fake tab, same pattern as `importTab`).
     private(set) var pendingAssistantTabOpen = false
 
+    /// Spec 081 (FR-021) — the pending open came from ✦ on «Покупки» / «Подборки»: the
+    /// assistant opens a new chat instead of the recent one. Reset with the open.
+    private(set) var pendingAssistantTabOpenStartsNewChat = false
+
     /// Spec 078 — shake-to-open queued until AppShellView presents / updates the sheet.
     private(set) var pendingShakeAssistantOpenRequest: AssistantShakeOpenRequest?
 
@@ -128,6 +132,14 @@ final class AppShellCoordinator {
     /// Consumes the pending tab-open flag after AppShellView presented the sheet.
     func consumeAssistantTabOpen() {
         pendingAssistantTabOpen = false
+        pendingAssistantTabOpenStartsNewChat = false
+    }
+
+    /// Spec 081 — ✦ in an iPad toolbar: the same open (or, with the panel open, close) as
+    /// the «Ассистент» tab. `startsNewChat`: ✦ on «Покупки» and «Подборки» (FR-021).
+    func handleAssistantToolbarTap(startsNewChat: Bool) {
+        pendingAssistantTabOpenStartsNewChat = startsNewChat
+        pendingAssistantTabOpen = true
     }
 
     /// Queues a shake open. Idempotent against double presentation via requestId.
@@ -531,6 +543,7 @@ final class AppShellCoordinator {
         assistantSessionEpoch &+= 1
         pendingAssistantOpenRequest = nil
         pendingAssistantTabOpen = false
+        pendingAssistantTabOpenStartsNewChat = false
         pendingShakeAssistantOpenRequest = nil
         isProfileSheetPresented = false
         // A sidebar hidden by «Развернуть» comes back with the reset, wherever the user is.

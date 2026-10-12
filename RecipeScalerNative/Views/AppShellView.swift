@@ -111,6 +111,10 @@ struct AppShellView: View {
     @State private var assistantOpenRequest: AssistantOpenRequest?
     /// Spec 078 — shake open payload delivered into the presented sheet.
     @State private var assistantShakeOpenRequest: AssistantShakeOpenRequest?
+    /// PI-5 on the iPad panel (spec 081): an external request was routed in the current
+    /// update, so an «Ассистент» tap of the same update must not toggle the panel shut.
+    /// Cleared on the next main-actor turn.
+    @State private var externalRequestRoutedInThisUpdate = false
     @State private var transientStatus: TransientStatusPayload?
     @State private var transientStatusDismissTask: Task<Void, Never>?
     @State private var mobileTimerPanelCollapsed = true
@@ -186,6 +190,16 @@ struct AppShellView: View {
     private func routePendingAssistantOpenRequest() {
         guard let request = coordinator.pendingAssistantOpenRequest else { return }
         coordinator.consumeAssistantOpenRequest(request)
+        externalRequestRoutedInThisUpdate = true
+        Task { @MainActor in
+            externalRequestRoutedInThisUpdate = false
+        }
+        // Already open (the panel, or a tab open of the same update): hand the request
+        // over now. The view's `onChange` would miss it when the view is built with it,
+        // and the session deduplicates by request id.
+        if showAssistant {
+            assistantSession.receiveExternalRequest(request)
+        }
         assistantOpenRequest = request
         assistantShakeOpenRequest = nil
         assistantContextRecipeId = nil
@@ -196,11 +210,13 @@ struct AppShellView: View {
     /// Spec 081 (T032a) — a real open starts the shared session from a clean
     /// slate (what a freshly built sheet did). Already open: the visible
     /// sheet/panel receives the new request through its `onChange`.
-    private func presentAssistant() {
+    /// `startsNewChat`: ✦ on the iPad «Покупки» / «Подборки» (FR-021).
+    private func presentAssistant(startsNewChat: Bool = false) {
         if !showAssistant {
             assistantSession.beginPresentation(
                 openRequest: assistantOpenRequest,
-                shakeRequest: assistantShakeOpenRequest
+                shakeRequest: assistantShakeOpenRequest,
+                startsNewChat: startsNewChat
             )
         }
         showAssistant = true
@@ -209,12 +225,12 @@ struct AppShellView: View {
     /// Spec 074 — manual open (tab-bar entry, FAB replacement, adoption CTA).
     /// Manual open carries no external payload; `assistantOpenRequest` is reset
     /// so a stale request from a previous presentation cannot leak in.
-    private func openAssistantManually() {
+    private func openAssistantManually(startsNewChat: Bool = false) {
         assistantOpenRequest = nil
         assistantShakeOpenRequest = nil
         assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
         assistantRecipeContext.isAssistantSheetOpen = true
-        presentAssistant()
+        presentAssistant(startsNewChat: startsNewChat)
         resyncTabViewSelectionAfterAssistantInteraction()
     }
 
@@ -624,14 +640,25 @@ struct AppShellView: View {
             }
             .onChange(of: coordinator.pendingAssistantTabOpen) { _, isPending in
                 guard isPending else { return }
+                let startsNewChat = coordinator.pendingAssistantTabOpenStartsNewChat
                 coordinator.consumeAssistantTabOpen()
+                // Spec 081 (FR-021): the tab and ✦ toggle the iPad panel. An external
+                // request of the same update (routed already, or still queued) keeps
+                // it open with that request (PI-5).
+                if layoutMode == .padRegular, showAssistant {
+                    guard !externalRequestRoutedInThisUpdate,
+                          coordinator.pendingAssistantOpenRequest == nil
+                    else { return }
+                    closeAssistantPanel()
+                    return
+                }
                 // PI-5: if an external request was routed in the same SwiftUI
                 // transaction (both onChange handlers fire before the render),
                 // it already set `assistantOpenRequest` and the sheet will
                 // present its payload. A manual open would nil it out and the
                 // message would be silently lost — skip the manual open.
                 guard assistantOpenRequest == nil else { return }
-                openAssistantManually()
+                openAssistantManually(startsNewChat: startsNewChat)
             }
             .onChange(of: coordinator.selectedTab) { _, newTab in
                 guard newTab != .assistant else { return }
@@ -1002,7 +1029,8 @@ struct AppShellView: View {
             mobileTimerPanelCollapsed: mobileTimerPanelCollapsed,
             mobileTimerPanelCollapsedBinding: mobileTimerPanelCollapsedBinding,
             showsMobileTimerPanelExpandedInset: showsMobileTimerPanelExpandedInset,
-            mobileTimerPanelChevronNamespace: mobileTimerPanelChevronNamespace
+            mobileTimerPanelChevronNamespace: mobileTimerPanelChevronNamespace,
+            assistantPanelOpen: showsAssistantPanel
         )
     }
 

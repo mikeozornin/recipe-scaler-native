@@ -764,7 +764,7 @@ private struct ShoppingListToolbarHost<Content: View>: View {
                 }
                 if let assistantCoordinator {
                     ToolbarItem(placement: .topBarTrailing) {
-                        IPadAssistantToolbarButton(coordinator: assistantCoordinator)
+                        IPadAssistantToolbarButton(coordinator: assistantCoordinator, startsNewChat: true)
                     }
                 }
             }

@@ -25,7 +25,8 @@ enum IPadLayoutMetrics {
     /// The list column stays beside the recipe only while the recipe keeps at least this
     /// much; narrower, the section is the phone stack (push).
     static let minDetailWithList: CGFloat = 320
-    /// `.inspectorColumnWidth` of the assistant.
+    /// The assistant panel beside the tab view (`AppShellView.assistantPanel`, FR-019),
+    /// without its divider.
     static let inspectorWidth: CGFloat = 340
     /// The recipe splits into two columns from this panel width.
     static let twoColumnMinDetail: CGFloat = 720
@@ -100,7 +101,8 @@ struct IPadLayout: Equatable {
     let contentWidth: CGFloat
     /// Room for the list column beside the recipe; else the phone stack (push).
     let splitFits: Bool
-    /// The list column is on screen: the split fits and the recipe is not expanded.
+    /// The list column is on screen: the split fits, the recipe is not expanded and the
+    /// assistant panel does not stand beside it (FR-022).
     let listShown: Bool
     /// List column width without its divider. Kept while the recipe is expanded (the
     /// column waits off screen); 0 for the phone stack.
@@ -109,6 +111,7 @@ struct IPadLayout: Equatable {
     let twoColumns: Bool
     let toolbarStyle: IPadDetailToolbarStyle
     /// «Развернуть» / «Свернуть» leads the recipe toolbar (the view adds: a recipe is open).
+    /// Not while the assistant panel hides the list: the expanded state waits for it to close.
     let showsExpandButton: Bool
     let shopVkusvillIconOnly: Bool
 }
@@ -136,17 +139,31 @@ enum IPadLayoutPolicy {
     /// `recipeExpanded`: the user expanded the recipe over the whole content (Notes-style).
     /// `toolbarBesideTabBar`: the panel toolbar shares the row of the floating top tab bar
     /// (`toolbarSharesTabBarRow`), so only the room beside the tab bar is left for it.
+    /// `assistantBesideRecipe`: the assistant panel is open and a recipe is open
+    /// (`contentWidth` already excludes the panel). FR-022: the list column hides at any
+    /// width, the recipe takes the content. Whether the section is the split or the phone
+    /// stack is decided on the width without the panel, so opening or closing it never
+    /// swaps the recipe view (scroll, cooking) and never collapses an expanded recipe.
     static func resolve(
         contentWidth: CGFloat,
         contentHeight: CGFloat,
         recipeExpanded: Bool,
         isEditing: Bool,
-        toolbarBesideTabBar: Bool = false
+        toolbarBesideTabBar: Bool = false,
+        assistantBesideRecipe: Bool = false
     ) -> IPadLayout {
         let listWidth = listColumnWidth(contentWidth: contentWidth, contentHeight: contentHeight)
-        let splitFits = contentWidth - listWidth - IPadLayoutMetrics.columnDividerWidth
-            >= IPadLayoutMetrics.minDetailWithList
-        let listShown = splitFits && !recipeExpanded && !isEditing
+        let splitFits: Bool
+        if assistantBesideRecipe {
+            let widthWithoutPanel = contentWidth + IPadLayoutMetrics.inspectorWidth + IPadLayoutMetrics.columnDividerWidth
+            splitFits = Self.splitFits(
+                contentWidth: widthWithoutPanel,
+                listWidth: listColumnWidth(contentWidth: widthWithoutPanel, contentHeight: contentHeight)
+            )
+        } else {
+            splitFits = Self.splitFits(contentWidth: contentWidth, listWidth: listWidth)
+        }
+        let listShown = splitFits && !recipeExpanded && !isEditing && !assistantBesideRecipe
         let detailWidth = listShown
             ? contentWidth - listWidth - IPadLayoutMetrics.columnDividerWidth
             : contentWidth
@@ -167,9 +184,14 @@ enum IPadLayoutPolicy {
             detailWidth: detailWidth,
             twoColumns: detailWidth >= IPadLayoutMetrics.twoColumnMinDetail,
             toolbarStyle: toolbarStyle,
-            showsExpandButton: splitFits && !isEditing,
+            showsExpandButton: splitFits && !isEditing && !assistantBesideRecipe,
             shopVkusvillIconOnly: contentWidth < IPadLayoutMetrics.shopLabeledMinContent
         )
+    }
+
+    /// The list column fits beside a recipe of at least 320.
+    private static func splitFits(contentWidth: CGFloat, listWidth: CGFloat) -> Bool {
+        contentWidth - listWidth - IPadLayoutMetrics.columnDividerWidth >= IPadLayoutMetrics.minDetailWithList
     }
 
     /// iPadOS 26 puts a page's navigation bar into the row of the floating top tab bar

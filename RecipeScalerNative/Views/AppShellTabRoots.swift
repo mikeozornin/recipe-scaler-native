@@ -23,6 +23,9 @@ struct AppShellTabRoots {
     let mobileTimerPanelCollapsedBinding: Binding<Bool>
     let showsMobileTimerPanelExpandedInset: Bool
     let mobileTimerPanelChevronNamespace: Namespace.ID
+    /// Spec 081 (FR-022) — the assistant panel stands beside the tabs; only the iPad
+    /// Recipes split reads it (the iPhone always passes `false`).
+    let assistantPanelOpen: Bool
 
     /// `showsAssistantToolbarButton`: ✦ in the toolbar, iPad sidebar only (spec 081, FR-007).
     func discover(showsAssistantToolbarButton: Bool = false) -> some View {
@@ -62,7 +65,8 @@ struct AppShellTabRoots {
             mobileTimerPanelIsCollapsed: mobileTimerPanelCollapsed,
             scenePhase: scenePhase,
             showsCollectionMenu: showsCollectionMenu,
-            showsAssistantToolbarButton: showsAssistantToolbarButton
+            showsAssistantToolbarButton: showsAssistantToolbarButton,
+            assistantPanelOpen: assistantPanelOpen
         ))
     }
 

@@ -15,13 +15,15 @@ final class IPadLayoutPolicyTests: XCTestCase {
         _ contentWidth: CGFloat,
         height: CGFloat = 834,
         recipeExpanded: Bool = false,
-        isEditing: Bool = false
+        isEditing: Bool = false,
+        assistantBesideRecipe: Bool = false
     ) -> IPadLayout {
         IPadLayoutPolicy.resolve(
             contentWidth: contentWidth,
             contentHeight: height,
             recipeExpanded: recipeExpanded,
-            isEditing: isEditing
+            isEditing: isEditing,
+            assistantBesideRecipe: assistantBesideRecipe
         )
     }
 
@@ -137,6 +139,55 @@ final class IPadLayoutPolicyTests: XCTestCase {
             XCTAssertTrue(editing.twoColumns, "W=\(width)")
             XCTAssertFalse(editing.showsExpandButton, "W=\(width)")
         }
+    }
+
+    // MARK: - Assistant panel beside a recipe (T034, FR-022)
+
+    /// The measured content already excludes the panel and its divider (340 + 1).
+    private func withPanel(_ window: CGFloat, sidebar: CGFloat = 0) -> CGFloat {
+        window - sidebar - IPadLayoutMetrics.inspectorWidth - IPadLayoutMetrics.columnDividerWidth
+    }
+
+    func testAssistantPanelHidesTheListAtAnyWidth() {
+        // iPad Pro 11": landscape top bar, landscape with the sidebar, portrait, 13" landscape.
+        let cases: [(content: CGFloat, height: CGFloat, twoColumns: Bool)] = [
+            (withPanel(1210), 834, true),
+            (withPanel(1210, sidebar: IPadLayoutMetrics.sidebarWidth), 834, false),
+            (withPanel(834), 1210, false),
+            (withPanel(1376), 1032, true),
+        ]
+        for (content, height, twoColumns) in cases {
+            let resolved = layout(content, height: height, assistantBesideRecipe: true)
+            XCTAssertTrue(resolved.splitFits, "W=\(content): the split stays, the recipe view is not swapped")
+            XCTAssertFalse(resolved.listShown, "W=\(content)")
+            XCTAssertEqual(resolved.detailWidth, content, "W=\(content): the recipe takes the content")
+            XCTAssertEqual(resolved.twoColumns, twoColumns, "W=\(content)")
+            XCTAssertFalse(resolved.showsExpandButton, "W=\(content): no «Развернуть» beside the panel")
+        }
+        // Landscape without the sidebar: 869 → the recipe in two columns (layout.md `#assistant/chat`).
+        XCTAssertEqual(withPanel(1210), 869)
+    }
+
+    func testAssistantPanelKeepsThePhoneStackWhereTheSplitNeverFit() {
+        // Landscape ⅔ with the sidebar: 496 has no room for the list even without the panel.
+        let content = withPanel(776, sidebar: IPadLayoutMetrics.sidebarWidth)
+        let resolved = layout(content, assistantBesideRecipe: true)
+        XCTAssertFalse(resolved.splitFits)
+        XCTAssertFalse(resolved.listShown)
+        XCTAssertEqual(resolved.detailWidth, content)
+    }
+
+    func testClosingTheAssistantPanelBringsTheListBack() {
+        let open = layout(withPanel(1210), assistantBesideRecipe: true)
+        let closed = layout(1210)
+        XCTAssertFalse(open.listShown)
+        XCTAssertTrue(closed.listShown)
+        XCTAssertEqual(closed.listWidth, 403)
+        XCTAssertEqual(open.splitFits, closed.splitFits, "the panel never swaps split and stack")
+        // An expanded recipe stays expanded under the panel and after it closes.
+        let expandedOpen = layout(withPanel(834), height: 1210, recipeExpanded: true, assistantBesideRecipe: true)
+        XCTAssertTrue(IPadLayoutPolicy.keepsRecipeExpanded(splitFits: expandedOpen.splitFits, isPadRegular: true))
+        XCTAssertTrue(layout(834, height: 1210, recipeExpanded: true).showsExpandButton, "«Свернуть» is back")
     }
 
     // MARK: - layout.md §Матрица приёмки

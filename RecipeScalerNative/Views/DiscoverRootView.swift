@@ -64,7 +64,7 @@ struct DiscoverRootView: View {
             .toolbar {
                 if showsAssistantToolbarButton {
                     ToolbarItem(placement: .topBarTrailing) {
-                        IPadAssistantToolbarButton(coordinator: coordinator)
+                        IPadAssistantToolbarButton(coordinator: coordinator, startsNewChat: true)
                     }
                 }
             }

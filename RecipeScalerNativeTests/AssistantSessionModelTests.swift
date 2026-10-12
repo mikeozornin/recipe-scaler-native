@@ -3,6 +3,7 @@
 //
 //  Spec 081 (T032a) — the shared assistant session: a panel ↔ sheet swap keeps
 //  the chat, the draft and the stream; close / logout / session epoch drop it.
+//  T034 — ✦ on «Покупки» / «Подборки» opens a new chat instead of the recent one.
 //  No network: every call goes through an in-memory fake client.
 //
 
@@ -130,6 +131,44 @@ final class AssistantSessionModelTests: XCTestCase {
         XCTAssertEqual(model.input, "")
     }
 
+    // MARK: - Open with a new chat (spec 081, FR-021)
+
+    /// The tab and the recipe ✦ reopen a chat closed less than a minute ago.
+    func testReopenRestoresRecentThread() async {
+        let backend = FakeAssistantBackend()
+        backend.recentThreadId = "thread-recent"
+        let model = backend.makeModel()
+
+        await openAndBootstrap(model, backend: backend)
+        await waitUntil { model.threadId == "thread-recent" }
+
+        XCTAssertEqual(backend.getMessagesCalls, ["thread-recent"])
+    }
+
+    /// ✦ on «Покупки» and «Подборки» opens a new chat, even right after a recent one;
+    /// the typed draft stays.
+    func testStartsNewChatSkipsRecentThread() async {
+        let backend = FakeAssistantBackend()
+        backend.recentThreadId = "thread-recent"
+        let model = backend.makeModel()
+        model.input = "Черновик"
+
+        model.beginPresentation(openRequest: nil, shakeRequest: nil, startsNewChat: true)
+        model.viewDidAppear(shakeRequest: nil)
+        await waitUntil { backend.listThreadsCalls == 1 && !model.isBootstrapping }
+        await settle()
+
+        XCTAssertNil(model.threadId)
+        XCTAssertTrue(model.messages.isEmpty)
+        XCTAssertTrue(backend.getMessagesCalls.isEmpty)
+        XCTAssertEqual(model.input, "Черновик")
+
+        // The next plain open restores again.
+        model.close()
+        await openAndBootstrap(model, backend: backend)
+        await waitUntil { model.threadId == "thread-recent" }
+    }
+
     // MARK: - Session teardown
 
     func testEpochChangeDropsStaleStream() async {
@@ -211,6 +250,9 @@ private final class FakeAssistantBackend {
     var continuation: AsyncThrowingStream<AssistantStreamEvent, Error>.Continuation?
     var streamTerminated = false
     var persistedThreadIds: [String?] = []
+    /// A thread saved and opened just now: the ≤60 s restore picks it.
+    var recentThreadId: String?
+    var getMessagesCalls: [String] = []
 
     func makeModel() -> AssistantSessionModel {
         AssistantSessionModel(
@@ -224,7 +266,15 @@ private final class FakeAssistantBackend {
         AssistantSessionClient(
             listThreads: { [unowned self] in
                 listThreadsCalls += 1
-                return []
+                return recentThreadId.map {
+                    [AssistantThreadDTO(
+                        id: $0,
+                        title: "Соус",
+                        createdAt: "2026-10-13T09:00:00.000Z",
+                        updatedAt: "2026-10-13T09:00:00.000Z",
+                        lastMessageAt: nil
+                    )]
+                } ?? []
             },
             createThread: {
                 AssistantThreadDTO(
@@ -235,7 +285,10 @@ private final class FakeAssistantBackend {
                     lastMessageAt: nil
                 )
             },
-            getMessages: { _ in [] },
+            getMessages: { [unowned self] threadId in
+                getMessagesCalls.append(threadId)
+                return []
+            },
             deleteThread: { _ in },
             stream: { [unowned self] threadId, message, _ in
                 streamCalls.append((threadId: threadId, message: message))
@@ -247,8 +300,8 @@ private final class FakeAssistantBackend {
                 self.continuation = continuation
                 return stream
             },
-            savedThreadId: { nil },
-            lastOpenedAt: { 0 },
+            savedThreadId: { [unowned self] in recentThreadId },
+            lastOpenedAt: { [unowned self] in recentThreadId == nil ? 0 : Date().timeIntervalSince1970 },
             persistThreadId: { [unowned self] threadId in
                 persistedThreadIds.append(threadId)
             },

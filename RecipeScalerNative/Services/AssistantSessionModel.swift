@@ -108,6 +108,9 @@ final class AssistantSessionModel {
     @ObservationIgnored private var handledExternalRequestId: Int?
     @ObservationIgnored private var pendingShakeRequest: AssistantShakeOpenRequest?
     @ObservationIgnored private var handledShakeRequestId: Int?
+    /// Spec 081 (FR-021) — this presentation opens a new chat, not the recent one (✦ on
+    /// «Покупки» / «Подборки» of the iPad). Set by `beginPresentation`.
+    @ObservationIgnored private var startsNewChatOnOpen = false
     @ObservationIgnored private var interactionGeneration = 0
     /// Bumped by `beginPresentation`, `close` and `resetForLogout`: work that
     /// is not generation-guarded (thread delete) must not land in a later
@@ -139,9 +142,11 @@ final class AssistantSessionModel {
     /// The shell opens the assistant. Equivalent to building a fresh sheet
     /// (a closed chat reopens through the ≤60 s restore, as before), except
     /// the typed draft, which survives close and reopen (plan.md Р7).
+    /// `startsNewChat`: skip the ≤60 s restore (spec 081, FR-021); the draft still stays.
     func beginPresentation(
         openRequest: AssistantOpenRequest?,
-        shakeRequest: AssistantShakeOpenRequest?
+        shakeRequest: AssistantShakeOpenRequest?,
+        startsNewChat: Bool = false
     ) {
         cancelAllWork()
         presentationEpoch &+= 1
@@ -153,6 +158,7 @@ final class AssistantSessionModel {
         handledShakeRequestId = nil
         pendingExternalRequest = openRequest
         pendingShakeRequest = shakeRequest
+        startsNewChatOnOpen = startsNewChat
         inputPlaceholderVariantIndex = Int.random(in: 0..<AssistantInputPlaceholder.variantCount)
     }
 
@@ -188,6 +194,7 @@ final class AssistantSessionModel {
         handledShakeRequestId = nil
         pendingExternalRequest = nil
         pendingShakeRequest = nil
+        startsNewChatOnOpen = false
     }
 
     /// Logout / account switch while a presentation is visible: cancel every
@@ -309,6 +316,11 @@ final class AssistantSessionModel {
 
         if let shake = pendingShakeRequest, shake.forceNewChat {
             applyShakeSideEffects(shake)
+            return
+        }
+
+        if startsNewChatOnOpen {
+            startNewChat(keepsDraft: true)
             return
         }
 

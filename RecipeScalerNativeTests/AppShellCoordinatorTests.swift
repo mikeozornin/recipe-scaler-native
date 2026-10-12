@@ -68,6 +68,32 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertFalse(coordinator.pendingAssistantTabOpen)
     }
 
+    /// Spec 081 (FR-021) — ✦ in an iPad toolbar opens like the tab; ✦ on «Покупки» and
+    /// «Подборки» asks for a new chat. The flag goes with the open and with a logout.
+    func test_assistantToolbarTap_carriesNewChatUntilConsumed() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.selectedTab = .shopping
+
+        coordinator.handleAssistantToolbarTap(startsNewChat: true)
+
+        XCTAssertTrue(coordinator.pendingAssistantTabOpen)
+        XCTAssertTrue(coordinator.pendingAssistantTabOpenStartsNewChat)
+        XCTAssertEqual(coordinator.selectedTab, .shopping)
+
+        coordinator.consumeAssistantTabOpen()
+        XCTAssertFalse(coordinator.pendingAssistantTabOpen)
+        XCTAssertFalse(coordinator.pendingAssistantTabOpenStartsNewChat)
+
+        coordinator.handleAssistantToolbarTap(startsNewChat: true)
+        coordinator.resetShellStateForLogout()
+        XCTAssertFalse(coordinator.pendingAssistantTabOpenStartsNewChat)
+
+        // The recipe ✦ and the tab keep the recent chat.
+        coordinator.handleAssistantToolbarTap(startsNewChat: false)
+        XCTAssertTrue(coordinator.pendingAssistantTabOpen)
+        XCTAssertFalse(coordinator.pendingAssistantTabOpenStartsNewChat)
+    }
+
     /// PI-5 race (spec 074 review): an external request can arrive in the same
     /// SwiftUI transaction as a tab tap. AppShellView's tab-open handler skips
     /// the manual open when a request was routed, so the coordinator contract
