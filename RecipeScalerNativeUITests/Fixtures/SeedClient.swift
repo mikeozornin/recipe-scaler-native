@@ -81,24 +81,9 @@ final class SeedClient {
 
     // MARK: - Shopping list
 
-    /// Add free-text items to the shopping list.
-    func addShoppingItems(_ labels: [String]) async throws {
-        let url = base.appendingPathComponent("/api/shopping-list/items")
-        let body = try JSONEncoder().encode(["items": labels])
-        let (data, resp) = try await post(url: url, body: body)
-        try ensureOK(resp, url, data: data)
-    }
-
-    /// Add all ingredients from a recipe (scaled) to the shopping list.
-    func addRecipeToShoppingList(recipeId: String, targetServings: Int? = nil) async throws {
-        validateId(recipeId, kind: "recipe")
-        var url = base.appendingPathComponent("/api/shopping-list/from-recipe/\(recipeId)")
-        if let servings = targetServings {
-            url.append(queryItems: [URLQueryItem(name: "servings", value: String(servings))])
-        }
-        let (data, resp) = try await post(url: url, body: Data())
-        try ensureOK(resp, url, data: data)
-    }
+    // No REST seeding: the shopping list is a Yjs document synced over the socket, and
+    // `/api/v1/shopping-list` only reads it (public link, settings) and toggles sharing.
+    // Specs add items in the app (`ShoppingListPage.addManualItem`).
 
     // MARK: - Collections
 

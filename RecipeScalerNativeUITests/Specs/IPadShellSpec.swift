@@ -18,7 +18,6 @@ import XCTest
 ///     (a fresh test user has none, so `testSidebarContents` covers the empty section).
 final class IPadShellSpec: BaseTestCase {
     private var seededDisplayName: String?
-    private var seededShoppingItem: String?
 
     @MainActor
     override func setUp() async throws {
@@ -55,13 +54,6 @@ final class IPadShellSpec: BaseTestCase {
     }
 
     override func prepareBeforeLaunch() async throws {
-        if name.contains("testTopBarHasNoBadges") {
-            let item = TestData.shoppingItemLabel("E2E iPad")
-            try await seedOrSkip("POST /api/shopping-list/items") {
-                try await seedClient.addShoppingItems([item])
-            }
-            seededShoppingItem = item
-        }
         if name.contains("testFooterOpensProfileSheet") {
             let displayName = "E2E iPad \(UUID().uuidString.prefix(6))"
             try await seedOrSkip("PATCH /api/users/name") {
@@ -201,10 +193,11 @@ final class IPadShellSpec: BaseTestCase {
 
     // MARK: - Top bar and compact
 
-    func testTopBarHasNoBadges() throws {
-        let item = try XCTUnwrap(seededShoppingItem)
-        XCTAssertTrue(element(UIA.shoppingList).waitForExistence(timeout: Wait.firstPaint), "Shopping did not open")
-        XCTAssertTrue(app.staticTexts[item].waitForExistence(timeout: Wait.firstPaint), "Seeded item did not sync")
+    func testTopBarHasNoBadges() {
+        // The shopping list has no REST write API (a Yjs document): add the item in the app.
+        let item = TestData.shoppingItemLabel("E2E iPad")
+        shoppingListPage.awaitReady().addManualItem(item)
+        XCTAssertTrue(shoppingListPage.row(label: item).waitForExistence(timeout: Wait.syncRoundTrip), "Added item missing")
 
         let shopping = topBarTab(UIA.tabShopping)
         XCTAssertTrue(shopping.waitForExistence(timeout: Wait.element), "«Покупки» missing from the top bar")
