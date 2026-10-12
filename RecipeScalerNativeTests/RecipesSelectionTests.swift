@@ -173,4 +173,114 @@ final class RecipesSelectionTests: XCTestCase {
             RecipesSelection()
         )
     }
+
+    // MARK: - iPad split (T028)
+
+    /// «Все рецепты» (title menu, sidebar row) keeps the open recipe and drops edit mode.
+    func testSelectingAllRecipesKeepsOpenRecipe() {
+        XCTAssertEqual(
+            RecipesSelection.selectingAllRecipes(in: [
+                .folder("f1"),
+                .recipe(recipeId: "r1", folderContext: "f1", openInEditMode: true),
+            ]),
+            [.recipe(recipeId: "r1", folderContext: nil)]
+        )
+        XCTAssertEqual(RecipesSelection.selectingAllRecipes(in: [.folder("f1")]), [])
+        XCTAssertEqual(RecipesSelection.selectingAllRecipes(in: []), [])
+    }
+
+    /// Pinned first: the lists below are given in the order the column shows them.
+    private let lists: [String?: [String]] = [
+        nil: ["pinned", "r1", "r2", "r3"],
+        "f1": ["r2", "r3"],
+        "empty": [],
+    ]
+
+    private func repaired(
+        _ path: [RecipesRoute],
+        userFolderIds: [String] = ["f1", "empty"],
+        live: Set<String>? = nil,
+        previousLive: Set<String> = [],
+        lists: [String?: [String]]? = nil,
+        previousList: [String] = []
+    ) -> [RecipesRoute]? {
+        let lists = lists ?? self.lists
+        return RecipesSelection.splitRepairedPath(
+            path,
+            userFolderIds: userFolderIds,
+            liveRecipeIds: live ?? Set(lists[nil] ?? []),
+            previousLiveRecipeIds: previousLive,
+            listRecipeIds: { lists[$0] ?? [] },
+            previousListRecipeIds: previousList
+        )
+    }
+
+    func testSplitOpensFirstRecipeWhenNothingIsOpen() {
+        XCTAssertEqual(repaired([]), [.recipe(recipeId: "pinned", folderContext: nil)])
+        XCTAssertEqual(
+            repaired([.folder("f1")]),
+            [.folder("f1"), .recipe(recipeId: "r2", folderContext: "f1")]
+        )
+        XCTAssertNil(repaired([.folder("empty")]), "an empty collection keeps the panel empty")
+        XCTAssertNil(repaired([], lists: [nil: []]), "no recipes at all")
+    }
+
+    func testSplitKeepsCanonicalSelection() {
+        XCTAssertNil(repaired([.recipe(recipeId: "r1", folderContext: nil)]))
+        XCTAssertNil(repaired([.folder("f1"), .recipe(recipeId: "r3", folderContext: "f1", openInEditMode: true)]))
+        XCTAssertNil(repaired([.folder(allRecipes), .recipe(recipeId: "r1", folderContext: nil)]))
+        // Just created: not in the index yet, never was → stays open.
+        XCTAssertNil(repaired([.folder("f1"), .recipe(recipeId: "new", folderContext: "f1", openInEditMode: true)]))
+        // Removed from the collection but still alive → stays open in that collection.
+        XCTAssertNil(repaired([.folder("f1"), .recipe(recipeId: "r1", folderContext: "f1")]))
+    }
+
+    /// Spotlight, Universal Links, quick actions and import push `.recipe` over the
+    /// current path; the split makes it canonical so the row is highlighted.
+    func testSplitCanonicalizesDeepLinks() {
+        // Outside the selected collection → «Все рецепты».
+        XCTAssertEqual(
+            repaired([.folder("f1"), .recipe(recipeId: "r2", folderContext: "f1"), .recipe(recipeId: "r1", folderContext: nil)]),
+            [.recipe(recipeId: "r1", folderContext: nil)]
+        )
+        // Inside it → stays in the collection.
+        XCTAssertEqual(
+            repaired([.folder("f1"), .recipe(recipeId: "r2", folderContext: "f1"), .recipe(recipeId: "r3", folderContext: nil)]),
+            [.folder("f1"), .recipe(recipeId: "r3", folderContext: nil)]
+        )
+        // `handleDeepLink` resets the path first: already canonical.
+        XCTAssertNil(repaired([.recipe(recipeId: "r3", folderContext: nil)]))
+    }
+
+    func testSplitRepairsDeletions() {
+        // The open recipe was deleted on another device → the next one, edit mode dropped.
+        XCTAssertEqual(
+            repaired(
+                [.recipe(recipeId: "r2", folderContext: nil, openInEditMode: true)],
+                live: ["pinned", "r1", "r3"],
+                previousLive: ["pinned", "r1", "r2", "r3"],
+                lists: [nil: ["pinned", "r1", "r3"]],
+                previousList: ["pinned", "r1", "r2", "r3"]
+            ),
+            [.recipe(recipeId: "r3", folderContext: nil)]
+        )
+        // Last in the collection → the one before it.
+        XCTAssertEqual(
+            repaired(
+                [.folder("f1"), .recipe(recipeId: "r3", folderContext: "f1")],
+                live: ["pinned", "r1", "r2"],
+                previousLive: ["pinned", "r1", "r2", "r3"],
+                lists: [nil: ["pinned", "r1", "r2"], "f1": ["r2"]],
+                previousList: ["r2", "r3"]
+            ),
+            [.folder("f1"), .recipe(recipeId: "r2", folderContext: "f1")]
+        )
+        // The collection was deleted → «Все рецепты», the recipe stays open.
+        XCTAssertEqual(
+            repaired([.folder("gone"), .recipe(recipeId: "r2", folderContext: "gone")]),
+            [.recipe(recipeId: "r2", folderContext: nil)]
+        )
+        // The collection was deleted with nothing open → «Все рецепты» and its first recipe.
+        XCTAssertEqual(repaired([.folder("gone")]), [.recipe(recipeId: "pinned", folderContext: nil)])
+    }
 }
