@@ -456,10 +456,9 @@ struct CollectionsRootView: View {
     // MARK: - Actions
 
     private func commitNewFolder() {
-        let trimmed = newFolderName.trimmingCharacters(in: .whitespaces)
         isNewFieldFocused = false
 
-        guard !trimmed.isEmpty else {
+        guard let name = NewCollectionCommit.name(from: newFolderName) else {
             withAnimation(.easeInOut(duration: 0.15)) {
                 isCreatingNew = false
                 newFolderName = ""
@@ -467,16 +466,7 @@ struct CollectionsRootView: View {
             return
         }
 
-        guard !isSavingFolder else { return }
-        isSavingFolder = true
-
-        Task {
-            do {
-                _ = try await syncService.createFolder(name: trimmed)
-            } catch {
-                // Silently fail — user can retry.
-            }
-            isSavingFolder = false
+        NewCollectionCommit.start(name, isSaving: $isSavingFolder, syncService: syncService) {
             withAnimation(.easeInOut(duration: 0.15)) {
                 isCreatingNew = false
                 newFolderName = ""

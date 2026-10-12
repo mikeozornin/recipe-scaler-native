@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		08185F4A30518177E69C62A0 /* NewCollectionCommit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081D040ECE4EA13E423B0050 /* NewCollectionCommit.swift */; };
 		0815F1A68158B1AA39854C93 /* IPadSidebarProfileFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081314D04499DC956CD13A0B /* IPadSidebarProfileFooter.swift */; };
 		0815ACE2D755816A5D51FE1E /* AccountAvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081A7F962A0092E70734257D /* AccountAvatarView.swift */; };
 		0813D7E109D730012D3486F8 /* IPadShellItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0812ADFF8D274A1D2F3A8515 /* IPadShellItemTests.swift */; };
@@ -859,6 +860,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		081D040ECE4EA13E423B0050 /* NewCollectionCommit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCollectionCommit.swift; sourceTree = "<group>"; };
 		081314D04499DC956CD13A0B /* IPadSidebarProfileFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadSidebarProfileFooter.swift; sourceTree = "<group>"; };
 		081A7F962A0092E70734257D /* AccountAvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountAvatarView.swift; sourceTree = "<group>"; };
 		0812ADFF8D274A1D2F3A8515 /* IPadShellItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadShellItemTests.swift; sourceTree = "<group>"; };
@@ -1734,6 +1736,7 @@
 		2C4753BF21C7787912B3866F /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				081D040ECE4EA13E423B0050 /* NewCollectionCommit.swift */,
 				081A7F962A0092E70734257D /* AccountAvatarView.swift */,
 				081435AA90949164D95209FA /* AppShellTabRoots.swift */,
 				081CBD7997AADC6843B621D9 /* IPad */,
@@ -3197,6 +3200,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				08185F4A30518177E69C62A0 /* NewCollectionCommit.swift in Sources */,
 				0815F1A68158B1AA39854C93 /* IPadSidebarProfileFooter.swift in Sources */,
 				0815ACE2D755816A5D51FE1E /* AccountAvatarView.swift in Sources */,
 				081337D12340B02A6E19FFC8 /* AppShellTabRoots.swift in Sources */,

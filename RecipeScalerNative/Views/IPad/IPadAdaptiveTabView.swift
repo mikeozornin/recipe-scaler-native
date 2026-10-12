@@ -28,6 +28,9 @@ struct IPadAdaptiveTabView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     /// `\.tabBarPlacement == .sidebar`, reported from the selected page.
     @State private var sidebarShown = false
+    @State private var isNewCollectionAlertPresented = false
+    @State private var newCollectionName = ""
+    @State private var isSavingCollection = false
 
     private var isCompact: Bool { horizontalSizeClass == .compact }
 
@@ -115,6 +118,16 @@ struct IPadAdaptiveTabView: View {
                     Text("collections.title")
                         .accessibilityIdentifier(AccessibilityIdentifiers.ipadSidebarCollections)
                 }
+                .sectionActions {
+                    Button {
+                        newCollectionName = ""
+                        isNewCollectionAlertPresented = true
+                    } label: {
+                        // Identifiers do not reach the sidebar action row or the alert field
+                        // (checked on iPadOS 26.3); UI tests find them by label.
+                        Label("collections.new", systemImage: "plus")
+                    }
+                }
                 .defaultVisibility(.hidden, for: .tabBar)
             }
         }
@@ -132,9 +145,26 @@ struct IPadAdaptiveTabView: View {
                 )
             }
         }
+        .alert("collections.new", isPresented: $isNewCollectionAlertPresented) {
+            TextField("collections.new-placeholder", text: $newCollectionName)
+            Button("common.cancel", role: .cancel) {
+                newCollectionName = ""
+            }
+            Button("collections.create") {
+                commitNewCollection()
+            }
+            .disabled(NewCollectionCommit.name(from: newCollectionName) == nil || isSavingCollection)
+        }
         .task {
             await applyLaunchSidebarHidden()
         }
+    }
+
+    /// The same commit as the phone collections list (`NewCollectionCommit`).
+    private func commitNewCollection() {
+        defer { newCollectionName = "" }
+        guard let name = NewCollectionCommit.name(from: newCollectionName) else { return }
+        NewCollectionCommit.start(name, isSaving: $isSavingCollection, syncService: syncService)
     }
 
     /// Every page reports the tab bar placement; only the selected one is on screen.
