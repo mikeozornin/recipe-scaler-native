@@ -134,7 +134,7 @@
 - [x] T013 [US1] Вынести корни вкладок из `modernTabBar` (`RecipeScalerNative/Views/AppShellView.swift` ~:709-770) в `RecipeScalerNative/Views/AppShellTabRoots.swift`. Только перенос: iPhone-дерево не меняется. Проверка — `verify-ipad-layout.sh --iphone-regression` и `AppShellNavigationSpec` на iPhone. — `#recipes/tabs` на iPhone (рефакторинг, вид не меняется)
 
   **Проверено:** `--iphone-regression` — 11 состояний, 0 отличий (`recipes-list` и `assistant-chat` сошлись со второй попытки скрипта). `AppShellNavigationSpec` собирается, но 3 теста пропущены: нет бэкенда для `register-auto` (127.0.0.1:3001).
-- [ ] T014 [US1] Создать `RecipeScalerNative/Views/IPad/IPadAdaptiveTabView.swift`.
+- [x] T014 [US1] Создать `RecipeScalerNative/Views/IPad/IPadAdaptiveTabView.swift`.
 
   **Первый шаг — проверка, не подтверждённая спайком** (plan.md §Непроверенное): «Профиль» и «Ассистент» с `.tabPlacement(.pinned)` + динамическим `.defaultVisibility(placement == .sidebar ? .hidden : .automatic, for: .sidebar)`. Переключить сайдбар туда и обратно на iPad-симуляторе: строк нет в сайдбаре, иконки у правого края верхнего бара есть. Если не работает — остановиться и спросить (строки рядом с футером или другой обход). Результат записать в задаче.
 
@@ -151,6 +151,10 @@
   - создать `RecipeScalerNative/Views/IPad/IPadSidebarControl.swift` (plan.md Р2): «сайдбар плавает» (левый safe area страницы < 60) и `sidebar.isHidden` через `TabBarDiscovery`; только `.padRegular` и 26.2+; контроллер не найден → лог и ничего.
 
   Ветка в `AppShellView.tabView` (~:690-697): iOS 26.2+ и `idiom == .pad` → `IPadAdaptiveTabView`, иначе без изменений. Зависимости в тулбаре передавать явно (plan.md, ловушка iOS 26). Тесты в `IPadShellSpec` (T022): `testTopBarHasNoBadges`, `testCompactHasNoMoreTab`. — `#recipes/sidebar`, `#recipes/tabs`, окно ½
+
+  **Сделано и проверено (iPad Pro 11", портрет):** сайдбар — «Рецепты» 69, «Покупки» 11, коллекции со счётчиками, строк «Профиль»/«Ассистент» нет; верхний бар — без бейджей, иконки профиля и ✦ справа; тап по коллекции → экран коллекции в стеке, в сайдбаре подсвечена коллекция; ✦ открывает лист ассистента, выбор не меняется; `-DebugWindowWidth=375` — нижний бар из 5 вкладок без «Ещё», «Профиль» — телефонная страница. Бейдж «Покупок» — число некупленных пунктов `syncService.shoppingSnapshot` (документ грузится с сессией, новых подписок нет). Скриншоты `tmp/ipad-verify/us1/t014-*.png`.
+
+  **Отклонение:** секция «Коллекции» строится только при показанном сайдбаре (`sidebarShown && !isCompact`), а не всегда в regular. Плавающий сайдбар в портрете сам закрывается после тапа по коллекции, и выбранная в этот момент коллекция навсегда оставалась в верхнем баре (кнопка «›», страница с «🎂 Десерты»); чтение `.tab(.recipes)` из T012 этого не исправляло. Без секции в режиме верхнего бара коллекции в бар не попадают; при открытии сайдбара секция на месте, выбранная коллекция подсвечена.
 - [ ] T015 [P] [US1] Вынести телефонный аватар из `RecipeScalerNative/Views/AccountView.swift` (`accountAvatar`, ~:860-871) в `RecipeScalerNative/Views/AccountAvatarView.swift`:
   - `AccountAvatarView(url: URL?, size: CGFloat)`: фото через `AuthAvatarImage`, иначе `person.circle.fill` цветом `.secondary`, обрезка кругом — ровно как сейчас;
   - `AccountView` использует его с размером 40; вид на iPhone не меняется;

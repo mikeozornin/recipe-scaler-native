@@ -7,6 +7,9 @@ enum IPadLayoutMetrics {
     static let regularMinWidth: CGFloat = 680
     /// Sidebar (272) plus its 8 pt inset; subtracted from the content width while visible.
     static let sidebarWidth: CGFloat = 280
+    /// Leading safe-area inset of the selected page below which a shown sidebar floats
+    /// over the content instead of standing beside it (spike S1/S2, `IPadSidebarControl`).
+    static let sidebarOverlayMaxLeadingInset: CGFloat = 60
     /// Recipe list column, without its divider.
     static let listColumnWidth: CGFloat = 320
     /// Hairline between columns (list | detail, recipe left | right).

@@ -60,7 +60,7 @@ enum AppTab: String, CaseIterable, Hashable {
     }
 }
 
-private struct AppTabBarLabel: View {
+struct AppTabBarLabel: View {
     let tab: AppTab
 
     var body: some View {
@@ -74,7 +74,7 @@ private struct AppTabBarLabel: View {
 /// `feedBadgeStore` is injected — tab labels are measured as bar items; after
 /// assistant dismiss iOS 26 uses a fallback environment and
 /// `@Environment(FeedBadgeStore.self)` traps.
-private struct FeedBadgeTabLabel: View {
+struct FeedBadgeTabLabel: View {
     let feedBadgeStore: FeedBadgeStore
 
     var body: some View {
@@ -690,10 +690,31 @@ struct AppShellView: View {
     @ViewBuilder
     private var tabView: some View {
         if #available(iOS 26.2, *) {
-            modernTabView
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                iPadTabView
+            } else {
+                modernTabView
+            }
         } else {
             legacyTabView
         }
+    }
+
+    /// Spec 081 — the iPad shell: sidebar, top bar or the phone bottom bar in compact.
+    /// Same timer accessory as the iPhone (it exists in the sidebar mode too, spike S6).
+    @available(iOS 26.2, *)
+    private var iPadTabView: some View {
+        IPadAdaptiveTabView(
+            coordinator: coordinator,
+            syncService: syncService,
+            feedBadgeStore: feedBadgeStore,
+            tabRoots: tabRoots
+        )
+        .animation(MobileTimerPanelLayout.toggleAnimation, value: mobileTimerPanelCollapsed)
+        .modifier(MobileTimerAccessoryModifier(
+            isEnabled: showsMobileTimerPanelAccessory,
+            accessory: mobileTimerPanelAccessory
+        ))
     }
 
     @available(iOS 26.2, *)

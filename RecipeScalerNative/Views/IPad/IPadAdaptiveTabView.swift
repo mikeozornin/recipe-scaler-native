@@ -1,0 +1,158 @@
+import RecipeScalerCore
+import SwiftUI
+
+/// The iPad shell on iPadOS 26.2+ (spec 081, plan.md Р2): one `.sidebarAdaptable`
+/// `TabView` that is a sidebar, a top tab bar (sidebar hidden) or the phone bottom bar
+/// (compact window). Tab roots are the phone ones (`AppShellTabRoots`).
+///
+/// System workarounds from the spike (S1, S3, S5):
+/// - badges only while the tab bar is the sidebar, or they show up in the top bar;
+/// - «Профиль» and «Ассистент» are `.pinned` icons of the top bar and hidden from the
+///   sidebar only while it is shown (plain `.hidden` removes them from the top bar too);
+/// - the «Коллекции» section exists only while the sidebar is shown: in compact
+///   collections and «Ассистент» go to «Ещё»; in the top bar a collection that was
+///   selected when the sidebar hid stays in the bar for good;
+/// - a selected collection exists only in the sidebar (`IPadShellSelection`);
+/// - no `.inspector` on the `TabView`: it zeroes the top safe area of the tabs.
+///
+/// Dependencies are passed in explicitly: labels are measured as bar items, where
+/// iOS 26 may hand them a fallback environment (`@Environment(Observable)` traps).
+@available(iOS 26.2, *)
+struct IPadAdaptiveTabView: View {
+    @Bindable var coordinator: AppShellCoordinator
+    let syncService: YjsSyncService
+    let feedBadgeStore: FeedBadgeStore
+    let tabRoots: AppShellTabRoots
+
+    @Environment(\.appLayoutMode) private var layoutMode
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    /// `\.tabBarPlacement == .sidebar`, reported from the selected page.
+    @State private var sidebarShown = false
+
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+
+    private var collections: [RecipeFolder] {
+        RecipeFolder.sortedActive(syncService.folders)
+    }
+
+    private func selection(collections: [RecipeFolder]) -> IPadShellSelection {
+        IPadShellSelection(
+            coordinator: coordinator,
+            sidebarShown: sidebarShown && !isCompact,
+            collectionIds: Set(collections.map(\.id))
+        )
+    }
+
+    var body: some View {
+        let collections = collections
+        let selection = selection(collections: collections)
+        let current = selection.item
+        return TabView(selection: selection.binding) {
+            Tab(value: IPadShellItem.tab(.discover)) {
+                page(tabRoots.discover())
+            } label: {
+                FeedBadgeTabLabel(feedBadgeStore: feedBadgeStore)
+            }
+
+            Tab(value: IPadShellItem.tab(.recipes)) {
+                // One `RecipeListView` at a time: a selected collection row hosts it.
+                if case .collection = current {
+                    page(Color.clear)
+                } else {
+                    page(tabRoots.recipes())
+                }
+            } label: {
+                AppTabBarLabel(tab: .recipes)
+            }
+            .badge(sidebarBadge(syncService.collectionIndex.live.count))
+
+            Tab(value: IPadShellItem.tab(.shopping)) {
+                page(tabRoots.shopping())
+            } label: {
+                AppTabBarLabel(tab: .shopping)
+            }
+            .badge(sidebarBadge(shoppingToBuyCount))
+
+            Tab(value: IPadShellItem.tab(.profile)) {
+                // In a wide window the profile is a form sheet (T019a), never a page.
+                if layoutMode == .padRegular {
+                    page(Color.clear)
+                } else {
+                    page(tabRoots.profile())
+                }
+            } label: {
+                AppTabBarLabel(tab: .profile)
+            }
+            .tabPlacement(.pinned)
+            .defaultVisibility(sidebarShown ? .hidden : .automatic, for: .sidebar)
+
+            // Spec 074 — fake tab: opens the assistant sheet, never selected.
+            Tab(value: IPadShellItem.tab(.assistant)) {
+                page(Color.clear)
+            } label: {
+                AppTabBarLabel(tab: .assistant)
+            }
+            .tabPlacement(.pinned)
+            .defaultVisibility(sidebarShown ? .hidden : .automatic, for: .sidebar)
+
+            if sidebarShown && !isCompact {
+                TabSection {
+                    ForEach(collections, id: \.id) { folder in
+                        let item = IPadShellItem.collection(folder.id)
+                        let count = syncService.collectionIndex.countByFolder[folder.id] ?? 0
+                        Tab(value: item) {
+                            if current == item {
+                                page(tabRoots.recipes())
+                            } else {
+                                page(Color.clear)
+                            }
+                        } label: {
+                            collectionLabel(folder, count: count)
+                        }
+                        .badge(sidebarBadge(count))
+                    }
+                } header: {
+                    Text("collections.title")
+                        .accessibilityIdentifier(AccessibilityIdentifiers.ipadSidebarCollections)
+                }
+                .defaultVisibility(.hidden, for: .tabBar)
+            }
+        }
+        .tabViewStyle(.sidebarAdaptable)
+        .task {
+            await applyLaunchSidebarHidden()
+        }
+    }
+
+    /// Every page reports the tab bar placement; only the selected one is on screen.
+    private func page<Content: View>(_ content: Content) -> some View {
+        content.reportsIPadSidebarShown($sidebarShown)
+    }
+
+    private func sidebarBadge(_ count: Int) -> Int {
+        sidebarShown ? count : 0
+    }
+
+    /// Items still to buy, from the shopping document loaded with the session.
+    private var shoppingToBuyCount: Int {
+        syncService.shoppingSnapshot.items.reduce(0) { $0 + ($1.purchased ? 0 : 1) }
+    }
+
+    /// The name as the phone collections list shows it: the leading emoji, then the name.
+    private func collectionLabel(_ folder: RecipeFolder, count: Int) -> some View {
+        let presentation = FolderDisplayName.presentation(forStoredName: folder.name)
+        let title = [presentation.leadingEmoji, presentation.displayName]
+            .compactMap { $0 }
+            .joined(separator: " ")
+        return Label(title, systemImage: RecipeFolderConstants.folderIconName(recipeCount: count))
+            .accessibilityIdentifier(AccessibilityIdentifiers.ipadSidebarCollection(folderId: folder.id))
+    }
+
+    /// DEBUG `-IPadSidebarHidden=1` (layout.md `#recipes/tabs`): start without the sidebar.
+    private func applyLaunchSidebarHidden() async {
+        guard DebugLaunchOptions.iPadSidebarHidden, layoutMode == .padRegular else { return }
+        // The `UITabBarController` is attached after the first layout pass.
+        try? await Task.sleep(for: .milliseconds(300))
+        IPadSidebarControl.setSidebarHidden(true)
+    }
+}
