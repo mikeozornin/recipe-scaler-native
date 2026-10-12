@@ -12,7 +12,10 @@ import XCTest
 ///   - sidebar rows are plain elements `tab_*`, `ipad-sidebar-collection-<id>`, their
 ///     labels end with the badge («Покупки, 1»);
 ///   - the sidebar toggle is `ToggleSideBar` in the top bar, `ToggleSidebar` in the sidebar;
-///   - the «Новая коллекция» section action and the alert field carry no identifier.
+///   - the «Новая коллекция» section action and the alert field get identifiers in code,
+///     but the system drops them: both are matched by identifier or label;
+///   - with no collections the «Коллекции» header and the action are still there
+///     (a fresh test user has none, so `testSidebarContents` covers the empty section).
 final class IPadShellSpec: BaseTestCase {
     private var seededDisplayName: String?
     private var seededShoppingItem: String?
@@ -284,10 +287,11 @@ final class IPadShellSpec: BaseTestCase {
         }
     }
 
-    /// The sidebar «Новая коллекция» action: matched by label inside the sidebar column.
+    /// The sidebar «Новая коллекция» action: by identifier or by label inside the sidebar column.
     private func newCollectionAction() -> XCUIElement? {
         let candidates = app.descendants(matching: .any).matching(NSPredicate(
-            format: "label IN %@ AND identifier != %@",
+            format: "identifier == %@ OR (label IN %@ AND identifier != %@)",
+            UIA.ipadSidebarNewCollection,
             ["Новая коллекция", "New collection"],
             UIA.collectionsNewRow
         ))
@@ -317,7 +321,8 @@ final class IPadShellSpec: BaseTestCase {
 
         let alert = app.alerts.firstMatch
         XCTAssertTrue(alert.waitForExistence(timeout: Wait.element), "New collection alert did not open")
-        let field = alert.textFields.firstMatch
+        let byId = alert.textFields.matching(identifier: UIA.ipadNewCollectionNameField).firstMatch
+        let field = byId.exists ? byId : alert.textFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: Wait.element), "Collection name field missing")
         let create = alert.buttons.matching(NSPredicate(format: "label IN %@", ["Создать", "Create"])).firstMatch
         field.tap()

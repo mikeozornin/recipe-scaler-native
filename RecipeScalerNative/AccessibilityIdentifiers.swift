@@ -264,6 +264,9 @@ enum AccessibilityIdentifiers {
     /// «Коллекции» section of the sidebar; rows use `ipadSidebarCollection(folderId:)`.
     static let ipadSidebarCollections = "ipad-sidebar-collections"
     static let ipadSidebarCollectionPrefix = "ipad-sidebar-collection-"
+    /// «Новая коллекция» action of the «Коллекции» section and the name field of its alert.
+    static let ipadSidebarNewCollection = "ipad-sidebar-new-collection"
+    static let ipadNewCollectionNameField = "ipad-new-collection-name-field"
     static let ipadRecipeListColumn = "ipad-recipe-list-column"
     /// «Список рецептов» — shows the hidden list column.
     static let ipadShowRecipeListButton = "ipad-show-recipe-list-button"

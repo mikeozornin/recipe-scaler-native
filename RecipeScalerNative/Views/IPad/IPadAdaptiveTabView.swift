@@ -43,7 +43,8 @@ struct IPadAdaptiveTabView: View {
             coordinator: coordinator,
             sidebarShown: sidebarShown && !isCompact,
             collectionIds: Set(collections.map(\.id)),
-            layoutMode: layoutMode
+            layoutMode: layoutMode,
+            onNewCollection: presentNewCollectionAlert
         )
     }
 
@@ -115,18 +116,27 @@ struct IPadAdaptiveTabView: View {
                         }
                         .badge(sidebarBadge(count))
                     }
+                    if collections.isEmpty {
+                        // A section without tabs is dropped with its header and action;
+                        // a child hidden in the sidebar keeps both (iPadOS 26.3). Never
+                        // shown, so never selected; `.newCollection` would only ask a name.
+                        Tab(value: IPadShellItem.newCollection) {
+                            page(Color.clear)
+                        } label: {
+                            Label("collections.new", systemImage: "plus")
+                        }
+                        .defaultVisibility(.hidden, for: .sidebar)
+                    }
                 } header: {
                     Text("collections.title")
                         .accessibilityIdentifier(AccessibilityIdentifiers.ipadSidebarCollections)
                 }
                 .sectionActions {
-                    Button {
-                        newCollectionName = ""
-                        isNewCollectionAlertPresented = true
-                    } label: {
-                        // Identifiers do not reach the sidebar action row or the alert field
-                        // (checked on iPadOS 26.3); UI tests find them by label.
+                    // iPadOS 26.3 drops identifiers of section actions and alert
+                    // fields from the tree; UI tests fall back to the label.
+                    Button(action: presentNewCollectionAlert) {
                         Label("collections.new", systemImage: "plus")
+                            .accessibilityIdentifier(AccessibilityIdentifiers.ipadSidebarNewCollection)
                     }
                 }
                 .defaultVisibility(.hidden, for: .tabBar)
@@ -148,6 +158,7 @@ struct IPadAdaptiveTabView: View {
         }
         .alert("collections.new", isPresented: $isNewCollectionAlertPresented) {
             TextField("collections.new-placeholder", text: $newCollectionName)
+                .accessibilityIdentifier(AccessibilityIdentifiers.ipadNewCollectionNameField)
             Button("common.cancel", role: .cancel) {
                 newCollectionName = ""
             }
@@ -166,6 +177,11 @@ struct IPadAdaptiveTabView: View {
             vkusvillSettings: tabRoots.vkusvillSettings,
             performLogoutTeardown: tabRoots.performLogoutTeardown
         ))
+    }
+
+    private func presentNewCollectionAlert() {
+        newCollectionName = ""
+        isNewCollectionAlertPresented = true
     }
 
     /// The same commit as the phone collections list (`NewCollectionCommit`).

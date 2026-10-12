@@ -50,6 +50,21 @@ final class IPadShellItemTests: XCTestCase {
         XCTAssertFalse(coordinator.isProfileSheetPresented)
     }
 
+    func testNewCollectionAsksForANameAndKeepsSelection() throws {
+        let coordinator = try makeCoordinator()
+        coordinator.selectedTab = .shopping
+        var asked = 0
+        var shell = selection(coordinator)
+        shell.onNewCollection = { asked += 1 }
+
+        shell.select(.newCollection)
+
+        XCTAssertEqual(asked, 1)
+        XCTAssertEqual(coordinator.selectedTab, .shopping)
+        XCTAssertEqual(coordinator.recipesPath, [])
+        XCTAssertEqual(shell.item, .tab(.shopping))
+    }
+
     func testAssistantDoesNotChangeSelection() throws {
         let coordinator = try makeCoordinator()
         coordinator.selectedTab = .shopping
