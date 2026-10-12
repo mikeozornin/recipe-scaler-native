@@ -5,17 +5,18 @@
     {
       "target": "RecipeScalerNativeTests",
       "class": "SnapshotTests",
-      "reason": "Test host crashes on missing AuthService/YjsSyncService environment objects (pre-existing).",
+      "reason": "Test host crashes on missing environment objects: AuthService (testAuthView) and ReleaseNotesStore (testRecipeListView); no reference snapshots recorded. Re-verified 2026-10-12: 2 of 2 iPhone-simulator runs crashed the same way.",
       "owner": "ios-infra",
       "introducedAt": "2026-07-25",
-      "expiry": "2026-10-01",
+      "expiry": "2026-11-12",
       "exitCriteria": [
         "AppContainer-based test host injected into #Preview paths",
         "SnapshotTests pass three consecutive runs without prod sync"
       ],
       "removalCondition": "Either the test host is repaired and SnapshotTests are reinstated in test-fast.sh, or the suite is removed with a documented decision in docs/DECISIONS.md.",
       "links": [
-        "llm/reviews/2026.07.25 review-kilo-glm-5.2-recipe-scaler-native.md"
+        "llm/reviews/2026.07.25 review-kilo-glm-5.2-recipe-scaler-native.md",
+        "docs/DECISIONS.md (2026-10-12 — Renew SnapshotTests quarantine to 2026-11-12)"
       ]
     }
   ]

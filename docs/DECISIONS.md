@@ -508,3 +508,14 @@ The description editor bridge (`description-editor-bridge.js` ↔ `DescriptionEd
 
 ---
 
+### 2026-10-12 — Renew SnapshotTests quarantine to 2026-11-12
+
+**Decision:** Keep `RecipeScalerNativeTests/SnapshotTests` quarantined in `scripts/test-quarantine.json` and move its expiry from 2026-10-01 to 2026-11-12. Owner, exit criteria and removal condition are unchanged: an AppContainer-based test host injected into the `#Preview` paths, plus 3 consecutive passes.
+
+**Rationale:** The entry had expired, which `scripts/check-test-quarantine.py` treats as red. On 2026-10-12 the suite was run twice on the iPhone simulator (`build-for-testing`, then `test-without-building -only-testing:RecipeScalerNativeTests/SnapshotTests`). Both runs failed the same way, with `TEST EXECUTE FAILED` and the test host crashing before any test completed:
+- `testAuthView` — `No Observable object of type AuthService found`;
+- `testRecipeListView` — `No Observable object of type ReleaseNotesStore found`.
+
+The suite also has no recorded reference snapshots (`isRecording = false`, no committed `__Snapshots__` images), so even with environment objects it would fail on the missing references. Fixing it means app-side test-host / test code changes plus recording references, which is outside the iPad-spike docs task. Removing the entry would make the fast suite red, and deleting the tests would drop the only snapshot coverage stub. So the entry is renewed with an updated reason.
+
+---
