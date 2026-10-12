@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0815642EC1F8F481A4E051DF /* IPadRecipesSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081A85171151F7AAC6D5F40A /* IPadRecipesSpec.swift */; };
 		0813971944D613633CE0F999 /* YDocRecipeDetailColumns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0810E26824E331FAC2A2A356 /* YDocRecipeDetailColumns.swift */; };
 		081BACD5F55A1B03061EB394 /* IPadShellSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */; };
 		081A15CAD06242AEB73277A9 /* IPadProfileSheetPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0817B80AFD53CD65E53B0BEA /* IPadProfileSheetPolicyTests.swift */; };
@@ -868,6 +869,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		081A85171151F7AAC6D5F40A /* IPadRecipesSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadRecipesSpec.swift; sourceTree = "<group>"; };
 		0810E26824E331FAC2A2A356 /* YDocRecipeDetailColumns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YDocRecipeDetailColumns.swift; sourceTree = "<group>"; };
 		08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadShellSpec.swift; sourceTree = "<group>"; };
 		0817B80AFD53CD65E53B0BEA /* IPadProfileSheetPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetPolicyTests.swift; sourceTree = "<group>"; };
@@ -2681,6 +2683,7 @@
 		UIT422B515994E4FDA9B0 /* Specs */ = {
 			isa = PBXGroup;
 			children = (
+				081A85171151F7AAC6D5F40A /* IPadRecipesSpec.swift */,
 				08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */,
 				UITAB5A803D9115B87C2E /* FeatureAdoptionGuidesSpec.swift */,
 				UITEF4902F43B6C5EDA96 /* FeatureAdoptionTrackerSpec.swift */,
@@ -3794,6 +3797,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0815642EC1F8F481A4E051DF /* IPadRecipesSpec.swift in Sources */,
 				081BACD5F55A1B03061EB394 /* IPadShellSpec.swift in Sources */,
 				UITESTSRCBF00100000000 /* RecipeScalerNativeUITests.swift in Sources */,
 				UIT8D74A32C89F7DE0818 /* BaseTestCase.swift in Sources */,
