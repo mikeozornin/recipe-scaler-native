@@ -63,7 +63,16 @@ final class AppShellCoordinator {
     /// setter is internal (module-scoped only).
     var fileImportCoordinator: RecipeFileImportCoordinator?
 
-    var selectedTab: AppTab = .recipes
+    var selectedTab: AppTab = .recipes {
+        didSet {
+            switch selectedTab {
+            case .discover, .recipes, .shopping:
+                lastNonProfileTab = selectedTab
+            case .profile, .assistant, .importTab:
+                break
+            }
+        }
+    }
     var importPresentation: ImportPresentation?
     /// Recipes stack. Typed (not `NavigationPath`) so the iPad columns can read and write
     /// the same selection through `RecipesSelection` (spec 081, plan.md Р4). Never serialized.
@@ -97,6 +106,10 @@ final class AppShellCoordinator {
     /// Spec 081 — bumped each time the profile sheet closes, so the iPad sidebar footer
     /// reloads the name and avatar that may have changed in the sheet.
     private(set) var profileSheetRevision = 0
+
+    /// Spec 081 (plan.md Р2a) — the section the profile sheet returns to when «Профиль»
+    /// gets selected in a wide window (FR-004b). Real sections only.
+    private(set) var lastNonProfileTab: AppTab = .recipes
 
     /// Consumes the pending tab-open flag after AppShellView presented the sheet.
     func consumeAssistantTabOpen() {
@@ -188,6 +201,25 @@ final class AppShellCoordinator {
     // MARK: - iPad profile sheet (spec 081, plan.md Р2a)
 
     func presentProfileSheet() {
+        isProfileSheetPresented = true
+    }
+
+    /// `onDismiss` of the sheet (system swipe, tap outside or «Готово»).
+    func profileSheetDidDismiss() {
+        isProfileSheetPresented = false
+        profileSheetRevision &+= 1
+    }
+
+    /// `.profile` selected in `.padRegular` (tab tap, ⌘4, `requestRemindersSetup`,
+    /// `-OpenTab=profile`, widening on the Profile tab) → back to `previous`, sheet on top.
+    func normalizeProfileSelection(previous: AppTab?, layoutMode: AppLayoutMode) {
+        let resolution = IPadProfileSheetPolicy.resolve(
+            selected: selectedTab,
+            previous: previous,
+            layoutMode: layoutMode
+        )
+        guard resolution.presentsSheet else { return }
+        selectedTab = resolution.selected
         isProfileSheetPresented = true
     }
 
@@ -484,8 +516,10 @@ final class AppShellCoordinator {
         pendingAssistantOpenRequest = nil
         pendingAssistantTabOpen = false
         pendingShakeAssistantOpenRequest = nil
+        isProfileSheetPresented = false
         discoverListState?.clearAll()
         selectedTab = .recipes
+        lastNonProfileTab = .recipes
         recipesPath = []
         discoverPath = NavigationPath()
         shoppingPath = NavigationPath()

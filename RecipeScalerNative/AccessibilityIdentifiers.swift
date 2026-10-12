@@ -270,6 +270,8 @@ enum AccessibilityIdentifiers {
     static let ipadAssistantInspector = "ipad-assistant-inspector"
     /// ✦ — opens and closes the assistant inspector.
     static let ipadAssistantToolbarButton = "ipad-assistant-toolbar-button"
+    /// «Готово» of the profile form sheet (wide window).
+    static let ipadProfileSheetDoneButton = "ipad-profile-sheet-done-button"
 
     static func ipadSidebarCollection(folderId: String) -> String {
         "\(ipadSidebarCollectionPrefix)\(folderId)"

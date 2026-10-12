@@ -784,8 +784,22 @@ struct AppShellView: View {
         )
     }
 
+    /// Spec 081 (Q1) — on an iPad below iOS 26.2 the profile is a form sheet in a wide
+    /// window too; the iPhone keeps the bare tab bar.
+    @ViewBuilder
     private var legacyTabView: some View {
-        legacyTabBar
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            legacyTabBar
+                .modifier(IPadProfileSheetModifier(
+                    coordinator: coordinator,
+                    auth: authService,
+                    timer: timerManager,
+                    vkusvillSettings: vkusvillSettings,
+                    performLogoutTeardown: performLogoutTeardown
+                ))
+        } else {
+            legacyTabBar
+        }
     }
 
     private var legacyTabBar: some View {

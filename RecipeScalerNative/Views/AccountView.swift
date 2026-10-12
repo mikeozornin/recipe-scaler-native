@@ -12,6 +12,25 @@ private enum AccountSheet: Identifiable {
     var id: Self { self }
 }
 
+/// Spec 081 — «Готово» when `AccountView` is the iPad profile sheet. Without `onDone`
+/// the content is returned as is, so the iPhone and the compact tab keep their tree.
+private struct AccountSheetDoneToolbar: ViewModifier {
+    let onDone: (() -> Void)?
+
+    func body(content: Content) -> some View {
+        if let onDone {
+            content.toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("common.done", action: onDone)
+                        .accessibilityIdentifier(AccessibilityIdentifiers.ipadProfileSheetDoneButton)
+                }
+            }
+        } else {
+            content
+        }
+    }
+}
+
 struct AccountView: View {
     @Environment(YjsSyncService.self) private var syncService
     @Environment(RemindersSyncService.self) private var remindersService
@@ -31,6 +50,8 @@ struct AccountView: View {
     private let auth: AuthService
     private let timer: TimerManager
     private let vkusvillSettings: VkusvillSettingsStore
+    /// Spec 081 — «Готово» of the iPad profile form sheet; `nil` on the iPhone and in a tab.
+    private let onDone: (() -> Void)?
     @State private var viewModel: AccountSettingsViewModel
 
     /// `performLogoutTeardown` must come from the composition root (AppShellView
@@ -42,11 +63,13 @@ struct AccountView: View {
         auth: AuthService,
         timer: TimerManager,
         vkusvillSettings: VkusvillSettingsStore,
-        performLogoutTeardown: (() async -> Void)? = nil
+        performLogoutTeardown: (() async -> Void)? = nil,
+        onDone: (() -> Void)? = nil
     ) {
         self.auth = auth
         self.timer = timer
         self.vkusvillSettings = vkusvillSettings
+        self.onDone = onDone
         _viewModel = State(initialValue: AccountSettingsViewModel(
             auth: auth,
             timer: timer,
@@ -171,6 +194,7 @@ struct AccountView: View {
                 }
                 .localizedNavigationTitle("account.title")
                 .navigationBarTitleDisplayMode(.inline)
+                .modifier(AccountSheetDoneToolbar(onDone: onDone))
                 .listSectionSpacing(12)
                 .appListBodyTypography()
                 .environment(

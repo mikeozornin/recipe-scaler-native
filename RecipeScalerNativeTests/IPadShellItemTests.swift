@@ -31,6 +31,25 @@ final class IPadShellItemTests: XCTestCase {
         )
     }
 
+    func testProfileInRegularDoesNotChangeSelection() throws {
+        let coordinator = try makeCoordinator()
+        coordinator.selectedTab = .shopping
+        var regular = selection(coordinator)
+        regular.layoutMode = .padRegular
+
+        regular.select(.tab(.profile))
+
+        XCTAssertEqual(coordinator.selectedTab, .shopping)
+        XCTAssertTrue(coordinator.isProfileSheetPresented)
+        XCTAssertEqual(regular.item, .tab(.shopping))
+
+        // Compact window: «Профиль» is a tab.
+        coordinator.profileSheetDidDismiss()
+        selection(coordinator).select(.tab(.profile))
+        XCTAssertEqual(coordinator.selectedTab, .profile)
+        XCTAssertFalse(coordinator.isProfileSheetPresented)
+    }
+
     func testAssistantDoesNotChangeSelection() throws {
         let coordinator = try makeCoordinator()
         coordinator.selectedTab = .shopping

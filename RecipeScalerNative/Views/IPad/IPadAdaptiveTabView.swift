@@ -42,7 +42,8 @@ struct IPadAdaptiveTabView: View {
         IPadShellSelection(
             coordinator: coordinator,
             sidebarShown: sidebarShown && !isCompact,
-            collectionIds: Set(collections.map(\.id))
+            collectionIds: Set(collections.map(\.id)),
+            layoutMode: layoutMode
         )
     }
 
@@ -158,6 +159,13 @@ struct IPadAdaptiveTabView: View {
         .task {
             await applyLaunchSidebarHidden()
         }
+        .modifier(IPadProfileSheetModifier(
+            coordinator: coordinator,
+            auth: tabRoots.authService,
+            timer: tabRoots.timerManager,
+            vkusvillSettings: tabRoots.vkusvillSettings,
+            performLogoutTeardown: tabRoots.performLogoutTeardown
+        ))
     }
 
     /// The same commit as the phone collections list (`NewCollectionCommit`).

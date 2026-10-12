@@ -23,6 +23,8 @@ struct IPadShellSelection {
     var collectionIds: Set<String>
     /// First recipe of a collection as its list shows it; asked only while `isSplitActive`.
     var firstRecipeId: (String) -> String? = { _ in nil }
+    /// In `.padRegular` «Профиль» opens the profile sheet and keeps the selection (plan.md Р2a).
+    var layoutMode: AppLayoutMode = .phone
 
     var item: IPadShellItem {
         Self.item(
@@ -39,6 +41,8 @@ struct IPadShellSelection {
 
     func select(_ newItem: IPadShellItem) {
         switch newItem {
+        case .tab(.profile) where layoutMode == .padRegular:
+            coordinator.presentProfileSheet()
         case .tab(let tab):
             // «Ассистент» keeps the selection (pending open, as on the iPhone);
             // a second tap on the current section pops it to the root.

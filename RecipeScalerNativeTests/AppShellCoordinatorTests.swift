@@ -265,6 +265,60 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertNil(UserDefaults.standard.string(forKey: DeepLinkRouter.pendingRecipeIdKey))
     }
 
+    // MARK: - Spec 081 — profile sheet in a wide iPad window (T019a)
+
+    func testWideningOnProfileTabRestoresPreviousAndPresentsSheet() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.selectedTab = .shopping
+        coordinator.selectedTab = .profile // compact window: the profile tab
+
+        coordinator.normalizeProfileSelection(previous: coordinator.lastNonProfileTab, layoutMode: .padRegular)
+
+        XCTAssertEqual(coordinator.selectedTab, .shopping)
+        XCTAssertTrue(coordinator.isProfileSheetPresented)
+    }
+
+    func testNarrowingKeepsProfileSheet() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.selectedTab = .discover
+        coordinator.presentProfileSheet()
+
+        coordinator.normalizeProfileSelection(previous: coordinator.lastNonProfileTab, layoutMode: .phone)
+
+        XCTAssertEqual(coordinator.selectedTab, .discover)
+        XCTAssertTrue(coordinator.isProfileSheetPresented)
+
+        let revision = coordinator.profileSheetRevision
+        coordinator.profileSheetDidDismiss()
+        XCTAssertFalse(coordinator.isProfileSheetPresented)
+        XCTAssertEqual(coordinator.profileSheetRevision, revision &+ 1)
+    }
+
+    func testRemindersSetupInRegularPresentsSheet() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.selectedTab = .shopping
+
+        coordinator.requestRemindersSetup()
+        // The shell's `onChange(of: selectedTab)` with the old value.
+        coordinator.normalizeProfileSelection(previous: .shopping, layoutMode: .padRegular)
+
+        XCTAssertEqual(coordinator.selectedTab, .shopping)
+        XCTAssertTrue(coordinator.isProfileSheetPresented)
+        XCTAssertTrue(coordinator.pendingRemindersSetup, "the sheet consumes it on appear")
+    }
+
+    func testLogoutDismissesProfileSheet() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.selectedTab = .shopping
+        coordinator.presentProfileSheet()
+
+        coordinator.resetShellStateForLogout()
+
+        XCTAssertFalse(coordinator.isProfileSheetPresented)
+        XCTAssertEqual(coordinator.selectedTab, .recipes)
+        XCTAssertEqual(coordinator.lastNonProfileTab, .recipes)
+    }
+
     func test_requestRemindersSetup_switchesToProfileAndSetsPending() throws {
         let (coordinator, _, _) = try makeCoordinator()
         coordinator.selectedTab = .shopping

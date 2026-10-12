@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		081A15CAD06242AEB73277A9 /* IPadProfileSheetPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0817B80AFD53CD65E53B0BEA /* IPadProfileSheetPolicyTests.swift */; };
+		081D48A0C5792DA6C6306F66 /* IPadProfileSheetModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081B3845856DC980503EE6A8 /* IPadProfileSheetModifier.swift */; };
+		081E76BD3B8AF81943CFF690 /* IPadProfileSheetPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081867C288854BF5052DAF26 /* IPadProfileSheetPolicy.swift */; };
 		0816FFE16E7751247F2308B4 /* IPadAssistantToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0810E433F234D38B47531CE0 /* IPadAssistantToolbarButton.swift */; };
 		08185F4A30518177E69C62A0 /* NewCollectionCommit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081D040ECE4EA13E423B0050 /* NewCollectionCommit.swift */; };
 		0815F1A68158B1AA39854C93 /* IPadSidebarProfileFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081314D04499DC956CD13A0B /* IPadSidebarProfileFooter.swift */; };
@@ -861,6 +864,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0817B80AFD53CD65E53B0BEA /* IPadProfileSheetPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetPolicyTests.swift; sourceTree = "<group>"; };
+		081B3845856DC980503EE6A8 /* IPadProfileSheetModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetModifier.swift; sourceTree = "<group>"; };
+		081867C288854BF5052DAF26 /* IPadProfileSheetPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetPolicy.swift; sourceTree = "<group>"; };
 		0810E433F234D38B47531CE0 /* IPadAssistantToolbarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadAssistantToolbarButton.swift; sourceTree = "<group>"; };
 		081D040ECE4EA13E423B0050 /* NewCollectionCommit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCollectionCommit.swift; sourceTree = "<group>"; };
 		081314D04499DC956CD13A0B /* IPadSidebarProfileFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadSidebarProfileFooter.swift; sourceTree = "<group>"; };
@@ -2043,6 +2049,7 @@
 		93D42941605BAA5DD8D2035A /* RecipeScalerNativeTests */ = {
 			isa = PBXGroup;
 			children = (
+				0817B80AFD53CD65E53B0BEA /* IPadProfileSheetPolicyTests.swift */,
 				0812ADFF8D274A1D2F3A8515 /* IPadShellItemTests.swift */,
 				081F1FD029328F7EFA3D8048 /* RecipesSelectionTests.swift */,
 				081618DB1CDED04A80B55285 /* AppLayoutModeTests.swift */,
@@ -2228,6 +2235,7 @@
 		B3EE97F98D203CDB04111240 /* Routing */ = {
 			isa = PBXGroup;
 			children = (
+				081867C288854BF5052DAF26 /* IPadProfileSheetPolicy.swift */,
 				081A55F5FF0E5C98209BD431 /* RecipesSelection.swift */,
 				0EF2B3F0EB5A4599AE467921 /* DeepLinkRouter.swift */,
 				A1B2C3D4E5F60718293A4C01 /* AppShellCoordinator.swift */,
@@ -2735,6 +2743,7 @@
 		081CBD7997AADC6843B621D9 /* IPad */ = {
 			isa = PBXGroup;
 			children = (
+				081B3845856DC980503EE6A8 /* IPadProfileSheetModifier.swift */,
 				0810E433F234D38B47531CE0 /* IPadAssistantToolbarButton.swift */,
 				081314D04499DC956CD13A0B /* IPadSidebarProfileFooter.swift */,
 				081886D29CEE86686D583F2F /* IPadShellItem.swift */,
@@ -3203,6 +3212,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				081D48A0C5792DA6C6306F66 /* IPadProfileSheetModifier.swift in Sources */,
+				081E76BD3B8AF81943CFF690 /* IPadProfileSheetPolicy.swift in Sources */,
 				0816FFE16E7751247F2308B4 /* IPadAssistantToolbarButton.swift in Sources */,
 				08185F4A30518177E69C62A0 /* NewCollectionCommit.swift in Sources */,
 				0815F1A68158B1AA39854C93 /* IPadSidebarProfileFooter.swift in Sources */,
@@ -3640,6 +3651,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				081A15CAD06242AEB73277A9 /* IPadProfileSheetPolicyTests.swift in Sources */,
 				0813D7E109D730012D3486F8 /* IPadShellItemTests.swift in Sources */,
 				0814BC5B70E8459EA6013499 /* RecipesSelectionTests.swift in Sources */,
 				08175422ECD11B896922424D /* AppLayoutModeTests.swift in Sources */,

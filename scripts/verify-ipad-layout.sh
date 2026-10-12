@@ -119,6 +119,8 @@ BASELINE_DIR="$OUT_DIR/iphone-baseline"
 REGRESSION_DIR="$OUT_DIR/iphone-regression"
 RECIPE_NAME="${IPAD_VERIFY_RECIPE_NAME:-Баскский чизкейк}"
 DISCOVER_PROFILE="${IPAD_VERIFY_DISCOVER_PROFILE:-mike.ozornin}"
+# Window ½ stand-in for the compact states (IPadLayoutMetrics.regularMinWidth is 680).
+COMPACT_WIDTH="${IPAD_VERIFY_COMPACT_WIDTH:-400}"
 MAX_DIFF_PIXELS="${IPAD_VERIFY_MAX_DIFF_PIXELS:-0}"
 MASK_RADIUS="${IPAD_VERIFY_MASK_RADIUS:-8}"
 # Box-fill connected unstable regions (see scripts/ipad-verify-pixels.swift).
@@ -140,6 +142,9 @@ RETRIES="${IPAD_VERIFY_RETRIES:-2}"
 # recipes-tabs / recipes-focus are iPad-only (DEBUG -IPadSidebarHidden /
 # -IPadListHidden, T011); on the phone they collapse into recipes-sidebar (recipe
 # on top of the stack), so the iPhone regression does not list them.
+# profile-tabs / recipes-compact / profile-compact are iPad-only too: the profile
+# form sheet over the top bar (T019a) and the window ½ stand-in (-DebugWindowWidth,
+# compact size class): the phone bottom bar, «Профиль» as a tab page.
 # ---------------------------------------------------------------------------
 COMMON_STATES=(
   recipes-list
@@ -162,7 +167,7 @@ if [[ "${IPAD_VERIFY_INCLUDE_TIMERS:-0}" == "1" ]]; then
   COMMON_STATES+=(recipes-timers)
 fi
 IPHONE_STATES=("${COMMON_STATES[@]}")
-IPAD_STATES=("${COMMON_STATES[@]}" recipes-tabs recipes-focus)
+IPAD_STATES=("${COMMON_STATES[@]}" recipes-tabs recipes-focus profile-tabs recipes-compact profile-compact)
 
 STATE_ARGS=()
 STATE_WAIT="ready"
@@ -235,8 +240,20 @@ state_spec() {
       STATE_WAIT="import"
       ;;
     profile-public)
-      STATE_NOTE="profile tab"
+      STATE_NOTE="profile tab (iPad: form sheet over «Рецепты»)"
       STATE_ARGS=("-OpenTab=profile")
+      ;;
+    profile-tabs)
+      STATE_NOTE="profile form sheet, sidebar hidden (iPad only)"
+      STATE_ARGS=("-OpenTab=profile" "-IPadSidebarHidden=1")
+      ;;
+    recipes-compact)
+      STATE_NOTE="recipe list in a ${COMPACT_WIDTH} pt window: bottom tab bar (iPad only)"
+      STATE_ARGS=("-OpenTab=recipes" -recipe-list-view-mode flat "-DebugWindowWidth=$COMPACT_WIDTH")
+      ;;
+    profile-compact)
+      STATE_NOTE="profile tab page in a ${COMPACT_WIDTH} pt window (iPad only)"
+      STATE_ARGS=("-OpenTab=profile" "-DebugWindowWidth=$COMPACT_WIDTH")
       ;;
     *)
       return 1
