@@ -6,7 +6,7 @@ import SwiftUI
 enum NewCollectionCommit {
     /// The name to save, or `nil` when there is nothing to save.
     static func name(from raw: String) -> String? {
-        let trimmed = raw.trimmingCharacters(in: .whitespaces)
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
 

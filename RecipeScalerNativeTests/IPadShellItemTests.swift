@@ -70,6 +70,16 @@ final class IPadShellItemTests: XCTestCase {
         XCTAssertEqual(shell.item, .tab(.shopping))
     }
 
+    /// T017: the sidebar alert and the phone list share the commit; blank names never save.
+    func testNewCollectionNameTrimsWhitespaceAndNewlines() {
+        XCTAssertNil(NewCollectionCommit.name(from: ""))
+        XCTAssertNil(NewCollectionCommit.name(from: "   "))
+        XCTAssertNil(NewCollectionCommit.name(from: "\n\n"))
+        XCTAssertNil(NewCollectionCommit.name(from: " \t\n "))
+        XCTAssertEqual(NewCollectionCommit.name(from: "\n Супы \n"), "Супы")
+        XCTAssertEqual(NewCollectionCommit.name(from: "Супы  дня"), "Супы  дня")
+    }
+
     func testAssistantDoesNotChangeSelection() throws {
         let coordinator = try makeCoordinator()
         coordinator.selectedTab = .shopping
