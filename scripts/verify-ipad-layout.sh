@@ -195,8 +195,12 @@ state_spec() {
       STATE_ARGS=("-OpenTab=recipes" -recipe-list-view-mode flat)
       ;;
     recipes-sidebar)
-      STATE_NOTE="recipe «${RECIPE_NAME}» open (phone: on top of the stack)"
+      STATE_NOTE="recipe «${RECIPE_NAME}» open, sidebar shown (phone: on top of the stack)"
       STATE_ARGS=("${recipe_args[@]}")
+      # Portrait starts with the sidebar hidden; the phone keeps its baseline arguments.
+      if [[ "$MODE" != "iphone-regression" ]]; then
+        STATE_ARGS+=("-IPadSidebarShown=1")
+      fi
       STATE_WAIT="media"
       ;;
     recipes-tabs)

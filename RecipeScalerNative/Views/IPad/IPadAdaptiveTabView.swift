@@ -168,7 +168,7 @@ struct IPadAdaptiveTabView: View {
             .disabled(NewCollectionCommit.name(from: newCollectionName) == nil || isSavingCollection)
         }
         .task {
-            await applyLaunchSidebarHidden()
+            await applyLaunchSidebarVisibility()
         }
         .modifier(IPadProfileSheetModifier(
             coordinator: coordinator,
@@ -216,10 +216,12 @@ struct IPadAdaptiveTabView: View {
     }
 
     /// DEBUG `-IPadSidebarHidden=1` (layout.md `#recipes/tabs`): start without the sidebar.
-    private func applyLaunchSidebarHidden() async {
-        guard DebugLaunchOptions.iPadSidebarHidden, layoutMode == .padRegular else { return }
+    /// DEBUG `-IPadSidebarShown=1` (`#recipes/sidebar`): start with it, also in portrait.
+    private func applyLaunchSidebarVisibility() async {
+        let hidden = DebugLaunchOptions.iPadSidebarHidden
+        guard hidden || DebugLaunchOptions.iPadSidebarShown, layoutMode == .padRegular else { return }
         // The `UITabBarController` is attached after the first layout pass.
         try? await Task.sleep(for: .milliseconds(300))
-        IPadSidebarControl.setSidebarHidden(true)
+        IPadSidebarControl.setSidebarHidden(hidden)
     }
 }

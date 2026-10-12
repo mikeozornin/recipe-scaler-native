@@ -226,6 +226,13 @@ enum DebugLaunchOptions {
         boolFlag("IPadSidebarHidden")
     }
 
+    /// `-IPadSidebarShown=1` — `.padRegular` starts with the sidebar shown, also in portrait
+    /// where the system starts with it hidden (layout.md `#recipes/sidebar`).
+    /// `-IPadSidebarHidden=1` wins when both are set.
+    static var iPadSidebarShown: Bool {
+        boolFlag("IPadSidebarShown")
+    }
+
     /// `-IPadListHidden=1` — `.padRegular` starts with the recipe list column hidden (`#recipes/focus`).
     static var iPadListHidden: Bool {
         boolFlag("IPadListHidden")
@@ -466,6 +473,7 @@ enum DebugLaunchOptions {
     static var simulateErrorAlert: Bool { false }
     static var openTab: AppTab? { nil }
     static var iPadSidebarHidden: Bool { false }
+    static var iPadSidebarShown: Bool { false }
     static var iPadListHidden: Bool { false }
     static var debugWindowWidth: CGFloat? { nil }
 
