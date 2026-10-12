@@ -272,6 +272,7 @@ struct YDocRecipeDetailView: View {
             syncService: syncService,
             apiClient: apiClient,
             isScreenAwakeActive: $isScreenAwakeActive,
+            padPanel: padPanel,
             onToggleEdit: { Task { await toggleEditMode() } }
         ) {
         ScrollViewReader { scrollProxy in
@@ -898,16 +899,28 @@ private struct RecipeDetailToolbarHost<Content: View>: View {
     let syncService: YjsSyncService
     let apiClient: APIClient
     @Binding var isScreenAwakeActive: Bool
+    /// Spec 081 (T026): «…», «Поделиться» (wide), «Не гасить экран», ✦, «Изменить».
+    let padPanel: RecipeDetailPadPanel?
     let onToggleEdit: () -> Void
     @ViewBuilder let content: () -> Content
 
+    /// The iPad items after the shared group; edit mode keeps only «Готово» (Q2).
+    private var padActions: RecipeDetailPadPanel? {
+        guard let padPanel, recipe != nil, !(isEditing && canEnterEditMode) else { return nil }
+        return padPanel
+    }
+
+    private var padEdit: RecipeDetailPadPanel? {
+        canEnterEditMode ? padActions : nil
+    }
+
     var body: some View {
         content()
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    trailingToolbarItems
-                }
-            }
+            .modifier(RecipeDetailTrailingToolbar(
+                main: trailingToolbarItems,
+                assistantCoordinator: padActions?.coordinator,
+                edit: padEdit.map { editButton(showsTitle: $0.toolbarStyle == .padWide) }
+            ))
     }
 
     @ViewBuilder
@@ -926,27 +939,88 @@ private struct RecipeDetailToolbarHost<Content: View>: View {
                     isPinned: isPinned,
                     syncService: syncService
                 )
-                RecipeDetailShareButton(
-                    recipeId: recipeId,
-                    isPublic: recipe.isPublic,
-                    hasImage: !(recipe.imageUrl?.isEmpty ?? true),
-                    hasSteps: recipe.hasSteps,
-                    syncService: syncService,
-                    apiClient: apiClient
-                )
+                if padPanel?.toolbarStyle != .padNarrow {
+                    RecipeDetailShareButton(
+                        recipeId: recipeId,
+                        isPublic: recipe.isPublic,
+                        hasImage: !(recipe.imageUrl?.isEmpty ?? true),
+                        hasSteps: recipe.hasSteps,
+                        syncService: syncService,
+                        apiClient: apiClient
+                    )
+                }
                 ScreenAwakeToggle(isActive: $isScreenAwakeActive)
-                if canEnterEditMode {
-                    Button(action: onToggleEdit) {
-                        AppToolbarStyle.labeledIcon(
-                            systemName: "pencil",
-                            title: "edit.edit"
-                        )
-                    }
-                    .appToolbarIconButton()
-                    .accessibilityLabel("edit.edit")
-                    .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailEdit)
+                if canEnterEditMode, padPanel == nil {
+                    editButton(showsTitle: true)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func editButton(showsTitle: Bool) -> some View {
+        Button(action: onToggleEdit) {
+            if showsTitle {
+                AppToolbarStyle.labeledIcon(
+                    systemName: "pencil",
+                    title: "edit.edit"
+                )
+            } else {
+                AppToolbarStyle.iconOnly(systemName: "pencil")
+            }
+        }
+        .appToolbarIconButton()
+        .accessibilityLabel("edit.edit")
+        .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailEdit)
+    }
+}
+
+/// The trailing bar items. On the phone one group, as before; on `.padRegular` ✦ and
+/// «Изменить» follow as separate glass capsules (iOS 26), as in the prototype `.dt-bar`.
+/// `ToolbarSpacer` needs iOS 26, and `#available` inside a toolbar builder needs
+/// iOS 17.5, so the check sits at the view level.
+private struct RecipeDetailTrailingToolbar<Main: View, Edit: View>: ViewModifier {
+    let main: Main
+    let assistantCoordinator: AppShellCoordinator?
+    let edit: Edit?
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        main
+                    }
+                    if let assistantCoordinator {
+                        ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                        ToolbarItem(placement: .topBarTrailing) {
+                            IPadAssistantToolbarButton(coordinator: assistantCoordinator)
+                        }
+                    }
+                    if let edit {
+                        ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                        ToolbarItem(placement: .topBarTrailing) {
+                            edit
+                        }
+                    }
+                }
+        } else {
+            content
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        main
+                    }
+                    if let assistantCoordinator {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            IPadAssistantToolbarButton(coordinator: assistantCoordinator)
+                        }
+                    }
+                    if let edit {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            edit
+                        }
+                    }
+                }
         }
     }
 }
