@@ -11,13 +11,13 @@
   - `TARGETED_DEVICE_FAMILY = "1,2"` для таргета `RecipeScalerNative`.
   - iPad-оболочка на `TabView(.sidebarAdaptable)` (iPadOS 26.2+): сайдбар, раздел «Коллекции», футер профиля, верхний и нижний таб-бары.
   - Раздел «Рецепты»: колонка списка и панель рецепта, рецепт в две колонки с перетаскиваемым разделителем (ширина сохраняется, Q5).
-  - Ассистент как `.inspector`.
+  - Ассистент — своя панель справа 340 pt рядом с `TabView` в широком окне и телефонный лист в узком (не `.inspector`: спайк S5, Р7); общий store сессии ассистента.
   - Поповеры «Коллекции», истории чатов и таймеров.
   - Правка в две колонки.
   - Ограничение ширины у «Покупок» и «Подборок»; профиль «Моё всё» в широком окне — form sheet (Р2a, Q7); импорт в form sheet.
   - Отключение встряхивания на iPad.
   - `.commands` и `keyboardShortcut`.
-  - Многозадачность в одном окне.
+  - Многозадачность в одном окне с изменяемым размером: Split View, Slide Over, Stage Manager.
   - Поиск iPad-симулятора и проверочный скрипт iPad-раскладки; iPad-скриншоты App Store.
 - **Вне scope**:
   - Mac и Vision Pro.
@@ -25,14 +25,14 @@
   - Изменение логики поиска, CRDT, сервера и веба.
   - Экспорт в PDF (Q3), откат правок в режиме правки (Q2), сгенерированный аватар (Q6): этого нет на iPhone.
   - Сайдбар на iPadOS 18.0–26.1 (Q1): низкий приоритет, на потом (Р3).
-  - Несколько окон (Q4: только если спайк S7 покажет, что дёшево; иначе STOP 5).
+  - Несколько окон. Q4: «только если дёшево»; спайк S7 показал, что дорого, сработал STOP 5 (§Результаты спайка). Отдельная спека, если понадобится.
   - Идеи на потом из спеки: ассистент «видит» рецепт; сетка карточек авторов.
 - **STOP conditions** (остановиться, записать в `docs/DECISIONS.md`, спросить человека):
   1. **iPhone.** Любое расхождение на iPhone: красный `verify-ui-smoke.sh`, `AppShellNavigationSpec` или unit-тесты; отличие iPhone-скриншотов до и после (T029) — кроме осознанной правки `[RecipesRoute]`, которая не меняет пиксели.
-  2. **Белый экран или некликабельный UI на iPad-симуляторе** (повтор `docs/DECISIONS.md:411`) после спайка T005/T006. Сначала — минимальная репродукция в спайке, а не обход в продакшен-коде.
-  3. **Вложенная навигация.** И вариант A (`NavigationSplitView` внутри `Tab`), и вариант B (два `NavigationStack` в `HStack`) ломают панели инструментов, `.searchable` или переходы.
+  2. **Белый экран или некликабельный UI на iPad-симуляторе** (повтор `docs/DECISIONS.md:411`) после спайка T005/T006. Сначала — минимальная репродукция в спайке, а не обход в продакшен-коде. **Итог спайка (2026-10-12):** белого экрана нет; сработал на `.inspector` уровня `TabView` и на варианте A (тулбары под таб-баром), снят заменой — своя панель ассистента (Р7) и вариант B (Р5).
+  3. **Вложенная навигация.** И вариант A (`NavigationSplitView` внутри `Tab`), и вариант B (два `NavigationStack` в `HStack`) ломают панели инструментов, `.searchable` или переходы. **Не сработал** (S4): A сломан, B работает.
   4. **Коллекции в сайдбаре.** `TabSection` с динамическими коллекциями не работает без дублирования стека рецептов на каждую коллекцию (утечки, двойная подписка на YDoc). Тогда коллекции переезжают в меню заголовка колонки списка, а сайдбар остаётся без раздела — это отклонение от прототипа, нужно решение человека.
-  5. **Несколько окон** требуют переноса `AppShellCoordinator` из общего `AppContainer` (`RecipeScalerNativeApp.swift:121`, `AppContainer.swift:65`) в отдельную сцену. По умолчанию это STOP для мультиоконности (Q4); одно окно с изменяемым размером остаётся в scope.
+  5. **Несколько окон** требуют переноса `AppShellCoordinator` из общего `AppContainer` (`RecipeScalerNativeApp.swift:121`, `AppContainer.swift:65`) в отдельную сцену. По умолчанию это STOP для мультиоконности (Q4); одно окно с изменяемым размером остаётся в scope. **Сработал** (S7, 2026-10-12): мультиоконность вне scope, `UIApplicationSupportsMultipleScenes` не добавляется.
   6. **Устаревшие API.** Нужный API есть только в beta-SDK или требует поднять минимальную iOS выше 17.0.
 
 ## Конституционная проверка
@@ -42,23 +42,23 @@
 | CRDT-first | N/A | Документы, схема Yjs и запись не меняются. Новая коллекция из сайдбара идёт через существующий `syncService.createFolder(name:)` (`CollectionsRootView.swift:475`). Правки рецепта — те же телефонные компоненты. |
 | Web parity | N/A | Только нативная раскладка; веб не меняется. Аватар — телефонный (фото или `person.circle.fill`), нового рисования аватара нет (Q6). |
 | Offline-first | PASS | Колонки, инспектор и поповеры работают на локальных данных. Футер профиля офлайн показывает номер аккаунта и `person.circle.fill` (FR-004). Ширина левой колонки рецепта хранится локально (`UserDefaults`). Сетевые действия (импорт, Вкусвилл) отключаются, как на iPhone. |
-| Native UI | PASS | `TabView(.sidebarAdaptable)`, `Tab`/`TabSection`, `.inspector`, `.popover`, `.presentationSizing(.form)`, `.commands`, `keyboardShortcut`, `NavigationSplitView` или `NavigationStack`. Шрифт Martian через `AppTypography`. |
+| Native UI | PASS | `TabView(.sidebarAdaptable)`, `Tab`/`TabSection`, `.tabPlacement(.pinned)`, `.tabViewSidebarBottomBar`, `tabViewBottomAccessory`, `.popover`, `.presentationSizing(.form)`, `.commands`, `keyboardShortcut`, `NavigationStack`. Системные `.inspector` на уровне `TabView` и `NavigationSplitView` внутри `Tab` отвергнуты спайком (S4, S5): на iPadOS 26.3 они ломают верхние отступы тулбаров. Замена — своя панель ассистента и колонки на двух `NavigationStack`. Шрифт Martian через `AppTypography`. |
 | Phased delivery | PASS | 7 историй, каждая выпускается отдельно (spec.md); US1 — минимальный выпуск. Сначала спайк, вёрстка после него. |
 | i18n | PASS | Новые строки — ключи в `Localizable.xcstrings` (en + ru), телефонные ключи переиспользуются (FR-032); `bash scripts/lint-i18n.sh`. |
-| Documentation | PASS | spec.md, plan.md, tasks.md, layout.md; записи в `docs/DECISIONS.md` (оболочка, старый путь, окна) и `docs/AGENT-WORKFLOW.md` (iPad-симулятор) — T054. |
+| Documentation | PASS | spec.md, plan.md, tasks.md, layout.md; записи в `docs/DECISIONS.md`: по итогам спайка (колонки — вариант B, своя панель ассистента, одно окно) — 2026-10-12; оболочка, старый путь, разделитель — T054; `docs/AGENT-WORKFLOW.md` (iPad-симулятор) — T054. |
 
 ## Очерёдность
 
 1. **Setup (T001–T004).** Скрипты iPad-симулятора, семейство устройств, проверка расширений. Без них нечем проверять.
-2. **Foundational (T005–T011).**
-   - Спайк оболочки и контента на живом iPad-симуляторе. Первым — из-за `DECISIONS.md:411`.
+2. **Foundational (T005–T011)** — сделано.
+   - Спайк оболочки и контента на живом iPad-симуляторе (T005, T006) — вердикты в §Результаты спайка. Белого экрана из `DECISIONS.md:411` нет.
    - Чистая политика раскладки, режим раскладки в environment, типизированный путь рецептов, адаптивные модификаторы показа.
    - Всё остальное зависит от этого шага.
-3. **US1 (T012–T022, T019a)** — оболочка, включая лист профиля. Без неё нет iPad-выпуска.
-4. **US2 (T023–T031)** — колонки рецептов. Зависит от T008–T010 и решения спайка по варианту A/B.
-5. **US3 (T032–T035)**, **US4 (T036–T040)**, **US5 (T041–T044)** — независимы друг от друга, все после US2: им нужна панель рецепта и правило ширины.
+3. **US1 (T012–T022, T019a)** — оболочка, включая лист профиля. Без неё нет iPad-выпуска. Первый шаг T014 — проверка динамической видимости «Профиля» и «Ассистента» (§Непроверенное).
+4. **US2 (T023–T031)** — колонки рецептов по варианту B (Р5). Зависит от T008–T010.
+5. **US3 (T032a, T032–T035)**, **US4 (T036–T040)**, **US5 (T041–T044)** — независимы друг от друга, все после US2: им нужна панель рецепта и правило ширины. В US3 сначала общий store сессии ассистента (T032a), потом панель.
 6. **US6 (T045–T048)** — меню и клавиатура. Публикует действия из US1–US5, поэтому после них.
-7. **US7 (T049–T052)** — матрица многозадачности и решение по окнам.
+7. **US7 (T049–T052)** — матрица многозадачности в одном окне (STOP 5: несколько окон вне scope), ландшафт и старый путь.
 8. **Polish (T053–T057)** — строки, скриншоты App Store, документация, полный прогон, ревью.
 
 ## Архитектурные решения
@@ -86,10 +86,14 @@ idiom == .pad && horizontalSizeClass == .regular ? .padRegular : .phone
 
 - `TabView(selection:)` + `.tabViewStyle(.sidebarAdaptable)`.
 - Вкладки «Подборки», «Рецепты», «Покупки».
-- «Профиль» и «Ассистент» с `.defaultVisibility(sidebarShown ? .hidden : .automatic, for: .sidebar)`. Не просто `.hidden`: в Scrapp `.hidden` для `.sidebar` прятал вкладку и из верхнего бара (`RootView.swift:240-244`). `sidebarShown` — из `@Environment(\.tabBarPlacement) == .sidebar`, прочитанного на странице вкладки (`reportsSidebar`, `RootView.swift:311-327`); заголовок сайдбара для этого не годится — UIKit выдвигает сайдбар без изменения его геометрии.
-- `TabSection("collections.title")`: по `Tab` на каждую коллекцию, `.defaultVisibility(.hidden, for: .tabBar)`, `.sectionActions` с «Новая коллекция».
-- `.tabViewSidebarBottomBar` — футер профиля, только при `.padRegular`; тап открывает лист профиля (Р2a).
-- Тот же `MobileTimerAccessoryModifier` (`:1029-1043`).
+- **Плейсмент таб-бара** (S2). Читать — `@Environment(\.tabBarPlacement)` на странице вкладки (`.topBar` ↔ `.sidebar`, `@available` iOS 18+; `reportsSidebar`, `RootView.swift:311-327`). Заголовок сайдбара для этого не годится: UIKit выдвигает сайдбар без изменения его геометрии. Менять — `UITabBarController.sidebar.isHidden`, контроллер ищется через `TabBarDiscovery` от `window.rootViewController`. Сайдбар плавает поверх контента, если `selectedViewController.view.safeAreaInsets.left < 60`. На 834 pt в портрете он плавает всегда, `sidebar.preferredLayout = .tile` игнорируется.
+- «Профиль» и «Ассистент» — `.tabPlacement(.pinned)` + `.defaultVisibility(sidebarShown ? .hidden : .automatic, for: .sidebar)`. `.pinned` даёт иконки без подписи у правого края верхнего бара (S1, `s1-11`). Без динамической видимости в сайдбаре они остаются строками у футера (`s1-12`). Статичный `.hidden` для `.sidebar` прячет вкладку и из верхнего бара — как в Scrapp (`RootView.swift:240-244`) и в спайке. Сочетание динамической видимости с `.pinned` спайк **не проверял** — это первый шаг T014 (§Непроверенное).
+- `sidebarShown` — плейсмент `== .sidebar`.
+- `TabSection("collections.title")`: по `Tab` на каждую коллекцию, `.defaultVisibility(.hidden, for: .tabBar)`, `.sectionActions` с «Новая коллекция». **Только при `horizontalSizeClass != .compact`** (S3): в compact `.sidebarAdaptable` расплющивает все вкладки в нижний бар, включая скрытые для `.tabBar` и `.sidebarOnly`, и коллекции с «Ассистентом» уезжают в «Ещё» (`s3-02`). Без секции в compact 5 вкладок, как на iPhone (`s3-04`).
+- **Бейджи** («Рецепты», «Покупки», коллекции) — только при плейсменте `.sidebar`, иначе 0: иначе они попадают в верхний бар (S1, `s1-11` / `s1-12`).
+- `.tabViewSidebarBottomBar` — футер профиля, только при `.padRegular`; тап открывает лист профиля (Р2a). Программный выбор из футера не закрывает плавающий сайдбар (системный тап по строке закрывает). Поэтому после тапа: если сайдбар плавает поверх контента — `sidebar.isHidden = true` (S1, обход 3).
+- Тот же `MobileTimerAccessoryModifier` (`:1029-1043`). `tabViewBottomAccessory` есть и в режиме сайдбара: аксессуар встаёт правее сайдбара и не затемняется (S6, `s6-05`). Своя капсула не нужна.
+- На `TabView` **не** ставим `.inspector`: он обнуляет верхний safe area у всех вкладок, кроме первой (S5, STOP 2). Ассистент — Р7.
 
 Содержимое вкладок — те же корневые view, что в `modernTabBar` (`:709-770`). Общие построители выносятся из `AppShellView` в `AppShellTabRoots`, чтобы не копировать.
 
@@ -104,7 +108,7 @@ enum IPadShellItem: Hashable {
 
 Это вычисляемая привязка поверх `coordinator.selectedTab` и `coordinator.recipesPath`, второго источника правды нет:
 
-- **Чтение:** если `selectedTab == .recipes` и в пути есть `.folder(id)` пользовательской коллекции — `.collection(id)`; иначе `.tab(selectedTab)`.
+- **Чтение:** если плейсмент `.sidebar`, `selectedTab == .recipes` и в пути есть `.folder(id)` пользовательской коллекции — `.collection(id)`; иначе `.tab(selectedTab)`. При `.topBar` и в compact выбранная коллекция читается как `.tab(.recipes)`, а сама коллекция остаётся в пути. Причина (S1, обход 4): выбранный `Tab` коллекции в режиме верхнего бара вытаскивает в бар всю группу «Коллекции» с кнопкой «‹» (`s1-20`), и `.tabPlacement(.sidebarOnly)` не помогает (`s1-15`). В compact секции нет вовсе (S3). Привязка получает плейсмент параметром, как `isSplitActive`.
 - **Запись `.collection(id)`** зависит от режима. Привязка получает `isSplitActive`: `true`, только когда раздел «Рецепты» рисует `IPadRecipesSplitView` (`.padRegular`, после T024); в US1, в compact и на телефонном стеке — `false`.
   - `isSplitActive == false`: `selectedTab = .recipes`, путь = `[.folder(id)]` — телефонный экран коллекции в стеке (spec.md US1, сценарий 5).
   - `isSplitActive == true`: `selectedTab = .recipes`, путь = `[.folder(id), .recipe(recipeId: первый рецепт коллекции, folderContext: id)]` — колонка коллекции и её первый рецепт (US2, сценарий 5). Пустая коллекция — `[.folder(id)]`.
@@ -112,7 +116,9 @@ enum IPadShellItem: Hashable {
 - **Запись `.tab(.assistant)`:** выбор не меняется, ассистент открывается или закрывается — как `handleTabSelection` (`AppShellCoordinator.swift:147`).
 - **Запись `.tab(.profile)` при `.padRegular`:** выбор не меняется, открывается лист профиля (Р2a).
 
-Содержимое невыбранных `Tab` коллекций — пустое (`Color.clear`), чтобы не держать несколько стеков рецептов (STOP 4).
+Содержимое невыбранных `Tab` коллекций — пустое (`Color.clear`), чтобы не держать несколько стеков рецептов (STOP 4). Спайк подтвердил: строится только выбранная вкладка, лишних стеков нет, STOP 4 не сработал.
+
+**Футер и сайдбар — UIKit-обходы.** `sidebar.isHidden` и `TabBarDiscovery` — единственный UIKit-код оболочки. Он живёт в одном помощнике (`IPadSidebarControl`, рядом с `IPadAdaptiveTabView`) и вызывается только при `.padRegular` на iPadOS 26.2+. Если контроллер не найден — ничего не делаем и пишем в лог (сайдбар остаётся открытым, это не блокирует).
 
 ### Р2a. Профиль — form sheet в широком окне (Q7, как в Scrapp)
 
@@ -154,7 +160,7 @@ enum IPadProfileSheetPolicy {
 
 Урок Scrapp (`RootView.swift:113-114`): если системный таб-бар после отказа в привязке оставляет на экране пустую страницу «Профиля», делаем как там. Привязка пропускает выбор, а `onChange` выше возвращает прежнюю вкладку и открывает лист. Какой из двух вариантов работает, решает проверка на симуляторе в T019a. В `.padRegular` содержимое `Tab` «Профиль» — `Color.clear`: оно не показывается, и второй `AccountView` не грузит профиль за листом. В `.phone` (compact) там телефонный `AccountView` из `AppShellTabRoots`.
 
-**Футер.** `IPadSidebarProfileFooter` — `Button`, вызывает `coordinator.presentProfileSheet()`. Выбранным не бывает (в Scrapp «it's never selected»), `.hoverEffect`, `accessibilityIdentifier` `ipad.sidebar.profileFooter`.
+**Футер.** `IPadSidebarProfileFooter` — `Button`, вызывает `coordinator.presentProfileSheet()`, а если сайдбар плавает поверх контента — ещё и прячет его через `IPadSidebarControl` (Р2, S1 обход 3; иначе лист открывается под затемнением открытого сайдбара). Выбранным не бывает (в Scrapp «it's never selected»), `.hoverEffect`, `accessibilityIdentifier` `ipad.sidebar.profileFooter`.
 
 **Лист** — на уровне `IPadAdaptiveTabView` (и `legacyTabView` для Р3):
 
@@ -198,7 +204,7 @@ enum IPadProfileSheetPolicy {
 
 Оболочка не меняется: `legacyTabView` с `.tabItem`. Система сама рисует верхний таб-бар на iPadOS 18+ и нижний на 17. Сайдбара, раздела «Коллекции» и футера нет; коллекции доступны телефонным экраном.
 
-Колонки рецепта, политика ширины, инспектор (`.inspector` есть с iOS 17), поповеры, form sheet и ограничение ширины работают везде, где `AppLayoutMode == .padRegular`. Лист профиля тоже (Р2a): вкладка «Профиль» системного таб-бара открывает его тем же правилом координатора. Капсулы таймеров нет — как на старом пути iPhone.
+Колонки рецепта, политика ширины, панель ассистента (обычный `HStack`, без API 26.x), поповеры, form sheet и ограничение ширины работают везде, где `AppLayoutMode == .padRegular`. Лист профиля тоже (Р2a): вкладка «Профиль» системного таб-бара открывает его тем же правилом координатора. Капсулы таймеров нет — как на старом пути iPhone.
 
 Почему так (пользователь согласился, Q1):
 
@@ -221,17 +227,42 @@ iPhone пушит в массив так же, как в `NavigationPath`. iPad 
 
 ### Р5. Колонки раздела «Рецепты»
 
-Вариант выбирает спайк T006. Обе схемы используют одну политику и одно состояние.
+**Решено спайком T006 (S4): вариант B.** Записано в `docs/DECISIONS.md` (2026-10-12).
 
-- **A (предпочтительный):** `NavigationSplitView` из двух колонок внутри `Tab`.
-  - Колонка списка `.navigationSplitViewColumnWidth(320)`.
-  - `columnVisibility` и стиль (`.balanced`, если список помещается; `.prominentDetail` с выездом списка поверх рецепта, если нет) задаёт `IPadLayoutPolicy`.
-  - Кнопку «Список рецептов» даёт система.
-- **B (запасной):** `HStack` из двух `NavigationStack` — список 320 pt, разделитель 1 pt, панель рецепта. Кнопка «Список рецептов» — своя (`ToolbarItem(placement: .topBarLeading)`, `sidebar.left`), список поверх — `.overlay` с затемнением.
+- **A — отвергнут.** `NavigationSplitView` из двух колонок внутри `Tab`. После показа и скрытия сайдбара (кнопкой или программно) nav bar-ы колонок остаются со старым верхним отступом и уезжают под плавающий таб-бар: y=46 вместо 90, «…» и ✦ ложатся на «Профиль» и «Ассистента» (`s2-02`, `s4-03`). Лечится только сменой вкладки. Не помогли `setNeedsLayout`, «подпрыгивание» таб-бара, `.id(tabBarPlacement)` на сплите; `additionalSafeAreaInsets` перебарщивает (y=122). Источник — вложенный `UISplitViewController` внутри `UITabBarController`. Баг стабилен на основном сценарии (открыть и закрыть сайдбар в портрете).
+- **B — выбран.** `HStack` из двух `NavigationStack`: тулбары в порядке и до, и после переключения сайдбара (`s4-01`, `s4-02`), с панелью ассистента тоже (тулбар y=100, `insetT=96`). STOP 3 не сработал.
+
+```swift
+HStack(spacing: 0) {
+    if listMode == .inline {
+        NavigationStack { RecipeListView(columnMode: true) }   // поиск — во внешнем состоянии
+            .frame(width: IPadLayoutMetrics.listColumnWidth)   // 320
+        Divider()
+    }
+    NavigationStack(path: $detailPath) {
+        YDocRecipeDetailView(recipeId: id).id(id)
+            .toolbar { ToolbarItem(placement: .topBarLeading) { listButton } }  // sidebar.left, если список не inline
+    }
+}
+.overlay(alignment: .leading) {
+    if listMode == .overlay {   // аналог .prominentDetail
+        ZStack(alignment: .leading) {
+            Color.black.opacity(0.25).ignoresSafeArea().onTapGesture { listMode = .hidden }
+            NavigationStack { RecipeListView(columnMode: true) }
+                .frame(width: IPadLayoutMetrics.listColumnWidth).background(.background).shadow(radius: 12)
+        }
+    }
+}
+```
+
+- **`listMode`** — `.inline` / `.hidden` / `.overlay`. `.inline`, если `IPadLayoutPolicy` говорит `listShown`. Иначе `.hidden`; кнопка «Список рецептов» переводит в `.inline`, если список помещается, иначе в `.overlay`. Тап по затемнению или выбор рецепта в `.overlay` → `.hidden`. Флаг «список спрятан пользователем» — в `AppShellCoordinator` (Р4).
+- **Что делаем руками** (цена B): кнопку «Список рецептов» (`sidebar.left`, `ToolbarItem(placement: .topBarLeading)`, `s4-05`), выезжающий поверх список — `.overlay` с затемнением 0.25 и шириной 320 (`s4-06`), стиль колонки — фон, ширину и разделитель 1 pt.
+- **Поиск.** `.searchable` колонки списка в B — лупа в тулбаре колонки, раскрывается и фильтрует (`s4-04`); встроенного поля, как у сайдбар-колонки A, нет. Состояние поиска держится **вне** `NavigationStack` списка (во вью-модели списка или в `@State` родителя): тогда запрос переживает `.inline` ↔ `.hidden` ↔ `.overlay`. Спайк это подтвердил.
+- **Вид не меняется**: список 320 + разделитель 1 + панель, как в layout.md. Отличия от A невидимы пользователю, кроме формы поля поиска.
 
 Колонка списка — `RecipeListView` в «режиме колонки»: тот же список, поиск, меню «+». Строки выбирают рецепт (`Button` и выделение) вместо `NavigationLink(value:)` (`RecipeListView.swift:535`) только при `.padRegular`. Плитка папок (`viewModeMenu`, `:403-435`) в колонке не показывается.
 
-Панель рецепта — `YDocRecipeDetailView(recipeId:)` с `.id(recipeId)` в корне своего стека.
+Панель рецепта — `YDocRecipeDetailView(recipeId:)` с `.id(recipeId)` в корне своего стека. Выбор рецепта меняет корень, а не путь стека панели (`detailPath` — только для переходов внутри панели, если они есть).
 
 ### Р6. Рецепт в две колонки
 
@@ -265,19 +296,41 @@ iPhone пушит в массив так же, как в `NavigationPath`. iPad 
 
 `AwakeScrollChromeModifier` (:761) остаётся на внешнем контейнере, поэтому полоса готовки тянется на обе колонки (FR-023). `.mobileTimerPanelBottomPadding` действует на обе колонки.
 
-### Р7. Показ: инспектор, поповеры, form sheet
+### Р7. Показ: панель ассистента, поповеры, form sheet
 
-- **Ассистент.** Один `showAssistant` (`AppShellView.swift:106`), два показа:
-  - `.inspector(isPresented: mode == .padRegular ? $showAssistant : .constant(false))` + `.inspectorColumnWidth(340)` на уровне `TabView`;
-  - существующий `AssistantSheetModifier` (`:1046-1072`) получает `isPresented: mode == .padRegular ? .constant(false) : $showAssistant`.
+- **Ассистент — своя панель справа, не `.inspector`** (спайк S5, `docs/DECISIONS.md` 2026-10-12). `.inspector` на уровне `TabView` обнуляет верхний safe area у всех вкладок, кроме первой, и у вкладок коллекций (STOP 2, `s1-05`). `.inspector` в каждой вкладке инсеты не ломает, но пересоздаёт ассистента при смене вкладки, и черновик теряется (`s5-03`–`s5-05`). Своя панель проверена: инсеты в порядке, панель переживает смену вкладок (`s5-06`, `s5-07`), в compact — лист (`s5-08`).
 
-  Внутри инспектора — содержимое `AssistantSheet` без изменений. Если `AssistantPresentation == .inspector`, добавляется ×, а история (`AssistantSheet.swift:129`) показывается поповером с содержимым `AssistantThreadListSheet`.
+  Один `showAssistant` (`AppShellView.swift:106`), два показа:
 
-  Переход size class при открытом ассистенте: лист закрывается, инспектор открывается, и наоборот; чат берётся из `AssistantSessionStore` (проверяется в T006).
+  ```swift
+  HStack(spacing: 0) {
+      tabView                                     // TabView(.sidebarAdaptable) или legacyTabView
+      if showAssistant && layoutMode == .padRegular {
+          Divider().ignoresSafeArea()
+          AssistantSheet(session: assistantSession, presentation: .inspector)
+              .frame(width: IPadLayoutMetrics.inspectorWidth)   // 340, имя константы прежнее
+              .transition(.move(edge: .trailing))
+      }
+  }
+  .animation(.snappy, value: showAssistant)
+  ```
+
+  - В `.phone` и в compact — существующий `AssistantSheetModifier` (`:1046-1072`) с `isPresented: layoutMode == .padRegular ? .constant(false) : $showAssistant`.
+  - Панель занимает 340 pt из ширины окна; `IPadLayoutPolicy.contentWidth(…, inspectorVisible:)` вычитает её так же, как раньше вычитал колонку инспектора: матрица layout.md не меняется. Константа остаётся `IPadLayoutMetrics.inspectorWidth`; в тексте «инспектор» = эта панель.
+  - Внутри панели — содержимое `AssistantSheet`. При `AssistantPresentation == .inspector` добавляется ×, а история (`AssistantSheet.swift:129`) показывается поповером с содержимым `AssistantThreadListSheet`.
+- **Общая сессия ассистента** (новое, T032a). Панель и лист — разные экземпляры view. Сейчас `AssistantSheet` держит всю сессию в `@State` (`:26-56`): `threadId`, `threads`, `messages`, `input`, `attachments`, `isSending`, `streamTask`, `bootstrapTask`, `externalSendTask`. В `onDisappear` (`:185-210`) он сохраняет `threadId` в `AssistantSessionStore` и отменяет задачи. Поэтому переход панель ↔ лист (смена size class) теряет черновик и обрывает ответ. `AssistantSessionStore` (`Services/AssistantSessionStore.swift`) хранит только `threadId` и `lastOpenedAt`.
+  - Новый `@MainActor @Observable final class AssistantSessionModel` держит `threadId`, `threads`, `messages`, `input`, `attachments`, `isSending`, задачи стрима и бутстрапа.
+  - Владелец — `AppContainer` (одна сессия на приложение: окно одно, STOP 5). Модель передаётся в `AssistantSheet` явно, параметром `session:`, а не через `@Environment` (ловушка iOS 26, ниже).
+  - Задачи отменяет модель: при явном закрытии ассистента (×, свайп листа, `showAssistant = false`), при смене `coordinator.assistantSessionEpoch` (`teardownForSessionInvalidation`) и при logout. `onDisappear` view больше не отменяет стрим: при переходе панель ↔ лист старый view исчезает, а ответ должен дойти. `threadId` по-прежнему пишется в `AssistantSessionStore` для восстановления после перезапуска.
+  - На iPhone поведение то же: лист открылся — сессия продолжилась, закрылся — задачи отменены, тред сохранён. Отличие только в том, что черновик `input` переживает закрытие и повторное открытие листа (сейчас он сбрасывается); это совпадает с ожиданием «тот же чат» (FR-019) и проверяется в T035.
+  - Если перенос сессии окажется дороже, чем выглядит (например, `AssistantSheet` завязан на `@State` в десятках мест), — остановиться и спросить. Деградация «переход панель ↔ лист теряет черновик, тред сохраняется» допустима только с согласия человека.
 - **Поповеры.** `.adaptivePopover(isPresented:...)`: при `.phone` — тот же `.sheet` с той же хромой (`appOpaqueSheetPresentation()`), при `.padRegular` — `.popover`. Применяется к:
-  - `CollectionAssignSheet` из «…» (`RecipeDetailActionsMenu.swift:61-62`, поповер 300 pt);
+  - `CollectionAssignSheet` из «…» (`RecipeDetailActionsMenu.swift:61-62`, поповер 300 pt). Спайк: поповер от пункта `Menu` работает и привязан к «…» (S6, `s6-04`);
   - истории ассистента;
   - таймерам: тап по капсуле на `.padRegular` открывает поповер 380 pt с `MobileTimerPanel(.insetExpanded)` вместо раскрытой панели (`AppShellView.swift:650-664`).
+- **Поповер таймеров — на уровне оболочки** (S6). `.popover` внутри `tabViewBottomAccessory` сломан: тап проходит, поповер не появляется. Состояние `timerPopoverShown` живёт в оболочке, капсула в аксессуаре только ставит флаг. Поповер прикреплён к невидимому якорю, фрейм которого берётся из фрейма аксессуара: `onGeometryChange` → `.popover(attachmentAnchor: .rect(.rect(frame)), arrowEdge: .bottom)`. Фиксированная точка снизу по центру не годится: открытый сайдбар сдвигает аксессуар вправо (`s6-06`). `.presentationCompactAdaptation(.sheet)` на случай compact.
+  - Аксессуар есть и в режиме верхнего бара, и в режиме сайдбара (`s6-01`, `s6-05`). Своя капсула `.overlay(alignment: .bottom)` не нужна.
+  - Однажды в спайке аксессуар пропал после тапа по координате; не повторилось. При реализации T038 — перепроверить серией открытий и закрытий.
 - **Профиль.** `.sheet` + `.iPadFormSheet()` с телефонным `AccountView` и «Готово» — Р2a.
 - **Импорт.** `ImportRecipeSheet` (`ImportRecipeSheet.swift:216`) на `.padRegular` — `.presentationSizing(.form)` (iOS 18+; на iOS 17 iPad сам показывает form sheet). Если окажется, что `detents: [.large]` уже даёт form sheet, правка не нужна (T020).
 
@@ -302,15 +355,37 @@ iPhone пушит в массив так же, как в `NavigationPath`. iPad 
 
 | # | Вопрос | Вердикт | Решение |
 |---|--------|---------|---------|
-| S1 | `.sidebarAdaptable` + `TabSection` с динамическими коллекциями + `.sectionActions` + `.tabViewSidebarBottomBar` на iPad-симуляторе 26.x: нет белого экрана, всё кликается | — | — |
-| S2 | Можно ли читать и менять видимость сайдбара (⌃⌘S, свернуть в правке, меню заголовка списка только при скрытом сайдбаре) | — | если нет: меню заголовка показывается всегда, сайдбар в правке не сворачивается, ⌃⌘S — системный пункт |
-| S3 | В узком окне `.sidebarAdaptable` даёт нижний таб-бар, как `modernTabView` на iPhone (минимизация, аксессуар таймеров) | — | если нет: в compact рисуем `modernTabView` |
-| S4 | Вариант A (`NavigationSplitView` в `Tab`) или B (`HStack` из двух стеков): тулбары колонок, `.searchable`, `.prominentDetail` поверх | — | — |
-| S5 | `.inspector` на уровне `TabView`: ширина 340, открыт поверх смены вкладок, переход sheet ↔ inspector при смене size class | — | — |
-| S6 | `.popover` от `Menu` («…») и от `tabViewBottomAccessory`; где капсула таймеров в режиме сайдбара | — | если аксессуара в режиме сайдбара нет: своя капсула `.overlay(alignment: .bottom)` |
-| S7 | Сколько стоит несколько окон (общий `AppContainer`) | — | по умолчанию STOP 5 |
+Спайк выполнен 2026-10-12: Xcode 26.3, iPad Pro 11″ (834 × 1210), iPadOS 26.3. Код спайка — выбрасываемый, в ветку фичи не вливается. Подробности и скриншоты: `tmp/ipad-research/spike-verdicts.md`, `tmp/ipad-research/spike/`.
+
+| # | Вопрос | Вердикт | Решение |
+|---|--------|---------|---------|
+| S1 | `.sidebarAdaptable` + `TabSection` с динамическими коллекциями + `.sectionActions` + `.tabViewSidebarBottomBar` на iPad-симуляторе 26.x: нет белого экрана, всё кликается | VERIFIED (с обходами) | Р2. Белого экрана нет. Обходы: бейджи только при плейсменте `.sidebar`; Профиль и Ассистент — `.tabPlacement(.pinned)`; выбор из футера прячет плавающий сайдбар (`IPadSidebarControl`); выбранная в режиме верхнего бара коллекция отображается как `.recipes` + `.folder(id)`; без `.inspector` на `TabView`. STOP 4 не сработал. |
+| S2 | Можно ли читать и менять видимость сайдбара (⌃⌘S, свернуть в правке, меню заголовка списка только при скрытом сайдбаре) | CHECKED (портрет); ландшафт INCONCLUSIVE | Читаем `@Environment(\.tabBarPlacement)`, меняем `UITabBarController.sidebar.isHidden` через `IPadSidebarControl`. ⌃⌘S — своя команда, сайдбар в правке сворачивается, меню заголовка — при `.topBar`. На 834 портрет сайдбар всегда плавает поверх затемнённого контента, `.tile` игнорируется. Ландшафт — §Непроверенное. |
+| S3 | В узком окне `.sidebarAdaptable` даёт нижний таб-бар, как `modernTabView` на iPhone (минимизация, аксессуар таймеров) | VERIFIED (с обходом) | Нижний бар и аксессуар есть. В compact `TabSection` не строим, иначе коллекции и Ассистент уходят в «Ещё». `traitOverrides` не помогают. |
+| S4 | Вариант A (`NavigationSplitView` в `Tab`) или B (`HStack` из двух стеков): тулбары колонок, `.searchable`, `.prominentDetail` поверх | A — FAILED; B — VERIFIED | Р5 = B. У A тулбары колонок уезжают под таб-бар после переключения сайдбара. STOP 3 не сработал. |
+| S5 | `.inspector` на уровне `TabView`: ширина 340, открыт поверх смены вкладок, переход sheet ↔ inspector при смене size class | `.inspector` на `TabView` — FAILED (STOP 2); своя панель — VERIFIED | Р7: своя панель `HStack` 340 pt + лист в compact; сессия ассистента в общем store (T032a). |
+| S6 | `.popover` от `Menu` («…») и от `tabViewBottomAccessory`; где капсула таймеров в режиме сайдбара | VERIFIED (с обходом) | Поповер из `Menu` работает. Аксессуар есть в режиме сайдбара — своя капсула не нужна. `.popover` внутри аксессуара сломан → поповер на уровне оболочки с якорем по фрейму аксессуара (Р7). |
+| S7 | Сколько стоит несколько окон (общий `AppContainer`) | FAILED (дорого) | STOP 5: одно окно с изменяемым размером; несколько окон вне scope. |
 
 Вердикты: CHECKED / VERIFIED / INCONCLUSIVE / FAILED.
+
+**STOP:** 2 — сработал на `.inspector` уровня `TabView` и на варианте A, снят заменой (своя панель, B). 3 — не сработал. 4 — не сработал. 5 — сработал, мультиоконность вне scope. 6 — не сработал: всё использованное есть в iOS 26.2 SDK и закрыто `@available` на пути 26.2+, минимальная iOS 17.0 не меняется.
+
+### Непроверенное
+
+| Что | Почему не проверено | Как и когда проверяем | Если не подтвердится |
+|-----|---------------------|-----------------------|----------------------|
+| Ландшафт и ширины 1024/1194/1366: встаёт ли сайдбар рядом с контентом; работает ли раскладка колонок «рядом» | `requestGeometryUpdate` отказывает («windowing mode does not allow…») и в Windowed Apps, и в Full-Screen Apps | T049: повернуть Simulator.app через `osascript` (cmd+→ или меню Device › Rotate Right) и снять матрицу. Если поворот не удаётся автоматизировать — пометить в отчёте T049 и передать владельцу проверку на устройстве (human gate) | Политика колонок от этого не зависит: она считает ширину контента. Если сайдбар в ландшафте тоже плавает — матрица layout.md для 1194 пересчитывается без вычета 321 pt; решение записывается в DECISIONS |
+| Динамический `.defaultVisibility(placement == .sidebar ? .hidden : .automatic, for: .sidebar)` вместе с `.tabPlacement(.pinned)` для Профиля и Ассистента | Спайк проверил только статичные варианты (`s1-11`, `s1-12`) | Первый шаг T014, до остальной оболочки: переключить сайдбар туда и обратно, убедиться, что строки «Профиль» и «Ассистент» уходят из сайдбара, а иконки в верхнем баре остаются | Остановиться и спросить: либо строки остаются в сайдбаре рядом с футером, либо ищем другой обход |
+| iPadOS 18.4 — старый путь оболочки (Р3) | В спайке только 26.3 | T051 | Как в T051 |
+| Эмодзи в подписях сайдбара (имена коллекций) | Не проверялось на симуляторе с нормальным эмодзи-шрифтом | T049 (ручной проход по матрице) на симуляторе с эмодзи-шрифтом или на устройстве | Записать в DECISIONS, подписи не меняем |
+
+### Риски после спайка
+
+- **UIKit-обход видимости сайдбара** (`sidebar.isHidden`) опирается на поиск `UITabBarController` в иерархии. Может сломаться в следующей iPadOS. Изолирован в `IPadSidebarControl`; если контроллер не найден — лог и бездействие: сайдбар остаётся системным, приложение работает.
+- **Перенос сессии ассистента** в `AssistantSessionModel` трогает iPhone-путь. Митигировано: T035 и `verify-assistant.sh` на iPhone; поведение листа на iPhone эквивалентно (черновик теперь переживает закрытие).
+- **Свой стиль колонки списка (B)** — фон, разделитель, выезд поверх делаются руками и могут разойтись с системными в будущих iPadOS. Митигировано: `verify-ipad-layout.sh` по состояниям прототипа.
+- **Поповер таймеров** привязан к фрейму аксессуара; аксессуар однажды пропадал (S6). T038 включает серию открытий и закрытий.
 
 ## Изменения
 
@@ -326,13 +401,15 @@ iPhone пушит в массив так же, как в `NavigationPath`. iPad 
 | `RecipeScalerNative/Views/IPad/IPadSidebarProfileFooter.swift` | Создать | Футер профиля (FR-004); тап открывает лист профиля (Р2a). |
 | `RecipeScalerNative/Routing/IPadProfileSheetPolicy.swift` | Создать | Р2a: чистое правило «вкладка „Профиль“ в `.padRegular` → лист + прежняя вкладка» (FR-004a, FR-004b). |
 | `RecipeScalerNative/Views/AccountAvatarView.swift` | Создать | Телефонный аватар (фото или `person.circle.fill`), вынесенный из `AccountView` (:860-871) без изменения вида; используется в `AccountView` и футере сайдбара (FR-005). |
-| `RecipeScalerNative/Views/IPad/IPadRecipesSplitView.swift` | Создать | Р5: колонки раздела «Рецепты». |
+| `RecipeScalerNative/Views/IPad/IPadRecipesSplitView.swift` | Создать | Р5, вариант B: `HStack` из двух `NavigationStack`, `listMode` (`.inline`/`.hidden`/`.overlay`), своя кнопка «Список рецептов», выезд поверх с затемнением. Имя файла прежнее, `NavigationSplitView` внутри нет. |
+| `RecipeScalerNative/Views/IPad/IPadSidebarControl.swift` | Создать | Р2: чтение плавающего сайдбара и `sidebar.isHidden` через `TabBarDiscovery`; единственный UIKit-код оболочки, только `.padRegular` и 26.2+. |
+| `RecipeScalerNative/Services/AssistantSessionModel.swift` | Создать | Р7: общая `@Observable`-сессия ассистента (сообщения, черновик, вложения, задачи стрима) для панели и листа; владелец — `AppContainer`. |
 | `RecipeScalerNative/Views/IPad/IPadAssistantToolbarButton.swift` | Создать | Кнопка ✦ для `.padRegular`. |
 | `RecipeScalerNative/Views/IPad/IPadCommands.swift` | Создать | Р8: `FocusedValueKey`, `AppCommandActions`, `RecipeCommandActions`, `Commands`. |
 | `RecipeScalerNative/Views/AppShellTabRoots.swift` | Создать | Общие корни вкладок для `modernTabBar` и `IPadAdaptiveTabView`. |
 | `RecipeScalerNative/Routing/RecipesSelection.swift` | Создать | Р4: чистые функции путь ↔ выбор. |
 | `RecipeScalerNative/Routing/AppShellCoordinator.swift` | Изменить | `recipesPath: [RecipesRoute]` (:68); помощники выбора; хранение флага «список спрятан»; Р2a: `isProfileSheetPresented`, `lastNonProfileTab`, `profileSheetRevision`, `presentProfileSheet()`, `normalizeProfileSelection(previous:layoutMode:)`, сброс листа в `resetShellStateForLogout` (:461). |
-| `RecipeScalerNative/Views/AppShellView.swift` | Изменить | Ветка iPad в `tabView` (:690-697); инспектор (:426); защита от встряхивания (:214); тап по капсуле таймеров (:650-664); лист профиля и нормализация выбора на `legacyTabView` при `.padRegular` (Р2a, Р3); публикация команд. |
+| `RecipeScalerNative/Views/AppShellView.swift` | Изменить | Ветка iPad в `tabView` (:690-697); панель ассистента в `HStack` рядом с `TabView` вместо `.inspector` (:426, Р7); защита от встряхивания (:214); тап по капсуле таймеров и поповер таймеров на уровне оболочки с якорем по фрейму аксессуара (:650-664, Р7); лист профиля и нормализация выбора на `legacyTabView` при `.padRegular` (Р2a, Р3); публикация команд. |
 | `RecipeScalerNative/ContentView.swift` | Изменить | Режим раскладки в `rootChrome` (:192-210). |
 | `RecipeScalerNative/RecipeScalerNativeApp.swift` | Изменить | `.commands` на `WindowGroup` (:176). |
 | `RecipeScalerNative/Views/RecipeListView.swift` | Изменить | `Binding<[RecipesRoute]>` (:18, :40); режим колонки (выбор вместо push, :535); контекстное меню (iPad) на тех же обработчиках, что свайпы (:544-573). |
@@ -341,16 +418,18 @@ iPhone пушит в массив так же, как в `NavigationPath`. iPad 
 | `RecipeScalerNative/Views/YDocRecipeDetailColumns.swift` | Создать | Раскладка в две колонки и перетаскиваемый разделитель с сохранением ширины (Р6); держит `YDocRecipeDetailView` в разумном размере. |
 | `RecipeScalerNative/Views/RecipeDetailActionsMenu.swift` | Изменить | Поповер «Коллекции» на `.padRegular` (:61-62). |
 | `RecipeScalerNative/Views/CollectionAssignSheet.swift` | Изменить | Размер содержимого в поповере (300 pt); сохранение при закрытии не меняется (:112-114). |
-| `RecipeScalerNative/Views/AssistantSheet.swift` | Изменить | Режим инспектора: ×, история поповером (:129, тулбар :1054-1070). |
+| `RecipeScalerNative/Views/AssistantSheet.swift` | Изменить | Принимает `session: AssistantSessionModel` вместо собственного `@State` сессии (:26-56); `onDisappear` (:185-210) больше не отменяет стрим; режим панели: ×, история поповером (:129, тулбар :1054-1070). |
+| `RecipeScalerNative/AppContainer.swift` | Изменить | Владеет `AssistantSessionModel`; сброс сессии при logout и смене `assistantSessionEpoch`. |
 | `RecipeScalerNative/Views/ShoppingListView.swift` | Изменить | Ограничение ширины; Вкусвилл только иконкой при < 640 (:704); ✦ на `.padRegular`. |
 | `RecipeScalerNative/Views/AccountView.swift` | Изменить | Необязательный `onDone` → «Готово» в тулбаре листа (Р2a; на iPhone `nil`); `pendingRemindersSetup` обрабатывается и при появлении; без строки встряхивания на iPad (:579); `accountAvatar` (:860-871) заменён на `AccountAvatarView` без изменения вида. Ограничение ширины не нужно: в `.padRegular` профиль — лист. |
 | `RecipeScalerNative/Views/DiscoverRootView.swift`, `Views/Discover/DiscoverPublicProfileView.swift` | Изменить | Ограничение ширины 720 / 1100; сегменты в строке заголовка на `.padRegular`; ✦. |
 | `RecipeScalerNative/Views/ImportRecipeSheet.swift` | Изменить | Form sheet на `.padRegular` (:216), если нужно. |
-| `RecipeScalerNative/AccessibilityIdentifiers.swift`, `RecipeScalerNativeUITests/Helpers/Selectors.swift` | Изменить | Идентификаторы сайдбара, футера, колонки списка, инспектора; кнопка «Готово» листа профиля. |
+| `RecipeScalerNative/AccessibilityIdentifiers.swift`, `RecipeScalerNativeUITests/Helpers/Selectors.swift` | Изменить | Идентификаторы сайдбара, футера, колонки списка, кнопки «Список рецептов», панели ассистента; кнопка «Готово» листа профиля. |
 | `RecipeScalerNative/Utils/DebugLaunchOptions.swift` | Изменить | Только DEBUG: `-IPadSidebarHidden`, `-IPadListHidden`, `-DebugWindowWidth <pt>` для матрицы (T049). |
 | `RecipeScalerNative/Resources/Localizable.xcstrings` | Изменить | Новые ключи `ipad.*` (en + ru). |
 | `RecipeScalerNative/Utils/ShakeToOpenAssistantPreference.swift` | Изменить | Р9: `isActive(idiom:)`. |
 | `RecipeScalerNativeTests/IPadLayoutPolicyTests.swift`, `RecipesSelectionTests.swift`, `IPadShellItemTests.swift`, `AppLayoutModeTests.swift`, `IPadProfileSheetPolicyTests.swift` | Создать | Чистая логика, включая clamp ширины левой колонки (`IPadLayoutPolicyTests/testLeftColumnClamp`) и правило листа профиля (Р2a). |
+| `RecipeScalerNativeTests/AssistantSessionModelTests.swift` | Создать | Р7: черновик и стрим переживают смену view; закрытие, смена эпохи и logout отменяют задачи. |
 | `RecipeScalerNativeTests/ShakeToOpenAssistantPreferenceTests.swift` | Изменить | Проверки `isActive(idiom:)` для iPhone и iPad. |
 | `RecipeScalerNativeTests/AppShellCoordinatorTests.swift` | Изменить | Тип пути; переходы листа профиля (Р2a); существующие проверки (:119-216) остаются. |
 | `RecipeScalerNativeUITests/Specs/IPadShellSpec.swift`, `IPadRecipesSpec.swift`, `IPadAssistantSpec.swift`, `IPadKeyboardSpec.swift` | Создать | UI-тесты только для iPad (`XCTSkipUnless` по idiom). |
@@ -396,7 +475,12 @@ iPhone пушит в массив так же, как в `NavigationPath`. iPad 
 | iPad: сайдбар | Сайдбар показывает «Подборки», «Рецепты», «Покупки», коллекции со счётчиками, «Новая коллекция», футер | `RecipeScalerNativeUITests/IPadShellSpec/testSidebarContents` |
 | iPad: выбор коллекции | При активном `IPadRecipesSplitView` выбор коллекции открывает её первый рецепт, в колонке — её рецепты; без split — телефонный экран коллекции в стеке (`[.folder(id)]`) | `IPadShellItemTests/testCollectionMapsToRecipesPath` (оба случая) + `RecipesSelectionTests/testSelectingCollectionOpensFirstRecipe` + `IPadRecipesSpec/testCollectionSelection` |
 | iPad: смена size class | Открытый рецепт и коллекция сохраняются при переходе regular ↔ compact | `RecipesSelectionTests/testSelectionSurvivesModeSwitch` + `IPadRecipesSpec/testRotationKeepsRecipe` |
-| iPad: ассистент | Тап ✦ открывает инспектор 340 pt; вкладка не меняется; при compact — лист с тем же чатом | `IPadShellItemTests/testAssistantDoesNotChangeSelection` + `IPadAssistantSpec` |
+| iPad: ассистент | Тап ✦ открывает панель 340 pt справа от `TabView`; вкладка не меняется; при compact — лист с тем же чатом | `IPadShellItemTests/testAssistantDoesNotChangeSelection` + `IPadAssistantSpec` |
+| iPad: черновик ассистента | Введённый текст и вложения сохраняются при смене вкладки с открытой панелью и при переходе панель ↔ лист (смена size class); идущий ответ дописывается | `AssistantSessionModelTests` + `IPadAssistantSpec/testTabSwitchKeepsDraft`, `testSizeClassSwitchKeepsChat` |
+| iPhone: ассистент | Лист ассистента открывается, отправляет, показывает историю, как раньше; закрытие листа отменяет стрим и сохраняет тред | `bash scripts/verify-assistant.sh` (iPhone) + `AssistantSessionModelTests/testCloseCancelsStream` |
+| iPad: тулбары вкладок | У каждой вкладки и у вкладок коллекций тулбар под таб-баром, не под ним; после показа и скрытия сайдбара — тоже | `bash scripts/verify-ipad-layout.sh` (состояния с открытым и закрытым сайдбаром) |
+| iPad: коллекция в режиме верхнего бара | При плейсменте `.topBar` выбор коллекции даёт `.tab(.recipes)` + `.folder(id)` в пути, группа «Коллекции» не появляется в верхнем баре; бейджей в верхнем баре нет | `IPadShellItemTests/testCollectionInTopBarMapsToRecipesTab` + `IPadShellSpec/testTopBarHasNoBadges` |
+| iPad: compact | В compact `TabSection` не строится: 5 вкладок, как на iPhone, «Ещё» нет | `IPadShellSpec/testCompactHasNoMoreTab` |
 | iPad: футер | Публичный профиль с именем → имя; иначе → номер аккаунта; аватар — фото, если есть, иначе `person.circle.fill`, как в `AccountView` на iPhone | `IPadShellSpec/testFooterPrivateShowsAccountId` + `bash scripts/verify-ipad-layout.sh --iphone-regression` (профиль на iPhone не меняется после выноса `AccountAvatarView` и параметра `onDone`) |
 | iPad: лист профиля | В `.padRegular` футер, вкладка «Профиль» верхнего бара, «Настроить Напоминания», ⌘4 и `-OpenTab=profile` открывают form sheet «Моё всё» с «Готово»; `selectedTab` не меняется; в сайдбаре нет вкладки «Профиль»; в `.phone` — вкладка | `IPadProfileSheetPolicyTests` + `AppShellCoordinatorTests/testRemindersSetupInRegularPresentsSheet` + `IPadShellItemTests/testProfileInRegularDoesNotChangeSelection` + `IPadShellSpec/testFooterOpensProfileSheet`, `testTopBarProfileOpensSheet`, `testSidebarHasNoProfileTab` |
 | iPad: лист профиля при смене size class | compact → regular на вкладке «Профиль» → прежняя вкладка (или «Рецепты») + лист; regular → compact с открытым листом → лист остаётся | `AppShellCoordinatorTests/testWideningOnProfileTabRestoresPreviousAndPresentsSheet`, `testNarrowingKeepsProfileSheet` |
@@ -416,7 +500,8 @@ iPhone пушит в массив так же, как в `NavigationPath`. iPad 
 | Выбор «первого рецепта» коллекции | `collectionId` | синхронно из `syncService.collectionIndex`, без `await` | N/A | N/A — нет async side effects |
 | Измерение ширины → `IPadLayoutPolicy` | N/A | N/A | N/A | N/A — синхронный пересчёт в `onGeometryChange` |
 | Перетаскивание разделителя → запись ширины | N/A | N/A | жест SwiftUI | N/A — синхронная запись в `UserDefaults` в `onEnded`, без `await` |
-| Открытие или закрытие инспектора, переход sheet ↔ inspector | `AssistantSessionStore` (общий) | N/A | SwiftUI-презентация | чат не теряется при смене size class — `IPadAssistantSpec/testSizeClassSwitchKeepsChat` |
+| Открытие или закрытие панели ассистента, переход лист ↔ панель | `AssistantSessionModel` (общий, из `AppContainer`) | N/A | SwiftUI-презентация; view не владеет задачами | чат не теряется при смене size class — `IPadAssistantSpec/testSizeClassSwitchKeepsChat` |
+| Стрим ответа ассистента (`streamTask`, `bootstrapTask`, `externalSendTask`) | `threadId`, `assistantSessionEpoch` на момент старта | `threadId` и эпоха не изменились перед записью сообщения | `AssistantSessionModel`: отмена при явном закрытии, смене эпохи, logout; не при `onDisappear` view | ответ после смены эпохи не попадает в новую сессию — `AssistantSessionModelTests/testEpochChangeDropsStaleStream` |
 | Команды меню (`FocusedValue` с замыканиями) | рецепт или сцена, опубликовавшие значение | действие проверяет, что `recipeId` всё ещё открыт | замыкания живут, пока view в фокусе | ⌘E после закрытия рецепта ничего не делает — `IPadKeyboardSpec` |
 | Поповер «Коллекции»: сохранение при закрытии (`CollectionAssignSheet.swift:112-114` → :198) | `recipeId` | как сейчас | как сейчас (`onDisappear`) | тап мимо поповера сохраняет выбор — `IPadRecipesSpec/testCollectionsPopoverPersists` |
 
@@ -424,7 +509,7 @@ iPhone пушит в массив так же, как в `NavigationPath`. iPad 
 
 | Entry path | In-memory | Tasks/streams | Persisted state | Cross-process / OS surface | Positive postcondition |
 |------------|-----------|---------------|-----------------|---------------------------|-------------------------|
-| logout | `recipesPath = []`, `selectedTab` по умолчанию (`.recipes`), инспектор закрыт, флаг «список спрятан» сброшен, `isProfileSheetPresented = false` и `lastNonProfileTab = .recipes` (выход обычно нажимают в листе профиля), профиль футера очищен | `.task` футера отменяется с view | `ipad.recipeDetailLeftColumnWidth` остаётся: настройка устройства, не аккаунта | меню-команды получают `nil` (view ушли) | после повторного входа оболочка в начальном состоянии, футер без имени прошлого аккаунта |
+| logout | `recipesPath = []`, `selectedTab` по умолчанию (`.recipes`), панель ассистента закрыта, `AssistantSessionModel` сброшена (сообщения, черновик, вложения), флаг «список спрятан» сброшен, `isProfileSheetPresented = false` и `lastNonProfileTab = .recipes` (выход обычно нажимают в листе профиля), профиль футера очищен | `.task` футера отменяется с view; задачи `AssistantSessionModel` отменены | `ipad.recipeDetailLeftColumnWidth` остаётся: настройка устройства, не аккаунта | меню-команды получают `nil` (view ушли) | после повторного входа оболочка в начальном состоянии, футер без имени прошлого аккаунта |
 | account switch | как logout | как logout | как logout | как logout | футер показывает номер и аватар нового аккаунта (фото или `person.circle.fill`) |
 | stale session / cold start | путь из диплинка (если есть), иначе выбор первого рецепта; лист профиля закрыт (флаг только в памяти) | — | N/A | ориентации `~ipad` из Info.plist | iPad стартует в правильной раскладке для текущей ширины окна, без мигания компактной раскладки |
 | reconnect / partial failure | выбор сохраняется | загрузка профиля повторяется по `.task(id:)` | N/A | N/A | футер переходит с номера аккаунта на имя, когда профиль загрузился |
@@ -435,7 +520,7 @@ iPhone пушит в массив так же, как в `NavigationPath`. iPad 
 - **Canonical owner**: состояние оболочки и раздела «Рецепты» — `AppShellCoordinator` (`selectedTab`, `recipesPath: [RecipesRoute]`, `isProfileSheetPresented`). Пороги раскладки — `IPadLayoutPolicy`. Режим раскладки — `AppLayoutMode` в environment.
 - **Writer/reader targets**: только основное приложение. Расширения, виджеты и часы состояние оболочки не читают.
 - **Validator/normalizer**: `RecipesSelection` нормализует путь — не больше одного `.folder` в начале и одного `.recipe` на iPad; на iPhone путь не нормализуется (телефонный стек может быть глубже).
-- **Raw literal exceptions**: числа 280/320/340/400/480/660/720/1100/560/380/300/36/12 только в `IPadLayoutPolicy` (`IPadLayoutMetrics`); в view — ссылки на константы.
+- **Raw literal exceptions**: числа 280/320/340/400/480/660/720/1100/560/380/300/36/12 только в `IPadLayoutPolicy` (`IPadLayoutMetrics`); в view — ссылки на константы. Затемнение 0.25 под выездом списка (Р5) и порог 60 pt левого safe area для «сайдбар плавает» (`IPadSidebarControl`) — тоже константы.
 
 ## Locale / theme consumers
 
@@ -498,7 +583,7 @@ iPhone пушит в массив так же, как в `NavigationPath`. iPad 
   ```
 
   Ожидается `BUILD SUCCEEDED`. Локально есть iPad Pro 11-inch (M4) на iOS 26.3.
-- **Unit-тесты:** `bash scripts/test-fast.sh` → exit 0, включая `IPadLayoutPolicyTests`, `RecipesSelectionTests`, `IPadShellItemTests`, `AppLayoutModeTests`, `IPadProfileSheetPolicyTests`, `AppShellCoordinatorTests`, `ShakeToOpenAssistantPreferenceTests`.
+- **Unit-тесты:** `bash scripts/test-fast.sh` → exit 0, включая `AssistantSessionModelTests`, `IPadLayoutPolicyTests`, `RecipesSelectionTests`, `IPadShellItemTests`, `AppLayoutModeTests`, `IPadProfileSheetPolicyTests`, `AppShellCoordinatorTests`, `ShakeToOpenAssistantPreferenceTests`.
 - **iPhone-регрессия** (паттерн `docs/AGENT-WORKFLOW.md:48-55`):
 
   ```sh
@@ -533,7 +618,8 @@ iPhone пушит в массив так же, как в `NavigationPath`. iPad 
 
 - **Как откатить:**
   - Быстро — вернуть `TARGETED_DEVICE_FAMILY = 1`: iPad снова получает режим совместимости, iPad-ветки не выполняются, потому что `AppLayoutMode` никогда не станет `.padRegular` (на iPhone-сборке idiom `.phone`, а в режиме совместимости iPad сообщает idiom `.phone`).
-  - Полный откат — revert ветки. Переход на `[RecipesRoute]` можно оставить: он не меняет поведение.
+  - Полный откат — revert ветки. Переход на `[RecipesRoute]` можно оставить: он не меняет поведение. `AssistantSessionModel` тоже можно оставить: на iPhone лист работает так же.
+  - `IPadSidebarControl` — единственная точка UIKit-обхода; если новая iPadOS его сломает, его можно выключить (ничего не делать), потеряв только авто-скрытие сайдбара и ⌃⌘S.
 - **Что будет взаимодействовать с изменением в будущем:**
   - любые новые вкладки (`AppTab`) — их нужно добавить и в `AppShellTabRoots`, и в `IPadShellItem`; новые программные переходы к профилю идут через `selectedTab = .profile` — нормализация Р2a превратит их в лист;
   - новые блоки рецепта — решить, в какую колонку;

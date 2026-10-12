@@ -414,6 +414,8 @@ invalidating session-scoped wire operations.
 
 **Rationale:** iPad simulator showed a white screen and non-clickable UI; user chose to defer polish rather than block `master` with unfinished adaptive shell work.
 
+**Update (2026-10-12):** Resolved for spec 081. The iPad shell spike (T005/T006, iPadOS 26.3 simulator) found no white screen: `TabView(.sidebarAdaptable)` with a dynamic `TabSection`, `.sectionActions` and `.tabViewSidebarBottomBar` renders and every row is clickable. The non-clickable / mis-inset toolbars it did find came from a TabView-level `.inspector` and a `NavigationSplitView` inside a `Tab`; see the 2026-10-12 entries below.
+
 ---
 
 ### 2026-07-03 — Ingredient illustrations: no iPad in initial native scope
@@ -464,3 +466,45 @@ The description editor bridge (`description-editor-bridge.js` ↔ `DescriptionEd
 **Review №2, appendix follow-ups (same validation):** Reconnect (`refreshWireSnapshotsForRecipes`) filters candidates by `hasUnsyncedLocalChanges` before reading any yrs or wire snapshot, and the description export check reads `offline_sync_queue` once, not once per recipe (30 synced recipes: 30 snapshot reads → 0, 30 queue queries → 1). Offline description-editor updates no longer write a full yrs snapshot each: the queue row is the durable copy (replayed by `loadLocalSnapshots`), the snapshot stays on the 500 ms debounce (10 updates: 10 writes → ≤ 1). List search: `RecipeSearchIndex` carries its normalized fields, built once in `DocumentManager` and cached by state vector; `RecipeListSearchStore` re-peeks loaded indexes after the debounce, so edits that never touch the collection entry (description editor, remote) are found (300 warm re-peeks ≈ 21 ms, off the keystroke path). Description matching uses `.literal` (the non-literal `NSString` search was 18 of 24 ms), so Cyrillic is NFC-folded before comparison; Latin uses NFKD as the search rule says (was NFD: `ﬁ` and full-width forms did not match). 300 loaded indexes per keystroke: 297 → 9.5 ms (Debug, simulator). `IngredientIllustrationCatalog` memoizes name-matcher results by trimmed name: shopping rows re-match every label on each render, 41 rows 102 → 0.02 ms.
 
 ---
+
+### 2026-10-12 — iPad recipes columns (spec 081 Р5): two NavigationStacks in an HStack (variant B)
+
+**Decision:** On iPad in a regular-width window the Recipes section is an `HStack` of two `NavigationStack`s (`IPadRecipesSplitView`): list column 320 pt + 1 pt divider + recipe panel. It does not use `NavigationSplitView` (variant A). The "Recipe list" button (`sidebar.left`), the list sliding over the recipe (`.overlay` with a 0.25 dim) and the column styling are our own code. The list's search state lives outside the list's `NavigationStack`, so a query survives inline ↔ hidden ↔ overlay. Visually the layout matches `specs/081-ipad-adaptation/layout.md`.
+
+**Rationale:** Spike S4 (iPadOS 26.3 simulator, iPad 11″ portrait), evidence in `tmp/ipad-research/spike-verdicts.md` and screenshots `s2-02`, `s4-01`…`s4-07`.
+- Variant A breaks on the main scenario. After the sidebar is shown and hidden (button or programmatic), the split's column nav bars keep a stale top inset and slide under the floating tab bar (y=46 instead of 90), so "…" and ✦ overlap Profile and Assistant. Only a tab switch fixes it.
+- `setNeedsLayout`, bouncing the tab bar and `.id(tabBarPlacement)` on the split did not help, and `additionalSafeAreaInsets` overshoots (y=122). The cause is a nested `UISplitViewController` inside `UITabBarController`.
+- Variant B keeps correct toolbars before and after sidebar toggles, including with the assistant panel open. STOP 3 ("both variants break") was not triggered.
+- The cost of B is a custom list button, a custom overlay and manual column styling.
+
+---
+
+### 2026-10-12 — iPad assistant (spec 081 Р7): own trailing panel, not TabView `.inspector`
+
+**Decision:**
+- In a regular-width iPad window the assistant is our own trailing panel, 340 pt wide: `HStack { TabView │ Divider │ AssistantSheet(presentation: .inspector) }`, shown and hidden by the single `showAssistant`. In compact width and on iPhone it stays the existing sheet.
+- Assistant session state moves out of `AssistantSheet`'s `@State` into a shared `@Observable` `AssistantSessionModel` owned by `AppContainer` and passed explicitly. That state covers messages, draft input, attachments, thread and the stream/bootstrap tasks.
+- The model cancels its tasks on explicit close, on session-epoch change and on logout, not on view `onDisappear`.
+- The timer popover is lifted from inside `tabViewBottomAccessory` to the shell and anchored to the accessory's measured frame.
+
+**Rationale:** Spike S5/S6, evidence in `tmp/ipad-research/spike-verdicts.md`.
+- A TabView-level `.inspector` set the top safe area to 0 on every tab except the first, and on collection tabs, pushing toolbars under the floating tab bar. That is STOP 2, bisected with flags (`s1-05` vs `s1-20`).
+- A per-tab `.inspector` keeps the insets but rebuilds the assistant on every tab switch and loses the draft (`s5-03`–`s5-05`).
+- The custom panel keeps the insets and survives tab switches (`s5-06`, `s5-07`); compact shows the sheet (`s5-08`).
+- Panel and sheet are different view instances, so without the shared model a size-class change would drop the draft and cancel the streaming reply.
+- `.popover` inside the bottom accessory never appears. Lifted to the shell it works, including in sidebar mode (`s6-02`, `s6-03`, `s6-06`). The accessory exists in sidebar mode, so no custom capsule is needed.
+
+---
+
+### 2026-10-12 — iPad: single resizable window, multiple windows out of scope (spec 081 STOP 5)
+
+**Decision:** Spec 081 ships one window. It supports Split View, Slide Over and Stage Manager resizing. `UIApplicationSupportsMultipleScenes` is not added and there is no "New Window". Multiple windows need their own spec.
+
+**Rationale:** Spike S7 found it expensive.
+- There is a single `WindowGroup` (`RecipeScalerNativeApp.swift:176`) and one shared `AppContainer` with a single `shellCoordinator` (`AppContainer.swift:65`), so tab selection, navigation paths and `showAssistant` would be shared across windows.
+- `DeepLinkRouter.shared` has one `pending` slot (`DeepLinkRouter.swift:57`, `:99`) and is called from App Intents and `TimerManager`, with no way to pick a target window.
+- More process-wide singletons would need per-scene review: `AssistantRecipeContext`, `TimerManager` panel flags, `ReleaseNotesStore`, `ClipboardImportStore`, `OfflineBannerGate`, `RecipeFileImportCoordinator`.
+- A future spec would need a per-scene `AppShellCoordinator`, a scene-aware router and a review of each singleton. The user's Q4 answer was "only if cheap".
+
+---
+
