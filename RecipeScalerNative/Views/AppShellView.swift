@@ -115,6 +115,10 @@ struct AppShellView: View {
     /// update, so an «Ассистент» tap of the same update must not toggle the panel shut.
     /// Cleared on the next main-actor turn.
     @State private var externalRequestRoutedInThisUpdate = false
+    /// `layoutMode == .padRegular`, for the sheet binding's setter (spec 081): SwiftUI
+    /// dismisses a sheet through the binding it was presented with, and that binding's
+    /// closure sees the environment of its own update, not the current one.
+    @State private var assistantShowsAsPanel = false
     @State private var transientStatus: TransientStatusPayload?
     @State private var transientStatusDismissTask: Task<Void, Never>?
     @State private var mobileTimerPanelCollapsed = true
@@ -470,6 +474,9 @@ struct AppShellView: View {
             }
         }
         .animation(.snappy, value: showsAssistantPanel)
+        .onChange(of: layoutMode, initial: true) { _, mode in
+            assistantShowsAsPanel = mode == .padRegular
+        }
             .onPreferenceChange(ClipboardBannerHeightKey.self) { clipboardBannerHeight = $0 }
             .onChange(of: isClipboardBannerVisible) { _, visible in
                 if !visible {
@@ -491,7 +498,15 @@ struct AppShellView: View {
             }
             .modifier(AssistantSheetModifier(
                 // A wide iPad window shows the panel instead (T032).
-                isPresented: layoutMode == .padRegular ? .constant(false) : $showAssistant,
+                isPresented: Binding(
+                    get: { showAssistant && layoutMode != .padRegular },
+                    set: { isPresented in
+                        // The sheet also goes away when the window turns regular and
+                        // the chat moves into the panel (T032a): that is not a close.
+                        if !isPresented, assistantShowsAsPanel { return }
+                        showAssistant = isPresented
+                    }
+                ),
                 contextRecipeId: assistantContextRecipeId ?? assistantRecipeContext.visibleRecipeId,
                 openRequest: assistantOpenRequest,
                 shakeOpenRequest: assistantShakeOpenRequest,
