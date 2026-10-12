@@ -527,10 +527,11 @@ struct CollectionFolderView: View {
                 Button {
                     column.selectRecipe(item.id, folderContext, false)
                 } label: {
-                    Color.clear
+                    // No `.opacity(0.01)` here (the phone link keeps it): a Button that faint in a
+                    // List row gets no taps. The shape makes the whole row the target.
+                    Color.clear.contentShape(Rectangle())
                 }
                 .frame(maxWidth: .infinity, minHeight: RecipeRowLayoutMetrics.rowHeight)
-                .opacity(0.01)
             } else {
                 NavigationLink(value: route) {
                     Color.clear
