@@ -126,8 +126,12 @@ struct AppShellView: View {
     /// Overlay и сам hero подписаны на `context` через `@ObservedObject`.
     @State private var heroPhotoZoomSession = HeroPhotoZoomSession()
 
-    init(coordinator: AppShellCoordinator) {
+    /// Spec 081 (T032a) — owned by `AppContainer`; shared by the sheet and the iPad panel.
+    private let assistantSession: AssistantSessionModel
+
+    init(coordinator: AppShellCoordinator, assistantSession: AssistantSessionModel) {
         _coordinator = Bindable(wrappedValue: coordinator)
+        self.assistantSession = assistantSession
     }
 
     /// Resolved from the environment's `AppContainer` (composition root owns
@@ -183,6 +187,19 @@ struct AppShellView: View {
         assistantShakeOpenRequest = nil
         assistantContextRecipeId = nil
         assistantRecipeContext.isAssistantSheetOpen = true
+        presentAssistant()
+    }
+
+    /// Spec 081 (T032a) — a real open starts the shared session from a clean
+    /// slate (what a freshly built sheet did). Already open: the visible
+    /// sheet/panel receives the new request through its `onChange`.
+    private func presentAssistant() {
+        if !showAssistant {
+            assistantSession.beginPresentation(
+                openRequest: assistantOpenRequest,
+                shakeRequest: assistantShakeOpenRequest
+            )
+        }
         showAssistant = true
     }
 
@@ -194,7 +211,7 @@ struct AppShellView: View {
         assistantShakeOpenRequest = nil
         assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
         assistantRecipeContext.isAssistantSheetOpen = true
-        showAssistant = true
+        presentAssistant()
         resyncTabViewSelectionAfterAssistantInteraction()
     }
 
@@ -209,7 +226,7 @@ struct AppShellView: View {
         assistantShakeOpenRequest = request
         assistantContextRecipeId = request.attachRecipeId ?? assistantRecipeContext.visibleRecipeId
         assistantRecipeContext.isAssistantSheetOpen = true
-        showAssistant = true
+        presentAssistant()
         resyncTabViewSelectionAfterAssistantInteraction()
     }
 
@@ -451,11 +468,16 @@ struct AppShellView: View {
                     )
                     // #endregion
                     #endif
+                    // Spec 081 (T032a): the sheet also goes away when the iPad
+                    // window turns regular and the chat moves into the panel —
+                    // that is not a close.
+                    guard !showAssistant else { return }
                     assistantRecipeContext.isAssistantSheetOpen = false
                     assistantContextRecipeId = nil
                     assistantShakeOpenRequest = nil
                     resyncTabViewSelectionAfterAssistantInteraction()
                 },
+                session: assistantSession,
                 environmentCoordinator: coordinator,
                 syncService: syncService,
                 offlineGate: offlineGate,
@@ -559,6 +581,9 @@ struct AppShellView: View {
             }
             .onChange(of: showAssistant) { _, isOpen in
                 assistantRecipeContext.isAssistantSheetOpen = isOpen
+                if !isOpen {
+                    assistantSession.close()
+                }
                 #if DEBUG
                 // #region agent log
                 AgentSyncDebugLog.assistantLayout(
@@ -1065,6 +1090,7 @@ private struct AssistantSheetModifier: ViewModifier {
     let openRequest: AssistantOpenRequest?
     let shakeOpenRequest: AssistantShakeOpenRequest?
     let onDismiss: () -> Void
+    let session: AssistantSessionModel
     let environmentCoordinator: AppShellCoordinator
     let syncService: YjsSyncService
     let offlineGate: OfflineBannerGate
@@ -1074,6 +1100,7 @@ private struct AssistantSheetModifier: ViewModifier {
         content
             .sheet(isPresented: $isPresented, onDismiss: onDismiss) {
                 AssistantSheet(
+                    session: session,
                     contextRecipeId: contextRecipeId,
                     openRequest: openRequest,
                     shakeOpenRequest: shakeOpenRequest,

@@ -219,10 +219,16 @@ struct ContentView: View {
             if let sceneId = DebugLaunchOptions.openGuideMediaScene {
                 GuideMediaStudioView(sceneId: sceneId)
             } else {
-                AppShellView(coordinator: container.shellCoordinator)
+                AppShellView(
+                    coordinator: container.shellCoordinator,
+                    assistantSession: container.assistantSession
+                )
             }
             #else
-            AppShellView(coordinator: container.shellCoordinator)
+            AppShellView(
+                coordinator: container.shellCoordinator,
+                assistantSession: container.assistantSession
+            )
             #endif
         }
         .task(id: effectiveUserId) {

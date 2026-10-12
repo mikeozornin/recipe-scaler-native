@@ -63,6 +63,9 @@ final class AppContainer {
     /// Tab + nested navigation state; lives on the container so theme/locale root updates
     /// do not recreate paths when `AppShellView` is torn down.
     let shellCoordinator: AppShellCoordinator
+    /// Spec 081 (T032a) — the assistant chat session shared by the compact
+    /// sheet and the iPad panel (a size-class swap keeps chat, draft, stream).
+    let assistantSession: AssistantSessionModel
     let timerLiveActivityCoordinator: TimerLiveActivityCoordinator
     let liveActivityPushRegistrar: LiveActivityPushRegistrar
     /// Spec 030 B2 — widget push token register/unregister (composition-root only).
@@ -222,6 +225,10 @@ final class AppContainer {
         self.sync = sync
         self.reminders = RemindersSyncService(mapStore: mapStore)
         self.spotlight = SpotlightIndexer(syncService: sync)
+        self.assistantSession = AssistantSessionModel(
+            isOnline: { [weak sync] in sync?.connectionState.isConnected ?? false },
+            collectionEntries: { [weak sync] in sync?.collectionEntries ?? [] }
+        )
         self.shellCoordinator = AppShellCoordinator(
             syncService: sync,
             deepLinkRouter: deepLinkRouter,
@@ -424,6 +431,7 @@ final class AppContainer {
         let isSameUser = previousUserId == userId
         if !isSameUser, previousUserId != nil {
             shellCoordinator.resetShellStateForLogout()
+            assistantSession.resetForLogout()
             discoverListState.clearAll()
             vkusvillSettings.clearForLogout()
         }
@@ -582,6 +590,7 @@ final class AppContainer {
         processTableRebuild.cancel()
         resetBootstrapAfterLogout()
         shellCoordinator.resetShellStateForLogout()
+        assistantSession.resetForLogout()
         discoverListState.clearAll()
         // Teardown must not send authenticated traffic: by this point the
         // outgoing account's credentials are already gone (logout wipes
