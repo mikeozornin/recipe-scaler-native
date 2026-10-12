@@ -76,111 +76,139 @@ struct AssistantSheet: View {
 
     var body: some View {
         NavigationStack {
-            AssistantSheetToolbarHost(
-                onShowHistory: { showHistorySheet = true },
-                onStartNewChat: { session.startNewChat() }
-            ) {
-            VStack(spacing: 0) {
-                if showsOnlineContent {
-                    messageList
-                    AssistantComposer(
-                        text: $session.input,
-                        attachments: $session.attachments,
-                        isSending: session.isSending,
-                        inputPlaceholderVariantIndex: session.inputPlaceholderVariantIndex,
-                        contextRecipeId: contextRecipeId,
-                        autoStartVoice: $session.autoStartVoice,
-                        onSend: { session.launchSend() },
-                        syncService: syncService
-                    )
-                    .padding(.horizontal, 12)
-                    .padding(.top, 6)
-                    .padding(.bottom, 12)
-                } else {
-                    ContentUnavailableView {
-                        AppEmptyState.label("assistant.error-unavailable", symbol: "wifi.slash")
-                    } description: {
-                        Text("assistant.offline.description")
-                            .appBody()
+            switch presentation {
+            case .sheet:
+                AssistantSheetToolbarHost(
+                    onShowHistory: { showHistorySheet = true },
+                    onStartNewChat: { session.startNewChat() }
+                ) {
+                    chat
+                }
+            case .inspector:
+                AssistantInspectorToolbarHost(
+                    isHistoryPresented: $showHistorySheet,
+                    onStartNewChat: { session.startNewChat() },
+                    onClose: onClose,
+                    history: {
+                        threadList
+                            .frame(
+                                width: IPadLayoutMetrics.historyPopoverWidth,
+                                height: IPadLayoutMetrics.historyPopoverMaxHeight
+                            )
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .accessibilityIdentifier(AccessibilityIdentifiers.assistantOfflineFootnote)
+                ) {
+                    chat
                 }
-            }
-            .background(Color(.systemBackground))
-            .localizedNavigationTitle("assistant.title")
-            .overlay {
-                if session.isBootstrapping {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(.systemBackground).opacity(0.6))
-                }
-            }
-            .sheet(isPresented: $showHistorySheet) {
-                AssistantThreadListSheet(
-                    threads: session.threads,
-                    activeThreadId: session.threadId,
-                    deletingThreadId: session.deletingThreadId,
-                    isLoading: session.isLoadingThreads || (session.isBootstrapping && session.threads.isEmpty),
-                    onSelect: { selectedId in
-                        showHistorySheet = false
-                        Task { await session.openThread(selectedId) }
-                    },
-                    onDelete: { deletedId in
-                        Task { await session.deleteThread(deletedId) }
-                    }
-                )
-            }
-            .errorAlert(title: "assistant.error-unavailable", message: $session.loadError)
-            .onChange(of: coordinator.assistantSessionEpoch) { _, _ in
-                session.teardownForSessionInvalidation()
-            }
-            .onChange(of: isOnline) { _, connected in
-                session.handleConnectivityChange(isConnected: connected)
-            }
-            .onChange(of: openRequest) { _, request in
-                session.receiveExternalRequest(request)
-            }
-            .onChange(of: shakeOpenRequest) { _, request in
-                session.receiveShakeRequest(request)
-            }
-            .onChange(of: showHistorySheet) { _, isOpen in
-                if isOpen {
-                    session.historyDidOpen()
-                }
-            }
-            .onAppear {
-                session.viewDidAppear(shakeRequest: shakeOpenRequest)
-                #if DEBUG
-                AgentSyncDebugLog.sync(
-                    location: "AssistantSheet.onAppear",
-                    message: "assistant_sheet_appeared",
-                    data: ["has_thread_id": session.threadId != nil ? "true" : "false"]
-                )
-                #endif
-            }
-            .onDisappear {
-                // Spec 081 (T032a): no teardown here — a panel ↔ sheet swap
-                // must keep the chat. The shell calls `session.close()`.
-                #if DEBUG
-                // #region agent log
-                AgentSyncDebugLog.assistantLayout(
-                    hypothesisId: "H1",
-                    location: "AssistantSheet.onDisappear",
-                    message: "assistant_sheet_disappeared",
-                    data: ["has_thread_id": session.threadId != nil ? "true" : "false"]
-                )
-                AgentSyncDebugLog.logNavigationBarState(
-                    hypothesisId: "H2",
-                    location: "AssistantSheet.onDisappear",
-                    tag: "sheet_disappear"
-                )
-                // #endregion
-                #endif
-            }
-            .accessibilityIdentifier(AccessibilityIdentifiers.assistantSheet)
             }
         }
+    }
+
+    /// The history list: the phone sheet, or the panel's popover (FR-020).
+    private var threadList: some View {
+        AssistantThreadListSheet(
+            threads: session.threads,
+            activeThreadId: session.threadId,
+            deletingThreadId: session.deletingThreadId,
+            isLoading: session.isLoadingThreads || (session.isBootstrapping && session.threads.isEmpty),
+            onSelect: { selectedId in
+                showHistorySheet = false
+                Task { await session.openThread(selectedId) }
+            },
+            onDelete: { deletedId in
+                Task { await session.deleteThread(deletedId) }
+            }
+        )
+    }
+
+    private var chat: some View {
+        VStack(spacing: 0) {
+            if showsOnlineContent {
+                messageList
+                AssistantComposer(
+                    text: $session.input,
+                    attachments: $session.attachments,
+                    isSending: session.isSending,
+                    inputPlaceholderVariantIndex: session.inputPlaceholderVariantIndex,
+                    contextRecipeId: contextRecipeId,
+                    autoStartVoice: $session.autoStartVoice,
+                    onSend: { session.launchSend() },
+                    syncService: syncService
+                )
+                .padding(.horizontal, 12)
+                .padding(.top, 6)
+                .padding(.bottom, 12)
+            } else {
+                ContentUnavailableView {
+                    AppEmptyState.label("assistant.error-unavailable", symbol: "wifi.slash")
+                } description: {
+                    Text("assistant.offline.description")
+                        .appBody()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .accessibilityIdentifier(AccessibilityIdentifiers.assistantOfflineFootnote)
+            }
+        }
+        .background(Color(.systemBackground))
+        .localizedNavigationTitle("assistant.title")
+        .overlay {
+            if session.isBootstrapping {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemBackground).opacity(0.6))
+            }
+        }
+        // The panel opens the list as its popover instead (T033).
+        .sheet(isPresented: presentation == .sheet ? $showHistorySheet : .constant(false)) {
+            threadList
+        }
+        .errorAlert(title: "assistant.error-unavailable", message: $session.loadError)
+        .onChange(of: coordinator.assistantSessionEpoch) { _, _ in
+            session.teardownForSessionInvalidation()
+        }
+        .onChange(of: isOnline) { _, connected in
+            session.handleConnectivityChange(isConnected: connected)
+        }
+        .onChange(of: openRequest) { _, request in
+            session.receiveExternalRequest(request)
+        }
+        .onChange(of: shakeOpenRequest) { _, request in
+            session.receiveShakeRequest(request)
+        }
+        .onChange(of: showHistorySheet) { _, isOpen in
+            if isOpen {
+                session.historyDidOpen()
+            }
+        }
+        .onAppear {
+            session.viewDidAppear(shakeRequest: shakeOpenRequest)
+            #if DEBUG
+            AgentSyncDebugLog.sync(
+                location: "AssistantSheet.onAppear",
+                message: "assistant_sheet_appeared",
+                data: ["has_thread_id": session.threadId != nil ? "true" : "false"]
+            )
+            #endif
+        }
+        .onDisappear {
+            // Spec 081 (T032a): no teardown here — a panel ↔ sheet swap
+            // must keep the chat. The shell calls `session.close()`.
+            #if DEBUG
+            // #region agent log
+            AgentSyncDebugLog.assistantLayout(
+                hypothesisId: "H1",
+                location: "AssistantSheet.onDisappear",
+                message: "assistant_sheet_disappeared",
+                data: ["has_thread_id": session.threadId != nil ? "true" : "false"]
+            )
+            AgentSyncDebugLog.logNavigationBarState(
+                hypothesisId: "H2",
+                location: "AssistantSheet.onDisappear",
+                tag: "sheet_disappear"
+            )
+            // #endregion
+            #endif
+        }
+        .accessibilityIdentifier(AccessibilityIdentifiers.assistantSheet)
     }
 
     // MARK: - Message list
@@ -383,5 +411,81 @@ private struct AssistantSheetToolbarHost<Content: View>: View {
                     .accessibilityIdentifier(AccessibilityIdentifiers.assistantNewThreadButton)
                 }
             }
+    }
+}
+
+/// Spec 081 (T033) — the panel bar (prototype `.insp-bar`): «Ассистент» at the leading
+/// edge, [history, new chat] and × at the trailing one. The history list is a popover
+/// from its button (FR-020). No `@Environment` objects, as in `AssistantSheetToolbarHost`.
+private struct AssistantInspectorToolbarHost<History: View, Content: View>: View {
+    @Binding var isHistoryPresented: Bool
+    let onStartNewChat: () -> Void
+    let onClose: () -> Void
+    @ViewBuilder let history: () -> History
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            titledContent
+                .toolbar {
+                    ToolbarItemGroup(placement: .topBarTrailing) {
+                        historyButton
+                        newChatButton
+                    }
+                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                    ToolbarItem(placement: .topBarTrailing) {
+                        closeButton
+                    }
+                }
+        } else {
+            titledContent
+                .toolbar {
+                    ToolbarItemGroup(placement: .topBarTrailing) {
+                        historyButton
+                        newChatButton
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        closeButton
+                    }
+                }
+        }
+    }
+
+    private var titledContent: some View {
+        content()
+            .toolbarTitleDisplayMode(.inlineLarge)
+    }
+
+    private var historyButton: some View {
+        Button {
+            isHistoryPresented = true
+        } label: {
+            AppToolbarStyle.iconOnly(systemName: "clock.arrow.circlepath")
+        }
+        .appToolbarIconButton()
+        .accessibilityLabel(Text("assistant.threads-title"))
+        .accessibilityIdentifier(AccessibilityIdentifiers.assistantHistoryButton)
+        .adaptivePopover(isPresented: $isHistoryPresented, content: history)
+        // A bar item may get a fallback environment (`.phone`, a sheet); the panel
+        // exists only in a wide window.
+        .environment(\.appLayoutMode, .padRegular)
+    }
+
+    private var newChatButton: some View {
+        Button(action: onStartNewChat) {
+            AppToolbarStyle.iconOnly(systemName: "plus")
+        }
+        .appToolbarIconButton()
+        .accessibilityLabel(Text("assistant.new-chat"))
+        .accessibilityIdentifier(AccessibilityIdentifiers.assistantNewThreadButton)
+    }
+
+    private var closeButton: some View {
+        Button(action: onClose) {
+            AppToolbarStyle.iconOnly(systemName: "xmark")
+        }
+        .appToolbarIconButton()
+        .accessibilityLabel(Text("assistant.close"))
+        .accessibilityIdentifier(AccessibilityIdentifiers.ipadAssistantInspectorCloseButton)
     }
 }

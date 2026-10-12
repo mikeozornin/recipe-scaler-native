@@ -279,7 +279,10 @@ enum AccessibilityIdentifiers {
     static let ipadRecipeDetailLeftColumn = "ipad-recipe-detail-left-column"
     static let ipadRecipeColumnDivider = "ipad-recipe-column-divider"
     static let ipadRecipeDetailRightColumn = "ipad-recipe-detail-right-column"
+    /// The assistant panel beside the tabs in a wide window (spec 081, T032).
     static let ipadAssistantInspector = "ipad-assistant-inspector"
+    /// × of the assistant panel.
+    static let ipadAssistantInspectorCloseButton = "ipad-assistant-inspector-close-button"
     /// ✦ — opens and closes the assistant inspector.
     static let ipadAssistantToolbarButton = "ipad-assistant-toolbar-button"
     /// «Готово» of the profile form sheet (wide window).
