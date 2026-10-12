@@ -568,7 +568,6 @@ struct AppShellView: View {
             .environment(assistantRecipeContext)
             .frame(width: IPadLayoutMetrics.inspectorWidth)
             .accessibilityElement(children: .contain)
-            .accessibilityIdentifier(AccessibilityIdentifiers.ipadAssistantInspector)
         }
         .transition(.move(edge: .trailing))
     }

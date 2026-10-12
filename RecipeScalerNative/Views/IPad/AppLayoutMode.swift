@@ -44,15 +44,24 @@ extension View {
     func appLayoutModeRoot() -> some View {
         modifier(AppLayoutModeRootModifier())
             // Outside the resolver, so the overridden size class reaches it.
-            .modifier(DebugWindowWidthModifier(width: DebugLaunchOptions.debugWindowWidth))
+            .modifier(DebugWindowWidthModifier(
+                width: DebugLaunchOptions.debugWindowWidth,
+                compactInPortrait: DebugLaunchOptions.debugCompactInPortrait
+            ))
     }
 }
 
 /// `-DebugWindowWidth=<pt>` (DEBUG only): narrows the root to `width`, pinned to the
 /// leading edge, and sets the horizontal size class by `IPadLayoutMetrics.regularMinWidth`.
-/// Without the argument (and in Release) the content is returned untouched.
+///
+/// `-DebugCompactInPortrait=1` (DEBUG only): in portrait the root narrows to a ½ window
+/// (402 pt, layout.md §Матрица) with a compact size class; landscape stays regular, so a
+/// rotation is a runtime size class change (spec 081, T035).
+///
+/// Without the arguments (and in Release) the content is returned untouched.
 private struct DebugWindowWidthModifier: ViewModifier {
     let width: CGFloat?
+    let compactInPortrait: Bool
 
     func body(content: Content) -> some View {
         #if DEBUG
@@ -64,6 +73,14 @@ private struct DebugWindowWidthModifier: ViewModifier {
                 )
                 .frame(width: width)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        } else if compactInPortrait {
+            GeometryReader { proxy in
+                let isPortrait = proxy.size.height > proxy.size.width
+                content
+                    .environment(\.horizontalSizeClass, isPortrait ? .compact : .regular)
+                    .frame(width: isPortrait ? 402 : nil)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            }
         } else {
             content
         }

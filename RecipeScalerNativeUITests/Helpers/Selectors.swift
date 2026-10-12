@@ -249,9 +249,9 @@ enum UIA {
     static let ipadRecipeDetailLeftColumn = "ipad-recipe-detail-left-column"
     static let ipadRecipeColumnDivider = "ipad-recipe-column-divider"
     static let ipadRecipeDetailRightColumn = "ipad-recipe-detail-right-column"
-    /// The assistant panel beside the tabs in a wide window (spec 081, T032).
-    static let ipadAssistantInspector = "ipad-assistant-inspector"
-    /// × of the assistant panel.
+    /// × of the assistant panel beside the tabs in a wide window (spec 081, T033). The panel
+    /// itself has no id: the root's `root_content` replaces the id of every top-level
+    /// element below the root, the panel included; find it by its bar, the one with ×.
     static let ipadAssistantInspectorCloseButton = "ipad-assistant-inspector-close-button"
     /// ✦ — opens and closes the assistant inspector.
     static let ipadAssistantToolbarButton = "ipad-assistant-toolbar-button"

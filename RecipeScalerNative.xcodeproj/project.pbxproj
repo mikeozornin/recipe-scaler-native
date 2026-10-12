@@ -10,6 +10,7 @@
 		0815642EC1F8F481A4E051DF /* IPadRecipesSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081A85171151F7AAC6D5F40A /* IPadRecipesSpec.swift */; };
 		0813971944D613633CE0F999 /* YDocRecipeDetailColumns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0810E26824E331FAC2A2A356 /* YDocRecipeDetailColumns.swift */; };
 		081BACD5F55A1B03061EB394 /* IPadShellSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */; };
+		0818A72F114D5CEDF40789E7 /* IPadAssistantSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081CED8F21DC44DB207349B5 /* IPadAssistantSpec.swift */; };
 		081A15CAD06242AEB73277A9 /* IPadProfileSheetPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0817B80AFD53CD65E53B0BEA /* IPadProfileSheetPolicyTests.swift */; };
 		081D48A0C5792DA6C6306F66 /* IPadProfileSheetModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081B3845856DC980503EE6A8 /* IPadProfileSheetModifier.swift */; };
 		081E76BD3B8AF81943CFF690 /* IPadProfileSheetPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081867C288854BF5052DAF26 /* IPadProfileSheetPolicy.swift */; };
@@ -874,6 +875,7 @@
 		081A85171151F7AAC6D5F40A /* IPadRecipesSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadRecipesSpec.swift; sourceTree = "<group>"; };
 		0810E26824E331FAC2A2A356 /* YDocRecipeDetailColumns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YDocRecipeDetailColumns.swift; sourceTree = "<group>"; };
 		08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadShellSpec.swift; sourceTree = "<group>"; };
+		081CED8F21DC44DB207349B5 /* IPadAssistantSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadAssistantSpec.swift; sourceTree = "<group>"; };
 		0817B80AFD53CD65E53B0BEA /* IPadProfileSheetPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetPolicyTests.swift; sourceTree = "<group>"; };
 		081B3845856DC980503EE6A8 /* IPadProfileSheetModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetModifier.swift; sourceTree = "<group>"; };
 		081867C288854BF5052DAF26 /* IPadProfileSheetPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetPolicy.swift; sourceTree = "<group>"; };
@@ -2691,6 +2693,7 @@
 			children = (
 				081A85171151F7AAC6D5F40A /* IPadRecipesSpec.swift */,
 				08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */,
+				081CED8F21DC44DB207349B5 /* IPadAssistantSpec.swift */,
 				UITAB5A803D9115B87C2E /* FeatureAdoptionGuidesSpec.swift */,
 				UITEF4902F43B6C5EDA96 /* FeatureAdoptionTrackerSpec.swift */,
 				UIT042788CF0A93FC75C3 /* DiscoverEnablementSpec.swift */,
@@ -3807,6 +3810,7 @@
 			files = (
 				0815642EC1F8F481A4E051DF /* IPadRecipesSpec.swift in Sources */,
 				081BACD5F55A1B03061EB394 /* IPadShellSpec.swift in Sources */,
+				0818A72F114D5CEDF40789E7 /* IPadAssistantSpec.swift in Sources */,
 				UITESTSRCBF00100000000 /* RecipeScalerNativeUITests.swift in Sources */,
 				UIT8D74A32C89F7DE0818 /* BaseTestCase.swift in Sources */,
 				UIT5DD600C96B7EC8EDF9 /* Selectors.swift in Sources */,

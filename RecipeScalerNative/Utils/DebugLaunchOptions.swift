@@ -250,6 +250,13 @@ enum DebugLaunchOptions {
         return CGFloat(value)
     }
 
+    /// `-DebugCompactInPortrait=1` — a portrait iPad window behaves as a compact one (the
+    /// root narrows to a ½ window, 402 pt, size class compact), landscape stays regular. Rotating flips the size class at runtime: UI tests of the panel ↔ sheet swap
+    /// (spec 081, T035), which the simulator cannot do with a real window resize.
+    static var debugCompactInPortrait: Bool {
+        boolFlag("DebugCompactInPortrait")
+    }
+
     /// Apply `-AppLanguage=` / `-AppTheme=` before SwiftUI bodies evaluate localized strings.
     static func applyScreenshotPreferences() {
         if let raw = stringValue("AppLanguage"),
@@ -477,6 +484,7 @@ enum DebugLaunchOptions {
     static var iPadSidebarShown: Bool { false }
     static var iPadListHidden: Bool { false }
     static var debugWindowWidth: CGFloat? { nil }
+    static var debugCompactInPortrait: Bool { false }
 
     static func applyScreenshotPreferences() {}
 
