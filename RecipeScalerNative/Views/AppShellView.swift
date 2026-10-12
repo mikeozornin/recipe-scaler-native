@@ -202,7 +202,9 @@ struct AppShellView: View {
     private func routePendingShakeAssistantOpenRequest() {
         guard let request = coordinator.pendingShakeAssistantOpenRequest else { return }
         coordinator.consumeShakeAssistantOpenRequest(request)
-        guard ShakeToOpenAssistantPreference.isEnabled else { return }
+        guard ShakeToOpenAssistantPreference.isActive(idiom: UIDevice.current.userInterfaceIdiom) else {
+            return
+        }
         assistantOpenRequest = nil
         assistantShakeOpenRequest = request
         assistantContextRecipeId = request.attachRecipeId ?? assistantRecipeContext.visibleRecipeId
@@ -213,7 +215,9 @@ struct AppShellView: View {
 
     private func handleDeviceShake() {
         guard scenePhase == .active else { return }
-        guard ShakeToOpenAssistantPreference.isEnabled else { return }
+        guard ShakeToOpenAssistantPreference.isActive(idiom: UIDevice.current.userInterfaceIdiom) else {
+            return
+        }
         guard DeviceShakeDetector.shouldAcceptShake() else { return }
         coordinator.requestShakeAssistantOpen(
             visibleRecipeId: assistantRecipeContext.visibleRecipeId

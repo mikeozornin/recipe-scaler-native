@@ -576,10 +576,13 @@ struct AccountView: View {
                 }
             }
 
-            Toggle(isOn: $shakeToOpenAssistant) {
-                Text("account.shake-open-assistant.label").appBody()
+            // Spec 081 — no shake on the iPad (sheet and compact tab alike).
+            if UIDevice.current.userInterfaceIdiom != .pad {
+                Toggle(isOn: $shakeToOpenAssistant) {
+                    Text("account.shake-open-assistant.label").appBody()
+                }
+                .accessibilityIdentifier(AccessibilityIdentifiers.accountShakeOpenAssistantToggle)
             }
-            .accessibilityIdentifier(AccessibilityIdentifiers.accountShakeOpenAssistantToggle)
 
         } header: {
             AppSectionHeader("account.section.preferences")

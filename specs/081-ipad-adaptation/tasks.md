@@ -187,12 +187,14 @@
 
   **Сделано и проверено:** `IPadAssistantToolbarButton` (координатор передаётся явно) — справа в тулбаре покупок, в одной «капсуле» с «Купить во Вкусвилле» и «Поделиться»; тап открывает телефонный лист ассистента с пустым чатом. Список — колонка 720 по центру, фон `systemGroupedBackground` и по бокам. Проверено на iPad Pro 11: портрет (верхний бар и плавающий сайдбар), альбом (сайдбар рядом и верхний бар). iPhone `--iphone-regression` `shopping-az` — 0 отличий. В `verify-ipad-layout.sh` перед каждым запуском пишется нейтральный текст в буфер симулятора (Simulator копирует туда буфер Mac; ссылка показывает баннер импорта и ломает сравнение), буфер Mac не трогается. Скриншоты `tmp/ipad-verify/us1/t018-01-shopping-tabs.png`, `t018-02-shopping-sidebar.png`, `t018-04-landscape-shopping.png`, `t018-05-landscape-tabs.png`, `t018-06-assistant-sheet.png`.
   **Отклонение:** правило «< 640» не спасает: в верхнем баре (и под плавающим сайдбаром в портрете) подпись выталкивает тулбар в «…». Подпись только при сайдбаре рядом со страницей (`tabBarPlacement == .sidebar` и страница сдвинута, `minX > 0`) и ширине ≥ 640; иначе иконка. `ToolbarSpacer` между ✦ и остальными не поставлен — с ним ✦ уходит в «…».
-- [ ] T019 [P] [US1] Профиль и встряхивание.
+- [x] T019 [P] [US1] Профиль и встряхивание.
   - `RecipeScalerNative/Views/AccountView.swift`: строка встряхивания (~:579-585) скрыта при `idiom == .pad` (в листе и во вкладке compact); строка «Аккаунт» — как на iPhone (`AccountAvatarView` из T015). Ограничение ширины не ставить: в `.padRegular` профиль — лист (T019a), в compact — телефонная страница.
   - `RecipeScalerNative/Utils/ShakeToOpenAssistantPreference.swift`: `isActive(idiom:)`; использовать в `AppShellView` (~:205, ~:214).
   - Тесты `testPhoneHonorsPreference`, `testPadIgnoresShake` в `RecipeScalerNativeTests/ShakeToOpenAssistantPreferenceTests.swift`.
 
   — `#profile/public`
+
+  **Сделано и проверено:** `isActive(idiom:)` — iPad не реагирует на встряхивание, остальные устройства следуют настройке; используется в `handleDeviceShake` и `routePendingShakeAssistantOpenRequest`. Строка встряхивания в профиле скрыта при `idiom == .pad` (во вкладке compact `-DebugWindowWidth 400` её нет — `tmp/ipad-verify/us1/t019-01-profile-compact-no-shake.png`; лист — T019a). На iPhone строка на месте; `ShakeToOpenAssistantPreferenceTests` 7/7; iPhone `--iphone-regression` `profile-public`, `assistant-chat` — 0 отличий.
 - [ ] T019a [US1] Профиль «Моё всё» — form sheet в широком окне (spec.md Q7, FR-004a, FR-004b; plan.md Р2a; образец — Scrapp `RootView.swift:55`, `:113-137`, `:163-178`).
   - Создать `RecipeScalerNative/Routing/IPadProfileSheetPolicy.swift`: чистая `resolve(selected:previous:layoutMode:) -> (selected, presentsSheet)` — `.profile` в `.padRegular` → (`previous ?? .recipes`, `true`), иначе без изменений.
   - `RecipeScalerNative/Routing/AppShellCoordinator.swift`:

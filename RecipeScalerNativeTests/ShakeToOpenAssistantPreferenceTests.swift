@@ -36,6 +36,17 @@ final class ShakeToOpenAssistantPreferenceTests: XCTestCase {
         XCTAssertFalse(ShakeToOpenAssistantPreference.isEnabled)
     }
 
+    func testPhoneHonorsPreference() {
+        XCTAssertFalse(ShakeToOpenAssistantPreference.isActive(idiom: .phone))
+        ShakeToOpenAssistantPreference.isEnabled = true
+        XCTAssertTrue(ShakeToOpenAssistantPreference.isActive(idiom: .phone))
+    }
+
+    func testPadIgnoresShake() {
+        ShakeToOpenAssistantPreference.isEnabled = true
+        XCTAssertFalse(ShakeToOpenAssistantPreference.isActive(idiom: .pad))
+    }
+
     func test_debounce_drops_second() {
         let t0 = Date(timeIntervalSince1970: 1_000)
         XCTAssertTrue(DeviceShakeDetector.shouldAcceptShake(now: t0, debounce: 1.0))
