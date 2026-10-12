@@ -10,14 +10,18 @@ enum IPadLayoutMetrics {
     /// Leading safe-area inset of the selected page below which a shown sidebar floats
     /// over the content instead of standing beside it (spike S1/S2, `IPadSidebarControl`).
     static let sidebarOverlayMaxLeadingInset: CGFloat = 60
-    /// Recipe list column, without its divider.
-    static let listColumnWidth: CGFloat = 320
+    /// Recipe list column, without its divider: never narrower than this.
+    static let listColumnMinWidth: CGFloat = 320
+    /// Share of the content (minus the divider) the list column takes in portrait:
+    /// list and recipe split it in half.
+    static let listShareInPortrait: CGFloat = 1.0 / 2.0
+    /// … and in landscape: list ⅓, recipe ⅔ (as Apple Notes).
+    static let listShareInLandscape: CGFloat = 1.0 / 3.0
     /// Hairline between columns (list | detail, recipe left | right).
     static let columnDividerWidth: CGFloat = 1
-    /// List column plus its divider: 321.
-    static let listColumnTotalWidth: CGFloat = listColumnWidth + columnDividerWidth
-    /// The list column is shown only if the detail panel keeps at least this much.
-    static let minDetailWithList: CGFloat = 560
+    /// The list column stays beside the recipe only while the recipe keeps at least this
+    /// much; narrower, the section is the phone stack (push).
+    static let minDetailWithList: CGFloat = 320
     /// `.inspectorColumnWidth` of the assistant.
     static let inspectorWidth: CGFloat = 340
     /// The recipe splits into two columns from this panel width.
@@ -88,19 +92,26 @@ enum IPadDetailToolbarStyle: Equatable {
     case padBesideTabBar
 }
 
-/// What the Recipes section shows at a given content width (layout.md §Токены, formulas).
+/// What the Recipes section shows at a given content size (layout.md §Токены, formulas).
 struct IPadLayout: Equatable {
     let contentWidth: CGFloat
+    /// Room for the list column beside the recipe; else the phone stack (push).
+    let splitFits: Bool
+    /// The list column is on screen: the split fits and the recipe is not expanded.
     let listShown: Bool
+    /// List column width without its divider. Kept while the recipe is expanded (the
+    /// column waits off screen); 0 for the phone stack.
+    let listWidth: CGFloat
     let detailWidth: CGFloat
     let twoColumns: Bool
     let toolbarStyle: IPadDetailToolbarStyle
-    let showsListButton: Bool
+    /// «Развернуть» / «Свернуть» leads the recipe toolbar (the view adds: a recipe is open).
+    let showsExpandButton: Bool
     let shopVkusvillIconOnly: Bool
 }
 
-/// Pure layout decisions for `.padRegular`. The app measures `contentWidth`
-/// (`onGeometryChange` / `GeometryReader`); tests derive it from the window width.
+/// Pure layout decisions for `.padRegular`. The app measures the content
+/// (`GeometryReader`); tests derive it from the window size.
 enum IPadLayoutPolicy {
     /// `W − sidebar − inspector` — the acceptance matrix and tests only.
     static func contentWidth(windowWidth: CGFloat, sidebarVisible: Bool, inspectorVisible: Bool) -> CGFloat {
@@ -109,20 +120,36 @@ enum IPadLayoutPolicy {
             - (inspectorVisible ? IPadLayoutMetrics.inspectorWidth : 0)
     }
 
+    /// List column width, without its divider: half of the content in portrait (taller
+    /// than wide), a third in landscape, never under 320. With the sidebar beside the
+    /// content the rule applies to what is left of the window.
+    static func listColumnWidth(contentWidth: CGFloat, contentHeight: CGFloat) -> CGFloat {
+        let isPortrait = contentHeight > contentWidth
+        let share = isPortrait ? IPadLayoutMetrics.listShareInPortrait : IPadLayoutMetrics.listShareInLandscape
+        let proportional = ((contentWidth - IPadLayoutMetrics.columnDividerWidth) * share).rounded()
+        return max(IPadLayoutMetrics.listColumnMinWidth, proportional)
+    }
+
+    /// `recipeExpanded`: the user expanded the recipe over the whole content (Notes-style).
     /// `toolbarBesideTabBar`: the panel toolbar shares the row of the floating top tab bar
     /// (`toolbarSharesTabBarRow`), so only the room beside the tab bar is left for it.
     static func resolve(
         contentWidth: CGFloat,
-        listCollapsedByUser: Bool,
+        contentHeight: CGFloat,
+        recipeExpanded: Bool,
         isEditing: Bool,
         toolbarBesideTabBar: Bool = false
     ) -> IPadLayout {
-        let listShown = !listCollapsedByUser
-            && !isEditing
-            && contentWidth - IPadLayoutMetrics.listColumnTotalWidth >= IPadLayoutMetrics.minDetailWithList
-        let detailWidth = contentWidth - (listShown ? IPadLayoutMetrics.listColumnTotalWidth : 0)
+        let listWidth = listColumnWidth(contentWidth: contentWidth, contentHeight: contentHeight)
+        let splitFits = contentWidth - listWidth - IPadLayoutMetrics.columnDividerWidth
+            >= IPadLayoutMetrics.minDetailWithList
+        let listShown = splitFits && !recipeExpanded && !isEditing
+        let detailWidth = listShown
+            ? contentWidth - listWidth - IPadLayoutMetrics.columnDividerWidth
+            : contentWidth
         let toolbarStyle: IPadDetailToolbarStyle
-        if toolbarBesideTabBar, contentWidth < IPadLayoutMetrics.wideToolbarBesideTabBarMinContent {
+        // With the list column shown the system keeps both column bars in their own row.
+        if toolbarBesideTabBar, !listShown, contentWidth < IPadLayoutMetrics.wideToolbarBesideTabBarMinContent {
             toolbarStyle = .padBesideTabBar
         } else if detailWidth >= IPadLayoutMetrics.wideToolbarMinDetail {
             toolbarStyle = .padWide
@@ -131,11 +158,13 @@ enum IPadLayoutPolicy {
         }
         return IPadLayout(
             contentWidth: contentWidth,
+            splitFits: splitFits,
             listShown: listShown,
+            listWidth: splitFits ? listWidth : 0,
             detailWidth: detailWidth,
             twoColumns: detailWidth >= IPadLayoutMetrics.twoColumnMinDetail,
             toolbarStyle: toolbarStyle,
-            showsListButton: !listShown,
+            showsExpandButton: splitFits && !isEditing,
             shopVkusvillIconOnly: contentWidth < IPadLayoutMetrics.shopLabeledMinContent
         )
     }

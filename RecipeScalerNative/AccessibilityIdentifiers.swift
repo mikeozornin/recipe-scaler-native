@@ -271,10 +271,8 @@ enum AccessibilityIdentifiers {
     /// Title of the list column next to the sidebar; in the top bar the title is a menu.
     static let ipadRecipeListTitle = "ipad-recipe-list-title"
     static let ipadRecipeListTitleMenu = "ipad-recipe-list-title-menu"
-    /// Dimming behind the list shown over the recipe; a tap hides the list.
-    static let ipadRecipeListDim = "ipad-recipe-list-dim"
-    /// «Список рецептов» — shows the hidden list column.
-    static let ipadShowRecipeListButton = "ipad-show-recipe-list-button"
+    /// «Развернуть» / «Свернуть» — the recipe over the whole section, or back beside the list.
+    static let ipadRecipeExpandButton = "ipad-recipe-expand-button"
     /// The recipe panel next to the list column (empty when the list is empty).
     static let ipadRecipeDetailPanel = "ipad-recipe-detail-panel"
     /// Two-column recipe: the left column (photo, ingredients), the divider, the steps.

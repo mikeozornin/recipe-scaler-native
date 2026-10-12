@@ -20,6 +20,11 @@ enum IPadSidebarControl {
         return leadingInset < IPadLayoutMetrics.sidebarOverlayMaxLeadingInset
     }
 
+    /// The sidebar is on screen, beside the content or over it.
+    static var isSidebarShown: Bool {
+        tabBarController().map { !$0.sidebar.isHidden } ?? false
+    }
+
     static func setSidebarHidden(_ hidden: Bool) {
         guard let tabBarController = tabBarController() else {
             AppLog.notice(.ui, "ipad_sidebar_controller_missing", data: ["hidden": hidden ? "true" : "false"])

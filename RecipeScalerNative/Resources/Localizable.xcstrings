@@ -15877,19 +15877,36 @@
         }
       }
     },
-    "ipad.recipes.show-list": {
+    "ipad.recipes.collapse": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recipe list"
+            "value": "Collapse"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Список рецептов"
+            "value": "Свернуть"
+          }
+        }
+      }
+    },
+    "ipad.recipes.expand": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expand"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Развернуть"
           }
         }
       }

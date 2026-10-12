@@ -6,6 +6,12 @@ import SwiftUI
 /// `NavigationSplitView` (its column toolbars slide under the tab bar after the sidebar
 /// toggles, spike S4).
 ///
+/// As Apple Notes: the list column is always beside the recipe while there is room
+/// (`IPadLayoutPolicy.resolve`, half in portrait, a third in landscape); «Развернуть» at the
+/// leading edge of the recipe toolbar gives the recipe the whole section and hides the
+/// sidebar, «Свернуть» brings both back. Without room for both the section is the phone
+/// stack (push).
+///
 /// The selection lives in `AppShellCoordinator.recipesPath` (`RecipesSelection`), so the
 /// open recipe survives rotation, a size class change and the phone stack (FR-018).
 /// Dependencies are passed in explicitly (iOS 26 fallback environment, see `RecipeListView`).
@@ -26,16 +32,6 @@ struct IPadRecipesSplitView: View {
     let showsAssistantToolbarButton: Bool
 
     @State private var searchText = ""
-    @State private var isOverlayShown = false
-
-    private enum ListMode {
-        /// The 320 pt column beside the recipe.
-        case inline
-        /// Only the recipe; «Список рецептов» in its toolbar.
-        case hidden
-        /// The list over the recipe with dimming (too narrow for the column).
-        case overlay
-    }
 
     private var selection: RecipesSelection {
         RecipesSelection.selection(from: coordinator.recipesPath)
@@ -45,18 +41,59 @@ struct IPadRecipesSplitView: View {
         syncService.collectionIndex
     }
 
+    /// Nothing to expand without an open recipe: the list stays.
+    private var isExpanded: Bool {
+        coordinator.recipeDetailExpanded && selection.recipeId != nil
+    }
+
     var body: some View {
         GeometryReader { proxy in
-            split(layout: IPadLayoutPolicy.resolve(
+            let layout = IPadLayoutPolicy.resolve(
                 contentWidth: proxy.size.width,
-                listCollapsedByUser: coordinator.recipesListHiddenByUser,
+                contentHeight: proxy.size.height,
+                recipeExpanded: isExpanded,
                 isEditing: false,
                 toolbarBesideTabBar: IPadLayoutPolicy.toolbarSharesTabBarRow(
                     tabBarOnTop: showsCollectionMenu,
                     splitTop: proxy.frame(in: .global).minY
                 )
-            ))
+            )
+            if layout.splitFits {
+                split(layout: layout)
+            } else {
+                pushStack
+            }
         }
+        .onChange(of: selection.collectionId) { _, _ in
+            searchText = ""
+        }
+        .onChange(of: selection.recipeId == nil) { _, isEmpty in
+            // An empty collection opened from the sidebar: back to the list, not a blank panel.
+            if isEmpty, coordinator.recipeDetailExpanded {
+                setExpanded(false)
+            }
+        }
+    }
+
+    /// Expanded, the list column slides off the leading edge but stays in the hierarchy:
+    /// without it iPadOS moves the recipe bar into the row of the top tab bar, and after
+    /// «Свернуть» that bar keeps the narrow room beside the tab bar (items go to «More»).
+    private func split(layout: IPadLayout) -> some View {
+        let selection = selection
+        return HStack(spacing: 0) {
+            listColumn(selection: selection)
+                .frame(width: layout.listWidth)
+                .opacity(layout.listShown ? 1 : 0)
+                .allowsHitTesting(layout.listShown)
+                .accessibilityHidden(!layout.listShown)
+            Rectangle()
+                .fill(Color(.separator))
+                .frame(width: IPadLayoutMetrics.columnDividerWidth)
+                .ignoresSafeArea(edges: .vertical)
+            detailPanel(selection: selection, layout: layout)
+                .frame(width: layout.detailWidth)
+        }
+        .frame(width: layout.contentWidth, alignment: .trailing)
         .onAppear {
             repairSelection(previous: nil)
         }
@@ -70,50 +107,23 @@ struct IPadRecipesSplitView: View {
         )) { previous, _ in
             repairSelection(previous: previous)
         }
-        .onChange(of: selection.collectionId) { _, _ in
-            searchText = ""
-        }
     }
 
-    private func split(layout: IPadLayout) -> some View {
-        let selection = selection
-        // Nothing to show in the panel (an empty collection): the list stays over it.
-        let listMode: ListMode = layout.listShown
-            ? .inline
-            : (isOverlayShown || selection.recipeId == nil ? .overlay : .hidden)
-        return HStack(spacing: 0) {
-            if listMode == .inline {
-                listColumn(selection: selection)
-                    .frame(width: IPadLayoutMetrics.listColumnWidth)
-                Rectangle()
-                    .fill(Color(.separator))
-                    .frame(width: IPadLayoutMetrics.columnDividerWidth)
-                    .ignoresSafeArea(edges: .vertical)
-            }
-            detailPanel(selection: selection, layout: layout)
-                .frame(maxWidth: .infinity)
-        }
-        .overlay(alignment: .leading) {
-            if listMode == .overlay {
-                ZStack(alignment: .leading) {
-                    Color.black.opacity(0.25)
-                        .ignoresSafeArea()
-                        .onTapGesture { isOverlayShown = false }
-                        .accessibilityAddTraits(.isButton)
-                        .accessibilityLabel(Text("common.close"))
-                        .accessibilityIdentifier(AccessibilityIdentifiers.ipadRecipeListDim)
-                    listColumn(selection: selection)
-                        .frame(width: IPadLayoutMetrics.listColumnWidth)
-                        .background(Color(.systemBackground).ignoresSafeArea())
-                        .shadow(radius: 12)
-                }
-                .transition(.opacity)
-            }
-        }
-        .animation(.easeInOut(duration: 0.2), value: listMode)
-        .onChange(of: layout.listShown) { _, shown in
-            if shown { isOverlayShown = false }
-        }
+    /// No room for the list beside the recipe: the phone stack, nothing selected for the
+    /// user (`repairSelection` runs in the split only).
+    private var pushStack: some View {
+        RecipeListView(
+            navigationPath: $coordinator.recipesPath,
+            syncService: syncService,
+            coordinator: coordinator,
+            assistantRecipeContext: assistantRecipeContext,
+            timerManager: timerManager,
+            apiClient: apiClient,
+            appContainer: appContainer,
+            systemBannerStore: systemBannerStore,
+            mobileTimerPanelIsCollapsed: mobileTimerPanelIsCollapsed,
+            scenePhase: scenePhase
+        )
     }
 
     // MARK: - List column
@@ -192,20 +202,28 @@ struct IPadRecipesSplitView: View {
                 }
             }
             .toolbar {
-                if layout.showsListButton {
+                if layout.showsExpandButton, selection.recipeId != nil {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            showList(contentWidth: layout.contentWidth)
-                        } label: {
-                            AppToolbarStyle.iconOnly(systemName: "sidebar.left")
-                        }
-                        .appToolbarIconButton()
-                        .accessibilityLabel(Text("ipad.recipes.show-list"))
-                        .accessibilityIdentifier(AccessibilityIdentifiers.ipadShowRecipeListButton)
+                        expandButton
                     }
                 }
             }
         }
+    }
+
+    /// Notes: `arrow.up.left.and.arrow.down.right` expands, the inward arrows collapse.
+    private var expandButton: some View {
+        let expanded = isExpanded
+        return Button {
+            setExpanded(!expanded)
+        } label: {
+            AppToolbarStyle.iconOnly(
+                systemName: expanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right"
+            )
+        }
+        .appToolbarIconButton()
+        .accessibilityLabel(Text(expanded ? "ipad.recipes.collapse" : "ipad.recipes.expand"))
+        .accessibilityIdentifier(AccessibilityIdentifiers.ipadRecipeExpandButton)
     }
 
     // MARK: - Selection
@@ -225,7 +243,6 @@ struct IPadRecipesSplitView: View {
             folderContext: folderContext,
             openInEditMode: openInEditMode
         )
-        isOverlayShown = false
     }
 
     /// The title menu: a collection with its first recipe open, or «Все рецепты» with
@@ -242,17 +259,26 @@ struct IPadRecipesSplitView: View {
         }
     }
 
-    /// «Список рецептов»: back to the column when it fits, else the list over the recipe.
-    private func showList(contentWidth: CGFloat) {
-        let fits = IPadLayoutPolicy.resolve(
-            contentWidth: contentWidth,
-            listCollapsedByUser: false,
-            isEditing: false
-        ).listShown
-        if fits {
-            coordinator.recipesListHiddenByUser = false
-        } else {
-            isOverlayShown = true
+    /// «Развернуть» hides the sidebar beside the content too; «Свернуть» shows it again.
+    /// A sidebar floating over the content (portrait) is closed and not brought back.
+    private func setExpanded(_ expanded: Bool) {
+        guard expanded != coordinator.recipeDetailExpanded else { return }
+        if #available(iOS 26.2, *) {
+            if expanded {
+                let shown = IPadSidebarControl.isSidebarShown
+                coordinator.sidebarHiddenByRecipeExpand = shown && !IPadSidebarControl.sidebarOverlaysContent
+                if shown {
+                    IPadSidebarControl.setSidebarHidden(true)
+                }
+            } else if coordinator.sidebarHiddenByRecipeExpand {
+                IPadSidebarControl.setSidebarHidden(false)
+            }
+        }
+        if !expanded {
+            coordinator.sidebarHiddenByRecipeExpand = false
+        }
+        withAnimation(.easeInOut(duration: 0.25)) {
+            coordinator.recipeDetailExpanded = expanded
         }
     }
 

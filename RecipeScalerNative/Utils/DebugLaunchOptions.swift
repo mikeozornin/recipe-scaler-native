@@ -233,7 +233,8 @@ enum DebugLaunchOptions {
         boolFlag("IPadSidebarShown")
     }
 
-    /// `-IPadListHidden=1` — `.padRegular` starts with the recipe list column hidden (`#recipes/focus`).
+    /// `-IPadListHidden=1` — `.padRegular` starts with the recipe expanded: the list column
+    /// hidden (`#recipes/focus`, «Развернуть»).
     static var iPadListHidden: Bool {
         boolFlag("IPadListHidden")
     }

@@ -10,43 +10,117 @@ import XCTest
 
 final class IPadLayoutPolicyTests: XCTestCase {
 
+    /// `height` defaults to a landscape window (11-inch, 834 pt tall): a third for the list.
     private func layout(
         _ contentWidth: CGFloat,
-        listCollapsedByUser: Bool = false,
+        height: CGFloat = 834,
+        recipeExpanded: Bool = false,
         isEditing: Bool = false
     ) -> IPadLayout {
         IPadLayoutPolicy.resolve(
             contentWidth: contentWidth,
-            listCollapsedByUser: listCollapsedByUser,
+            contentHeight: height,
+            recipeExpanded: recipeExpanded,
             isEditing: isEditing
         )
     }
 
+    // MARK: - List column proportions (Notes-style)
+
+    func testListTakesHalfInPortraitAndAThirdInLandscape() {
+        // iPad Pro 11" M4: portrait 834 × 1210, landscape 1210 × 834.
+        XCTAssertEqual(IPadLayoutPolicy.listColumnWidth(contentWidth: 834, contentHeight: 1210), 417)
+        XCTAssertEqual(IPadLayoutPolicy.listColumnWidth(contentWidth: 1210, contentHeight: 834), 403)
+        // 13": portrait 1032 × 1376, landscape 1376 × 1032.
+        XCTAssertEqual(IPadLayoutPolicy.listColumnWidth(contentWidth: 1032, contentHeight: 1376), 516)
+        XCTAssertEqual(IPadLayoutPolicy.listColumnWidth(contentWidth: 1376, contentHeight: 1032), 458)
+        // A square is not portrait: portrait means taller than wide.
+        XCTAssertEqual(IPadLayoutPolicy.listColumnWidth(contentWidth: 1000, contentHeight: 1000), 333)
+    }
+
+    func testListNeverNarrowerThan320() {
+        // Landscape with the sidebar beside the content: a third of 930 is 310.
+        XCTAssertEqual(IPadLayoutPolicy.listColumnWidth(contentWidth: 930, contentHeight: 834), 320)
+        // Portrait 680 (the regular minimum): half is 340.
+        XCTAssertEqual(IPadLayoutPolicy.listColumnWidth(contentWidth: 680, contentHeight: 1000), 340)
+        XCTAssertEqual(IPadLayoutPolicy.listColumnWidth(contentWidth: 600, contentHeight: 1000), 320)
+    }
+
+    func testPortraitSplitsInHalfWithOneColumnRecipe() {
+        let portrait = layout(834, height: 1210)
+        XCTAssertTrue(portrait.splitFits)
+        XCTAssertTrue(portrait.listShown)
+        XCTAssertEqual(portrait.listWidth, 417)
+        XCTAssertEqual(portrait.detailWidth, 416)
+        XCTAssertFalse(portrait.twoColumns)
+        XCTAssertTrue(portrait.showsExpandButton)
+    }
+
+    func testLandscapeGivesTheRecipeTwoThirdsAndTwoColumns() {
+        let landscape = layout(1210)
+        XCTAssertTrue(landscape.listShown)
+        XCTAssertEqual(landscape.listWidth, 403)
+        XCTAssertEqual(landscape.detailWidth, 806)
+        XCTAssertTrue(landscape.twoColumns)
+        XCTAssertEqual(landscape.toolbarStyle, .padWide)
+    }
+
+    func testSidebarInLandscapeAppliesTheRuleToTheRest() {
+        let withSidebar = layout(1210 - IPadLayoutMetrics.sidebarWidth)
+        XCTAssertTrue(withSidebar.listShown)
+        XCTAssertEqual(withSidebar.listWidth, 320)
+        XCTAssertEqual(withSidebar.detailWidth, 609)
+        XCTAssertFalse(withSidebar.twoColumns)
+    }
+
+    func testExpandedRecipeTakesTheWholeContent() {
+        for (width, height, list): (CGFloat, CGFloat, CGFloat) in [(834, 1210, 417), (1210, 834, 403), (930, 834, 320)] {
+            let expanded = layout(width, height: height, recipeExpanded: true)
+            XCTAssertTrue(expanded.splitFits, "W=\(width)")
+            XCTAssertFalse(expanded.listShown, "W=\(width)")
+            XCTAssertEqual(expanded.listWidth, list, "W=\(width): the column waits off screen")
+            XCTAssertEqual(expanded.detailWidth, width, "W=\(width)")
+            XCTAssertTrue(expanded.twoColumns, "W=\(width)")
+            XCTAssertTrue(expanded.showsExpandButton, "W=\(width): «Свернуть» stays")
+        }
+    }
+
     // MARK: - Thresholds (value and 1 pt below)
 
-    func testListThresholdAt881() {
-        let atThreshold = layout(560 + 321)
+    func testSplitThresholdKeeps320ForTheRecipe() {
+        // Landscape: the list is 320 up to 961, so the split needs 320 + 1 + 320.
+        let atThreshold = layout(641)
+        XCTAssertTrue(atThreshold.splitFits)
         XCTAssertTrue(atThreshold.listShown)
-        XCTAssertEqual(atThreshold.detailWidth, 560)
-        XCTAssertFalse(atThreshold.showsListButton)
+        XCTAssertEqual(atThreshold.detailWidth, 320)
 
-        let below = layout(560 + 321 - 1)
+        let below = layout(640)
+        XCTAssertFalse(below.splitFits)
         XCTAssertFalse(below.listShown)
-        XCTAssertEqual(below.detailWidth, 880)
-        XCTAssertTrue(below.showsListButton)
+        XCTAssertEqual(below.detailWidth, 640)
+        XCTAssertFalse(below.showsExpandButton, "the phone stack has nothing to expand")
+
+        // Portrait: half of the content until it is under 641 as well.
+        XCTAssertTrue(layout(641, height: 1000).splitFits)
+        XCTAssertFalse(layout(640, height: 1000).splitFits)
     }
 
     func testTwoColumnThresholdAt720() {
-        XCTAssertTrue(layout(720).twoColumns)
-        XCTAssertFalse(layout(719).twoColumns)
-        // With the list shown the panel is what counts: 720 + 321 → two columns, 1 pt less → one.
-        XCTAssertTrue(layout(720 + 321).twoColumns)
-        XCTAssertFalse(layout(720 + 321 - 1).twoColumns)
+        XCTAssertTrue(layout(720, recipeExpanded: true).twoColumns)
+        XCTAssertFalse(layout(719, recipeExpanded: true).twoColumns)
+        // With the list shown the panel is what counts: 720 + 1 + 360 (a third) → two
+        // columns, 1 pt less → one.
+        XCTAssertEqual(layout(1081).detailWidth, 720)
+        XCTAssertTrue(layout(1081).twoColumns)
+        XCTAssertFalse(layout(1080).twoColumns)
     }
 
     func testWideToolbarThresholdAt600() {
-        XCTAssertEqual(layout(600).toolbarStyle, .padWide)
-        XCTAssertEqual(layout(599).toolbarStyle, .padNarrow)
+        XCTAssertEqual(layout(600, recipeExpanded: true).toolbarStyle, .padWide)
+        XCTAssertEqual(layout(599, recipeExpanded: true).toolbarStyle, .padNarrow)
+        // A third for the list: 600 + 1 + 320 → wide, 1 pt less → narrow.
+        XCTAssertEqual(layout(921).toolbarStyle, .padWide)
+        XCTAssertEqual(layout(920).toolbarStyle, .padNarrow)
     }
 
     func testVkusvillLabelThresholdAt640() {
@@ -54,18 +128,14 @@ final class IPadLayoutPolicyTests: XCTestCase {
         XCTAssertTrue(layout(639).shopVkusvillIconOnly)
     }
 
-    func testCollapsedListAndEditingHideTheList() {
-        let collapsed = layout(1194, listCollapsedByUser: true)
-        XCTAssertFalse(collapsed.listShown)
-        XCTAssertEqual(collapsed.detailWidth, 1194)
-        XCTAssertTrue(collapsed.showsListButton)
-
+    func testEditingHidesTheList() {
         // layout.md §Матрица приёмки: edit mode hides the list, the panel takes the content.
-        for width: CGFloat in [1194, 776, 834] {
+        for width: CGFloat in [1210, 776, 834] {
             let editing = layout(width, isEditing: true)
             XCTAssertFalse(editing.listShown, "W=\(width)")
             XCTAssertEqual(editing.detailWidth, width, "W=\(width)")
             XCTAssertTrue(editing.twoColumns, "W=\(width)")
+            XCTAssertFalse(editing.showsExpandButton, "W=\(width)")
         }
     }
 
@@ -73,46 +143,49 @@ final class IPadLayoutPolicyTests: XCTestCase {
 
     private struct MatrixRow {
         let window: CGFloat
+        let height: CGFloat
         let sidebar: Bool
         let inspector: Bool
         let content: CGFloat
-        let list: Bool
+        let list: CGFloat?
         let detail: CGFloat
         let twoColumns: Bool
         let toolbar: IPadDetailToolbarStyle
         let vkusvillIconOnly: Bool
     }
 
+    /// `list`: the list column width, `nil` for the phone stack (no room beside the recipe).
     func testPrototypeMatrix() {
         let rows: [MatrixRow] = [
-            // Landscape, full screen.
-            MatrixRow(window: 1194, sidebar: true, inspector: false, content: 914, list: true, detail: 593,
-                      twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: false),
-            MatrixRow(window: 1194, sidebar: false, inspector: false, content: 1194, list: true, detail: 873,
-                      twoColumns: true, toolbar: .padWide, vkusvillIconOnly: false),
-            MatrixRow(window: 1194, sidebar: true, inspector: true, content: 574, list: false, detail: 574,
-                      twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: true),
-            MatrixRow(window: 1194, sidebar: false, inspector: true, content: 854, list: false, detail: 854,
-                      twoColumns: true, toolbar: .padWide, vkusvillIconOnly: false),
-            // Landscape, 2/3.
-            MatrixRow(window: 776, sidebar: true, inspector: false, content: 496, list: false, detail: 496,
-                      twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: true),
-            MatrixRow(window: 776, sidebar: false, inspector: false, content: 776, list: false, detail: 776,
-                      twoColumns: true, toolbar: .padWide, vkusvillIconOnly: false),
-            MatrixRow(window: 776, sidebar: false, inspector: true, content: 436, list: false, detail: 436,
-                      twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: true),
-            // Portrait, full screen.
-            MatrixRow(window: 834, sidebar: true, inspector: false, content: 554, list: false, detail: 554,
-                      twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: true),
-            MatrixRow(window: 834, sidebar: false, inspector: false, content: 834, list: false, detail: 834,
-                      twoColumns: true, toolbar: .padWide, vkusvillIconOnly: false),
-            MatrixRow(window: 834, sidebar: false, inspector: true, content: 494, list: false, detail: 494,
-                      twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: true),
+            // iPad Pro 11" M4, landscape, full screen.
+            MatrixRow(window: 1210, height: 834, sidebar: true, inspector: false, content: 930, list: 320,
+                      detail: 609, twoColumns: false, toolbar: .padWide, vkusvillIconOnly: false),
+            MatrixRow(window: 1210, height: 834, sidebar: false, inspector: false, content: 1210, list: 403,
+                      detail: 806, twoColumns: true, toolbar: .padWide, vkusvillIconOnly: false),
+            MatrixRow(window: 1210, height: 834, sidebar: true, inspector: true, content: 590, list: nil,
+                      detail: 590, twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: true),
+            MatrixRow(window: 1210, height: 834, sidebar: false, inspector: true, content: 870, list: 320,
+                      detail: 549, twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: false),
+            // Landscape, 2/3 (taller than wide: portrait proportions).
+            MatrixRow(window: 776, height: 834, sidebar: true, inspector: false, content: 496, list: nil,
+                      detail: 496, twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: true),
+            MatrixRow(window: 776, height: 834, sidebar: false, inspector: false, content: 776, list: 388,
+                      detail: 387, twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: false),
+            MatrixRow(window: 776, height: 834, sidebar: false, inspector: true, content: 436, list: nil,
+                      detail: 436, twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: true),
+            // Portrait, full screen. The sidebar floats over the content there (spike S1);
+            // the row with it keeps the formula of the matrix.
+            MatrixRow(window: 834, height: 1210, sidebar: true, inspector: false, content: 554, list: nil,
+                      detail: 554, twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: true),
+            MatrixRow(window: 834, height: 1210, sidebar: false, inspector: false, content: 834, list: 417,
+                      detail: 416, twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: false),
+            MatrixRow(window: 834, height: 1210, sidebar: false, inspector: true, content: 494, list: nil,
+                      detail: 494, twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: true),
             // 13-inch, full screen.
-            MatrixRow(window: 1376, sidebar: true, inspector: false, content: 1096, list: true, detail: 775,
-                      twoColumns: true, toolbar: .padWide, vkusvillIconOnly: false),
-            MatrixRow(window: 1032, sidebar: true, inspector: false, content: 752, list: false, detail: 752,
-                      twoColumns: true, toolbar: .padWide, vkusvillIconOnly: false),
+            MatrixRow(window: 1376, height: 1032, sidebar: true, inspector: false, content: 1096, list: 365,
+                      detail: 730, twoColumns: true, toolbar: .padWide, vkusvillIconOnly: false),
+            MatrixRow(window: 1032, height: 1376, sidebar: true, inspector: false, content: 752, list: 376,
+                      detail: 375, twoColumns: false, toolbar: .padNarrow, vkusvillIconOnly: false),
         ]
         for row in rows {
             let label = "W=\(row.window) sidebar=\(row.sidebar) inspector=\(row.inspector)"
@@ -122,13 +195,15 @@ final class IPadLayoutPolicyTests: XCTestCase {
                 inspectorVisible: row.inspector
             )
             XCTAssertEqual(content, row.content, label)
-            let resolved = layout(content)
+            let resolved = layout(content, height: row.height)
             XCTAssertEqual(resolved.contentWidth, row.content, label)
-            XCTAssertEqual(resolved.listShown, row.list, label)
+            XCTAssertEqual(resolved.splitFits, row.list != nil, label)
+            XCTAssertEqual(resolved.listShown, row.list != nil, label)
+            XCTAssertEqual(resolved.listWidth, row.list ?? 0, label)
             XCTAssertEqual(resolved.detailWidth, row.detail, label)
             XCTAssertEqual(resolved.twoColumns, row.twoColumns, label)
             XCTAssertEqual(resolved.toolbarStyle, row.toolbar, label)
-            XCTAssertEqual(resolved.showsListButton, !row.list, label)
+            XCTAssertEqual(resolved.showsExpandButton, row.list != nil, label)
             XCTAssertEqual(resolved.shopVkusvillIconOnly, row.vkusvillIconOnly, label)
             if row.twoColumns {
                 XCTAssertEqual(
@@ -143,12 +218,13 @@ final class IPadLayoutPolicyTests: XCTestCase {
     }
 
     /// Sidebar and inspector together in a narrow regular window: only the formula is fixed
-    /// here (list hidden, one column); the on-screen verdict belongs to T049.
+    /// here (the phone stack, one column); the on-screen verdict belongs to T049.
     func testMatrixEdgeRowsKeepFormulaValues() {
         for (window, content): (CGFloat, CGFloat) in [(776, 156), (834, 214)] {
             let width = IPadLayoutPolicy.contentWidth(windowWidth: window, sidebarVisible: true, inspectorVisible: true)
             XCTAssertEqual(width, content)
-            let resolved = layout(width)
+            let resolved = layout(width, height: 834)
+            XCTAssertFalse(resolved.splitFits)
             XCTAssertFalse(resolved.listShown)
             XCTAssertEqual(resolved.detailWidth, content)
             XCTAssertFalse(resolved.twoColumns)
@@ -162,7 +238,7 @@ final class IPadLayoutPolicyTests: XCTestCase {
         for width: CGFloat in [582, 388, 536, 402, 320] {
             XCTAssertLessThan(width, IPadLayoutMetrics.regularMinWidth, "W=\(width)")
         }
-        for width: CGFloat in [1194, 776, 834, 1376, 1032] {
+        for width: CGFloat in [1210, 1194, 776, 834, 1376, 1032] {
             XCTAssertGreaterThanOrEqual(width, IPadLayoutMetrics.regularMinWidth, "W=\(width)")
         }
     }
@@ -225,7 +301,8 @@ final class IPadLayoutPolicyTests: XCTestCase {
         func style(_ width: CGFloat, beside: Bool) -> IPadDetailToolbarStyle {
             IPadLayoutPolicy.resolve(
                 contentWidth: width,
-                listCollapsedByUser: false,
+                contentHeight: 1210,
+                recipeExpanded: true,
                 isEditing: false,
                 toolbarBesideTabBar: beside
             ).toolbarStyle

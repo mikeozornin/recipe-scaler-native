@@ -146,7 +146,7 @@ RETRIES="${IPAD_VERIFY_RETRIES:-2}"
 # assistant-history, import-photo, menubar-*) are not reachable by arguments and
 # are reviewed manually; assistant-new / profile-private depend on server data.
 # recipes-tabs / recipes-focus are iPad-only (DEBUG -IPadSidebarHidden /
-# -IPadListHidden, T011); on the phone they collapse into recipes-sidebar (recipe
+# -IPadListHidden = the recipe expanded, T011); on the phone they collapse into recipes-sidebar (recipe
 # on top of the stack), so the iPhone regression does not list them.
 # profile-tabs / recipes-compact / profile-compact are iPad-only too: the profile
 # form sheet over the top bar (T019a) and the window ½ stand-in (-DebugWindowWidth,
@@ -209,7 +209,7 @@ state_spec() {
       STATE_WAIT="media"
       ;;
     recipes-focus)
-      STATE_NOTE="recipe «${RECIPE_NAME}» open, sidebar and list hidden (iPad only)"
+      STATE_NOTE="recipe «${RECIPE_NAME}» expanded: sidebar and list hidden (iPad only)"
       STATE_ARGS=("${recipe_args[@]}" "-IPadSidebarHidden=1" "-IPadListHidden=1")
       STATE_WAIT="media"
       ;;
