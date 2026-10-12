@@ -87,7 +87,7 @@ struct CollectionFolderView: View {
         let title = [folderPresentation.leadingEmoji, displayName]
             .compactMap { $0 }
             .joined(separator: " ")
-        return RecipeListColumnTitle(title: title, menu: column.collectionMenu)
+        return RecipeListColumnTitle(title: title, menu: column.collectionMenu, maxWidth: column.titleMaxWidth)
     }
 
     /// Entries to render: precomputed filtered snapshot when searching, full
@@ -184,7 +184,7 @@ struct CollectionFolderView: View {
         .onAppear {
             searchStore.bind(syncService: syncService)
             if column != nil, !searchQuery.wrappedValue.isEmpty {
-                // The column came back (inline ↔ over the recipe) with a query.
+                // The column was rebuilt (back from the phone stack) with a query.
                 let query = searchQuery.wrappedValue
                 searchTokens = RecipeSearchUtils.tokenizeQuery(query)
                 searchStore.refresh(entries: folderRecipes, query: query)

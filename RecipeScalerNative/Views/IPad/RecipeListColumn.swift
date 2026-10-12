@@ -7,13 +7,16 @@ struct RecipeListColumn {
     /// The recipe open in the panel; its row is highlighted.
     let selectedRecipeId: String?
     /// Owned by the split, outside the column `NavigationStack`: a query survives the
-    /// column turning into the list over the recipe and back.
+    /// column being rebuilt (the phone stack and back).
     let searchText: Binding<String>
     /// Opens a recipe in the panel (`RecipesSelection.selectingRecipe`).
     let selectRecipe: (_ recipeId: String, _ folderContext: String?, _ openInEditMode: Bool) -> Void
     /// The «Все рецепты | коллекции» title menu; `nil` next to the sidebar, where the
     /// collections are sidebar rows.
     let collectionMenu: RecipeListCollectionMenu?
+    /// Widest the column title text gets before it truncates (the column width less
+    /// `IPadLayoutMetrics.listTitleBarReserve`).
+    let titleMaxWidth: CGFloat
 }
 
 /// Lists the title menu of the list column switches between.
@@ -29,6 +32,7 @@ struct RecipeListCollectionMenu {
 struct RecipeListColumnTitle: View {
     let title: String
     let menu: RecipeListCollectionMenu?
+    let maxWidth: CGFloat
 
     var body: some View {
         if let menu {
@@ -69,6 +73,7 @@ struct RecipeListColumnTitle: View {
             .font(AppTypography.title2)
             .foregroundStyle(Color.primary)
             .lineLimit(1)
+            .frame(maxWidth: maxWidth, alignment: .leading)
     }
 
     private func isSelected(_ collectionId: String?, in menu: RecipeListCollectionMenu) -> Binding<Bool> {

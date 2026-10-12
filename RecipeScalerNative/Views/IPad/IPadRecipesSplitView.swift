@@ -78,10 +78,12 @@ struct IPadRecipesSplitView: View {
     /// Expanded, the list column slides off the leading edge but stays in the hierarchy:
     /// without it iPadOS moves the recipe bar into the row of the top tab bar, and after
     /// «Свернуть» that bar keeps the narrow room beside the tab bar (items go to «More»).
+    /// `accessibilityHidden` takes its bar items and row contents out of the VoiceOver tree;
+    /// XCUITest still lists the off-screen rows.
     private func split(layout: IPadLayout) -> some View {
         let selection = selection
         return HStack(spacing: 0) {
-            listColumn(selection: selection)
+            listColumn(selection: selection, width: layout.listWidth)
                 .frame(width: layout.listWidth)
                 .opacity(layout.listShown ? 1 : 0)
                 .allowsHitTesting(layout.listShown)
@@ -128,7 +130,7 @@ struct IPadRecipesSplitView: View {
 
     // MARK: - List column
 
-    private func listColumn(selection: RecipesSelection) -> some View {
+    private func listColumn(selection: RecipesSelection, width: CGFloat) -> some View {
         let column = RecipeListColumn(
             selectedRecipeId: selection.recipeId,
             searchText: $searchText,
@@ -139,7 +141,8 @@ struct IPadRecipesSplitView: View {
                     selectedCollectionId: selection.collectionId,
                     select: selectCollection
                 )
-                : nil
+                : nil,
+            titleMaxWidth: max(0, width - IPadLayoutMetrics.listTitleBarReserve)
         )
         return NavigationStack {
             if let collectionId = selection.collectionId {

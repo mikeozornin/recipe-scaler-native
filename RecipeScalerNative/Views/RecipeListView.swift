@@ -170,7 +170,8 @@ struct RecipeListView: View {
             columnTitle: column.map { column in
                 RecipeListColumnTitle(
                     title: Bundle.currentLocalizedString("collections.all-recipes"),
-                    menu: column.collectionMenu
+                    menu: column.collectionMenu,
+                    maxWidth: column.titleMaxWidth
                 )
             },
             viewModeMenu: { viewModeMenu }
@@ -273,7 +274,7 @@ struct RecipeListView: View {
         .onAppear {
             searchStore.bind(syncService: syncService)
             if column != nil, !searchQuery.wrappedValue.isEmpty {
-                // The column came back (inline ↔ over the recipe) with a query.
+                // The column was rebuilt (back from the phone stack) with a query.
                 let query = searchQuery.wrappedValue
                 searchTokens = RecipeSearchUtils.tokenizeQuery(query)
                 searchStore.refresh(entries: syncService.collectionIndex.live, query: query)

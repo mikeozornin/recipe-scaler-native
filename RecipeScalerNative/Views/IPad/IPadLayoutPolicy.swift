@@ -17,6 +17,9 @@ enum IPadLayoutMetrics {
     static let listShareInPortrait: CGFloat = 1.0 / 2.0
     /// … and in landscape: list ⅓, recipe ⅔ (as Apple Notes).
     static let listShareInLandscape: CGFloat = 1.0 / 3.0
+    /// Room the list column bar keeps beside its title: the bar margins, «+» and a gap.
+    /// A longer title truncates; otherwise the bar sends the title menu and «+» to «More».
+    static let listTitleBarReserve: CGFloat = 150
     /// Hairline between columns (list | detail, recipe left | right).
     static let columnDividerWidth: CGFloat = 1
     /// The list column stays beside the recipe only while the recipe keeps at least this
