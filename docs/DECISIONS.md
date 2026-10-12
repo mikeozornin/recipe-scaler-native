@@ -519,3 +519,43 @@ The description editor bridge (`description-editor-bridge.js` ↔ `DescriptionEd
 The suite also has no recorded reference snapshots (`isRecording = false`, no committed `__Snapshots__` images), so even with environment objects it would fail on the missing references. Fixing it means app-side test-host / test code changes plus recording references, which is outside the iPad-spike docs task. Removing the entry would make the fast suite red, and deleting the tests would drop the only snapshot coverage stub. So the entry is renewed with an updated reason.
 
 ---
+
+### 2026-10-12 — iPad sidebar: an empty «Коллекции» section keeps one hidden child tab (spec 081 US1)
+
+**Decision:** The sidebar's «Коллекции» `TabSection` always contains one extra child tab, `IPadShellItem.newCollection`, with `.defaultVisibility(.hidden, for: .sidebar)`. It is never selected; it only keeps the section alive. UI tests find the section's «+» action and the new-collection alert's text field by accessibility id OR by label.
+
+**Rationale:** On iPadOS 26.3 a `TabSection` with no child tabs is dropped together with its header and its `.sectionActions`, so a user without collections had no «+» to create the first one. A hidden child keeps the section (and the action) on screen without showing a row. The same system build drops `accessibilityIdentifier` on section actions and on alert `TextField`s, so id-only queries fail; matching by label as a fallback keeps the tests stable without inventing a custom control.
+
+---
+
+### 2026-10-12 — UI tests add shopping items through the app, not via REST seeding
+
+**Decision:** iPad UI tests that need shopping-list items create them through the app (recipe → «В список покупок», or the shopping list's own add field). They do not seed the list over REST.
+
+**Rationale:** The shopping list is a Yjs document synced over the WebSocket; the backend has no REST write endpoint for list items. Writing a raw Yjs update from the test would duplicate the sync client in test code. Going through the app exercises the real path and needs no backend changes.
+
+---
+
+### 2026-10-12 — iPad profile form sheet survives narrowing to compact
+
+**Decision:** While the «Профиль» form sheet is up, tapping «Профиль» again keeps the sheet and the previously selected section, in any layout mode. `IPadProfileSheetPolicy.resolve(…, isSheetPresented:)` makes this decision; `AppShellCoordinator` passes `isProfileSheetPresented`. There is never a second `AccountView` (one in the sheet and one as a tab page).
+
+**Rationale:** UIKit keeps a presented form sheet when the window narrows from regular to compact (Split View, Stage Manager). Without the flag, a compact-width tap on «Профиль» switched the tab to the profile page while the sheet was still up, so two `AccountView`s ran at once and fought over the same state.
+
+---
+
+### 2026-10-12 — verify-ipad-layout.sh: discover states only with an explicit profile slug
+
+**Decision:** `scripts/verify-ipad-layout.sh` captures `discover-feed` and `discover-author` only when `IPAD_VERIFY_DISCOVER_PROFILE=<slug>` is set. There is no default slug; without it the script skips both states and prints why.
+
+**Rationale:** The discover screens show other people's public data. A hard-coded real profile would put a real person's recipes into committed or shared screenshots by default. An explicit, validated slug (`[A-Za-z0-9._-]`) makes that a conscious choice.
+
+---
+
+### 2026-10-12 — DEBUG `-IPadSidebarShown=1` forces the sidebar visible in portrait
+
+**Decision:** DEBUG builds accept `-IPadSidebarShown=1`: at `.padRegular` the app shows the sidebar shortly after launch, also in portrait where the system default is hidden. `-IPadSidebarHidden=1` wins when both are set. Release builds ignore both.
+
+**Rationale:** Layout verification (`verify-ipad-layout.sh`, `#recipes-sidebar` and the threshold matrix) needs the portrait-with-sidebar state without a tap sequence. The flag goes through the same `IPadSidebarControl.setSidebarHidden` path as the user's button, so the captured layout is the real one.
+
+---
