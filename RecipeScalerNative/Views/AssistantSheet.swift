@@ -12,6 +12,14 @@
 import SwiftUI
 import RecipeScalerCore
 
+/// Where the chat is shown (spec 081, plan.md Р7).
+enum AssistantPresentation {
+    /// The phone sheet (iPhone, compact iPad window): unchanged.
+    case sheet
+    /// The iPad panel beside the tabs (`.padRegular`, T032).
+    case inspector
+}
+
 struct AssistantSheet: View {
     @Environment(AppShellCoordinator.self) private var coordinator
     @Environment(OfflineBannerGate.self) private var offlineGate
@@ -27,6 +35,9 @@ struct AssistantSheet: View {
     /// iOS 26 in a fallback environment (bar-item sizing) after dismissal
     /// starts; `@Environment(YjsSyncService.self)` traps there.
     let syncService: YjsSyncService
+    let presentation: AssistantPresentation
+    /// The panel's ×; the sheet closes by swiping it down.
+    let onClose: () -> Void
 
     @State private var showHistorySheet = false
     @State private var messageListContentWidth: CGFloat = 0
@@ -36,13 +47,17 @@ struct AssistantSheet: View {
         contextRecipeId: String?,
         openRequest: AssistantOpenRequest? = nil,
         shakeOpenRequest: AssistantShakeOpenRequest? = nil,
-        syncService: YjsSyncService
+        syncService: YjsSyncService,
+        presentation: AssistantPresentation = .sheet,
+        onClose: @escaping () -> Void = {}
     ) {
         _session = Bindable(session)
         self.contextRecipeId = contextRecipeId
         self.openRequest = openRequest
         self.shakeOpenRequest = shakeOpenRequest
         self.syncService = syncService
+        self.presentation = presentation
+        self.onClose = onClose
     }
 
     private var isOnline: Bool {

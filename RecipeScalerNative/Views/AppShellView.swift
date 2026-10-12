@@ -103,6 +103,9 @@ struct AppShellView: View {
     @Environment(ClipboardImportStore.self) private var clipboardImport
     @Environment(ReleaseNotesStore.self) private var releaseNotes
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.appLayoutMode) private var layoutMode
+    /// The assistant is open: the phone sheet, or the iPad panel in a wide window
+    /// (spec 081, T032) — one flag for both, so a size class change keeps it open.
     @State private var showAssistant = false
     @State private var assistantContextRecipeId: String?
     @State private var assistantOpenRequest: AssistantOpenRequest?
@@ -239,6 +242,22 @@ struct AppShellView: View {
         coordinator.requestShakeAssistantOpen(
             visibleRecipeId: assistantRecipeContext.visibleRecipeId
         )
+    }
+
+    /// Spec 081 (T032) — the assistant stands beside the tabs as a panel only in a
+    /// wide iPad window; otherwise the same `showAssistant` presents the sheet.
+    private var showsAssistantPanel: Bool {
+        showAssistant && layoutMode == .padRegular
+    }
+
+    /// Spec 081 (T032) — the panel's ×. Does what the sheet's `onDismiss` does, which
+    /// a panel never gets.
+    private func closeAssistantPanel() {
+        showAssistant = false
+        assistantContextRecipeId = nil
+        assistantShakeOpenRequest = nil
+        assistantOpenRequest = nil
+        resyncTabViewSelectionAfterAssistantInteraction()
     }
 
     /// Keep TabView on the real tab; the assistant entry is a fake tab (sheet only).
@@ -415,16 +434,26 @@ struct AppShellView: View {
         }
     }
 
+    /// Spec 081 (T032, plan.md Р7) — the assistant panel stands beside the `TabView`, not
+    /// `.inspector` on it (that zeroes the top safe area of the tabs, spike S5). The panel
+    /// lives at the shell level, so it survives tab switches. On the iPhone the `HStack`
+    /// holds the tab view alone.
     private var shellWithOverlays: some View {
-        tabView
-            .environment(\.heroPhotoZoomContext, heroPhotoZoomSession.context)
-            .background {
-                TabBarTopOffsetReader(offsetFromLayoutBottom: $tabBarTopOffsetFromLayoutBottom)
+        HStack(spacing: 0) {
+            tabView
+                .environment(\.heroPhotoZoomContext, heroPhotoZoomSession.context)
+                .background {
+                    TabBarTopOffsetReader(offsetFromLayoutBottom: $tabBarTopOffsetFromLayoutBottom)
+                }
+                .heroPhotoZoomOverlay(heroPhotoZoomSession.context)
+                .overlay(alignment: .bottom) {
+                    bottomStatusOverlays
+                }
+            if showsAssistantPanel {
+                assistantPanel
             }
-            .heroPhotoZoomOverlay(heroPhotoZoomSession.context)
-            .overlay(alignment: .bottom) {
-                bottomStatusOverlays
-            }
+        }
+        .animation(.snappy, value: showsAssistantPanel)
             .onPreferenceChange(ClipboardBannerHeightKey.self) { clipboardBannerHeight = $0 }
             .onChange(of: isClipboardBannerVisible) { _, visible in
                 if !visible {
@@ -445,7 +474,8 @@ struct AppShellView: View {
                     .environment(releaseNotes)
             }
             .modifier(AssistantSheetModifier(
-                isPresented: $showAssistant,
+                // A wide iPad window shows the panel instead (T032).
+                isPresented: layoutMode == .padRegular ? .constant(false) : $showAssistant,
                 contextRecipeId: assistantContextRecipeId ?? assistantRecipeContext.visibleRecipeId,
                 openRequest: assistantOpenRequest,
                 shakeOpenRequest: assistantShakeOpenRequest,
@@ -475,6 +505,8 @@ struct AppShellView: View {
                     assistantRecipeContext.isAssistantSheetOpen = false
                     assistantContextRecipeId = nil
                     assistantShakeOpenRequest = nil
+                    // A request of a closed chat must not block the next tab open (PI-5 guard).
+                    assistantOpenRequest = nil
                     resyncTabViewSelectionAfterAssistantInteraction()
                 },
                 session: assistantSession,
@@ -484,6 +516,32 @@ struct AppShellView: View {
                 assistantRecipeContext: assistantRecipeContext
             ))
     }
+    /// Spec 081 (T032) — the assistant panel: the sheet's chat (shared session, T032a)
+    /// with the panel chrome (T033), 340 pt behind a hairline.
+    private var assistantPanel: some View {
+        HStack(spacing: 0) {
+            Divider()
+                .ignoresSafeArea()
+            AssistantSheet(
+                session: assistantSession,
+                // The recipe beside the panel stays visible and can change.
+                contextRecipeId: assistantRecipeContext.visibleRecipeId ?? assistantContextRecipeId,
+                openRequest: assistantOpenRequest,
+                shakeOpenRequest: assistantShakeOpenRequest,
+                syncService: syncService,
+                presentation: .inspector,
+                onClose: closeAssistantPanel
+            )
+            .environment(coordinator)
+            .environment(offlineGate)
+            .environment(assistantRecipeContext)
+            .frame(width: IPadLayoutMetrics.inspectorWidth)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(AccessibilityIdentifiers.ipadAssistantInspector)
+        }
+        .transition(.move(edge: .trailing))
+    }
+
     /// Lifecycle observers, split into small chains so the SwiftUI
     /// type-checker can handle each expression.
     private var shellObservers: some View {
