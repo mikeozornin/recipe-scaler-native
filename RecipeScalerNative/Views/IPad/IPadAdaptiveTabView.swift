@@ -246,14 +246,27 @@ struct IPadAdaptiveTabView: View {
         syncService.shoppingSnapshot.items.reduce(0) { $0 + ($1.purchased ? 0 : 1) }
     }
 
-    /// The name as the phone collections list shows it: the leading emoji, then the name.
+    /// A row as the phone collections list draws it (`CollectionsRootView.collectionRow`):
+    /// the collection's emoji as the icon, else its folder in the collection colour, then
+    /// the name; the count is the row badge.
+    ///
+    /// A tab label is only an image and a title, so the emoji is drawn into the icon
+    /// (`IPadSidebarCollectionIcon`) and never joins the title. The folder is drawn in its
+    /// own colour: the sidebar tints a template symbol black.
     private func collectionLabel(_ folder: RecipeFolder, count: Int) -> some View {
         let presentation = FolderDisplayName.presentation(forStoredName: folder.name)
-        let title = [presentation.leadingEmoji, presentation.displayName]
-            .compactMap { $0 }
-            .joined(separator: " ")
-        return Label(title, systemImage: RecipeFolderConstants.folderIconName(recipeCount: count))
-            .accessibilityIdentifier(AccessibilityIdentifiers.ipadSidebarCollection(folderId: folder.id))
+        let icon = IPadSidebarCollectionIcon.image(
+            emoji: presentation.leadingEmoji,
+            symbolName: RecipeFolderConstants.folderIconName(recipeCount: count),
+            tint: UIColor(RecipeAccentColor.folderIconColor(folderId: folder.id, folder: folder))
+        )
+        return Label {
+            Text(presentation.displayName)
+        } icon: {
+            Image(uiImage: icon)
+                .renderingMode(.original)
+        }
+        .accessibilityIdentifier(AccessibilityIdentifiers.ipadSidebarCollection(folderId: folder.id))
     }
 
     /// DEBUG `-IPadSidebarHidden=1` (layout.md `#recipes/tabs`): start without the sidebar.
@@ -264,5 +277,47 @@ struct IPadAdaptiveTabView: View {
         // The `UITabBarController` is attached after the first layout pass.
         try? await Task.sleep(for: .milliseconds(300))
         IPadSidebarControl.setSidebarHidden(hidden)
+    }
+}
+
+/// Sidebar collection icons as images in their own colours: a tab label is only an image
+/// and a title, so the emoji the phone row shows as text is drawn into the image.
+@MainActor
+private enum IPadSidebarCollectionIcon {
+    /// The emoji box: as wide as the sidebar's symbol slot, so the emoji is centred on the
+    /// section icons and the name starts where theirs do. The emoji is drawn at the row
+    /// text size.
+    private static let canvas = CGSize(width: 28, height: 24)
+    private static var emojiCache: [String: UIImage] = [:]
+
+    static func image(emoji: String?, symbolName: String, tint: UIColor) -> UIImage {
+        if let emoji {
+            return emojiImage(emoji)
+        }
+        let configuration = UIImage.SymbolConfiguration(pointSize: AppTypography.bodySize, weight: .semibold)
+        let symbol = UIImage(systemName: symbolName, withConfiguration: configuration) ?? UIImage()
+        return symbol.withTintColor(tint, renderingMode: .alwaysOriginal)
+    }
+
+    private static func emojiImage(_ emoji: String) -> UIImage {
+        if let cached = emojiCache[emoji] {
+            return cached
+        }
+        // The system font falls back to Apple Color Emoji.
+        let text = NSAttributedString(
+            string: emoji,
+            attributes: [.font: UIFont.systemFont(ofSize: AppTypography.bodySize + 2)]
+        )
+        let size = text.size()
+        // A sequence wider than the box shrinks to fit instead of being clipped.
+        let scale = min(1, canvas.width / max(size.width, 1), canvas.height / max(size.height, 1))
+        let image = UIGraphicsImageRenderer(size: canvas).image { context in
+            context.cgContext.translateBy(x: canvas.width / 2, y: canvas.height / 2)
+            context.cgContext.scaleBy(x: scale, y: scale)
+            text.draw(at: CGPoint(x: -size.width / 2, y: -size.height / 2))
+        }
+        .withRenderingMode(.alwaysOriginal)
+        emojiCache[emoji] = image
+        return image
     }
 }
