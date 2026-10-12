@@ -323,4 +323,51 @@ final class IPadLayoutPolicyTests: XCTestCase {
         XCTAssertEqual(IPadLayoutMetrics.formSheetHeight(containerHeight: 1194), 720)
         XCTAssertEqual(IPadLayoutMetrics.formSheetHeight(containerHeight: 744), 664)
     }
+
+    // MARK: - «Развернуть» and the sidebar (T024)
+
+    func testExpandHidesAShownSidebarAndRemembersOnlyOneBesideTheContent() {
+        let beside = IPadLayoutPolicy.recipeExpandSidebar(shown: true, overlaysContent: false)
+        XCTAssertTrue(beside.hide)
+        XCTAssertTrue(beside.rememberHidden)
+        // Portrait: a floating sidebar is closed and not brought back.
+        let floating = IPadLayoutPolicy.recipeExpandSidebar(shown: true, overlaysContent: true)
+        XCTAssertTrue(floating.hide)
+        XCTAssertFalse(floating.rememberHidden)
+        let hidden = IPadLayoutPolicy.recipeExpandSidebar(shown: false, overlaysContent: false)
+        XCTAssertFalse(hidden.hide)
+        XCTAssertFalse(hidden.rememberHidden)
+    }
+
+    /// No room for the list beside the recipe (push) or a compact window: no expanded recipe.
+    func testRecipeStaysExpandedOnlyWhileTheSplitFitsInARegularWindow() {
+        XCTAssertTrue(IPadLayoutPolicy.keepsRecipeExpanded(splitFits: true, isPadRegular: true))
+        XCTAssertFalse(IPadLayoutPolicy.keepsRecipeExpanded(splitFits: false, isPadRegular: true))
+        XCTAssertFalse(IPadLayoutPolicy.keepsRecipeExpanded(splitFits: true, isPadRegular: false))
+        // The push threshold the split view feeds in: 640 pt of content is too narrow.
+        XCTAssertFalse(layout(640).splitFits)
+        XCTAssertTrue(layout(641).splitFits)
+    }
+
+    func testSidebarHiddenByExpandComesBackOnlyCollapsedOnRecipesInARegularWindow() {
+        func restores(_ hidden: Bool, expanded: Bool = false, recipes: Bool = true, regular: Bool = true) -> Bool {
+            IPadLayoutPolicy.restoresSidebarHiddenByExpand(
+                hiddenByExpand: hidden,
+                recipeExpanded: expanded,
+                recipesTabSelected: recipes,
+                isPadRegular: regular
+            )
+        }
+        XCTAssertTrue(restores(true))
+        XCTAssertFalse(restores(false), "Only a sidebar the expand hid comes back")
+        XCTAssertFalse(restores(true, expanded: true))
+        XCTAssertFalse(restores(true, recipes: false), "Not on another tab")
+        XCTAssertFalse(restores(true, regular: false), "Not in a compact window")
+    }
+
+    func testSidebarShownAgainIsNoLongerOursToRestore() {
+        XCTAssertFalse(IPadLayoutPolicy.sidebarStillHiddenByExpand(hiddenByExpand: true, sidebarShown: true))
+        XCTAssertTrue(IPadLayoutPolicy.sidebarStillHiddenByExpand(hiddenByExpand: true, sidebarShown: false))
+        XCTAssertFalse(IPadLayoutPolicy.sidebarStillHiddenByExpand(hiddenByExpand: false, sidebarShown: false))
+    }
 }

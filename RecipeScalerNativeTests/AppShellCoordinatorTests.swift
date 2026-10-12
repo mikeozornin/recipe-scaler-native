@@ -411,4 +411,123 @@ final class AppShellCoordinatorTests: XCTestCase {
         )
         XCTAssertNil(coordinator.pendingAssistantOpenRequest)
     }
+
+    // MARK: - Spec 081 — «Развернуть» and the sidebar (T024)
+
+    func testExpandHidesSidebarBesideContentAndCollapseBringsItBack() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        let sidebar = FakeIPadSidebar(shown: true)
+        coordinator.iPadSidebar = sidebar
+
+        coordinator.setRecipeDetailExpanded(true, isPadRegular: true)
+        XCTAssertTrue(coordinator.recipeDetailExpanded)
+        XCTAssertFalse(sidebar.isSidebarShown)
+        XCTAssertTrue(coordinator.sidebarHiddenByRecipeExpand)
+
+        coordinator.setRecipeDetailExpanded(false, isPadRegular: true)
+        XCTAssertFalse(coordinator.recipeDetailExpanded)
+        XCTAssertTrue(sidebar.isSidebarShown)
+        XCTAssertFalse(coordinator.sidebarHiddenByRecipeExpand)
+    }
+
+    func testFloatingSidebarIsClosedAndNotBroughtBack() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        let sidebar = FakeIPadSidebar(shown: true, overlays: true)
+        coordinator.iPadSidebar = sidebar
+
+        coordinator.setRecipeDetailExpanded(true, isPadRegular: true)
+        coordinator.setRecipeDetailExpanded(false, isPadRegular: true)
+
+        XCTAssertFalse(sidebar.isSidebarShown)
+        XCTAssertEqual(sidebar.calls, [true])
+    }
+
+    /// The user shows the sidebar again while expanded: «Свернуть» leaves it alone.
+    func testCollapseDoesNotFightASidebarTheUserShowed() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        let sidebar = FakeIPadSidebar(shown: true)
+        coordinator.iPadSidebar = sidebar
+        coordinator.setRecipeDetailExpanded(true, isPadRegular: true)
+
+        sidebar.isSidebarShown = true
+        coordinator.noteSidebarShown(true)
+        XCTAssertFalse(coordinator.sidebarHiddenByRecipeExpand)
+        // … and hides it again: still the user's choice.
+        sidebar.isSidebarShown = false
+        coordinator.noteSidebarShown(false)
+
+        coordinator.setRecipeDetailExpanded(false, isPadRegular: true)
+        XCTAssertFalse(sidebar.isSidebarShown)
+        XCTAssertEqual(sidebar.calls, [true])
+    }
+
+    /// A compact window (or one too narrow for the split) collapses the recipe; the sidebar
+    /// waits for the wide window and comes back there.
+    func testCompactCollapsesAndTheSidebarWaitsForTheWideWindow() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        let sidebar = FakeIPadSidebar(shown: true)
+        coordinator.iPadSidebar = sidebar
+        coordinator.setRecipeDetailExpanded(true, isPadRegular: true)
+
+        coordinator.setRecipeDetailExpanded(false, isPadRegular: false)
+        XCTAssertFalse(coordinator.recipeDetailExpanded, "Widening must not bring the expanded recipe back")
+        XCTAssertFalse(sidebar.isSidebarShown)
+        XCTAssertTrue(coordinator.sidebarHiddenByRecipeExpand)
+
+        coordinator.restoreSidebarHiddenByRecipeExpand(isPadRegular: true)
+        XCTAssertTrue(sidebar.isSidebarShown)
+        XCTAssertFalse(coordinator.sidebarHiddenByRecipeExpand)
+    }
+
+    /// Collapsed while the user is on another tab: the sidebar does not pop open there,
+    /// it comes back with the return to Recipes.
+    func testCollapseOffRecipesDefersTheSidebarToTheReturn() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        let sidebar = FakeIPadSidebar(shown: true)
+        coordinator.iPadSidebar = sidebar
+        coordinator.selectedTab = .recipes
+        coordinator.setRecipeDetailExpanded(true, isPadRegular: true)
+        coordinator.selectedTab = .shopping
+
+        coordinator.setRecipeDetailExpanded(false, isPadRegular: true)
+        XCTAssertFalse(sidebar.isSidebarShown)
+        coordinator.restoreSidebarHiddenByRecipeExpand(isPadRegular: true)
+        XCTAssertFalse(sidebar.isSidebarShown, "Still on «Покупки»")
+
+        coordinator.selectedTab = .recipes
+        coordinator.restoreSidebarHiddenByRecipeExpand(isPadRegular: true)
+        XCTAssertTrue(sidebar.isSidebarShown)
+    }
+
+    func testLogoutBringsBackASidebarHiddenByExpand() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        let sidebar = FakeIPadSidebar(shown: true)
+        coordinator.iPadSidebar = sidebar
+        coordinator.setRecipeDetailExpanded(true, isPadRegular: true)
+        coordinator.selectedTab = .shopping
+
+        coordinator.resetShellStateForLogout()
+
+        XCTAssertTrue(sidebar.isSidebarShown)
+        XCTAssertFalse(coordinator.recipeDetailExpanded)
+        XCTAssertFalse(coordinator.sidebarHiddenByRecipeExpand)
+    }
+}
+
+@MainActor
+private final class FakeIPadSidebar: IPadSidebarControlling {
+    var isSidebarShown: Bool
+    let sidebarOverlaysContent: Bool
+    /// `setSidebarHidden` arguments, in order.
+    private(set) var calls: [Bool] = []
+
+    init(shown: Bool, overlays: Bool = false) {
+        isSidebarShown = shown
+        sidebarOverlaysContent = overlays
+    }
+
+    func setSidebarHidden(_ hidden: Bool) {
+        calls.append(hidden)
+        isSidebarShown = !hidden
+    }
 }

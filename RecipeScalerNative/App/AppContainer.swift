@@ -236,6 +236,10 @@ final class AppContainer {
         let fileImportCoordinator = RecipeFileImportCoordinator(syncService: sync)
         fileImportCoordinator.shellCoordinator = shellCoordinator
         shellCoordinator.fileImportCoordinator = fileImportCoordinator
+        // Spec 081 (T024): the sidebar «Развернуть» hides on the iPad shell (iPadOS 26.2+).
+        if #available(iOS 26.2, *), UIDevice.current.userInterfaceIdiom == .pad {
+            shellCoordinator.iPadSidebar = IPadSidebarLiveControl()
+        }
 
         // Feature adoption store (spec 038). Cache is loaded lazily in
         // `bootstrap(userId:)` so the section renders instantly on first appear.

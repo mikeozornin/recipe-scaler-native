@@ -58,32 +58,46 @@ struct IPadRecipesSplitView: View {
                     splitTop: proxy.frame(in: .global).minY
                 )
             )
-            if layout.splitFits {
-                split(layout: layout)
-            } else {
-                pushStack
+            Group {
+                if layout.splitFits {
+                    split(layout: layout)
+                } else {
+                    pushStack
+                }
+            }
+            .onChange(of: layout.splitFits, initial: true) { _, fits in
+                // Too narrow for the list beside the recipe (push): nothing to expand any
+                // more, so the recipe collapses and the sidebar it hid comes back.
+                // A zero size is a page laid out off screen, not a narrow window.
+                guard proxy.size.width > 0,
+                      coordinator.recipeDetailExpanded,
+                      !IPadLayoutPolicy.keepsRecipeExpanded(splitFits: fits, isPadRegular: true)
+                else { return }
+                setExpanded(false)
             }
         }
         .onChange(of: selection.collectionId) { _, _ in
             searchText = ""
         }
         .onChange(of: selection.recipeId == nil) { _, isEmpty in
-            // An empty collection opened from the sidebar: back to the list, not a blank panel.
+            // An empty collection opened from the sidebar: back to the list, not a blank
+            // panel. Off the Recipes tab the sidebar waits for the return
+            // (`AppShellCoordinator.restoreSidebarHiddenByRecipeExpand`).
             if isEmpty, coordinator.recipeDetailExpanded {
                 setExpanded(false)
             }
         }
     }
 
-    /// Expanded, the list column slides off the leading edge but stays in the hierarchy:
-    /// without it iPadOS moves the recipe bar into the row of the top tab bar, and after
-    /// «Свернуть» that bar keeps the narrow room beside the tab bar (items go to «More»).
-    /// `accessibilityHidden` takes its bar items and row contents out of the VoiceOver tree;
-    /// XCUITest still lists the off-screen rows.
+    /// Expanded, the list column slides off the leading edge but its `NavigationStack`
+    /// stays in the hierarchy: without it iPadOS moves the recipe bar into the row of the
+    /// top tab bar, and after «Свернуть» that bar keeps the narrow room beside the tab bar
+    /// (items go to «More»). The stack is emptied (`listColumn`), so no row, title, «+» or
+    /// search field is left for VoiceOver, Full Keyboard Access or a pointer.
     private func split(layout: IPadLayout) -> some View {
         let selection = selection
         return HStack(spacing: 0) {
-            listColumn(selection: selection, width: layout.listWidth)
+            listColumn(selection: selection, width: layout.listWidth, isShown: layout.listShown)
                 .frame(width: layout.listWidth)
                 .opacity(layout.listShown ? 1 : 0)
                 .allowsHitTesting(layout.listShown)
@@ -130,7 +144,8 @@ struct IPadRecipesSplitView: View {
 
     // MARK: - List column
 
-    private func listColumn(selection: RecipesSelection, width: CGFloat) -> some View {
+    /// `isShown == false` (expanded): an empty stack, kept for the bar workaround (`split`).
+    private func listColumn(selection: RecipesSelection, width: CGFloat, isShown: Bool) -> some View {
         let column = RecipeListColumn(
             selectedRecipeId: selection.recipeId,
             searchText: $searchText,
@@ -145,7 +160,9 @@ struct IPadRecipesSplitView: View {
             titleMaxWidth: max(0, width - IPadLayoutMetrics.listTitleBarReserve)
         )
         return NavigationStack {
-            if let collectionId = selection.collectionId {
+            if !isShown {
+                Color.clear
+            } else if let collectionId = selection.collectionId {
                 CollectionFolderView(
                     folderId: collectionId,
                     syncService: syncService,
@@ -262,26 +279,12 @@ struct IPadRecipesSplitView: View {
         }
     }
 
-    /// «Развернуть» hides the sidebar beside the content too; «Свернуть» shows it again.
-    /// A sidebar floating over the content (portrait) is closed and not brought back.
+    /// «Развернуть» hides the sidebar beside the content too; «Свернуть» shows it again
+    /// (`AppShellCoordinator.setRecipeDetailExpanded`). The split exists only in a regular
+    /// window.
     private func setExpanded(_ expanded: Bool) {
-        guard expanded != coordinator.recipeDetailExpanded else { return }
-        if #available(iOS 26.2, *) {
-            if expanded {
-                let shown = IPadSidebarControl.isSidebarShown
-                coordinator.sidebarHiddenByRecipeExpand = shown && !IPadSidebarControl.sidebarOverlaysContent
-                if shown {
-                    IPadSidebarControl.setSidebarHidden(true)
-                }
-            } else if coordinator.sidebarHiddenByRecipeExpand {
-                IPadSidebarControl.setSidebarHidden(false)
-            }
-        }
-        if !expanded {
-            coordinator.sidebarHiddenByRecipeExpand = false
-        }
         withAnimation(.easeInOut(duration: 0.25)) {
-            coordinator.recipeDetailExpanded = expanded
+            coordinator.setRecipeDetailExpanded(expanded, isPadRegular: true)
         }
     }
 

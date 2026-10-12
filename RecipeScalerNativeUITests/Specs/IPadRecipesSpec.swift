@@ -14,9 +14,9 @@ import XCTest
 /// backend has no `POST /api/collections`, so the collection test makes one in the
 /// «В коллекцию» sheet; the toolbar check makes an editable recipe with «+».
 ///
-/// Expanded, the list column stays in the hierarchy off the leading edge (an iPadOS bar
-/// workaround, see `IPadRecipesSplitView.split`) and XCUITest still lists its rows, so
-/// «no list» means «not on screen».
+/// Expanded, the list column's empty `NavigationStack` stays in the hierarchy off the
+/// leading edge (an iPadOS bar workaround, see `IPadRecipesSplitView.split`), but its rows,
+/// «+» and search field are gone: nothing for VoiceOver or Full Keyboard Access to reach.
 ///
 /// No room for the list beside the recipe (push) needs a ⅔ landscape window with the
 /// sidebar shown; the simulator cannot make one (`-DebugWindowWidth` under 680 pt is the
@@ -119,6 +119,10 @@ final class IPadRecipesSpec: BaseTestCase {
         let row = recipeListPage.recipeRow(id: first.id)
         XCTAssertTrue(waitUntil { self.selectedRowCount == 1 }, "No recipe row is highlighted")
 
+        let menu = app.buttons.matching(identifier: UIA.recipeDetailMenu).firstMatch
+        XCTAssertTrue(menu.waitForExistence(timeout: Wait.element), "No «…» in the recipe toolbar")
+        let barTop = menu.frame.minY
+
         tapExpand(expecting: Self.collapse)
         assertListGone(row)
         XCTAssertTrue(waitUntil { self.leftColumn.frame.minX < 2 }, "The expanded recipe starts at \(leftColumn.frame.minX), expected 0")
@@ -136,6 +140,12 @@ final class IPadRecipesSpec: BaseTestCase {
         XCTAssertTrue(waitUntil { self.listOnScreen }, "«Свернуть» did not bring the list back")
         XCTAssertTrue(waitUntil { row.isSelected || self.selectedRowCount == 1 }, "The open recipe is not highlighted after «Свернуть»")
         assertListWidth(third: true)
+        // The recipe bar keeps its own row and its items after «Свернуть» (not squeezed
+        // beside the top tab bar, items not in «More»).
+        XCTAssertTrue(waitUntil { menu.exists && menu.isHittable }, "«…» is not on the bar after «Свернуть»")
+        XCTAssertLessThan(abs(menu.frame.minY - barTop), 2, "The recipe bar moved from \(barTop) to \(menu.frame.minY) after «Свернуть»")
+        XCTAssertTrue(expandButton.isHittable, "«Развернуть» is not on the bar after «Свернуть»")
+        capture("recipes-landscape-collapsed")
 
         // The sidebar beside the content: a third of the rest goes to the list (never under 320).
         showSidebar()
@@ -415,7 +425,8 @@ final class IPadRecipesSpec: BaseTestCase {
         }
     }
 
-    /// Expanded: the list column and its rows are off screen.
+    /// Expanded: the list column is off screen and nothing of it is left to reach — no
+    /// rows, no «+», no search field (VoiceOver, Full Keyboard Access).
     private func assertListGone(_ row: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(
             waitUntil { !self.listOnScreen },
@@ -423,7 +434,14 @@ final class IPadRecipesSpec: BaseTestCase {
             file: file,
             line: line
         )
-        XCTAssertTrue(waitUntil { !row.exists || !row.isHittable }, "A row of the hidden list can be tapped", file: file, line: line)
+        XCTAssertTrue(waitUntil { !row.exists }, "A row of the hidden list is still in the tree", file: file, line: line)
+        XCTAssertEqual(rowCount, 0, "Rows of the hidden list are still in the tree", file: file, line: line)
+        XCTAssertFalse(recipeListPage.addButton.exists, "«+» of the hidden list is still in the tree", file: file, line: line)
+        XCTAssertEqual(app.searchFields.count, 0, "The search field of the hidden list is still in the tree", file: file, line: line)
+    }
+
+    private var rowCount: Int {
+        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", UIA.recipeRowPrefix)).count
     }
 
     /// Taps «Развернуть» / «Свернуть» and waits for the button to read `labels`.

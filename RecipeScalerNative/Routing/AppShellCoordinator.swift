@@ -105,12 +105,17 @@ final class AppShellCoordinator {
 
     /// Spec 081 (T024) — the recipe of the iPad split takes the whole section, the list
     /// column hidden («Развернуть», as Apple Notes). Kept for the session across tabs,
-    /// never persisted. DEBUG `-IPadListHidden=1` starts expanded.
-    var recipeDetailExpanded = DebugLaunchOptions.iPadListHidden
+    /// never persisted. DEBUG `-IPadListHidden=1` starts expanded. Changed only through
+    /// `setRecipeDetailExpanded`.
+    private(set) var recipeDetailExpanded = DebugLaunchOptions.iPadListHidden
 
     /// The sidebar was beside the content when the recipe expanded and was hidden with
-    /// it; «Свернуть» shows it again.
-    var sidebarHiddenByRecipeExpand = false
+    /// it; «Свернуть» shows it again (`restoreSidebarHiddenByRecipeExpand`).
+    private(set) var sidebarHiddenByRecipeExpand = false
+
+    /// Spec 081 — the iPad sidebar «Развернуть» hides and «Свернуть» brings back; set by
+    /// `AppContainer` on iPadOS 26.2+, a fake in unit tests, `nil` on older systems.
+    var iPadSidebar: (any IPadSidebarControlling)?
 
     /// Spec 081 — bumped each time the profile sheet closes, so the iPad sidebar footer
     /// reloads the name and avatar that may have changed in the sheet.
@@ -528,6 +533,10 @@ final class AppShellCoordinator {
         pendingAssistantTabOpen = false
         pendingShakeAssistantOpenRequest = nil
         isProfileSheetPresented = false
+        // A sidebar hidden by «Развернуть» comes back with the reset, wherever the user is.
+        if sidebarHiddenByRecipeExpand, iPadSidebar?.isSidebarShown == false {
+            iPadSidebar?.setSidebarHidden(false)
+        }
         recipeDetailExpanded = false
         sidebarHiddenByRecipeExpand = false
         discoverListState?.clearAll()
@@ -539,6 +548,56 @@ final class AppShellCoordinator {
         deepLinkRouter.clear()
         UserDefaults.standard.removeObject(forKey: DeepLinkRouter.pendingRecipeIdKey)
         AppGroup.userDefaults?.removeObject(forKey: DeepLinkRouter.pendingRecipeIdKey)
+    }
+
+    // MARK: - Recipe expand (spec 081, T024)
+
+    /// «Развернуть» / «Свернуть» of the iPad recipe. Expanding hides a shown sidebar
+    /// (remembering one that stood beside the content); collapsing brings that one back
+    /// when the user is on Recipes in a wide window, else later
+    /// (`restoreSidebarHiddenByRecipeExpand`). The caller animates.
+    func setRecipeDetailExpanded(_ expanded: Bool, isPadRegular: Bool) {
+        guard expanded != recipeDetailExpanded else { return }
+        if expanded, let iPadSidebar {
+            let decision = IPadLayoutPolicy.recipeExpandSidebar(
+                shown: iPadSidebar.isSidebarShown,
+                overlaysContent: iPadSidebar.sidebarOverlaysContent
+            )
+            sidebarHiddenByRecipeExpand = decision.rememberHidden
+            if decision.hide {
+                iPadSidebar.setSidebarHidden(true)
+            }
+        }
+        recipeDetailExpanded = expanded
+        if !expanded {
+            restoreSidebarHiddenByRecipeExpand(isPadRegular: isPadRegular)
+        }
+    }
+
+    /// Shows the sidebar «Развернуть» hid once the recipe is collapsed and the user is on
+    /// Recipes in a wide window: called on collapse, on the return to Recipes and on the
+    /// way back from a compact window.
+    func restoreSidebarHiddenByRecipeExpand(isPadRegular: Bool) {
+        guard IPadLayoutPolicy.restoresSidebarHiddenByExpand(
+            hiddenByExpand: sidebarHiddenByRecipeExpand,
+            recipeExpanded: recipeDetailExpanded,
+            recipesTabSelected: selectedTab == .recipes,
+            isPadRegular: isPadRegular
+        ) else { return }
+        sidebarHiddenByRecipeExpand = false
+        if iPadSidebar?.isSidebarShown == false {
+            iPadSidebar?.setSidebarHidden(false)
+        }
+    }
+
+    /// The sidebar's visibility as the shell reads it (`\.tabBarPlacement`). Shown again
+    /// while «Развернуть» had hidden it — the user's toggle or the system — it is no longer
+    /// ours to restore, so «Свернуть» does not fight the user.
+    func noteSidebarShown(_ shown: Bool) {
+        sidebarHiddenByRecipeExpand = IPadLayoutPolicy.sidebarStillHiddenByExpand(
+            hiddenByExpand: sidebarHiddenByRecipeExpand,
+            sidebarShown: shown
+        )
     }
 
     // MARK: - Private

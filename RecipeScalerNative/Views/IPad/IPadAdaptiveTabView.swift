@@ -173,6 +173,21 @@ struct IPadAdaptiveTabView: View {
         .task {
             await applyLaunchSidebarVisibility()
         }
+        // «Развернуть» (T024) hides the sidebar; these keep that state honest.
+        .onChange(of: sidebarShown) { _, shown in
+            coordinator.noteSidebarShown(shown)
+        }
+        .onChange(of: layoutMode) { _, mode in
+            if mode == .padRegular {
+                coordinator.restoreSidebarHiddenByRecipeExpand(isPadRegular: true)
+            } else {
+                // Compact is the phone: no expanded recipe, the sidebar back once wide again.
+                coordinator.setRecipeDetailExpanded(false, isPadRegular: false)
+            }
+        }
+        .onChange(of: coordinator.selectedTab) { _, _ in
+            coordinator.restoreSidebarHiddenByRecipeExpand(isPadRegular: layoutMode == .padRegular)
+        }
         .modifier(IPadProfileSheetModifier(
             coordinator: coordinator,
             auth: tabRoots.authService,

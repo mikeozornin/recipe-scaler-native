@@ -189,6 +189,39 @@ enum IPadLayoutPolicy {
         layoutMode == .padRegular && tabBarIsSidebar
     }
 
+    // MARK: - «Развернуть» and the sidebar (T024)
+
+    /// «Развернуть» closes a shown sidebar. Only one standing beside the content is
+    /// remembered and comes back on «Свернуть»; a sidebar floating over the content
+    /// (portrait) is just closed.
+    static func recipeExpandSidebar(shown: Bool, overlaysContent: Bool) -> (hide: Bool, rememberHidden: Bool) {
+        (hide: shown, rememberHidden: shown && !overlaysContent)
+    }
+
+    /// The expanded recipe lasts only while the list column could stand beside it: a
+    /// window too narrow for the split (push) or compact collapses it.
+    static func keepsRecipeExpanded(splitFits: Bool, isPadRegular: Bool) -> Bool {
+        splitFits && isPadRegular
+    }
+
+    /// A sidebar hidden by «Развернуть» comes back once the recipe is collapsed, but only
+    /// on the Recipes section of a regular window: collapsed elsewhere (another tab, a
+    /// compact window) it waits until the user is back on Recipes in a wide window.
+    static func restoresSidebarHiddenByExpand(
+        hiddenByExpand: Bool,
+        recipeExpanded: Bool,
+        recipesTabSelected: Bool,
+        isPadRegular: Bool
+    ) -> Bool {
+        hiddenByExpand && !recipeExpanded && recipesTabSelected && isPadRegular
+    }
+
+    /// The sidebar showed up while it was hidden by «Развернуть» (the user's toggle, or the
+    /// system after a rotation): nothing is left to restore, «Свернуть» leaves it alone.
+    static func sidebarStillHiddenByExpand(hiddenByExpand: Bool, sidebarShown: Bool) -> Bool {
+        hiddenByExpand && !sidebarShown
+    }
+
     /// Left recipe column width, or `nil` for one column.
     /// `clamp(preferred ?? 400, 320, min(480, detailWidth − 1 − 320))`: the saved width
     /// is never rewritten here, so it comes back once the panel is wide enough again.

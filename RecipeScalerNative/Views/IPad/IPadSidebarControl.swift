@@ -48,6 +48,24 @@ enum IPadSidebarControl {
     }
 }
 
+/// The sidebar as `AppShellCoordinator` drives it for «Развернуть» / «Свернуть»; a fake in
+/// unit tests, `IPadSidebarLiveControl` in the app.
+@MainActor
+protocol IPadSidebarControlling: AnyObject {
+    var isSidebarShown: Bool { get }
+    var sidebarOverlaysContent: Bool { get }
+    func setSidebarHidden(_ hidden: Bool)
+}
+
+/// `IPadSidebarControl` behind `IPadSidebarControlling`, set by `AppContainer`.
+@available(iOS 26.2, *)
+@MainActor
+final class IPadSidebarLiveControl: IPadSidebarControlling {
+    var isSidebarShown: Bool { IPadSidebarControl.isSidebarShown }
+    var sidebarOverlaysContent: Bool { IPadSidebarControl.sidebarOverlaysContent }
+    func setSidebarHidden(_ hidden: Bool) { IPadSidebarControl.setSidebarHidden(hidden) }
+}
+
 extension View {
     /// Reports whether the sidebar is on screen, from a page of the `TabView`
     /// (Scrapp `RootView.swift:311-327`). The placement follows the sidebar opened and
