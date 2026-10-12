@@ -294,6 +294,27 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.profileSheetRevision, revision &+ 1)
     }
 
+    /// The sheet was kept up on narrowing; the compact «Профиль» tab must not add a page.
+    func testProfileTabAfterNarrowingKeepsSingleSheet() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.selectedTab = .shopping
+        coordinator.presentProfileSheet()
+
+        coordinator.selectedTab = .profile
+        // The shell's `onChange(of: selectedTab)` in the compact window.
+        coordinator.normalizeProfileSelection(previous: .shopping, layoutMode: .phone)
+
+        XCTAssertEqual(coordinator.selectedTab, .shopping)
+        XCTAssertTrue(coordinator.isProfileSheetPresented)
+
+        // Sheet closed: the compact «Профиль» is a tab again.
+        coordinator.profileSheetDidDismiss()
+        coordinator.selectedTab = .profile
+        coordinator.normalizeProfileSelection(previous: .shopping, layoutMode: .phone)
+        XCTAssertEqual(coordinator.selectedTab, .profile)
+        XCTAssertFalse(coordinator.isProfileSheetPresented)
+    }
+
     func testRemindersSetupInRegularPresentsSheet() throws {
         let (coordinator, _, _) = try makeCoordinator()
         coordinator.selectedTab = .shopping

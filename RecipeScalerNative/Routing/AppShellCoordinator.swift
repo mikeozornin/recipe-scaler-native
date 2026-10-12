@@ -212,11 +212,13 @@ final class AppShellCoordinator {
 
     /// `.profile` selected in `.padRegular` (tab tap, ⌘4, `requestRemindersSetup`,
     /// `-OpenTab=profile`, widening on the Profile tab) → back to `previous`, sheet on top.
+    /// The same with the sheet kept up after narrowing: no second profile under it.
     func normalizeProfileSelection(previous: AppTab?, layoutMode: AppLayoutMode) {
         let resolution = IPadProfileSheetPolicy.resolve(
             selected: selectedTab,
             previous: previous,
-            layoutMode: layoutMode
+            layoutMode: layoutMode,
+            isSheetPresented: isProfileSheetPresented
         )
         guard resolution.presentsSheet else { return }
         selectedTab = resolution.selected

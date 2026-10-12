@@ -79,8 +79,9 @@ struct IPadAdaptiveTabView: View {
             .badge(sidebarBadge(shoppingToBuyCount))
 
             Tab(value: IPadShellItem.tab(.profile)) {
-                // In a wide window the profile is a form sheet (T019a), never a page.
-                if layoutMode == .padRegular {
+                // In a wide window the profile is a form sheet (T019a), never a page;
+                // a sheet kept up after narrowing is the only profile too.
+                if layoutMode == .padRegular || coordinator.isProfileSheetPresented {
                     page(Color.clear)
                 } else {
                     page(tabRoots.profile())

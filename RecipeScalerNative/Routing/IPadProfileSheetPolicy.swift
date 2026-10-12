@@ -7,12 +7,17 @@ enum IPadProfileSheetPolicy {
     /// `.profile` in `.padRegular` → the previous section (`.recipes` without one) and the
     /// sheet; anything else stays as it is. Only a real section counts as previous:
     /// «Импорт» and «Ассистент» open sheets and are never selected.
+    ///
+    /// The sheet survives narrowing (the system shows it full width), so `.profile` with
+    /// the sheet already up keeps it in any mode: one `AccountView`, never a second page
+    /// under the sheet. On the iPhone the sheet is never presented.
     static func resolve(
         selected: AppTab,
         previous: AppTab?,
-        layoutMode: AppLayoutMode
+        layoutMode: AppLayoutMode,
+        isSheetPresented: Bool = false
     ) -> (selected: AppTab, presentsSheet: Bool) {
-        guard selected == .profile, layoutMode == .padRegular else {
+        guard selected == .profile, layoutMode == .padRegular || isSheetPresented else {
             return (selected, false)
         }
         switch previous {

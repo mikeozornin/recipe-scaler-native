@@ -32,6 +32,32 @@ final class IPadProfileSheetPolicyTests: XCTestCase {
         XCTAssertFalse(result.presentsSheet)
     }
 
+    func testCompactProfileWithSheetUpKeepsSheetAndPrevious() {
+        let result = IPadProfileSheetPolicy.resolve(
+            selected: .profile,
+            previous: .discover,
+            layoutMode: .phone,
+            isSheetPresented: true
+        )
+
+        XCTAssertEqual(result.selected, .discover)
+        XCTAssertTrue(result.presentsSheet)
+    }
+
+    func testNonProfileSelectionWithSheetUpUnchanged() {
+        for mode in [AppLayoutMode.phone, .padRegular] {
+            let result = IPadProfileSheetPolicy.resolve(
+                selected: .shopping,
+                previous: .recipes,
+                layoutMode: mode,
+                isSheetPresented: true
+            )
+
+            XCTAssertEqual(result.selected, .shopping)
+            XCTAssertFalse(result.presentsSheet)
+        }
+    }
+
     func testNonProfileSelectionUnchanged() {
         for mode in [AppLayoutMode.phone, .padRegular] {
             for tab in [AppTab.discover, .recipes, .shopping] {

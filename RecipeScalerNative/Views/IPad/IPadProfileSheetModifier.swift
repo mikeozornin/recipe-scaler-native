@@ -6,7 +6,8 @@ import SwiftUI
 /// - `.profile` selected in `.padRegular` from anywhere (tab tap, `requestRemindersSetup`,
 ///   ⌘4, `-OpenTab=profile`) goes back to the previous section with the sheet on top;
 /// - widening a compact window on the «Профиль» tab does the same with the last section;
-/// - narrowing keeps an open sheet (the system shows it full width), as in Scrapp.
+/// - narrowing keeps an open sheet (the system shows it full width), as in Scrapp; while
+///   it is up, «Профиль» keeps the sheet instead of opening a second profile page.
 ///
 /// Dependencies are passed in explicitly, like the rest of the iPad shell.
 struct IPadProfileSheetModifier: ViewModifier {

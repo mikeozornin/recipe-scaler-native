@@ -43,6 +43,11 @@ final class IPadShellItemTests: XCTestCase {
         XCTAssertTrue(coordinator.isProfileSheetPresented)
         XCTAssertEqual(regular.item, .tab(.shopping))
 
+        // Narrowed with the sheet up: «Профиль» keeps the sheet, no profile page.
+        selection(coordinator).select(.tab(.profile))
+        XCTAssertEqual(coordinator.selectedTab, .shopping)
+        XCTAssertTrue(coordinator.isProfileSheetPresented)
+
         // Compact window: «Профиль» is a tab.
         coordinator.profileSheetDidDismiss()
         selection(coordinator).select(.tab(.profile))
