@@ -332,7 +332,7 @@ struct AccountView: View {
         Section {
             if let userId = auth.userId {
                 HStack(spacing: 12) {
-                    accountAvatar
+                    AccountAvatarView(url: viewModel.avatarURL, size: 40)
                     Text(UserIdFormatter.format(userId))
                         .appBody()
                     Spacer(minLength: 8)
@@ -855,21 +855,6 @@ struct AccountView: View {
                 LabeledContent("account.version", value: version)
             }
         }
-    }
-
-    @ViewBuilder
-    private var accountAvatar: some View {
-        Group {
-            if let url = viewModel.avatarURL {
-                AuthAvatarImage(url: url)
-            } else {
-                Image(systemName: "person.circle.fill")
-                    .resizable()
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(width: 40, height: 40)
-        .clipShape(Circle())
     }
 }
 

@@ -155,12 +155,14 @@
   **Сделано и проверено (iPad Pro 11", портрет):** сайдбар — «Рецепты» 69, «Покупки» 11, коллекции со счётчиками, строк «Профиль»/«Ассистент» нет; верхний бар — без бейджей, иконки профиля и ✦ справа; тап по коллекции → экран коллекции в стеке, в сайдбаре подсвечена коллекция; ✦ открывает лист ассистента, выбор не меняется; `-DebugWindowWidth=375` — нижний бар из 5 вкладок без «Ещё», «Профиль» — телефонная страница. Бейдж «Покупок» — число некупленных пунктов `syncService.shoppingSnapshot` (документ грузится с сессией, новых подписок нет). Скриншоты `tmp/ipad-verify/us1/t014-*.png`.
 
   **Отклонение:** секция «Коллекции» строится только при показанном сайдбаре (`sidebarShown && !isCompact`), а не всегда в regular. Плавающий сайдбар в портрете сам закрывается после тапа по коллекции, и выбранная в этот момент коллекция навсегда оставалась в верхнем баре (кнопка «›», страница с «🎂 Десерты»); чтение `.tab(.recipes)` из T012 этого не исправляло. Без секции в режиме верхнего бара коллекции в бар не попадают; при открытии сайдбара секция на месте, выбранная коллекция подсвечена.
-- [ ] T015 [P] [US1] Вынести телефонный аватар из `RecipeScalerNative/Views/AccountView.swift` (`accountAvatar`, ~:860-871) в `RecipeScalerNative/Views/AccountAvatarView.swift`:
+- [x] T015 [P] [US1] Вынести телефонный аватар из `RecipeScalerNative/Views/AccountView.swift` (`accountAvatar`, ~:860-871) в `RecipeScalerNative/Views/AccountAvatarView.swift`:
   - `AccountAvatarView(url: URL?, size: CGFloat)`: фото через `AuthAvatarImage`, иначе `person.circle.fill` цветом `.secondary`, обрезка кругом — ровно как сейчас;
   - `AccountView` использует его с размером 40; вид на iPhone не меняется;
   - узора, как в прототипе, нет ни на iPad, ни на iPhone (spec.md Q6, FR-005).
 
   Проверка — `verify-ipad-layout.sh --iphone-regression` (профиль) без отличий; логики нет, unit-тест не нужен. — `#profile/public`, `#profile/private`
+
+  **Проверено:** `--iphone-regression --only profile-public` — 0 отличий.
 - [ ] T016 [US1] Создать `RecipeScalerNative/Views/IPad/IPadSidebarProfileFooter.swift` и подключить через `.tabViewSidebarBottomBar` только при `.padRegular` (образец — `SidebarProfileRow`, Scrapp `RootView.swift:329-362`).
   - `Button` во всю ширину строки, `.hoverEffect`, идентификатор футера из T011; выбранным не бывает.
   - Аватар — `AccountAvatarView` (T015) размером 36 (`footerAvatarSize`): фото, если есть, иначе `person.circle.fill` — как в `AccountView` на iPhone.
