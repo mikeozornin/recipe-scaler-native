@@ -90,6 +90,14 @@ final class AppShellCoordinator {
     /// Spec 078 — shake-to-open queued until AppShellView presents / updates the sheet.
     private(set) var pendingShakeAssistantOpenRequest: AssistantShakeOpenRequest?
 
+    /// Spec 081 (plan.md Р2a) — «Моё всё» as a form sheet in a wide iPad window; the only
+    /// source of truth for that sheet. The selected section does not change.
+    var isProfileSheetPresented = false
+
+    /// Spec 081 — bumped each time the profile sheet closes, so the iPad sidebar footer
+    /// reloads the name and avatar that may have changed in the sheet.
+    private(set) var profileSheetRevision = 0
+
     /// Consumes the pending tab-open flag after AppShellView presented the sheet.
     func consumeAssistantTabOpen() {
         pendingAssistantTabOpen = false
@@ -175,6 +183,12 @@ final class AppShellCoordinator {
         } else {
             selectedTab = newTab
         }
+    }
+
+    // MARK: - iPad profile sheet (spec 081, plan.md Р2a)
+
+    func presentProfileSheet() {
+        isProfileSheetPresented = true
     }
 
     func presentImport(

@@ -119,6 +119,19 @@ struct IPadAdaptiveTabView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
+        .tabViewSidebarBottomBar {
+            // Profile entry of the sidebar (plan.md Р2a); compact has no sidebar.
+            if layoutMode == .padRegular {
+                IPadSidebarProfileFooter(
+                    coordinator: coordinator,
+                    auth: tabRoots.authService,
+                    syncService: syncService,
+                    timer: tabRoots.timerManager,
+                    vkusvillSettings: tabRoots.vkusvillSettings,
+                    performLogoutTeardown: tabRoots.performLogoutTeardown
+                )
+            }
+        }
         .task {
             await applyLaunchSidebarHidden()
         }

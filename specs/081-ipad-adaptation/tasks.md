@@ -163,7 +163,7 @@
   Проверка — `verify-ipad-layout.sh --iphone-regression` (профиль) без отличий; логики нет, unit-тест не нужен. — `#profile/public`, `#profile/private`
 
   **Проверено:** `--iphone-regression --only profile-public` — 0 отличий.
-- [ ] T016 [US1] Создать `RecipeScalerNative/Views/IPad/IPadSidebarProfileFooter.swift` и подключить через `.tabViewSidebarBottomBar` только при `.padRegular` (образец — `SidebarProfileRow`, Scrapp `RootView.swift:329-362`).
+- [x] T016 [US1] Создать `RecipeScalerNative/Views/IPad/IPadSidebarProfileFooter.swift` и подключить через `.tabViewSidebarBottomBar` только при `.padRegular` (образец — `SidebarProfileRow`, Scrapp `RootView.swift:329-362`).
   - `Button` во всю ширину строки, `.hoverEffect`, идентификатор футера из T011; выбранным не бывает.
   - Аватар — `AccountAvatarView` (T015) размером 36 (`footerAvatarSize`): фото, если есть, иначе `person.circle.fill` — как в `AccountView` на iPhone.
   - Подпись: публичный профиль с именем → имя; иначе → номер аккаунта (`UserIdFormatter`, моноширинный).
@@ -172,6 +172,8 @@
   - Зависимости передавать явно (ловушка iOS 26).
 
   — `#profile/public`, `#profile/private`
+
+  **Сделано:** футер в сайдбаре — `person.circle.fill` 36 и номер аккаунта моноширинным (DEBUG-аккаунт приватный); тап прячет плавающий сайдбар. В координатор добавлены `isProfileSheetPresented`, `profileSheetRevision`, `presentProfileSheet()`; сам лист и увеличение `profileSheetRevision` при закрытии — T019a. Скриншот `tmp/ipad-verify/us1/t016-01-sidebar-footer.png`.
 - [ ] T017 [US1] «Новая коллекция» в сайдбаре: `.sectionActions` → системный алерт с `TextField` → обрезка пробелов, пустое имя не сохраняется, single-flight `isSaving` → `syncService.createFolder(name:)`. Общий помощник вынести из `CollectionsRootView.commitNewFolder` (`RecipeScalerNative/Views/CollectionsRootView.swift` ~:458-484) и использовать в обоих местах. — `#recipes/sidebar`
 - [ ] T018 [P] [US1] Создать `RecipeScalerNative/Views/IPad/IPadAssistantToolbarButton.swift` (✦; в US1 открывает телефонный лист ассистента, новый чат). Покупки (`RecipeScalerNative/Views/ShoppingListView.swift`):
   - `.iPadReadableWidth(720)`;
