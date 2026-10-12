@@ -451,9 +451,13 @@ private struct AssistantInspectorToolbarHost<History: View, Content: View>: View
         }
     }
 
+    /// The title is a leading bar item in the display font (prototype `.insp-bar h3`, as the
+    /// list column title): the system inline large title shares the 340 pt row with the
+    /// three buttons and truncates to «Асси…».
     private var titledContent: some View {
         content()
-            .toolbarTitleDisplayMode(.inlineLarge)
+            .toolbarTitleDisplayMode(.inline)
+            .modifier(AssistantInspectorBarTitle())
     }
 
     private var historyButton: some View {
@@ -487,5 +491,36 @@ private struct AssistantInspectorToolbarHost<History: View, Content: View>: View
         .appToolbarIconButton()
         .accessibilityLabel(Text("assistant.close"))
         .accessibilityIdentifier(AccessibilityIdentifiers.ipadAssistantInspectorCloseButton)
+    }
+}
+
+/// Spec 081 (T033) — the panel title as a leading bar item instead of the system title.
+/// `toolbar(removing: .title)` exists from iOS 18; the panel needs iPadOS 26.2.
+private struct AssistantInspectorBarTitle: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+                .toolbar(removing: .title)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        title
+                    }
+                    .sharedBackgroundVisibility(.hidden)
+                }
+        } else {
+            content
+        }
+    }
+
+    /// A fixed width: the bar proposes a leading item almost nothing beside three buttons.
+    /// The display face at 20 pt, as the prototype.
+    private var title: some View {
+        Text("assistant.title")
+            .font(AppTypography.display(AppTypography.title3Size))
+            .foregroundStyle(Color.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .frame(width: IPadLayoutMetrics.inspectorTitleWidth, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
     }
 }

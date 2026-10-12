@@ -28,6 +28,10 @@ enum IPadLayoutMetrics {
     /// The assistant panel beside the tab view (`AppShellView.assistantPanel`, FR-019),
     /// without its divider.
     static let inspectorWidth: CGFloat = 340
+    /// «Ассистент» at the leading edge of the panel bar (prototype `.insp-bar h3`): what
+    /// [history, new chat] and × leave of the 340 pt row. Wider, × goes to «More»; a longer
+    /// title scales down instead of truncating.
+    static let inspectorTitleWidth: CGFloat = 120
     /// The recipe splits into two columns from this panel width.
     static let twoColumnMinDetail: CGFloat = 720
     /// Left recipe column until the user drags the divider.
