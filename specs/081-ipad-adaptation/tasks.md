@@ -131,7 +131,9 @@
   - запись `.collection(id)` зависит от параметра `isSplitActive`: `false` (US1, compact, телефонный стек) → путь `[.folder(id)]`, телефонный экран коллекции; `true` (активен `IPadRecipesSplitView`, включает T024) → `[.folder(id), .recipe(первый рецепт, folderContext: id)]`, пустая коллекция → `[.folder(id)]`.
 
   Создать `RecipeScalerNativeTests/IPadShellItemTests.swift` (`testAssistantDoesNotChangeSelection`, `testCollectionMapsToRecipesPath` — оба случая `isSplitActive`, `testDeepLinkPathMapsToCollection`, `testCollectionInTopBarMapsToRecipesTab`). — `#recipes/sidebar`, `#recipes/collection`
-- [ ] T013 [US1] Вынести корни вкладок из `modernTabBar` (`RecipeScalerNative/Views/AppShellView.swift` ~:709-770) в `RecipeScalerNative/Views/AppShellTabRoots.swift`. Только перенос: iPhone-дерево не меняется. Проверка — `verify-ipad-layout.sh --iphone-regression` и `AppShellNavigationSpec` на iPhone. — `#recipes/tabs` на iPhone (рефакторинг, вид не меняется)
+- [x] T013 [US1] Вынести корни вкладок из `modernTabBar` (`RecipeScalerNative/Views/AppShellView.swift` ~:709-770) в `RecipeScalerNative/Views/AppShellTabRoots.swift`. Только перенос: iPhone-дерево не меняется. Проверка — `verify-ipad-layout.sh --iphone-regression` и `AppShellNavigationSpec` на iPhone. — `#recipes/tabs` на iPhone (рефакторинг, вид не меняется)
+
+  **Проверено:** `--iphone-regression` — 11 состояний, 0 отличий (`recipes-list` и `assistant-chat` сошлись со второй попытки скрипта). `AppShellNavigationSpec` собирается, но 3 теста пропущены: нет бэкенда для `register-auto` (127.0.0.1:3001).
 - [ ] T014 [US1] Создать `RecipeScalerNative/Views/IPad/IPadAdaptiveTabView.swift`.
 
   **Первый шаг — проверка, не подтверждённая спайком** (plan.md §Непроверенное): «Профиль» и «Ассистент» с `.tabPlacement(.pinned)` + динамическим `.defaultVisibility(placement == .sidebar ? .hidden : .automatic, for: .sidebar)`. Переключить сайдбар туда и обратно на iPad-симуляторе: строк нет в сайдбаре, иконки у правого края верхнего бара есть. Если не работает — остановиться и спросить (строки рядом с футером или другой обход). Результат записать в задаче.

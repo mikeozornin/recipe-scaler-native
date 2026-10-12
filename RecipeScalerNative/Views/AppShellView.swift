@@ -710,53 +710,25 @@ struct AppShellView: View {
     private var modernTabBar: some View {
         TabView(selection: modernTabSelection) {
             Tab(value: AppTab.discover) {
-                modernTabRoot(DiscoverRootView(
-                    path: $coordinator.discoverPath,
-                    feedBadgeStore: feedBadgeStore,
-                    coordinator: coordinator
-                ))
+                tabRoots.discover()
             } label: {
                 FeedBadgeTabLabel(feedBadgeStore: feedBadgeStore)
             }
 
             Tab(value: AppTab.recipes) {
-                modernTabRoot(RecipeListView(
-                    navigationPath: $coordinator.recipesPath,
-                    syncService: syncService,
-                    coordinator: coordinator,
-                    assistantRecipeContext: assistantRecipeContext,
-                    timerManager: timerManager,
-                    apiClient: appContainer?.api ?? .shared,
-                    appContainer: appContainer,
-                    systemBannerStore: appContainer?.systemBanner ?? SystemBannerStore(),
-                    mobileTimerPanelIsCollapsed: mobileTimerPanelCollapsed,
-                    scenePhase: scenePhase
-                ))
+                tabRoots.recipes()
             } label: {
                 AppTabBarLabel(tab: .recipes)
             }
 
             Tab(value: AppTab.shopping) {
-                modernTabRoot(ShoppingListView(
-                    path: $coordinator.shoppingPath,
-                    syncService: syncService,
-                    timerManager: timerManager,
-                    coordinator: coordinator,
-                    authService: authService,
-                    vkusvillSettings: vkusvillSettings,
-                    mobileTimerPanelIsCollapsed: mobileTimerPanelCollapsed
-                ))
+                tabRoots.shopping()
             } label: {
                 AppTabBarLabel(tab: .shopping)
             }
 
             Tab(value: AppTab.profile) {
-                modernTabRoot(AccountView(
-                    auth: authService,
-                    timer: timerManager,
-                    vkusvillSettings: vkusvillSettings,
-                    performLogoutTeardown: performLogoutTeardown
-                ))
+                tabRoots.profile()
             } label: {
                 AppTabBarLabel(tab: .profile)
             }
@@ -892,19 +864,24 @@ struct AppShellView: View {
         }
     }
 
-    /// Modern twin of `tabRoot` for the iOS 26 `Tab { }` builder — identical
-    /// timer-panel wiring, without `.tabItem` (the label comes from `Tab`).
-    private func modernTabRoot<Content: View>(
-        _ content: Content
-    ) -> some View {
-        let rooted = content
-            .environment(\.mobileTimerPanelIsCollapsed, mobileTimerPanelCollapsed)
-
-        return rooted
-            .modifier(ModernTabBottomBarModifier(
-                showsExpandedInset: showsMobileTimerPanelExpandedInset,
-                expandedPanel: mobileTimerPanelExpandedInset
-            ))
+    /// Tab roots shared with the iPad shell (spec 081, T013).
+    private var tabRoots: AppShellTabRoots {
+        AppShellTabRoots(
+            coordinator: coordinator,
+            syncService: syncService,
+            authService: authService,
+            timerManager: timerManager,
+            assistantRecipeContext: assistantRecipeContext,
+            vkusvillSettings: vkusvillSettings,
+            feedBadgeStore: feedBadgeStore,
+            appContainer: appContainer,
+            scenePhase: scenePhase,
+            performLogoutTeardown: performLogoutTeardown,
+            mobileTimerPanelCollapsed: mobileTimerPanelCollapsed,
+            mobileTimerPanelCollapsedBinding: mobileTimerPanelCollapsedBinding,
+            showsMobileTimerPanelExpandedInset: showsMobileTimerPanelExpandedInset,
+            mobileTimerPanelChevronNamespace: mobileTimerPanelChevronNamespace
+        )
     }
 
     private var tabSelection: Binding<AppTab> {
@@ -1070,25 +1047,3 @@ private struct AssistantSheetModifier: ViewModifier {
             }
     }
 }
-
-/// iOS 26.2-only expanded timer inset over `safeAreaBar` — same wiring as the
-/// legacy `tabRoot` 26.2 branch, isolated for the `Tab { }` builder.
-private struct ModernTabBottomBarModifier<Panel: View>: ViewModifier {
-    let showsExpandedInset: Bool
-    let expandedPanel: Panel
-
-    func body(content: Content) -> some View {
-        if #available(iOS 26.2, *) {
-            content
-                .safeAreaBar(edge: .bottom, spacing: 0) {
-                    if showsExpandedInset {
-                        expandedPanel
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-                }
-        } else {
-            content
-        }
-    }
-}
-

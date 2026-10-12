@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0813D7E109D730012D3486F8 /* IPadShellItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0812ADFF8D274A1D2F3A8515 /* IPadShellItemTests.swift */; };
+		081337D12340B02A6E19FFC8 /* AppShellTabRoots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081435AA90949164D95209FA /* AppShellTabRoots.swift */; };
 		0817F221D6F3F98265461EF9 /* IPadShellItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081886D29CEE86686D583F2F /* IPadShellItem.swift */; };
 		P075S01B /* AwakeScrollAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S01A /* AwakeScrollAction.swift */; };
 		P075S02B /* AwakeHandsFreeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S02A /* AwakeHandsFreeStorage.swift */; };
@@ -855,6 +856,7 @@
 
 /* Begin PBXFileReference section */
 		0812ADFF8D274A1D2F3A8515 /* IPadShellItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadShellItemTests.swift; sourceTree = "<group>"; };
+		081435AA90949164D95209FA /* AppShellTabRoots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellTabRoots.swift; sourceTree = "<group>"; };
 		081886D29CEE86686D583F2F /* IPadShellItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadShellItem.swift; sourceTree = "<group>"; };
 		P075S01A /* AwakeScrollAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollAction.swift; sourceTree = "<group>"; };
 		P075S02A /* AwakeHandsFreeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeHandsFreeStorage.swift; sourceTree = "<group>"; };
@@ -1724,6 +1726,7 @@
 		2C4753BF21C7787912B3866F /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				081435AA90949164D95209FA /* AppShellTabRoots.swift */,
 				081CBD7997AADC6843B621D9 /* IPad */,
 				C38C9866A5142170D549D605 /* AuthView.swift */,
 				C46C342D35721B88D83D58BB /* QRScannerView.swift */,
@@ -3182,6 +3185,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				081337D12340B02A6E19FFC8 /* AppShellTabRoots.swift in Sources */,
 				0817F221D6F3F98265461EF9 /* IPadShellItem.swift in Sources */,
 				081A346C3661632089C45D82 /* AdaptivePresentation.swift in Sources */,
 				08128BC24B81042524D0AAC9 /* RecipesSelection.swift in Sources */,
