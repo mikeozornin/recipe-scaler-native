@@ -124,6 +124,19 @@ final class SeedClient {
         return CreatedCollection(id: id, name: name)
     }
 
+    // MARK: - Profile
+
+    /// `PATCH /api/users/name` — the display name a public profile shows.
+    func setDisplayName(_ name: String) async throws {
+        let url = base.appendingPathComponent("/api/users/name")
+        var req = URLRequest(url: url)
+        req.httpMethod = "PATCH"
+        for (k, v) in try user.authHeaders() { req.setValue(v, forHTTPHeaderField: k) }
+        req.httpBody = try JSONEncoder().encode(["name": name])
+        let (data, resp) = try await session.data(for: req)
+        try ensureOK(try unwrapHTTP(resp), url, data: data)
+    }
+
     // MARK: - Timers
 
     /// Start a custom timer via the v1 sync wire (web parity: `seedRunningTimer`).

@@ -236,12 +236,16 @@
   **Сделано и проверено (iPad Pro 11", портрет):** «Подборки» крупным заголовком слева и сегменты 320 справа в одной строке (как `.lt-row` прототипа), лента и «Моя лента» в колонке 720, ✦ справа открывает лист ассистента; со сдвинутым сайдбаром то же; страница автора — колонка 1100 (в портрете 834 на всю ширину), сетка без изменений; `-DebugWindowWidth=400` — телефонный вид (пикер под large title, без ✦). iPhone: `--iphone-regression --only discover-feed,discover-author,shopping-az` — 0 отличий. Скриншоты `tmp/ipad-verify/us1/t021-*.png`.
 
   **Отклонение:** заголовок бара на iPad убран через `toolbar(removing: .title)` (iOS 18+), чтобы «Подборки» не дублировались в баре; `navigationTitle` остаётся для кнопки «Назад». `DiscoverFeedSegmentPicker` получил параметр `horizontalPadding` (по умолчанию 16, как было). `iPadReadableWidth` на iPhone (по идиоме) теперь возвращает содержимое без рамок: даже `nil`-рамки сдвигали содержимое `ScrollView` автора на доли точки, и картинки отличались от базы (120 642 пикселя).
-- [ ] T022 [US1] Создать `RecipeScalerNativeUITests/Specs/IPadShellSpec.swift` (`XCTSkipUnless` iPad):
+- [x] T022 [US1] Создать `RecipeScalerNativeUITests/Specs/IPadShellSpec.swift` (`XCTSkipUnless` iPad):
   - `testSidebarContents`, `testFooterPrivateShowsAccountId`, `testCollectionTapOpensRecipes`, `testNewCollectionFromSidebar`;
   - `testProfileHasNoShakeRow` — в листе;
   - `testFooterOpensProfileSheet`: «Моё всё» и «Готово», выбор сайдбара прежний, «Готово» закрывает; переключение «Публичный профиль» обновляет футер после закрытия;
   - `testTopBarProfileOpensSheet` (`-IPadSidebarHidden=1`), `testSidebarHasNoProfileTab`;
   - `testTopBarHasNoBadges` (`-IPadSidebarHidden=1`), `testCompactHasNoMoreTab` (окно ½ или `-DebugWindowWidth`), `testCollectionInTopBarShowsRecipesTab`.
+
+  **Сделано и проверено:** все 11 тестов в `IPadShellSpec` (портрет, iPadOS 26.2+; на iPhone и ниже 26.2 — `XCTSkip`). Для теста футера `SeedClient.setDisplayName` (`PATCH /api/users/name`), в `UIA` — `accountShakeOpenAssistantToggle`. Сборка `build-for-testing` на iPad и iPhone — без ошибок; на iPhone спека пропускается («iPad only»). Запросы спеки сверены одноразовым пробником только на чтение на DEBUG-аккаунте (в репозиторий не попал): верхние вкладки — кнопки с `isSelected`, строки сайдбара со счётчиком («Покупки, 11»), в верхней панели счётчиков нет, «Профиль»/«Ассистент» в сайдбаре отсутствуют, «Готово» листа найдено по id, строки встряхивания в листе нет, «Создать» выключено для пустого имени (алерт закрыт «Отменой», коллекция не создана), тап по коллекции закрывает оверлей, открывает «Вкусняшки» и оставляет выбранными «Рецепты», после открытия сайдбара строка выбрана; при `-DebugWindowWidth=400` — пять вкладок снизу без «Ещё», «Профиль» — вкладка без «Готово». Сами тесты не прогнаны: им нужен локальный бэкенд (`register-auto`), а запуск против прода запрещён; без бэкенда все 11 пропускаются на `register-auto`.
+
+  **Отклонение:** у таргета UI-тестов `TARGETED_DEVICE_FAMILY` 1 → «1,2»: с одним iPhone раннер на iPad работал в режиме совместимости, `UIDevice.current.userInterfaceIdiom` был `.phone`, и `XCTSkipUnless` пропускал спеку и на iPad. На iPhone ничего не меняется (`AppShellNavigationSpec` собирается и запускается как раньше).
 
   Прогнать на iPad; на iPhone — `AppShellNavigationSpec` и `verify-ui-smoke.sh`. — `#recipes/sidebar`, `#recipes/tabs`, `#profile/public`, `#profile/private`
 

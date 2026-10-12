@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		081BACD5F55A1B03061EB394 /* IPadShellSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */; };
 		081A15CAD06242AEB73277A9 /* IPadProfileSheetPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0817B80AFD53CD65E53B0BEA /* IPadProfileSheetPolicyTests.swift */; };
 		081D48A0C5792DA6C6306F66 /* IPadProfileSheetModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081B3845856DC980503EE6A8 /* IPadProfileSheetModifier.swift */; };
 		081E76BD3B8AF81943CFF690 /* IPadProfileSheetPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081867C288854BF5052DAF26 /* IPadProfileSheetPolicy.swift */; };
@@ -864,6 +865,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadShellSpec.swift; sourceTree = "<group>"; };
 		0817B80AFD53CD65E53B0BEA /* IPadProfileSheetPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetPolicyTests.swift; sourceTree = "<group>"; };
 		081B3845856DC980503EE6A8 /* IPadProfileSheetModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetModifier.swift; sourceTree = "<group>"; };
 		081867C288854BF5052DAF26 /* IPadProfileSheetPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetPolicy.swift; sourceTree = "<group>"; };
@@ -2672,6 +2674,7 @@
 		UIT422B515994E4FDA9B0 /* Specs */ = {
 			isa = PBXGroup;
 			children = (
+				08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */,
 				UITAB5A803D9115B87C2E /* FeatureAdoptionGuidesSpec.swift */,
 				UITEF4902F43B6C5EDA96 /* FeatureAdoptionTrackerSpec.swift */,
 				UIT042788CF0A93FC75C3 /* DiscoverEnablementSpec.swift */,
@@ -3779,6 +3782,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				081BACD5F55A1B03061EB394 /* IPadShellSpec.swift in Sources */,
 				UITESTSRCBF00100000000 /* RecipeScalerNativeUITests.swift in Sources */,
 				UIT8D74A32C89F7DE0818 /* BaseTestCase.swift in Sources */,
 				UIT5DD600C96B7EC8EDF9 /* Selectors.swift in Sources */,
@@ -4697,7 +4701,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScalerUITests;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = RecipeScalerNative;
 			};
 			name = Debug;
@@ -4718,7 +4722,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = ru.recipescaler.RecipeScalerUITests;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = RecipeScalerNative;
 				VALIDATE_PRODUCT = YES;
 			};
