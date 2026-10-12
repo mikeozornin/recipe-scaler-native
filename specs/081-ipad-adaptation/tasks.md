@@ -89,6 +89,8 @@
   - `testLeftColumnClamp`: без сохранённой ширины — 400; 200 → 320; 600 → 480; панель 720 → не шире 399, панель 760 → не шире 439 (правой ≥ 320); панель 719 → `nil`.
 
   — `#recipes/sidebar`, `#recipes/tabs`, `#assistant/chat`
+
+  **2026-10-12 (T024, раскладка Notes):** `resolve(contentWidth:contentHeight:recipeExpanded:isEditing:)`, новая `listColumnWidth(contentWidth:contentHeight:)`, `showsExpandButton` вместо `showsListButton`; порог 560 + 321 заменён долями ½ / ⅓ и 320 + 1 + 320 (layout.md §Токены).
 - [x] T008 [P] Создать `RecipeScalerNative/Views/IPad/AppLayoutMode.swift`:
   - `enum AppLayoutMode { case phone, padRegular }`;
   - `EnvironmentValues.appLayoutMode`, по умолчанию `.phone`;
@@ -114,6 +116,8 @@
   - Расширить `scripts/verify-ipad-layout.sh` (T002): состояния со скрытым сайдбаром и скрытым списком через `-IPadSidebarHidden` / `-IPadListHidden`. Матрицу окон добавит T049.
 
   — `#recipes/tabs`, `#recipes/focus`
+
+  **2026-10-12 (T024):** кнопки «Список рецептов» больше нет — идентификатор `ipad-recipe-expand-button` у «Развернуть» / «Свернуть»; `-IPadListHidden=1` запускает с развёрнутым рецептом.
 
 **Checkpoint**: вердикты S1–S7 записаны, вариант колонок выбран (B), ассистент — своя панель, одно окно (STOP 5). `IPadLayoutPolicyTests`, `AppLayoutModeTests`, `RecipesSelectionTests`, `AppShellCoordinatorTests` зелёные. `verify-ipad-layout.sh --iphone-regression` — 0 отличий. iPad-ветки ещё не видны пользователю.
 
@@ -268,28 +272,31 @@
 
 ## Phase 4: User Story 2 — Рецепты: колонка списка и две колонки (P1)
 
-**Goal**: список 320 pt + панель рецепта, рецепт в две колонки по ширине, кнопка «Список рецептов», контекстное меню.  
+**Goal**: колонка списка рядом с рецептом (½ контента в книжной, ⅓ в альбомной, не меньше 320 pt), рецепт в две колонки по ширине, «Развернуть» / «Свернуть» как в Apple Notes, контекстное меню.  
 **Independent Test**: spec.md US2.
 
-- [ ] T023 [US2] Режим колонки в `RecipeScalerNative/Views/RecipeListView.swift` (только при `.padRegular`):
+- [x] T023 [US2] Режим колонки в `RecipeScalerNative/Views/RecipeListView.swift` (только при `.padRegular`):
   - строка выбирает рецепт через `RecipesSelection` вместо `NavigationLink(value:)` (~:535), выбранная строка выделена;
   - плитка папок (`viewModeMenu`, ~:403-435) скрыта;
   - заголовок «Все рецепты» / название коллекции; при плейсменте `.topBar` (сайдбар скрыт; читается `@Environment(\.tabBarPlacement)`, S2) — меню выбора «Все рецепты | коллекции» с галочкой;
-  - поиск и меню «+» как есть; состояние поиска (`searchText`) — снаружи `NavigationStack` колонки (во вью-модели списка или у родителя), чтобы переживать переход колонка ↔ выезд поверх (T024).
+  - поиск и меню «+» как есть; состояние поиска (`searchText`) — снаружи `NavigationStack` колонки (у родителя, `IPadRecipesSplitView`), чтобы переживать «Развернуть» / «Свернуть» и телефонный стек (T024); смена коллекции запрос сбрасывает.
 
   Тот же режим для `RecipeScalerNative/Views/CollectionFolderView.swift`. — `#recipes/sidebar`, `#recipes/tabs`, `#recipes/search`
-- [ ] T024 [US2] Создать `RecipeScalerNative/Views/IPad/IPadRecipesSplitView.swift` по варианту **B** (T006, plan.md Р5): `HStack` из двух `NavigationStack`, **без `NavigationSplitView`** (у него тулбары колонок уезжают под таб-бар после переключения сайдбара):
-  - `listMode`: `.inline` / `.hidden` / `.overlay`;
-  - `.inline` — колонка списка 320 (`NavigationStack { RecipeListView(columnMode: true) }`) + `Divider` 1 pt + панель `NavigationStack { YDocRecipeDetailView(recipeId:).id(recipeId) }`; фон и стиль колонки — вручную;
-  - ширина контента измеряется через `onGeometryChange` (iOS 18+) / `GeometryReader` (iOS 17) и передаётся в `IPadLayoutPolicy`;
-  - своя кнопка «Список рецептов» (`ToolbarItem(placement: .topBarLeading)`, `sidebar.left`), если список не `.inline`: при достаточной ширине → `.inline`, иначе → `.overlay`;
-  - `.overlay` — `.overlay(alignment: .leading)`: затемнение 0.25 (тап → `.hidden`) + список 320 с фоном и тенью; выбор рецепта в `.overlay` → `.hidden`;
-  - поиск — `.searchable` колонки списка (лупа в тулбаре колонки, S4), состояние снаружи стека (T023): запрос переживает `.inline` ↔ `.hidden` ↔ `.overlay`;
-  - флаг «список спрятан» — в `AppShellCoordinator`;
+
+  **Отклонение:** поле поиска — под заголовком колонки (`.navigationBarDrawer`, как в прототипе `#recipes/search`), а не лупой в тулбаре колонки. Меню коллекций в заголовке включает оболочка флагом `showsCollectionMenu` (сайдбар скрыт; плейсмент сообщает выбранная страница через `reportsIPadSidebarShown`), сама колонка `tabBarPlacement` не читает. Заголовок не шире колонки минус 150 pt (`listTitleBarReserve`, layout.md): длинное имя коллекции обрезается «…», иначе бар уводил меню заголовка и кнопку справа в «Ещё» (941c0b5).
+- [x] T024 [US2] Создать `RecipeScalerNative/Views/IPad/IPadRecipesSplitView.swift` по варианту **B** (T006, plan.md Р5): `HStack` из двух `NavigationStack`, **без `NavigationSplitView`** (у него тулбары колонок уезжают под таб-бар после переключения сайдбара). Раскладка — как в Apple Notes (решение владельца продукта 2026-10-12, `docs/DECISIONS.md`):
+  - колонка списка (`NavigationStack` с `RecipeListView` / `CollectionFolderView` в режиме колонки, T023) + разделитель 1 pt + панель `NavigationStack { YDocRecipeDetailView(recipeId:).id(recipeId) }`;
+  - ширина и высота контента измеряются `GeometryReader` и передаются в `IPadLayoutPolicy.resolve(contentWidth:contentHeight:recipeExpanded:isEditing:)`: список — `max(320, round((ширина − 1) × доля))`, доля ½ в книжной (высота контента больше ширины) и ⅓ в альбомной; с сайдбаром рядом правило работает на оставшейся ширине;
+  - колонка видна всегда, когда рецепту рядом остаётся ≥ 320 pt; иначе раздел — телефонный стек (push);
+  - «Развернуть» (`arrow.up.left.and.arrow.down.right`, `ToolbarItem(placement: .topBarLeading)` панели рецепта, id `ipad-recipe-expand-button`) — рецепт на весь раздел, колонка списка прячется, сайдбар, стоявший рядом с контентом, прячется через `IPadSidebarControl`; кнопка становится «Свернуть» (`arrow.down.right.and.arrow.up.left`) и возвращает список и сайдбар в прежнее состояние. Без открытого рецепта и в compact кнопки нет;
+  - флаг `recipeDetailExpanded` — в `AppShellCoordinator`, только на сессию: переживает смену вкладок и поворот, не перезапуск;
+  - поиск — состояние снаружи стека колонки (T023): запрос переживает «Развернуть» / «Свернуть»;
   - передавать `isSplitActive = true` в привязку `IPadShellItem` (T012), пока split показан.
 
   Подключить в корень вкладки «Рецепты» при `.padRegular`. — `#recipes/focus`, `#recipes/tabs`
-- [ ] T025 [US2] Две колонки рецепта.
+
+  **Отклонение:** первая версия (81118c0: `listMode` `.inline` / `.hidden` / `.overlay`, своя кнопка «Список рецептов» `sidebar.left`, список 320 поверх рецепта с затемнением) заменена раскладкой Notes по решению владельца (434ea8f). Порог `minDetailWithList` 560 → 320, список — доля контента вместо 320. Развёрнутый рецепт не удаляет колонку списка, а уводит её за левый край (прозрачная, без нажатий, `accessibilityHidden`): без колонки iPadOS переносит бар рецепта в строку верхнего таб-бара и после «Свернуть» оставляет там, пункты уходят в «Ещё». XCUITest всё равно видит строки за экраном, тесты проверяют край колонки. Сайдбар, плавающий над контентом (книжная), «Развернуть» закрывает, а «Свернуть» не возвращает. Push на симуляторе на весь экран не воспроизводится (самое узкое — книжная 834: 417 + 1 + 416), проверен только `IPadLayoutPolicyTests`. `-IPadListHidden=1` теперь значит «рецепт развёрнут при запуске», сайдбар он не прячет. Повторный тап по «Рецепты» оставляет открытый рецепт.
+- [x] T025 [US2] Две колонки рецепта.
   - Создать `RecipeScalerNative/Views/YDocRecipeDetailColumns.swift`.
   - В `RecipeScalerNative/Views/YDocRecipeDetailView.swift` вынести левую колонку (фото, заголовок, порции, ингредиенты, КБЖУ, ~:280-396) и правую (`StepsSection` / `RecipeDescriptionEditorBlock`, ~:400-414) в `@ViewBuilder`.
   - Одна колонка — прежний `VStack` в прежнем порядке.
@@ -303,18 +310,25 @@
     - та же ширина в правке (T041).
 
   — `#recipes/tabs`, `#recipes/sidebar`
-- [ ] T026 [US2] Варианты тулбара рецепта в `RecipeScalerNative/Views/YDocRecipeDetailView.swift` (~:825-880):
+
+  **Отклонение:** правка пока в одну колонку (не шире 720 по центру) — две колонки в правке и общая ширина появятся в T041 (US5). На разделителе — небольшая «ручка», чтобы его было видно и за что тянуть.
+- [x] T026 [US2] Варианты тулбара рецепта в `RecipeScalerNative/Views/YDocRecipeDetailView.swift` (~:825-880):
   - `.phone` — как сейчас;
   - `.padWide` (панель ≥ 600) — «…», «Поделиться», «Не гасить экран», ✦, «Изменить» с текстом;
-  - `.padNarrow` — «…», «Не гасить экран», ✦, карандаш без текста.
+  - `.padNarrow` — «…», «Не гасить экран», ✦, карандаш без текста;
+  - слева — «Развернуть» / «Свернуть» (T024).
 
   ✦ — `IPadAssistantToolbarButton`. Зависимости передавать явно. — `#recipes/sidebar` (узкий), `#recipes/tabs` (широкий)
-- [ ] T027 [P] [US2] Контекстное меню строки в `RecipeScalerNative/Views/RecipeListView.swift` (только при `idiom == .pad`):
+
+  **Отклонение:** ✦ и «Изменить» — отдельные капсулы через `ToolbarSpacer` (iOS 26). ✦ только при видимом сайдбаре (2822afe, FR-021): при таб-баре сверху там закреплена вкладка «Ассистент», второй вход не нужен. Третий стиль `.padBesideTabBar` (b6daa69) — одна капсула «…», «Не гасить экран», карандаш, когда бар рецепта делит строку плавающего таб-бара; после T024 (колонка списка всегда в иерархии) бар туда не переезжает, и на симуляторе этот стиль больше не встречается.
+- [x] T027 [P] [US2] Контекстное меню строки в `RecipeScalerNative/Views/RecipeListView.swift` (только при `idiom == .pad`):
   - «Закрепить/Открепить», «В коллекцию», «В список покупок», «Поделиться», разделитель, «Удалить» — на тех же обработчиках, что свайпы (~:544-573);
   - «Поделиться» → `RecipeShareSheet` (вынести из `private` в `RecipeScalerNative/Views/RecipeDetailShareButton.swift`, если не хватает `isPublic` / `hasImage` / `hasSteps` у строки — пункт отложить и записать здесь, FR-017).
 
   — `#recipes/context`
-- [ ] T028 [US2] Правила выбора.
+
+  **Отклонение:** «Поделиться» отложен: строкам списка (`CollectionEntry`) не хватает `isPublic` и `hasSteps` для `RecipeShareSheet` (FR-017). У пунктов иконки, как в системных меню; новый ключ `ipad.recipe.context.add-to-collection` («В коллекцию»). Меню есть на iPad при любой ширине окна, на iPhone его нет.
+- [x] T028 [US2] Правила выбора.
   - Ничего не выбрано → первый рецепт списка (закреплённые сверху).
   - Удалён открытый → следующий.
   - Удалена выбранная коллекция → «Все рецепты».
@@ -323,8 +337,12 @@
 
   — `#recipes/collection`
 - [ ] T029 [US2] iPhone-регрессия после T023–T028: `bash scripts/verify-ipad-layout.sh --iphone-regression` (рецепт, правка, список, коллекция, поиск) — 0 отличий; `bash scripts/verify-description-editor.sh`, `bash scripts/verify-recipe-collections.sh` на iPhone — зелёные. Расхождения исправить в этой задаче. — `#recipes/sidebar`, `#recipes/collection`, `#recipes/search`, `#edit/edit` на iPhone
-- [ ] T030 [US2] Создать `RecipeScalerNativeUITests/Specs/IPadRecipesSpec.swift`: `testListAndTwoColumns`, `testCollectionSelection`, `testShowListButton`, `testRotationKeepsRecipe`, `testContextMenu`, `testSearchFiltersColumn`, `testColumnDividerDragPersists` (потянуть разделитель вправо до упора → левая колонка 480 ± 1 по `frame`; `app.terminate()` + `app.launch()` с теми же аргументами → ширина та же). — `#recipes/tabs`, `#recipes/focus`, `#recipes/collection`, `#recipes/context`, `#recipes/search`
+- [x] T030 [US2] Создать `RecipeScalerNativeUITests/Specs/IPadRecipesSpec.swift`: `testListAndTwoColumns`, `testCollectionSelection`, `testExpandCollapse` («Развернуть» прячет список и сайдбар, стоявший рядом, «Свернуть» возвращает оба; развёрнутый вид переживает смену вкладки), `testRotationKeepsRecipe`, `testContextMenu`, `testSearchFiltersColumn`, `testColumnDividerDragPersists` (потянуть разделитель вправо до упора → левая колонка 480 ± 1 по `frame`; `app.terminate()` + `app.launch()` с теми же аргументами → ширина та же). — `#recipes/tabs`, `#recipes/focus`, `#recipes/collection`, `#recipes/context`, `#recipes/search`
+
+  **Отклонение:** каждый тест — свежий пользователь с двумя рецептами через REST, без ингредиентов (bulk-ингредиенты на локальном бэкенде отвечают 500); коллекцию тест создаёт в приложении через «В коллекцию» (`POST /api/collections` — 404). Отдельного теста на push нет: на симуляторе его не воспроизвести, правило покрыто `IPadLayoutPolicyTests`. Ширины проверяются по `frame`: список — ⅓ или ½ контента, рядом с сайдбаром — от окна минус 280 (колонка уходит под плавающий сайдбар); «нет списка» — колонка за левым краем (T024). Снимки XCTest в альбомной на симуляторе iPadOS 26 — обрезанный портретный буфер, поэтому снимки для ревью сняты `simctl io screenshot` (`tmp/ipad-verify/us2/redesign/`). Прогон: 7/7 на iPad Pro 11" (iPadOS 26.3), на iPhone спека пропускается.
 - [ ] T031 [US2] Ручной проход по layout.md §Матрица приёмки для `recipes/*`: альбомная и книжная, весь экран и ⅔, сайдбар виден и скрыт; разделитель колонок пальцем и трекпадом (упоры, сохранение после перезапуска и после сужения окна). Отметить «пройдено / не пройдено» по каждому пункту. — `#recipes/*`
+
+  **Подготовлено автоматически 2026-10-12, ручной проход не делался.** На симуляторе iPad Pro 11" пройдено: альбомная и книжная на весь экран, в альбомной — сайдбар скрыт и виден, «Развернуть» / «Свернуть» в каждом из этих состояний (снимки `tmp/ipad-verify/us2/redesign/`); разделитель колонок перетаскиванием XCUITest до упора и сохранение после перезапуска (`testColumnDividerDragPersists`). Не пройдено: книжная с плавающим сайдбаром над рецептом (снимка нет); окна ⅔ и ½ (Split View и Stage Manager на симуляторе не автоматизируются), а с ними push на экране; разделитель пальцем и трекпадом; сохранение ширины после сужения окна (только `IPadLayoutPolicyTests`); VoiceOver.
 
 **Checkpoint (US2)**: колонки и две колонки рецепта совпадают с прототипом по матрице; открытый рецепт переживает поворот и смену ширины; iPhone — 0 отличий. Можно выпускать.
 
@@ -409,7 +427,7 @@
   - Проверить аппаратную и плавающую клавиатуру: курсор не уходит под клавиатуру, панель видна.
 
   — `#edit/edit`
-- [ ] T043 [US5] После «Готово» рецепт открыт, список скрыт, кнопка «Список рецептов» есть (как `#recipes/focus`). Смена size class во время правки сохраняет фокус и текст. Одна колонка правки при панели < 720 — не шире 720 по центру. — `#edit/edit` → `#recipes/focus`
+- [ ] T043 [US5] После «Готово» рецепт открыт развёрнутым, список скрыт, «Свернуть» его возвращает (как `#recipes/focus`). Смена size class во время правки сохраняет фокус и текст. Одна колонка правки при панели < 720 — не шире 720 по центру. — `#edit/edit` → `#recipes/focus`
 - [ ] T044 [US5] Тест `testEditTwoColumns` в `RecipeScalerNativeUITests/Specs/IPadRecipesSpec.swift`; `bash scripts/verify-description-editor.sh` на iPhone; ручной проход `#edit/edit` в альбомной, ⅔ и ½. — `#edit/edit`
 
 **Checkpoint (US5)**: правка в две колонки совпадает с прототипом; на iPhone правка без изменений (0 отличий скриншотов).
