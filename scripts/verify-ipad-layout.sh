@@ -35,7 +35,7 @@
 # is relaunched IPAD_VERIFY_RETRIES times before it counts as FAILED.
 #
 # Data and side effects: the app runs as the shared DEBUG simulator user against
-# prod data (recipes, shopping list, discover feed). -ScreenshotCapture=1 hides
+# prod data (recipes, shopping list; discover only with a named profile). -ScreenshotCapture=1 hides
 # release notes / system banners and deletes that user's active timers on every
 # launch; the opt-in timers state creates one 42-minute timer that the next launch
 # removes.
@@ -45,7 +45,9 @@
 #   IPAD_SIM_ID / SIM_ID               simulator overrides (iPad / iPhone)
 #   IPAD_VERIFY_OUT                    output root (default tmp/ipad-verify)
 #   IPAD_VERIFY_RECIPE_NAME            recipe opened by recipe states (default «Баскский чизкейк»)
-#   IPAD_VERIFY_DISCOVER_PROFILE       public profile for discover-author (default mike.ozornin)
+#   IPAD_VERIFY_DISCOVER_PROFILE       public profile for discover-author. No default: without it
+#                                      discover-feed / discover-author are skipped (both show other
+#                                      people's public data); name a profile you may capture
 #   IPAD_VERIFY_MAX_DIFF_PIXELS        allowed differing pixels per state (default 0)
 #   IPAD_VERIFY_CHANNEL_TOLERANCE      per-channel delta treated as equal (default 2: Liquid Glass
 #                                      blur dithers ±1–2 levels between launches; layout changes are far larger)
@@ -118,7 +120,11 @@ OUT_DIR="${IPAD_VERIFY_OUT:-$ROOT/tmp/ipad-verify}"
 BASELINE_DIR="$OUT_DIR/iphone-baseline"
 REGRESSION_DIR="$OUT_DIR/iphone-regression"
 RECIPE_NAME="${IPAD_VERIFY_RECIPE_NAME:-Баскский чизкейк}"
-DISCOVER_PROFILE="${IPAD_VERIFY_DISCOVER_PROFILE:-mike.ozornin}"
+DISCOVER_PROFILE="${IPAD_VERIFY_DISCOVER_PROFILE:-}"
+if [[ -n "$DISCOVER_PROFILE" && ! "$DISCOVER_PROFILE" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  echo "IPAD_VERIFY_DISCOVER_PROFILE must be a profile slug ([A-Za-z0-9._-]), got «${DISCOVER_PROFILE}»" >&2
+  exit 64
+fi
 # Window ½ stand-in for the compact states (IPadLayoutMetrics.regularMinWidth is 680).
 COMPACT_WIDTH="${IPAD_VERIFY_COMPACT_WIDTH:-400}"
 MAX_DIFF_PIXELS="${IPAD_VERIFY_MAX_DIFF_PIXELS:-0}"
@@ -145,6 +151,8 @@ RETRIES="${IPAD_VERIFY_RETRIES:-2}"
 # profile-tabs / recipes-compact / profile-compact are iPad-only too: the profile
 # form sheet over the top bar (T019a) and the window ½ stand-in (-DebugWindowWidth,
 # compact size class): the phone bottom bar, «Профиль» as a tab page.
+# discover-feed / discover-author run only with IPAD_VERIFY_DISCOVER_PROFILE: they
+# show other people's public recipes and profiles.
 # ---------------------------------------------------------------------------
 COMMON_STATES=(
   recipes-list
@@ -154,11 +162,15 @@ COMMON_STATES=(
   edit-edit
   assistant-chat
   shopping-az
-  discover-feed
-  discover-author
   import-text
   profile-public
 )
+DISCOVER_SKIP_NOTE=""
+if [[ -n "$DISCOVER_PROFILE" ]]; then
+  COMMON_STATES+=(discover-feed discover-author)
+else
+  DISCOVER_SKIP_NOTE="skip discover-feed, discover-author: set IPAD_VERIFY_DISCOVER_PROFILE=<slug> to capture them (they show other people's public data)"
+fi
 # recipes-timers starts a timer, and the first timer asks for notification
 # permission. simctl cannot answer that system alert, so the state is opt-in:
 # answer the alert once on the simulator, then set IPAD_VERIFY_INCLUDE_TIMERS=1
@@ -535,6 +547,7 @@ run_ipad() {
   select_states "${IPAD_STATES[@]}"
   local -a states=("${SELECTED[@]}")
   echo "== iPad layout capture on $SIM_ID (${#states[@]} states) =="
+  if [[ -n "$DISCOVER_SKIP_NOTE" ]]; then echo "  $DISCOVER_SKIP_NOTE"; fi
   prepare_simulator
   local state failed=0 tmp final
   mkdir -p "$OUT_DIR/.frames/ipad"
@@ -681,6 +694,7 @@ run_iphone_regression() {
   local label="regression"
   ((CAPTURE_BASELINE)) && label="baseline"
   echo "== iPhone $label on $SIM_ID (${#states[@]} states) =="
+  if [[ -n "$DISCOVER_SKIP_NOTE" ]]; then echo "  $DISCOVER_SKIP_NOTE"; fi
 
   if ((!CAPTURE_BASELINE)) && [[ ! -f "$BASELINE_DIR/manifest.txt" ]]; then
     echo "FAILED: no iPhone baseline in $BASELINE_DIR — capture it with --capture-baseline on code without spec-081 Swift changes" >&2
@@ -739,6 +753,7 @@ case "$MODE" in
     done
     echo "iPhone regression states:"
     printf '  %s\n' "${IPHONE_STATES[@]}"
+    if [[ -n "$DISCOVER_SKIP_NOTE" ]]; then echo "$DISCOVER_SKIP_NOTE"; fi
     ;;
   compare-dirs)
     ensure_pixel_tool
