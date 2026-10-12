@@ -583,3 +583,19 @@ The suite also has no recorded reference snapshots (`isRecording = false`, no co
 **Rationale:** User decision 2026-10-12: follow Apple Notes. The list is there whenever it fits and one button gives the recipe the whole section, instead of our own list toggle next to the system sidebar button and a list sliding over the recipe. The proportions (½ portrait, ⅓ landscape) are the owner's; a portrait half keeps the recipe in one column, landscape and expanded give it two. Expanded, the list column stays in the hierarchy off the leading edge (transparent, no hit testing, hidden from accessibility): removing it lets iPadOS 26.3 move the recipe bar into the tab bar row and keep it there after collapse.
 
 ---
+
+### 2026-10-12 — iPad: «Развернуть» restores only the sidebar it hid (spec 081 US2)
+
+**Decision:** `AppShellCoordinator` owns the expand state. `setRecipeDetailExpanded` hides the sidebar only when it stands beside the content and remembers that in `sidebarHiddenByRecipeExpand`; the decisions are pure functions in `IPadLayoutPolicy`. The recipe collapses when the window narrows to the phone stack (push) or to compact. The remembered sidebar comes back only on the Recipes tab in a regular window: a collapse elsewhere (an empty collection opened from the sidebar, compact) defers the restore until the user returns there. If the user shows the sidebar while expanded, the flag clears and «Свернуть» leaves it alone. Sign-out shows a sidebar that expand hid before it clears the flags. Expanded, the list column's `NavigationStack` stays in the hierarchy (the toolbar workaround) but is emptied, so no rows, «+» or search field remain for XCUITest, VoiceOver or Full Keyboard Access.
+
+**Rationale:** Review of the Notes-style expand found that the sidebar could stay hidden after the window narrowed or after sign-out, and that it could pop open over another tab. Restoring only what we hid, and only where it was hidden, never fights the user. An empty stack keeps the toolbar fix and removes the invisible but reachable list.
+
+---
+
+### 2026-10-12 — iPad: the assistant panel on Recipes always hides the list column (spec 081 US3, user decision)
+
+**Decision:** When the assistant panel opens on the Recipes tab, the list column is always hidden at any window width: the screen shows the recipe and the chat. Closing the assistant brings the list back under the usual FR-011 rules, keeping the open recipe and the selected row. Recorded in spec.md (US3, FR-022) and layout.md (`#assistant/chat`); implemented with US3.
+
+**Rationale:** User decision 2026-10-12. Recipe plus chat is the working pair while talking to the assistant. A list squeezed beside both would leave the recipe in one narrow column.
+
+---

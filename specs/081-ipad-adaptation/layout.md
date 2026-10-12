@@ -84,7 +84,7 @@ leftWidth    = twoColumns ? clamp(preferred ?? 400, 320, min(480, detailWidth �
 
 | Прототип (CSS-класс) | SwiftUI |
 |----------------------|---------|
-| `.sb` сайдбар, `.sb-item`, `.sb-sec` «Коллекции», `.is-sub` коллекции | системный сайдбар `TabView(.sidebarAdaptable)`; `Tab`; `TabSection("collections.title")`; `.sectionActions` («Новая коллекция») |
+| `.sb` сайдбар, `.sb-item`, `.sb-sec` «Коллекции», `.is-sub` коллекции | системный сайдбар `TabView(.sidebarAdaptable)`; `Tab`; `TabSection("collections.title")`; `.sectionActions` («Новая коллекция»); строка коллекции — как в телефонном списке: эмодзи иконкой (картинка), иначе папка цветом коллекции, имя, счётчик бейджем |
 | `.sb-foot` строка профиля | `.tabViewSidebarBottomBar { IPadSidebarProfileFooter }` — `Button`, открывает лист профиля; выбранной не бывает (подсветка `is-on` прототипа не делается) |
 | кнопка сайдбара (`toggle-sb`, ⌃⌘S) | системная кнопка сайдбара; ⌃⌘S и сворачивание в правке — `IPadSidebarControl` (`sidebar.isHidden`, спайк S2) |
 | `.tabs-top` плавающий бар из 5 вкладок | системный верхний таб-бар `.sidebarAdaptable` при скрытом сайдбаре |
@@ -102,7 +102,7 @@ leftWidth    = twoColumns ? clamp(preferred ?? 400, 320, min(480, detailWidth �
 | `.sheet-insp` | телефонный лист ассистента (`AssistantSheetModifier`) |
 | `.dim` + `.formsheet` | `.sheet` + `.presentationSizing(.form)` (`.iPadFormSheet()`) |
 | `.dim` + `.formsheet.is-prof` (бар: «Моё всё» по центру, «Готово» справа) | `.sheet(isPresented: $coordinator.isProfileSheetPresented)` → `AccountView(onDone:)` (свой `NavigationStack`, заголовок `account.title`, `ToolbarItem(.confirmationAction)` «Готово») + `.iPadFormSheet()`; тап по `.dim` — системное закрытие |
-| `.ios-menu` у строки | `.contextMenu` (только `idiom == .pad`) |
+| `.ios-menu` у строки | `.contextMenu` (только `.padRegular`) |
 | `.ios-menu` «…», «+», меню заголовка | `Menu` |
 | `.topbar` у «Покупок», «Подборок» | `toolbar` вкладки |
 | `.page-in` | `.iPadReadableWidth(720)` |
@@ -132,7 +132,7 @@ leftWidth    = twoColumns ? clamp(preferred ?? 400, 320, min(480, detailWidth �
 | `#recipes/focus` | верхний бар · без списка · рецепт 1194 → две колонки; слева в тулбаре «Свернуть» (`arrow.down.right.and.arrow.up.left`). Вход — «Развернуть» (`arrow.up.left.and.arrow.down.right`), он прячет и сайдбар, если тот стоял рядом; «Свернуть» возвращает список и сайдбар (Apple Notes, решение 2026-10-12) | `IPadRecipesSplitView` (B), `AppShellCoordinator.recipeDetailExpanded` (на сессию, переживает смену вкладок); кнопка `ToolbarItem(placement: .topBarLeading)`, id `ipad-recipe-expand-button`; сайдбар — `IPadSidebarControl` | как `sidebar` | `02-focus` |
 | `#recipes/collection` | сайдбар, выбрана «Десерты» · колонка «Десерты» (её рецепты) · первый рецепт коллекции | выбор `IPadShellItem.collection(id)` при активном `IPadRecipesSplitView` → путь `[.folder(id), .recipe(первый, folderContext: id)]` (plan.md Р2) | путь `[.folder(id)]` — телефонный экран коллекции (`CollectionFolderView`) в стеке | `03-collection` |
 | `#recipes/search` | верхний бар · колонка с запросом «шоколад» · пусто → «Ничего не нашлось по «…»» | `.searchable` колонки списка, телефонная фильтрация и пустое состояние | телефонный список с поиском | `04-search`, `23-half-search` |
-| `#recipes/context` | сайдбар · контекстное меню у строки: «Закрепить/Открепить», «В коллекцию», «В список покупок», «Поделиться» │ «Удалить» | `.contextMenu` строки (только iPad) на обработчиках свайпов | то же меню долгим нажатием (iPad в compact) | `05-context` |
+| `#recipes/context` | сайдбар · контекстное меню у строки: «Закрепить/Открепить», «В коллекцию», «В список покупок», «Поделиться» │ «Удалить» | `.contextMenu` строки (только `.padRegular`) на обработчиках свайпов | меню нет, как на iPhone (свайпы строки) | `05-context` |
 | `#recipes/timers` | капсула таймеров внизу по центру (высота 48, отступ 16) → по тапу поповер 380 над ней | `tabViewBottomAccessory` + `.popover` с `MobileTimerPanel` | телефонная раскрытая панель таймеров | `06-timers` |
 | `#recipes/cooking` | зелёная полоса под тулбаром на всю ширину панели (над фото и шагами) | `ScreenAwakeStatusBanner` над `YDocRecipeDetailColumns` | полоса под тулбаром, как на iPhone | `b1-cooking` |
 | `#recipes/collections` | «…» → «Коллекции» → поповер 300 от «…»: «Добавить в коллекцию», коллекции с галочками, «Новая коллекция» | `RecipeDetailActionsMenu` → `.adaptivePopover` → `CollectionAssignSheet` | телефонный лист | `b1-collections` |
@@ -147,7 +147,7 @@ leftWidth    = twoColumns ? clamp(preferred ?? 400, 320, min(480, detailWidth �
 
 | Состояние | Широкое окно | SwiftUI | Compact | Скриншот |
 |-----------|--------------|---------|---------|----------|
-| `#assistant/chat` | верхний бар · рецепт (список скрыт: 854 − 321 < 560) в две колонки · инспектор 340: «Ассистент», [история, новый чат], ×; чат; композер с тегом рецепта, тег → чип | панель в `HStack` рядом с `IPadAdaptiveTabView` → `AssistantSheet(session:, .inspector)`, ширина 340 | телефонный лист ассистента поверх рецепта | `b1-assist-chat`, `08-*`, `24-third-assistant`, `26-portrait-assistant` |
+| `#assistant/chat` | верхний бар · рецепт в две колонки (853), колонки списка нет: на «Рецептах» открытый ассистент прячет её всегда, закрытие возвращает (решение 2026-10-12) · инспектор 340: «Ассистент», [история, новый чат], ×; чат; композер с тегом рецепта, тег → чип | панель в `HStack` рядом с `IPadAdaptiveTabView` → `AssistantSheet(session:, .inspector)`, ширина 340 | телефонный лист ассистента поверх рецепта | `b1-assist-chat`, `08-*`, `24-third-assistant`, `26-portrait-assistant` |
 | `#assistant/new` | то же, пустой чат | то же | лист | `b1-assist-new` |
 | `#assistant/history` | поповер от кнопки истории поверх чата: поиск и чаты (2 строки), текущий выделен | `.adaptivePopover` → `AssistantThreadListSheet` | телефонный лист истории | `b1-assist-history` |
 
@@ -273,7 +273,7 @@ leftWidth    = twoColumns ? clamp(preferred ?? 400, 320, min(480, detailWidth �
 1. На iPhone `AppLayoutMode` всегда `.phone`: скриншоты iPhone до и после совпадают попиксельно (`verify-ipad-layout.sh --iphone-regression`).
 2. iPad 11″, альбомная, весь экран, сайдбар виден: видна колонка списка; панель рецепта 593 ± 2; рецепт в одну колонку; в тулбаре нет «Поделиться», а «Изменить» — иконка.
 3. То же со скрытым сайдбаром: левая колонка рецепта 400 ± 1 (разделитель не двигали), шаги не шире 660, у «Изменить» есть текст.
-4. С открытым инспектором (без сайдбара) инспектор 340 ± 1. По FR-011 (2026-10-12) список остаётся рядом (320), рецепт 533 в одну колонку; прежнее «колонки списка нет, рецепт в две колонки» (US3) сверить при реализации US3.
+4. С открытым инспектором (без сайдбара) инспектор 340 ± 1, колонки списка нет, рецепт 853 в две колонки (FR-022, решение 2026-10-12); после закрытия инспектора колонка списка возвращается.
 5. Книжная, весь экран: список и рецепт пополам (417 и 416 ± 2), рецепт в одну колонку, слева в тулбаре рецепта «Развернуть»; после него рецепт на всю ширину в две колонки. Альбомная, сайдбар виден: «Развернуть» прячет сайдбар и список, «Свернуть» возвращает оба.
 6. Альбомная ½ (582): нижний таб-бар из пяти вкладок, сайдбара и верхнего бара нет.
 7. Импорт в широком окне: лист 560 ± 10 по ширине, вокруг затемнение; в ½ — лист на всю высоту.

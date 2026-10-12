@@ -425,7 +425,7 @@ HStack(spacing: 0) {
 | `RecipeScalerNative/Views/DiscoverRootView.swift`, `Views/Discover/DiscoverPublicProfileView.swift` | Изменить | Ограничение ширины 720 / 1100; сегменты в строке заголовка на `.padRegular`; ✦. |
 | `RecipeScalerNative/Views/ImportRecipeSheet.swift` | Изменить | Form sheet на `.padRegular` (:216), если нужно. |
 | `RecipeScalerNative/AccessibilityIdentifiers.swift`, `RecipeScalerNativeUITests/Helpers/Selectors.swift` | Изменить | Идентификаторы сайдбара, футера, колонки списка, кнопки «Список рецептов», панели ассистента; кнопка «Готово» листа профиля. |
-| `RecipeScalerNative/Utils/DebugLaunchOptions.swift` | Изменить | Только DEBUG: `-IPadSidebarHidden`, `-IPadListHidden`, `-DebugWindowWidth <pt>` для матрицы (T049). |
+| `RecipeScalerNative/Utils/DebugLaunchOptions.swift` | Изменить | Только DEBUG: `-IPadSidebarHidden`, `-IPadListHidden` (с 2026-10-12 — старт с развёрнутым рецептом: «Свернуть», списка нет; сайдбар не прячет), `-DebugWindowWidth <pt>` для матрицы (T049). |
 | `RecipeScalerNative/Resources/Localizable.xcstrings` | Изменить | Новые ключи `ipad.*` (en + ru). |
 | `RecipeScalerNative/Utils/ShakeToOpenAssistantPreference.swift` | Изменить | Р9: `isActive(idiom:)`. |
 | `RecipeScalerNativeTests/IPadLayoutPolicyTests.swift`, `RecipesSelectionTests.swift`, `IPadShellItemTests.swift`, `AppLayoutModeTests.swift`, `IPadProfileSheetPolicyTests.swift` | Создать | Чистая логика, включая clamp ширины левой колонки (`IPadLayoutPolicyTests/testLeftColumnClamp`) и правило листа профиля (Р2a). |
@@ -627,4 +627,4 @@ HStack(spacing: 0) {
   - Mac Catalyst или «Designed for iPad»;
   - будущая спека с «ассистент видит рецепт» и сеткой авторов;
   - сайдбар на iPadOS 18+ (Q1, низкий приоритет) — третий построитель таб-бара (Р3).
-- **Временные allowlist/quarantine:** DEBUG-флаги `-DebugWindowWidth`, `-IPadSidebarHidden`, `-IPadListHidden` — owner: эта фича; только `#if DEBUG`; убираются, если появится штатный способ задавать ширину окна симулятора из UI-тестов.
+- **Временные allowlist/quarantine:** DEBUG-флаги `-DebugWindowWidth`, `-IPadSidebarHidden`, `-IPadListHidden` (старт с развёрнутым рецептом) — owner: эта фича; только `#if DEBUG`; убираются, если появится штатный способ задавать ширину окна симулятора из UI-тестов.
