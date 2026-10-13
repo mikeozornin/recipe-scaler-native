@@ -46,7 +46,10 @@ struct ProcessTableCookingView: View {
                     .onAppear { closeCooking() }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // `minWidth: 0`: the measured width is the window, not the matrix. Without it a
+        // window narrower than the 420 pt starting width (an iPad window ⅓ or Slide Over)
+        // measured the 420 pt matrix itself and stayed clipped on both sides (spec 081 T039).
+        .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
         .background {
             Color(.systemBackground)
                 .ignoresSafeArea(edges: .horizontal)

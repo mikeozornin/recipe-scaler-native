@@ -195,6 +195,87 @@ final class ProcessTableCookingLayoutTests: XCTestCase {
         )
     }
 
+    /// Spec 081 (T039): on iPad the cooking table turns with the window. It does not force
+    /// landscape, and the matrix fills the width without clipping in landscape, in portrait,
+    /// in a ½ window and in windows narrower than the 420 pt starting width.
+    func testCookingOnIPadFollowsTheWindowInEveryOrientation() throws {
+        try XCTSkipIf(UIDevice.current.userInterfaceIdiom != .pad, "iPad layout")
+        let scene = try XCTUnwrap(
+            UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first,
+            "Needs a live window scene"
+        )
+        let sceneOrientation = scene.effectiveGeometry.interfaceOrientation
+
+        let cooking = ProcessTableCookingCoordinator()
+        cooking.beginLandscapeSession()
+        defer { cooking.dismissForLogout() }
+        XCTAssertEqual(
+            cooking.supportedInterfaceOrientations(for: scene.windows.first),
+            .all,
+            "Cooking must not lock the iPad to landscape"
+        )
+        let cookingHost = ProcessTableCookingHostingController(rootView: makeCookingView())
+        XCTAssertEqual(cookingHost.supportedInterfaceOrientations, .all)
+
+        let windows: [(name: String, size: CGSize)] = [
+            ("landscape", CGSize(width: 1210, height: 834)),
+            ("portrait", CGSize(width: 834, height: 1210)),
+            ("half", CGSize(width: 597, height: 834)),
+            ("narrow", CGSize(width: 400, height: 834)),
+            ("third", CGSize(width: 320, height: 834))
+        ]
+        for (name, size) in windows {
+            let host = UIHostingController(rootView: makeCookingView())
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(origin: .zero, size: size)
+            window.rootViewController = host
+            window.isHidden = false
+            host.view.layoutIfNeeded()
+            pumpMain(seconds: 0.4)
+            host.view.layoutIfNeeded()
+
+            var grid: CGRect?
+            XCTAssertTrue(
+                eventually {
+                    grid = frame(of: AccessibilityIdentifiers.recipeProcessTableGrid, in: host.view)
+                    return grid.map { $0.width > 0 } ?? false
+                },
+                "\(name): the process-table grid is not on screen"
+            )
+            if let grid {
+                XCTAssertGreaterThanOrEqual(grid.minX, -0.5, "\(name): the grid starts off the window: \(grid)")
+                XCTAssertLessThanOrEqual(grid.maxX, size.width + 0.5, "\(name): the grid is clipped: \(grid)")
+                XCTAssertGreaterThanOrEqual(
+                    grid.width,
+                    size.width - ProcessTableLayout.cookingLeadingEdgePad - 1,
+                    "\(name): the grid does not fill the window width: \(grid)"
+                )
+            }
+            if let close = frame(of: AccessibilityIdentifiers.recipeProcessTableClose, in: host.view) {
+                XCTAssertTrue(
+                    window.bounds.contains(close),
+                    "\(name): Close is outside the window: \(close)"
+                )
+            }
+            let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "ipad-cooking-\(name)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+
+        XCTAssertEqual(
+            scene.effectiveGeometry.interfaceOrientation,
+            sceneOrientation,
+            "Cooking must not rotate the iPad"
+        )
+    }
+
     // MARK: - Fixture
 
     private func makeCardRecipe(processTableRaw: String?) -> RecipeData {
@@ -323,6 +404,24 @@ final class ProcessTableCookingLayoutTests: XCTestCase {
             }
         }
         return view.subviews.contains { containsAccessibilityIdentifier(id, in: $0) }
+    }
+
+    /// Window frame of the view or SwiftUI accessibility element with `id`.
+    private func frame(of id: String, in view: UIView) -> CGRect? {
+        if view.accessibilityIdentifier == id, let window = view.window {
+            return view.convert(view.bounds, to: window)
+        }
+        for element in view.accessibilityElements ?? [] {
+            guard let object = element as? NSObject,
+                  object.value(forKey: "accessibilityIdentifier") as? String == id
+            else { continue }
+            guard let window = view.window else { return object.accessibilityFrame }
+            return window.convert(object.accessibilityFrame, from: window.screen.coordinateSpace)
+        }
+        for subview in view.subviews {
+            if let found = frame(of: id, in: subview) { return found }
+        }
+        return nil
     }
 
     private func containsAccessibilityIdentifier(_ id: String, in controller: UIViewController) -> Bool {
