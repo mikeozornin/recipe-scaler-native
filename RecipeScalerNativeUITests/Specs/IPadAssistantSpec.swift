@@ -316,17 +316,17 @@ final class IPadAssistantSpec: BaseTestCase {
         XCTAssertTrue(tab.waitForExistence(timeout: Wait.element), "«Ассистент» missing from the top bar", file: file, line: line)
         tab.tap()
         XCTAssertTrue(inspector.waitForExistence(timeout: Wait.element), "The «Ассистент» tab did not open the panel", file: file, line: line)
-        XCTAssertFalse(waitUntil(timeout: 2) { self.chatOutsidePanel }, "A sheet opened over the panel", file: file, line: line)
+        // A sheet comes up over the panel a moment after it, so give it the time.
+        XCTAssertFalse(waitUntil(timeout: 3) { self.composerCount > 1 }, "A sheet opened over the panel", file: file, line: line)
     }
 
-    /// Chat content left of the window's middle: a sheet (form or page), never the 340 pt
-    /// panel at the trailing edge. `assistantPage.sheet` alone also matches the panel's chat
-    /// (the same `assistant_sheet` id).
-    private var chatOutsidePanel: Bool {
-        let window = app.windows.firstMatch.frame
-        return app.descendants(matching: .any).matching(identifier: UIA.assistantSheet)
-            .allElementsBoundByIndex
-            .contains { $0.exists && !$0.frame.isEmpty && $0.frame.minX < window.midX }
+    /// Chat composers on screen: the panel's, plus a sheet's if one opened over it.
+    /// `assistantPage.sheet` alone also matches the panel's chat (the same `assistant_sheet`
+    /// id). Counts only, no per-element frames: the check has to be cheap to poll.
+    private var composerCount: Int {
+        [UIA.assistantMessageInput, UIA.assistantSheet].reduce(0) { sum, id in
+            sum + app.textFields.matching(identifier: id).count + app.textViews.matching(identifier: id).count
+        }
     }
 
     /// History, «Новый чат» and × sit in the panel's own bar, all reachable.
