@@ -36,8 +36,10 @@ struct IPadRecipesSplitView: View {
     let assistantPanelOpen: Bool
 
     @State private var searchText = ""
-    /// The section's size with the software keyboard hidden: the keyboard must not turn
-    /// portrait into landscape (`IPadLayoutPolicy.contentHeightIgnoringKeyboard`).
+    /// The section's size up to the window's top and bottom edges, under the bars and with
+    /// the software keyboard hidden: a window taller than wide is portrait (the ⅔ landscape
+    /// window, layout.md §Матрица приёмки), and the keyboard never turns portrait into
+    /// landscape (`IPadLayoutPolicy.contentHeightIgnoringKeyboard`).
     @State private var sizeWithoutKeyboard: CGSize?
 
     private var selection: RecipesSelection {
@@ -60,8 +62,8 @@ struct IPadRecipesSplitView: View {
     }
 
     var body: some View {
-        // The columns stay inside the keyboard safe area (rows under the keyboard scroll
-        // into view); only the orientation is read from the height without the keyboard.
+        // The columns stay inside the safe area (rows under the keyboard scroll into view);
+        // only the orientation is read from the height to the window edges.
         GeometryReader { proxy in
             let layout = IPadLayoutPolicy.resolve(
                 contentWidth: proxy.size.width,
@@ -126,7 +128,7 @@ struct IPadRecipesSplitView: View {
         .background {
             Color.clear
                 .onGeometryChange(for: CGSize.self) { $0.size } action: { sizeWithoutKeyboard = $0 }
-                .ignoresSafeArea(.keyboard)
+                .ignoresSafeArea(.all, edges: .vertical)
         }
         .onChange(of: selection.collectionId) { _, _ in
             searchText = ""

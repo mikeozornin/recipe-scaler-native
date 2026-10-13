@@ -89,6 +89,25 @@ final class IPadLayoutPolicyTests: XCTestCase {
         XCTAssertTrue(resolved.twoColumns)
     }
 
+    /// The ⅔ landscape window (11″ M4: 787 × 834) is taller than wide, so the list is half
+    /// (layout.md §Матрица приёмки). Under the top tab bar the section is 787 × ~740, wider
+    /// than tall: the height measured to the window edges keeps it portrait (spec 081, T052).
+    func testTwoThirdsLandscapeWindowSplitsInHalf() {
+        let height = IPadLayoutPolicy.contentHeightIgnoringKeyboard(
+            current: CGSize(width: 787, height: 740),
+            withoutKeyboard: CGSize(width: 787, height: 834)
+        )
+        XCTAssertEqual(height, 834)
+        let resolved = layout(787, height: height)
+        XCTAssertEqual(resolved.listWidth, 393, "The ⅔ landscape window took the landscape third")
+        XCTAssertEqual(resolved.detailWidth, 393)
+        XCTAssertFalse(resolved.twoColumns)
+        // What T049 measured: the height under the bars alone gives the clamped third.
+        XCTAssertEqual(layout(787, height: 740).listWidth, 320)
+        // layout.md row «Альбомная · ⅔» on the 1194 pt window.
+        XCTAssertEqual(layout(776, height: 834).listWidth, 388)
+    }
+
     /// A measurement of another width is from before a rotation: the current height decides.
     func testStaleMeasurementAfterRotationIsIgnored() {
         let height = IPadLayoutPolicy.contentHeightIgnoringKeyboard(

@@ -193,11 +193,13 @@ enum IPadLayoutPolicy {
         )
     }
 
-    /// The height that decides portrait or landscape. A view laid out inside the keyboard
-    /// safe area gets shorter while the keyboard is up (portrait 834 × 1100 becomes
-    /// 834 × 700), so the content is measured once more ignoring the keyboard
-    /// (`withoutKeyboard`). The keyboard changes only the height: a measurement of
-    /// another width is from before a rotation or resize and is not used.
+    /// The height that decides portrait or landscape: the window's, as layout.md §Матрица
+    /// приёмки counts it. A view laid out inside the safe area is shorter by the bars (the
+    /// ⅔ landscape window 776 × 834 would turn landscape under them) and, while the keyboard
+    /// is up, by the keyboard (portrait 834 × 1100 becomes 834 × 700), so the content is
+    /// measured once more to the window's top and bottom edges (`withoutKeyboard`). The
+    /// height alone differs: a measurement of another width is from before a rotation or
+    /// resize and is not used.
     static func contentHeightIgnoringKeyboard(current: CGSize, withoutKeyboard: CGSize?) -> CGFloat {
         guard let withoutKeyboard, abs(withoutKeyboard.width - current.width) < 0.5 else {
             return current.height
