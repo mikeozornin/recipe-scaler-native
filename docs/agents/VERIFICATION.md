@@ -56,6 +56,10 @@ entitlements, plist, extension targets, `Package.resolved`, Xcode version и SDK
 - `scripts/tests/test-verify-ipad-layout.sh` — pixel-сравнение iPhone-регрессии
   (spec 081): падает на изменённом, пропавшем или повёрнутом скриншоте и на
   пустом baseline; box-маска нестабильных областей.
+- `scripts/tests/test-verify-ipad-keyboard.sh` — host-клавиши iPad (spec 081, US6):
+  `VERIFIED` только если `testHostKeys` прошёл и каждая запрошенная клавиша отправлена и
+  увидена тестом; без AXe или backend — `INCONCLUSIVE`, пропуск/ноль тестов/сбой `axe` —
+  `FAILED`.
 
 Новый verifier-скрипт обязан добавить fixture-тест, который доказывает, что
 скрипт падает на сломанной среде/входе.

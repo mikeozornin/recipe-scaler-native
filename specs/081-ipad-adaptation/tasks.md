@@ -670,16 +670,58 @@
 **Goal**: команды из layout.md §Меню в меню-баре и по шорткатам.  
 **Independent Test**: spec.md US6.
 
-- [ ] T045 [US6] Создать `RecipeScalerNative/Views/IPad/IPadCommands.swift`: `FocusedValueKey` для `AppCommandActions` (вкладки, ассистент, новый рецепт, импорт, новая коллекция, поиск, сайдбар) и `RecipeCommandActions` (правка, порции, покупки, закрепить, коллекции, не гасить экран, удалить, поделиться). Публиковать через `.focusedSceneValue` из `AppShellView` и `YDocRecipeDetailView` **только при `idiom == .pad`**. — `#menubar/file`, `#menubar/recipe`, `#menubar/view`
-- [ ] T046 [US6] `.commands` на `WindowGroup` в `RecipeScalerNative/RecipeScalerNativeApp.swift` (~:176):
+- [x] T045 [US6] Создать `RecipeScalerNative/Views/IPad/IPadCommands.swift`: `FocusedValueKey` для `AppCommandActions` (вкладки, ассистент, новый рецепт, импорт, новая коллекция, поиск, сайдбар) и `RecipeCommandActions` (правка, порции, покупки, закрепить, коллекции, не гасить экран, удалить, поделиться). Публиковать через `.focusedSceneValue` из `AppShellView` и `YDocRecipeDetailView` **только при `idiom == .pad`**. — `#menubar/file`, `#menubar/recipe`, `#menubar/view`
+
+  **Сделано и проверено (commits): ef9aedd, a30ced5, 14613a2.**
+  - `IPadCommands.swift`: `AppCommandActions` и `RecipeCommandActions`, `FocusedValues`. `AppShellView` и `YDocRecipeDetailView` публикуют их через `focusedSceneValue` только на iPad; на iPhone значения нет, и шорткатов нет.
+  - Действие `nil` — пункт серый. В правке у рецепта остаётся только «Готово», ⌘N и ⌘F тоже `nil`.
+  - Оба значения `Equatable` без замыканий: равны при тех же пунктах и флагах, а замыкания читают рецепт и порции в момент вызова. Без этого каждое тело давало «новое» значение, SwiftUI гнал его через фокус сцены на каждом layout, и поворот iPad в компактное окно посреди правки вешал приложение (100% CPU). Исправлено в 14613a2.
+  - Тесты: `AppShellCoordinatorTests` (⌘1–⌘4 не сбрасывают стеки, ⌘4 в широком окне — лист «Моё всё», запрос ⌘F берётся один раз за 1,5 с, ⇧⌘N закрывает лист профиля, значения команд сравнивают пункты, а не замыкания).
+
+  **Отклонение:** в `AppCommandActions` нет действия сайдбара: ⌃⌘S — системный пункт (T046).
+- [x] T046 [US6] `.commands` на `WindowGroup` в `RecipeScalerNative/RecipeScalerNativeApp.swift` (~:176):
   - «Файл» (`CommandGroup(after: .newItem)`), «Рецепт» (`CommandMenu`), «Вид» (`CommandGroup(before: .sidebar)` / `.toolbar`);
   - шорткаты по таблице layout.md §Меню;
   - в меню только действия, которые есть на iPhone: «Экспорт в PDF…» прототипа не добавляется (spec.md Q3);
   - строки — ключи `ipad.menu.*` в `RecipeScalerNative/Resources/Localizable.xcstrings`.
 
   — `#menubar/file`, `#menubar/recipe`, `#menubar/view`
-- [ ] T047 [US6] ⌘↩ на «Готово» правки и ⌘F → `.searchFocused` колонки списка (iOS 18+; на 17 пункта нет). Проверить, что на iPhone с клавиатурой ничего нового не срабатывает. — `#edit/edit`, `#recipes/search`
-- [ ] T048 [US6] Создать `RecipeScalerNativeUITests/Specs/IPadKeyboardSpec.swift` (`XCUIElement.typeKey`): ⌘E, ⌘↩, ⌘+, ⌘−, ⌘0, ⇧⌘L, ⇧⌘P, ⌃⌘A, ⌘⌫ (появляется подтверждение удаления, тест его отменяет), ⌘1–⌘4, ⌘J, ⌘F, ⌘N, ⇧⌘I, ⇧⌘N; меню «Рецепт» неактивно без рецепта. — `#menubar/recipe`
+
+  **Сделано и проверено (commits): ef9aedd.**
+  - «Файл», «Рецепт», «Вид» по таблице layout.md §Меню, только на iPad. «Экспорт в PDF…» нет.
+  - 8 ключей `ipad.menu.*` на русском и английском, `lint-i18n` проходит.
+  - Системное меню «Найти» убрано (`findingPreference = .removed`), иначе оно забирает ⌘F.
+  - Удержание клавиши не повторяет команду (`buttonRepeatBehavior(.disabled)`).
+
+  **Отклонение:**
+  - «Файл» заменяет системную группу (`CommandGroup(replacing: .newItem)`, а не `after:`): у приложения одно окно, пункта «Новое окно» нет.
+  - ⌃⌘S — системный пункт «Показать боковую панель», а не своя команда через `IPadSidebarControl`: второй пункт с ⌃⌘S роняет приложение при запуске.
+  - ⌘+ срабатывает и на ⌘= (UIKit), отдельного пункта ⌘= нет; другие раскладки — ручная проверка.
+- [x] T047 [US6] ⌘↩ на «Готово» правки и ⌘F → `.searchFocused` колонки списка (iOS 18+; на 17 пункта нет). Проверить, что на iPhone с клавиатурой ничего нового не срабатывает. — `#edit/edit`, `#recipes/search`
+
+  **Сделано и проверено (commits): ef9aedd, a30ced5.**
+  - ⌘↩ висит на пункте меню «Готово», а не на кнопке: у шортката один владелец, и он виден при удержании ⌘.
+  - ⌘F: вкладка «Рецепты» и фокус в поиск списка на экране (`.searchFocused`, iOS 18+; на 17 пункта нет). В широком окне рецепт сворачивается и панель, скрывающая список, закрывается; phone-стек возвращается к списку.
+  - iPhone: `PhoneKeyboardSpec` жмёт ⌘=, ⌘E, ⇧⌘P, ⌘3, ⌘J, ⌘N на открытом рецепте — ничего не меняется; ⌘A в поиске доказывает, что клавиши доходят.
+- [x] T048 [US6] Создать `RecipeScalerNativeUITests/Specs/IPadKeyboardSpec.swift` (`XCUIElement.typeKey`): ⌘E, ⌘↩, ⌘+, ⌘−, ⌘0, ⇧⌘L, ⇧⌘P, ⌃⌘A, ⌘⌫ (появляется подтверждение удаления, тест его отменяет), ⌘1–⌘4, ⌘J, ⌘F, ⌘N, ⇧⌘I, ⇧⌘N; меню «Рецепт» неактивно без рецепта. — `#menubar/recipe`
+
+  **Сделано и проверено (commits): a30ced5, b2d84a9.**
+  - `IPadKeyboardSpec`, 6 тестов: все шорткаты из списка; «Рецепт» неактивен без рецепта и в правке.
+  - `typeKey` на iPadOS 26.3 теряет первую клавишу после запуска (тесты сначала жмут свободный ⌘K) и не доставляет ⌘↩ и ⌘⌫. `testHostKeys` просит `scripts/verify-ipad-keyboard.sh` прислать их HID-событиями (AXe): ⌘↩ из заголовка и из шагов, ⌘⌫ на рецепте (подтверждение, тест его отменяет), без рецепта и в поле поиска.
+  - Самопроверка скрипта `scripts/tests/test-verify-ipad-keyboard.sh` в `policy-check`.
+  - Прогон (14613a2): `bash scripts/verify-ipad-keyboard.sh` → VERIFIED (6 тестов, 6 клавиш хоста отправлены и увидены), iPad Pro 11" M4, iPadOS 26.3.
+
+  **Отклонение:**
+  - ⌘+ жмётся как ⌘= (`typeKey("+")` добавляет ⇧).
+  - Меню-бара нет в дереве доступности: его вид и подсказки при удержании ⌘ — ручная проверка.
+  - Ингредиент для ⇧⌘L набирается в правке рецепта из ⌘N: рецепт из REST в старом формате, его нельзя править, а ингредиенты по REST для него локальный бэкенд не принимает.
+
+  **Проверки (14613a2):**
+  - policy-check и lint-i18n проходят; build-for-testing на iPad и iPhone и Release собираются.
+  - `AppShellCoordinatorTests` на iPad 58/58; test-fast на iPhone: 1113 прошли, 2 пропущены, 0 падений, ни один кейс не дольше 30 с.
+  - `IPadRecipesSpec` 11/11, `IPadShellSpec` 13/13, `IPadAssistantSpec` 6/6, каждый отдельно, с открытым окном Simulator.app. До 14613a2 `testEditSurvivesSizeClassChange`, `testSizeClassSwitchKeepsChat` и `testCompactHasNoMoreTab` падали: приложение висело после поворота в компактное окно (см. T045).
+  - `verify-ipad-keyboard.sh` → VERIFIED; `PhoneKeyboardSpec` на iPhone проходит.
+  - `verify-description-editor.sh` на iPhone проходит; `verify-ipad-layout.sh --iphone-regression`: 9 состояний, 0 отличий. `profile-public` прошёл со второй попытки скрипта: на первой отличались 3 пикселя.
 
 **Checkpoint (US6)**: все шорткаты срабатывают на iPad-симуляторе с аппаратной клавиатурой (SC-006); на iPhone поведение прежнее.
 

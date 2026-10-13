@@ -829,3 +829,34 @@ Shots: `tmp/ipad-verify/us5/padding-{reading,edit}-portrait[-before].png`.
 `IPadRecipesSpec.testEditTwoColumns` needs the Simulator.app window open on the iPad. Headless, after `typeText` iPadOS gives the steps editor only the keyboard's shortcuts bar, and the test fails with «No software keyboard». It failed that way at every commit back to the US5 base and passes with the window open. The failure message and `docs/AGENT-WORKFLOW.md` now say so (cf60d16).
 
 ---
+
+### 2026-10-13 — iPad: keyboard shortcuts and the menu bar (spec 081 US6)
+
+**Decision:** The iPad gets «Файл», «Рецепт» and «Вид» in the iPadOS menu bar with the shortcuts of layout.md §Меню (`IPadCommands.swift`). Every item runs a path the iPhone already has; there is no «Экспорт в PDF…» (Q3). `AppShellView` publishes `AppCommandActions` and the open `YDocRecipeDetailView` publishes `RecipeCommandActions` with `focusedSceneValue`, both only when `idiom == .pad`, and `.commands` is added to the `WindowGroup` on the iPad only. A `nil` action greys its item out. Details:
+- **«Файл»** replaces the system `.newItem` group, so the iPad has no «Новое окно» item: ⌘N, ⇧⌘I, ⇧⌘N and «Поделиться рецептом…».
+  - ⌘N does what «Новый рецепт» of the list «+» does (`AppShellCoordinator.createRecipeFromKeyboard`): a new recipe in edit on «Рецепты», whichever list is on screen.
+  - ⇧⌘N raises the «Новая коллекция» alert of the iPad shell (`newCollectionRequestEpoch`). It is `nil` before iPadOS 26.2, where that shell does not exist; it closes the profile sheet first.
+  - «Поделиться рецептом…» hosts `RecipeShareSheet` in the recipe view (`recipeShareSheet`), so it works without the toolbar button on screen.
+- **«Рецепт»** acts on the recipe on screen; with no recipe every item is grey. In an edit only «Готово» (⌘↩) is left, as the edit toolbar has only «Готово». ⌘+ / ⌘− follow the stepper bounds (1…99), ⌘0 is active only when the servings differ from the recipe. ⇧⌘L, ⇧⌘P and «В коллекцию…» run what «…» runs. ⌘⌫ shows the phone delete confirmation; a focused text field keeps ⌘⌫ for its text.
+- **⌘↩ lives on the menu item**, not on the «Готово» button (layout.md says the button): one owner per shortcut, and the item shows it while ⌘ is held.
+- **«Вид»**: ⌘J, ⌘1–⌘4, ⌘F.
+  - ⌘1–⌘4 select a tab without popping the section's stack (`selectTabFromKeyboard`); ⌘4 in a wide window opens the «Моё всё» sheet, as the tab does (FR-004a).
+  - ⌘J is the «Ассистент» tab: it opens the assistant and closes it again (the panel in a wide window, the sheet in a narrow one).
+  - ⌘F goes to «Рецепты» and focuses the search field of the list on screen (`.searchFocused`, iOS 18+; the item does not exist on iOS 17). In a wide window the expanded recipe collapses and a panel that hides the list closes first; the phone stack pops to its list. The request is taken once, by a list that shows up within 1.5 s (`recipeSearchFocusWindow`). It is `nil` during an edit.
+- **⌃⌘S is the system «Показать боковую панель»** item of the iPad sidebar, not our own command (layout.md S2): a second item with ⌃⌘S crashes the app at launch.
+- **⌘+ also answers ⌘=**: UIKit matches the `+` item for the =/+ key pressed without ⇧, so the US layout needs no extra ⌘= item (layout.md's fallback). The test presses ⌘=, because `typeKey("+", .command)` adds ⇧. The RU and other layouts are a manual check.
+- **The system «Найти» menu is removed** (`UIMainMenuSystem.Configuration.findingPreference = .removed`): it took ⌘F.
+- **Held keys do not repeat** a command (`buttonRepeatBehavior(.disabled)`): a repeat closed the assistant ⌘J had just opened.
+- **The command values are `Equatable` without their closures.** Two values are equal for the same items and flags (`layoutMode` for «Файл» and «Вид»; the recipe id, «Закрепить»/«Открепить» and «Не гасить экран» for «Рецепт»). The closures read the recipe and its servings when they run. Each body makes new closures, and SwiftUI could not compare such a value: it went through the scene's focus on every layout. Turning the iPad into a compact window mid-edit hung the app in that loop at 100% CPU (`IPadRecipesSpec.testEditSurvivesSizeClassChange`, `IPadAssistantSpec.testSizeClassSwitchKeepsChat`).
+- **Titles** are `ipad.menu.*` keys (RU and EN) read with `Bundle.currentLocalizedString`, because commands live outside the in-app language environment.
+
+**Rationale:** Reusing the phone actions keeps one behaviour per command and nothing new on the iPhone, where no command value is published. Tests:
+- `AppShellCoordinatorTests`: ⌘1–⌘4 keep the stacks, ⌘4 is the sheet in a wide window, the ⌘F request is taken once within its window, ⇧⌘N closes the profile sheet, the command values compare their items and not their closures.
+- `IPadKeyboardSpec` on the iPad simulator: ⌘1–⌘4, ⌘J, ⌘F, ⌘N, ⇧⌘I, ⇧⌘N, ⌘E, ⌘+ (as ⌘=), ⌘−, ⌘0, ⇧⌘L, ⇧⌘P, ⌃⌘A, the inactive «Рецепт» without a recipe and in an edit. `typeKey` on iPadOS 26.3 loses the first key after a launch (tests press a free ⌘K first) and never delivers ⌘↩ or ⌘⌫. `testHostKeys` therefore asks `scripts/verify-ipad-keyboard.sh` to send them as HID events with AXe and checks the result: ⌘↩ ends an edit from the title and from the steps editor; ⌘⌫ shows the confirmation on a recipe (the test cancels it) and asks nothing without one; ⌘⌫ in the search field deletes its text. The menu bar itself is not in the accessibility tree, so its look is a manual check.
+- `PhoneKeyboardSpec` on the iPhone: the iPad shortcuts change nothing there, and ⌘A in the search field shows the keys reach the app.
+
+The edit test types an ingredient in the edit of a ⌘N recipe. A recipe created over REST is in the old format and read-only, and the local backend rejects ingredients sent over REST for it, so the test cannot seed one. Two pre-existing findings on the way, left as they are:
+- `RecipeTitleTextField` takes the focus back after an incidental blur. A tap from the focused title of a new recipe into the new-ingredient row puts the caret in the row for a moment, then back in the title. The test lets the title go with its keyboard «Готово» first.
+- `.accessibilityIdentifier(recipeEditNewIngredientRow)` on the row covers its children: the name and amount fields and «Return» report the row's identifier, so `recipe_edit_new_ingredient_submit` never matches.
+
+---

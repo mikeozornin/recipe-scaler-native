@@ -62,6 +62,25 @@ Simulator.app на этом iPad и отключённой аппаратной 
 `typeText` следующее поле получает от iPadOS только панель быстрых команд вместо клавиатуры, и
 `app.keyboards` пуст («No software keyboard»).
 
+`IPadKeyboardSpec` (шорткаты iPad, spec 081 US6) окно Simulator.app не нужно, `ConnectHardwareKeyboard`
+любой: `typeKey` шлёт аппаратные события. Ограничения `typeKey` на симуляторе iPadOS 26.3:
+
+- первое событие после запуска может потеряться — тесты сначала жмут свободный ⌘K;
+- ⌘↩ и ⌘⌫ (любой шорткат с Return, `.delete` или `"\u{8}"`) до приложения не доходят, а те же
+  клавиши HID-событиями (`axe key-combo`) доходят;
+- `typeKey("+", .command)` добавляет ⇧, поэтому ⌘+ жмётся как ⌘=.
+
+Поэтому ⌘↩ и ⌘⌫ проверяет `testHostKeys`: без хоста он пропускается, а с ним спеку гоняет
+
+```bash
+bash scripts/verify-ipad-keyboard.sh               # build-for-testing + вся IPadKeyboardSpec
+bash scripts/verify-ipad-keyboard.sh --skip-build --only testHostKeys
+```
+
+Скрипту нужны AXe (`brew install cameroncooke/axe/axe`) и локальный бэкенд на 127.0.0.1:3001. Тест
+печатает `IPAD_KEYBOARD_HOST_KEY <n> <combo>`, скрипт шлёт клавишу в симулятор, тест проверяет
+результат. Пока скрипт идёт, не печатай на Mac. Логи — `tmp/ipad-keyboard/`.
+
 **Быстрый gate для PR / агента** — один build + все unit-тесты (без UI), с лимитом 30 с на кейс:
 
 ```bash
