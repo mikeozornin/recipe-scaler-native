@@ -73,6 +73,62 @@ final class AssistantSessionModelTests: XCTestCase {
         XCTAssertEqual(backend.streamCalls.map(\.message), ["Подбери гарнир"])
     }
 
+    /// The shell routes a request straight into an open chat and the chat's own
+    /// `openRequest` observer delivers it again: one send, the stream keeps running.
+    func testRepeatedExternalRequestWhileOpenIsSentOnce() async {
+        let backend = FakeAssistantBackend()
+        let model = backend.makeModel()
+        await openAndBootstrap(model, backend: backend)
+        let request = AssistantOpenRequest(requestId: 11, message: "Подбери гарнир")
+
+        model.receiveExternalRequest(request)
+        await waitUntil { backend.continuation != nil }
+        backend.continuation?.yield(.textDelta("Рис"))
+        await waitUntil { model.messages.last?.text == "Рис" }
+
+        model.receiveExternalRequest(request)
+        await settle()
+
+        XCTAssertEqual(backend.streamCalls.map(\.message), ["Подбери гарнир"])
+        XCTAssertFalse(backend.streamTerminated, "the duplicate must not restart the chat")
+        XCTAssertEqual(model.messages.map(\.text), ["Подбери гарнир", "Рис"])
+        XCTAssertTrue(model.isSending)
+
+        // Another request is not a duplicate.
+        backend.continuation?.finish()
+        await waitUntil { !model.isSending }
+        model.receiveExternalRequest(AssistantOpenRequest(requestId: 12, message: "А десерт?"))
+        await waitUntil { backend.streamCalls.count == 2 }
+        XCTAssertEqual(backend.streamCalls.last?.message, "А десерт?")
+    }
+
+    /// A request that arrives while the bootstrap waits for the server is sent once,
+    /// after it, into a new chat.
+    func testExternalRequestDuringBootstrapIsSentOnceAfterIt() async {
+        let backend = FakeAssistantBackend()
+        backend.recentThreadId = "thread-recent"
+        backend.holdsListThreads = true
+        let model = backend.makeModel()
+        model.beginPresentation(openRequest: nil, shakeRequest: nil)
+        model.viewDidAppear(shakeRequest: nil)
+        await waitUntil { backend.listThreadsCalls == 1 }
+        XCTAssertTrue(model.isBootstrapping)
+
+        model.receiveExternalRequest(AssistantOpenRequest(requestId: 21, message: "Чем заменить сливки?"))
+        await settle()
+        XCTAssertTrue(backend.streamCalls.isEmpty, "nothing is sent before the bootstrap ends")
+
+        backend.releaseListThreads()
+        await waitUntil { backend.streamCalls.count == 1 }
+        await settle()
+
+        XCTAssertEqual(backend.streamCalls.map(\.message), ["Чем заменить сливки?"])
+        XCTAssertEqual(backend.streamCalls.first?.threadId, "thread-new")
+        XCTAssertTrue(backend.getMessagesCalls.isEmpty, "the request opens a new chat, not the recent one")
+        XCTAssertEqual(model.messages.first?.text, "Чем заменить сливки?")
+        XCTAssertEqual(backend.listThreadsCalls, 1)
+    }
+
     // MARK: - Close / reopen (iPhone behavior unchanged)
 
     func testCloseCancelsStream() async {
@@ -86,13 +142,22 @@ final class AssistantSessionModelTests: XCTestCase {
         backend.continuation?.yield(.textDelta("Сними"))
         await waitUntil { model.messages.last?.text == "Сними" }
 
+        XCTAssertEqual(model.threadId, "thread-new")
+        XCTAssertTrue(model.isSending)
+
+        // Events the server sent before the close: a stream delivers what it buffered
+        // even after the consumer is cancelled, so only the model's guard keeps them out.
+        backend.continuation?.yield(.textDelta(" с огня"))
+        backend.continuation?.yield(.final(Self.finalEvent(threadId: "thread-stale")))
         model.close()
         await waitUntil { backend.streamTerminated }
-        backend.continuation?.yield(.textDelta(" с огня"))
         await settle()
 
-        XCTAssertTrue(backend.streamTerminated)
         XCTAssertEqual(model.messages.last?.text, "Сними", "a closed chat must not take stream events")
+        XCTAssertEqual(model.messages.map(\.role), ["user", "assistant"])
+        XCTAssertEqual(model.threadId, "thread-new", "a stale final must not switch the thread")
+        XCTAssertTrue(model.isSending, "close leaves the content to the dismissal animation")
+        XCTAssertFalse(backend.persistedThreadIds.contains("thread-stale"))
         XCTAssertEqual(backend.persistedThreadIds.last ?? nil, "thread-new")
     }
 
@@ -182,14 +247,50 @@ final class AssistantSessionModelTests: XCTestCase {
         backend.continuation?.yield(.textDelta("Сними"))
         await waitUntil { model.messages.last?.text == "Сними" }
 
+        // Buffered before the teardown (see `testCloseCancelsStream`). A text delta has
+        // no message left to land in, a tool status row and the final would.
+        backend.continuation?.yield(.toolStart(toolName: "search_recipes", toolCallId: "call-1"))
+        backend.continuation?.yield(.final(Self.finalEvent(threadId: "thread-stale")))
         model.teardownForSessionInvalidation()
-        backend.continuation?.yield(.textDelta(" с огня"))
         await waitUntil { backend.streamTerminated }
         await settle()
 
         XCTAssertTrue(model.messages.isEmpty)
         XCTAssertNil(model.threadId)
         XCTAssertFalse(model.isSending)
+        XCTAssertFalse(backend.persistedThreadIds.contains("thread-stale"))
+    }
+
+    /// A teardown also stops the first bootstrap, the history refresh and the shake
+    /// intent of the dead session, not only the stream.
+    func testTeardownDropsBootstrapShakeAndHistoryRefresh() async {
+        let backend = FakeAssistantBackend()
+        backend.recentThreadId = "thread-recent"
+        backend.holdsListThreads = true
+        let model = backend.makeModel()
+        let shake = AssistantShakeOpenRequest(
+            requestId: 3,
+            attachRecipeId: nil,
+            forceNewChat: false,
+            startVoiceRecording: true
+        )
+        model.beginPresentation(openRequest: nil, shakeRequest: shake)
+        model.viewDidAppear(shakeRequest: shake)
+        model.historyDidOpen()
+        await waitUntil { backend.listThreadsCalls == 2 }
+        XCTAssertTrue(model.isBootstrapping)
+        XCTAssertTrue(model.isLoadingThreads)
+
+        model.teardownForSessionInvalidation()
+        backend.releaseListThreads()
+        await settle()
+
+        XCTAssertFalse(model.autoStartVoice, "the dead session's shake must not start voice input")
+        XCTAssertTrue(model.threads.isEmpty)
+        XCTAssertNil(model.threadId)
+        XCTAssertTrue(backend.getMessagesCalls.isEmpty, "the recent thread must not be restored")
+        XCTAssertFalse(model.isBootstrapping)
+        XCTAssertFalse(model.isLoadingThreads, "no history spinner left behind")
     }
 
     func testLogoutResetsSession() async {
@@ -233,6 +334,19 @@ final class AssistantSessionModelTests: XCTestCase {
         XCTAssertTrue(condition(), "condition not reached", file: file, line: line)
     }
 
+    private static func finalEvent(threadId: String) -> AssistantStreamFinalData {
+        AssistantStreamFinalData(
+            thread: AssistantStreamFinalData.Thread(id: threadId, title: "Чужой чат"),
+            userMessage: nil,
+            assistantMessage: AssistantStreamFinalMessage(
+                id: "assistant-stale",
+                content: "Устаревший ответ",
+                metadata: nil,
+                createdAt: nil
+            )
+        )
+    }
+
     /// Lets queued main-actor work run (a stale event would land here).
     private func settle() async {
         for _ in 0..<10 {
@@ -253,6 +367,17 @@ private final class FakeAssistantBackend {
     /// A thread saved and opened just now: the ≤60 s restore picks it.
     var recentThreadId: String?
     var getMessagesCalls: [String] = []
+    /// `listThreads` waits for `releaseListThreads()`, ignoring cancellation, as a slow
+    /// server does: the caller's guards decide what lands.
+    var holdsListThreads = false
+    private var listThreadsWaiters: [CheckedContinuation<Void, Never>] = []
+
+    func releaseListThreads() {
+        holdsListThreads = false
+        let waiters = listThreadsWaiters
+        listThreadsWaiters = []
+        waiters.forEach { $0.resume() }
+    }
 
     func makeModel() -> AssistantSessionModel {
         AssistantSessionModel(
@@ -266,6 +391,9 @@ private final class FakeAssistantBackend {
         AssistantSessionClient(
             listThreads: { [unowned self] in
                 listThreadsCalls += 1
+                if holdsListThreads {
+                    await withCheckedContinuation { listThreadsWaiters.append($0) }
+                }
                 return recentThreadId.map {
                     [AssistantThreadDTO(
                         id: $0,
