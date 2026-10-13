@@ -848,17 +848,15 @@ struct AppShellView: View {
         return UIDevice.current.userInterfaceIdiom == .pad && layoutMode == .padRegular
     }
 
-    /// The iPad capsule: in a wide window «expand» toggles the popover instead.
+    /// The iPad capsule: in a wide window «expand» opens the popover instead. While the
+    /// popover is shown a tap on the capsule lands in its dismiss region and closes it, so
+    /// the capsule only ever opens it.
     private var iPadTimerAccessoryCollapsedBinding: Binding<Bool> {
         Binding(
             get: { mobileTimerPanelCollapsed },
             set: { collapsed in
                 if !collapsed, timersShowAsPopover {
-                    if timerPopoverShown {
-                        timerPopoverShown = false
-                    } else {
-                        showTimerPopover()
-                    }
+                    showTimerPopover()
                 } else {
                     mobileTimerPanelCollapsedBinding.wrappedValue = collapsed
                 }
@@ -867,8 +865,22 @@ struct AppShellView: View {
     }
 
     private func showTimerPopover() {
+        #if DEBUG
+        debugTimerPopoverPending = false
+        #endif
         timerPopoverAnchorRect = timerPopoverGeometry.anchorRect
         timerPopoverShown = true
+    }
+
+    /// The panel's chevron, a compact window, or the capsule gone. A tap outside closes the
+    /// popover through its binding.
+    private func closeTimerPopover() {
+        timerPopoverShown = false
+        #if DEBUG
+        // `-MobileTimerPanelExpanded=1` asked for the popover in the window and with the
+        // capsule it launched with, not for one that comes back later.
+        debugTimerPopoverPending = false
+        #endif
     }
 
     /// The popover follows the capsule while it is shown (a sidebar toggle, a rotation).
@@ -896,7 +908,6 @@ struct AppShellView: View {
                 followTimerCapsule()
                 #if DEBUG
                 if debugTimerPopoverPending {
-                    debugTimerPopoverPending = false
                     showTimerPopover()
                 }
                 #endif
@@ -934,7 +945,7 @@ struct AppShellView: View {
             isCollapsed: Binding(
                 get: { false },
                 set: { collapsed in
-                    if collapsed { timerPopoverShown = false }
+                    if collapsed { closeTimerPopover() }
                 }
             ),
             presentation: .insetExpanded
@@ -1007,13 +1018,13 @@ struct AppShellView: View {
                 }
             } else {
                 // A compact window is the phone: a tap on the capsule expands the panel.
-                timerPopoverShown = false
+                closeTimerPopover()
             }
         }
         .onChange(of: showsMobileTimerPanelAccessory) { _, shown in
             // No capsule (the last timer ended, edit mode): nothing to point at.
             if !shown {
-                timerPopoverShown = false
+                closeTimerPopover()
             }
         }
     }
