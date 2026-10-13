@@ -62,9 +62,11 @@ enum AppTab: String, CaseIterable, Hashable {
 
 struct AppTabBarLabel: View {
     let tab: AppTab
+    /// Another glyph for this bar (spec 081: the iPad top bar). `nil` — `tab.tabBarSymbol`.
+    var systemImage: String?
 
     var body: some View {
-        Label(tab.title, systemImage: tab.tabBarSymbol)
+        Label(tab.title, systemImage: systemImage ?? tab.tabBarSymbol)
             .font(AppTypography.tabBar)
             .accessibilityIdentifier(tab.accessibilityId)
     }

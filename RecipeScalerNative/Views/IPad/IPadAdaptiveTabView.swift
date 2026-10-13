@@ -34,6 +34,10 @@ struct IPadAdaptiveTabView: View {
 
     private var isCompact: Bool { horizontalSizeClass == .compact }
 
+    /// «Профиль» in the top tab bar. The compact bottom bar fills `person` anyway, so the
+    /// glyph is the same there; `AppTab.tabBarSymbol` stays the outline for the phone.
+    private static let profileTopBarSymbol = "person.fill"
+
     private var collections: [RecipeFolder] {
         RecipeFolder.sortedActive(syncService.folders)
     }
@@ -89,7 +93,10 @@ struct IPadAdaptiveTabView: View {
                     page(tabRoots.profile())
                 }
             } label: {
-                AppTabBarLabel(tab: .profile)
+                // The top bar draws a symbol as named (the phone bar fills it by itself):
+                // the filled person, as the owner asked (DECISIONS 2026-10-13).
+                AppTabBarLabel(tab: .profile, systemImage: Self.profileTopBarSymbol)
+                    .symbolVariant(.fill)
             }
             .tabPlacement(.pinned)
             .defaultVisibility(sidebarShown ? .hidden : .automatic, for: .sidebar)
