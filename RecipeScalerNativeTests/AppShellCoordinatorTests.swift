@@ -876,6 +876,89 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertNil(coordinator.recipesStackPathToRestore([recipeRoute("deleted")]))
     }
 
+    // MARK: - Spec 081 — iPad keyboard shortcuts (US6, T045)
+
+    /// ⌘1–⌘4 switch the section without the tab tap's pop to the root.
+    func testKeyboardTabSelectionKeepsTheSectionStacks() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.selectedTab = .recipes
+        coordinator.recipesPath.append(recipeRoute("open"))
+
+        coordinator.selectTabFromKeyboard(.recipes)
+        XCTAssertEqual(coordinator.recipesPath.count, 1, "⌘2 on «Рецепты» keeps the open recipe")
+
+        coordinator.selectTabFromKeyboard(.shopping)
+        XCTAssertEqual(coordinator.selectedTab, .shopping)
+        coordinator.selectTabFromKeyboard(.recipes)
+        XCTAssertEqual(coordinator.selectedTab, .recipes)
+        XCTAssertEqual(coordinator.recipesPath.count, 1, "The way back keeps the open recipe")
+    }
+
+    /// ⌘4 in a wide window ends as the profile sheet; another section closes it.
+    func testKeyboardProfileIsTheSheetInAWideWindow() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.selectedTab = .shopping
+
+        coordinator.selectTabFromKeyboard(.profile)
+        // The shell's `onChange(of: selectedTab)` in a wide window.
+        coordinator.normalizeProfileSelection(previous: coordinator.lastNonProfileTab, layoutMode: .padRegular)
+        XCTAssertEqual(coordinator.selectedTab, .shopping)
+        XCTAssertTrue(coordinator.isProfileSheetPresented)
+
+        coordinator.selectTabFromKeyboard(.profile)
+        XCTAssertTrue(coordinator.isProfileSheetPresented, "⌘4 again keeps the one sheet")
+
+        coordinator.selectTabFromKeyboard(.shopping)
+        XCTAssertFalse(coordinator.isProfileSheetPresented, "⌘3 under the sheet closes it")
+        XCTAssertEqual(coordinator.selectedTab, .shopping)
+
+        coordinator.presentProfileSheet()
+        coordinator.selectTabFromKeyboard(.discover)
+        XCTAssertFalse(coordinator.isProfileSheetPresented)
+        XCTAssertEqual(coordinator.selectedTab, .discover)
+    }
+
+    /// ⌘F opens «Рецепты» and the list on screen takes the focus once, soon after.
+    func testRecipeSearchFocusIsTakenOnceWithinItsWindow() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.selectedTab = .shopping
+        coordinator.presentProfileSheet()
+        let pressed = Date(timeIntervalSince1970: 1_000)
+        let epoch = coordinator.recipeSearchFocusRequestEpoch
+
+        coordinator.requestRecipeSearchFocus(at: pressed)
+        XCTAssertEqual(coordinator.selectedTab, .recipes)
+        XCTAssertFalse(coordinator.isProfileSheetPresented)
+        XCTAssertEqual(coordinator.recipeSearchFocusRequestEpoch, epoch &+ 1)
+
+        XCTAssertTrue(coordinator.consumeRecipeSearchFocusRequest(at: pressed.addingTimeInterval(0.5)))
+        XCTAssertFalse(
+            coordinator.consumeRecipeSearchFocusRequest(at: pressed.addingTimeInterval(0.6)),
+            "A second list does not take the same ⌘F"
+        )
+
+        coordinator.requestRecipeSearchFocus(at: pressed)
+        XCTAssertFalse(
+            coordinator.consumeRecipeSearchFocusRequest(
+                at: pressed.addingTimeInterval(AppShellCoordinator.recipeSearchFocusWindow + 0.1)
+            ),
+            "A list that appears long after ⌘F does not take it"
+        )
+        XCTAssertFalse(coordinator.consumeRecipeSearchFocusRequest(at: pressed), "No ⌘F, no focus")
+    }
+
+    /// ⇧⌘N asks the shell for the «Новая коллекция» alert and closes the profile sheet.
+    func testNewCollectionRequestClosesTheProfileSheet() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.presentProfileSheet()
+        let epoch = coordinator.newCollectionRequestEpoch
+
+        coordinator.requestNewCollection()
+
+        XCTAssertEqual(coordinator.newCollectionRequestEpoch, epoch &+ 1)
+        XCTAssertFalse(coordinator.isProfileSheetPresented)
+    }
+
     private func recipeRoute(_ recipeId: String) -> RecipesRoute {
         .recipe(recipeId: recipeId, folderContext: nil)
     }

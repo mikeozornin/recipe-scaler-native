@@ -149,6 +149,7 @@ enum UIA {
     static let recipeDetailMenuAddAllToShopping = "recipe_detail_menu_add_all_to_shopping"
     static let recipeDetailMenuDelete = "recipe_detail_menu_delete"
     static let recipeDetailDeleteConfirm = "recipe_detail_delete_confirm"
+    static let recipeDetailServingsValue = "recipe_detail_servings_value"
     static let ingredientSwipeAddToShopping = "ingredient_swipe_add_to_shopping"
     static let importSubmitButton = "import_submit_button"
     static let screenAwakeToggle = "screen_awake_toggle"
