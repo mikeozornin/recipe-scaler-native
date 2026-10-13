@@ -583,6 +583,7 @@ final class AppShellCoordinatorTests: XCTestCase {
         let sidebar = FakeIPadSidebar(shown: true)
         coordinator.iPadSidebar = sidebar
         coordinator.selectedTab = .recipes
+        coordinator.recipesPath = [recipeRoute("r1")]
         coordinator.beginRecipeEdit(makeEditSession(sync))
         coordinator.setRecipeDetailExpanded(true, isPadRegular: true)
 
@@ -621,6 +622,84 @@ final class AppShellCoordinatorTests: XCTestCase {
 
         coordinator.endRecipeEdit(recipeId: "r2", isPadRegular: true)
         XCTAssertEqual(coordinator.recipeEdit?.recipeId, "r1")
+    }
+
+    /// The user left the edit of r1 on another tab, and a deep link, an import or a
+    /// deletion opened r2 meanwhile: the edit ends with no recipe view to end it, so the
+    /// sidebar «Развернуть» hid comes back with «Свернуть».
+    func testAnEditLeftOnAnotherTabEndsWhenAnotherRecipeOpens() throws {
+        let (coordinator, _, sync) = try makeCoordinator()
+        let sidebar = FakeIPadSidebar(shown: true)
+        coordinator.iPadSidebar = sidebar
+        coordinator.selectedTab = .recipes
+        coordinator.recipesPath = [recipeRoute("r1")]
+        let view = UUID()
+        let session = makeEditSession(sync, recipeId: "r1", owner: view)
+        coordinator.beginRecipeEdit(session)
+        coordinator.setRecipeDetailExpanded(true, isPadRegular: true)
+        XCTAssertFalse(sidebar.isSidebarShown)
+        coordinator.selectedTab = .shopping
+        session.release(owner: view)
+
+        _ = coordinator.completeImport(ImportRecipesResult(recipeIds: ["r2"], importedCount: 1))
+        XCTAssertNil(coordinator.recipeEdit, "The edit of r1 outlived its recipe")
+
+        coordinator.setRecipeDetailExpanded(false, isPadRegular: true)
+        XCTAssertTrue(sidebar.isSidebarShown, "The sidebar stayed hidden for an edit no one is in")
+    }
+
+    func testAnEditLeftOnAnotherTabEndsWhenItsRecipeCloses() throws {
+        let (coordinator, _, sync) = try makeCoordinator()
+        coordinator.recipesPath = [recipeRoute("r1")]
+        let view = UUID()
+        let session = makeEditSession(sync, recipeId: "r1", owner: view)
+        coordinator.beginRecipeEdit(session)
+        session.release(owner: view)
+
+        // A deep link to a recipe not loaded yet empties the path until it arrives.
+        coordinator.handleDeepLink(.openRecipe(recipeId: "r2"))
+        XCTAssertNil(coordinator.recipeEdit)
+    }
+
+    /// A path change that keeps r1 open (a collection picked around it) keeps the edit.
+    func testAnEditLeftOnAnotherTabSurvivesWhileItsRecipeStaysOpen() throws {
+        let (coordinator, _, sync) = try makeCoordinator()
+        coordinator.recipesPath = [recipeRoute("r1")]
+        let view = UUID()
+        let session = makeEditSession(sync, recipeId: "r1", owner: view)
+        coordinator.beginRecipeEdit(session)
+        session.release(owner: view)
+
+        coordinator.recipesPath = [.folder(CollectionVirtualFolders.allRecipesFolderId), recipeRoute("r1")]
+        XCTAssertTrue(coordinator.recipeEdit === session)
+    }
+
+    /// On screen the recipe view in the edit ends it as it leaves (`leaveIPadEditSession`);
+    /// the path change alone does not, or a «Назад» mid-rebuild would drop the edit.
+    func testAnEditWithItsViewOnScreenOutlivesThePathChange() throws {
+        let (coordinator, _, sync) = try makeCoordinator()
+        coordinator.recipesPath = [recipeRoute("r1")]
+        let session = makeEditSession(sync, recipeId: "r1")
+        coordinator.beginRecipeEdit(session)
+
+        coordinator.recipesPath = [recipeRoute("r2")]
+        XCTAssertTrue(coordinator.recipeEdit === session)
+    }
+
+    /// «Свернуть» while the session still holds a recipe that is no longer open (its view
+    /// has not left yet): only an edit of the open recipe keeps the sidebar hidden.
+    func testCollapseIgnoresAnEditOfAnotherRecipe() throws {
+        let (coordinator, _, sync) = try makeCoordinator()
+        let sidebar = FakeIPadSidebar(shown: true)
+        coordinator.iPadSidebar = sidebar
+        coordinator.selectedTab = .recipes
+        coordinator.recipesPath = [recipeRoute("r1")]
+        coordinator.beginRecipeEdit(makeEditSession(sync, recipeId: "r1"))
+        coordinator.setRecipeDetailExpanded(true, isPadRegular: true)
+
+        coordinator.recipesPath = [recipeRoute("r2")]
+        coordinator.setRecipeDetailExpanded(false, isPadRegular: true)
+        XCTAssertTrue(sidebar.isSidebarShown)
     }
 
     func testLogoutEndsTheEdit() throws {
@@ -687,6 +766,10 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertEqual(session.owner, lingering)
         session.release(owner: lingering)
         XCTAssertNil(session.owner)
+    }
+
+    private func recipeRoute(_ recipeId: String) -> RecipesRoute {
+        .recipe(recipeId: recipeId, folderContext: nil)
     }
 
     private func makeEditableRecipe(id: String) -> RecipeData {

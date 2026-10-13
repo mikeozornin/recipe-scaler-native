@@ -76,7 +76,9 @@ final class AppShellCoordinator {
     var importPresentation: ImportPresentation?
     /// Recipes stack. Typed (not `NavigationPath`) so the iPad columns can read and write
     /// the same selection through `RecipesSelection` (spec 081, plan.md Р4). Never serialized.
-    var recipesPath: [RecipesRoute] = []
+    var recipesPath: [RecipesRoute] = [] {
+        didSet { endRecipeEditLeftBehind() }
+    }
     var discoverPath = NavigationPath()
     var shoppingPath = NavigationPath()
     private(set) var pendingSpotlightRecipeId: String?
@@ -121,7 +123,8 @@ final class AppShellCoordinator {
     /// recipe view: a size class change or a resize between the split and the phone stack
     /// rebuilds that view, and the new one adopts the edit with its drafts and focus.
     /// The split reads it to hide the list (`IPadLayoutPolicy.resolve(isEditing:)`).
-    /// Never set on the iPhone. Changed only through `beginRecipeEdit` / `endRecipeEdit`.
+    /// Never set on the iPhone. Changed only through `beginRecipeEdit` / `endRecipeEdit`, and
+    /// ended by a `recipesPath` change that leaves it behind (`endRecipeEditLeftBehind`).
     private(set) var recipeEdit: IPadRecipeEditSession?
 
     /// Recipes opened in edit on creation (`RecipesRoute.recipe(openInEditMode:)`) on the
@@ -345,12 +348,14 @@ final class AppShellCoordinator {
         switch link {
         case .openRecipe(let recipeId):
             selectedTab = .recipes
-            recipesPath = []
+            // One assignment: an emptied path in between would end an edit of this very
+            // recipe (`endRecipeEditLeftBehind`).
             if syncService.collectionEntries.contains(where: { $0.id == recipeId && !$0.deleted }) {
                 pendingSpotlightRecipeId = nil
-                recipesPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
+                recipesPath = [RecipesRoute.recipe(recipeId: recipeId, folderContext: nil)]
             } else {
                 pendingSpotlightRecipeId = recipeId
+                recipesPath = []
             }
             deepLinkRouter.clear()
         case .addToShopping(let recipeId):
@@ -504,8 +509,7 @@ final class AppShellCoordinator {
         guard let recipeId else { return }
         didOpenDebugLaunchRecipe = true
         selectedTab = .recipes
-        recipesPath = []
-        recipesPath.append(RecipesRoute.recipe(recipeId: recipeId, folderContext: nil))
+        recipesPath = [RecipesRoute.recipe(recipeId: recipeId, folderContext: nil)]
         AppLog.info(.app, "debug_open_recipe_shell", data: ["recipeId": recipeId])
     }
 
@@ -605,10 +609,13 @@ final class AppShellCoordinator {
     /// Recipes in a wide window: called on collapse, on the return to Recipes and on the
     /// way back from a compact window.
     func restoreSidebarHiddenByRecipeExpand(isPadRegular: Bool) {
+        // Only an edit of the open recipe keeps the sidebar hidden.
+        let editsOpenRecipe = recipeEdit != nil
+            && recipeEdit?.recipeId == RecipesSelection.selection(from: recipesPath).recipeId
         guard IPadLayoutPolicy.restoresSidebarHiddenByExpand(
             hiddenByExpand: sidebarHiddenByRecipeExpand,
             recipeExpanded: recipeDetailExpanded,
-            recipeEditing: recipeEdit != nil,
+            recipeEditing: editsOpenRecipe,
             recipesTabSelected: selectedTab == .recipes,
             isPadRegular: isPadRegular
         ) else { return }
@@ -637,6 +644,18 @@ final class AppShellCoordinator {
         guard recipeEdit?.recipeId == recipeId else { return }
         recipeEdit = nil
         restoreSidebarHiddenByRecipeExpand(isPadRegular: isPadRegular)
+    }
+
+    /// An edit no recipe view is in (the user left it on another tab, or its view is being
+    /// rebuilt) ends once its recipe is no longer the open one: a deep link, an import or a
+    /// deletion opened another or closed it while the view was away. On screen the leaving
+    /// view ends it (`leaveIPadEditSession`). The sidebar comes back with «Свернуть» or the
+    /// return to Recipes (`restoreSidebarHiddenByRecipeExpand`).
+    private func endRecipeEditLeftBehind() {
+        guard let recipeEdit, recipeEdit.owner == nil,
+              RecipesSelection.selection(from: recipesPath).recipeId != recipeEdit.recipeId
+        else { return }
+        self.recipeEdit = nil
     }
 
     /// The sidebar's visibility as the shell reads it (`\.tabBarPlacement`). Shown again
