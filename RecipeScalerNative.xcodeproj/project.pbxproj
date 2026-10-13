@@ -13,6 +13,7 @@
 		081BACD5F55A1B03061EB394 /* IPadShellSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */; };
 		0818A72F114D5CEDF40789E7 /* IPadAssistantSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081CED8F21DC44DB207349B5 /* IPadAssistantSpec.swift */; };
 		081637D5711F73246A296DCB /* IPadKeyboardSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08133323D9E83A8273D649AA /* IPadKeyboardSpec.swift */; };
+		081B4C9E2F7A3D6015E8B942 /* IPadMultitaskingSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081A7E3D5C2B4F1980A6D217 /* IPadMultitaskingSpec.swift */; };
 		0812C7A41E5B90D3F6A8B215 /* PhoneKeyboardSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081E93B60D4A72C5E1F8A347 /* PhoneKeyboardSpec.swift */; };
 		081A15CAD06242AEB73277A9 /* IPadProfileSheetPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0817B80AFD53CD65E53B0BEA /* IPadProfileSheetPolicyTests.swift */; };
 		081D48A0C5792DA6C6306F66 /* IPadProfileSheetModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081B3845856DC980503EE6A8 /* IPadProfileSheetModifier.swift */; };
@@ -884,6 +885,7 @@
 		08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadShellSpec.swift; sourceTree = "<group>"; };
 		081CED8F21DC44DB207349B5 /* IPadAssistantSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadAssistantSpec.swift; sourceTree = "<group>"; };
 		08133323D9E83A8273D649AA /* IPadKeyboardSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadKeyboardSpec.swift; sourceTree = "<group>"; };
+		081A7E3D5C2B4F1980A6D217 /* IPadMultitaskingSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadMultitaskingSpec.swift; sourceTree = "<group>"; };
 		081E93B60D4A72C5E1F8A347 /* PhoneKeyboardSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneKeyboardSpec.swift; sourceTree = "<group>"; };
 		0817B80AFD53CD65E53B0BEA /* IPadProfileSheetPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetPolicyTests.swift; sourceTree = "<group>"; };
 		081B3845856DC980503EE6A8 /* IPadProfileSheetModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadProfileSheetModifier.swift; sourceTree = "<group>"; };
@@ -2710,6 +2712,7 @@
 				08106BAFE810C5F74B2E14B7 /* IPadShellSpec.swift */,
 				081CED8F21DC44DB207349B5 /* IPadAssistantSpec.swift */,
 				08133323D9E83A8273D649AA /* IPadKeyboardSpec.swift */,
+				081A7E3D5C2B4F1980A6D217 /* IPadMultitaskingSpec.swift */,
 				081E93B60D4A72C5E1F8A347 /* PhoneKeyboardSpec.swift */,
 				UITAB5A803D9115B87C2E /* FeatureAdoptionGuidesSpec.swift */,
 				UITEF4902F43B6C5EDA96 /* FeatureAdoptionTrackerSpec.swift */,
@@ -3834,6 +3837,7 @@
 				081BACD5F55A1B03061EB394 /* IPadShellSpec.swift in Sources */,
 				0818A72F114D5CEDF40789E7 /* IPadAssistantSpec.swift in Sources */,
 				081637D5711F73246A296DCB /* IPadKeyboardSpec.swift in Sources */,
+				081B4C9E2F7A3D6015E8B942 /* IPadMultitaskingSpec.swift in Sources */,
 				0812C7A41E5B90D3F6A8B215 /* PhoneKeyboardSpec.swift in Sources */,
 				UITESTSRCBF00100000000 /* RecipeScalerNativeUITests.swift in Sources */,
 				UIT8D74A32C89F7DE0818 /* BaseTestCase.swift in Sources */,

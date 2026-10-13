@@ -250,6 +250,13 @@ enum DebugLaunchOptions {
         return CGFloat(value)
     }
 
+    /// `-DebugWindowWidthLive=1` — the root width follows `DebugWindowWidthChannel` at runtime,
+    /// starting from `-DebugWindowWidth` (or the whole window): UI tests resize the window
+    /// the way Split View and Stage Manager do, which the simulator cannot script (spec 081, T049).
+    static var debugWindowWidthLive: Bool {
+        boolFlag("DebugWindowWidthLive")
+    }
+
     /// `-DebugCompactInPortrait=1` — a portrait iPad window behaves as a compact one (the
     /// root narrows to a ½ window, 402 pt, size class compact), landscape stays regular. Rotating flips the size class at runtime: UI tests of the panel ↔ sheet swap
     /// (spec 081, T035), which the simulator cannot do with a real window resize.
@@ -484,6 +491,7 @@ enum DebugLaunchOptions {
     static var iPadSidebarShown: Bool { false }
     static var iPadListHidden: Bool { false }
     static var debugWindowWidth: CGFloat? { nil }
+    static var debugWindowWidthLive: Bool { false }
     static var debugCompactInPortrait: Bool { false }
 
     static func applyScreenshotPreferences() {}

@@ -81,6 +81,24 @@ bash scripts/verify-ipad-keyboard.sh --skip-build --only testHostKeys
 печатает `IPAD_KEYBOARD_HOST_KEY <n> <combo>`, скрипт шлёт клавишу в симулятор, тест проверяет
 результат. Пока скрипт идёт, не печатай на Mac. Логи — `tmp/ipad-keyboard/`.
 
+`IPadMultitaskingSpec` (одно окно на ширинах многозадачности, spec 081 US7) меняет ширину корня
+приложения на лету (`-DebugWindowWidthLive=1`, Darwin-уведомление из теста) и проверяет раскладку,
+открытый рецепт и коллекцию на каждой ширине. Скриншоты снимает хост:
+
+```bash
+bash scripts/verify-ipad-layout.sh --matrix                 # build-for-testing + вся спека
+bash scripts/verify-ipad-layout.sh --matrix --skip-build --only testAssistantWidthsLandscape
+IPAD_SIM_ID=<udid 13″> bash scripts/verify-ipad-layout.sh --matrix --skip-build
+```
+
+Нужен локальный бэкенд на 127.0.0.1:3001. Скриншоты и таблица `matrix.txt` — в
+`tmp/ipad-verify/us7/<устройство>/`, логи — в `tmp/ipad-verify/us7/`. Настоящие Split View,
+Slide Over и Stage Manager симулятор не скриптует: они остаются ручной проверкой на устройстве.
+На iPad-симуляторе ниже iPadOS 26.2 (`IPAD_SIM_ID=…`) та же спека проходит старую оболочку
+(системный таб-бар, без сайдбара). Рантаймы симулятора iOS 18.4/18.5 приложение не запускают:
+dyld не находит `/usr/lib/swift/libswiftWebKit.dylib` (баг рантайма, WebKit 293831), так что
+старую оболочку проверяет владелец на устройстве.
+
 **Быстрый gate для PR / агента** — один build + все unit-тесты (без UI), с лимитом 30 с на кейс:
 
 ```bash

@@ -7,6 +7,9 @@
 #   bash scripts/verify-ipad-layout.sh --capture-baseline    # iPhone: write the baseline
 #   bash scripts/verify-ipad-layout.sh --list-states
 #   bash scripts/verify-ipad-layout.sh --compare-dirs <baseline-dir> <current-dir>
+#   bash scripts/verify-ipad-layout.sh --matrix [--skip-build] [--only <test>]
+#                                # one window through the multitasking widths (US7):
+#                                # scripts/verify-ipad-matrix.sh, its header has the rest
 #
 # Options:
 #   --only <state>[,<state>...]  subset of states (names from --list-states)
@@ -76,8 +79,15 @@ COMPARE_BASELINE_DIR=""
 COMPARE_CURRENT_DIR=""
 
 usage() {
-  sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'
 }
+
+# The width matrix is an XCUITest run with its own options (spec 081, T049).
+for arg in "$@"; do
+  if [[ "$arg" == "--matrix" ]]; then
+    exec bash "$ROOT/scripts/verify-ipad-matrix.sh" "$@"
+  fi
+done
 
 while (($#)); do
   case "$1" in

@@ -60,6 +60,11 @@ entitlements, plist, extension targets, `Package.resolved`, Xcode version и SDK
   `VERIFIED` только если `testHostKeys` прошёл и каждая запрошенная клавиша отправлена и
   увидена тестом; без AXe или backend — `INCONCLUSIVE`, пропуск/ноль тестов/сбой `axe` —
   `FAILED`.
+- `scripts/tests/test-verify-ipad-matrix.sh` — окно iPad через ширины многозадачности
+  (spec 081, US7): `VERIFIED` только если тесты прошли без пропусков и каждый запрошенный
+  скриншот снят и подтверждён тесту; без backend или симулятора — `INCONCLUSIVE`, сбой
+  `simctl io`/`notifyutil`, пропуск или ноль тестов — `FAILED`; `verify-ipad-layout.sh
+  --matrix` доходит до того же скрипта.
 
 Новый verifier-скрипт обязан добавить fixture-тест, который доказывает, что
 скрипт падает на сломанной среде/входе.
