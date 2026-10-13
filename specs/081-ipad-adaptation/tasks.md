@@ -392,7 +392,7 @@
   - Закреплённая вкладка «Ассистент» и ✦ открывают и закрывают панель, выбранная вкладка не меняется (FR-021).
   - ✦ на «Покупках» и «Подборках» открывает панель с новым чатом, набранный черновик сохраняется. Вкладка и ✦ рецепта, как и раньше, возвращают чат, открытый в последние 60 с.
   - На «Рецептах» с открытой панелью колонки списка нет, в альбомной рецепт в две колонки (контент 869 на iPad Pro 11" M4 с окном 1210; по §Матрица — 853). Закрытие возвращает список, открытый рецепт и выделенную строку.
-  - Сплит или стек решается по ширине без панели (`IPadLayoutPolicy`, `assistantBesideRecipe`), поэтому открытие и закрытие панели не меняет view рецепта (прокрутка, готовка) и не сворачивает развёрнутый рецепт. «Развернуть» скрыт, пока панель прячет список; после закрытия состояние «развёрнут» возвращается.
+  - Сплит или стек решается по ширине без панели (`IPadLayoutPolicy`, `assistantPanelOpen`; см. «Доработки после ревью US3» ниже), поэтому открытие и закрытие панели не меняет view рецепта (прокрутка, готовка) и не сворачивает развёрнутый рецепт. «Развернуть» скрыт, пока панель открыта; после закрытия состояние «развёрнут» возвращается.
   - PI-5: тап по вкладке в том же обновлении, что внешний запрос («Купить во Вкусвилле»), панель не закрывает. Внешний запрос в уже открытый ассистент уходит в сессию напрямую, без повторов (по id запроса).
   - Тесты: `IPadLayoutPolicyTests`, `AppShellCoordinatorTests`, `AssistantSessionModelTests`, `IPadAssistantSpec`.
   - Снимки `tmp/ipad-verify/us3/panel-recipes-landscape.png`, `panel-recipes-portrait.png`, `panel-shopping-landscape.png`, `shopping-sidebar-star-landscape.png` → `panel-shopping-from-star-landscape.png`.
@@ -419,6 +419,21 @@
   - Смена size class в тесте — новый DEBUG-аргумент `-DebugCompactInPortrait=1`: в книжной корень сужается до ½ окна (402, compact), в альбомной остаётся regular, поворот меняет size class на лету. Лист при этом показывает настоящее полноширинное окно, поэтому он выглядит как page sheet по центру, а не как лист в окне ½. Это артефакт хука.
   - В `RecipeScalerNativeUITests/Helpers/Selectors.swift` поправлен комментарий и удалена константа `ipadAssistantInspector` (id, добавленный в T033 и перекрытый `root_content`). `SeedClient` и `BaseTestCase` не менялись.
   - Окно ⅓ не проверено: Split View и Stage Manager на симуляторе не автоматизируются, а `-DebugWindowWidth=320` сужает только корень SwiftUI, лист показывает полное окно. Ручной проход ⅓ на устройстве — за человеком (T049).
+
+  **Доработки после ревью US3 (2026-10-13, 9adb9e2…96c306f):**
+  - Выход и смена аккаунта закрывают ассистента и сбрасывают его контекст рецепта. Одна точка — `AppContainer.resetAssistantForLogout()`: сессия и `AssistantRecipeContext` (`isAssistantSheetOpen`, `visibleRecipeId`). Её зовут `stopForLogout()` и `resetForAccountSwitch()`. Смена `assistantSessionEpoch` закрывает лист или панель. `onDismiss` листа пропускает только передачу чата в панель, поэтому лист, снесённый вместе с оболочкой на iPhone, тоже считается закрытым. Тесты — `AppContainerTests`.
+  - Teardown сессии делает то же, что `resetForLogout()`: отменяет первый bootstrap и обновление истории, сбрасывает отложенный shake. Тест — `testTeardownDropsBootstrapShakeAndHistoryRefresh`.
+  - `testCloseCancelsStream` и `testEpochChangeDropsStaleStream` доставляют буферизованные события до close/teardown. Они проверяют, что `messages`, `isSending` и `threadId` не тронуты; без guard в цикле стрима оба падают.
+  - Новые тесты: повторный id запроса при открытом ассистенте уходит один раз; внешний запрос во время bootstrap уходит один раз после него.
+  - В `IPadAssistantSpec` всегда истинная проверка заменена подсчётом полей ввода чата. Лист поверх панели она ловит: при мутации биндинга листа падает в двух тестах.
+  - Пока панель открыта, сплит или стек на «Рецептах» решается по ширине без панели, есть рецепт или нет (`assistantPanelOpen`). Без рецепта (пустая коллекция) список остаётся рядом с панелью, выбор рецепта только прячет список. «Развернуть» скрыт всё время, пока панель открыта. Тест — `IPadLayoutPolicyTests.testAssistantPanelKeepsOneModeWithOrWithoutARecipe`, решение — в `docs/DECISIONS.md`.
+  - Снимки книжной на 11″: `tmp/ipad-verify/us3-fixups/portrait-panel-empty-collection.png` (список 320 + пустая деталь 172 + панель 340) → `portrait-panel-recipe-open.png` (список скрыт, рецепт 493).
+  - Проверки:
+    - `test-fast` (1071, 0 падений), `policy-check`, `lint-i18n`;
+    - Debug build-for-testing для iPad и iPhone, Release;
+    - `IPadAssistantSpec` 6/6, `IPadRecipesSpec` 7/7, `IPadShellSpec` 13/13;
+    - iPhone: `verify-assistant.sh` — VERIFIED. Базовая линия переснята с merge-base 3df9bdd, `--iphone-regression` — 9 состояний, 0 отличий.
+  - M2 и L1 ревью остаются в T036 (US4).
 
 **Checkpoint (US3)**: панель ассистента открывается из любой вкладки и переживает смену вкладок, список прячется, рецепт остаётся в две колонки в альбомной; в compact — лист с тем же чатом; iPhone — лист как раньше, 0 отличий.
 
