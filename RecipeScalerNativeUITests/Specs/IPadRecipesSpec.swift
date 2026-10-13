@@ -330,10 +330,11 @@ final class IPadRecipesSpec: BaseTestCase {
 
     /// `#recipes/timers` (T038, spike S6): a tap on the timers capsule opens the phone's
     /// expanded panel as a 380 pt popover over the capsule, not the panel above the bar.
-    /// A tap outside, the panel's own chevron or another tap on the capsule closes it, and
+    /// A tap outside closes it (on the capsule too: the capsule lies in the popover's
+    /// dismiss region, so the tap does not reopen it), and so does the panel's own chevron;
     /// the capsule stays (S6 once lost it after a popover). With the sidebar shown the
     /// capsule moves and the popover follows it.
-    func testTimersPopover() {
+    func testTimersPopoverClosesOnATapOutsideOrTheChevronAndKeepsTheCapsule() {
         awaitRows()
         let capsule = timerCapsule()
         XCTAssertTrue(capsule.waitForExistence(timeout: Wait.syncRoundTrip), "No timers capsule")
@@ -358,7 +359,7 @@ final class IPadRecipesSpec: BaseTestCase {
                 // The panel's own chevron folds the phone panel; here it closes the popover.
                 popover.buttons.firstMatch.tap()
             default:
-                // Another tap on the capsule (under the popover's dismiss region).
+                // A tap outside that lands on the capsule: it closes, it does not reopen.
                 capsule.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             }
             XCTAssertTrue(
