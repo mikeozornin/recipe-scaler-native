@@ -534,4 +534,26 @@ final class IPadLayoutPolicyTests: XCTestCase {
         XCTAssertTrue(IPadLayoutPolicy.sidebarStillHiddenByExpand(hiddenByExpand: true, sidebarShown: false))
         XCTAssertFalse(IPadLayoutPolicy.sidebarStillHiddenByExpand(hiddenByExpand: false, sidebarShown: false))
     }
+
+    /// FR-018, T043: the reflow's pop of a stack a layout change rebuilt is put back. The
+    /// user's later «Назад», a pop with no rebuild and a recipe deleted meanwhile are not.
+    func testStackPathIsPutBackOnlyRightAfterARebuildAndToALiveRecipe() {
+        let kept: [RecipesRoute] = [.recipe(recipeId: "r1", folderContext: nil)]
+        let live: (String) -> Bool = { $0 == "r1" }
+        let window = IPadLayoutPolicy.stackReflowWindow
+
+        XCTAssertEqual(IPadLayoutPolicy.stackPathToRestore(kept, sinceRebuild: 0.15, isRecipeLive: live), kept)
+        XCTAssertNil(IPadLayoutPolicy.stackPathToRestore(kept, sinceRebuild: window, isRecipeLive: live))
+        XCTAssertNil(IPadLayoutPolicy.stackPathToRestore(kept, sinceRebuild: nil, isRecipeLive: live))
+        XCTAssertNil(IPadLayoutPolicy.stackPathToRestore(kept, sinceRebuild: -0.1, isRecipeLive: live))
+        XCTAssertNil(IPadLayoutPolicy.stackPathToRestore(kept, sinceRebuild: 0.15, isRecipeLive: { _ in false }))
+        XCTAssertNil(IPadLayoutPolicy.stackPathToRestore([], sinceRebuild: 0.15, isRecipeLive: live))
+
+        let folder: [RecipesRoute] = [.folder(CollectionVirtualFolders.allRecipesFolderId)]
+        XCTAssertEqual(
+            IPadLayoutPolicy.stackPathToRestore(folder, sinceRebuild: 0.15, isRecipeLive: { _ in false }),
+            folder,
+            "A collection has no recipe to check"
+        )
+    }
 }

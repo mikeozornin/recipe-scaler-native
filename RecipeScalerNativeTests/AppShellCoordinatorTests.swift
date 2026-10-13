@@ -783,6 +783,56 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertFalse(session.admits(viewModel: ownEdit, viewEditing: true), "An edit of its own")
     }
 
+    // MARK: - Spec 081 — the recipes stack across a layout change (FR-018, T043)
+
+    /// Only a layout change arms the put-back of the recipes stack, for the reflow's pop
+    /// right after it, and once.
+    func testRecipesStackIsPutBackOnceRightAfterALayoutChange() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        let kept: [RecipesRoute] = [.folder(CollectionVirtualFolders.allRecipesFolderId)]
+        let rebuilt = Date()
+        XCTAssertNil(coordinator.recipesStackPathToRestore(kept, at: rebuilt), "No layout change")
+
+        coordinator.noteRecipesStackRebuilt(at: rebuilt)
+        XCTAssertEqual(coordinator.recipesStackPathToRestore(kept, at: rebuilt.addingTimeInterval(0.15)), kept)
+        XCTAssertNil(coordinator.recipesStackPathToRestore(kept, at: rebuilt.addingTimeInterval(0.2)), "Once")
+
+        coordinator.noteRecipesStackRebuilt(at: rebuilt)
+        XCTAssertNil(
+            coordinator.recipesStackPathToRestore(kept, at: rebuilt.addingTimeInterval(0.8)),
+            "The user's own «Назад»"
+        )
+    }
+
+    /// The app emptying the path itself is not a reflow to undo.
+    func testTheAppsOwnPathResetsCancelThePutBack() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        let kept: [RecipesRoute] = [.folder(CollectionVirtualFolders.allRecipesFolderId)]
+        coordinator.selectedTab = .recipes
+
+        coordinator.noteRecipesStackRebuilt()
+        coordinator.handleDeepLink(.openRecipe(recipeId: "missing"))
+        XCTAssertNil(coordinator.recipesStackPathToRestore(kept), "A deep link")
+
+        coordinator.noteRecipesStackRebuilt()
+        coordinator.handleTabSelection(.recipes)
+        XCTAssertNil(coordinator.recipesStackPathToRestore(kept), "A tap on the selected Recipes tab")
+
+        coordinator.noteRecipesStackRebuilt()
+        coordinator.resetShellStateForLogout()
+        XCTAssertNil(coordinator.recipesStackPathToRestore(kept), "Logout")
+
+        coordinator.noteRecipesStackRebuilt()
+        coordinator.cancelRecipesStackRestore()
+        XCTAssertNil(coordinator.recipesStackPathToRestore(kept), "The recipe view closing itself")
+    }
+
+    func testADeletedRecipeIsNotPutBack() throws {
+        let (coordinator, _, _) = try makeCoordinator()
+        coordinator.noteRecipesStackRebuilt()
+        XCTAssertNil(coordinator.recipesStackPathToRestore([recipeRoute("deleted")]))
+    }
+
     private func recipeRoute(_ recipeId: String) -> RecipesRoute {
         .recipe(recipeId: recipeId, folderContext: nil)
     }

@@ -345,6 +345,7 @@ final class AppShellCoordinator {
 
     func handleDeepLink(_ link: DeepLink) {
         inboundClipboardSuppressed = true
+        cancelRecipesStackRestore()
         switch link {
         case .openRecipe(let recipeId):
             selectedTab = .recipes
@@ -509,6 +510,7 @@ final class AppShellCoordinator {
         guard let recipeId else { return }
         didOpenDebugLaunchRecipe = true
         selectedTab = .recipes
+        cancelRecipesStackRestore()
         recipesPath = [RecipesRoute.recipe(recipeId: recipeId, folderContext: nil)]
         AppLog.info(.app, "debug_open_recipe_shell", data: ["recipeId": recipeId])
     }
@@ -572,6 +574,7 @@ final class AppShellCoordinator {
         discoverListState?.clearAll()
         selectedTab = .recipes
         lastNonProfileTab = .recipes
+        cancelRecipesStackRestore()
         recipesPath = []
         discoverPath = NavigationPath()
         shoppingPath = NavigationPath()
@@ -658,6 +661,37 @@ final class AppShellCoordinator {
         self.recipeEdit = nil
     }
 
+    // MARK: - The recipes stack across a layout change (spec 081, FR-018, T043)
+
+    /// When a layout change last rebuilt the recipes stack with the path it had; `nil` once
+    /// spent or cancelled. Not observed: nothing draws it.
+    @ObservationIgnored private var recipesStackRebuiltAt: Date?
+
+    /// A layout change rebuilt the recipes stack with the path it had: the split turned
+    /// into the phone stack (`IPadRecipesSplitView`) or the size class changed
+    /// (`IPadAdaptiveTabView`). The reflow that follows may pop it (`IPadStackPathKeeper`).
+    func noteRecipesStackRebuilt(at date: Date = .now) {
+        recipesStackRebuiltAt = date
+    }
+
+    /// The app itself changes the recipes path (a deep link, a reset, the recipe view
+    /// closing itself): an emptied path is not a reflow to undo.
+    func cancelRecipesStackRestore() {
+        recipesStackRebuiltAt = nil
+    }
+
+    /// The stack a layout change rebuilt was emptied: the path to put back, or `nil`. Only
+    /// a pop right after the rebuild is the reflow's (`IPadLayoutPolicy.stackPathToRestore`),
+    /// it is put back once, and never to a recipe that is gone meanwhile.
+    func recipesStackPathToRestore(_ kept: [RecipesRoute], at date: Date = .now) -> [RecipesRoute]? {
+        let sinceRebuild = recipesStackRebuiltAt.map { date.timeIntervalSince($0) }
+        recipesStackRebuiltAt = nil
+        let entries = syncService.collectionEntries
+        return IPadLayoutPolicy.stackPathToRestore(kept, sinceRebuild: sinceRebuild) { recipeId in
+            entries.contains { $0.id == recipeId && !$0.deleted }
+        }
+    }
+
     /// The sidebar's visibility as the shell reads it (`\.tabBarPlacement`). Shown again
     /// while «Развернуть» had hidden it — the user's toggle or the system — it is no longer
     /// ours to restore, so «Свернуть» does not fight the user.
@@ -678,6 +712,7 @@ final class AppShellCoordinator {
                 discoverListState?.clearAll()
             }
         case .recipes:
+            cancelRecipesStackRestore()
             if !recipesPath.isEmpty { recipesPath = [] }
         case .shopping:
             if !shoppingPath.isEmpty { shoppingPath = NavigationPath() }

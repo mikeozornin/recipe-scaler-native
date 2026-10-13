@@ -185,6 +185,8 @@ struct IPadAdaptiveTabView: View {
             coordinator.noteSidebarShown(shown)
         }
         .onChange(of: layoutMode) { _, mode in
+            // The recipes stack is built anew with the path it had; the reflow may pop it.
+            coordinator.noteRecipesStackRebuilt()
             if mode == .padRegular {
                 coordinator.restoreSidebarHiddenByRecipeExpand(isPadRegular: true)
             } else {

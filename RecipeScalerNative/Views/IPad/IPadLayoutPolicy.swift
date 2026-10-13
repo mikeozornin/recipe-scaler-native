@@ -278,6 +278,28 @@ enum IPadLayoutPolicy {
         hiddenByExpand && !sidebarShown
     }
 
+    /// FR-018, T043: a recipes stack rebuilt by a layout change (the split turned into the
+    /// phone stack, or a size class change) is popped by SwiftUI while the window reflows,
+    /// about 150 ms after it appeared. Only a pop this soon after the rebuild is put back;
+    /// the user's own «Назад» comes later, and with no rebuild nothing is put back.
+    static let stackReflowWindow: Double = 0.5
+
+    /// The path to put back when the rebuilt stack was emptied, or `nil`. `sinceRebuild` is
+    /// the time in seconds since the layout change rebuilt the stack, `nil` without one. A recipe
+    /// deleted meanwhile is not put back.
+    static func stackPathToRestore(
+        _ kept: [RecipesRoute],
+        sinceRebuild: Double?,
+        isRecipeLive: (String) -> Bool
+    ) -> [RecipesRoute]? {
+        guard !kept.isEmpty, let sinceRebuild, sinceRebuild >= 0, sinceRebuild < stackReflowWindow
+        else { return nil }
+        if let recipeId = RecipesSelection.selection(from: kept).recipeId, !isRecipeLive(recipeId) {
+            return nil
+        }
+        return kept
+    }
+
     /// Left recipe column width, or `nil` for one column:
     /// `min(400, detailWidth − 1 − 320)`, so 399 at the 720 pt threshold.
     static func detailLeftWidth(detailWidth: CGFloat) -> CGFloat? {

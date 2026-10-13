@@ -90,6 +90,10 @@ struct IPadRecipesSplitView: View {
                 // more, so the recipe collapses and the sidebar it hid comes back.
                 // A zero size is a page laid out off screen, not a narrow window.
                 guard proxy.size.width > 0 else { return }
+                if !fits {
+                    // The phone stack is built with the split's path; the reflow may pop it.
+                    coordinator.noteRecipesStackRebuilt()
+                }
                 if coordinator.recipeDetailExpanded,
                    !IPadLayoutPolicy.keepsRecipeExpanded(splitFits: fits, isPadRegular: true) {
                     setExpanded(false)
