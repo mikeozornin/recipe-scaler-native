@@ -77,7 +77,12 @@ final class AppShellCoordinator {
     /// Recipes stack. Typed (not `NavigationPath`) so the iPad columns can read and write
     /// the same selection through `RecipesSelection` (spec 081, plan.md Р4). Never serialized.
     var recipesPath: [RecipesRoute] = [] {
-        didSet { endRecipeEditLeftBehind() }
+        didSet {
+            // The reflow's pop right after a layout change: the edit's view is being
+            // rebuilt, and the keeper decides (`recipesStackPathToRestore`).
+            guard !(recipesPath.isEmpty && isRecipesStackRestoreArmed()) else { return }
+            endRecipeEditLeftBehind()
+        }
     }
     var discoverPath = NavigationPath()
     var shoppingPath = NavigationPath()
@@ -652,8 +657,9 @@ final class AppShellCoordinator {
     /// An edit no recipe view is in (the user left it on another tab, or its view is being
     /// rebuilt) ends once its recipe is no longer the open one: a deep link, an import or a
     /// deletion opened another or closed it while the view was away. On screen the leaving
-    /// view ends it (`leaveIPadEditSession`). The sidebar comes back with «Свернуть» or the
-    /// return to Recipes (`restoreSidebarHiddenByRecipeExpand`).
+    /// view ends it (`leaveIPadEditSession`). The reflow's pop after a layout change waits
+    /// for the keeper's verdict (`recipesStackPathToRestore`). The sidebar comes back with
+    /// «Свернуть» or the return to Recipes (`restoreSidebarHiddenByRecipeExpand`).
     private func endRecipeEditLeftBehind() {
         guard let recipeEdit, recipeEdit.owner == nil,
               RecipesSelection.selection(from: recipesPath).recipeId != recipeEdit.recipeId
@@ -683,13 +689,24 @@ final class AppShellCoordinator {
     /// The stack a layout change rebuilt was emptied: the path to put back, or `nil`. Only
     /// a pop right after the rebuild is the reflow's (`IPadLayoutPolicy.stackPathToRestore`),
     /// it is put back once, and never to a recipe that is gone meanwhile.
+    /// An edit left behind by a pop that is not put back ends here (`endRecipeEditLeftBehind`).
     func recipesStackPathToRestore(_ kept: [RecipesRoute], at date: Date = .now) -> [RecipesRoute]? {
         let sinceRebuild = recipesStackRebuiltAt.map { date.timeIntervalSince($0) }
         recipesStackRebuiltAt = nil
         let entries = syncService.collectionEntries
-        return IPadLayoutPolicy.stackPathToRestore(kept, sinceRebuild: sinceRebuild) { recipeId in
+        let restored = IPadLayoutPolicy.stackPathToRestore(kept, sinceRebuild: sinceRebuild) { recipeId in
             entries.contains { $0.id == recipeId && !$0.deleted }
         }
+        if restored == nil { endRecipeEditLeftBehind() }
+        return restored
+    }
+
+    /// A layout change has just rebuilt the recipes stack: an emptied path may be the
+    /// reflow's pop, which the keeper puts back.
+    private func isRecipesStackRestoreArmed(at date: Date = .now) -> Bool {
+        guard let rebuiltAt = recipesStackRebuiltAt else { return false }
+        let sinceRebuild = date.timeIntervalSince(rebuiltAt)
+        return sinceRebuild >= 0 && sinceRebuild < IPadLayoutPolicy.stackReflowWindow
     }
 
     /// The sidebar's visibility as the shell reads it (`\.tabBarPlacement`). Shown again

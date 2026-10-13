@@ -674,6 +674,49 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.recipeEdit === session)
     }
 
+    /// A layout change rebuilds the recipe view, and the reflow pops the new stack before
+    /// the new view takes up the edit: the edit waits for the keeper to put the path back.
+    func testTheReflowPopDoesNotEndAnEditBeingRebuilt() throws {
+        let (coordinator, _, sync) = try makeCoordinator()
+        let kept = [recipeRoute("r1")]
+        coordinator.recipesPath = kept
+        let view = UUID()
+        let session = makeEditSession(sync, recipeId: "r1", owner: view)
+        coordinator.beginRecipeEdit(session)
+        coordinator.noteRecipesStackRebuilt()
+        session.release(owner: view)
+
+        coordinator.recipesPath = []
+        XCTAssertTrue(coordinator.recipeEdit === session, "The reflow's pop ended the edit")
+        // The keeper puts the path back.
+        coordinator.recipesPath = kept
+        XCTAssertTrue(coordinator.recipeEdit === session)
+    }
+
+    /// A pop the keeper does not put back (here r1 is not in the collection) or a pop well
+    /// after the layout change ends an edit no view is in.
+    func testAnEditEndsWithAPopThatIsNotPutBack() throws {
+        let (coordinator, _, sync) = try makeCoordinator()
+        let kept = [recipeRoute("r1")]
+        coordinator.recipesPath = kept
+        let view = UUID()
+        coordinator.beginRecipeEdit(makeEditSession(sync, recipeId: "r1", owner: view))
+        coordinator.recipeEdit?.release(owner: view)
+
+        coordinator.noteRecipesStackRebuilt()
+        coordinator.recipesPath = []
+        XCTAssertNotNil(coordinator.recipeEdit)
+        XCTAssertNil(coordinator.recipesStackPathToRestore(kept))
+        XCTAssertNil(coordinator.recipeEdit, "Not put back")
+
+        coordinator.recipesPath = kept
+        coordinator.beginRecipeEdit(makeEditSession(sync, recipeId: "r1", owner: view))
+        coordinator.recipeEdit?.release(owner: view)
+        coordinator.noteRecipesStackRebuilt(at: Date().addingTimeInterval(-1))
+        coordinator.recipesPath = []
+        XCTAssertNil(coordinator.recipeEdit, "The user's own «Назад» later")
+    }
+
     /// On screen the recipe view in the edit ends it as it leaves (`leaveIPadEditSession`);
     /// the path change alone does not, or a «Назад» mid-rebuild would drop the edit.
     func testAnEditWithItsViewOnScreenOutlivesThePathChange() throws {
