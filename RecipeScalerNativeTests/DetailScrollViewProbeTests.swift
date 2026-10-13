@@ -1,3 +1,4 @@
+import SwiftUI
 import UIKit
 import XCTest
 @testable import RecipeScalerNative
@@ -24,5 +25,46 @@ final class DetailScrollViewProbeTests: XCTestCase {
         window.addSubview(probe)
         probe.discover()
         XCTAssertNil(box.host)
+    }
+
+    /// Spec 081 (T036): in the iPad two-column recipe the probe sits at the top of the
+    /// steps, so hands-free scrolling moves the right column and leaves the left one.
+    @MainActor
+    func test_probe_in_two_columns_binds_the_right_column() throws {
+        let box = DetailScrollViewProbeBox()
+        let tall = { (label: String) in
+            VStack(spacing: 0) {
+                ForEach(0..<40, id: \.self) { index in
+                    Text(verbatim: "\(label) \(index)").frame(height: 60)
+                }
+            }
+        }
+        let host = UIHostingController(
+            rootView: YDocRecipeDetailColumns(detailWidth: 900) {
+                tall("Ингредиент")
+            } right: {
+                VStack(spacing: 0) {
+                    DetailScrollViewProbe(box: box).frame(width: 1, height: 1)
+                    tall("Шаг")
+                }
+            }
+        )
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 900, height: 800))
+        window.rootViewController = host
+        window.isHidden = false
+        defer { window.isHidden = true }
+        host.view.layoutIfNeeded()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+        host.view.layoutIfNeeded()
+
+        let scroll = try XCTUnwrap(box.host, "The probe found no scroll view")
+        let frame = scroll.convert(scroll.bounds, to: window)
+        let leftWidth = try XCTUnwrap(IPadLayoutPolicy.detailLeftWidth(detailWidth: 900))
+        XCTAssertGreaterThanOrEqual(
+            frame.minX,
+            leftWidth,
+            "Hands-free scrolling must move the steps column, not the left one: \(frame)"
+        )
+        XCTAssertGreaterThan(scroll.contentSize.height, frame.height, "The steps column must scroll")
     }
 }
