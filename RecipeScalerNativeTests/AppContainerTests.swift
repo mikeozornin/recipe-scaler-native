@@ -175,6 +175,40 @@ final class AppContainerTests: XCTestCase {
         XCTAssertNil(container.deepLinkRouter.pending)
     }
 
+    /// Spec 081 (US3 review M1): logout with the assistant open. Left set, the flag keeps
+    /// the next account's recipe screens from clearing their context and screen-awake mode.
+    func test_stopForLogout_withAssistantOpen_resetsAssistantRecipeContext() async throws {
+        let container = try makeContainer()
+        container.assistantRecipeContext.setVisibleRecipeId("recipe-of-account-a")
+        container.assistantRecipeContext.isAssistantSheetOpen = true
+        let epoch = container.shellCoordinator.assistantSessionEpoch
+
+        await container.stopForLogout()
+
+        XCTAssertFalse(container.assistantRecipeContext.isAssistantSheetOpen)
+        XCTAssertNil(container.assistantRecipeContext.visibleRecipeId)
+        XCTAssertEqual(
+            container.shellCoordinator.assistantSessionEpoch,
+            epoch &+ 1,
+            "the shell closes its sheet or panel on this epoch"
+        )
+    }
+
+    /// The same for an account switch without a logout in between (`bootstrap(userId:)`
+    /// is a no-op under XCTest, so its branch is called directly).
+    func test_accountSwitch_withAssistantOpen_resetsAssistantRecipeContext() throws {
+        let container = try makeContainer()
+        container.assistantRecipeContext.setVisibleRecipeId("recipe-of-account-a")
+        container.assistantRecipeContext.isAssistantSheetOpen = true
+        let epoch = container.shellCoordinator.assistantSessionEpoch
+
+        container.resetForAccountSwitch()
+
+        XCTAssertFalse(container.assistantRecipeContext.isAssistantSheetOpen)
+        XCTAssertNil(container.assistantRecipeContext.visibleRecipeId)
+        XCTAssertEqual(container.shellCoordinator.assistantSessionEpoch, epoch &+ 1)
+    }
+
     func test_stopForLogout_dismissesCookingAndCancelsRebuild() async throws {
         let container = try makeContainer()
         container.cooking.present(

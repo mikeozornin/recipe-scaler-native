@@ -430,10 +430,7 @@ final class AppContainer {
         let previousUserId = bootstrappedUserId
         let isSameUser = previousUserId == userId
         if !isSameUser, previousUserId != nil {
-            shellCoordinator.resetShellStateForLogout()
-            assistantSession.resetForLogout()
-            discoverListState.clearAll()
-            vkusvillSettings.clearForLogout()
+            resetForAccountSwitch()
         }
         bootstrappedUserId = userId
 
@@ -584,13 +581,29 @@ final class AppContainer {
         }
     }
 
+    /// Another account bootstraps without a logout in between (`bootstrap(userId:)`).
+    func resetForAccountSwitch() {
+        shellCoordinator.resetShellStateForLogout()
+        resetAssistantForLogout()
+        discoverListState.clearAll()
+        vkusvillSettings.clearForLogout()
+    }
+
+    /// Logout and account switch: the chat session and the «assistant is open» / visible
+    /// recipe flags go together. Left set, the flag keeps the next account's recipe screens
+    /// from clearing their context and the screen-awake mode (`YDocRecipeDetailView`).
+    func resetAssistantForLogout() {
+        assistantSession.resetForLogout()
+        assistantRecipeContext.resetForLogout()
+    }
+
     /// Stop sync + clear local state on logout (formerly `ContentView.onChange(of: authService.isAuthenticated)`).
     func stopForLogout() async {
         cooking.dismissForLogout()
         processTableRebuild.cancel()
         resetBootstrapAfterLogout()
         shellCoordinator.resetShellStateForLogout()
-        assistantSession.resetForLogout()
+        resetAssistantForLogout()
         discoverListState.clearAll()
         // Teardown must not send authenticated traffic: by this point the
         // outgoing account's credentials are already gone (logout wipes

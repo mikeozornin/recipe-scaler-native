@@ -280,4 +280,13 @@ final class AssistantRecipeContext {
             visibleRecipeId = nil
         }
     }
+
+    /// Logout or account switch: no assistant is open for the next account and no recipe
+    /// of the outgoing one is visible. The shell closes its sheet or panel on the same
+    /// session epoch (`AppShellView`), but the shell may already be gone (AuthView), so
+    /// the flag is not left to its `onChange` (`AppContainer.resetAssistantForLogout`).
+    func resetForLogout() {
+        isAssistantSheetOpen = false
+        visibleRecipeId = nil
+    }
 }

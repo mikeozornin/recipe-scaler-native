@@ -273,7 +273,7 @@ struct AppShellView: View {
     }
 
     /// Spec 081 (T032) — the panel's ×. Does what the sheet's `onDismiss` does, which
-    /// a panel never gets.
+    /// a panel never gets. Also closes the iPhone sheet (logout, `assistantSessionEpoch`).
     private func closeAssistantPanel() {
         showAssistant = false
         assistantContextRecipeId = nil
@@ -533,8 +533,9 @@ struct AppShellView: View {
                     #endif
                     // Spec 081 (T032a): the sheet also goes away when the iPad
                     // window turns regular and the chat moves into the panel —
-                    // that is not a close.
-                    guard !showAssistant else { return }
+                    // that is not a close. Any other dismissal with the flag still
+                    // set (the shell torn down under an open sheet) is one.
+                    if showAssistant, assistantShowsAsPanel { return }
                     assistantRecipeContext.isAssistantSheetOpen = false
                     assistantContextRecipeId = nil
                     assistantShakeOpenRequest = nil
@@ -679,6 +680,12 @@ struct AppShellView: View {
             .onChange(of: coordinator.selectedTab) { _, newTab in
                 guard newTab != .assistant else { return }
                 tabViewSelection = newTab
+            }
+            .onChange(of: coordinator.assistantSessionEpoch) { _, _ in
+                // Logout or account switch (`resetShellStateForLogout`) while the shell
+                // stays: the sheet or panel closes, as the profile and import sheets do.
+                guard showAssistant else { return }
+                closeAssistantPanel()
             }
             .onChange(of: showAssistant) { _, isOpen in
                 assistantRecipeContext.isAssistantSheetOpen = isOpen
