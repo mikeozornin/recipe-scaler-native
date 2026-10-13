@@ -860,3 +860,20 @@ The edit test types an ingredient in the edit of a ⌘N recipe. A recipe created
 - `.accessibilityIdentifier(recipeEditNewIngredientRow)` on the row covers its children: the name and amount fields and «Return» report the row's identifier, so `recipe_edit_new_ingredient_submit` never matches.
 
 ---
+
+### 2026-10-13 — iPad: multitasking in one window (spec 081 US7)
+
+**Decision:** The width matrix of layout.md §Матрица приёмки is walked in one running app, not by relaunching at each width.
+- **A live width channel (DEBUG only).** With `-DebugWindowWidthLive=1` the app reads the Darwin state of `ru.recipescaler.debug.window-width` (0 is the whole window), narrows its root to it (`appLayoutModeRoot`) and posts back the width it applied. `IPadMultitaskingSpec` moves through the widths and checks, at each one, the tabs or bottom bar, the list column, the recipe columns, the assistant panel, and that the open recipe and its collection are kept (SC-005).
+- **Host screenshots.** XCTest's screenshot of a landscape window is a cropped portrait buffer, so the test prints `IPAD_MATRIX_SHOT <n> <name>` and waits; `scripts/verify-ipad-matrix.sh` (also `verify-ipad-layout.sh --matrix`) takes `simctl io screenshot`, turns landscape shots upright with `sips`, and answers on `ru.recipescaler.debug.matrix-shot`. The measured rows go to `matrix.txt`. A fixture self-test runs in `policy-check`.
+- **The orientation is the window's.** The recipes split measured its height inside the safe area, so the ⅔ landscape window (776 × 834 on the 11″) lost the bars' height, read as landscape and gave the list ⅓ (320 pt). It now measures to the window's top and bottom edges: the window is taller than wide, the list takes ½, as the matrix says. The keyboard still never turns portrait into landscape.
+- **One window stays** (Q4): no scene manifest, no `UIApplicationSupportsMultipleScenes`, one `WindowGroup`, «Новое окно» replaced away in `IPadCommands`.
+
+**Rationale:** The simulator cannot script Split View, Slide Over or Stage Manager, and relaunching at each width would not show what a resize keeps. The stand-in narrows only the SwiftUI root, so it has limits, and these stay manual checks on a device:
+- sheets are presented from the full window (the compact assistant is a form-sheet card, not the phone sheet);
+- below the full width iPadOS folds the sidebar into the top tab bar, which a real ⅔ window may not do;
+- the menu bar is not in the accessibility tree.
+
+The old shell (iPadOS 17.0–26.1, spec.md Q1) could not be checked on the simulator. On the iOS 18.4 runtime the app crashes at launch: dyld cannot load `/usr/lib/swift/libswiftWebKit.dylib`. The app links it through the Swift overlay `WKWebView.callAsyncJavaScript(_:arguments:in:contentWorld:) async` (deployment target 17), and the 18.4/18.5 simulator runtimes keep the library in `System/Cryptexes/OS/usr/lib/swift`, where dyld does not look. It is a known runtime bug (WebKit 293831; Apple forums threads 780073 and 785964), and devices are reported to run. No iOS 17 runtime is installed. Both are owner checks on a device.
+
+---
