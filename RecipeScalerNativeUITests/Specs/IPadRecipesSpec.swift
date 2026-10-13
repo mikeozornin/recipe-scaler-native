@@ -254,6 +254,64 @@ final class IPadRecipesSpec: BaseTestCase {
         XCTAssertTrue(menuItem(Self.newCollection).exists, "The collection sheet has no «Новая коллекция»")
     }
 
+    // MARK: - Recipe actions (US4)
+
+    /// `#recipes/collections` (T037): «…» → «Коллекции» is a 300 pt popover from «…», not
+    /// a sheet. A new collection is checked on creation; a tap outside closes the popover
+    /// and saves the membership, as closing the phone sheet does. The collection then
+    /// lists the recipe.
+    func testCollectionsPopoverPersists() {
+        let collection = TestData.collectionName("E2E iPad Popover")
+        awaitRows()
+        let firstRow = recipeListPage.recipeRow(id: first.id)
+        let secondRow = recipeListPage.recipeRow(id: second.id)
+        firstRow.tap()
+        XCTAssertTrue(waitUntil { firstRow.isSelected }, "«\(first.name)» did not open")
+        XCTAssertTrue(recipeTitle(first.name).waitForExistence(timeout: Wait.element), "«\(first.name)» not in the panel")
+
+        let menu = openCollectionsPopover()
+        let popover = app.popovers.firstMatch
+        XCTAssertTrue(popover.waitForExistence(timeout: Wait.element), "«Коллекции» is not a popover")
+        let frame = popover.frame
+        XCTAssertTrue((298...302).contains(frame.width), "The collections popover is \(frame.width) pt wide, expected 300")
+        // iPadOS 26 grows a bar button's popover out of the button, over it.
+        XCTAssertTrue(
+            (frame.minX...frame.maxX).contains(menu.frame.midX) && frame.minY <= menu.frame.maxY,
+            "The popover is not attached to «…» (\(frame) vs \(menu.frame))"
+        )
+
+        let newRow = menuItem(Self.newCollection)
+        XCTAssertTrue(newRow.waitForExistence(timeout: Wait.element), "No «Новая коллекция» in the popover")
+        newRow.staticTexts.firstMatch.tap()
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: Wait.element), "No collection name field")
+        field.tap()
+        field.typeText(collection + "\n")
+        let popoverRow = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", collection)).firstMatch
+        XCTAssertTrue(popoverRow.waitForExistence(timeout: Wait.syncRoundTrip), "Collection «\(collection)» was not created")
+        capture("recipes-collections-popover-landscape")
+
+        // Outside the popover: the bottom of the list column.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.95)).tap()
+        XCTAssertTrue(waitUntil { !self.assignSheetTitle.exists }, "A tap outside did not close the popover")
+
+        // Saved on close: the collection lists the recipe, and only it.
+        openTitleMenu()
+        tapMenuItem([collection])
+        XCTAssertTrue(waitUntil { firstRow.exists && firstRow.isSelected }, "The collection does not list «\(first.name)»")
+        XCTAssertTrue(waitUntil { !secondRow.exists }, "«\(second.name)» is listed in the collection")
+
+        // Reopened, the popover shows the saved membership; it closes again.
+        openCollectionsPopover()
+        XCTAssertTrue(
+            app.buttons.matching(NSPredicate(format: "label CONTAINS %@", collection)).firstMatch
+                .waitForExistence(timeout: Wait.element),
+            "The reopened popover has no «\(collection)»"
+        )
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.95)).tap()
+        XCTAssertTrue(waitUntil { !self.assignSheetTitle.exists }, "The reopened popover did not close")
+    }
+
     // MARK: - Search
 
     /// `#recipes/search`: the column search filters the column; no match → the empty state.
@@ -310,6 +368,8 @@ final class IPadRecipesSpec: BaseTestCase {
     private static let addToShopping = ["В\u{00a0}список покупок", "В список покупок", "Add to shopping list"]
     private static let delete = ["Удалить", "Delete"]
     private static let newCollection = ["Новая коллекция", "New collection"]
+    /// «…» → «Коллекции» in the recipe toolbar.
+    private static let collections = ["Коллекции", "Collections"]
     /// `IPadLayoutMetrics.sidebarWidth`: the sidebar (272) and its 8 pt inset.
     private static let sidebarWidth: CGFloat = 280
 
@@ -486,6 +546,24 @@ final class IPadRecipesSpec: BaseTestCase {
             .firstMatch
         XCTAssertTrue(item.waitForExistence(timeout: Wait.syncRoundTrip), "Title menu has no «\(labels[0])»")
         item.tap()
+    }
+
+    /// «…» → «Коллекции» in the recipe toolbar; returns «…».
+    @discardableResult
+    private func openCollectionsPopover(file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
+        let menu = app.buttons.matching(identifier: UIA.recipeDetailMenu).firstMatch
+        XCTAssertTrue(menu.waitForExistence(timeout: Wait.element), "No «…» in the recipe toolbar", file: file, line: line)
+        menu.tap()
+        let item = menuItem(Self.collections)
+        XCTAssertTrue(item.waitForExistence(timeout: Wait.element), "«…» has no «Коллекции»", file: file, line: line)
+        item.tap()
+        XCTAssertTrue(
+            assignSheetTitle.waitForExistence(timeout: Wait.element),
+            "«Коллекции» did not open the collections popover",
+            file: file,
+            line: line
+        )
+        return menu
     }
 
     private var assignSheetTitle: XCUIElement {
