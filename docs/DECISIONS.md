@@ -708,9 +708,9 @@ The suite also has no recorded reference snapshots (`isRecording = false`, no co
 
 ### 2026-10-13 — iPad: timers in a popover over the capsule (spec 081 T038, spike S6)
 
-**Decision:** On iPadOS 26.2+ in `.padRegular` a tap on the timers capsule (`tabViewBottomAccessory`) toggles the shell's `timerPopoverShown` instead of expanding the panel. The popover hangs off an invisible 1 × 1 anchor at the tab view's top-leading corner, with `attachmentAnchor: .rect(.rect(capsuleFrame))` in the anchor's space and `arrowEdge: .bottom`. The arrow points at the capsule with or without the sidebar, and the popover follows the capsule while shown. The content is the phone `MobileTimerPanel(.insetExpanded)`, 380 pt wide and unchanged. Its chevron, a tap outside or the capsule closes it. A wide window has no expanded panel: entering `.padRegular` folds an expanded one, leaving it closes the popover, and the popover closes when the capsule goes away. The iPhone and a compact iPad window keep the expanded panel. In DEBUG, `-MobileTimerPanelExpanded=1` opens the popover in a wide window. The capsule and anchor frames live in a plain class held in `@State` (`TimerPopoverGeometry`), and measurements at the origin are ignored.
+**Decision:** On iPadOS 26.2+ in `.padRegular` a tap on the timers capsule (`tabViewBottomAccessory`) opens the popover (the shell's `timerPopoverShown`) instead of expanding the panel. The popover hangs off an invisible 1 × 1 anchor at the tab view's top-leading corner, with `attachmentAnchor: .rect(.rect(capsuleFrame))` in the anchor's space and `arrowEdge: .bottom`. The arrow points at the capsule with or without the sidebar, and the popover follows the capsule while shown. The content is the phone `MobileTimerPanel(.insetExpanded)`, 380 pt wide and unchanged. Its chevron or a tap outside closes it. A tap on the capsule while it is shown is a tap outside: the capsule lies in the popover's dismiss region. A wide window has no expanded panel: entering `.padRegular` folds an expanded one, leaving it closes the popover, and the popover closes when the capsule goes away. The iPhone and a compact iPad window keep the expanded panel. In DEBUG, `-MobileTimerPanelExpanded=1` opens the popover in a wide window once the capsule is measured; any close drops the request. The capsule and anchor frames live in a plain class held in `@State` (`TimerPopoverGeometry`), and measurements at the origin are ignored.
 
-**Rationale:** Spike S6: a `.popover` inside the accessory never shows. An anchor view the size of the tab view blocked taps on the content under the popover's host, hence a 1 pt anchor with a rect attachment. The accessory is rebuilt on every shell update and first measures off-window at {0, 0}; writing its frame to `@State` updated the shell in a loop and hung the app. `IPadRecipesSpec.testTimersPopover` runs four open and close rounds and checks that the capsule survives each one (in S6 it once disappeared).
+**Rationale:** Spike S6: a `.popover` inside the accessory never shows. An anchor view the size of the tab view blocked taps on the content under the popover's host, hence a 1 pt anchor with a rect attachment. The accessory is rebuilt on every shell update and first measures off-window at {0, 0}; writing its frame to `@State` updated the shell in a loop and hung the app. `IPadRecipesSpec.testTimersPopoverClosesOnATapOutsideOrTheChevronAndKeepsTheCapsule` runs four open and close rounds and checks that the capsule survives each one (in S6 it once disappeared).
 
 ---
 
@@ -745,22 +745,22 @@ A rebuilt view adopts the session and stays in edit. The session keeps a stack o
 
 ### 2026-10-13 — iPad: the phone stack keeps the open recipe after a size class change (spec 081 FR-018)
 
-**Decision:** `RecipeListView`'s own `NavigationStack` (iPhone, compact iPad, the iPad push stack) gets `IPadStackPathKeeper`. If the stack appeared with a recipe in its path and SwiftUI empties the path within 1 s, the path is put back once without animation. The modifier is a no-op on the iPhone and when the stack starts empty.
+**Decision:** `RecipeListView`'s own `NavigationStack` (iPhone, compact iPad, the iPad push stack) gets `IPadStackPathKeeper`. If the stack appeared with a recipe in its path and SwiftUI empties the path within 1 s, the path is put back once without animation. The modifier is a no-op on the iPhone and when the stack starts empty. Narrowed the same day to 0.5 s after a layout change, see «US4/US5 review fixes».
 
 **Rationale:** When the window leaves the split, the new stack starts with the split's path, and about 150 ms later SwiftUI pops it while the window reflows (`NavigationColumnState.pop`). The compact window then showed the list instead of the open recipe, along with the edit in it. No earlier test covered a compact window with an open recipe. `IPadRecipesSpec.testEditSurvivesSizeClassChange` covers it now.
 
 ---
 
-### 2026-10-13 — iPad: recipe edit with the assistant and the popovers (spec 081 US5, owner decision pending)
+### 2026-10-13 — iPad: recipe edit with the assistant and the popovers (spec 081 US5, owner decision)
 
 **Decision:**
-- **Assistant entry.** There is no ✦ during edit: the edit bar is «Готово» only (Q2). The entry is the pinned «Ассистент» tab in the top tab bar, which shows while the edit keeps the sidebar folded, so there is still one assistant entry on screen (FR-021). If the user opens the sidebar mid-edit, the screen has no assistant entry until «Готово»: the sidebar does not list the pinned tab, and the ✦ that would replace it is not on the edit bar. We accept this for now; it is an owner decision.
+- **Assistant entry.** There is no ✦ during edit: the edit bar is «Готово» only (Q2). The entry is the pinned «Ассистент» tab in the top tab bar, which shows while the edit keeps the sidebar folded, so there is still one assistant entry on screen (FR-021). If the user opens the sidebar mid-edit, the screen has no assistant entry until «Готово»: the sidebar does not list the pinned tab, and the ✦ that would replace it is not on the edit bar. The owner accepted the behaviour as is (entry «the assistant during recipe edit stays as it is» below).
 - **Panel opened during edit.** The edit stays, and the panel takes the room the list had.
 - **Edit started with the panel open.** The edit expands the recipe, and the recipe stays expanded after the panel closes.
 - **Timers.** During edit the timers capsule and its popover are hidden, as on the iPhone (`TimerManager.setSuppressPanelSafeAreaInset`). The capsule stays hidden while the rebuilt view's edit continues.
 - **Collections.** The «Коллекции» popover cannot be reached during edit, because «…» is not on the edit bar.
 
-**Rationale:** No feature the iPhone lacks, and a single assistant entry. The iPhone edit bar has no ✦ either, and a ✦ next to «Готово» would break Q2. The edit folds the sidebar, so the common case keeps the pinned tab on screen. The sidebar opened by hand mid-edit is rare, and «Готово» brings the ✦ back. Flagged for the owner.
+**Rationale:** No feature the iPhone lacks, and a single assistant entry. The iPhone edit bar has no ✦ either, and a ✦ next to «Готово» would break Q2. The edit folds the sidebar, so the common case keeps the pinned tab on screen. The sidebar opened by hand mid-edit is rare, and «Готово» brings the ✦ back. The owner decided on 2026-10-13 to keep it.
 
 ---
 
@@ -791,5 +791,41 @@ Shots: `tmp/ipad-verify/us5/padding-{reading,edit}-portrait[-before].png`.
 - `testDismissBeforeTheEditorIsReadyKeepsItsFirstFocus`;
 - `testDismissOfAReadyEditorMutesFocusUntilItsBlur`;
 - `testChromeStaysWithTheNewerEditor`.
+
+---
+
+### 2026-10-13 — iPad: the assistant during recipe edit stays as it is (spec 081 US5, owner decision)
+
+**Decision:** The current behaviour is accepted as is. The assistant entry is the ✦ in the top tab bar or the sidebar, and it stays reachable during edit. The recipe toolbar in edit shows only «Готово». Nothing more is needed, and the code does not change.
+
+**Rationale:** The owner does not need the assistant during edit, but it is fine that it is available. This closes the open point of «recipe edit with the assistant and the popovers» above.
+
+---
+
+### 2026-10-13 — iPad: US4/US5 review fixes (spec 081)
+
+**Decision:** The review of US4 and US5 found eight points. All are fixed except one of the four cleanups, which predates 081:
+- **An edit left on another tab** ends once its recipe is no longer selected: `recipesPath` ends an edit session without a view in it whose recipe left the path (a0532b9). Before, a recipe switched off screen (deep link, debug open) kept a stale session, and the next view of that recipe took it up. The reflow's pop right after a layout change waits for `IPadStackPathKeeper`: the edit ends only if that pop is not put back, or a size class change mid-edit would leave edit (6112af2, found by `testEditSurvivesSizeClassChange`).
+- **The title no longer takes the focus back** after a one/two-column switch mid-edit. The title's auto-focus request is spent once the title has the focus or the steps editor gets it, on the iPad panel only (068bfb7). No UI test: the switch inside one view needs a real Stage Manager resize.
+- **`IPadStackPathKeeper`** no longer undoes the user's «Назад». It puts the path back only when the split or the shell reports a stack rebuild (`noteRecipesStackRebuilt`), within 0.5 s, once, and only to a recipe that still exists. The app's own path resets (deep link, logout, tab reselect, sheet dismiss, delete) cancel it (0d54a2c). A system «Назад» within 0.5 s of a real layout change still looks like the reflow pop.
+- **The assistant context** is cleared only by the recipe view that set it (an owner token in `AssistantRecipeContext`). An old view's late `onDisappear` after compact → regular with the assistant sheet no longer clears the new view's recipe (baf5f61).
+- **Cleanups:**
+  - `RecipeStepsColumnMetrics` measures its fonts once (cf6af4b);
+  - the bridge's `focusAt` takes only whole finite positions (`Number.isFinite`, `Math.floor`, ad9e09f);
+  - `adoptIPadEditSessionIfNeeded` does not take up an edit that the view has just left with «Готово» (`IPadRecipeEditSession.admits`, fa61a1f).
+  - The two `onChange(of: descriptionChrome.isFocused)` handlers in `YDocRecipeDetailView` predate 081, so they stay; see the 081 backlog.
+- **`DetailScrollViewProbeTests`** builds the production `YDocRecipeDetailColumns`, which now places the probe in the right column itself (3777e12).
+- **The timers popover:**
+  - the capsule only opens it, because the toggle-close branch could not run;
+  - the DEBUG `-MobileTimerPanelExpanded` request is cleared once the popover shows and on every close path (ff9a72d);
+  - the UI test is renamed for what it checks (89218b5).
+
+**Rationale:** Each fix keeps the iPhone as it was. The new code paths need `iPadEditHost`, the split or the popover, and none of them exist on the iPhone. The assistant owner token is invisible there. Unit tests:
+- `AppShellCoordinatorTests`: the edit left behind, the reflow pop that keeps it, the stack put back once, path resets cancel it, a deleted recipe is not put back, and the session admits only a view that can be in it;
+- `IPadLayoutPolicyTests.testStackPathIsPutBackOnlyRightAfterARebuildAndToALiveRecipe`;
+- `AssistantRecipeContextTests` (owner token);
+- `DetailScrollViewProbeTests`.
+
+`IPadRecipesSpec.testEditTwoColumns` needs the Simulator.app window open on the iPad. Headless, after `typeText` iPadOS gives the steps editor only the keyboard's shortcuts bar, and the test fails with «No software keyboard». It failed that way at every commit back to the US5 base and passes with the window open. The failure message and `docs/AGENT-WORKFLOW.md` now say so (cf60d16).
 
 ---

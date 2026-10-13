@@ -22,3 +22,4 @@
 - `verify-recipe-collections.sh` и `verify-assistant.sh` пишут скриншоты в отслеживаемые папки `specs/`.
 - Капсула таймеров (`MobileTimerPanel.swift` ~:76-86) без accessibility value «развёрнуто / свёрнуто».
 - В dev-базе остались одноразовые тестовые пользователи.
+- В `YDocRecipeDetailView` два `onChange(of: descriptionChrome.isFocused)` (~:302 и ~:431). Оба старше 081 (15c3665/9e24950 и 370df3a/a5b0d79); слить в один — отдельная правка с проверкой редактора шагов на iPhone.

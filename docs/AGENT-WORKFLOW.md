@@ -56,6 +56,12 @@ xcodebuild test-without-building -scheme RecipeScalerNative \
 
 Паттерн build-for-testing + test-without-building — в `scripts/verify-third-party-import.sh`.
 
+UI-спеки iPad, которые проверяют программную клавиатуру (`IPadRecipesSpec`), гоняй с открытым
+Simulator.app на этом iPad и отключённой аппаратной клавиатурой
+(`defaults read com.apple.iphonesimulator ConnectHardwareKeyboard` → 0). Без окна симулятора после
+`typeText` следующее поле получает от iPadOS только панель быстрых команд вместо клавиатуры, и
+`app.keyboards` пуст («No software keyboard»).
+
 **Быстрый gate для PR / агента** — один build + все unit-тесты (без UI), с лимитом 30 с на кейс:
 
 ```bash
