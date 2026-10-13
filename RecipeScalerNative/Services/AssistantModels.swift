@@ -282,14 +282,22 @@ final class AssistantRecipeContext {
         isAssistantOpen && !coversRecipe
     }
 
-    func setVisibleRecipeId(_ recipeId: String) {
+    /// The recipe view that set `visibleRecipeId`. Not observed: nothing draws it.
+    @ObservationIgnored private var visibleRecipeOwner: UUID?
+
+    /// `owner` is the recipe view. A rebuild can bring up the new view before the old one
+    /// leaves (spec 081: a size class change with the assistant open turns the sheet into
+    /// the panel, and the old view then leaves uncovered), so only the view that set the
+    /// recipe clears it.
+    func setVisibleRecipeId(_ recipeId: String, owner: UUID? = nil) {
         visibleRecipeId = recipeId
+        visibleRecipeOwner = owner
     }
 
-    func clearVisibleRecipeId(_ recipeId: String) {
-        if visibleRecipeId == recipeId {
-            visibleRecipeId = nil
-        }
+    func clearVisibleRecipeId(_ recipeId: String, owner: UUID? = nil) {
+        guard visibleRecipeId == recipeId, visibleRecipeOwner == owner else { return }
+        visibleRecipeId = nil
+        visibleRecipeOwner = nil
     }
 
     /// The shell opened the assistant: the panel beside the tabs or the sheet over them.
@@ -316,6 +324,7 @@ final class AssistantRecipeContext {
     func releaseRecipe(hiddenBy tab: AppTab) -> Bool {
         guard isBesideRecipe, tab != .recipes, tab != .assistant else { return false }
         visibleRecipeId = nil
+        visibleRecipeOwner = nil
         return true
     }
 
@@ -327,5 +336,6 @@ final class AssistantRecipeContext {
         isAssistantOpen = false
         coversRecipe = false
         visibleRecipeId = nil
+        visibleRecipeOwner = nil
     }
 }

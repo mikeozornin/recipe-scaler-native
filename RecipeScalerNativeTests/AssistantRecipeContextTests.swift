@@ -114,6 +114,40 @@ final class AssistantRecipeContextTests: XCTestCase {
         XCTAssertEqual(closed.visibleRecipeId, "r1")
     }
 
+    /// Compact → regular with the sheet open: the sheet becomes the panel and the recipe is
+    /// rebuilt in the split. The old view leaves uncovered after the new one showed the same
+    /// recipe; its clear must not take the recipe from the composer beside it.
+    func test_compactToRegular_withSheet_oldViewLeavingLate_keepsRecipe() {
+        let context = AssistantRecipeContext()
+        let phoneStackView = UUID()
+        let splitView = UUID()
+        context.setVisibleRecipeId("r1", owner: phoneStackView)
+        context.assistantDidOpen(asPanel: false)
+
+        context.assistantDidMove(asPanel: true)
+        context.setVisibleRecipeId("r1", owner: splitView)
+        XCTAssertFalse(context.coversRecipe, "the old view's onDisappear is not guarded any more")
+        context.clearVisibleRecipeId("r1", owner: phoneStackView)
+        XCTAssertEqual(context.visibleRecipeId, "r1", "the recipe beside the panel lost its context")
+
+        context.clearVisibleRecipeId("r1", owner: splitView)
+        XCTAssertNil(context.visibleRecipeId, "the view showing the recipe clears it as it leaves")
+    }
+
+    /// The old view leaves first: it clears, and the new one sets the recipe again.
+    func test_rebuild_oldViewLeavingFirst_newViewSetsRecipe() {
+        let context = AssistantRecipeContext()
+        let old = UUID()
+        let new = UUID()
+        context.setVisibleRecipeId("r1", owner: old)
+
+        context.clearVisibleRecipeId("r1", owner: old)
+        XCTAssertNil(context.visibleRecipeId)
+        context.setVisibleRecipeId("r1", owner: new)
+        context.clearVisibleRecipeId("r1", owner: old)
+        XCTAssertEqual(context.visibleRecipeId, "r1")
+    }
+
     func test_resetForLogout_clearsEveryFlag() {
         let context = AssistantRecipeContext()
         context.setVisibleRecipeId("r1")

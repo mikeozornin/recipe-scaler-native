@@ -57,6 +57,9 @@ struct YDocRecipeDetailView: View {
     @State var isFinishingEdit = false
     /// This view in the iPad edit session (`IPadRecipeEditSession.owner`).
     @State var editOwnerToken = UUID()
+    /// This view as the one showing the recipe to the assistant
+    /// (`AssistantRecipeContext.setVisibleRecipeId(_:owner:)`).
+    @State private var assistantContextOwner = UUID()
     /// The unsaved title of the view this one replaced (T043); `nil` once saved.
     @State var adoptedTitleDraft: String?
     /// The steps caret of the view this one replaced, put back once the editor is ready.
@@ -524,7 +527,7 @@ struct YDocRecipeDetailView: View {
             // Under the assistant sheet the recipe keeps its context and keep-awake; beside
             // the iPad panel it is gone like without the panel (spec 081, T036).
             guard !assistantRecipeContext.coversRecipe else { return }
-            assistantRecipeContext.clearVisibleRecipeId(recipeId)
+            assistantRecipeContext.clearVisibleRecipeId(recipeId, owner: assistantContextOwner)
             if !sheetOverlay {
                 deactivateScreenAwake()
             }
@@ -603,7 +606,7 @@ struct YDocRecipeDetailView: View {
             applyStartDescriptionEditIfNeeded()
         }
         .onAppear {
-            assistantRecipeContext.setVisibleRecipeId(recipeId)
+            assistantRecipeContext.setVisibleRecipeId(recipeId, owner: assistantContextOwner)
             applyStartInEditModeIfNeeded()
             applyStartDescriptionEditIfNeeded()
             #if DEBUG
