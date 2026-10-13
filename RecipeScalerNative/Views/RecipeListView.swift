@@ -160,6 +160,7 @@ struct RecipeListView: View {
             NavigationStack(path: $navigationPath) {
                 listScreen
             }
+            .modifier(IPadStackPathKeeper(path: $navigationPath))
         }
     }
 
@@ -1044,6 +1045,43 @@ private struct RecipeListNavigationTitle: ViewModifier {
                 .localizedNavigationTitle("Recipes")
                 .navigationBarTitleDisplayMode(.inline)
         }
+    }
+}
+
+/// Spec 081 (FR-018, T043) — the iPad phone stack keeps the open recipe when the window
+/// leaves the split (a size class change, or a window too narrow for the split). The new
+/// stack starts with the path the split had, and SwiftUI pops it while the window reflows
+/// (`NavigationColumnState.pop`, about 150 ms after the stack appeared): the recipe, and the
+/// edit in it, were gone. A pop that soon after the stack first appeared is put back once,
+/// without the push animation. A no-op on the iPhone.
+private struct IPadStackPathKeeper: ViewModifier {
+    @Binding var path: [RecipesRoute]
+    /// The path the stack was built with, while a reflow may still pop it.
+    @State private var pathAtFirstAppear: [RecipesRoute]?
+    @State private var appearedAt: Date?
+    @State private var didAppear = false
+
+    /// Long enough for the reflow, short enough not to undo the user's own «Назад».
+    private static let reflowWindow: TimeInterval = 1
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                // Back from another tab is the same stack: only a new stack is armed.
+                guard !didAppear else { return }
+                didAppear = true
+                guard UIDevice.current.userInterfaceIdiom == .pad, !path.isEmpty else { return }
+                pathAtFirstAppear = path
+                appearedAt = .now
+            }
+            .onChange(of: path) { _, newPath in
+                guard let kept = pathAtFirstAppear, let appearedAt else { return }
+                pathAtFirstAppear = nil
+                guard newPath.isEmpty, Date.now.timeIntervalSince(appearedAt) < Self.reflowWindow else { return }
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { path = kept }
+            }
     }
 }
 
