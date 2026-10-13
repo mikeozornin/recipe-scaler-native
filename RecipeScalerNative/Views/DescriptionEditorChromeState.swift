@@ -43,6 +43,14 @@ final class DescriptionEditorChromeState {
         suppressFormattingBar = false
     }
 
+    /// The editor of `bridge` went away. A newer editor may have bound in the meantime (the
+    /// iPad rebuilds the steps editor when the recipe switches between one and two columns):
+    /// then the chrome stays with it.
+    func unbind(bridge: DescriptionEditorBridge) {
+        guard self.bridge === bridge else { return }
+        reset()
+    }
+
     func setSuppressFormattingBar(_ suppress: Bool) {
         guard suppressFormattingBar != suppress else { return }
         suppressFormattingBar = suppress

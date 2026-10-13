@@ -307,7 +307,12 @@ final class DescriptionEditorBridge {
 
     /// Dismiss keyboard and clear focus (e.g. keyboard accessory Done).
     func dismissEditingFocus() {
-        suppressIncomingFocus = true
+        // Mute `focus` until the editor answers the `blur` command. An editor that is not
+        // ready drops the command and never answers: muting it would swallow the next real
+        // focus (the steps tapped after the title of a recipe that opened in edit).
+        if phase == .ready {
+            suppressIncomingFocus = true
+        }
         isFocused = false
         sendCommand(name: "blur")
         webView?.resignEditingKeyboard()

@@ -1858,6 +1858,59 @@ final class DescriptionEditorScrollInsetTests: XCTestCase {
         XCTAssertEqual(bridge.paintedContentBottom, 64, accuracy: 0.01)
     }
 
+    /// Spec 081 (US5): the title of a new recipe takes focus before the steps editor is
+    /// ready; the blur sent then is dropped, so it must not mute the editor's first focus.
+    @MainActor
+    func testDismissBeforeTheEditorIsReadyKeepsItsFirstFocus() throws {
+        let db = try YrsDatabase.makeInMemoryFallback()
+        let store = YDocStore(dbQueue: db.dbQueue)
+        let sync = YjsSyncService.makeForTesting(store: store)
+        let bridge = DescriptionEditorBridge(recipeId: "focus-recipe", syncService: sync)
+
+        bridge.dismissEditingFocus()
+        bridge.handleWebMessage(["type": "ready"])
+        bridge.handleWebMessage(["type": "focus"])
+
+        XCTAssertTrue(bridge.isFocused)
+    }
+
+    @MainActor
+    func testDismissOfAReadyEditorMutesFocusUntilItsBlur() throws {
+        let db = try YrsDatabase.makeInMemoryFallback()
+        let store = YDocStore(dbQueue: db.dbQueue)
+        let sync = YjsSyncService.makeForTesting(store: store)
+        let bridge = DescriptionEditorBridge(recipeId: "focus-recipe", syncService: sync)
+        bridge.handleWebMessage(["type": "ready"])
+
+        bridge.dismissEditingFocus()
+        bridge.handleWebMessage(["type": "focus"])
+        XCTAssertFalse(bridge.isFocused, "A focus in flight before the blur came back")
+
+        bridge.handleWebMessage(["type": "blur"])
+        bridge.handleWebMessage(["type": "focus"])
+        XCTAssertTrue(bridge.isFocused)
+    }
+
+    /// Spec 081 (US5): the iPad rebuilds the steps editor when the recipe switches between
+    /// one and two columns; the old editor going away keeps the chrome on the new one.
+    @MainActor
+    func testChromeStaysWithTheNewerEditor() throws {
+        let db = try YrsDatabase.makeInMemoryFallback()
+        let store = YDocStore(dbQueue: db.dbQueue)
+        let sync = YjsSyncService.makeForTesting(store: store)
+        let old = DescriptionEditorBridge(recipeId: "chrome-recipe", syncService: sync)
+        let new = DescriptionEditorBridge(recipeId: "chrome-recipe", syncService: sync)
+        let chrome = DescriptionEditorChromeState()
+
+        chrome.bind(bridge: old)
+        chrome.bind(bridge: new)
+        chrome.unbind(bridge: old)
+        XCTAssertTrue(chrome.bridge === new)
+
+        chrome.unbind(bridge: new)
+        XCTAssertNil(chrome.bridge)
+    }
+
     func testDescriptionEditorUpdateBytesDecodesBase64AndLegacyArrays() {
         let bytes = Data([1, 0, 255, 7, 128])
         XCTAssertEqual(DescriptionEditorBridge.updateBytes(from: bytes.base64EncodedString()), bytes)

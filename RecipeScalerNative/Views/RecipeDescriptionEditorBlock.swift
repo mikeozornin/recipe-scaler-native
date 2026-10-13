@@ -128,7 +128,7 @@ struct RecipeDescriptionEditorBlock: View {
             Task { @MainActor in
                 await syncService.flushPendingEdits()
                 bridge.teardown()
-                chrome.reset()
+                chrome.unbind(bridge: bridge)
                 await syncService.resumeRecipeRefresh()
             }
         }
