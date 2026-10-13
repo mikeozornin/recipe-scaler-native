@@ -721,3 +721,75 @@ The suite also has no recorded reference snapshots (`isRecording = false`, no co
 **Rationale:** A flexible frame without `minWidth` takes the larger of the proposal and its child. The view starts with a 420 pt container size, so in a window narrower than 420 pt (⅓, Slide Over) it measured its own matrix and stayed clipped on both sides. With `minWidth: 0` it measures the window. On the iPhone the table is landscape only (at least 667 pt), so nothing changes there.
 
 ---
+
+### 2026-10-13 — iPad: recipe edit takes the section like «Развернуть» (spec 081 US5, T041–T043)
+
+**Decision:** On `.padRegular`, when the list and the recipe fit side by side, entering edit expands the recipe the same way «Развернуть» does (`IPadLayoutPolicy.expandsRecipeForEdit`). The list column hides, and a sidebar standing beside the content folds and is remembered. Only «Готово» stays on the bar (Q2); «Развернуть» / «Свернуть» is hidden during edit. The edit uses the T025 columns (panel ≥ 720 pt): the edit header, servings and ingredients go on the left, and the steps editor goes on the right. The formatting bar is in the right column's `.safeAreaInset(edge: .bottom)`, so it sits under the steps and above the keyboard. Below 720 pt the edit is one phone column, at most 720 pt wide and centered. After «Готово» the recipe stays expanded, and «Свернуть» brings back the list and the sidebar that the edit hid (`#recipes/focus`). The sidebar does not return on «Готово» itself, which is a deviation from the literal T041. If the window can't fit the split (the push stack), edit changes nothing in the section. The same applies to a compact window, which is the phone. Coming back to the split during an edit expands the recipe again. A sidebar hidden for the edit stays hidden while the edit goes on and comes back with «Свернуть».
+
+**Rationale:** T043 and `#edit/edit` → `#recipes/focus` describe the state after «Готово» as the expanded recipe, so the expand rules (DECISIONS 2026-10-12) apply as they are, with no second mechanism. A ⅔ landscape window gives the expanded recipe a panel of about 800 pt, so it edits in two columns, as layout.md says. The spec's Independent Test mentions one column there, so this also deviates from it. Tests: `IPadLayoutPolicyTests`, `AppShellCoordinatorTests`, `IPadRecipesSpec.testEditTwoColumns` and `testEditSurvivesSizeClassChange`.
+
+---
+
+### 2026-10-13 — iPad: a recipe edit outlives its view (spec 081 T043, FR-018)
+
+**Decision:** A size class change, or a resize between the split and the phone stack, rebuilds the recipe view in another container. On the iPad the edit lives in `AppShellCoordinator.recipeEdit` (`IPadRecipeEditSession`) and holds:
+- the edit view model (the servings and color drafts written on «Готово»);
+- the title as typed so far (the title is saved on blur);
+- the focus: the title, or the steps editor with its Tiptap selection. The bridge now posts `from`/`to`, and the new `focusAt` command puts the caret back.
+
+A rebuilt view adopts the session and stays in edit. The session keeps a stack of the views in the edit and hears focus notes from views still in it. A focus note makes that view the current one. Text and blur notes count only from the current view. A blur is noted 300 ms after it happens, so a view torn down in between is not heard. Ingredient field focus is not carried over; the ingredient and step text is in the Y.Doc already. `recipeIdsStartedInEdit` stops a recipe created with «+» from re-entering edit after «Готово» when its view is rebuilt (the route still says `openInEditMode`). The iPhone has no session (`iPadEditHost == nil`).
+
+**Rationale:** A rebuild brings up several views of the recipe one after another. A probe showed that the last of them leaving dropped the edit from the view still on screen, so its later focus was lost. A stack plus "a focus note claims the edit" fixes that, and stray notes from a view being torn down are still ignored. Tests: `AppShellCoordinatorTests.testEditSessionHearsOnlyItsOwner` and `testEditSessionGoesBackToTheViewStillInTheEdit`, plus `IPadRecipesSpec.testEditSurvivesSizeClassChange` (regular → compact → regular, title then steps).
+
+---
+
+### 2026-10-13 — iPad: the phone stack keeps the open recipe after a size class change (spec 081 FR-018)
+
+**Decision:** `RecipeListView`'s own `NavigationStack` (iPhone, compact iPad, the iPad push stack) gets `IPadStackPathKeeper`. If the stack appeared with a recipe in its path and SwiftUI empties the path within 1 s, the path is put back once without animation. The modifier is a no-op on the iPhone and when the stack starts empty.
+
+**Rationale:** When the window leaves the split, the new stack starts with the split's path, and about 150 ms later SwiftUI pops it while the window reflows (`NavigationColumnState.pop`). The compact window then showed the list instead of the open recipe, along with the edit in it. No earlier test covered a compact window with an open recipe. `IPadRecipesSpec.testEditSurvivesSizeClassChange` covers it now.
+
+---
+
+### 2026-10-13 — iPad: recipe edit with the assistant and the popovers (spec 081 US5, owner decision pending)
+
+**Decision:**
+- **Assistant entry.** There is no ✦ during edit: the edit bar is «Готово» only (Q2). The entry is the pinned «Ассистент» tab in the top tab bar, which shows while the edit keeps the sidebar folded, so there is still one assistant entry on screen (FR-021). If the user opens the sidebar mid-edit, the screen has no assistant entry until «Готово»: the sidebar does not list the pinned tab, and the ✦ that would replace it is not on the edit bar. We accept this for now; it is an owner decision.
+- **Panel opened during edit.** The edit stays, and the panel takes the room the list had.
+- **Edit started with the panel open.** The edit expands the recipe, and the recipe stays expanded after the panel closes.
+- **Timers.** During edit the timers capsule and its popover are hidden, as on the iPhone (`TimerManager.setSuppressPanelSafeAreaInset`). The capsule stays hidden while the rebuilt view's edit continues.
+- **Collections.** The «Коллекции» popover cannot be reached during edit, because «…» is not on the edit bar.
+
+**Rationale:** No feature the iPhone lacks, and a single assistant entry. The iPhone edit bar has no ✦ either, and a ✦ next to «Готово» would break Q2. The edit folds the sidebar, so the common case keeps the pinned tab on screen. The sidebar opened by hand mid-edit is rare, and «Готово» brings the ✦ back. Flagged for the owner.
+
+---
+
+### 2026-10-13 — iPad: the steps column uses the left column's padding (spec 081, owner decision)
+
+**Decision:** In the two-column recipe (reading and edit) the steps column uses the same padding as the left column:
+- **Sides.** The steps sections keep their own 16 pt sides, as on the left. The text stays at most 660 pt wide (`stepsMaxWidth`, leading). The extra padding that made the steps 32 pt from the column edges is gone, together with `IPadLayoutMetrics.stepsHorizontalPadding`.
+- **Top.** The cap top of «Инструкции» sits on the line where the left column starts. That line is the top of the photo, of its placeholder in edit, or of the legacy banner, or else the cap top of the recipe title. `RecipeStepsColumnMetrics.topPadding` computes the padding from the font metrics (title 28, «Инструкции» title2) and from the 44 pt row the reading header is centred in. The editor's header has no such row.
+
+The phone `StepsSection` and the single column are unchanged.
+
+**Rationale:** The owner asked for it on 2026-10-13. The steps read as a second column of the same card, not as a separate inset panel. A fixed number would drift with Dynamic Type and with the photo, so the padding is computed. In a recipe without a photo, «Инструкции» moves about 6 pt between reading (title cap top) and edit (the placeholder top), because the left column itself starts differently. Measured on portrait shots at 2 px per pt:
+- reading: the «Н» of the title and the «И» of «Инструкции» both have their cap top at 343 px (before: «И» at 361 px);
+- edit: the «И» is at 332 px, as is the top of the placeholder (before: 343 px);
+- the right text starts 17.5 pt from its column edge and the left text 18 pt from its edge, which is 16 pt plus the glyph bearing.
+
+Shots: `tmp/ipad-verify/us5/padding-{reading,edit}-portrait[-before].png`.
+
+---
+
+### 2026-10-13 — Description editor: focus after a rebuild and before the editor is ready (spec 081 US5)
+
+**Decision:** Two races in the steps editor's focus are fixed. They apply on the iPhone too.
+- **Chrome unbinding.** `DescriptionEditorChromeState.unbind(bridge:)` replaces `reset()` in `RecipeDescriptionEditorBlock.onDisappear`. An editor that leaves resets the formatting bar's chrome only if the chrome is still bound to it. Before, the delayed `onDisappear` of the old block reset the chrome that the new block had bound. This happens when the iPad rebuilds the steps editor as the recipe switches between one and two columns, for example on ⅔. After that, a tap on the steps brought no formatting bar.
+- **Muting incoming focus.** `DescriptionEditorBridge.dismissEditingFocus()` mutes incoming `focus` only when the editor is `.ready`. The mute is lifted by the editor's answer to the `blur` command. An editor that is not ready drops the command, so the mute stayed and swallowed the next real focus. That was the first tap on the steps after editing the title of a recipe that opened in edit.
+
+**Rationale:** Both were found by `IPadRecipesSpec` at ⅔, where the editor is rebuilt while the title has focus. The second one is the likely cause of "the first tap on the steps after the title does nothing", which XCTest also saw on the iPhone. The UI test helper still taps a second time, so this needs a check by hand. Pixels don't change. Behaviour on the iPhone is checked with `scripts/verify-description-editor.sh`. Unit tests in `RecipeScalerNativeTests`:
+- `testDismissBeforeTheEditorIsReadyKeepsItsFirstFocus`;
+- `testDismissOfAReadyEditorMutesFocusUntilItsBlur`;
+- `testChromeStaysWithTheNewerEditor`.
+
+---
