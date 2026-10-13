@@ -383,6 +383,7 @@ struct AppShellView: View {
             focusSearch = { focusRecipeSearchFromKeyboard() }
         }
         return AppCommandActions(
+            layoutMode: layoutMode,
             selectTab: { coordinator.selectTabFromKeyboard($0) },
             toggleAssistant: { toggleAssistantFromKeyboard() },
             newRecipe: isEditingRecipe ? nil : { Task { await coordinator.createRecipeFromKeyboard() } },

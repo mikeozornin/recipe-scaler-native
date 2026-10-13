@@ -959,6 +959,39 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertFalse(coordinator.isProfileSheetPresented)
     }
 
+    /// The menu values compare without their closures: a body that made new closures for
+    /// the same items publishes an equal value. A value SwiftUI could not compare hung the
+    /// app when the iPad turned into a compact window mid-edit.
+    func testCommandActionsCompareTheirItemsNotTheirClosures() {
+        func app(_ layout: AppLayoutMode, newRecipe: Bool = true) -> AppCommandActions {
+            AppCommandActions(
+                layoutMode: layout,
+                selectTab: { _ in },
+                toggleAssistant: {},
+                newRecipe: newRecipe ? {} : nil,
+                importRecipe: {}
+            )
+        }
+        XCTAssertEqual(app(.padRegular), app(.padRegular))
+        XCTAssertNotEqual(app(.padRegular), app(.phone), "The closures keep the layout they were made in")
+        XCTAssertNotEqual(app(.padRegular), app(.padRegular, newRecipe: false), "⌘N greyed out in an edit")
+
+        func recipe(_ id: String, pinned: Bool = false, editing: Bool = false) -> RecipeCommandActions {
+            var actions = RecipeCommandActions(recipeId: id, isPinned: pinned, isScreenAwake: false)
+            if editing {
+                actions.finishEdit = {}
+            } else {
+                actions.edit = {}
+                actions.togglePin = {}
+            }
+            return actions
+        }
+        XCTAssertEqual(recipe("r1"), recipe("r1"))
+        XCTAssertNotEqual(recipe("r1"), recipe("r2"))
+        XCTAssertNotEqual(recipe("r1"), recipe("r1", pinned: true), "«Закрепить» becomes «Открепить»")
+        XCTAssertNotEqual(recipe("r1"), recipe("r1", editing: true), "An edit leaves only «Готово»")
+    }
+
     private func recipeRoute(_ recipeId: String) -> RecipesRoute {
         .recipe(recipeId: recipeId, folderContext: nil)
     }

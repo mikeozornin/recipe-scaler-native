@@ -955,7 +955,7 @@ extension YDocRecipeDetailView {
     fileprivate var recipeCommandActions: RecipeCommandActions? {
         guard UIDevice.current.userInterfaceIdiom == .pad, isViewInHierarchy, let recipe else { return nil }
         let isPinned = syncService.collectionEntries.first { $0.id == recipeId }?.isPinned ?? false
-        var actions = RecipeCommandActions(isPinned: isPinned, isScreenAwake: isScreenAwakeActive)
+        var actions = RecipeCommandActions(recipeId: recipeId, isPinned: isPinned, isScreenAwake: isScreenAwakeActive)
         guard !isEditing else {
             if canEnterEditMode {
                 actions.finishEdit = { Task { if isEditing { await toggleEditMode() } } }
@@ -969,10 +969,10 @@ extension YDocRecipeDetailView {
         let current = RecipeServings.currentServings(base: base, scaleFactor: scaleFactor)
         // The stepper's own bounds: − stops at 1, + at 99 (`ServingsStepperView`).
         if current < 99 {
-            actions.increaseServings = { stepServings(base: base, delta: 1) }
+            actions.increaseServings = { stepServingsFromKeyboard(delta: 1) }
         }
         if current > 1 {
-            actions.decreaseServings = { stepServings(base: base, delta: -1) }
+            actions.decreaseServings = { stepServingsFromKeyboard(delta: -1) }
         }
         if scaleFactor != 1 {
             actions.resetServings = { resetServingsToRecipe() }
@@ -980,6 +980,8 @@ extension YDocRecipeDetailView {
         let service = syncService
         let id = recipeId
         actions.addToShopping = {
+            // The recipe as it is now: an equal value keeps the closures it was made with.
+            guard let recipe = self.recipe else { return }
             Task {
                 await RecipeDetailMenuActions.addAllToShopping(
                     recipeId: id,
@@ -999,6 +1001,12 @@ extension YDocRecipeDetailView {
         actions.delete = { isDeleteConfirmationPresented = true }
         actions.share = { isMenuShareSheetPresented = true }
         return actions
+    }
+
+    /// ⌘+ / ⌘−: the stepper's step for the servings the recipe has now.
+    private func stepServingsFromKeyboard(delta: Int) {
+        guard let recipe else { return }
+        stepServings(base: max(1, recipe.servings), delta: delta)
     }
 
     /// ⌘0: the servings the recipe was written for (scale 1).

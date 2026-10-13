@@ -4,7 +4,13 @@ import SwiftUI
 /// Published by `AppShellView` (`focusedSceneValue(\.appCommands)`) only on the iPad,
 /// so the iPhone with a keyboard gets no new shortcuts. Every action is a path the
 /// phone already has; `nil` greys the item out.
-struct AppCommandActions {
+///
+/// Equal when the same items are available for the same `layoutMode`, the only value the
+/// closures keep from the view that made them. Every body makes new closures; a value
+/// SwiftUI could not compare went through the scene's focus on each layout, and rotating
+/// the iPad into a compact window mid-edit hung the app in that loop.
+struct AppCommandActions: Equatable {
+    var layoutMode: AppLayoutMode
     /// ⌘1–⌘4. In a wide window «Профиль» opens the «Моё всё» sheet (FR-004a).
     var selectTab: (AppTab) -> Void
     /// ⌘J: the «Ассистент» tab (panel or sheet), or closes the open assistant.
@@ -17,12 +23,24 @@ struct AppCommandActions {
     var newCollection: (() -> Void)?
     /// ⌘F: «Рецепты» with the focus in the search field. `nil` during a recipe edit.
     var focusSearch: (() -> Void)?
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.layoutMode == rhs.layoutMode && lhs.availableItems == rhs.availableItems
+    }
+
+    private var availableItems: [Bool] {
+        [newRecipe, importRecipe, newCollection, focusSearch].map { $0 != nil }
+    }
 }
 
 /// Spec 081 (US6, T045) — the open recipe for the «Рецепт» menu, published by
 /// `YDocRecipeDetailView` on the iPad while it is on screen. No recipe, no menu: every
 /// item is greyed out. During an edit only «Готово» is left, as in the phone toolbar.
-struct RecipeCommandActions {
+///
+/// Equal for the same recipe, flags and available items, as `AppCommandActions`: the
+/// closures read the recipe and the servings when they run, not when they were made.
+struct RecipeCommandActions: Equatable {
+    var recipeId: String
     /// ⌘E: «Изменить».
     var edit: (() -> Void)?
     /// ⌘↩: «Готово» of the edit, the shortcut of the menu item (one owner per shortcut).
@@ -46,6 +64,20 @@ struct RecipeCommandActions {
     var delete: (() -> Void)?
     /// «Поделиться рецептом…»: `RecipeShareSheet`.
     var share: (() -> Void)?
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.recipeId == rhs.recipeId
+            && lhs.isPinned == rhs.isPinned
+            && lhs.isScreenAwake == rhs.isScreenAwake
+            && lhs.availableItems == rhs.availableItems
+    }
+
+    private var availableItems: [Bool] {
+        [
+            edit, finishEdit, increaseServings, decreaseServings, resetServings, addToShopping,
+            togglePin, assignToCollections, toggleScreenAwake, delete, share,
+        ].map { $0 != nil }
+    }
 }
 
 private struct AppCommandActionsKey: FocusedValueKey {
