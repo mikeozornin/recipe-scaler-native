@@ -54,12 +54,7 @@ final class IPadRecipesSpec: BaseTestCase {
     }
 
     override func extraLaunchArguments() -> [String] {
-        var args = ["-OpenTab=recipes", "-IPadSidebarHidden=1"]
-        if !name.contains("testColumnDividerDragPersists") {
-            // The saved width outlives the app; pin the default (400) for the layout checks.
-            args += ["-ipad.recipeDetailLeftColumnWidth", "400"]
-        }
-        return args
+        ["-OpenTab=recipes", "-IPadSidebarHidden=1"]
     }
 
     override func prepareBeforeLaunch() async throws {
@@ -84,7 +79,7 @@ final class IPadRecipesSpec: BaseTestCase {
 
         let left = leftColumn.frame.width
         let right = rightColumn.frame.width
-        XCTAssertTrue((320...481).contains(left), "Left recipe column is \(left) pt, expected 320–480")
+        XCTAssertTrue((399...401).contains(left), "Left recipe column is \(left) pt, expected 400")
         XCTAssertGreaterThanOrEqual(right, 320, "Steps column is \(right) pt, expected ≥ 320")
         // Landscape: the list takes a third of the content and its 1 pt divider follows it.
         assertListWidth(third: true)
@@ -305,35 +300,6 @@ final class IPadRecipesSpec: BaseTestCase {
         assertListKeeps(landscapeWidth, "landscape")
     }
 
-    // MARK: - Divider
-
-    /// FR-012a: the divider stops at 320 and 480; the width survives a relaunch.
-    func testColumnDividerDragPersists() {
-        awaitRows()
-        awaitTwoColumns()
-
-        dragDivider(by: -400)
-        XCTAssertTrue(waitUntil { abs(self.leftColumn.frame.width - 320) <= 1 }, "Left stop: column is \(leftColumn.frame.width) pt, expected 320")
-
-        dragDivider(by: 400)
-        XCTAssertTrue(waitUntil { abs(self.leftColumn.frame.width - 480) <= 1 }, "Right stop: column is \(leftColumn.frame.width) pt, expected 480")
-        XCTAssertGreaterThanOrEqual(rightColumn.frame.width, 320, "Steps column under 320 at the right stop")
-        capture("recipes-divider-480")
-
-        app.terminate()
-        app.launch()
-        hideSidebarIfShown()
-        awaitRows()
-        awaitTwoColumns()
-        XCTAssertTrue(
-            waitUntil { abs(self.leftColumn.frame.width - 480) <= 1 },
-            "After relaunch the column is \(leftColumn.frame.width) pt, expected the saved 480"
-        )
-
-        // Back to about the default so later runs and screenshots start from 400.
-        dragDivider(by: -80)
-    }
-
     // MARK: - Helpers
 
     private static let expand = ["Развернуть", "Expand"]
@@ -359,7 +325,6 @@ final class IPadRecipesSpec: BaseTestCase {
     }
     private var leftColumn: XCUIElement { app.scrollViews.matching(identifier: UIA.ipadRecipeDetailLeftColumn).firstMatch }
     private var rightColumn: XCUIElement { app.scrollViews.matching(identifier: UIA.ipadRecipeDetailRightColumn).firstMatch }
-    private var divider: XCUIElement { element(UIA.ipadRecipeColumnDivider) }
     private var expandButton: XCUIElement { app.buttons.matching(identifier: UIA.ipadRecipeExpandButton).firstMatch }
     /// The expand button matched by its label: reading `.label` of a button that is being
     /// rebuilt fails the test at once.
@@ -400,7 +365,6 @@ final class IPadRecipesSpec: BaseTestCase {
     private func awaitTwoColumns(file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(leftColumn.waitForExistence(timeout: Wait.firstPaint), "No left recipe column", file: file, line: line)
         XCTAssertTrue(rightColumn.exists, "No steps column", file: file, line: line)
-        XCTAssertTrue(divider.exists, "No column divider", file: file, line: line)
     }
 
     /// The toolbar keeps «…» and «Изменить» on the bar, not in the system overflow.
@@ -470,17 +434,6 @@ final class IPadRecipesSpec: BaseTestCase {
         XCTAssertTrue(expandButton.waitForExistence(timeout: Wait.element), "No expand button", file: file, line: line)
         expandButton.tap()
         XCTAssertTrue(expandButton(reading: labels).waitForExistence(timeout: Wait.element), "The expand button does not read «\(labels[0])»", file: file, line: line)
-    }
-
-    private func dragDivider(by dx: CGFloat) {
-        XCTAssertTrue(divider.isHittable, "Divider is not hittable")
-        let start = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        start.press(
-            forDuration: 0.2,
-            thenDragTo: start.withOffset(CGVector(dx: dx, dy: 0)),
-            withVelocity: .slow,
-            thenHoldForDuration: 0.2
-        )
     }
 
     /// A tap on the column search brings up the software keyboard (the simulator runs with

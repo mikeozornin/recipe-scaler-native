@@ -34,16 +34,10 @@ enum IPadLayoutMetrics {
     static let inspectorTitleWidth: CGFloat = 120
     /// The recipe splits into two columns from this panel width.
     static let twoColumnMinDetail: CGFloat = 720
-    /// Left recipe column until the user drags the divider.
+    /// Left recipe column: a fixed width, no divider to drag (owner decision 2026-10-13).
     static let detailLeftWidth: CGFloat = 400
-    static let detailLeftMinWidth: CGFloat = 320
-    static let detailLeftMaxWidth: CGFloat = 480
     /// Steps column never gets narrower than this.
     static let detailRightMinWidth: CGFloat = 320
-    /// Drag area of the recipe column divider (the visible line is `columnDividerWidth`).
-    static let columnDividerHitWidth: CGFloat = 12
-    /// VoiceOver adjustable step of the column divider.
-    static let columnDividerAccessibilityStep: CGFloat = 20
     static let stepsMaxWidth: CGFloat = 660
     static let stepsHorizontalPadding: CGFloat = 32
     /// One-column recipe and edit form, centered.
@@ -77,10 +71,6 @@ enum IPadLayoutMetrics {
     static let cookStripMinHeight: CGFloat = 44
     /// Avatar in the sidebar footer (`AccountView` keeps 40).
     static let footerAvatarSize: CGFloat = 36
-
-    /// Saved left recipe column width (Q5): one per device, shared by view and edit mode.
-    /// Written only when the divider is released; layout only reads and clamps it.
-    static let detailLeftColumnWidthStorageKey = "ipad.recipeDetailLeftColumnWidth"
 
     /// Import form sheet height: 720 or less, keeping 40 pt above and below.
     static func formSheetHeight(containerHeight: CGFloat) -> CGFloat {
@@ -262,16 +252,13 @@ enum IPadLayoutPolicy {
         hiddenByExpand && !sidebarShown
     }
 
-    /// Left recipe column width, or `nil` for one column.
-    /// `clamp(preferred ?? 400, 320, min(480, detailWidth − 1 − 320))`: the saved width
-    /// is never rewritten here, so it comes back once the panel is wide enough again.
-    static func detailLeftWidth(preferred: CGFloat?, detailWidth: CGFloat) -> CGFloat? {
+    /// Left recipe column width, or `nil` for one column:
+    /// `min(400, detailWidth − 1 − 320)`, so 399 at the 720 pt threshold.
+    static func detailLeftWidth(detailWidth: CGFloat) -> CGFloat? {
         guard detailWidth >= IPadLayoutMetrics.twoColumnMinDetail else { return nil }
-        let upper = min(
-            IPadLayoutMetrics.detailLeftMaxWidth,
+        return min(
+            IPadLayoutMetrics.detailLeftWidth,
             detailWidth - IPadLayoutMetrics.columnDividerWidth - IPadLayoutMetrics.detailRightMinWidth
         )
-        let wanted = preferred.flatMap { $0.isFinite ? $0 : nil } ?? IPadLayoutMetrics.detailLeftWidth
-        return min(max(wanted, IPadLayoutMetrics.detailLeftMinWidth), upper)
     }
 }

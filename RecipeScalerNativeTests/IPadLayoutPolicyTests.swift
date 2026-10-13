@@ -309,12 +309,12 @@ final class IPadLayoutPolicyTests: XCTestCase {
             XCTAssertEqual(resolved.shopVkusvillIconOnly, row.vkusvillIconOnly, label)
             if row.twoColumns {
                 XCTAssertEqual(
-                    IPadLayoutPolicy.detailLeftWidth(preferred: nil, detailWidth: resolved.detailWidth),
+                    IPadLayoutPolicy.detailLeftWidth(detailWidth: resolved.detailWidth),
                     IPadLayoutMetrics.detailLeftWidth,
-                    "\(label): untouched divider keeps the left column at 400"
+                    "\(label): the left column is 400"
                 )
             } else {
-                XCTAssertNil(IPadLayoutPolicy.detailLeftWidth(preferred: nil, detailWidth: resolved.detailWidth), label)
+                XCTAssertNil(IPadLayoutPolicy.detailLeftWidth(detailWidth: resolved.detailWidth), label)
             }
         }
     }
@@ -345,34 +345,15 @@ final class IPadLayoutPolicyTests: XCTestCase {
         }
     }
 
-    // MARK: - Recipe column divider (Q5)
+    // MARK: - Recipe columns (fixed left width, no divider)
 
-    func testLeftColumnClamp() throws {
-        XCTAssertEqual(IPadLayoutPolicy.detailLeftWidth(preferred: nil, detailWidth: 873), 400)
-        XCTAssertEqual(IPadLayoutPolicy.detailLeftWidth(preferred: 200, detailWidth: 873), 320)
-        XCTAssertEqual(IPadLayoutPolicy.detailLeftWidth(preferred: 600, detailWidth: 873), 480)
-
+    func testLeftColumnIsFixedAndKeepsTheSteps() {
+        XCTAssertEqual(IPadLayoutPolicy.detailLeftWidth(detailWidth: 873), 400)
+        XCTAssertEqual(IPadLayoutPolicy.detailLeftWidth(detailWidth: 1194), 400)
         // The steps column keeps at least 320: panel − 1 − 320.
-        let at720 = IPadLayoutPolicy.detailLeftWidth(preferred: nil, detailWidth: 720)
-        XCTAssertEqual(at720, 399)
-        XCTAssertLessThanOrEqual(try XCTUnwrap(at720), 399)
-        let at760 = IPadLayoutPolicy.detailLeftWidth(preferred: 600, detailWidth: 760)
-        XCTAssertEqual(at760, 439)
-        XCTAssertLessThanOrEqual(try XCTUnwrap(at760), 439)
-
-        XCTAssertNil(IPadLayoutPolicy.detailLeftWidth(preferred: nil, detailWidth: 719))
-        XCTAssertNil(IPadLayoutPolicy.detailLeftWidth(preferred: 450, detailWidth: 719))
-    }
-
-    func testSavedLeftWidthComesBackWhenThePanelWidens() {
-        let saved: CGFloat = 470
-        XCTAssertEqual(IPadLayoutPolicy.detailLeftWidth(preferred: saved, detailWidth: 760), 439)
-        XCTAssertEqual(IPadLayoutPolicy.detailLeftWidth(preferred: saved, detailWidth: 1194), saved)
-    }
-
-    func testNonFiniteSavedWidthFallsBackToDefault() {
-        XCTAssertEqual(IPadLayoutPolicy.detailLeftWidth(preferred: .nan, detailWidth: 873), 400)
-        XCTAssertEqual(IPadLayoutPolicy.detailLeftWidth(preferred: .infinity, detailWidth: 873), 400)
+        XCTAssertEqual(IPadLayoutPolicy.detailLeftWidth(detailWidth: 720), 399)
+        XCTAssertEqual(IPadLayoutPolicy.detailLeftWidth(detailWidth: 721), 400)
+        XCTAssertNil(IPadLayoutPolicy.detailLeftWidth(detailWidth: 719))
     }
 
     // MARK: - One assistant entry (FR-021)

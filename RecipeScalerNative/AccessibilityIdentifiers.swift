@@ -275,9 +275,8 @@ enum AccessibilityIdentifiers {
     static let ipadRecipeExpandButton = "ipad-recipe-expand-button"
     /// The recipe panel next to the list column (empty when the list is empty).
     static let ipadRecipeDetailPanel = "ipad-recipe-detail-panel"
-    /// Two-column recipe: the left column (photo, ingredients), the divider, the steps.
+    /// Two-column recipe: the left column (photo, ingredients) and the steps.
     static let ipadRecipeDetailLeftColumn = "ipad-recipe-detail-left-column"
-    static let ipadRecipeColumnDivider = "ipad-recipe-column-divider"
     static let ipadRecipeDetailRightColumn = "ipad-recipe-detail-right-column"
     /// × of the assistant panel beside the tabs in a wide window (spec 081, T033). The panel
     /// itself has no id: the root's `root_content` replaces the id of every top-level

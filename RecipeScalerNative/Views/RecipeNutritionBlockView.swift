@@ -76,20 +76,35 @@ struct RecipeNutritionBlockView: View {
         }
     }
 
+    /// «КБЖУ на» and the basis selector on one line, or the selector under the title when
+    /// the line can't fit. The selector sets explicit segment widths and never gets narrower
+    /// than its titles: in a too narrow `HStack` the row overflowed, and a vertical
+    /// `ScrollView` around a wider child grows past its frame and re-centers it, so the whole
+    /// column shifted left and clipped (spec 081, iPad recipe column, 2026-10-13).
     @ViewBuilder
     private var modeHeader: some View {
-        HStack(alignment: .center, spacing: 8) {
-            Text("nutrition.label-prefix")
-                .appHeadline()
-
-            if showsModeToggle {
-                NutritionModeSegmentedPicker(modes: modeItems, selection: $viewMode)
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 8) {
+                modeHeaderContent
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                modeHeaderContent
             }
         }
         .onAppear { clampViewMode() }
         .onChange(of: recipe.id) { _, _ in clampViewMode() }
         .onChange(of: recipe.servings) { _, _ in clampViewMode() }
         .onChange(of: totalWeight) { _, _ in clampViewMode() }
+    }
+
+    @ViewBuilder
+    private var modeHeaderContent: some View {
+        Text("nutrition.label-prefix")
+            .appHeadline()
+
+        if showsModeToggle {
+            NutritionModeSegmentedPicker(modes: modeItems, selection: $viewMode)
+        }
     }
 
     private func macrosRow(_ macros: RecipeNutritionDisplay.Macros) -> some View {

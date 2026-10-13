@@ -57,8 +57,6 @@ final class IPadAssistantSpec: BaseTestCase {
             keepsSidebar ? "-OpenTab=shopping" : "-OpenTab=recipes",
             keepsSidebar ? "-IPadSidebarShown=1" : "-IPadSidebarHidden=1",
             "-ScreenshotAssistantFixture=1",
-            // The saved recipe column width outlives the app; pin the default (400).
-            "-ipad.recipeDetailLeftColumnWidth", "400",
         ]
         if name.contains("testSizeClassSwitchKeepsChat") {
             args.append("-DebugCompactInPortrait=1")
