@@ -197,24 +197,14 @@ final class AssistantSessionModel {
         startsNewChatOnOpen = false
     }
 
-    /// Logout / account switch while a presentation is visible: cancel every
-    /// in-flight task and drop session-scoped state so nothing writes into a
-    /// dead session.
+    /// Logout / account switch while a presentation is visible (the chat's
+    /// `assistantSessionEpoch` observer): the same reset as `resetForLogout`,
+    /// which the container has usually run already. Every in-flight task of the
+    /// dead session is cancelled — the first bootstrap and the history refresh
+    /// too — and its pending shake or external request is dropped, so nothing
+    /// lands in the next session.
     func teardownForSessionInvalidation() {
-        bootstrapTask?.cancel()
-        externalSendTask?.cancel()
-        streamTask?.cancel()
-        streamTask = nil
-        interactionGeneration &+= 1
-        isSending = false
-        isBootstrapping = false
-        pendingExternalRequest = nil
-        undeliveredPrompt = nil
-        threadId = nil
-        messages = []
-        threads = []
-        input = ""
-        attachments = []
+        resetForLogout()
     }
 
     func handleConnectivityChange(isConnected: Bool) {
