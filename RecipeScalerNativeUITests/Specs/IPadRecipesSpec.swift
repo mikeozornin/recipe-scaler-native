@@ -931,7 +931,14 @@ final class IPadRecipesSpec: BaseTestCase {
         XCTAssertGreaterThanOrEqual(bar.minX, steps.minX - 1, "The formatting bar \(bar) starts left of the steps column \(steps) (\(state))", file: file, line: line)
         XCTAssertLessThanOrEqual(bar.maxX, steps.maxX + 1, "The formatting bar \(bar) ends right of the steps column \(steps) (\(state))", file: file, line: line)
         let keyboard = app.keyboards.firstMatch
-        XCTAssertTrue(keyboard.waitForExistence(timeout: Wait.element), "No software keyboard (\(state))", file: file, line: line)
+        // Headless (Simulator.app closed), after `typeText` the next field gets only the
+        // keyboard's shortcuts bar, and `app.keyboards` finds nothing.
+        XCTAssertTrue(
+            keyboard.waitForExistence(timeout: Wait.element),
+            "No software keyboard (\(state)); is Simulator.app open on this iPad with the hardware keyboard disconnected?",
+            file: file,
+            line: line
+        )
         // The bar's material reaches under the keyboard (the background fills the safe
         // area), so its frame does too: the buttons are what must stay above the keyboard.
         let buttons = formattingBar.buttons
