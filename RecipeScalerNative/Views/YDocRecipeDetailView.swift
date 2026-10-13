@@ -501,7 +501,9 @@ struct YDocRecipeDetailView: View {
                 awakeScrollController.stopIfViewRemoved()
             }
             timerManager.setSuppressPanelSafeAreaInset(false)
-            guard !assistantRecipeContext.isAssistantSheetOpen else { return }
+            // Under the assistant sheet the recipe keeps its context and keep-awake; beside
+            // the iPad panel it is gone like without the panel (spec 081, T036).
+            guard !assistantRecipeContext.coversRecipe else { return }
             assistantRecipeContext.clearVisibleRecipeId(recipeId)
             if !sheetOverlay {
                 deactivateScreenAwake()
@@ -607,7 +609,7 @@ struct YDocRecipeDetailView: View {
             AwakeScrollChromeModifier(
                 controller: awakeScrollController,
                 isScreenAwakeActive: isScreenAwakeActive,
-                assistantSheetOpen: assistantRecipeContext.isAssistantSheetOpen,
+                assistantSheetOpen: assistantRecipeContext.coversRecipe,
                 cookingCoverPresented: appContainer?.cooking.presentation != nil,
                 voiceEnabled: $awakeVoiceEnabled,
                 handEnabled: $awakeHandEnabled,
@@ -873,7 +875,8 @@ struct YDocRecipeDetailView: View {
         awakeScrollController.flags.handEnabled = awakeHandEnabled
         awakeScrollController.flags.faceEnabled = awakeFaceEnabled
         awakeScrollController.flags.cookingPresented = appContainer?.cooking.presentation != nil
-        awakeScrollController.flags.assistantSheetOpen = assistantRecipeContext.isAssistantSheetOpen
+        // The sheet covers the recipe; the iPad panel stands beside it (spec 081, T036).
+        awakeScrollController.flags.assistantSheetOpen = assistantRecipeContext.coversRecipe
         awakeScrollController.syncArmState()
         pullAwakeChannelBindingsFromStorage()
     }

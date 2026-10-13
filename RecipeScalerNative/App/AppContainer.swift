@@ -589,9 +589,10 @@ final class AppContainer {
         vkusvillSettings.clearForLogout()
     }
 
-    /// Logout and account switch: the chat session and the «assistant is open» / visible
-    /// recipe flags go together. Left set, the flag keeps the next account's recipe screens
-    /// from clearing their context and the screen-awake mode (`YDocRecipeDetailView`).
+    /// Logout and account switch: the chat session and the «assistant is open» / «covers
+    /// the recipe» / visible recipe flags go together. Left set, «covers» keeps the next
+    /// account's recipe screens from clearing their context and the screen-awake mode
+    /// (`YDocRecipeDetailView`).
     func resetAssistantForLogout() {
         assistantSession.resetForLogout()
         assistantRecipeContext.resetForLogout()

@@ -718,6 +718,7 @@
 		E5F60718293A4B70270B63A6 /* ImportShareHintCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70D3CE0E4F /* ImportShareHintCard.swift */; };
 		0810DCCABA89756E7E1BDE8D /* IPadLayoutPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0816F0EFDB2ED67463882638 /* IPadLayoutPolicy.swift */; };
 		08134801A22C4C63BE0EC9B4 /* IPadLayoutPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0812DD142741F8E6919BCE3D /* IPadLayoutPolicyTests.swift */; };
+		37F6401D3B4557E0582A9C7C /* AssistantRecipeContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BC23EC1EAD23ABE4A9FBBC /* AssistantRecipeContextTests.swift */; };
 		081D3A6E5B2C4F7A9E1B0C42 /* RecipeNutritionHeaderLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081E7C2A4D9B3F1A6C5E8B17 /* RecipeNutritionHeaderLayoutTests.swift */; };
 		081C9459719004F841561A9A /* AssistantSessionModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0818A203A535DD0277F1CECB /* AssistantSessionModelTests.swift */; };
 		081AEEC5524E5337DFA2E444 /* AppLayoutMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08152918E48DFC678658FC60 /* AppLayoutMode.swift */; };
@@ -1567,6 +1568,7 @@
 		E5F60718293A4B70D3CE0E4F /* ImportShareHintCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Import/ImportShareHintCard.swift"; sourceTree = "<group>"; };
 		0816F0EFDB2ED67463882638 /* IPadLayoutPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadLayoutPolicy.swift; sourceTree = "<group>"; };
 		0812DD142741F8E6919BCE3D /* IPadLayoutPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadLayoutPolicyTests.swift; sourceTree = "<group>"; };
+		00BC23EC1EAD23ABE4A9FBBC /* AssistantRecipeContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantRecipeContextTests.swift; sourceTree = "<group>"; };
 		081E7C2A4D9B3F1A6C5E8B17 /* RecipeNutritionHeaderLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeNutritionHeaderLayoutTests.swift; sourceTree = "<group>"; };
 		0818A203A535DD0277F1CECB /* AssistantSessionModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSessionModelTests.swift; sourceTree = "<group>"; };
 		08152918E48DFC678658FC60 /* AppLayoutMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLayoutMode.swift; sourceTree = "<group>"; };
@@ -2073,6 +2075,7 @@
 				081F1FD029328F7EFA3D8048 /* RecipesSelectionTests.swift */,
 				081618DB1CDED04A80B55285 /* AppLayoutModeTests.swift */,
 				0812DD142741F8E6919BCE3D /* IPadLayoutPolicyTests.swift */,
+				00BC23EC1EAD23ABE4A9FBBC /* AssistantRecipeContextTests.swift */,
 				081E7C2A4D9B3F1A6C5E8B17 /* RecipeNutritionHeaderLayoutTests.swift */,
 				0818A203A535DD0277F1CECB /* AssistantSessionModelTests.swift */,
 				94F6EEB0522CF5E6241A73B1 /* Info.plist */,
@@ -3687,6 +3690,7 @@
 				0814BC5B70E8459EA6013499 /* RecipesSelectionTests.swift in Sources */,
 				08175422ECD11B896922424D /* AppLayoutModeTests.swift in Sources */,
 				08134801A22C4C63BE0EC9B4 /* IPadLayoutPolicyTests.swift in Sources */,
+				37F6401D3B4557E0582A9C7C /* AssistantRecipeContextTests.swift in Sources */,
 				081D3A6E5B2C4F7A9E1B0C42 /* RecipeNutritionHeaderLayoutTests.swift in Sources */,
 				081C9459719004F841561A9A /* AssistantSessionModelTests.swift in Sources */,
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,

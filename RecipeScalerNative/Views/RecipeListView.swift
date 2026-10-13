@@ -287,7 +287,7 @@ struct RecipeListView: View {
                 message: "recipes_tab_visible",
                 data: [
                     "selectedTab": coordinator.selectedTab.rawValue,
-                    "assistantSheetOpen": assistantRecipeContext.isAssistantSheetOpen ? "true" : "false",
+                    "assistantSheetOpen": assistantRecipeContext.coversRecipe ? "true" : "false",
                     "viewMode": viewMode.rawValue
                 ]
             )
@@ -312,7 +312,7 @@ struct RecipeListView: View {
                             message: "safe_area_top_changed",
                             data: [
                                 "safeTop": String(format: "%.1f", top),
-                                "assistantSheetOpen": assistantRecipeContext.isAssistantSheetOpen ? "true" : "false"
+                                "assistantSheetOpen": assistantRecipeContext.coversRecipe ? "true" : "false"
                             ]
                         )
                         // #endregion

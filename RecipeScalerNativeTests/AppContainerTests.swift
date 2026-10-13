@@ -175,17 +175,19 @@ final class AppContainerTests: XCTestCase {
         XCTAssertNil(container.deepLinkRouter.pending)
     }
 
-    /// Spec 081 (US3 review M1): logout with the assistant open. Left set, the flag keeps
-    /// the next account's recipe screens from clearing their context and screen-awake mode.
+    /// Spec 081 (US3 review M1): logout with the assistant open. Left set, the flags keep
+    /// the next account's recipe screens from clearing their context and screen-awake mode
+    /// (`coversRecipe`, T036) or keep the shell releasing a recipe beside a closed panel.
     func test_stopForLogout_withAssistantOpen_resetsAssistantRecipeContext() async throws {
         let container = try makeContainer()
         container.assistantRecipeContext.setVisibleRecipeId("recipe-of-account-a")
-        container.assistantRecipeContext.isAssistantSheetOpen = true
+        container.assistantRecipeContext.assistantDidOpen(asPanel: false)
         let epoch = container.shellCoordinator.assistantSessionEpoch
 
         await container.stopForLogout()
 
-        XCTAssertFalse(container.assistantRecipeContext.isAssistantSheetOpen)
+        XCTAssertFalse(container.assistantRecipeContext.isAssistantOpen)
+        XCTAssertFalse(container.assistantRecipeContext.coversRecipe)
         XCTAssertNil(container.assistantRecipeContext.visibleRecipeId)
         XCTAssertEqual(
             container.shellCoordinator.assistantSessionEpoch,
@@ -199,12 +201,13 @@ final class AppContainerTests: XCTestCase {
     func test_accountSwitch_withAssistantOpen_resetsAssistantRecipeContext() throws {
         let container = try makeContainer()
         container.assistantRecipeContext.setVisibleRecipeId("recipe-of-account-a")
-        container.assistantRecipeContext.isAssistantSheetOpen = true
+        container.assistantRecipeContext.assistantDidOpen(asPanel: true)
         let epoch = container.shellCoordinator.assistantSessionEpoch
 
         container.resetForAccountSwitch()
 
-        XCTAssertFalse(container.assistantRecipeContext.isAssistantSheetOpen)
+        XCTAssertFalse(container.assistantRecipeContext.isAssistantOpen)
+        XCTAssertFalse(container.assistantRecipeContext.isBesideRecipe)
         XCTAssertNil(container.assistantRecipeContext.visibleRecipeId)
         XCTAssertEqual(container.shellCoordinator.assistantSessionEpoch, epoch &+ 1)
     }

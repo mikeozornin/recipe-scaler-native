@@ -209,7 +209,7 @@ struct AppShellView: View {
         assistantOpenRequest = request
         assistantShakeOpenRequest = nil
         assistantContextRecipeId = nil
-        assistantRecipeContext.isAssistantSheetOpen = true
+        markAssistantOpen()
         presentAssistant()
     }
 
@@ -228,6 +228,21 @@ struct AppShellView: View {
         showAssistant = true
     }
 
+    /// Before `showAssistant` flips: the recipe under the sheet must already see itself
+    /// covered when it leaves the screen. The iPad panel stands beside it (T036).
+    private func markAssistantOpen() {
+        assistantRecipeContext.assistantDidOpen(asPanel: layoutMode == .padRegular)
+    }
+
+    /// Spec 081 (T036) — another section beside the open panel hides the recipe: the
+    /// composer stops offering it (the shell's copy of its id too) and the screen may sleep
+    /// again. The recipe view, hidden, turns its own cooking mode off on `onDisappear`.
+    private func releaseRecipe(hiddenBy tab: AppTab) {
+        guard assistantRecipeContext.releaseRecipe(hiddenBy: tab) else { return }
+        assistantContextRecipeId = nil
+        ScreenAwakeController.deactivate()
+    }
+
     /// Spec 074 — manual open (tab-bar entry, FAB replacement, adoption CTA).
     /// Manual open carries no external payload; `assistantOpenRequest` is reset
     /// so a stale request from a previous presentation cannot leak in.
@@ -235,7 +250,7 @@ struct AppShellView: View {
         assistantOpenRequest = nil
         assistantShakeOpenRequest = nil
         assistantContextRecipeId = assistantRecipeContext.visibleRecipeId
-        assistantRecipeContext.isAssistantSheetOpen = true
+        markAssistantOpen()
         presentAssistant(startsNewChat: startsNewChat)
         resyncTabViewSelectionAfterAssistantInteraction()
     }
@@ -250,7 +265,7 @@ struct AppShellView: View {
         assistantOpenRequest = nil
         assistantShakeOpenRequest = request
         assistantContextRecipeId = request.attachRecipeId ?? assistantRecipeContext.visibleRecipeId
-        assistantRecipeContext.isAssistantSheetOpen = true
+        markAssistantOpen()
         presentAssistant()
         resyncTabViewSelectionAfterAssistantInteraction()
     }
@@ -478,6 +493,7 @@ struct AppShellView: View {
         .animation(.snappy, value: showsAssistantPanel)
         .onChange(of: layoutMode, initial: true) { _, mode in
             assistantShowsAsPanel = mode == .padRegular
+            assistantRecipeContext.assistantDidMove(asPanel: mode == .padRegular)
         }
             .onPreferenceChange(ClipboardBannerHeightKey.self) { clipboardBannerHeight = $0 }
             .onChange(of: isClipboardBannerVisible) { _, visible in
@@ -536,7 +552,7 @@ struct AppShellView: View {
                     // that is not a close. Any other dismissal with the flag still
                     // set (the shell torn down under an open sheet) is one.
                     if showAssistant, assistantShowsAsPanel { return }
-                    assistantRecipeContext.isAssistantSheetOpen = false
+                    assistantRecipeContext.assistantDidClose()
                     assistantContextRecipeId = nil
                     assistantShakeOpenRequest = nil
                     // A request of a closed chat must not block the next tab open (PI-5 guard).
@@ -678,6 +694,7 @@ struct AppShellView: View {
                 openAssistantManually(startsNewChat: startsNewChat)
             }
             .onChange(of: coordinator.selectedTab) { _, newTab in
+                releaseRecipe(hiddenBy: newTab)
                 guard newTab != .assistant else { return }
                 tabViewSelection = newTab
             }
@@ -688,8 +705,10 @@ struct AppShellView: View {
                 closeAssistantPanel()
             }
             .onChange(of: showAssistant) { _, isOpen in
-                assistantRecipeContext.isAssistantSheetOpen = isOpen
-                if !isOpen {
+                if isOpen {
+                    markAssistantOpen()
+                } else {
+                    assistantRecipeContext.assistantDidClose()
                     assistantSession.close()
                 }
                 #if DEBUG

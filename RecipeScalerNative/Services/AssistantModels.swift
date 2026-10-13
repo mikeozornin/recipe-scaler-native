@@ -267,9 +267,20 @@ final class AssistantRecipeContext {
     private static let Standalone = AssistantRecipeContext()
 
     private(set) var visibleRecipeId: String?
-    var isAssistantSheetOpen = false
+    /// The assistant is open: the phone sheet, or the iPad panel beside the tabs (spec 081).
+    private(set) var isAssistantOpen = false
+    /// Spec 081 (T036) — the assistant covers the recipe: the phone sheet (iPhone, a compact
+    /// iPad window). Covered, the recipe keeps its context and keep-awake when it leaves the
+    /// screen, and hands-free stays off. The iPad panel stands beside the recipe, which stays
+    /// on screen and works as without the panel. On the iPhone it is `isAssistantOpen`.
+    private(set) var coversRecipe = false
 
     init() {}
+
+    /// The iPad panel beside the tabs: the recipe stays on screen.
+    var isBesideRecipe: Bool {
+        isAssistantOpen && !coversRecipe
+    }
 
     func setVisibleRecipeId(_ recipeId: String) {
         visibleRecipeId = recipeId
@@ -281,12 +292,40 @@ final class AssistantRecipeContext {
         }
     }
 
+    /// The shell opened the assistant: the panel beside the tabs or the sheet over them.
+    func assistantDidOpen(asPanel: Bool) {
+        isAssistantOpen = true
+        coversRecipe = !asPanel
+    }
+
+    /// The open assistant moved between the panel and the sheet (a size class change).
+    func assistantDidMove(asPanel: Bool) {
+        coversRecipe = isAssistantOpen && !asPanel
+    }
+
+    func assistantDidClose() {
+        isAssistantOpen = false
+        coversRecipe = false
+    }
+
+    /// Spec 081 (T036) — the panel stays open beside every section. Off «Рецептов» no
+    /// recipe stands beside it, so the composer must not offer the hidden one. The shell
+    /// releases it here instead of waiting for the hidden recipe view to hear about the
+    /// switch. Returns whether it did: the shell then drops its keep-awake too.
+    @discardableResult
+    func releaseRecipe(hiddenBy tab: AppTab) -> Bool {
+        guard isBesideRecipe, tab != .recipes, tab != .assistant else { return false }
+        visibleRecipeId = nil
+        return true
+    }
+
     /// Logout or account switch: no assistant is open for the next account and no recipe
     /// of the outgoing one is visible. The shell closes its sheet or panel on the same
     /// session epoch (`AppShellView`), but the shell may already be gone (AuthView), so
-    /// the flag is not left to its `onChange` (`AppContainer.resetAssistantForLogout`).
+    /// the flags are not left to its `onChange` (`AppContainer.resetAssistantForLogout`).
     func resetForLogout() {
-        isAssistantSheetOpen = false
+        isAssistantOpen = false
+        coversRecipe = false
         visibleRecipeId = nil
     }
 }
