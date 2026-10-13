@@ -124,6 +124,23 @@ struct AppShellView: View {
     @State private var transientStatus: TransientStatusPayload?
     @State private var transientStatusDismissTask: Task<Void, Never>?
     @State private var mobileTimerPanelCollapsed = true
+    /// Spec 081 (T038, spike S6) — the timers popover over the capsule in a wide iPad
+    /// window. Shell state: a `.popover` inside `tabViewBottomAccessory` never shows.
+    @State private var timerPopoverShown = false
+    /// `layoutMode == .padRegular` on the iPadOS 26.2+ shell, for the capsule binding's
+    /// setter (it must see the current window, not the one of the update that built it).
+    @State private var timersShowAsPopover = false
+    /// Where the capsule (`tabViewBottomAccessory`) and the popover anchor are. Not
+    /// observed: see `TimerPopoverGeometry`.
+    @State private var timerPopoverGeometry = TimerPopoverGeometry()
+    /// The capsule in the anchor's space: the popover points at it wherever the sidebar
+    /// moves it (S6, `s6-06`). Taken when the popover opens and while it is shown.
+    @State private var timerPopoverAnchorRect: CGRect = .zero
+    #if DEBUG
+    /// `-MobileTimerPanelExpanded=1` in a wide iPad window: the popover, once the capsule
+    /// has a frame to point at.
+    @State private var debugTimerPopoverPending = false
+    #endif
     /// Spec 074 — TabView selection decoupled from `coordinator.selectedTab` so the
     /// fake assistant tab (`Color.clear`) never becomes the hosted tab root after a
     /// tap or dismiss (fixes shell chrome / safe-area corruption after sheet dismiss).
@@ -619,7 +636,11 @@ struct AppShellView: View {
             .onAppear {
                 coordinator.openDebugTabIfNeeded(DebugLaunchOptions.openTab)
                 if DebugLaunchOptions.mobileTimerPanelExpanded {
-                    mobileTimerPanelCollapsed = false
+                    if usesTimerPopover {
+                        debugTimerPopoverPending = true
+                    } else {
+                        mobileTimerPanelCollapsed = false
+                    }
                 }
                 if DebugLaunchOptions.showAssistant {
                     openAssistantManually()
@@ -819,6 +840,110 @@ struct AppShellView: View {
             .environment(\.mobileTimerPanelChevronNamespace, mobileTimerPanelChevronNamespace)
     }
 
+    /// Spec 081 (T038) — iPadOS 26.2+ in a wide window: a tap on the capsule shows the
+    /// timers in a popover over it, not the expanded panel. The phone and a compact iPad
+    /// window expand the panel, as before.
+    private var usesTimerPopover: Bool {
+        guard #available(iOS 26.2, *) else { return false }
+        return UIDevice.current.userInterfaceIdiom == .pad && layoutMode == .padRegular
+    }
+
+    /// The iPad capsule: in a wide window «expand» toggles the popover instead.
+    private var iPadTimerAccessoryCollapsedBinding: Binding<Bool> {
+        Binding(
+            get: { mobileTimerPanelCollapsed },
+            set: { collapsed in
+                if !collapsed, timersShowAsPopover {
+                    if timerPopoverShown {
+                        timerPopoverShown = false
+                    } else {
+                        showTimerPopover()
+                    }
+                } else {
+                    mobileTimerPanelCollapsedBinding.wrappedValue = collapsed
+                }
+            }
+        )
+    }
+
+    private func showTimerPopover() {
+        timerPopoverAnchorRect = timerPopoverGeometry.anchorRect
+        timerPopoverShown = true
+    }
+
+    /// The popover follows the capsule while it is shown (a sidebar toggle, a rotation).
+    private func followTimerCapsule() {
+        guard timerPopoverShown else { return }
+        let rect = timerPopoverGeometry.anchorRect
+        if !rect.isApproximatelyEqual(to: timerPopoverAnchorRect) {
+            timerPopoverAnchorRect = rect
+        }
+    }
+
+    /// The phone capsule plus its frame for the popover anchor (iPad only, so the
+    /// iPhone accessory stays as it was).
+    private var iPadTimerAccessory: some View {
+        MobileTimerPanel(timerManager: timerManager, isCollapsed: iPadTimerAccessoryCollapsedBinding, presentation: .accessoryCollapsed)
+            .environment(timerManager)
+            .environment(\.mobileTimerPanelChevronNamespace, mobileTimerPanelChevronNamespace)
+            .onGeometryChange(for: CGRect.self) { proxy in
+                proxy.frame(in: .global)
+            } action: { frame in
+                // The accessory is rebuilt on every shell update and measures off-window
+                // first, at the origin: keep the last frame in the window.
+                guard frame.origin != .zero, !frame.isEmpty else { return }
+                timerPopoverGeometry.accessoryFrame = frame
+                followTimerCapsule()
+                #if DEBUG
+                if debugTimerPopoverPending {
+                    debugTimerPopoverPending = false
+                    showTimerPopover()
+                }
+                #endif
+            }
+    }
+
+    /// An invisible point at the tab view's corner; the popover is attached to the
+    /// capsule's frame in its space, with the arrow down to the capsule (S6). A point, so
+    /// the popover's host view covers nothing.
+    private var timerPopoverAnchor: some View {
+        Color.clear
+            .frame(width: 1, height: 1)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .onGeometryChange(for: CGPoint.self) { proxy in
+                proxy.frame(in: .global).origin
+            } action: { origin in
+                timerPopoverGeometry.anchorOrigin = origin
+                followTimerCapsule()
+            }
+            .popover(
+                isPresented: $timerPopoverShown,
+                attachmentAnchor: .rect(.rect(timerPopoverAnchorRect)),
+                arrowEdge: .bottom
+            ) {
+                timerPopoverContent
+            }
+    }
+
+    /// The phone's expanded panel, unchanged; its header chevron folds it, here it closes
+    /// the popover.
+    private var timerPopoverContent: some View {
+        MobileTimerPanel(
+            timerManager: timerManager,
+            isCollapsed: Binding(
+                get: { false },
+                set: { collapsed in
+                    if collapsed { timerPopoverShown = false }
+                }
+            ),
+            presentation: .insetExpanded
+        )
+        .environment(timerManager)
+        .frame(width: IPadLayoutMetrics.timersPopoverWidth)
+        .presentationCompactAdaptation(.sheet)
+    }
+
     private var showsMobileTimerPanelAccessory: Bool {
         !timerManager.suppressPanelSafeAreaInset
             && !timerManager.activeTimers.isEmpty
@@ -857,7 +982,8 @@ struct AppShellView: View {
     }
 
     /// Spec 081 — the iPad shell: sidebar, top bar or the phone bottom bar in compact.
-    /// Same timer accessory as the iPhone (it exists in the sidebar mode too, spike S6).
+    /// The iPhone's timer capsule (it exists in the sidebar mode too, spike S6); in a wide
+    /// window a tap on it opens the timers popover instead of the expanded panel (T038).
     @available(iOS 26.2, *)
     private var iPadTabView: some View {
         IPadAdaptiveTabView(
@@ -869,8 +995,27 @@ struct AppShellView: View {
         .animation(MobileTimerPanelLayout.toggleAnimation, value: mobileTimerPanelCollapsed)
         .modifier(MobileTimerAccessoryModifier(
             isEnabled: showsMobileTimerPanelAccessory,
-            accessory: mobileTimerPanelAccessory
+            accessory: iPadTimerAccessory
         ))
+        .overlay(alignment: .topLeading) { timerPopoverAnchor }
+        .onChange(of: layoutMode, initial: true) { _, mode in
+            timersShowAsPopover = mode == .padRegular
+            if mode == .padRegular {
+                // A wide window has no expanded panel: the capsule and its popover.
+                if !mobileTimerPanelCollapsed {
+                    mobileTimerPanelCollapsed = true
+                }
+            } else {
+                // A compact window is the phone: a tap on the capsule expands the panel.
+                timerPopoverShown = false
+            }
+        }
+        .onChange(of: showsMobileTimerPanelAccessory) { _, shown in
+            // No capsule (the last timer ended, edit mode): nothing to point at.
+            if !shown {
+                timerPopoverShown = false
+            }
+        }
     }
 
     @available(iOS 26.2, *)
@@ -1189,6 +1334,29 @@ private final class TabBarTopOffsetReaderViewController: UIViewController {
         let offsetFromLayoutBottom = offsetFromWindowBottom - window.safeAreaInsets.bottom
         guard offsetFromLayoutBottom > 0 else { return }
         onOffsetChange?(offsetFromLayoutBottom)
+    }
+}
+
+/// Spec 081 (T038) — the capsule's and the timers popover anchor's frames in the window.
+/// A plain class in `@State`, so a write does not update the shell: the capsule
+/// (`tabViewBottomAccessory`) is rebuilt on every shell update and measures off-window
+/// first, so a state write per measurement updated the shell in a loop and hung the app.
+private final class TimerPopoverGeometry {
+    var accessoryFrame: CGRect = .zero
+    var anchorOrigin: CGPoint = .zero
+
+    /// The capsule in the anchor's space.
+    var anchorRect: CGRect {
+        accessoryFrame.offsetBy(dx: -anchorOrigin.x, dy: -anchorOrigin.y)
+    }
+}
+
+private extension CGRect {
+    func isApproximatelyEqual(to other: CGRect, tolerance: CGFloat = 0.5) -> Bool {
+        abs(minX - other.minX) <= tolerance
+            && abs(minY - other.minY) <= tolerance
+            && abs(width - other.width) <= tolerance
+            && abs(height - other.height) <= tolerance
     }
 }
 
