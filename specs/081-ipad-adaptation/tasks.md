@@ -86,7 +86,7 @@
   Создать `RecipeScalerNativeTests/IPadLayoutPolicyTests.swift`:
   - каждый порог (560+321, 720, 600, 640) на значении и на 1 pt ниже;
   - `testPrototypeMatrix` — все строки layout.md §Матрица приёмки;
-  - `testLeftColumnClamp`: без сохранённой ширины — 400; 200 → 320; 600 → 480; панель 720 → не шире 399, панель 760 → не шире 439 (правой ≥ 320); панель 719 → `nil`.
+  - `testLeftColumnIsFixedAndKeepsTheSteps` (вместо `testLeftColumnClamp`, решение 2026-10-13): панели 873 и 1194 → 400; 720 → 399 (правой ≥ 320); 721 → 400; 719 → `nil`.
 
   — `#recipes/sidebar`, `#recipes/tabs`, `#assistant/chat`
 
@@ -302,16 +302,12 @@
   - Одна колонка — прежний `VStack` в прежнем порядке.
   - Две колонки (`.padRegular` и панель ≥ 720) — `HStack`: левый `ScrollView` шириной `IPadLayoutPolicy.detailLeftWidth` (T007), разделитель, правый `ScrollView` с шагами не шире 660 и отступами 32.
   - `DetailScrollViewProbe` на правой колонке, `.mobileTimerPanelBottomPadding` на обеих, `AwakeScrollChromeModifier` на внешнем контейнере.
-  - Перетаскиваемый разделитель (spec.md FR-012a, plan.md Р6, Q5):
-    - линия 1 pt, область захвата 12 pt (`columnDividerHitWidth`);
-    - во время перетаскивания ширина живая (`@State`) и проходит через `detailLeftWidth` (упоры 320 / 480, правой ≥ 320);
-    - при отпускании пишется в `@AppStorage("ipad.recipeDetailLeftColumnWidth")`; при раскладке только читается — сужение окна, список и инспектор сохранённое значение не меняют;
-    - VoiceOver: «Ширина колонок» (ключ `ipad.recipe.columnDivider`), `accessibilityAdjustableAction` ±20 pt;
-    - та же ширина в правке (T041).
+  - Между колонками статичная линия 1 pt (spec.md FR-012a, plan.md Р6); левая колонка `min(400, панель − 1 − 320)`, та же ширина в правке (T041).
+  - **Пересмотрено владельцем 2026-10-13:** перетаскиваемый разделитель Q5 (область захвата 12 pt, упоры 320 / 480, `@AppStorage("ipad.recipeDetailLeftColumnWidth")`, VoiceOver «Ширина колонок» ±20 pt) удалён вместе с ручкой, строками и тестами. Строка «КБЖУ на» с выбором базы переносит выбор под заголовок, если не помещается в колонку (`ViewThatFits`, `RecipeNutritionHeaderLayoutTests`): раньше она вылезала, и вертикальный `ScrollView` сдвигал всю колонку влево.
 
   — `#recipes/tabs`, `#recipes/sidebar`
 
-  **Отклонение:** правка пока в одну колонку (не шире 720 по центру) — две колонки в правке и общая ширина появятся в T041 (US5). На разделителе — небольшая «ручка», чтобы его было видно и за что тянуть.
+  **Отклонение:** правка пока в одну колонку (не шире 720 по центру) — две колонки в правке и общая ширина появятся в T041 (US5). На разделителе была небольшая «ручка», чтобы его было видно и за что тянуть (удалена с разделителем 2026-10-13).
 - [x] T026 [US2] Варианты тулбара рецепта в `RecipeScalerNative/Views/YDocRecipeDetailView.swift` (~:825-880):
   - `.phone` — как сейчас;
   - `.padWide` (панель ≥ 600) — «…», «Поделиться», «Не гасить экран», ✦, «Изменить» с текстом;
@@ -339,12 +335,12 @@
 - [x] T029 [US2] iPhone-регрессия после T023–T028: `bash scripts/verify-ipad-layout.sh --iphone-regression` (рецепт, правка, список, коллекция, поиск) — 0 отличий; `bash scripts/verify-description-editor.sh`, `bash scripts/verify-recipe-collections.sh` на iPhone — зелёные. Расхождения исправить в этой задаче. — `#recipes/sidebar`, `#recipes/collection`, `#recipes/search`, `#edit/edit` на iPhone
 
   **Итог 2026-10-12 (f940c4a):** 9 состояний, 0 отличий; `discover-feed` и `discover-author` скрипт пропускает без `IPAD_VERIFY_DISCOVER_PROFILE` (там чужие публичные данные). `verify-description-editor.sh` и `verify-recipe-collections.sh` на iPhone — VERIFIED. Код не менялся. Первые три прогона шли параллельно со сборками iPad и не прошли: отличались пиксели стеклянного таб-бара и полоски «домой» (`profile-public`, `shopping-az`, `import-text`), содержимое совпадало. Контрольный прогон на базовом коммите a3d592c дал 0 отличий в этих состояниях. Четвёртый прогон без параллельных сборок прошёл без повторов.
-- [x] T030 [US2] Создать `RecipeScalerNativeUITests/Specs/IPadRecipesSpec.swift`: `testListAndTwoColumns`, `testCollectionSelection`, `testExpandCollapse` («Развернуть» прячет список и сайдбар, стоявший рядом, «Свернуть» возвращает оба; развёрнутый вид переживает смену вкладки), `testRotationKeepsRecipe`, `testContextMenu`, `testSearchFiltersColumn`, `testColumnDividerDragPersists` (потянуть разделитель вправо до упора → левая колонка 480 ± 1 по `frame`; `app.terminate()` + `app.launch()` с теми же аргументами → ширина та же). — `#recipes/tabs`, `#recipes/focus`, `#recipes/collection`, `#recipes/context`, `#recipes/search`
+- [x] T030 [US2] Создать `RecipeScalerNativeUITests/Specs/IPadRecipesSpec.swift`: `testListAndTwoColumns`, `testCollectionSelection`, `testExpandCollapse` («Развернуть» прячет список и сайдбар, стоявший рядом, «Свернуть» возвращает оба; развёрнутый вид переживает смену вкладки), `testRotationKeepsRecipe`, `testContextMenu`, `testSearchFiltersColumn`; `testColumnDividerDragPersists` удалён вместе с разделителем 2026-10-13, `testListAndTwoColumns` проверяет левую колонку 400 ± 1. — `#recipes/tabs`, `#recipes/focus`, `#recipes/collection`, `#recipes/context`, `#recipes/search`
 
   **Отклонение:** каждый тест — свежий пользователь с двумя рецептами через REST, без ингредиентов (bulk-ингредиенты на локальном бэкенде отвечают 500); коллекцию тест создаёт в приложении через «В коллекцию» (`POST /api/collections` — 404). Отдельного теста на push нет: на симуляторе его не воспроизвести, правило покрыто `IPadLayoutPolicyTests`. Ширины проверяются по `frame`: список — ⅓ или ½ контента, рядом с сайдбаром — от окна минус 280 (колонка уходит под плавающий сайдбар); «нет списка» — колонка за левым краем (T024). Снимки XCTest в альбомной на симуляторе iPadOS 26 — обрезанный портретный буфер, поэтому снимки для ревью сняты `simctl io screenshot` (`tmp/ipad-verify/us2/redesign/`). Прогон: 7/7 на iPad Pro 11" (iPadOS 26.3), на iPhone спека пропускается.
-- [ ] T031 [US2] Ручной проход по layout.md §Матрица приёмки для `recipes/*`: альбомная и книжная, весь экран и ⅔, сайдбар виден и скрыт; разделитель колонок пальцем и трекпадом (упоры, сохранение после перезапуска и после сужения окна). Отметить «пройдено / не пройдено» по каждому пункту. — `#recipes/*`
+- [ ] T031 [US2] Ручной проход по layout.md §Матрица приёмки для `recipes/*`: альбомная и книжная, весь экран и ⅔, сайдбар виден и скрыт; колонки рецепта на самой узкой ширине с двумя колонками (панель 720) — ничего не вылезает, в том числе с КБЖУ (разделитель колонок пальцем и трекпадом снят с проверки 2026-10-13: разделитель удалён). Отметить «пройдено / не пройдено» по каждому пункту. — `#recipes/*`
 
-  **Подготовлено автоматически 2026-10-12, ручной проход не делался.** На симуляторе iPad Pro 11" пройдено: альбомная и книжная на весь экран, в альбомной — сайдбар скрыт и виден, «Развернуть» / «Свернуть» в каждом из этих состояний (снимки `tmp/ipad-verify/us2/redesign/`); разделитель колонок перетаскиванием XCUITest до упора и сохранение после перезапуска (`testColumnDividerDragPersists`). Не пройдено: книжная с плавающим сайдбаром над рецептом (снимка нет); окна ⅔ и ½ (Split View и Stage Manager на симуляторе не автоматизируются), а с ними push на экране; разделитель пальцем и трекпадом; сохранение ширины после сужения окна (только `IPadLayoutPolicyTests`); VoiceOver.
+  **Подготовлено автоматически 2026-10-12, ручной проход не делался.** На симуляторе iPad Pro 11" пройдено: альбомная и книжная на весь экран, в альбомной — сайдбар скрыт и виден, «Развернуть» / «Свернуть» в каждом из этих состояний (снимки `tmp/ipad-verify/us2/redesign/`); разделитель колонок перетаскиванием XCUITest до упора и сохранение после перезапуска (`testColumnDividerDragPersists`, тест удалён с разделителем 2026-10-13). 2026-10-13: панель 720 (`-DebugWindowWidth`) в ru и en, с КБЖУ, секциями и длинными названиями, список и развёрнутый вид — ничего не вылезает (`tmp/ipad-verify/device-fixups/`). Не пройдено: книжная с плавающим сайдбаром над рецептом (снимка нет); окна ⅔ и ½ (Split View и Stage Manager на симуляторе не автоматизируются), а с ними push на экране; VoiceOver. Разделитель пальцем и трекпадом и сохранение ширины больше не проверяются: разделителя нет.
 
 **Checkpoint (US2)**: колонки и две колонки рецепта совпадают с прототипом по матрице; открытый рецепт переживает поворот и смену ширины; iPhone — 0 отличий. Можно выпускать.
 
@@ -462,7 +458,7 @@
 
 - [ ] T041 [US5] Вход в правку при `.padRegular`:
   - `IPadRecipesSplitView` прячет список (`isEditing` в `IPadLayoutPolicy`), сайдбар сворачивается через `IPadSidebarControl` (`sidebar.isHidden = true`, S2) и возвращается после «Готово», если был открыт;
-  - правка раскладывается колонками T025 (тот же разделитель и сохранённая ширина): слева шапка правки, порции, `YDocIngredientsEditSection`, справа `RecipeDescriptionEditorBlock`.
+  - правка раскладывается колонками T025 (та же линия и ширина левой колонки): слева шапка правки, порции, `YDocIngredientsEditSection`, справа `RecipeDescriptionEditorBlock`.
 
   — `#edit/edit`
 - [ ] T042 [US5] Расположение элементов правки в две колонки.
@@ -531,12 +527,12 @@
 
 - [ ] T053 [P] Строки: все новые ключи en + ru в `RecipeScalerNative/Resources/Localizable.xcstrings`, телефонные ключи переиспользованы (FR-032); `bash scripts/lint-i18n.sh`, `RecipeScalerNativeTests/LocalizationConsistencyTests`. Проверить русский и английский интерфейс на iPad. — `#recipes/sidebar`, `#menubar/file`, `#menubar/recipe`, `#menubar/view`, `#profile/private`
 - [ ] T054 [P] Документация:
-  - `docs/DECISIONS.md` — оболочка iPad, старый путь (Q1, сайдбар на 18+ — на потом), перетаскиваемый разделитель и его ключ `UserDefaults` (Q5). Колонки (B), панель ассистента и одно окно уже записаны 2026-10-12 по итогам спайка — дополнить, если реализация от них отошла;
+  - `docs/DECISIONS.md` — оболочка iPad, старый путь (Q1, сайдбар на 18+ — на потом), колонки рецепта без перетаскиваемого разделителя (решение 2026-10-13, записано). Колонки (B), панель ассистента и одно окно уже записаны 2026-10-12 по итогам спайка — дополнить, если реализация от них отошла;
   - `docs/AGENT-WORKFLOW.md` — `resolve-ipad-simulator.sh`, `verify-ipad-layout.sh`;
   - `docs/PRD.md` — снять «только iPhone» (~:26, ~:544);
   - отметить, что эта спека заменяет невлитые `specs/062-mac-ipad-layout` (ветка `043-mac-ipad-layout`) и `specs/063-ipad` (ветка `063-ipad-adaptation`) для iPad.
 
-  — `#recipes/sidebar`, `#recipes/tabs` (разделитель колонок), `#menubar/view` (решения, которые фиксирует документация)
+  — `#recipes/sidebar`, `#recipes/tabs` (колонки рецепта), `#menubar/view` (решения, которые фиксирует документация)
 - [ ] T055 [P] iPad-скриншоты App Store: `scripts/capture-app-store-screenshots.sh` и `scripts/validate-app-store-screenshots.sh` для iPad 13″ (2064 × 2752, обе ориентации по требованиям ASC). **Human gate**: загрузка и выбор доступности на Mac и Vision Pro в ASC. — `#recipes/tabs`, `#assistant/chat`, `#shopping/recipe`
 - [ ] T056 Полная проверка по plan.md §Verification:
   - `bash scripts/verify-all.sh`;
@@ -558,7 +554,7 @@
 - **US1 (T012–T022, T019a)** блокирует остальные истории.
   - Внутри: T012 → T013 → T014 (первый шаг — проверка динамической видимости `.pinned`-вкладок) → (T016, T017); `IPadSidebarControl` из T014 нужен T016 и T041; T015 → T016; T015 → T019 (оба трогают `AccountView` / `AccountAvatarView`); T018–T020 параллельно после T014; T021 после T018; T019a после T012, T014, T015, T016, T019 (все трогают `AppShellCoordinator` / оболочку / `AccountView`); T022 последней, после T019a.
 - **US2 (T023–T031)** после US1.
-  - T023 → T024 → T025 → T026; T027 параллельно с T025; T028 после T024; T029 после T023–T028. Разделитель T025 опирается на `detailLeftWidth` из T007.
+  - T023 → T024 → T025 → T026; T027 параллельно с T025; T028 после T024; T029 после T023–T028. Колонки T025 опираются на `detailLeftWidth` из T007.
 - **US3, US4, US5** после US2, независимы друг от друга.
   - US5 использует колонки из T025.
   - US3: T032a → T032 → (T033, T034) → T035. T034 трогает `IPadRecipesSplitView` после T024.

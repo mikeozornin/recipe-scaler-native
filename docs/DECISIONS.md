@@ -647,3 +647,27 @@ The suite also has no recorded reference snapshots (`isRecording = false`, no co
 **Rationale:** The flag also keeps the recipe context for the assistant when the recipe view disappears behind the sheet. Splitting «assistant open» from «recipe covered» touches the cooking strip and hands-free work that T036 owns, so US3 keeps the existing behavior rather than half-change it.
 
 ---
+
+### 2026-10-13 — iPad: the profile tab is `person.fill` in the top tab bar (spec 081, owner decision)
+
+**Decision:** The iPad top tab bar names `person.fill` for «Профиль» (`AppTabBarLabel(tab:systemImage:)`, plus a `.fill` symbol variant). `AppTab.tabBarSymbol` and the iPhone bottom bar are unchanged.
+
+**Rationale:** Same rule as 2026-06-02 (tab bar uses fill symbols and tint only). The iPhone bottom bar fills the symbol by itself; the iPadOS 26 top tab bar draws it as named, so the profile glyph looked hollow next to the filled ones.
+
+---
+
+### 2026-10-13 — iPad: the keyboard does not change the list column in portrait (spec 081)
+
+**Decision:** The Recipes split reads the orientation from its size without the keyboard: a background sized with `.ignoresSafeArea(.keyboard)` gives `contentHeightIgnoringKeyboard` to `IPadLayoutPolicy.listColumnWidth`, and a stale measurement from before a rotation is ignored by its width. The columns themselves still avoid the keyboard. The DEBUG `-DebugCompactInPortrait` harness uses the same rule.
+
+**Rationale:** The split's `GeometryReader` shrinks with the software keyboard: portrait 834 × 1100 became 834 × 700, was read as landscape, and the list column jumped from half (417 pt) to a third (320 pt) as soon as the search field got focus. `IPadRecipesSpec.testKeyboardKeepsTheSplit` covers it.
+
+---
+
+### 2026-10-13 — iPad: recipe columns without a draggable divider; the nutrition header wraps (spec 081 FR-012a, owner decision, supersedes Q5)
+
+**Decision:** The two-column recipe has a fixed left column, `IPadLayoutPolicy.detailLeftWidth(detailWidth:) = min(400, panel − 1 − 320)`, so 400 pt and 399 pt at the 720 pt threshold, and a static 1 pt line between the columns. The drag gesture, the handle, the VoiceOver adjustable element, the `ipad.recipe.columnDivider*` strings, the `ipadRecipeColumnDivider` identifier and the persisted width are removed. The `UserDefaults` key `ipad.recipeDetailLeftColumnWidth`, already written on test devices, is no longer read; a leftover value is harmless. In `RecipeNutritionBlockView` the «КБЖУ на» row is a `ViewThatFits(in: .horizontal)`: the title and the basis selector on one line when it fits, otherwise the selector under the title.
+
+**Rationale:** The divider is removed by the owner's decision of 2026-10-13. While checking the narrowest two-column width we found the cause of a column «shifted left» and clipped: the basis selector (`UISegmentedControl` with explicit segment widths) never gets narrower than its titles, so the row needs 390.5 pt in en and 374 pt in ru, and a vertical `ScrollView` whose content is wider than its frame grows and re-centers it. At 399/400 pt the row fits in both languages, so the iPad looks as before; the wrap keeps a narrower column correct. iPhone 17 Pro (402 pt) is unchanged in both languages, and ru is unchanged on every iPhone from 374 pt. In en at 375 pt (SE) and 390 pt (16e, 13, 14) the selector now sits under the title; before, the row overflowed there by 15.5 pt and 0.5 pt. A custom `Layout` that would tolerate 1 pt cannot delegate to `HStackLayout` / `VStackLayout` (their layout methods are not public API). `RecipeNutritionHeaderLayoutTests` covers en and ru at 320–402 pt.
+
+---

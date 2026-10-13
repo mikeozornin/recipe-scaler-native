@@ -10,7 +10,7 @@
 - **В scope**:
   - `TARGETED_DEVICE_FAMILY = "1,2"` для таргета `RecipeScalerNative`.
   - iPad-оболочка на `TabView(.sidebarAdaptable)` (iPadOS 26.2+): сайдбар, раздел «Коллекции», футер профиля, верхний и нижний таб-бары.
-  - Раздел «Рецепты»: колонка списка и панель рецепта, рецепт в две колонки с перетаскиваемым разделителем (ширина сохраняется, Q5).
+  - Раздел «Рецепты»: колонка списка и панель рецепта, рецепт в две колонки: левая фиксированная, между колонками статичная линия (решение владельца 2026-10-13 вместо перетаскиваемого разделителя Q5).
   - Ассистент — своя панель справа 340 pt рядом с `TabView` в широком окне и телефонный лист в узком (не `.inspector`: спайк S5, Р7); общий store сессии ассистента.
   - Поповеры «Коллекции», истории чатов и таймеров.
   - Правка в две колонки.
@@ -41,7 +41,7 @@
 |------|--------|------------------------|
 | CRDT-first | N/A | Документы, схема Yjs и запись не меняются. Новая коллекция из сайдбара идёт через существующий `syncService.createFolder(name:)` (`CollectionsRootView.swift:475`). Правки рецепта — те же телефонные компоненты. |
 | Web parity | N/A | Только нативная раскладка; веб не меняется. Аватар — телефонный (фото или `person.circle.fill`), нового рисования аватара нет (Q6). |
-| Offline-first | PASS | Колонки, инспектор и поповеры работают на локальных данных. Футер профиля офлайн показывает номер аккаунта и `person.circle.fill` (FR-004). Ширина левой колонки рецепта хранится локально (`UserDefaults`). Сетевые действия (импорт, Вкусвилл) отключаются, как на iPhone. |
+| Offline-first | PASS | Колонки, инспектор и поповеры работают на локальных данных. Футер профиля офлайн показывает номер аккаунта и `person.circle.fill` (FR-004). Сетевые действия (импорт, Вкусвилл) отключаются, как на iPhone. |
 | Native UI | PASS | `TabView(.sidebarAdaptable)`, `Tab`/`TabSection`, `.tabPlacement(.pinned)`, `.tabViewSidebarBottomBar`, `tabViewBottomAccessory`, `.popover`, `.presentationSizing(.form)`, `.commands`, `keyboardShortcut`, `NavigationStack`. Системные `.inspector` на уровне `TabView` и `NavigationSplitView` внутри `Tab` отвергнуты спайком (S4, S5): на iPadOS 26.3 они ломают верхние отступы тулбаров. Замена — своя панель ассистента и колонки на двух `NavigationStack`. Шрифт Martian через `AppTypography`. |
 | Phased delivery | PASS | 7 историй, каждая выпускается отдельно (spec.md); US1 — минимальный выпуск. Сначала спайк, вёрстка после него. |
 | i18n | PASS | Новые строки — ключи в `Localizable.xcstrings` (en + ru), телефонные ключи переиспользуются (FR-032); `bash scripts/lint-i18n.sh`. |
@@ -275,19 +275,15 @@ HStack(spacing: 0) {
 
 Две колонки (`.padRegular` и панель ≥ 720) — `HStack(spacing: 0)` из двух `ScrollView`:
 
-- левая — ширина `IPadLayoutPolicy.detailLeftWidth(preferred:detailWidth:)`: по умолчанию 400, от 320 до 480, правой остаётся не меньше 320;
-- перетаскиваемый разделитель (см. ниже);
+- левая — ширина `IPadLayoutPolicy.detailLeftWidth(detailWidth:)`: `min(400, панель − 1 − 320)`, то есть 400, на границе 720 — 399; правой остаётся не меньше 320;
+- статичная линия 1 pt (`Color(.separator)`) между колонками (см. ниже);
 - правая с `frame(maxWidth: 660)` и отступами 32;
 - общий `ScrollViewReader` над обеими колонками.
 
-**Разделитель (Q5, FR-012a)** — как в Apple Notes:
+**Линия между колонками (FR-012a)** — решение владельца 2026-10-13, заменяет перетаскиваемый разделитель Q5:
 
-- линия 1 pt (`Divider`), область захвата 12 pt по центру линии;
-- `DragGesture` меняет живую ширину в `@State`, каждое значение проходит через `detailLeftWidth` (упоры 320 и 480, правой ≥ 320);
-- при отпускании действующая ширина пишется в `@AppStorage("ipad.recipeDetailLeftColumnWidth")` — одно значение на устройство, общее для просмотра и правки;
-- при раскладке сохранённое значение только читается и ужимается под текущую панель; ширина окна, список и инспектор его не перезаписывают;
-- отдельного порога нет: две колонки по-прежнему при панели ≥ 720, а 320 + 1 + 320 = 641 < 720, поэтому оба минимума всегда помещаются; на самой границе 720 левая колонка не шире 399;
-- VoiceOver: элемент «Ширина колонок» с `accessibilityAdjustableAction` (±20 pt); на трекпаде — курсор изменения ширины, если такой API есть на целевой iPadOS (не блокирует).
+- только линия 1 pt: без ручки, `DragGesture`, `@AppStorage` и элемента VoiceOver; ширина нигде не сохраняется;
+- содержимое левой колонки не шире предложенной ширины. Вертикальный `ScrollView` с более широким содержимым расширяется и центрирует его, и колонка уезжает влево. Единственный несжимаемый элемент — выбор базы КБЖУ (`UISegmentedControl` с явными ширинами сегментов). Строка «КБЖУ на» + выбор: 390,5 pt в en, 374 в ru, поэтому в `RecipeNutritionBlockView` она собрана через `ViewThatFits`: `HStack`, а если не помещается, `VStack` с выбором под заголовком. Где строка помещается, вид прежний; на iPhone 402 pt не меняется ни в одном языке.
 
 Переносы в правую колонку:
 
@@ -415,7 +411,7 @@ HStack(spacing: 0) {
 | `RecipeScalerNative/Views/RecipeListView.swift` | Изменить | `Binding<[RecipesRoute]>` (:18, :40); режим колонки (выбор вместо push, :535); контекстное меню (iPad) на тех же обработчиках, что свайпы (:544-573). |
 | `RecipeScalerNative/Views/CollectionsRootView.swift`, `CollectionFolderView.swift` | Изменить | Тип привязки пути; создание коллекции вынесено в общий помощник (`commitNewFolder` :458) для сайдбара. |
 | `RecipeScalerNative/Views/YDocRecipeDetailView.swift` | Изменить | Р6: левая и правая колонки; варианты тулбара (:825-880); перенос `DetailScrollViewProbe` и `formattingBarInset`; публикация `RecipeCommandActions`. |
-| `RecipeScalerNative/Views/YDocRecipeDetailColumns.swift` | Создать | Раскладка в две колонки и перетаскиваемый разделитель с сохранением ширины (Р6); держит `YDocRecipeDetailView` в разумном размере. |
+| `RecipeScalerNative/Views/YDocRecipeDetailColumns.swift` | Создать | Раскладка в две колонки с фиксированной левой колонкой и линией 1 pt (Р6); держит `YDocRecipeDetailView` в разумном размере. |
 | `RecipeScalerNative/Views/RecipeDetailActionsMenu.swift` | Изменить | Поповер «Коллекции» на `.padRegular` (:61-62). |
 | `RecipeScalerNative/Views/CollectionAssignSheet.swift` | Изменить | Размер содержимого в поповере (300 pt); сохранение при закрытии не меняется (:112-114). |
 | `RecipeScalerNative/Views/AssistantSheet.swift` | Изменить | Принимает `session: AssistantSessionModel` вместо собственного `@State` сессии (:26-56); `onDisappear` (:185-210) больше не отменяет стрим; режим панели: ×, история поповером (:129, тулбар :1054-1070). |
@@ -428,7 +424,7 @@ HStack(spacing: 0) {
 | `RecipeScalerNative/Utils/DebugLaunchOptions.swift` | Изменить | Только DEBUG: `-IPadSidebarHidden`, `-IPadListHidden` (с 2026-10-12 — старт с развёрнутым рецептом: «Свернуть», списка нет; сайдбар не прячет), `-DebugWindowWidth <pt>` для матрицы (T049). |
 | `RecipeScalerNative/Resources/Localizable.xcstrings` | Изменить | Новые ключи `ipad.*` (en + ru). |
 | `RecipeScalerNative/Utils/ShakeToOpenAssistantPreference.swift` | Изменить | Р9: `isActive(idiom:)`. |
-| `RecipeScalerNativeTests/IPadLayoutPolicyTests.swift`, `RecipesSelectionTests.swift`, `IPadShellItemTests.swift`, `AppLayoutModeTests.swift`, `IPadProfileSheetPolicyTests.swift` | Создать | Чистая логика, включая clamp ширины левой колонки (`IPadLayoutPolicyTests/testLeftColumnClamp`) и правило листа профиля (Р2a). |
+| `RecipeScalerNativeTests/IPadLayoutPolicyTests.swift`, `RecipesSelectionTests.swift`, `IPadShellItemTests.swift`, `AppLayoutModeTests.swift`, `IPadProfileSheetPolicyTests.swift` | Создать | Чистая логика, включая ширину левой колонки (`IPadLayoutPolicyTests/testLeftColumnIsFixedAndKeepsTheSteps`) и правило листа профиля (Р2a). |
 | `RecipeScalerNativeTests/AssistantSessionModelTests.swift` | Создать | Р7: черновик и стрим переживают смену view; закрытие, смена эпохи и logout отменяют задачи. |
 | `RecipeScalerNativeTests/ShakeToOpenAssistantPreferenceTests.swift` | Изменить | Проверки `isActive(idiom:)` для iPhone и iPad. |
 | `RecipeScalerNativeTests/AppShellCoordinatorTests.swift` | Изменить | Тип пути; переходы листа профиля (Р2a); существующие проверки (:119-216) остаются. |
@@ -453,7 +449,7 @@ HStack(spacing: 0) {
 - **Sync boundaries**: N/A — Yjs и серверный контракт не меняются. Создание коллекции — тот же `createFolder`. Профиль для футера — тот же `AccountAPI.fetchProfile` (`AccountAPI.swift:124`, `:131`) через `AccountSettingsViewModel` (`:88-109`).
 - **Persisted state**:
   - `UserDefaults`: `shakeToOpenAssistantEnabled` (не меняется; на iPad игнорируется), режим отображения коллекций (на iPad в колонке игнорируется).
-  - `UserDefaults`, новый ключ `ipad.recipeDetailLeftColumnWidth` (Double, pt) — ширина левой колонки рецепта на iPad (Q5). Пишется только при отпускании разделителя, читается с clamp; нет ключа — 400. На iPhone не читается и не пишется. Это настройка устройства, не аккаунта: при выходе не сбрасывается, в синхронизацию не попадает.
+  - Ширина левой колонки рецепта не сохраняется (решение 2026-10-13). Ключ `ipad.recipeDetailLeftColumnWidth`, который успел записать перетаскиваемый разделитель на тестовых устройствах, больше не читается.
   - Флаг «список спрятан пользователем» живёт в памяти координатора, не сохраняется. `@SceneStorage` в v1 не вводится.
   - SQLite, SwiftData, App Group, Keychain — N/A.
 - **Tests / verify scripts**:
@@ -484,7 +480,7 @@ HStack(spacing: 0) {
 | iPad: футер | Публичный профиль с именем → имя; иначе → номер аккаунта; аватар — фото, если есть, иначе `person.circle.fill`, как в `AccountView` на iPhone | `IPadShellSpec/testFooterPrivateShowsAccountId` + `bash scripts/verify-ipad-layout.sh --iphone-regression` (профиль на iPhone не меняется после выноса `AccountAvatarView` и параметра `onDone`) |
 | iPad: лист профиля | В `.padRegular` футер, вкладка «Профиль» верхнего бара, «Настроить Напоминания», ⌘4 и `-OpenTab=profile` открывают form sheet «Моё всё» с «Готово»; `selectedTab` не меняется; в сайдбаре нет вкладки «Профиль»; в `.phone` — вкладка | `IPadProfileSheetPolicyTests` + `AppShellCoordinatorTests/testRemindersSetupInRegularPresentsSheet` + `IPadShellItemTests/testProfileInRegularDoesNotChangeSelection` + `IPadShellSpec/testFooterOpensProfileSheet`, `testTopBarProfileOpensSheet`, `testSidebarHasNoProfileTab` |
 | iPad: лист профиля при смене size class | compact → regular на вкладке «Профиль» → прежняя вкладка (или «Рецепты») + лист; regular → compact с открытым листом → лист остаётся | `AppShellCoordinatorTests/testWideningOnProfileTabRestoresPreviousAndPresentsSheet`, `testNarrowingKeepsProfileSheet` |
-| iPad: разделитель колонок | Левая колонка рецепта по умолчанию 400, не уже 320 и не шире 480; правая не уже 320 (панель 720 → левая 399); панель < 720 → одна колонка; ширина после перетаскивания переживает перезапуск | `IPadLayoutPolicyTests/testLeftColumnClamp` + `IPadRecipesSpec/testColumnDividerDragPersists` |
+| iPad: колонки рецепта | Левая колонка рецепта 400; правая не уже 320 (панель 720 → левая 399); панель < 720 → одна колонка; строка «КБЖУ на» с выбором базы не выходит за колонку (выбор переносится под заголовок) | `IPadLayoutPolicyTests/testLeftColumnIsFixedAndKeepsTheSteps` + `RecipeNutritionHeaderLayoutTests` + `IPadRecipesSpec/testListAndTwoColumns` |
 | iPad: команды | ⌘E, ⌘+, ⌘−, ⌘0, ⇧⌘L, ⇧⌘P, ⌃⌘A, ⌘⌫ (через подтверждение), ⌘1–⌘4, ⌘J, ⌘F, ⌘N, ⇧⌘I, ⇧⌘N срабатывают; без рецепта меню «Рецепт» неактивно | `RecipeScalerNativeUITests/IPadKeyboardSpec` |
 | iPad: раскладка по состояниям | Каждое состояние layout.md §Карта состояний снято и сверено по чек-листу | `bash scripts/verify-ipad-layout.sh` + human gate |
 | Все новые строки | Есть en и ru | `bash scripts/lint-i18n.sh` |
@@ -499,7 +495,6 @@ HStack(spacing: 0) {
 | Обновление футера после закрытия листа профиля (`profileSheetRevision`) | `userId`, номер ревизии | `userId == текущий` перед присвоением | `.task(id: FooterKey(userId, revision))` футера: новая ревизия отменяет прежнюю загрузку | смена «Публичный профиль» в листе → после «Готово» футер показывает новое имя/номер — `IPadShellSpec/testFooterOpensProfileSheet` |
 | Выбор «первого рецепта» коллекции | `collectionId` | синхронно из `syncService.collectionIndex`, без `await` | N/A | N/A — нет async side effects |
 | Измерение ширины → `IPadLayoutPolicy` | N/A | N/A | N/A | N/A — синхронный пересчёт в `onGeometryChange` |
-| Перетаскивание разделителя → запись ширины | N/A | N/A | жест SwiftUI | N/A — синхронная запись в `UserDefaults` в `onEnded`, без `await` |
 | Открытие или закрытие панели ассистента, переход лист ↔ панель | `AssistantSessionModel` (общий, из `AppContainer`) | N/A | SwiftUI-презентация; view не владеет задачами | чат не теряется при смене size class — `IPadAssistantSpec/testSizeClassSwitchKeepsChat` |
 | Стрим ответа ассистента (`streamTask`, `bootstrapTask`, `externalSendTask`) | `threadId`, `assistantSessionEpoch` на момент старта | `threadId` и эпоха не изменились перед записью сообщения | `AssistantSessionModel`: отмена при явном закрытии, смене эпохи, logout; не при `onDisappear` view | ответ после смены эпохи не попадает в новую сессию — `AssistantSessionModelTests/testEpochChangeDropsStaleStream` |
 | Команды меню (`FocusedValue` с замыканиями) | рецепт или сцена, опубликовавшие значение | действие проверяет, что `recipeId` всё ещё открыт | замыкания живут, пока view в фокусе | ⌘E после закрытия рецепта ничего не делает — `IPadKeyboardSpec` |
@@ -509,7 +504,7 @@ HStack(spacing: 0) {
 
 | Entry path | In-memory | Tasks/streams | Persisted state | Cross-process / OS surface | Positive postcondition |
 |------------|-----------|---------------|-----------------|---------------------------|-------------------------|
-| logout | `recipesPath = []`, `selectedTab` по умолчанию (`.recipes`), панель ассистента закрыта, `AssistantSessionModel` сброшена (сообщения, черновик, вложения), флаг «список спрятан» сброшен, `isProfileSheetPresented = false` и `lastNonProfileTab = .recipes` (выход обычно нажимают в листе профиля), профиль футера очищен | `.task` футера отменяется с view; задачи `AssistantSessionModel` отменены | `ipad.recipeDetailLeftColumnWidth` остаётся: настройка устройства, не аккаунта | меню-команды получают `nil` (view ушли) | после повторного входа оболочка в начальном состоянии, футер без имени прошлого аккаунта |
+| logout | `recipesPath = []`, `selectedTab` по умолчанию (`.recipes`), панель ассистента закрыта, `AssistantSessionModel` сброшена (сообщения, черновик, вложения), флаг «список спрятан» сброшен, `isProfileSheetPresented = false` и `lastNonProfileTab = .recipes` (выход обычно нажимают в листе профиля), профиль футера очищен | `.task` футера отменяется с view; задачи `AssistantSessionModel` отменены | N/A | меню-команды получают `nil` (view ушли) | после повторного входа оболочка в начальном состоянии, футер без имени прошлого аккаунта |
 | account switch | как logout | как logout | как logout | как logout | футер показывает номер и аватар нового аккаунта (фото или `person.circle.fill`) |
 | stale session / cold start | путь из диплинка (если есть), иначе выбор первого рецепта; лист профиля закрыт (флаг только в памяти) | — | N/A | ориентации `~ipad` из Info.plist | iPad стартует в правильной раскладке для текущей ширины окна, без мигания компактной раскладки |
 | reconnect / partial failure | выбор сохраняется | загрузка профиля повторяется по `.task(id:)` | N/A | N/A | футер переходит с номера аккаунта на имя, когда профиль загрузился |
@@ -520,7 +515,7 @@ HStack(spacing: 0) {
 - **Canonical owner**: состояние оболочки и раздела «Рецепты» — `AppShellCoordinator` (`selectedTab`, `recipesPath: [RecipesRoute]`, `isProfileSheetPresented`). Пороги раскладки — `IPadLayoutPolicy`. Режим раскладки — `AppLayoutMode` в environment.
 - **Writer/reader targets**: только основное приложение. Расширения, виджеты и часы состояние оболочки не читают.
 - **Validator/normalizer**: `RecipesSelection` нормализует путь — не больше одного `.folder` в начале и одного `.recipe` на iPad; на iPhone путь не нормализуется (телефонный стек может быть глубже).
-- **Raw literal exceptions**: числа 280/320/340/400/480/660/720/1100/560/380/300/36/12 только в `IPadLayoutPolicy` (`IPadLayoutMetrics`); в view — ссылки на константы. Затемнение 0.25 под выездом списка (Р5) и порог 60 pt левого safe area для «сайдбар плавает» (`IPadSidebarControl`) — тоже константы.
+- **Raw literal exceptions**: числа 280/320/340/400/660/720/1100/560/380/300/36 только в `IPadLayoutPolicy` (`IPadLayoutMetrics`); в view — ссылки на константы. Затемнение 0.25 под выездом списка (Р5) и порог 60 pt левого safe area для «сайдбар плавает» (`IPadSidebarControl`) — тоже константы.
 
 ## Locale / theme consumers
 
@@ -535,7 +530,7 @@ HStack(spacing: 0) {
 
 - Current format/contract: `recipesPath: NavigationPath` → `[RecipesRoute]`. Это смена типа в памяти; путь не сериализуется (`NavigationPath.codable` не используется — проверить в T009), поэтому миграции данных нет.
 - Previous supported format: N/A.
-- Missing version/default behavior: на iPadOS 17.0–26.1 — старый путь оболочки (Р3). Нет сохранённой ширины левой колонки → 400; сохранённая вне 320–480 → clamp при чтении.
+- Missing version/default behavior: на iPadOS 17.0–26.1 — старый путь оболочки (Р3). Левая колонка рецепта всегда 400 (на границе 720 — 399), сохранённой ширины нет.
 - Unknown future version/ID behavior: коллекция из пути, которой нет в `syncService.folders`, → «Все рецепты» (как удалённая).
 - Required legacy fixture tests: сборка и smoke на симуляторе iOS 18.4 (runtime есть локально; нужен iPad-девайс на этом runtime — `xcrun simctl create`), проверка старого пути на iPad (T051).
 
