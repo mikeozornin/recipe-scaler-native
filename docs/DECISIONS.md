@@ -646,6 +646,8 @@ The suite also has no recorded reference snapshots (`isRecording = false`, no co
 
 **Rationale:** The flag also keeps the recipe context for the assistant when the recipe view disappears behind the sheet. Splitting «assistant open» from «recipe covered» touches the cooking strip and hands-free work that T036 owns, so US3 keeps the existing behavior rather than half-change it.
 
+**Superseded** by «iPad: hands-free and keep-awake keep working beside the assistant panel» (T036, below).
+
 ---
 
 ### 2026-10-13 — iPad: the profile tab is `person.fill` in the top tab bar (spec 081, owner decision)
@@ -685,5 +687,37 @@ The suite also has no recorded reference snapshots (`isRecording = false`, no co
 **Decision:** While the panel is open, `IPadLayoutPolicy.resolve(…, assistantPanelOpen:recipeOpen:)` chooses split or phone stack on the width without the panel, whether or not a recipe is open. That is the same mode as with the panel closed. Next to an open recipe the list column hides (FR-022). Without a recipe the list stays, because the split normally keeps one open (`repairSelection`); that happens only with an empty collection. «Развернуть» is hidden for as long as the panel is open.
 
 **Rationale:** Before, the flag was `assistantBesideRecipe` (panel open and a recipe open). With the panel open and no recipe, the section decided on the narrowed width. In portrait on 11″ that is 493 pt, so it showed the phone stack, and picking a recipe switched it to the split: the list vanished and the recipe view was rebuilt. With one mode for the whole time the panel is open, picking a recipe only hides the list. `IPadLayoutPolicyTests.testAssistantPanelKeepsOneModeWithOrWithoutARecipe` covers 11″ portrait and landscape (with and without the sidebar), 13″ landscape and a 776 pt window with the sidebar.
+
+---
+
+### 2026-10-13 — iPad: hands-free and keep-awake keep working beside the assistant panel (spec 081 T036, US3 review M2 and L1, supersedes the interim T034 entry)
+
+**Decision:** `AssistantRecipeContext` tells «the assistant is open» from «the assistant covers the recipe». `isAssistantOpen` is any open assistant; `coversRecipe` is only the phone sheet (iPhone, a compact iPad window); `isBesideRecipe` is the iPad panel. The shell reports `assistantDidOpen(asPanel:)`, `assistantDidMove(asPanel:)` on a size class change and `assistantDidClose()`. Awake-scroll, hands-free and the recipe's `onDisappear` read `coversRecipe`, so beside the panel the recipe works as it does without one: the cooking strip stays, hands-free stays armed, and leaving the recipe drops its context and keep-awake. When the panel is open and the user switches to «Покупки» or «Подборки», the shell calls `releaseRecipe(hiddenBy:)`: the composer stops offering the hidden recipe and `ScreenAwakeController.deactivate()` lets the screen sleep. `resetForLogout()` clears every flag. On the iPhone `coversRecipe` always equals `isAssistantOpen`, so nothing changes there.
+
+**Rationale:** The interim T034 rule disarmed hands-free beside the panel although the recipe stays on screen (review M2). On another section with the panel open, the composer kept the hidden recipe's chip and the screen stayed awake (review L1). The shell releases the recipe on the tab switch instead of relying on the hidden recipe view in the `TabView`. Caveat: with the panel open, hands-free voice and the assistant's dictation may both want the microphone; that needs a check on a device. Tests: `AssistantRecipeContextTests`, `AppContainerTests`, `DetailScrollViewProbeTests.test_probe_in_two_columns_binds_the_right_column` (scroll commands move the steps column).
+
+---
+
+### 2026-10-13 — iPad: «Коллекции» in a 300 × 420 popover from «…» (spec 081 T037)
+
+**Decision:** On `.padRegular` the recipe's «…» → «Коллекции» shows the phone `CollectionAssignSheet` in a popover through `adaptivePopover`. The popover is 300 × 420 (`IPadLayoutMetrics.collectionsPopoverWidth`, `collectionsPopoverHeight`), set by `iPadPopoverFrame` on the iPad idiom only. The iPhone and a compact iPad window keep the sheet. The layout mode is passed into `RecipeDetailActionsMenu` explicitly, because toolbar items may get a fallback environment. Membership is saved on close, as before. On iPadOS 26 a popover from a bar button grows out of the button and covers it; we accept the system look.
+
+**Rationale:** layout.md gave only a width. The content is a `List`, which has no height of its own, so the popover needs one; 420 matches the assistant history popover. `IPadRecipesSpec.testCollectionsPopoverPersists` covers creation, saving on a tap outside and reopening.
+
+---
+
+### 2026-10-13 — iPad: timers in a popover over the capsule (spec 081 T038, spike S6)
+
+**Decision:** On iPadOS 26.2+ in `.padRegular` a tap on the timers capsule (`tabViewBottomAccessory`) toggles the shell's `timerPopoverShown` instead of expanding the panel. The popover hangs off an invisible 1 × 1 anchor at the tab view's top-leading corner, with `attachmentAnchor: .rect(.rect(capsuleFrame))` in the anchor's space and `arrowEdge: .bottom`. The arrow points at the capsule with or without the sidebar, and the popover follows the capsule while shown. The content is the phone `MobileTimerPanel(.insetExpanded)`, 380 pt wide and unchanged. Its chevron, a tap outside or the capsule closes it. A wide window has no expanded panel: entering `.padRegular` folds an expanded one, leaving it closes the popover, and the popover closes when the capsule goes away. The iPhone and a compact iPad window keep the expanded panel. In DEBUG, `-MobileTimerPanelExpanded=1` opens the popover in a wide window. The capsule and anchor frames live in a plain class held in `@State` (`TimerPopoverGeometry`), and measurements at the origin are ignored.
+
+**Rationale:** Spike S6: a `.popover` inside the accessory never shows. An anchor view the size of the tab view blocked taps on the content under the popover's host, hence a 1 pt anchor with a rect attachment. The accessory is rebuilt on every shell update and first measures off-window at {0, 0}; writing its frame to `@State` updated the shell in a loop and hung the app. `IPadRecipesSpec.testTimersPopover` runs four open and close rounds and checks that the capsule survives each one (in S6 it once disappeared).
+
+---
+
+### 2026-10-13 — iPad: the cooking table follows the window (spec 081 T039)
+
+**Decision:** On the iPad the cooking table has no forced landscape and no rotation: `cookingOrientations` is `.all`, `requestLandscape` and `unlockOrientation` run only on the phone, and the orientation gate accepts portrait. The one fix is the root frame of `ProcessTableCookingView`: `.frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)`. The recipe screen's entry into the table is disabled (TODO 074), so `ProcessTableCookingLayoutTests.testCookingOnIPadFollowsTheWindowInEveryOrientation` hosts the view on the iPad simulator instead. It checks windows of 1210 × 834, 834 × 1210, 597, 400 and 320 pt.
+
+**Rationale:** A flexible frame without `minWidth` takes the larger of the proposal and its child. The view starts with a 420 pt container size, so in a window narrower than 420 pt (⅓, Slide Over) it measured its own matrix and stayed clipped on both sides. With `minWidth: 0` it measures the window. On the iPhone the table is landscape only (at least 667 pt), so nothing changes there.
 
 ---

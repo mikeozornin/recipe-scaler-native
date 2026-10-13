@@ -48,6 +48,7 @@
 | лист профиля | системный: `.presentationSizing(.form)`, в коде чисел нет (в прототипе 540 × 620 на 11″) | «Моё всё» в `.padRegular`; содержимое — телефонный `AccountView` на всю ширину листа, без своего ограничения ширины |
 | `timersPopoverWidth` | 380 | поповер таймеров |
 | `collectionsPopoverWidth` | 300 | поповер «Коллекции» |
+| `collectionsPopoverHeight` | 420 | поповер «Коллекции» (`List` своей высоты не имеет; как у поповера истории) |
 | `historyPopover` | ширина инспектора − 24, высота до 420 | история ассистента |
 | `barHeight` | 56 | тулбары панелей (системные) |
 | `cookStripMinHeight` | 44 | `ScreenAwakeStatusBanner` (телефонный) |
@@ -91,8 +92,8 @@ leftWidth    = twoColumns ? min(400, detailWidth − 1 − 320) : —   // 399 �
 | `.is-one .dt-col` | телефонный `VStack` рецепта, `frame(maxWidth: 720)` по центру |
 | `.cook` | `ScreenAwakeStatusBanner` (телефонный) |
 | `.acc-bar` | `tabViewBottomAccessory` (`MobileTimerAccessoryModifier`); есть и в режиме сайдбара (спайк S6), своей капсулы нет |
-| `.pop.timer-pop` | `.popover` с `MobileTimerPanel` на уровне оболочки, якорь — фрейм аксессуара (`onGeometryChange` → `attachmentAnchor: .rect(...)`); `.popover` внутри аксессуара не работает (S6) |
-| `.pop.coll-pop` | `.adaptivePopover` с `CollectionAssignSheet` |
+| `.pop.timer-pop` | `.popover` с `MobileTimerPanel(.insetExpanded)` на уровне оболочки (`timerPopoverShown`): невидимый якорь 1 × 1 в углу `TabView`, прикреплён к фрейму аксессуара (`onGeometryChange` → `attachmentAnchor: .rect(.rect(frame))`, стрелка вниз), следует за капсулой; `.popover` внутри аксессуара не работает (S6). В широком окне раскрытой панели нет |
+| `.pop.coll-pop` | `.adaptivePopover` с `CollectionAssignSheet`, `iPadPopoverFrame` 300 × 420; в iPadOS 26 поповер вырастает из «…» и закрывает её (системное) |
 | `.insp` + `.insp-bar` | своя панель 340 справа: `HStack { TabView │ Divider │ AssistantSheet(session:, .inspector) }` (история, новый чат, ×); не `.inspector` — он ломает верхние отступы вкладок (спайк S5) |
 | `.pop.hist-pop` | `.adaptivePopover` с `AssistantThreadListSheet` |
 | `.sheet-insp` | телефонный лист ассистента (`AssistantSheetModifier`) |
@@ -129,9 +130,9 @@ leftWidth    = twoColumns ? min(400, detailWidth − 1 − 320) : —   // 399 �
 | `#recipes/collection` | сайдбар, выбрана «Десерты» · колонка «Десерты» (её рецепты) · первый рецепт коллекции | выбор `IPadShellItem.collection(id)` при активном `IPadRecipesSplitView` → путь `[.folder(id), .recipe(первый, folderContext: id)]` (plan.md Р2) | путь `[.folder(id)]` — телефонный экран коллекции (`CollectionFolderView`) в стеке | `03-collection` |
 | `#recipes/search` | верхний бар · колонка с запросом «шоколад» · пусто → «Ничего не нашлось по «…»» | `.searchable` колонки списка, телефонная фильтрация и пустое состояние | телефонный список с поиском | `04-search`, `23-half-search` |
 | `#recipes/context` | сайдбар · контекстное меню у строки: «Закрепить/Открепить», «В коллекцию», «В список покупок», «Поделиться» │ «Удалить» | `.contextMenu` строки (только `.padRegular`) на обработчиках свайпов | меню нет, как на iPhone (свайпы строки) | `05-context` |
-| `#recipes/timers` | капсула таймеров внизу по центру (высота 48, отступ 16) → по тапу поповер 380 над ней | `tabViewBottomAccessory` + `.popover` с `MobileTimerPanel` | телефонная раскрытая панель таймеров | `06-timers` |
+| `#recipes/timers` | капсула таймеров внизу по центру (высота 48, отступ 16) → по тапу поповер 380 над ней | `tabViewBottomAccessory` + `.popover` оболочки с `MobileTimerPanel(.insetExpanded)`, прикреплённый к фрейму капсулы (`.pop.timer-pop`) | телефонная раскрытая панель таймеров | `06-timers` |
 | `#recipes/cooking` | зелёная полоса под тулбаром на всю ширину панели (над фото и шагами) | `ScreenAwakeStatusBanner` над `YDocRecipeDetailColumns` | полоса под тулбаром, как на iPhone | `b1-cooking` |
-| `#recipes/collections` | «…» → «Коллекции» → поповер 300 от «…»: «Добавить в коллекцию», коллекции с галочками, «Новая коллекция» | `RecipeDetailActionsMenu` → `.adaptivePopover` → `CollectionAssignSheet` | телефонный лист | `b1-collections` |
+| `#recipes/collections` | «…» → «Коллекции» → поповер 300 × 420 от «…»: «Добавить в коллекцию», коллекции с галочками, «Новая коллекция» | `RecipeDetailActionsMenu` → `.adaptivePopover` + `iPadPopoverFrame` → `CollectionAssignSheet` | телефонный лист | `b1-collections` |
 
 ### Шаг `edit`
 
@@ -310,6 +311,7 @@ leftWidth    = twoColumns ? min(400, detailWidth − 1 − 320) : —   // 399 �
 
 ## Changelog
 
+- 2026-10-13 — US4: токен `collectionsPopoverHeight` 420; `.pop.timer-pop`, `.pop.coll-pop`, `#recipes/timers`, `#recipes/collections` описывают сделанное (якорь 1 × 1 оболочки, `iPadPopoverFrame`).
 - 2026-10-13 — решение владельца продукта: разделитель колонок рецепта не перетаскивается. Удалены токены `detailLeftMinWidth`, `detailLeftMaxWidth`, `columnDividerHitWidth` и сохранённая ширина; формула `leftWidth` = `min(400, detailWidth − 1 − 320)`; переписаны «Колонки рецепта» §Токены, `.dt-split`, `#recipes/tabs`, п. 13 §Отклонения, утверждения 3 и 12. Выбор базы КБЖУ переносится под заголовок, если строка не помещается в колонку.
 - 2026-10-12 — решение владельца продукта (US2): список как в Apple Notes. Токены `listShareInPortrait` ½, `listShareInLandscape` ⅓, `listColumnMinWidth` 320, `minDetailWithList` 320 вместо `listColumnWidth` 320 и порога 560; формулы с `contentHeight`, `splitFits`, `recipeExpanded`; `#recipes/tabs` и `#recipes/focus` («Развернуть» / «Свернуть» вместо «Список рецептов»); матрица пересчитана; п. 1 §Отклонения, утверждения 4 и 5.
 

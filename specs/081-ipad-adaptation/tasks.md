@@ -444,14 +444,48 @@
 **Goal**: полоса готовки на обе колонки, «Коллекции» поповером, таймеры поповером.  
 **Independent Test**: spec.md US4.
 
-- [ ] T036 [P] [US4] Полоса готовки и управление без рук в двух колонках.
+- [x] T036 [P] [US4] Полоса готовки и управление без рук в двух колонках.
   - `ScreenAwakeStatusBanner` стоит под тулбаром на всю ширину панели (проверить `RecipeScalerNative/Views/AwakeScrollChromeModifier.swift` с раскладкой T025).
   - Команды прокрутки двигают правую колонку (`DetailScrollViewProbe`).
   - Прогнать `RecipeScalerNativeTests/AwakeScrollControllerTests` и `AwakeScrollEngineTests`.
 
   — `#recipes/cooking`
-- [ ] T037 [P] [US4] «Коллекции» поповером: `RecipeScalerNative/Views/RecipeDetailActionsMenu.swift` (~:61-62) — `.adaptivePopover` вместо `.sheet` при `.padRegular`; `RecipeScalerNative/Views/CollectionAssignSheet.swift` — ширина 300 в поповере, сохранение при закрытии как сейчас (~:112-114). Добавить `testCollectionsPopoverPersists` в `IPadRecipesSpec`. — `#recipes/collections`
-- [ ] T038 [US4] Таймеры поповером по вердикту S6 (plan.md Р7).
+
+  **Сделано и проверено (commits): 5bc871c, ea7be79.**
+  - Полоса уже стоит на всю ширину панели: `AwakeScrollChromeModifier` ставит её `safeAreaInset(.top)` над `YDocRecipeDetailColumns`. В альбомной без сайдбара у `screen_awake_banner` x 404, ширина 806, то есть полоса идёт над фото и над шагами. Код для этого не понадобился.
+  - Команды прокрутки двигают правую колонку: `detailScrollProbe` стоит в её `ScrollView`. Тест `DetailScrollViewProbeTests.test_probe_in_two_columns_binds_the_right_column` (ea7be79).
+  - M2 и L1 ревью US3 (5bc871c). `AssistantRecipeContext` различает «ассистент открыт» (`isAssistantOpen`) и «ассистент закрывает рецепт» (`coversRecipe`, только телефонный лист).
+    - Рядом с панелью полоса готовки и управление без рук работают так же, как без панели.
+    - Если с открытой панелью перейти на «Покупки» или «Подборки», оболочка отпускает скрытый рецепт (`releaseRecipe(hiddenBy:)`). Чип «Борщ» пропадает из композера, экран снова может гаснуть.
+    - Выход из аккаунта сбрасывает все флаги.
+    - На iPhone `coversRecipe` всегда равен `isAssistantOpen`.
+    - Тесты: `AssistantRecipeContextTests` (10), `AppContainerTests`.
+  - `AwakeScrollControllerTests` и `AwakeScrollEngineTests` прошли на iPad и в `test-fast` на iPhone.
+  - Снимки `tmp/ipad-verify/us4/`:
+    - `recipes-cooking-landscape.png`;
+    - `recipes-cooking-landscape-assistant.png` — полоса при открытой панели;
+    - `recipes-cooking-assistant-then-shopping.png` — на «Покупках» чипа рецепта нет;
+    - `recipes-cooking-portrait.png`, `recipes-cooking-half.png`.
+
+  **Отклонение:** временное решение T034 (флаг `isAssistantSheetOpen`, который ставили и для панели) заменено, запись в `docs/DECISIONS.md` помечена как устаревшая. Hands-free голосом и диктовка ассистента при открытой панели могут делить микрофон. Это проверяет владелец на устройстве (T040).
+- [x] T037 [P] [US4] «Коллекции» поповером: `RecipeScalerNative/Views/RecipeDetailActionsMenu.swift` (~:61-62) — `.adaptivePopover` вместо `.sheet` при `.padRegular`; `RecipeScalerNative/Views/CollectionAssignSheet.swift` — ширина 300 в поповере, сохранение при закрытии как сейчас (~:112-114). Добавить `testCollectionsPopoverPersists` в `IPadRecipesSpec`. — `#recipes/collections`
+
+  **Сделано и проверено (commits): d300a45, 6d7b9d8.**
+  - В `.padRegular` пункт «…» → «Коллекции» открывает `CollectionAssignSheet` в поповере 300 × 420 через `adaptivePopover` и `iPadPopoverFrame`. На iPhone и в compact-окне iPad — телефонный лист.
+  - Режим раскладки передаётся в меню тулбара явно: элементы бара могут получить запасное окружение.
+  - Членство сохраняется при закрытии, как раньше.
+  - `IPadRecipesSpec.testCollectionsPopoverPersists`:
+    - поповер шириной 300;
+    - новая коллекция отмечена сразу при создании;
+    - тап мимо закрывает поповер и сохраняет членство;
+    - в коллекции только этот рецепт;
+    - при повторном открытии отметка на месте.
+  - Снимки `tmp/ipad-verify/us4/recipes-collections-landscape.png`, `-portrait.png`, `-half.png` (в ½ — лист).
+
+  **Отклонение:**
+  - Высота 420 — новый токен `collectionsPopoverHeight`. В layout.md была только ширина, а у `List` своей высоты нет. 420 — как у поповера истории.
+  - В iPadOS 26 поповер от кнопки бара вырастает из «…» и закрывает её. Поведение системное, принято.
+- [x] T038 [US4] Таймеры поповером по вердикту S6 (plan.md Р7).
   - Тап по капсуле `tabViewBottomAccessory` при `.padRegular` ставит флаг `timerPopoverShown` на уровне оболочки (`RecipeScalerNative/Views/AppShellView.swift` ~:650-664) вместо раскрытой панели. `.popover` **внутри** аксессуара не работает (S6) — не ставить.
   - Поповер 380 pt с `MobileTimerPanel(.insetExpanded)` прикреплён к невидимому якорю оболочки; фрейм аксессуара — через `onGeometryChange` → `.popover(attachmentAnchor: .rect(.rect(frame)), arrowEdge: .bottom)`, чтобы стрелка указывала на капсулу и при открытом сайдбаре; `.presentationCompactAdaptation(.sheet)`.
   - Аксессуар есть и в режиме сайдбара (S6) — своей капсулы не делать.
@@ -459,7 +493,42 @@
   - Содержимое панели не меняется («Сбросить все» не добавляем).
 
   — `#recipes/timers`
-- [ ] T039 [US4] Проверить таблицу готовки (`RecipeScalerNative/Views/Cooking/ProcessTableCookingPresenter.swift`, ветки по idiom ~:55-120; `ProcessTableCookingOrientationGate.swift`) на iPad в обеих ориентациях и в окне ½. Исправлять, только если на iPad есть принудительный поворот или обрезка. — `#recipes/cooking`
+
+  **Сделано и проверено (commits): 1c123ea, 7223aa7.**
+  - iPadOS 26.2+, `.padRegular`: тап по капсуле переключает `timerPopoverShown` оболочки.
+  - Поповер 380 pt. Внутри — телефонная `MobileTimerPanel(.insetExpanded)` без изменений.
+  - Поповер привязан к невидимому якорю 1 × 1 в углу `TabView`, `attachmentAnchor` — фрейм капсулы. Стрелка указывает вниз на капсулу и при сайдбаре, пока поповер открыт, он следует за капсулой.
+  - Как поповер закрывается:
+    - тап мимо, шеврон панели или повторный тап по капсуле;
+    - переход в compact-окно;
+    - пропала капсула (таймеры кончились).
+  - При переходе в широкое окно раскрытая панель сворачивается.
+  - На iPhone и в compact-окне iPad панель раскрывается, как раньше.
+  - DEBUG `-MobileTimerPanelExpanded=1` в широком окне открывает поповер.
+  - `IPadRecipesSpec.testTimersPopover`, два запущенных таймера, четыре круга открытия и закрытия:
+    - поповер 380, над капсулой и по её центру;
+    - строки таймеров есть только в поповере;
+    - после каждого закрытия капсула на месте и нажимается;
+    - с сайдбаром поповер следует за сдвинутой капсулой.
+  - Снимки `tmp/ipad-verify/us4/recipes-timers-landscape.png`, `-landscape-capsule.png`, `-landscape-sidebar.png`, `-portrait.png`, `-half.png`.
+
+  **Отклонение:**
+  - Фреймы капсулы и якоря хранятся в ненаблюдаемом классе `TimerPopoverGeometry` в `@State`, измерения в точке {0, 0} отбрасываются. Причина: аксессуар пересобирается при каждом обновлении оболочки и первый раз измеряется вне окна. Запись фрейма в `@State` зацикливала оболочку и вешала приложение.
+  - Якорь — точка 1 × 1, а не view размером с `TabView`. Хост поповера во весь размер перекрывал нажатия по контенту.
+- [x] T039 [US4] Проверить таблицу готовки (`RecipeScalerNative/Views/Cooking/ProcessTableCookingPresenter.swift`, ветки по idiom ~:55-120; `ProcessTableCookingOrientationGate.swift`) на iPad в обеих ориентациях и в окне ½. Исправлять, только если на iPad есть принудительный поворот или обрезка. — `#recipes/cooking`
+
+  **Сделано и проверено (commits): 0c36438.**
+  - Принудительного поворота на iPad нет:
+    - `cookingOrientations` — `.all`;
+    - `requestLandscape` и `unlockOrientation` работают только на iPhone;
+    - гейт ориентации принимает книжную.
+  - Обрезка была в окнах уже 420 pt (⅓, Slide Over): view мерил свою стартовую матрицу 420 pt, а не окно. Исправлено: у корневого фрейма `ProcessTableCookingView` добавлен `minWidth: 0`. На iPhone таблица работает только в альбомной (от 667 pt), там ничего не меняется.
+  - Тест `ProcessTableCookingLayoutTests.testCookingOnIPadFollowsTheWindowInEveryOrientation` идёт только на iPad.
+    - Маска ориентаций `.all`.
+    - Окна 1210 × 834, 834 × 1210, 597, 400 и 320 pt: матрица на всю ширину и не обрезана, «Закрыть» в окне, ориентация сцены не меняется.
+    - Снимки `tmp/ipad-verify/us4/t039-ipad-cooking-{landscape,portrait,half,narrow,third}.png`.
+
+  **Отклонение:** вход в таблицу готовки на экране рецепта закомментирован (TODO 074), из UI до неё не дойти. Поэтому проверка — юнит-тестом на симуляторе iPad, а не проходом по экрану.
 - [ ] T040 [US4] Ручной проход `#recipes/cooking`, `#recipes/collections`, `#recipes/timers` в альбомной (две колонки), книжной и ½. `bash scripts/verify-timer-widget.sh` на iPhone — зелёный. — `#recipes/cooking`, `#recipes/collections`, `#recipes/timers`
 
 **Checkpoint (US4)**: полоса готовки на обе колонки, поповеры «Коллекции» и таймеров в широком окне, листы в compact; iPhone без изменений.
