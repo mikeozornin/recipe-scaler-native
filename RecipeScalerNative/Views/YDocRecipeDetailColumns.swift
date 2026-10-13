@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Spec 081 — the recipe shown in the panel of the iPad split (`IPadRecipesSplitView`).
 /// `nil` on the phone and in a compact iPad window: the recipe keeps its phone layout.
@@ -52,12 +53,11 @@ struct YDocRecipeDetailColumns<Left: View, Right: View, RightBar: View>: View {
 
             ScrollView {
                 right()
-                    // Steps text ≤ 660 with 32 pt sides (the sections bring 16 of them).
+                    // Steps text ≤ 660 with the sections' own 16 pt sides, as on the left.
                     .frame(
                         maxWidth: IPadLayoutMetrics.stepsMaxWidth + 2 * Self.sectionInset,
                         alignment: .leading
                     )
-                    .padding(.horizontal, IPadLayoutMetrics.stepsHorizontalPadding - Self.sectionInset)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, rightBottomPadding)
             }
@@ -77,6 +77,27 @@ extension YDocRecipeDetailColumns where RightBar == EmptyView {
         @ViewBuilder right: @escaping () -> Right
     ) {
         self.init(detailWidth: detailWidth, left: left, right: right, rightBar: { EmptyView() })
+    }
+}
+
+/// Spec 081 — the top of the steps column: the cap top of «Инструкции» lines up with what
+/// the left column starts with, the top edge of the photo (or of its placeholder in edit, or
+/// of the legacy banner) or the cap top of the recipe title (owner decision 2026-10-13).
+enum RecipeStepsColumnMetrics {
+    /// `headerRowHeight`: reading centres the header in a 44 pt row (`StepsSection`); the
+    /// editor's header (`RecipeDescriptionEditorBlock`) has no row, `nil`.
+    static func topPadding(leftStartsWithBox: Bool, headerRowHeight: CGFloat?) -> CGFloat {
+        let title = AppTypography.uiFont(AppFonts.display, size: AppTypography.recipeTitleSize, fallbackFamily: AppFonts.display)
+        let header = AppTypography.uiFont(AppFonts.display, size: AppTypography.title2Size, fallbackFamily: AppFonts.display)
+        // The photo and the title both start at the left column's 16 pt top padding.
+        let leftTop = RecipeDetailLayoutMetrics.titleTopSpacing + (leftStartsWithBox ? 0 : capInset(title))
+        let rowInset = headerRowHeight.map { max(0, ($0 - header.lineHeight) / 2) } ?? 0
+        return leftTop - rowInset - capInset(header)
+    }
+
+    /// From the top of a line of text to the top of its capitals.
+    private static func capInset(_ font: UIFont) -> CGFloat {
+        font.ascender - font.capHeight
     }
 }
 

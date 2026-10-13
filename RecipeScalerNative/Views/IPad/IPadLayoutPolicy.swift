@@ -39,7 +39,6 @@ enum IPadLayoutMetrics {
     /// Steps column never gets narrower than this.
     static let detailRightMinWidth: CGFloat = 320
     static let stepsMaxWidth: CGFloat = 660
-    static let stepsHorizontalPadding: CGFloat = 32
     /// One-column recipe and edit form, centered.
     static let singleColumnMaxWidth: CGFloat = 720
     /// «Поделиться» and «Изменить» get text labels from this panel width.

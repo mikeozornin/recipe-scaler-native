@@ -689,15 +689,16 @@ struct YDocRecipeDetailView: View {
                     .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
                 }
             } right: {
-                VStack(alignment: .leading, spacing: 0) {
-                    // Hands-free scrolling moves the steps (FR-026).
-                    detailScrollProbe
-                    VStack(alignment: .leading, spacing: 16) {
-                        if let recipe {
-                            detailStepsSection(recipe: recipe)
-                        }
+                VStack(alignment: .leading, spacing: 16) {
+                    if let recipe {
+                        detailStepsSection(recipe: recipe)
                     }
-                    .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
+                }
+                .padding(.top, stepsColumnTopPadding)
+                // Hands-free scrolling moves the steps (FR-026). Behind them, so the
+                // probe adds no height above «Инструкции».
+                .background(alignment: .topLeading) {
+                    detailScrollProbe
                 }
             } rightBar: {
                 formattingBarInset
@@ -720,6 +721,14 @@ struct YDocRecipeDetailView: View {
                 .modifier(RecipeDetailSingleColumnWidth(isPadPanel: padPanel != nil))
             }
         }
+    }
+
+    /// «Инструкции» lines up with the top of the left column (`RecipeStepsColumnMetrics`).
+    private var stepsColumnTopPadding: CGFloat {
+        RecipeStepsColumnMetrics.topPadding(
+            leftStartsWithBox: showsRecipeImageSection || isLegacyReadOnly,
+            headerRowHeight: isEditing && canEnterEditMode ? nil : ProcessTableLayout.ctaMinHit
+        )
     }
 
     private var detailScrollProbe: some View {
