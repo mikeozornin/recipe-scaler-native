@@ -754,7 +754,7 @@ A rebuilt view adopts the session and stays in edit. The session keeps a stack o
 ### 2026-10-13 — iPad: recipe edit with the assistant and the popovers (spec 081 US5, owner decision)
 
 **Decision:**
-- **Assistant entry.** There is no ✦ during edit: the edit bar is «Готово» only (Q2). The entry is the pinned «Ассистент» tab in the top tab bar, which shows while the edit keeps the sidebar folded, so there is still one assistant entry on screen (FR-021). If the user opens the sidebar mid-edit, the screen has no assistant entry until «Готово»: the sidebar does not list the pinned tab, and the ✦ that would replace it is not on the edit bar. The owner accepted the behaviour as is (entry «the assistant during recipe edit stays as it is» below).
+- **Assistant entry.** There is no ✦ during edit: the edit bar is «Готово» only (Q2). The entry is the pinned «Ассистент» tab in the top tab bar, which shows while the edit keeps the sidebar folded, so there is still one assistant entry on screen (FR-021). If the user opens the sidebar mid-edit, the screen has no assistant entry until «Готово»: the sidebar does not list the pinned tab, and the ✦ that would replace it is not on the edit bar. Confirmed by the owner on 2026-10-13: while the sidebar is open mid-edit the screen may have no assistant entry until «Готово» (entry «the assistant during recipe edit stays as it is» below).
 - **Panel opened during edit.** The edit stays, and the panel takes the room the list had.
 - **Edit started with the panel open.** The edit expands the recipe, and the recipe stays expanded after the panel closes.
 - **Timers.** During edit the timers capsule and its popover are hidden, as on the iPhone (`TimerManager.setSuppressPanelSafeAreaInset`). The capsule stays hidden while the rebuilt view's edit continues.
@@ -796,7 +796,7 @@ Shots: `tmp/ipad-verify/us5/padding-{reading,edit}-portrait[-before].png`.
 
 ### 2026-10-13 — iPad: the assistant during recipe edit stays as it is (spec 081 US5, owner decision)
 
-**Decision:** The current behaviour is accepted as is. The assistant entry is the ✦ in the top tab bar or the sidebar, and it stays reachable during edit. The recipe toolbar in edit shows only «Готово». Nothing more is needed, and the code does not change.
+**Decision:** The current behaviour is accepted as is. The assistant entry is the ✦ in the top tab bar or the sidebar, and it stays reachable during edit. The recipe toolbar in edit shows only «Готово». Nothing more is needed, and the code does not change. Confirmed by the owner on 2026-10-13: the sidebar opened mid-edit may have no assistant entry until «Готово», because it does not list the pinned «Ассистент» tab and the edit bar has no ✦.
 
 **Rationale:** The owner does not need the assistant during edit, but it is fine that it is available. This closes the open point of «recipe edit with the assistant and the popovers» above.
 
