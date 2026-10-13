@@ -12,7 +12,8 @@ import XCTest
 /// Every test gets a fresh user with two recipes seeded over REST (read-only «старый
 /// формат» on iOS). Collections and membership live in the Yjs document and the local
 /// backend has no `POST /api/collections`, so the collection test makes one in the
-/// «В коллекцию» sheet; the toolbar check makes an editable recipe with «+».
+/// «В коллекцию» sheet; the toolbar check and the edit tests (US5) make an editable recipe
+/// with «+», which opens it in edit.
 ///
 /// Expanded, the list column's empty `NavigationStack` stays in the hierarchy off the
 /// leading edge (an iPadOS bar workaround, see `IPadRecipesSplitView.split`), but its rows,
@@ -56,7 +57,12 @@ final class IPadRecipesSpec: BaseTestCase {
     }
 
     override func extraLaunchArguments() -> [String] {
-        ["-OpenTab=recipes", "-IPadSidebarHidden=1"]
+        var args = ["-OpenTab=recipes", "-IPadSidebarHidden=1"]
+        // A compact ½ window in portrait: a rotation is a size class change (T043).
+        if name.contains("testEditSurvivesSizeClassChange") {
+            args.append("-DebugCompactInPortrait=1")
+        }
+        return args
     }
 
     override func prepareBeforeLaunch() async throws {
@@ -422,6 +428,117 @@ final class IPadRecipesSpec: BaseTestCase {
         assertListKeeps(landscapeWidth, "landscape")
     }
 
+    // MARK: - Edit (US5)
+
+    /// `#edit/edit` (T041–T043): edit takes the whole section as «Развернуть» does — the
+    /// list hides, and a sidebar beside it — with the title and servings on the left and
+    /// the steps editor on the right; the bar keeps only «Готово» (Q2). The formatting bar
+    /// sits under the steps column above the keyboard. After «Готово» the recipe stays
+    /// expanded; «Свернуть» brings the list (and the sidebar) back.
+    func testEditTwoColumns() {
+        awaitRows()
+        awaitTwoColumns()
+        let row = recipeListPage.recipeRow(id: first.id)
+
+        // The seeded recipes are read-only: «+» makes one and opens it in edit.
+        recipeListPage.tapAddRecipe()
+        XCTAssertTrue(doneButton.waitForExistence(timeout: Wait.syncRoundTrip), "«+» did not open a new recipe for editing")
+        assertListGone(row)
+        awaitTwoColumns()
+        XCTAssertTrue(waitUntil { self.leftColumn.frame.minX < 2 }, "The recipe in edit starts at \(leftColumn.frame.minX), expected 0")
+        assertEditLayout("landscape")
+        capture("edit-landscape")
+
+        typeIntoTitle(" Pie")
+        let name = titleText
+        focusSteps()
+        assertFormattingBarUnderSteps("landscape")
+        app.typeText("Dough")
+        capture("edit-landscape-keyboard")
+
+        // Portrait (834 pt, still regular): the whole section, two columns, the bar under the steps.
+        rotate(to: .portrait)
+        awaitTwoColumns()
+        XCTAssertFalse(listOnScreen, "Rotation in edit brought the list back")
+        XCTAssertTrue(doneButton.exists, "Rotation left edit")
+        assertFormattingBarUnderSteps("portrait")
+        rotate(to: .landscapeLeft)
+
+        // «Готово»: the recipe stays expanded with the list hidden, the name and steps saved.
+        doneButton.tap()
+        XCTAssertTrue(expandButton(reading: Self.collapse).waitForExistence(timeout: Wait.element), "After «Готово» the recipe is not expanded (no «Свернуть»)")
+        XCTAssertFalse(listOnScreen, "«Готово» brought the list back")
+        XCTAssertTrue(recipeTitle(name).waitForExistence(timeout: Wait.element), "The title «\(name)» was not saved")
+        XCTAssertTrue(stepsText("Dough").waitForExistence(timeout: Wait.element), "The steps text was not saved")
+        capture("edit-landscape-done")
+
+        tapExpand(expecting: Self.expand)
+        XCTAssertTrue(waitUntil { self.listOnScreen }, "«Свернуть» did not bring the list back")
+
+        // The sidebar beside the content: edit hides it too, «Готово» keeps it hidden,
+        // «Свернуть» shows it again.
+        showSidebar()
+        XCTAssertTrue(waitUntil { self.listOnScreen }, "No list column beside the sidebar")
+        recipeListPage.tapAddRecipe()
+        XCTAssertTrue(doneButton.waitForExistence(timeout: Wait.syncRoundTrip), "«+» beside the sidebar did not open a new recipe for editing")
+        XCTAssertTrue(waitUntil { !self.sidebarShown }, "Edit kept the sidebar beside the recipe")
+        assertListGone(row)
+        awaitTwoColumns()
+        assertEditLayout("from the sidebar")
+        capture("edit-landscape-from-sidebar")
+
+        doneButton.tap()
+        XCTAssertTrue(expandButton(reading: Self.collapse).waitForExistence(timeout: Wait.element), "After «Готово» the recipe is not expanded (no «Свернуть»)")
+        XCTAssertFalse(sidebarShown, "«Готово» brought the sidebar back")
+        tapExpand(expecting: Self.expand)
+        XCTAssertTrue(waitUntil { self.sidebarShown }, "«Свернуть» did not bring the sidebar back")
+        XCTAssertTrue(waitUntil { self.listOnScreen }, "«Свернуть» did not bring the list back")
+    }
+
+    /// FR-018, T043: a size class change mid-edit keeps the edit, the text typed so far and
+    /// the focus. `-DebugCompactInPortrait=1` makes portrait a compact ½ window, so each
+    /// rotation rebuilds the recipe — in the phone stack, then back in the split.
+    func testEditSurvivesSizeClassChange() {
+        awaitRows()
+        recipeListPage.tapAddRecipe()
+        XCTAssertTrue(doneButton.waitForExistence(timeout: Wait.syncRoundTrip), "«+» did not open a new recipe for editing")
+        awaitTwoColumns()
+
+        // The title is saved when it loses focus: the typed text lives only in the field.
+        typeIntoTitle(" Pie")
+        let typed = titleText
+        rotate(to: .portrait)
+        XCTAssertTrue(waitUntil { !self.rightColumn.exists }, "The compact window kept two columns")
+        XCTAssertTrue(doneButton.waitForExistence(timeout: Wait.element), "The compact window left edit")
+        XCTAssertTrue(waitUntil { self.titleText == typed }, "The compact window lost the title text: «\(titleText)», expected «\(typed)»")
+        XCTAssertTrue(waitUntil { self.titleHasFocus }, "The compact window lost the title focus")
+        capture("edit-compact-title")
+        titleField.typeText(" Two")
+
+        rotate(to: .landscapeLeft)
+        awaitTwoColumns()
+        XCTAssertTrue(doneButton.exists, "Back in the split the recipe left edit")
+        XCTAssertTrue(waitUntil { self.titleText == typed + " Two" }, "The split lost the title text: «\(titleText)»")
+        XCTAssertTrue(waitUntil { self.titleHasFocus }, "The split lost the title focus")
+
+        // The steps editor: the caret comes back where it was.
+        focusSteps()
+        app.typeText("Dough")
+        rotate(to: .portrait)
+        XCTAssertTrue(waitUntil(timeout: Wait.firstPaint) { self.formattingBar.exists }, "The compact window lost the steps focus")
+        app.typeText(" mix")
+        rotate(to: .landscapeLeft)
+        awaitTwoColumns()
+        assertFormattingBarUnderSteps("back in the split")
+        app.typeText(" well")
+        capture("edit-split-steps")
+
+        doneButton.tap()
+        XCTAssertTrue(expandButton(reading: Self.collapse).waitForExistence(timeout: Wait.element), "After «Готово» the recipe is not expanded (no «Свернуть»)")
+        XCTAssertTrue(recipeTitle(typed + " Two").waitForExistence(timeout: Wait.element), "The title was not saved")
+        XCTAssertTrue(stepsText("Dough mix well").waitForExistence(timeout: Wait.element), "The steps lost text across the rebuilds")
+    }
+
     // MARK: - Helpers
 
     private static let expand = ["Развернуть", "Expand"]
@@ -730,6 +847,103 @@ final class IPadRecipesSpec: BaseTestCase {
         XCTAssertTrue(topBarToggle.waitForExistence(timeout: Wait.firstPaint), "No sidebar toggle in the top bar", file: file, line: line)
         topBarToggle.tap()
         XCTAssertTrue(waitUntil { self.sidebarShown }, "Sidebar did not show", file: file, line: line)
+    }
+
+    // MARK: Edit helpers
+
+    private var doneButton: XCUIElement { app.buttons.matching(identifier: UIA.recipeDetailDone).firstMatch }
+    private var titleField: XCUIElement { element(UIA.recipeTitleField) }
+    private var titleText: String { titleField.value as? String ?? "" }
+    private var titleHasFocus: Bool { (titleField.value(forKey: "hasKeyboardFocus") as? Bool) ?? false }
+    /// The steps editor (a web view); in two columns it is in the right one.
+    private var stepsEditor: XCUIElement {
+        rightColumn.exists ? rightColumn.webViews.firstMatch : app.webViews.firstMatch
+    }
+    private var formattingBar: XCUIElement { element("description_formatting_bar") }
+
+    private func stepsText(_ text: String) -> XCUIElement {
+        app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+    }
+
+    /// Edit in two columns: the title and servings on the left, the steps editor on the
+    /// right; the bar keeps only «Готово» (no «…», no expand button, no ✦).
+    private func assertEditLayout(_ state: String, file: StaticString = #filePath, line: UInt = #line) {
+        let left = leftColumn.frame
+        XCTAssertTrue(titleField.waitForExistence(timeout: Wait.element), "No title field (\(state))", file: file, line: line)
+        XCTAssertTrue(
+            (left.minX...left.maxX).contains(titleField.frame.midX),
+            "The title \(titleField.frame) is not in the left column \(left) (\(state))",
+            file: file,
+            line: line
+        )
+        let servings = recipeDetailPage.servingsRow.firstMatch
+        XCTAssertTrue(servings.waitForExistence(timeout: Wait.element), "No servings row (\(state))", file: file, line: line)
+        XCTAssertTrue(
+            (left.minX...left.maxX).contains(servings.frame.midX),
+            "The servings row \(servings.frame) is not in the left column \(left) (\(state))",
+            file: file,
+            line: line
+        )
+        XCTAssertTrue(stepsEditor.waitForExistence(timeout: Wait.firstPaint), "No steps editor in the right column (\(state))", file: file, line: line)
+        XCTAssertGreaterThanOrEqual(
+            stepsEditor.frame.minX,
+            left.maxX,
+            "The steps editor \(stepsEditor.frame) is not right of the left column \(left) (\(state))",
+            file: file,
+            line: line
+        )
+        XCTAssertFalse(expandButton.exists, "«Развернуть» on the bar in edit (\(state))", file: file, line: line)
+        XCTAssertFalse(app.buttons.matching(identifier: UIA.recipeDetailMenu).firstMatch.exists, "«…» on the bar in edit (\(state))", file: file, line: line)
+        XCTAssertFalse(element(UIA.ipadAssistantToolbarButton).exists, "✦ on the bar in edit (\(state))", file: file, line: line)
+    }
+
+    /// Appends `text` to the title; «+» focuses the title, a tap brings the focus back.
+    private func typeIntoTitle(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(titleField.waitForExistence(timeout: Wait.element), "No title field", file: file, line: line)
+        if !waitUntil(timeout: 3, { self.titleHasFocus }) {
+            titleField.tap()
+        }
+        XCTAssertTrue(waitUntil { self.titleHasFocus }, "The title field has no focus", file: file, line: line)
+        titleField.typeText(text)
+        XCTAssertTrue(waitUntil { self.titleText.hasSuffix(text) }, "The title reads «\(titleText)»", file: file, line: line)
+    }
+
+    /// A tap at the top of the steps editor: the caret goes in and the formatting bar shows.
+    private func focusSteps(file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(stepsEditor.waitForExistence(timeout: Wait.firstPaint), "No steps editor", file: file, line: line)
+        // After the title had the keyboard, the first tap on the steps editor does not
+        // focus it under XCTest, on the iPhone recipe screen as well: tap again once.
+        stepsEditor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        if !formattingBar.waitForExistence(timeout: 3) {
+            stepsEditor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+        XCTAssertTrue(formattingBar.waitForExistence(timeout: Wait.element), "A tap on the steps did not bring the formatting bar", file: file, line: line)
+    }
+
+    /// The formatting bar is under the steps column (not across the left one) and above the
+    /// software keyboard.
+    private func assertFormattingBarUnderSteps(_ state: String, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(formattingBar.waitForExistence(timeout: Wait.element), "No formatting bar (\(state))", file: file, line: line)
+        awaitTwoColumns(file: file, line: line)
+        let bar = formattingBar.frame
+        let steps = rightColumn.frame
+        XCTAssertGreaterThanOrEqual(bar.minX, steps.minX - 1, "The formatting bar \(bar) starts left of the steps column \(steps) (\(state))", file: file, line: line)
+        XCTAssertLessThanOrEqual(bar.maxX, steps.maxX + 1, "The formatting bar \(bar) ends right of the steps column \(steps) (\(state))", file: file, line: line)
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertTrue(keyboard.waitForExistence(timeout: Wait.element), "No software keyboard (\(state))", file: file, line: line)
+        // The bar's material reaches under the keyboard (the background fills the safe
+        // area), so its frame does too: the buttons are what must stay above the keyboard.
+        let buttons = formattingBar.buttons
+        XCTAssertTrue(
+            waitUntil {
+                let top = keyboard.frame.minY
+                let frames = buttons.allElementsBoundByIndex.map(\.frame)
+                return !frames.isEmpty && frames.allSatisfy { $0.maxY <= top + 1 }
+            },
+            "The formatting bar buttons \(buttons.allElementsBoundByIndex.map(\.frame)) are under the keyboard \(keyboard.frame) (\(state))",
+            file: file,
+            line: line
+        )
     }
 
     private func capture(_ name: String) {
