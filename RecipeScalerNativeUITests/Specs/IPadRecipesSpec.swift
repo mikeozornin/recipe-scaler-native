@@ -284,6 +284,27 @@ final class IPadRecipesSpec: BaseTestCase {
         XCTAssertTrue(leftColumn.exists, "Search closed the open recipe")
     }
 
+    /// The software keyboard shortens the content, not the layout: in portrait the list keeps
+    /// half the width beside the recipe (a keyboard-short 834×700 frame used to read as
+    /// landscape and squeeze the list to a third, 320 pt), and landscape keeps its third.
+    func testKeyboardKeepsTheSplit() {
+        awaitRows()
+        rotate(to: .portrait)
+        XCTAssertTrue(waitUntil { self.listOnScreen }, "No list column in portrait")
+        assertListWidth(third: false)
+        let portraitWidth = listColumn.frame.width
+
+        raiseKeyboard()
+        assertListKeeps(portraitWidth, "portrait")
+        capture("recipes-portrait-keyboard")
+
+        rotate(to: .landscapeLeft)
+        assertListWidth(third: true)
+        let landscapeWidth = listColumn.frame.width
+        raiseKeyboard()
+        assertListKeeps(landscapeWidth, "landscape")
+    }
+
     // MARK: - Divider
 
     /// FR-012a: the divider stops at 320 and 480; the width survives a relaunch.
@@ -459,6 +480,45 @@ final class IPadRecipesSpec: BaseTestCase {
             thenDragTo: start.withOffset(CGVector(dx: dx, dy: 0)),
             withVelocity: .slow,
             thenHoldForDuration: 0.2
+        )
+    }
+
+    /// A tap on the column search brings up the software keyboard (the simulator runs with
+    /// the hardware keyboard disconnected).
+    private func raiseKeyboard(file: StaticString = #filePath, line: UInt = #line) {
+        let keyboard = app.keyboards.firstMatch
+        if keyboard.exists { return }
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: Wait.element), "No search field in the list column", file: file, line: line)
+        field.tap()
+        XCTAssertTrue(
+            keyboard.waitForExistence(timeout: Wait.element),
+            "No software keyboard after a tap on the search (is a hardware keyboard connected to the simulator?)",
+            file: file,
+            line: line
+        )
+    }
+
+    /// With the keyboard up the list column keeps `width` (±1 pt) and the recipe stays beside
+    /// it, sampled through the keyboard animation and the relayout after it.
+    private func assertListKeeps(_ width: CGFloat, _ state: String, file: StaticString = #filePath, line: UInt = #line) {
+        let end = Date().addingTimeInterval(2.5)
+        repeat {
+            let now = listColumn.frame
+            guard listOnScreen, abs(now.width - width) <= 1 else {
+                XCTFail("With the keyboard (\(state)) the list column is \(now), expected \(width) pt wide", file: file, line: line)
+                return
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        } while Date() < end
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "The keyboard went away (\(state))", file: file, line: line)
+        XCTAssertTrue(expandButton.exists, "No «Развернуть» with the keyboard (\(state)): the list is not beside the recipe", file: file, line: line)
+        XCTAssertGreaterThan(
+            expandButton.frame.minX,
+            listColumn.frame.maxX,
+            "«Развернуть» is not in the recipe panel with the keyboard (\(state))",
+            file: file,
+            line: line
         )
     }
 

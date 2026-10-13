@@ -133,6 +133,8 @@ enum IPadLayoutPolicy {
     /// List column width, without its divider: half of the content in portrait (taller
     /// than wide), a third in landscape, never under 320. With the sidebar beside the
     /// content the rule applies to what is left of the window.
+    /// `contentHeight` is the height without the software keyboard
+    /// (`contentHeightIgnoringKeyboard`): the keyboard never turns portrait into landscape.
     static func listColumnWidth(contentWidth: CGFloat, contentHeight: CGFloat) -> CGFloat {
         let isPortrait = contentHeight > contentWidth
         let share = isPortrait ? IPadLayoutMetrics.listShareInPortrait : IPadLayoutMetrics.listShareInLandscape
@@ -191,6 +193,18 @@ enum IPadLayoutPolicy {
             showsExpandButton: splitFits && !isEditing && !assistantBesideRecipe,
             shopVkusvillIconOnly: contentWidth < IPadLayoutMetrics.shopLabeledMinContent
         )
+    }
+
+    /// The height that decides portrait or landscape. A view laid out inside the keyboard
+    /// safe area gets shorter while the keyboard is up (portrait 834 × 1100 becomes
+    /// 834 × 700), so the content is measured once more ignoring the keyboard
+    /// (`withoutKeyboard`). The keyboard changes only the height: a measurement of
+    /// another width is from before a rotation or resize and is not used.
+    static func contentHeightIgnoringKeyboard(current: CGSize, withoutKeyboard: CGSize?) -> CGFloat {
+        guard let withoutKeyboard, abs(withoutKeyboard.width - current.width) < 0.5 else {
+            return current.height
+        }
+        return max(current.height, withoutKeyboard.height)
     }
 
     /// The list column fits beside a recipe of at least 320.

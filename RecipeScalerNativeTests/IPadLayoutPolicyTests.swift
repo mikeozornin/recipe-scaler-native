@@ -58,6 +58,57 @@ final class IPadLayoutPolicyTests: XCTestCase {
         XCTAssertTrue(portrait.showsExpandButton)
     }
 
+    // MARK: - The keyboard does not change the orientation (device fix 2026-10-13)
+
+    /// Portrait 11": the split is 834 × 1100 and the keyboard leaves 834 × 700 — taller
+    /// than wide no more. The height without the keyboard keeps the list at half.
+    func testKeyboardInPortraitKeepsTheListAtHalf() {
+        let withoutKeyboard = CGSize(width: 834, height: 1100)
+        let keyboardUp = CGSize(width: 834, height: 700)
+        let height = IPadLayoutPolicy.contentHeightIgnoringKeyboard(current: keyboardUp, withoutKeyboard: withoutKeyboard)
+        XCTAssertEqual(height, 1100)
+        let resolved = layout(keyboardUp.width, height: height)
+        XCTAssertEqual(resolved.listWidth, 417, "The keyboard turned portrait into landscape")
+        XCTAssertTrue(resolved.listShown)
+        XCTAssertEqual(resolved.detailWidth, 416)
+        XCTAssertFalse(resolved.twoColumns)
+        // What the bug did: the keyboard-high height alone gives the landscape third.
+        XCTAssertEqual(layout(834, height: 700).listWidth, 320)
+    }
+
+    func testKeyboardInLandscapeKeepsTheThird() {
+        let height = IPadLayoutPolicy.contentHeightIgnoringKeyboard(
+            current: CGSize(width: 1210, height: 420),
+            withoutKeyboard: CGSize(width: 1210, height: 760)
+        )
+        XCTAssertEqual(height, 760)
+        let resolved = layout(1210, height: height)
+        XCTAssertEqual(resolved.listWidth, 403)
+        XCTAssertTrue(resolved.twoColumns)
+    }
+
+    /// A measurement of another width is from before a rotation: the current height decides.
+    func testStaleMeasurementAfterRotationIsIgnored() {
+        let height = IPadLayoutPolicy.contentHeightIgnoringKeyboard(
+            current: CGSize(width: 1210, height: 760),
+            withoutKeyboard: CGSize(width: 834, height: 1100)
+        )
+        XCTAssertEqual(height, 760)
+        XCTAssertEqual(layout(1210, height: height).listWidth, 403)
+        XCTAssertEqual(
+            IPadLayoutPolicy.contentHeightIgnoringKeyboard(current: CGSize(width: 834, height: 1100), withoutKeyboard: nil),
+            1100
+        )
+        // Never shorter than what is on screen.
+        XCTAssertEqual(
+            IPadLayoutPolicy.contentHeightIgnoringKeyboard(
+                current: CGSize(width: 834, height: 1100),
+                withoutKeyboard: CGSize(width: 834, height: 900)
+            ),
+            1100
+        )
+    }
+
     func testLandscapeGivesTheRecipeTwoThirdsAndTwoColumns() {
         let landscape = layout(1210)
         XCTAssertTrue(landscape.listShown)

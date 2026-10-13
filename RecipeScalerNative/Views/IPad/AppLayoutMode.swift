@@ -62,6 +62,8 @@ extension View {
 private struct DebugWindowWidthModifier: ViewModifier {
     let width: CGFloat?
     let compactInPortrait: Bool
+    /// The root with the keyboard hidden: typing in portrait keeps it portrait.
+    @State private var sizeWithoutKeyboard: CGSize?
 
     func body(content: Content) -> some View {
         #if DEBUG
@@ -75,11 +77,20 @@ private struct DebugWindowWidthModifier: ViewModifier {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         } else if compactInPortrait {
             GeometryReader { proxy in
-                let isPortrait = proxy.size.height > proxy.size.width
+                let height = IPadLayoutPolicy.contentHeightIgnoringKeyboard(
+                    current: proxy.size,
+                    withoutKeyboard: sizeWithoutKeyboard
+                )
+                let isPortrait = height > proxy.size.width
                 content
                     .environment(\.horizontalSizeClass, isPortrait ? .compact : .regular)
                     .frame(width: isPortrait ? 402 : nil)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            }
+            .background {
+                Color.clear
+                    .onGeometryChange(for: CGSize.self) { $0.size } action: { sizeWithoutKeyboard = $0 }
+                    .ignoresSafeArea(.keyboard)
             }
         } else {
             content
