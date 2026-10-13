@@ -56,6 +56,14 @@ final class IPadRecipeEditSession {
         owners.append(owner)
     }
 
+    /// Whether a recipe view may take up this edit. A view editing with another view model
+    /// has an edit of its own. A view out of edit that holds this view model has just left
+    /// it with «Готово»: the session ends a moment later (`syncIPadEditSession`), and a
+    /// recipe update in between must not put the view back in edit.
+    func admits(viewModel: RecipeEditViewModel?, viewEditing: Bool) -> Bool {
+        (viewModel === self.viewModel) == viewEditing
+    }
+
     /// The view left the screen while the edit goes on (it is being rebuilt elsewhere,
     /// or the user switched tabs).
     func release(owner: UUID) {
@@ -164,9 +172,10 @@ extension YDocRecipeDetailView {
     /// steps caret. `true` when this view is in that edit.
     @discardableResult
     func adoptIPadEditSessionIfNeeded() -> Bool {
-        guard let session = iPadEditSession else { return false }
+        guard let session = iPadEditSession,
+              session.admits(viewModel: editViewModel, viewEditing: isEditing)
+        else { return false }
         if isEditing {
-            guard editViewModel === session.viewModel else { return false }
             // Back from another tab: the same view.
             session.adopt(owner: editOwnerToken)
             return true

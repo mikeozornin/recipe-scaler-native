@@ -768,6 +768,21 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertNil(session.owner)
     }
 
+    /// T043: which recipe views take up the edit. A view that has just left it with
+    /// «Готово» (its view model, out of edit) does not take it up again on a recipe update
+    /// before the session ends.
+    func testEditSessionAdmitsOnlyAViewThatCanBeInIt() throws {
+        let (_, _, sync) = try makeCoordinator()
+        let session = makeEditSession(sync)
+        let ownEdit = RecipeEditViewModel(recipe: makeEditableRecipe(id: "r1"), syncService: sync)
+
+        XCTAssertTrue(session.admits(viewModel: nil, viewEditing: false), "A new view adopts")
+        XCTAssertTrue(session.admits(viewModel: ownEdit, viewEditing: false), "A new view with its reading model adopts")
+        XCTAssertTrue(session.admits(viewModel: session.viewModel, viewEditing: true), "Back from another tab")
+        XCTAssertFalse(session.admits(viewModel: session.viewModel, viewEditing: false), "Just left with «Готово»")
+        XCTAssertFalse(session.admits(viewModel: ownEdit, viewEditing: true), "An edit of its own")
+    }
+
     private func recipeRoute(_ recipeId: String) -> RecipesRoute {
         .recipe(recipeId: recipeId, folderContext: nil)
     }
