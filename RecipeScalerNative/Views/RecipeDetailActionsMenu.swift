@@ -20,8 +20,10 @@ struct RecipeDetailActionsMenu: View {
     /// on the phone. Passed in: the bar item may get a fallback environment (`.phone`).
     var layoutMode: AppLayoutMode = .phone
 
-    @State private var recipePendingDelete = false
-    @State private var showingAssignSheet = false
+    /// The delete confirmation and «В коллекцию» of this menu, owned by the recipe view so
+    /// the iPad menu bar (⌘⌫, «В коллекцию…», spec 081 US6) opens the same ones.
+    @Binding var recipePendingDelete: Bool
+    @Binding var showingAssignSheet: Bool
 
     var body: some View {
         Menu {
@@ -33,7 +35,13 @@ struct RecipeDetailActionsMenu: View {
                 }
 
                 Button {
-                    Task { await togglePin() }
+                    Task {
+                        await RecipeDetailMenuActions.togglePin(
+                            recipeId: recipeId,
+                            isPinned: isPinned,
+                            syncService: syncService
+                        )
+                    }
                 } label: {
                     AppLabel.make(
                         isPinned ? "recipe.list.unpin" : "recipe.list.pin",
@@ -42,7 +50,14 @@ struct RecipeDetailActionsMenu: View {
                 }
 
                 Button {
-                    Task { await addAllToShopping() }
+                    Task {
+                        await RecipeDetailMenuActions.addAllToShopping(
+                            recipeId: recipeId,
+                            recipeName: recipeName,
+                            ingredients: ingredients,
+                            syncService: syncService
+                        )
+                    }
                 } label: {
                     AppLabel.make("shopping.detail-add-all", symbol: "cart.badge.plus")
                 }
@@ -80,7 +95,7 @@ struct RecipeDetailActionsMenu: View {
             isPresented: $recipePendingDelete
         ) {
             Button(Bundle.currentLocalizedString("recipe.list.delete.confirm.action"), role: .destructive) {
-                Task { await deleteRecipe() }
+                Task { await RecipeDetailMenuActions.delete(recipeId: recipeId, syncService: syncService) }
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailDeleteConfirm)
             Button(Bundle.currentLocalizedString("recipe.list.delete.confirm.cancel"), role: .cancel) { }
@@ -94,8 +109,17 @@ struct RecipeDetailActionsMenu: View {
             )
         }
     }
+}
 
-    private func addAllToShopping() async {
+/// The actions of the recipe «…» menu, shared with the iPad menu bar (spec 081, US6).
+@MainActor
+enum RecipeDetailMenuActions {
+    static func addAllToShopping(
+        recipeId: String,
+        recipeName: String,
+        ingredients: [IngredientData],
+        syncService: YjsSyncService
+    ) async {
         let items = ShoppingListFromRecipe.makeItems(
             recipeId: recipeId,
             recipeName: recipeName,
@@ -103,7 +127,7 @@ struct RecipeDetailActionsMenu: View {
             ingredientIds: nil
         )
         guard !items.isEmpty else {
-            postShoppingMessage(Bundle.currentLocalizedString("shopping.no-items-to-add"))
+            ShoppingFeedback.postStatus(Bundle.currentLocalizedString("shopping.no-items-to-add"))
             return
         }
         do {
@@ -113,29 +137,25 @@ struct RecipeDetailActionsMenu: View {
                 ingredients: ingredients,
                 selectedIngredientIds: nil
             )
-            postShoppingMessage(ShoppingAddFeedback.message(for: items.count))
+            ShoppingFeedback.postStatus(ShoppingAddFeedback.message(for: items.count))
         } catch {
-            postShoppingMessage(UserFacingAPIError.message(for: error))
+            ShoppingFeedback.postStatus(UserFacingAPIError.message(for: error))
         }
     }
 
-    private func postShoppingMessage(_ message: String) {
-        ShoppingFeedback.postStatus(message)
-    }
-
-    private func togglePin() async {
+    static func togglePin(recipeId: String, isPinned: Bool, syncService: YjsSyncService) async {
         do {
             try await syncService.setRecipePinned(recipeId: recipeId, isPinned: !isPinned)
         } catch {
-            postShoppingMessage(UserFacingAPIError.message(for: error))
+            ShoppingFeedback.postStatus(UserFacingAPIError.message(for: error))
         }
     }
 
-    private func deleteRecipe() async {
+    static func delete(recipeId: String, syncService: YjsSyncService) async {
         do {
             try await syncService.deleteRecipeFromCollection(recipeId: recipeId)
         } catch {
-            postShoppingMessage(UserFacingAPIError.message(for: error))
+            ShoppingFeedback.postStatus(UserFacingAPIError.message(for: error))
         }
     }
 }

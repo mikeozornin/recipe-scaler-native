@@ -363,6 +363,62 @@ struct AppShellView: View {
                 \.featureAdoptionAppCta,
                 makeFeatureAdoptionAppCtaHandler()
             )
+            // Spec 081 (US6): the menu bar and its shortcuts, iPad only.
+            .focusedSceneValue(\.appCommands, appCommandActions)
+    }
+
+    // MARK: - iPad menu bar (spec 081, US6, T045)
+
+    /// The «Файл» and «Вид» commands; `nil` on the iPhone, which gets no new shortcuts.
+    /// Each is the path of the phone's own button.
+    private var appCommandActions: AppCommandActions? {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { return nil }
+        let isEditingRecipe = coordinator.recipeEdit != nil
+        var newCollection: (() -> Void)?
+        if #available(iOS 26.2, *) {
+            newCollection = { coordinator.requestNewCollection() }
+        }
+        var focusSearch: (() -> Void)?
+        if #available(iOS 18.0, *), !isEditingRecipe {
+            focusSearch = { focusRecipeSearchFromKeyboard() }
+        }
+        return AppCommandActions(
+            selectTab: { coordinator.selectTabFromKeyboard($0) },
+            toggleAssistant: { toggleAssistantFromKeyboard() },
+            newRecipe: isEditingRecipe ? nil : { Task { await coordinator.createRecipeFromKeyboard() } },
+            importRecipe: { coordinator.presentImport() },
+            newCollection: newCollection,
+            focusSearch: focusSearch
+        )
+    }
+
+    /// ⌘J: the «Ассистент» tab — it opens the assistant and, in a wide window, closes the
+    /// panel. The sheet of a narrow window closes as its swipe down would.
+    private func toggleAssistantFromKeyboard() {
+        coordinator.isProfileSheetPresented = false
+        if showAssistant, layoutMode != .padRegular {
+            closeAssistantPanel()
+            return
+        }
+        coordinator.handleTabSelection(.assistant)
+    }
+
+    /// ⌘F: «Рецепты» with the focus in the search field of the list on screen. In a wide
+    /// window the list comes back first: the recipe collapses («Свернуть») and a panel
+    /// that hides the list beside an open recipe (FR-022) closes.
+    private func focusRecipeSearchFromKeyboard() {
+        if layoutMode == .padRegular {
+            if coordinator.recipeDetailExpanded {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    coordinator.setRecipeDetailExpanded(false, isPadRegular: true)
+                }
+            }
+            if showsAssistantPanel,
+               RecipesSelection.selection(from: coordinator.recipesPath).recipeId != nil {
+                closeAssistantPanel()
+            }
+        }
+        coordinator.requestRecipeSearchFocus()
     }
 
     /// `body` split: SwiftUI type-checker chokes on the full modifier chain

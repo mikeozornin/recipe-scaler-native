@@ -277,6 +277,7 @@ struct RecipeListView: View {
             placement: column == nil ? .automatic : .navigationBarDrawer(displayMode: .always),
             prompt: Text("search.recipes")
         )
+        .iPadRecipeSearchFocus(coordinator: coordinator, popToList: popToListForSearch)
         .onAppear {
             searchStore.bind(syncService: syncService)
             if column != nil, !searchQuery.wrappedValue.isEmpty {
@@ -525,6 +526,14 @@ struct RecipeListView: View {
         } catch {
             presentedAlert = .error(UserFacingAPIError.message(for: error))
         }
+    }
+
+    /// ⌘F on the phone stack (iPad, US6): back to the list, whose search field is the one.
+    private func popToListForSearch() -> Bool {
+        guard column == nil, !navigationPath.isEmpty else { return false }
+        coordinator.cancelRecipesStackRestore()
+        navigationPath = []
+        return true
     }
 
     private func handleCreateRecipe(folderId: String?) async {

@@ -53,6 +53,7 @@ struct ServingsStepperView: View {
                 .appHeadline()
                 .foregroundStyle(accentColor)
                 .frame(minWidth: 32)
+                .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailServingsValue)
 
             Button(action: onIncrement) {
                 AppSymbol.image("plus")

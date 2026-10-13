@@ -177,6 +177,10 @@ struct IPadAdaptiveTabView: View {
             }
             .disabled(NewCollectionCommit.name(from: newCollectionName) == nil || isSavingCollection)
         }
+        .onChange(of: coordinator.newCollectionRequestEpoch) { _, _ in
+            // ⇧⌘N (US6): the alert of the sidebar «+», in any window size.
+            presentNewCollectionAlert()
+        }
         .task {
             await applyLaunchSidebarVisibility()
         }

@@ -169,6 +169,8 @@ enum AccessibilityIdentifiers {
     static let recipeDetailMenuAddAllToShopping = "recipe_detail_menu_add_all_to_shopping"
     static let recipeDetailMenuDelete = "recipe_detail_menu_delete"
     static let recipeDetailDeleteConfirm = "recipe_detail_delete_confirm"
+    /// The servings value of the view-mode stepper (spec 081, US6: ⌘+ / ⌘− / ⌘0).
+    static let recipeDetailServingsValue = "recipe_detail_servings_value"
     static let ingredientSwipeAddToShopping = "ingredient_swipe_add_to_shopping"
     static let importSubmitButton = "import_submit_button"
     static let clipboardImportBanner = "clipboard-import-banner"

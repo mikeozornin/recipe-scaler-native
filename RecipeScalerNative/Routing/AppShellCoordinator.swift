@@ -144,6 +144,19 @@ final class AppShellCoordinator {
     /// reloads the name and avatar that may have changed in the sheet.
     private(set) var profileSheetRevision = 0
 
+    /// Spec 081 (US6) — ⇧⌘N: bumped to ask the iPad shell for its «Новая коллекция» alert.
+    private(set) var newCollectionRequestEpoch = 0
+
+    /// Spec 081 (US6) — ⌘F: the recipe list on screen takes the search focus
+    /// (`consumeRecipeSearchFocusRequest`). Bumped with each request.
+    private(set) var recipeSearchFocusRequestEpoch = 0
+
+    /// When the last ⌘F was pressed; a list that appears long after it does not take it.
+    @ObservationIgnored private var recipeSearchFocusRequestedAt: Date?
+
+    /// ⌘N is creating a recipe: a second ⌘N waits, as the list «+» does.
+    @ObservationIgnored private var isCreatingRecipeFromMenu = false
+
     /// Spec 081 (plan.md Р2a) — the section the profile sheet returns to when «Профиль»
     /// gets selected in a wide window (FR-004b). Real sections only.
     private(set) var lastNonProfileTab: AppTab = .recipes
@@ -242,6 +255,72 @@ final class AppShellCoordinator {
             selectedTab = newTab
         }
     }
+
+    // MARK: - iPad keyboard and menu bar (spec 081, US6)
+
+    /// ⌘1–⌘4: the section, as a tab tap in the sidebar or tab bar, except that the current
+    /// section is not popped to its root. «Профиль» in a wide window becomes the sheet
+    /// (`IPadProfileSheetModifier`); with that sheet up another section closes it.
+    func selectTabFromKeyboard(_ tab: AppTab) {
+        if isProfileSheetPresented {
+            guard tab != .profile else { return }
+            isProfileSheetPresented = false
+        }
+        guard tab != selectedTab else { return }
+        selectedTab = tab
+    }
+
+    /// ⌘N: what «Новый рецепт» of the list «+» does (`RecipeListView.handleCreateRecipe`):
+    /// a new recipe opened in edit on «Рецепты», whichever list is on screen. The iPad
+    /// split makes the appended path canonical (`RecipesSelection.splitRepairedPath`).
+    func createRecipeFromKeyboard() async {
+        guard !isCreatingRecipeFromMenu else { return }
+        isCreatingRecipeFromMenu = true
+        defer { isCreatingRecipeFromMenu = false }
+        do {
+            let recipeId = try await syncService.createRecipe()
+            isProfileSheetPresented = false
+            cancelRecipesStackRestore()
+            selectedTab = .recipes
+            recipesPath.append(RecipesRoute.recipe(
+                recipeId: recipeId,
+                folderContext: nil,
+                openInEditMode: true
+            ))
+        } catch {
+            ShoppingFeedback.postStatus(
+                UserFacingAPIError.message(for: error),
+                symbolName: "exclamationmark.triangle",
+                kind: .error
+            )
+        }
+    }
+
+    /// ⇧⌘N: the «Новая коллекция» alert of the sidebar «+» (`IPadAdaptiveTabView`).
+    func requestNewCollection() {
+        isProfileSheetPresented = false
+        newCollectionRequestEpoch &+= 1
+    }
+
+    /// ⌘F: «Рецепты»; the list on screen focuses its search field
+    /// (`consumeRecipeSearchFocusRequest`).
+    func requestRecipeSearchFocus(at date: Date = .now) {
+        isProfileSheetPresented = false
+        selectedTab = .recipes
+        recipeSearchFocusRequestedAt = date
+        recipeSearchFocusRequestEpoch &+= 1
+    }
+
+    /// True once for a ⌘F pressed within `recipeSearchFocusWindow`: the list that shows up
+    /// for it (tab switch, collapse) takes the focus, a list that appears later does not.
+    func consumeRecipeSearchFocusRequest(at date: Date = .now) -> Bool {
+        guard let requestedAt = recipeSearchFocusRequestedAt else { return false }
+        recipeSearchFocusRequestedAt = nil
+        let elapsed = date.timeIntervalSince(requestedAt)
+        return elapsed >= 0 && elapsed < Self.recipeSearchFocusWindow
+    }
+
+    static let recipeSearchFocusWindow: TimeInterval = 1.5
 
     // MARK: - iPad profile sheet (spec 081, plan.md Р2a)
 

@@ -56,6 +56,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // a paired Apple Watch. No-op when WCSession is unsupported (iPad,
         // Simulator without watch).
         WatchCredentialsBridge.shared.activate()
+        // Spec 081 (US6): the iPadOS 26 menu bar has a system «Найти» group that owns ⌘F,
+        // ⌘E («Use Selection for Find») and ⌘J («Jump to Selection»), so the app's
+        // «Найти рецепт», «Изменить» and «Ассистент» never fired (UIKit logs the conflict).
+        // The app has no find-in-text, so the group goes; the rest of the menu stays.
+        if #available(iOS 26.0, *), UIDevice.current.userInterfaceIdiom == .pad {
+            let configuration = UIMainMenuSystem.Configuration()
+            configuration.findingPreference = .removed
+            UIMainMenuSystem.shared.setBuildConfiguration(configuration)
+        }
         return true
     }
 
@@ -198,6 +207,13 @@ struct RecipeScalerNativeApp: App {
                 }
         }
         .modelContainer(Self.sharedModelContainer)
+        .commands {
+            // Spec 081 (US6): «Файл», «Рецепт», «Вид» of the iPadOS menu bar and their
+            // shortcuts. The iPhone gets none, with or without a keyboard.
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                IPadMenuCommands()
+            }
+        }
     }
 
     /// Decode Spotlight tap: card itself → `.openRecipe`, action button → `.addToShopping`.

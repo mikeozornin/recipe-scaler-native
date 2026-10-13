@@ -15877,6 +15877,142 @@
         }
       }
     },
+    "ipad.menu.file.import": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import Recipe…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Импорт рецепта…"
+          }
+        }
+      }
+    },
+    "ipad.menu.file.share": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Recipe…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поделиться рецептом…"
+          }
+        }
+      }
+    },
+    "ipad.menu.recipe": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recipe"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рецепт"
+          }
+        }
+      }
+    },
+    "ipad.menu.recipe.add-to-collection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to Collection…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В коллекцию…"
+          }
+        }
+      }
+    },
+    "ipad.menu.recipe.fewer-servings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fewer Servings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Меньше порций"
+          }
+        }
+      }
+    },
+    "ipad.menu.recipe.more-servings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More Servings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Больше порций"
+          }
+        }
+      }
+    },
+    "ipad.menu.recipe.original-servings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original Servings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Исходные порции"
+          }
+        }
+      }
+    },
+    "ipad.menu.view.find-recipe": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find Recipe"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Найти рецепт"
+          }
+        }
+      }
+    },
     "ipad.recipes.collapse": {
       "extractionState": "manual",
       "localizations": {

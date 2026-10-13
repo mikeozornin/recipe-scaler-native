@@ -26,6 +26,7 @@
 		08159307D2D6DB502CB48870 /* IPadRecipesSplitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081BA99EBE429498FC8D3A7A /* IPadRecipesSplitView.swift */; };
 		081E03B49EEB7719F2F8FBC0 /* RecipeListColumn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081008E3A0A4BA757D02814D /* RecipeListColumn.swift */; };
 		0810412A2B3CDBF9AE7B44F5 /* IPadSidebarControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081F5EF87FAAC8A8E09E85E8 /* IPadSidebarControl.swift */; };
+		08114FDC3354BB233E3BE0F8 /* IPadCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081C4B5D2F458D365A361FD9 /* IPadCommands.swift */; };
 		P075S01B /* AwakeScrollAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S01A /* AwakeScrollAction.swift */; };
 		P075S02B /* AwakeHandsFreeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S02A /* AwakeHandsFreeStorage.swift */; };
 		P075S03B /* AwakeScrollEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = P075S03A /* AwakeScrollEngine.swift */; };
@@ -894,6 +895,7 @@
 		081BA99EBE429498FC8D3A7A /* IPadRecipesSplitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadRecipesSplitView.swift; sourceTree = "<group>"; };
 		081008E3A0A4BA757D02814D /* RecipeListColumn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeListColumn.swift; sourceTree = "<group>"; };
 		081F5EF87FAAC8A8E09E85E8 /* IPadSidebarControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadSidebarControl.swift; sourceTree = "<group>"; };
+		081C4B5D2F458D365A361FD9 /* IPadCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadCommands.swift; sourceTree = "<group>"; };
 		P075S01A /* AwakeScrollAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollAction.swift; sourceTree = "<group>"; };
 		P075S02A /* AwakeHandsFreeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeHandsFreeStorage.swift; sourceTree = "<group>"; };
 		P075S03A /* AwakeScrollEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwakeScrollEngine.swift; sourceTree = "<group>"; };
@@ -2782,6 +2784,7 @@
 				081BA99EBE429498FC8D3A7A /* IPadRecipesSplitView.swift */,
 				081008E3A0A4BA757D02814D /* RecipeListColumn.swift */,
 				081F5EF87FAAC8A8E09E85E8 /* IPadSidebarControl.swift */,
+				081C4B5D2F458D365A361FD9 /* IPadCommands.swift */,
 				0814E0D2483E00934194D4F1 /* AdaptivePresentation.swift */,
 				08152918E48DFC678658FC60 /* AppLayoutMode.swift */,
 				0816F0EFDB2ED67463882638 /* IPadLayoutPolicy.swift */,
@@ -3259,6 +3262,7 @@
 				08159307D2D6DB502CB48870 /* IPadRecipesSplitView.swift in Sources */,
 				081E03B49EEB7719F2F8FBC0 /* RecipeListColumn.swift in Sources */,
 				0810412A2B3CDBF9AE7B44F5 /* IPadSidebarControl.swift in Sources */,
+				08114FDC3354BB233E3BE0F8 /* IPadCommands.swift in Sources */,
 				081A346C3661632089C45D82 /* AdaptivePresentation.swift in Sources */,
 				08128BC24B81042524D0AAC9 /* RecipesSelection.swift in Sources */,
 				081AEEC5524E5337DFA2E444 /* AppLayoutMode.swift in Sources */,

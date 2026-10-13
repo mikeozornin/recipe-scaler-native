@@ -65,6 +65,12 @@ struct YDocRecipeDetailView: View {
     /// The steps caret of the view this one replaced, put back once the editor is ready.
     @State var adoptedStepsCaret: IPadRecipeEditFocus?
     @State var isScreenAwakeActive = false
+    /// «…» → «Удалить» confirmation and «В коллекцию»; the iPad menu bar opens them too
+    /// (spec 081, US6).
+    @State private var isDeleteConfirmationPresented = false
+    @State private var isCollectionAssignPresented = false
+    /// «Поделиться рецептом…» of the iPad menu bar: narrow toolbars have no share button.
+    @State private var isMenuShareSheetPresented = false
     /// Screen-scoped owner of the camera, mic, and speech session.
     /// ASYNC-LIFECYCLE §3 judgment call: logout pops this screen, so
     /// `onDisappear` → `stopIfViewRemoved()` tears the hardware down, and the
@@ -288,6 +294,8 @@ struct YDocRecipeDetailView: View {
             syncService: syncService,
             apiClient: apiClient,
             isScreenAwakeActive: $isScreenAwakeActive,
+            isDeleteConfirmationPresented: $isDeleteConfirmationPresented,
+            isCollectionAssignPresented: $isCollectionAssignPresented,
             padPanel: padPanel,
             layoutMode: layoutMode,
             onToggleEdit: { Task { await toggleEditMode() } }
@@ -479,6 +487,14 @@ struct YDocRecipeDetailView: View {
         }
         .errorAlert(title: "edit.error.title", message: $editErrorMessage)
         .errorAlert(title: "llm.parse-recipe", message: $descriptionParseError)
+        .modifier(RecipeDetailMenuBarSupport(
+            actions: recipeCommandActions,
+            isShareSheetPresented: $isMenuShareSheetPresented,
+            recipeId: recipeId,
+            recipe: recipe,
+            syncService: syncService,
+            apiClient: apiClient
+        ))
 
         .onChange(of: syncService.syncErrorMessage) { _, message in
             if let message { editErrorMessage = message }
@@ -930,6 +946,93 @@ struct YDocRecipeDetailView: View {
     }
 }
 
+// MARK: - iPad menu bar (spec 081, US6, T045)
+
+extension YDocRecipeDetailView {
+    /// The «Рецепт» menu for this recipe: the iPad only, while the view is on screen and
+    /// the recipe is loaded. Each command is a button of the screen; in an edit only
+    /// «Готово» (⌘↩) is left, as in the toolbar.
+    fileprivate var recipeCommandActions: RecipeCommandActions? {
+        guard UIDevice.current.userInterfaceIdiom == .pad, isViewInHierarchy, let recipe else { return nil }
+        let isPinned = syncService.collectionEntries.first { $0.id == recipeId }?.isPinned ?? false
+        var actions = RecipeCommandActions(isPinned: isPinned, isScreenAwake: isScreenAwakeActive)
+        guard !isEditing else {
+            if canEnterEditMode {
+                actions.finishEdit = { Task { if isEditing { await toggleEditMode() } } }
+            }
+            return actions
+        }
+        if canEnterEditMode {
+            actions.edit = { Task { if !isEditing { await toggleEditMode() } } }
+        }
+        let base = max(1, recipe.servings)
+        let current = RecipeServings.currentServings(base: base, scaleFactor: scaleFactor)
+        // The stepper's own bounds: − stops at 1, + at 99 (`ServingsStepperView`).
+        if current < 99 {
+            actions.increaseServings = { stepServings(base: base, delta: 1) }
+        }
+        if current > 1 {
+            actions.decreaseServings = { stepServings(base: base, delta: -1) }
+        }
+        if scaleFactor != 1 {
+            actions.resetServings = { resetServingsToRecipe() }
+        }
+        let service = syncService
+        let id = recipeId
+        actions.addToShopping = {
+            Task {
+                await RecipeDetailMenuActions.addAllToShopping(
+                    recipeId: id,
+                    recipeName: recipe.name,
+                    ingredients: recipe.ingredients,
+                    syncService: service
+                )
+            }
+        }
+        actions.togglePin = {
+            Task {
+                await RecipeDetailMenuActions.togglePin(recipeId: id, isPinned: isPinned, syncService: service)
+            }
+        }
+        actions.assignToCollections = { isCollectionAssignPresented = true }
+        actions.toggleScreenAwake = { isScreenAwakeActive.toggle() }
+        actions.delete = { isDeleteConfirmationPresented = true }
+        actions.share = { isMenuShareSheetPresented = true }
+        return actions
+    }
+
+    /// ⌘0: the servings the recipe was written for (scale 1).
+    private func resetServingsToRecipe() {
+        scaleFactor = 1
+        RecipeScaleStorage.saveScaleFactor(recipeId: recipeId, scaleFactor: scaleFactor)
+    }
+}
+
+/// Publishes the «Рецепт» menu and hosts the share sheet of «Поделиться рецептом…»: the
+/// share button is only in the wide toolbar.
+private struct RecipeDetailMenuBarSupport: ViewModifier {
+    let actions: RecipeCommandActions?
+    @Binding var isShareSheetPresented: Bool
+    let recipeId: String
+    let recipe: RecipeData?
+    let syncService: YjsSyncService
+    let apiClient: APIClient
+
+    func body(content: Content) -> some View {
+        content
+            .focusedSceneValue(\.recipeCommands, actions)
+            .recipeShareSheet(
+                isPresented: $isShareSheetPresented,
+                recipeId: recipeId,
+                isPublic: recipe?.isPublic ?? false,
+                hasImage: !(recipe?.imageUrl?.isEmpty ?? true),
+                hasSteps: recipe?.hasSteps ?? false,
+                syncService: syncService,
+                apiClient: apiClient
+            )
+    }
+}
+
 // Review 2026.09.04 №20 — `RecipeEditHeaderBindable`,
 // `DescriptionEditorScrollKeyboardPolicy`, `dismissPopoverOnVerticalDrag`
 // and `DescriptionEditorScrollAnchor` live in
@@ -944,6 +1047,9 @@ private struct RecipeDetailToolbarHost<Content: View>: View {
     let syncService: YjsSyncService
     let apiClient: APIClient
     @Binding var isScreenAwakeActive: Bool
+    /// The «…» delete confirmation and «В коллекцию», also opened from the iPad menu bar.
+    @Binding var isDeleteConfirmationPresented: Bool
+    @Binding var isCollectionAssignPresented: Bool
     /// Spec 081 (T026): «…», «Поделиться» (wide), «Не гасить экран», ✦, «Изменить».
     let padPanel: RecipeDetailPadPanel?
     let layoutMode: AppLayoutMode
@@ -986,7 +1092,9 @@ private struct RecipeDetailToolbarHost<Content: View>: View {
                     isEditing: false,
                     isPinned: isPinned,
                     syncService: syncService,
-                    layoutMode: layoutMode
+                    layoutMode: layoutMode,
+                    recipePendingDelete: $isDeleteConfirmationPresented,
+                    showingAssignSheet: $isCollectionAssignPresented
                 )
                 if padPanel.map({ $0.toolbarStyle == .padWide }) ?? true {
                     RecipeDetailShareButton(

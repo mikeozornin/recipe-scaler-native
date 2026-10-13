@@ -181,6 +181,7 @@ struct CollectionFolderView: View {
             placement: column == nil ? .automatic : .navigationBarDrawer(displayMode: .always),
             prompt: Text("search.recipes")
         )
+        .modifier(CollectionColumnSearchFocus(coordinator: coordinator, isColumn: column != nil))
         .onAppear {
             searchStore.bind(syncService: syncService)
             if column != nil, !searchQuery.wrappedValue.isEmpty {
@@ -775,6 +776,21 @@ private enum CollectionFolderAlert: Identifiable {
             "deleteFolder"
         case .error(let message):
             "error-\(message.hashValue)"
+        }
+    }
+}
+
+/// ⌘F (spec 081, US6) reaches a collection only as the list column of the iPad split; on
+/// the phone stack the recipe list under it takes the focus.
+private struct CollectionColumnSearchFocus: ViewModifier {
+    let coordinator: AppShellCoordinator
+    let isColumn: Bool
+
+    func body(content: Content) -> some View {
+        if isColumn {
+            content.iPadRecipeSearchFocus(coordinator: coordinator)
+        } else {
+            content
         }
     }
 }

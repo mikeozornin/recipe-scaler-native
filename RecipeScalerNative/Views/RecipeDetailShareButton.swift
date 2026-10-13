@@ -34,7 +34,31 @@ struct RecipeDetailShareButton: View {
             }
         }
         #endif
-        .sheet(isPresented: $showShare) {
+        .recipeShareSheet(
+            isPresented: $showShare,
+            recipeId: recipeId,
+            isPublic: isPublic,
+            hasImage: hasImage,
+            hasSteps: hasSteps,
+            syncService: syncService,
+            apiClient: apiClient
+        )
+    }
+}
+
+extension View {
+    /// The recipe share sheet of the share button; the iPad menu bar «Поделиться рецептом…»
+    /// opens the same one where the toolbar has no share button (spec 081, US6).
+    func recipeShareSheet(
+        isPresented: Binding<Bool>,
+        recipeId: String,
+        isPublic: Bool,
+        hasImage: Bool,
+        hasSteps: Bool,
+        syncService: YjsSyncService,
+        apiClient: APIClient
+    ) -> some View {
+        sheet(isPresented: isPresented) {
             RecipeShareSheet(
                 recipeId: recipeId,
                 initialIsPublic: isPublic,
