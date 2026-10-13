@@ -30,6 +30,8 @@ import XCTest
 final class IPadRecipesSpec: BaseTestCase {
     private var first: SeedClient.CreatedRecipe!
     private var second: SeedClient.CreatedRecipe!
+    /// `testTimersPopover` only: two running timers, seeded before launch.
+    private var timerIds: [String] = []
 
     @MainActor
     override func setUp() async throws {
@@ -66,6 +68,14 @@ final class IPadRecipesSpec: BaseTestCase {
         }
         first = seeded.0
         second = seeded.1
+        if name.contains("testTimersPopover") {
+            timerIds = try await seedOrSkip("timer events") {
+                [
+                    try await self.seedClient.startTimer(name: "Духовка", durationSec: 2530),
+                    try await self.seedClient.startTimer(name: "Соус", durationSec: 600),
+                ]
+            }
+        }
     }
 
     // MARK: - Layout
@@ -310,6 +320,60 @@ final class IPadRecipesSpec: BaseTestCase {
         )
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.95)).tap()
         XCTAssertTrue(waitUntil { !self.assignSheetTitle.exists }, "The reopened popover did not close")
+    }
+
+    /// `#recipes/timers` (T038, spike S6): a tap on the timers capsule opens the phone's
+    /// expanded panel as a 380 pt popover over the capsule, not the panel above the bar.
+    /// A tap outside, the panel's own chevron or another tap on the capsule closes it, and
+    /// the capsule stays (S6 once lost it after a popover). With the sidebar shown the
+    /// capsule moves and the popover follows it.
+    func testTimersPopover() {
+        awaitRows()
+        let capsule = timerCapsule()
+        XCTAssertTrue(capsule.waitForExistence(timeout: Wait.syncRoundTrip), "No timers capsule")
+        let popover = app.popovers.firstMatch
+        // A row's identifier reaches its play, name, time and delete elements.
+        let chips = timerIds.map { popover.descendants(matching: .any).matching(identifier: UIA.mobileTimerChip(timerId: $0)).firstMatch }
+
+        for round in 1...4 {
+            capsule.tap()
+            XCTAssertTrue(
+                chips.allSatisfy { $0.waitForExistence(timeout: Wait.element) },
+                "Round \(round): the capsule did not open the timers popover"
+            )
+            assertTimerPopover(over: capsule, "round \(round)")
+            if round == 1 { capture("recipes-timers-popover-landscape") }
+
+            switch round % 3 {
+            case 1:
+                // Outside the popover: the top of the list column.
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.2)).tap()
+            case 2:
+                // The panel's own chevron folds the phone panel; here it closes the popover.
+                popover.buttons.firstMatch.tap()
+            default:
+                // Another tap on the capsule (under the popover's dismiss region).
+                capsule.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
+            XCTAssertTrue(
+                waitUntil { !popover.exists },
+                "Round \(round): the timers popover did not close"
+            )
+            XCTAssertTrue(
+                waitUntil { capsule.exists && capsule.isHittable },
+                "Round \(round): the timers capsule is gone after the popover"
+            )
+        }
+
+        showSidebar()
+        XCTAssertTrue(waitUntil { capsule.isHittable }, "No timers capsule beside the sidebar")
+        capsule.tap()
+        XCTAssertTrue(chips[0].waitForExistence(timeout: Wait.element), "The capsule beside the sidebar did not open the popover")
+        assertTimerPopover(over: capsule, "sidebar shown")
+        capture("recipes-timers-popover-sidebar")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
+        XCTAssertTrue(waitUntil { !popover.exists }, "The timers popover beside the sidebar did not close")
+        XCTAssertTrue(waitUntil { capsule.exists && capsule.isHittable }, "The timers capsule is gone beside the sidebar")
     }
 
     // MARK: - Search
@@ -597,6 +661,34 @@ final class IPadRecipesSpec: BaseTestCase {
         // A form sheet on the iPad: a tap on the dimmed list outside it closes it.
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.95)).tap()
         XCTAssertTrue(waitUntil { !self.assignSheetTitle.exists }, "The collection sheet did not close")
+    }
+
+    /// The capsule in the tab bar accessory. The popover's panel header carries the panel
+    /// identifier, as the phone's expanded panel does.
+    private func timerCapsule() -> XCUIElement {
+        app.buttons.matching(identifier: UIA.mobileTimerPanelHeader).firstMatch
+    }
+
+    /// The popover is 380 pt wide, above the capsule and centered on it (the arrow points
+    /// down at it), and the timer rows are only in it (no expanded panel above the bar).
+    private func assertTimerPopover(over capsule: XCUIElement, _ state: String, file: StaticString = #filePath, line: UInt = #line) {
+        let popover = app.popovers.firstMatch
+        let frame = popover.frame
+        XCTAssertTrue((378...382).contains(frame.width), "\(state): the timers popover is \(frame.width) pt wide, expected 380", file: file, line: line)
+        XCTAssertLessThanOrEqual(frame.maxY, capsule.frame.minY + 1, "\(state): the popover is not above the capsule", file: file, line: line)
+        XCTAssertLessThan(
+            abs(frame.midX - capsule.frame.midX),
+            2,
+            "\(state): the popover is not centered on the capsule (\(frame) vs \(capsule.frame))",
+            file: file,
+            line: line
+        )
+        for id in timerIds {
+            let rowElements = app.descendants(matching: .any).matching(identifier: UIA.mobileTimerChip(timerId: id))
+            let inPopover = popover.descendants(matching: .any).matching(identifier: UIA.mobileTimerChip(timerId: id))
+            XCTAssertGreaterThan(inPopover.count, 0, "\(state): the popover has no row for timer \(id)", file: file, line: line)
+            XCTAssertEqual(rowElements.count, inPopover.count, "\(state): the timer row is also outside the popover", file: file, line: line)
+        }
     }
 
     private func rotate(to orientation: UIDeviceOrientation, file: StaticString = #filePath, line: UInt = #line) {
