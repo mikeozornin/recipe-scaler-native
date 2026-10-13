@@ -157,7 +157,8 @@ struct IPadRecipesSplitView: View {
             appContainer: appContainer,
             systemBannerStore: systemBannerStore,
             mobileTimerPanelIsCollapsed: mobileTimerPanelIsCollapsed,
-            scenePhase: scenePhase
+            scenePhase: scenePhase,
+            layoutMode: .padRegular
         )
     }
 
@@ -202,7 +203,8 @@ struct IPadRecipesSplitView: View {
                     systemBannerStore: systemBannerStore,
                     mobileTimerPanelIsCollapsed: mobileTimerPanelIsCollapsed,
                     scenePhase: scenePhase,
-                    column: column
+                    column: column,
+                    layoutMode: .padRegular
                 )
             }
         }
@@ -231,7 +233,8 @@ struct IPadRecipesSplitView: View {
                             detailWidth: layout.detailWidth,
                             toolbarStyle: layout.toolbarStyle,
                             assistantCoordinator: showsAssistantToolbarButton ? coordinator : nil
-                        )
+                        ),
+                        layoutMode: .padRegular
                     )
                     .id(recipeId)
                 } else {

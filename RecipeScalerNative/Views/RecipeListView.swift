@@ -17,6 +17,9 @@ struct RecipeListView: View {
     let scenePhase: ScenePhase
     /// Spec 081 (T023) — the list column of the iPad split; `nil` on the phone.
     let column: RecipeListColumn?
+    /// Spec 081 (T037) — `.padRegular` in the iPad Recipes section (column or phone stack),
+    /// passed to the pushed recipe. Injected, not read from the environment (see above).
+    let layoutMode: AppLayoutMode
     @Binding var navigationPath: [RecipesRoute]
     @State private var searchText = ""
     @State private var presentedSheet: RecipeListSheet?
@@ -49,7 +52,8 @@ struct RecipeListView: View {
         systemBannerStore: SystemBannerStore,
         mobileTimerPanelIsCollapsed: Bool = true,
         scenePhase: ScenePhase = .active,
-        column: RecipeListColumn? = nil
+        column: RecipeListColumn? = nil,
+        layoutMode: AppLayoutMode = .phone
     ) {
         _navigationPath = navigationPath
         self.syncService = syncService
@@ -62,6 +66,7 @@ struct RecipeListView: View {
         self.mobileTimerPanelIsCollapsed = mobileTimerPanelIsCollapsed
         self.scenePhase = scenePhase
         self.column = column
+        self.layoutMode = layoutMode
     }
     #if DEBUG
     @State private var didOpenDebugRecipe = false
@@ -359,7 +364,8 @@ struct RecipeListView: View {
                             navigationPath.removeLast()
                         }
                     },
-                    scenePhase: scenePhase
+                    scenePhase: scenePhase,
+                    layoutMode: layoutMode
                 )
             }
         }

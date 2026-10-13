@@ -25,6 +25,13 @@ extension View {
         modifier(IPadReadableWidthModifier(width: width))
     }
 
+    /// The popover size of `adaptivePopover` content on `.padRegular`; the phone sheet keeps
+    /// its own size. Apply inside the content. A popover sizes to the ideal size of its
+    /// content, and a `List` has none.
+    func iPadPopoverFrame(width: CGFloat, height: CGFloat) -> some View {
+        modifier(IPadPopoverFrameModifier(width: width, height: height))
+    }
+
     /// Form sheet sizing for a sheet's content on iPad, iOS 18+. Apply inside the sheet.
     ///
     /// Keyed on the idiom, which never changes while the app runs, so the sheet content
@@ -76,6 +83,26 @@ private struct IPadReadableWidthModifier: ViewModifier {
             content
                 .frame(maxWidth: isPad ? width : nil)
                 .frame(maxWidth: isPad ? .infinity : nil)
+        } else {
+            content
+        }
+    }
+}
+
+private struct IPadPopoverFrameModifier: ViewModifier {
+    @Environment(\.appLayoutMode) private var layoutMode
+
+    let width: CGFloat
+    let height: CGFloat
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        // The iPhone sheet gets the content untouched (see `IPadReadableWidthModifier`);
+        // on the iPad only the frame inputs change, so the content keeps its state when
+        // the popover becomes a sheet in a compact window (FR-018).
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            let isPad = layoutMode == .padRegular
+            content.frame(width: isPad ? width : nil, height: isPad ? height : nil)
         } else {
             content
         }

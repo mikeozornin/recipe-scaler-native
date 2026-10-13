@@ -27,6 +27,9 @@ struct YDocRecipeDetailView: View {
     /// Spec 081 — the panel of the iPad split: two columns and the iPad toolbar.
     /// `nil` on the phone and in a compact iPad window.
     var padPanel: RecipeDetailPadPanel? = nil
+    /// Spec 081 (T037) — `.padRegular` in the iPad split and its phone stack: «В коллекцию»
+    /// opens a popover. Injected, as the bar items may get a fallback environment.
+    var layoutMode: AppLayoutMode = .phone
     /// UI-only scale (web `recipe-scale:{id}` in localStorage). Not written to Y.Doc.
     @State var scaleFactor: Double = 1
     @AppStorage(NutritionSettings.globalEnabledKey) private var showNutritionGlobal = true
@@ -273,6 +276,7 @@ struct YDocRecipeDetailView: View {
             apiClient: apiClient,
             isScreenAwakeActive: $isScreenAwakeActive,
             padPanel: padPanel,
+            layoutMode: layoutMode,
             onToggleEdit: { Task { await toggleEditMode() } }
         ) {
         ScrollViewReader { scrollProxy in
@@ -904,6 +908,7 @@ private struct RecipeDetailToolbarHost<Content: View>: View {
     @Binding var isScreenAwakeActive: Bool
     /// Spec 081 (T026): «…», «Поделиться» (wide), «Не гасить экран», ✦, «Изменить».
     let padPanel: RecipeDetailPadPanel?
+    let layoutMode: AppLayoutMode
     let onToggleEdit: () -> Void
     @ViewBuilder let content: () -> Content
 
@@ -942,7 +947,8 @@ private struct RecipeDetailToolbarHost<Content: View>: View {
                     ingredients: recipe.ingredients,
                     isEditing: false,
                     isPinned: isPinned,
-                    syncService: syncService
+                    syncService: syncService,
+                    layoutMode: layoutMode
                 )
                 if padPanel.map({ $0.toolbarStyle == .padWide }) ?? true {
                     RecipeDetailShareButton(

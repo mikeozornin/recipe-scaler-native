@@ -63,6 +63,8 @@ enum IPadLayoutMetrics {
     static let formSheetVerticalInset: CGFloat = 80
     static let timersPopoverWidth: CGFloat = 380
     static let collectionsPopoverWidth: CGFloat = 300
+    /// As the history popover: room for about six collections and «Новая коллекция».
+    static let collectionsPopoverHeight: CGFloat = 420
     static let historyPopoverWidth: CGFloat = inspectorWidth - 24
     static let historyPopoverMaxHeight: CGFloat = 420
     /// Panel toolbars (system bars).

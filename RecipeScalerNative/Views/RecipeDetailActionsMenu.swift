@@ -16,6 +16,9 @@ struct RecipeDetailActionsMenu: View {
     /// injected observables (crash: `EnvironmentValues.subscript.getter` trap
     /// after dismissing the assistant sheet — fallback env has no `YjsSyncService`).
     let syncService: YjsSyncService
+    /// Spec 081 (T037): «В коллекцию» opens a popover from «…» on `.padRegular`, the sheet
+    /// on the phone. Passed in: the bar item may get a fallback environment (`.phone`).
+    var layoutMode: AppLayoutMode = .phone
 
     @State private var recipePendingDelete = false
     @State private var showingAssignSheet = false
@@ -58,13 +61,20 @@ struct RecipeDetailActionsMenu: View {
         .appToolbarIconButton()
         .accessibilityLabel("recipe.detail.more-actions")
         .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailMenu)
-        .sheet(isPresented: $showingAssignSheet) {
+        .adaptivePopover(isPresented: $showingAssignSheet) {
+            // A tap outside closes the popover; the selection is saved on close, as when
+            // the phone sheet closes (`CollectionAssignSheet.onDisappear`).
             CollectionAssignSheet(
                 recipeId: recipeId,
                 recipeName: recipeName,
                 syncService: syncService
             )
+            .iPadPopoverFrame(
+                width: IPadLayoutMetrics.collectionsPopoverWidth,
+                height: IPadLayoutMetrics.collectionsPopoverHeight
+            )
         }
+        .environment(\.appLayoutMode, layoutMode)
         .alert(
             Bundle.currentLocalizedString("recipe.list.delete.confirm.title"),
             isPresented: $recipePendingDelete
