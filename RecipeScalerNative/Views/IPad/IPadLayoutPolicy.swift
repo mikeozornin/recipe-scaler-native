@@ -97,8 +97,8 @@ struct IPadLayout: Equatable {
     let contentWidth: CGFloat
     /// Room for the list column beside the recipe; else the phone stack (push).
     let splitFits: Bool
-    /// The list column is on screen: the split fits, the recipe is not expanded and the
-    /// assistant panel does not stand beside it (FR-022).
+    /// The list column is on screen: the split fits, the recipe is neither expanded nor
+    /// edited (US5) and the assistant panel does not stand beside it (FR-022).
     let listShown: Bool
     /// List column width without its divider. Kept while the recipe is expanded (the
     /// column waits off screen); 0 for the phone stack.
@@ -108,6 +108,7 @@ struct IPadLayout: Equatable {
     let toolbarStyle: IPadDetailToolbarStyle
     /// «Развернуть» / «Свернуть» leads the recipe toolbar (the view adds: a recipe is open).
     /// Not while the assistant panel is open: the expanded state waits for it to close.
+    /// Not in edit either: the edit bar is «Готово» only (Q2).
     let showsExpandButton: Bool
     let shopVkusvillIconOnly: Bool
 }
@@ -135,6 +136,8 @@ enum IPadLayoutPolicy {
     }
 
     /// `recipeExpanded`: the user expanded the recipe over the whole content (Notes-style).
+    /// `isEditing`: the open recipe is in edit (US5); edit takes the content like the
+    /// expanded recipe (`expandsRecipeForEdit`).
     /// `toolbarBesideTabBar`: the panel toolbar shares the row of the floating top tab bar
     /// (`toolbarSharesTabBarRow`), so only the room beside the tab bar is left for it.
     /// `assistantPanelOpen`: the assistant panel stands beside the tab view (`contentWidth`
@@ -229,9 +232,24 @@ enum IPadLayoutPolicy {
 
     /// «Развернуть» closes a shown sidebar. Only one standing beside the content is
     /// remembered and comes back on «Свернуть»; a sidebar floating over the content
-    /// (portrait) is just closed.
-    static func recipeExpandSidebar(shown: Bool, overlaysContent: Bool) -> (hide: Bool, rememberHidden: Bool) {
-        (hide: shown, rememberHidden: shown && !overlaysContent)
+    /// (portrait) is just closed. `hiddenByExpand`: an earlier expand hid the sidebar and
+    /// its restore is still pending (the edit went through a compact window, T043); while
+    /// the sidebar stays hidden it is still ours to bring back.
+    static func recipeExpandSidebar(
+        shown: Bool,
+        overlaysContent: Bool,
+        hiddenByExpand: Bool
+    ) -> (hide: Bool, rememberHidden: Bool) {
+        (hide: shown, rememberHidden: (shown && !overlaysContent) || (hiddenByExpand && !shown))
+    }
+
+    /// Edit takes the whole section (US5, T041): entering it in the split expands the
+    /// recipe as «Развернуть» does, hiding the list and a sidebar beside the content, and
+    /// both come back by the expand rules: the recipe stays expanded after «Готово» and
+    /// «Свернуть» restores the list and the sidebar (`#recipes/focus`). The phone stack
+    /// (push) shows no list and has no expanded state, so edit there changes nothing.
+    static func expandsRecipeForEdit(isEditing: Bool, recipeExpanded: Bool, splitFits: Bool) -> Bool {
+        isEditing && !recipeExpanded && splitFits
     }
 
     /// The expanded recipe lasts only while the list column could stand beside it: a
@@ -243,13 +261,16 @@ enum IPadLayoutPolicy {
     /// A sidebar hidden by «Развернуть» comes back once the recipe is collapsed, but only
     /// on the Recipes section of a regular window: collapsed elsewhere (another tab, a
     /// compact window) it waits until the user is back on Recipes in a wide window.
+    /// Not while a recipe edit goes on (`recipeEditing`): back in a wide window the edit
+    /// expands the recipe again (`expandsRecipeForEdit`), so the sidebar does not flash.
     static func restoresSidebarHiddenByExpand(
         hiddenByExpand: Bool,
         recipeExpanded: Bool,
+        recipeEditing: Bool,
         recipesTabSelected: Bool,
         isPadRegular: Bool
     ) -> Bool {
-        hiddenByExpand && !recipeExpanded && recipesTabSelected && isPadRegular
+        hiddenByExpand && !recipeExpanded && !recipeEditing && recipesTabSelected && isPadRegular
     }
 
     /// The sidebar showed up while it was hidden by «Развернуть» (the user's toggle, or the

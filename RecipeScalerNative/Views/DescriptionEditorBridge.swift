@@ -48,6 +48,10 @@ struct DescriptionEditorSelectionState: Equatable {
     var canHighlight = true
     var canBulletList = true
     var canOrderedList = true
+    /// Tiptap selection positions; the iPad puts the caret back after a size class change
+    /// (spec 081, T043). `nil` from an older editor bundle.
+    var from: Int?
+    var to: Int?
 
     var canMarkTimer: Bool { hasSelection && !selectedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     var canMarkIngredient: Bool { canMarkTimer }
@@ -431,6 +435,9 @@ final class DescriptionEditorBridge {
         func string(_ key: String) -> String {
             dict[key] as? String ?? ""
         }
+        func int(_ key: String) -> Int? {
+            (dict[key] as? NSNumber)?.intValue
+        }
         return DescriptionEditorSelectionState(
             bold: bool("bold"),
             heading1: bool("heading1"),
@@ -443,7 +450,9 @@ final class DescriptionEditorBridge {
             canHeading1: dict["canHeading1"] == nil ? true : bool("canHeading1"),
             canHighlight: dict["canHighlight"] == nil ? true : bool("canHighlight"),
             canBulletList: dict["canBulletList"] == nil ? true : bool("canBulletList"),
-            canOrderedList: dict["canOrderedList"] == nil ? true : bool("canOrderedList")
+            canOrderedList: dict["canOrderedList"] == nil ? true : bool("canOrderedList"),
+            from: int("from"),
+            to: int("to")
         )
     }
 

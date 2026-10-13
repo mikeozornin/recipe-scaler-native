@@ -30,6 +30,10 @@ struct YDocRecipeDetailView: View {
     /// Spec 081 (T037) — `.padRegular` in the iPad split and its phone stack: «В коллекцию»
     /// opens a popover. Injected, as the bar items may get a fallback environment.
     var layoutMode: AppLayoutMode = .phone
+    /// Spec 081 (US5, T043) — keeps an edit across the rebuilds of this view on the iPad
+    /// (size class change, split ↔ phone stack): `AppShellCoordinator.recipeEdit`.
+    /// `nil` on the iPhone.
+    var iPadEditHost: AppShellCoordinator? = nil
     /// UI-only scale (web `recipe-scale:{id}` in localStorage). Not written to Y.Doc.
     @State var scaleFactor: Double = 1
     @AppStorage(NutritionSettings.globalEnabledKey) private var showNutritionGlobal = true
@@ -51,6 +55,12 @@ struct YDocRecipeDetailView: View {
     @State var commitTitleNonce = 0
     @State var titleSaveTask: Task<Void, Never>?
     @State var isFinishingEdit = false
+    /// This view in the iPad edit session (`IPadRecipeEditSession.owner`).
+    @State var editOwnerToken = UUID()
+    /// The unsaved title of the view this one replaced (T043); `nil` once saved.
+    @State var adoptedTitleDraft: String?
+    /// The steps caret of the view this one replaced, put back once the editor is ready.
+    @State var adoptedStepsCaret: IPadRecipeEditFocus?
     @State var isScreenAwakeActive = false
     /// Screen-scoped owner of the camera, mic, and speech session.
     /// ASYNC-LIFECYCLE §3 judgment call: logout pops this screen, so
@@ -353,7 +363,10 @@ struct YDocRecipeDetailView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            formattingBarInset
+            // Two columns: under the steps only (`YDocRecipeDetailColumns.rightBar`, T042).
+            if !showsTwoColumns {
+                formattingBarInset
+            }
         }
         .sheet(item: $descriptionTimerMarkupDraft, onDismiss: finishDescriptionMarkupSheet) { draft in
             DescriptionTimerTypeSheet(
@@ -422,6 +435,7 @@ struct YDocRecipeDetailView: View {
         }
         .onChange(of: isEditing) { _, editing in
             timerManager.setSuppressPanelSafeAreaInset(editing)
+            syncIPadEditSession(editing: editing)
         }
         .onAppear {
             isViewInHierarchy = true
@@ -504,7 +518,9 @@ struct YDocRecipeDetailView: View {
             if !sheetOverlay {
                 awakeScrollController.stopIfViewRemoved()
             }
-            timerManager.setSuppressPanelSafeAreaInset(false)
+            if !leaveIPadEditSession() {
+                timerManager.setSuppressPanelSafeAreaInset(false)
+            }
             // Under the assistant sheet the recipe keeps its context and keep-awake; beside
             // the iPad panel it is gone like without the panel (spec 081, T036).
             guard !assistantRecipeContext.coversRecipe else { return }
@@ -564,6 +580,9 @@ struct YDocRecipeDetailView: View {
         }
         .onChange(of: recipe?.id) { _, _ in
             guard editViewModel?.isEditingTitleField != true else { return }
+            // An edit adopted from the view this one replaced keeps its drafts (T043).
+            guard !(isEditing && editViewModel != nil && editViewModel === iPadEditHost?.recipeEdit?.viewModel)
+            else { return }
             if let recipe {
                 let vm = RecipeEditViewModel(recipe: recipe, syncService: syncService)
                 editViewModel = vm
@@ -644,9 +663,10 @@ struct YDocRecipeDetailView: View {
 
     // MARK: - Columns (spec 081, T025)
 
-    /// Two columns in the iPad split panel ≥ 720 pt; edit mode keeps one column (US5).
-    private var showsTwoColumns: Bool {
-        guard let padPanel, !isEditing else { return false }
+    /// Two columns in the iPad split panel ≥ 720 pt, in reading and in edit (US5, T041):
+    /// the edit header and the ingredients on the left, the steps editor on the right.
+    var showsTwoColumns: Bool {
+        guard let padPanel else { return false }
         return padPanel.detailWidth >= IPadLayoutMetrics.twoColumnMinDetail
     }
 
@@ -654,7 +674,10 @@ struct YDocRecipeDetailView: View {
     @ViewBuilder
     private var detailScroll: some View {
         if showsTwoColumns, let padPanel {
-            YDocRecipeDetailColumns(detailWidth: padPanel.detailWidth) {
+            YDocRecipeDetailColumns(
+                detailWidth: padPanel.detailWidth,
+                rightBottomPadding: descriptionEditorScrollBottomInset
+            ) {
                 VStack(alignment: .leading, spacing: 0) {
                     detailImageSection
                     VStack(alignment: .leading, spacing: 16) {
@@ -676,6 +699,8 @@ struct YDocRecipeDetailView: View {
                     }
                     .padding(.top, RecipeDetailLayoutMetrics.titleTopSpacing)
                 }
+            } rightBar: {
+                formattingBarInset
             }
         } else {
             ScrollView {
@@ -848,6 +873,9 @@ struct YDocRecipeDetailView: View {
                 processTableRecipe: recipe
             )
             .id("recipe_instructions")
+            .background {
+                iPadEditStepsProbe
+            }
         } else if let description = recipe.description, !description.isEmpty {
             StepsSection(
                 htmlContent: description,

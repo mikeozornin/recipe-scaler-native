@@ -14,18 +14,22 @@ extension YDocRecipeDetailView {
     func editHeader(_ vm: RecipeEditViewModel, recipe: RecipeData) -> some View {
         RecipeEditHeaderBindable(
             viewModel: vm,
-            initialTitle: recipe.name,
+            // iPad: the unsaved title of the view this one replaced (T043).
+            initialTitle: adoptedTitleDraft ?? recipe.name,
             pickerColor: $pickerColor,
             dismissTitleKeyboard: $dismissRecipeTitleKeyboard,
             commitTitleNonce: commitTitleNonce,
             requestInitialFocus: shouldAutoFocusRecipeTitle,
             onTitleBlur: { name in
+                adoptedTitleDraft = nil
                 scheduleTitleSave(name, editViewModel: vm)
             },
             onEditingActiveChanged: { active in
                 vm.isEditingTitleField = active
                 syncDescriptionChromeSuppression()
-            }
+                noteIPadTitleEditing(active)
+            },
+            onTitleTextChanged: iPadTitleTextObserver
         )
     }
 

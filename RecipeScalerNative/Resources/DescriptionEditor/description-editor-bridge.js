@@ -167,9 +167,11 @@
   function postSelectionStateNow() {
     if (!editor) return;
     try {
-      const { empty } = editor.state.selection;
+      const { empty, from, to } = editor.state.selection;
       const selectedText = getSelectedText();
       post('selectionState', {
+        from: from,
+        to: to,
         bold: editor.isActive('bold'),
         heading1: editor.isActive('heading', { level: 1 }),
         highlight: editor.isActive('highlight'),
@@ -687,6 +689,16 @@
         measureContentHeightNow();
         post('focus');
         return;
+      case 'focusAt': {
+        // iPad: the caret of the editor this one replaced (spec 081, T043).
+        var atSize = editor.state.doc.content.size;
+        var atFrom = Math.max(1, Math.min(atSize, Number(a && a.from) || 1));
+        var atTo = Math.max(atFrom, Math.min(atSize, Number(a && a.to) || atFrom));
+        editor.chain().focus().setTextSelection({ from: atFrom, to: atTo }).run();
+        measureContentHeightNow();
+        post('focus');
+        return;
+      }
       case 'focusMid': {
         var midSize = editor.state.doc.content.size;
         var midPos = Math.max(1, Math.floor(midSize / 2));

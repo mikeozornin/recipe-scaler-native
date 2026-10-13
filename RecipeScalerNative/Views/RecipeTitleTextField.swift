@@ -20,6 +20,8 @@ struct RecipeTitleTextField: View {
     let font: Font
     let onBlur: (String) -> Void
     let onEditingActiveChanged: (Bool) -> Void
+    /// Every edit of the text; `nil` on the iPhone (spec 081, T043).
+    let onTextChanged: ((String) -> Void)?
 
     @State private var draftText: String
     @FocusState private var isTitleFocused: Bool
@@ -39,7 +41,8 @@ struct RecipeTitleTextField: View {
         placeholder: String,
         font: Font,
         onBlur: @escaping (String) -> Void,
-        onEditingActiveChanged: @escaping (Bool) -> Void
+        onEditingActiveChanged: @escaping (Bool) -> Void,
+        onTextChanged: ((String) -> Void)? = nil
     ) {
         self.initialText = initialText
         _dismissKeyboard = dismissKeyboard
@@ -49,6 +52,7 @@ struct RecipeTitleTextField: View {
         self.font = font
         self.onBlur = onBlur
         self.onEditingActiveChanged = onEditingActiveChanged
+        self.onTextChanged = onTextChanged
         _draftText = State(initialValue: initialText)
         _lastSyncedInitialText = State(initialValue: initialText)
     }
@@ -81,6 +85,9 @@ struct RecipeTitleTextField: View {
             }
             .onChange(of: isTitleFocused) { _, focused in
                 handleFocusChange(focused)
+            }
+            .onChange(of: draftText) { _, text in
+                onTextChanged?(text)
             }
             .onChange(of: dismissKeyboard) { _, shouldDismiss in
                 guard shouldDismiss else { return }

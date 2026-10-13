@@ -444,16 +444,55 @@ final class IPadLayoutPolicyTests: XCTestCase {
     // MARK: - «Развернуть» and the sidebar (T024)
 
     func testExpandHidesAShownSidebarAndRemembersOnlyOneBesideTheContent() {
-        let beside = IPadLayoutPolicy.recipeExpandSidebar(shown: true, overlaysContent: false)
+        func expand(shown: Bool, overlays: Bool, hiddenByExpand: Bool = false) -> (hide: Bool, rememberHidden: Bool) {
+            IPadLayoutPolicy.recipeExpandSidebar(shown: shown, overlaysContent: overlays, hiddenByExpand: hiddenByExpand)
+        }
+        let beside = expand(shown: true, overlays: false)
         XCTAssertTrue(beside.hide)
         XCTAssertTrue(beside.rememberHidden)
         // Portrait: a floating sidebar is closed and not brought back.
-        let floating = IPadLayoutPolicy.recipeExpandSidebar(shown: true, overlaysContent: true)
+        let floating = expand(shown: true, overlays: true)
         XCTAssertTrue(floating.hide)
         XCTAssertFalse(floating.rememberHidden)
-        let hidden = IPadLayoutPolicy.recipeExpandSidebar(shown: false, overlaysContent: false)
+        let hidden = expand(shown: false, overlays: false)
         XCTAssertFalse(hidden.hide)
         XCTAssertFalse(hidden.rememberHidden)
+    }
+
+    /// An edit that went through a compact window expands again on the way back (T043):
+    /// the sidebar its first expand hid is still hidden and still comes back on «Свернуть».
+    func testExpandKeepsASidebarAnEarlierExpandHid() {
+        let again = IPadLayoutPolicy.recipeExpandSidebar(shown: false, overlaysContent: false, hiddenByExpand: true)
+        XCTAssertFalse(again.hide)
+        XCTAssertTrue(again.rememberHidden)
+        // Shown again meanwhile (the user's toggle): hidden now, remembered if beside.
+        let shownAgain = IPadLayoutPolicy.recipeExpandSidebar(shown: true, overlaysContent: true, hiddenByExpand: true)
+        XCTAssertTrue(shownAgain.hide)
+        XCTAssertFalse(shownAgain.rememberHidden)
+    }
+
+    /// T041: edit in the split expands the recipe; the phone stack has nothing to expand.
+    func testEditExpandsTheRecipeOnlyInTheSplit() {
+        XCTAssertTrue(IPadLayoutPolicy.expandsRecipeForEdit(isEditing: true, recipeExpanded: false, splitFits: true))
+        XCTAssertFalse(IPadLayoutPolicy.expandsRecipeForEdit(isEditing: true, recipeExpanded: true, splitFits: true))
+        XCTAssertFalse(IPadLayoutPolicy.expandsRecipeForEdit(isEditing: true, recipeExpanded: false, splitFits: false))
+        XCTAssertFalse(IPadLayoutPolicy.expandsRecipeForEdit(isEditing: false, recipeExpanded: false, splitFits: true))
+    }
+
+    /// Edit takes the panel at any split width, and the expanded state outlives it (T043).
+    func testEditKeepsTheListHiddenAndAfterDoneTheRecipeStaysExpanded() {
+        for width: CGFloat in [1210, 890, 776, 834] {
+            let editing = layout(width, recipeExpanded: true, isEditing: true)
+            XCTAssertFalse(editing.listShown, "W=\(width)")
+            XCTAssertFalse(editing.showsExpandButton, "W=\(width)")
+            let done = layout(width, recipeExpanded: true)
+            XCTAssertFalse(done.listShown, "W=\(width)")
+            XCTAssertTrue(done.showsExpandButton, "«Свернуть» after «Готово», W=\(width)")
+            XCTAssertEqual(done.detailWidth, editing.detailWidth, "W=\(width)")
+        }
+        // Below the 720 threshold edit is one column (≤ 720, centered by the view).
+        XCTAssertFalse(layout(719, isEditing: true).twoColumns)
+        XCTAssertTrue(layout(720, isEditing: true).twoColumns)
     }
 
     /// No room for the list beside the recipe (push) or a compact window: no expanded recipe.
@@ -467,10 +506,17 @@ final class IPadLayoutPolicyTests: XCTestCase {
     }
 
     func testSidebarHiddenByExpandComesBackOnlyCollapsedOnRecipesInARegularWindow() {
-        func restores(_ hidden: Bool, expanded: Bool = false, recipes: Bool = true, regular: Bool = true) -> Bool {
+        func restores(
+            _ hidden: Bool,
+            expanded: Bool = false,
+            editing: Bool = false,
+            recipes: Bool = true,
+            regular: Bool = true
+        ) -> Bool {
             IPadLayoutPolicy.restoresSidebarHiddenByExpand(
                 hiddenByExpand: hidden,
                 recipeExpanded: expanded,
+                recipeEditing: editing,
                 recipesTabSelected: recipes,
                 isPadRegular: regular
             )
@@ -478,6 +524,7 @@ final class IPadLayoutPolicyTests: XCTestCase {
         XCTAssertTrue(restores(true))
         XCTAssertFalse(restores(false), "Only a sidebar the expand hid comes back")
         XCTAssertFalse(restores(true, expanded: true))
+        XCTAssertFalse(restores(true, editing: true), "The edit expands again back in a wide window")
         XCTAssertFalse(restores(true, recipes: false), "Not on another tab")
         XCTAssertFalse(restores(true, regular: false), "Not in a compact window")
     }

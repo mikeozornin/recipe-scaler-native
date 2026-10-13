@@ -18,10 +18,16 @@ struct RecipeDetailPadPanel {
 /// The left column has a fixed width, 400 pt, cut to keep the steps at 320 pt
 /// (`IPadLayoutPolicy.detailLeftWidth`, 399 at the 720 pt threshold), with a static
 /// 1 pt hairline between the columns. No draggable divider (owner decision 2026-10-13).
-struct YDocRecipeDetailColumns<Left: View, Right: View>: View {
+///
+/// In edit (US5, T042) the left column holds the edit header and the ingredients, the
+/// right one the steps editor with its formatting bar (`rightBar`) pinned to the bottom of
+/// that column above the keyboard, and `rightBottomPadding` keeps the last line clear of it.
+struct YDocRecipeDetailColumns<Left: View, Right: View, RightBar: View>: View {
     let detailWidth: CGFloat
+    var rightBottomPadding: CGFloat = 0
     @ViewBuilder let left: () -> Left
     @ViewBuilder let right: () -> Right
+    @ViewBuilder let rightBar: () -> RightBar
 
     /// Phone sections carry their own 16 pt side insets (`.padding(.horizontal)`).
     private static var sectionInset: CGFloat { 16 }
@@ -53,9 +59,24 @@ struct YDocRecipeDetailColumns<Left: View, Right: View>: View {
                     )
                     .padding(.horizontal, IPadLayoutMetrics.stepsHorizontalPadding - Self.sectionInset)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, rightBottomPadding)
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.ipadRecipeDetailRightColumn)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                rightBar()
+            }
         }
+    }
+}
+
+extension YDocRecipeDetailColumns where RightBar == EmptyView {
+    /// Reading: no bar under the steps.
+    init(
+        detailWidth: CGFloat,
+        @ViewBuilder left: @escaping () -> Left,
+        @ViewBuilder right: @escaping () -> Right
+    ) {
+        self.init(detailWidth: detailWidth, left: left, right: right, rightBar: { EmptyView() })
     }
 }
 

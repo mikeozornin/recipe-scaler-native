@@ -19,6 +19,8 @@ struct RecipeEditHeaderBindable: View {
     var requestInitialFocus: Bool = false
     var onTitleBlur: (String) -> Void
     var onEditingActiveChanged: (Bool) -> Void
+    /// iPad only: the title as typed, kept across a rebuild of the recipe view (T043).
+    var onTitleTextChanged: ((String) -> Void)? = nil
     @Environment(\.locale) private var locale
 
     private var titleFont: Font {
@@ -41,7 +43,8 @@ struct RecipeEditHeaderBindable: View {
                     placeholder: titlePlaceholder,
                     font: titleFont,
                     onBlur: onTitleBlur,
-                    onEditingActiveChanged: onEditingActiveChanged
+                    onEditingActiveChanged: onEditingActiveChanged,
+                    onTextChanged: onTitleTextChanged
                 )
                     .id("recipe-title-editor")
                     .frame(maxWidth: .infinity, alignment: .leading)

@@ -53,6 +53,12 @@ struct IPadRecipesSplitView: View {
         coordinator.recipeDetailExpanded && selection.recipeId != nil
     }
 
+    /// The open recipe is in edit (US5): the list hides as for «Развернуть».
+    private var editsOpenRecipe: Bool {
+        guard let recipeId = selection.recipeId else { return false }
+        return coordinator.recipeEdit?.recipeId == recipeId
+    }
+
     var body: some View {
         // The columns stay inside the keyboard safe area (rows under the keyboard scroll
         // into view); only the orientation is read from the height without the keyboard.
@@ -64,7 +70,7 @@ struct IPadRecipesSplitView: View {
                     withoutKeyboard: sizeWithoutKeyboard
                 ),
                 recipeExpanded: isExpanded,
-                isEditing: false,
+                isEditing: editsOpenRecipe,
                 toolbarBesideTabBar: IPadLayoutPolicy.toolbarSharesTabBarRow(
                     tabBarOnTop: showsCollectionMenu,
                     splitTop: proxy.frame(in: .global).minY
@@ -83,11 +89,34 @@ struct IPadRecipesSplitView: View {
                 // Too narrow for the list beside the recipe (push): nothing to expand any
                 // more, so the recipe collapses and the sidebar it hid comes back.
                 // A zero size is a page laid out off screen, not a narrow window.
+                guard proxy.size.width > 0 else { return }
+                if coordinator.recipeDetailExpanded,
+                   !IPadLayoutPolicy.keepsRecipeExpanded(splitFits: fits, isPadRegular: true) {
+                    setExpanded(false)
+                } else if IPadLayoutPolicy.expandsRecipeForEdit(
+                    isEditing: editsOpenRecipe,
+                    recipeExpanded: coordinator.recipeDetailExpanded,
+                    splitFits: fits
+                ) {
+                    // Wide enough for the split again in the middle of an edit (back from a
+                    // compact window, whose width can still be the compact one when the
+                    // split comes up): the edit expands the recipe as on entering it.
+                    setExpanded(true)
+                }
+            }
+            .onChange(of: editsOpenRecipe, initial: true) { _, editing in
+                // T041: edit expands the recipe as «Развернуть» does (the sidebar beside
+                // the content folds); after «Готово» it stays expanded, «Свернуть»
+                // brings the list and the sidebar back. Also on the way back from a
+                // compact window in the middle of an edit (T043).
                 guard proxy.size.width > 0,
-                      coordinator.recipeDetailExpanded,
-                      !IPadLayoutPolicy.keepsRecipeExpanded(splitFits: fits, isPadRegular: true)
+                      IPadLayoutPolicy.expandsRecipeForEdit(
+                          isEditing: editing,
+                          recipeExpanded: coordinator.recipeDetailExpanded,
+                          splitFits: layout.splitFits
+                      )
                 else { return }
-                setExpanded(false)
+                setExpanded(true)
             }
         }
         .background {
@@ -234,7 +263,8 @@ struct IPadRecipesSplitView: View {
                             toolbarStyle: layout.toolbarStyle,
                             assistantCoordinator: showsAssistantToolbarButton ? coordinator : nil
                         ),
-                        layoutMode: .padRegular
+                        layoutMode: .padRegular,
+                        iPadEditHost: coordinator
                     )
                     .id(recipeId)
                 } else {

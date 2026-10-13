@@ -117,6 +117,17 @@ final class AppShellCoordinator {
     /// it; «Свернуть» shows it again (`restoreSidebarHiddenByRecipeExpand`).
     private(set) var sidebarHiddenByRecipeExpand = false
 
+    /// Spec 081 (US5, T041/T043) — the iPad recipe edit, kept here so it outlives the
+    /// recipe view: a size class change or a resize between the split and the phone stack
+    /// rebuilds that view, and the new one adopts the edit with its drafts and focus.
+    /// The split reads it to hide the list (`IPadLayoutPolicy.resolve(isEditing:)`).
+    /// Never set on the iPhone. Changed only through `beginRecipeEdit` / `endRecipeEdit`.
+    private(set) var recipeEdit: IPadRecipeEditSession?
+
+    /// Recipes opened in edit on creation (`RecipesRoute.recipe(openInEditMode:)`) on the
+    /// iPad: a rebuilt recipe view must not enter edit again after «Готово».
+    private(set) var recipeIdsStartedInEdit: Set<String> = []
+
     /// Spec 081 — the iPad sidebar «Развернуть» hides and «Свернуть» brings back; set by
     /// `AppContainer` on iPadOS 26.2+, a fake in unit tests, `nil` on older systems.
     var iPadSidebar: (any IPadSidebarControlling)?
@@ -552,6 +563,8 @@ final class AppShellCoordinator {
         }
         recipeDetailExpanded = false
         sidebarHiddenByRecipeExpand = false
+        recipeEdit = nil
+        recipeIdsStartedInEdit = []
         discoverListState?.clearAll()
         selectedTab = .recipes
         lastNonProfileTab = .recipes
@@ -574,7 +587,8 @@ final class AppShellCoordinator {
         if expanded, let iPadSidebar {
             let decision = IPadLayoutPolicy.recipeExpandSidebar(
                 shown: iPadSidebar.isSidebarShown,
-                overlaysContent: iPadSidebar.sidebarOverlaysContent
+                overlaysContent: iPadSidebar.sidebarOverlaysContent,
+                hiddenByExpand: sidebarHiddenByRecipeExpand
             )
             sidebarHiddenByRecipeExpand = decision.rememberHidden
             if decision.hide {
@@ -594,6 +608,7 @@ final class AppShellCoordinator {
         guard IPadLayoutPolicy.restoresSidebarHiddenByExpand(
             hiddenByExpand: sidebarHiddenByRecipeExpand,
             recipeExpanded: recipeDetailExpanded,
+            recipeEditing: recipeEdit != nil,
             recipesTabSelected: selectedTab == .recipes,
             isPadRegular: isPadRegular
         ) else { return }
@@ -601,6 +616,27 @@ final class AppShellCoordinator {
         if iPadSidebar?.isSidebarShown == false {
             iPadSidebar?.setSidebarHidden(false)
         }
+    }
+
+    // MARK: - Recipe edit on the iPad (spec 081, US5)
+
+    /// The recipe view entered edit. A session of another recipe is replaced: one recipe
+    /// is edited at a time.
+    func beginRecipeEdit(_ session: IPadRecipeEditSession) {
+        recipeEdit = session
+    }
+
+    func noteRecipeStartedInEdit(_ recipeId: String) {
+        recipeIdsStartedInEdit.insert(recipeId)
+    }
+
+    /// «Готово», or the edited recipe left the screen for good. The recipe stays expanded
+    /// (T043): «Свернуть» brings the list and a sidebar hidden for the edit back. Out of a
+    /// regular window or on another tab, that sidebar waits as after «Свернуть».
+    func endRecipeEdit(recipeId: String, isPadRegular: Bool) {
+        guard recipeEdit?.recipeId == recipeId else { return }
+        recipeEdit = nil
+        restoreSidebarHiddenByRecipeExpand(isPadRegular: isPadRegular)
     }
 
     /// The sidebar's visibility as the shell reads it (`\.tabBarPlacement`). Shown again

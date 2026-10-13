@@ -365,7 +365,9 @@ struct RecipeListView: View {
                         }
                     },
                     scenePhase: scenePhase,
-                    layoutMode: layoutMode
+                    layoutMode: layoutMode,
+                    // A compact iPad window keeps the edit across a size class change (T043).
+                    iPadEditHost: UIDevice.current.userInterfaceIdiom == .pad ? coordinator : nil
                 )
             }
         }

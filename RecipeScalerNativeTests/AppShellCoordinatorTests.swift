@@ -538,6 +538,177 @@ final class AppShellCoordinatorTests: XCTestCase {
         XCTAssertFalse(coordinator.recipeDetailExpanded)
         XCTAssertFalse(coordinator.sidebarHiddenByRecipeExpand)
     }
+
+    // MARK: - Spec 081 — recipe edit on the iPad (US5)
+
+    private func makeEditSession(
+        _ sync: YjsSyncService,
+        recipeId: String = "r1",
+        owner: UUID = UUID()
+    ) -> IPadRecipeEditSession {
+        IPadRecipeEditSession(
+            recipeId: recipeId,
+            viewModel: RecipeEditViewModel(recipe: makeEditableRecipe(id: recipeId), syncService: sync),
+            owner: owner
+        )
+    }
+
+    /// T041/T043: edit expands like «Развернуть»; «Готово» keeps the recipe expanded and
+    /// the sidebar hidden; «Свернуть» brings it back (`#recipes/focus`).
+    func testEditExpandsAndAfterDoneTheSidebarWaitsForCollapse() throws {
+        let (coordinator, _, sync) = try makeCoordinator()
+        let sidebar = FakeIPadSidebar(shown: true)
+        coordinator.iPadSidebar = sidebar
+        coordinator.selectedTab = .recipes
+
+        coordinator.beginRecipeEdit(makeEditSession(sync))
+        coordinator.setRecipeDetailExpanded(true, isPadRegular: true)
+        XCTAssertFalse(sidebar.isSidebarShown)
+
+        coordinator.endRecipeEdit(recipeId: "r1", isPadRegular: true)
+        XCTAssertNil(coordinator.recipeEdit)
+        XCTAssertTrue(coordinator.recipeDetailExpanded, "«Готово» keeps the recipe expanded")
+        XCTAssertFalse(sidebar.isSidebarShown)
+
+        coordinator.setRecipeDetailExpanded(false, isPadRegular: true)
+        XCTAssertTrue(sidebar.isSidebarShown)
+        XCTAssertEqual(sidebar.calls, [true, false])
+    }
+
+    /// T043: an edit through a compact window. The compact window collapses the recipe; back
+    /// in the wide one the sidebar is not brought back while the edit goes on, the edit
+    /// expands again and «Свернуть» after «Готово» restores the sidebar once.
+    func testEditThroughACompactWindowKeepsTheSidebarForTheCollapse() throws {
+        let (coordinator, _, sync) = try makeCoordinator()
+        let sidebar = FakeIPadSidebar(shown: true)
+        coordinator.iPadSidebar = sidebar
+        coordinator.selectedTab = .recipes
+        coordinator.beginRecipeEdit(makeEditSession(sync))
+        coordinator.setRecipeDetailExpanded(true, isPadRegular: true)
+
+        coordinator.setRecipeDetailExpanded(false, isPadRegular: false)
+        coordinator.restoreSidebarHiddenByRecipeExpand(isPadRegular: true)
+        XCTAssertFalse(sidebar.isSidebarShown, "No flash of the sidebar before the edit expands again")
+        XCTAssertTrue(coordinator.sidebarHiddenByRecipeExpand)
+
+        coordinator.setRecipeDetailExpanded(true, isPadRegular: true)
+        XCTAssertTrue(coordinator.sidebarHiddenByRecipeExpand)
+        coordinator.endRecipeEdit(recipeId: "r1", isPadRegular: true)
+        coordinator.setRecipeDetailExpanded(false, isPadRegular: true)
+        XCTAssertTrue(sidebar.isSidebarShown)
+        XCTAssertEqual(sidebar.calls, [true, false])
+    }
+
+    /// «Готово» in a compact window: the sidebar waits for the wide window, as after «Свернуть».
+    func testDoneInACompactWindowDefersTheSidebar() throws {
+        let (coordinator, _, sync) = try makeCoordinator()
+        let sidebar = FakeIPadSidebar(shown: true)
+        coordinator.iPadSidebar = sidebar
+        coordinator.selectedTab = .recipes
+        coordinator.beginRecipeEdit(makeEditSession(sync))
+        coordinator.setRecipeDetailExpanded(true, isPadRegular: true)
+        coordinator.setRecipeDetailExpanded(false, isPadRegular: false)
+
+        coordinator.endRecipeEdit(recipeId: "r1", isPadRegular: false)
+        XCTAssertFalse(sidebar.isSidebarShown)
+        coordinator.restoreSidebarHiddenByRecipeExpand(isPadRegular: true)
+        XCTAssertTrue(sidebar.isSidebarShown)
+    }
+
+    func testEndingAnotherRecipesEditKeepsTheSession() throws {
+        let (coordinator, _, sync) = try makeCoordinator()
+        coordinator.beginRecipeEdit(makeEditSession(sync, recipeId: "r1"))
+
+        coordinator.endRecipeEdit(recipeId: "r2", isPadRegular: true)
+        XCTAssertEqual(coordinator.recipeEdit?.recipeId, "r1")
+    }
+
+    func testLogoutEndsTheEdit() throws {
+        let (coordinator, _, sync) = try makeCoordinator()
+        coordinator.beginRecipeEdit(makeEditSession(sync))
+        coordinator.noteRecipeStartedInEdit("r1")
+
+        coordinator.resetShellStateForLogout()
+
+        XCTAssertNil(coordinator.recipeEdit)
+        XCTAssertTrue(coordinator.recipeIdsStartedInEdit.isEmpty)
+    }
+
+    /// T043: the view being torn down loses focus; only the view editing now is heard.
+    func testEditSessionHearsOnlyItsOwner() throws {
+        let (_, _, sync) = try makeCoordinator()
+        let first = UUID()
+        let second = UUID()
+        let session = makeEditSession(sync, owner: first)
+
+        session.noteFocus(.title, owner: first)
+        session.noteTitleText("Шарлотка с яблоками", owner: first)
+        session.adopt(owner: second)
+        session.noteBlur(.title, owner: first)
+        session.noteTitleText("", owner: first)
+        session.release(owner: first)
+        XCTAssertEqual(session.focus, .title)
+        XCTAssertEqual(session.titleDraft, "Шарлотка с яблоками")
+        XCTAssertEqual(session.owner, second)
+
+        session.noteFocus(.steps(from: 12, to: 12), owner: second)
+        session.noteBlur(.title, owner: second)
+        XCTAssertEqual(session.focus, .steps(from: 12, to: 12), "A title blur leaves the steps focus")
+        XCTAssertNil(session.titleDraft, "The title is saved on its blur")
+
+        session.noteBlur(.steps, owner: second)
+        XCTAssertEqual(session.focus, IPadRecipeEditFocus.none)
+        session.release(owner: second)
+        XCTAssertNil(session.owner)
+    }
+
+    /// T043: a rebuild brings up several views of the recipe in turn. When a later one
+    /// leaves, the edit goes back to the view still on screen, which keeps noting its focus.
+    func testEditSessionGoesBackToTheViewStillInTheEdit() throws {
+        let (_, _, sync) = try makeCoordinator()
+        let onScreen = UUID()
+        let passing = UUID()
+        let lingering = UUID()
+        let session = makeEditSession(sync, owner: onScreen)
+
+        session.adopt(owner: lingering)
+        session.adopt(owner: passing)
+        session.release(owner: passing)
+        XCTAssertEqual(session.owner, lingering)
+
+        session.noteFocus(.steps(from: 6, to: 6), owner: onScreen)
+        XCTAssertEqual(session.owner, onScreen, "The view the user types in edits now")
+        XCTAssertEqual(session.focus, .steps(from: 6, to: 6))
+        session.noteBlur(.steps, owner: lingering)
+        session.noteFocus(.title, owner: passing)
+        XCTAssertEqual(session.focus, .steps(from: 6, to: 6), "Views not editing now are not heard")
+
+        session.release(owner: onScreen)
+        XCTAssertEqual(session.owner, lingering)
+        session.release(owner: lingering)
+        XCTAssertNil(session.owner)
+    }
+
+    private func makeEditableRecipe(id: String) -> RecipeData {
+        RecipeData(
+            id: id,
+            name: "Шарлотка",
+            servings: 4,
+            color: "oklch(0.65 0.25 270)",
+            version: "v3",
+            description: "<p>Взбить яйца</p>",
+            ingredients: [],
+            nutrition: nil,
+            isPublic: false,
+            hasSteps: true,
+            createdAt: "",
+            updatedAt: "",
+            imageUrl: nil,
+            imageAspectRatio: nil,
+            originalRecipeLink: nil,
+            originalRecipe: nil
+        )
+    }
 }
 
 @MainActor

@@ -35,6 +35,8 @@ extension YDocRecipeDetailView {
     }
 
     func applyStartInEditModeIfNeeded() {
+        // iPad: an edit of this recipe outlives the view it started in (T043).
+        if adoptIPadEditSessionIfNeeded() { return }
         #if DEBUG
         let wantsEdit = startInEditMode
             || DebugLaunchOptions.startInEditMode
@@ -44,9 +46,11 @@ extension YDocRecipeDetailView {
         #endif
         guard wantsEdit,
               !didApplyStartInEditMode,
+              !iPadStartInEditAlreadyApplied,
               canEnterEditMode,
               let recipe else { return }
         didApplyStartInEditMode = true
+        noteIPadStartInEditApplied()
         shouldAutoFocusRecipeTitle = startInEditMode
         let vm = RecipeEditViewModel(recipe: recipe, syncService: syncService)
         editViewModel = vm
