@@ -157,6 +157,13 @@
     editor.commands.setTextSelection(savedSelection);
   }
 
+  // `focusAt`: a whole document position from the native side, or `fallback` when it is
+  // missing or not a finite number (a ProseMirror position cannot be fractional).
+  function focusAtPosition(value, fallback) {
+    var n = Number(value);
+    return value != null && Number.isFinite(n) ? Math.floor(n) : fallback;
+  }
+
   function getSelectedText() {
     if (!editor) return '';
     const { from, to, empty } = editor.state.selection;
@@ -692,8 +699,8 @@
       case 'focusAt': {
         // iPad: the caret of the editor this one replaced (spec 081, T043).
         var atSize = editor.state.doc.content.size;
-        var atFrom = Math.max(1, Math.min(atSize, Number(a && a.from) || 1));
-        var atTo = Math.max(atFrom, Math.min(atSize, Number(a && a.to) || atFrom));
+        var atFrom = Math.max(1, Math.min(atSize, focusAtPosition(a && a.from, 1)));
+        var atTo = Math.max(atFrom, Math.min(atSize, focusAtPosition(a && a.to, atFrom)));
         editor.chain().focus().setTextSelection({ from: atFrom, to: atTo }).run();
         measureContentHeightNow();
         post('focus');
