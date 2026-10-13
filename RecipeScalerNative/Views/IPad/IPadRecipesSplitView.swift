@@ -31,7 +31,8 @@ struct IPadRecipesSplitView: View {
     /// (`IPadLayoutPolicy.showsAssistantToolbarButton`).
     let showsAssistantToolbarButton: Bool
     /// The assistant panel stands beside the tab view: with a recipe open the list column
-    /// hides (FR-022), closing the panel brings it back. `IPadLayoutPolicy.resolve`.
+    /// hides (FR-022), closing the panel brings it back; split or stack stays as without the
+    /// panel. `IPadLayoutPolicy.resolve`.
     let assistantPanelOpen: Bool
 
     @State private var searchText = ""
@@ -68,7 +69,8 @@ struct IPadRecipesSplitView: View {
                     tabBarOnTop: showsCollectionMenu,
                     splitTop: proxy.frame(in: .global).minY
                 ),
-                assistantBesideRecipe: assistantPanelOpen && selection.recipeId != nil
+                assistantPanelOpen: assistantPanelOpen,
+                recipeOpen: selection.recipeId != nil
             )
             Group {
                 if layout.splitFits {

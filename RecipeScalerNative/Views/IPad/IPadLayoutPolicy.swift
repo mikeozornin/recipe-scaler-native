@@ -105,7 +105,7 @@ struct IPadLayout: Equatable {
     let twoColumns: Bool
     let toolbarStyle: IPadDetailToolbarStyle
     /// «Развернуть» / «Свернуть» leads the recipe toolbar (the view adds: a recipe is open).
-    /// Not while the assistant panel hides the list: the expanded state waits for it to close.
+    /// Not while the assistant panel is open: the expanded state waits for it to close.
     let showsExpandButton: Bool
     let shopVkusvillIconOnly: Bool
 }
@@ -135,22 +135,26 @@ enum IPadLayoutPolicy {
     /// `recipeExpanded`: the user expanded the recipe over the whole content (Notes-style).
     /// `toolbarBesideTabBar`: the panel toolbar shares the row of the floating top tab bar
     /// (`toolbarSharesTabBarRow`), so only the room beside the tab bar is left for it.
-    /// `assistantBesideRecipe`: the assistant panel is open and a recipe is open
-    /// (`contentWidth` already excludes the panel). FR-022: the list column hides at any
-    /// width, the recipe takes the content. Whether the section is the split or the phone
-    /// stack is decided on the width without the panel, so opening or closing it never
-    /// swaps the recipe view (scroll, cooking) and never collapses an expanded recipe.
+    /// `assistantPanelOpen`: the assistant panel stands beside the tab view (`contentWidth`
+    /// already excludes it). Whether the section is the split or the phone stack is then
+    /// decided on the width without the panel, with or without an open recipe: opening or
+    /// closing the panel never swaps the recipe view (scroll, cooking) or collapses an
+    /// expanded recipe, and picking a recipe under the panel never swaps the phone stack
+    /// for the split. FR-022: beside an open recipe (`recipeOpen`) the list column hides at
+    /// any width and the recipe takes the content. The split keeps a recipe open
+    /// (`IPadRecipesSplitView.repairSelection`), so without one the list is empty and stays.
     static func resolve(
         contentWidth: CGFloat,
         contentHeight: CGFloat,
         recipeExpanded: Bool,
         isEditing: Bool,
         toolbarBesideTabBar: Bool = false,
-        assistantBesideRecipe: Bool = false
+        assistantPanelOpen: Bool = false,
+        recipeOpen: Bool = true
     ) -> IPadLayout {
         let listWidth = listColumnWidth(contentWidth: contentWidth, contentHeight: contentHeight)
         let splitFits: Bool
-        if assistantBesideRecipe {
+        if assistantPanelOpen {
             let widthWithoutPanel = contentWidth + IPadLayoutMetrics.inspectorWidth + IPadLayoutMetrics.columnDividerWidth
             splitFits = Self.splitFits(
                 contentWidth: widthWithoutPanel,
@@ -159,7 +163,7 @@ enum IPadLayoutPolicy {
         } else {
             splitFits = Self.splitFits(contentWidth: contentWidth, listWidth: listWidth)
         }
-        let listShown = splitFits && !recipeExpanded && !isEditing && !assistantBesideRecipe
+        let listShown = splitFits && !recipeExpanded && !isEditing && !(assistantPanelOpen && recipeOpen)
         let detailWidth = listShown
             ? contentWidth - listWidth - IPadLayoutMetrics.columnDividerWidth
             : contentWidth
@@ -180,7 +184,7 @@ enum IPadLayoutPolicy {
             detailWidth: detailWidth,
             twoColumns: detailWidth >= IPadLayoutMetrics.twoColumnMinDetail,
             toolbarStyle: toolbarStyle,
-            showsExpandButton: splitFits && !isEditing && !assistantBesideRecipe,
+            showsExpandButton: splitFits && !isEditing && !assistantPanelOpen,
             shopVkusvillIconOnly: contentWidth < IPadLayoutMetrics.shopLabeledMinContent
         )
     }
