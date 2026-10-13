@@ -529,7 +529,25 @@
     - Снимки `tmp/ipad-verify/us4/t039-ipad-cooking-{landscape,portrait,half,narrow,third}.png`.
 
   **Отклонение:** вход в таблицу готовки на экране рецепта закомментирован (TODO 074), из UI до неё не дойти. Поэтому проверка — юнит-тестом на симуляторе iPad, а не проходом по экрану.
-- [ ] T040 [US4] Ручной проход `#recipes/cooking`, `#recipes/collections`, `#recipes/timers` в альбомной (две колонки), книжной и ½. `bash scripts/verify-timer-widget.sh` на iPhone — зелёный. — `#recipes/cooking`, `#recipes/collections`, `#recipes/timers`
+- [x] T040 [US4] Ручной проход `#recipes/cooking`, `#recipes/collections`, `#recipes/timers` в альбомной (две колонки), книжной и ½. `bash scripts/verify-timer-widget.sh` на iPhone — зелёный. — `#recipes/cooking`, `#recipes/collections`, `#recipes/timers`
+
+  **Сделано и проверено (автоматическая часть, 2026-10-13):**
+  - Проход на симуляторе iPad Pro 11" M4 (iPadOS 26.3). Свежий пользователь, рецепты выдуманы. Снимки в `tmp/ipad-verify/us4/`, у каждого есть копия `-900`.
+    - `#recipes/cooking`: альбомная в две колонки, с панелью ассистента, после перехода на «Покупки», книжная, ½.
+    - `#recipes/collections`: альбомная и книжная — поповер, ½ — лист.
+    - `#recipes/timers`: альбомная (поповер; капсула; поповер при сайдбаре), книжная — поповер, ½ — раскрытая панель.
+  - Окно ½ сделано через DEBUG `-DebugWindowWidth=597`. Лист в нём центрируется по всему экрану — артефакт хука, как в T035.
+  - Проверки:
+    - iPhone: `verify-timer-widget.sh` — все проверки прошли; `verify-assistant.sh` — VERIFIED; `verify-ipad-layout.sh --iphone-regression` отдельно — 9 состояний, 0 отличий.
+    - `test-fast` — 1083 теста, 0 падений, 2 пропущены (тесты только для iPad); `policy-check` и `lint-i18n` прошли.
+    - Debug build-for-testing для iPad и iPhone и Release собираются.
+    - На iPad, по одной спеке: `IPadRecipesSpec` 9/9, `IPadShellSpec` 13/13, `IPadAssistantSpec` 6/6.
+
+  **Отклонение:** ручной проход на устройстве остаётся за владельцем:
+  - управление без рук и «Не гасить экран» при открытой панели ассистента; не мешают ли друг другу голосовые команды без рук и диктовка ассистента (общий микрофон);
+  - поповер таймеров при настоящем изменении окна (Stage Manager, Split View) и при повороте с открытым поповером;
+  - таблица готовки при повороте и в узких окнах, когда 074 вернёт вход в неё;
+  - поповер «Коллекции», закрывающий «…» (системное поведение iPadOS 26).
 
 **Checkpoint (US4)**: полоса готовки на обе колонки, поповеры «Коллекции» и таймеров в широком окне, листы в compact; iPhone без изменений.
 
