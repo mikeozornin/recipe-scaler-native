@@ -28,6 +28,9 @@ extension YDocRecipeDetailView {
                 vm.isEditingTitleField = active
                 syncDescriptionChromeSuppression()
                 noteIPadTitleEditing(active)
+                if active {
+                    settleIPadTitleAutoFocus()
+                }
             },
             onTitleTextChanged: iPadTitleTextObserver
         )

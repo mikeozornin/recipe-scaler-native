@@ -435,6 +435,7 @@ struct YDocRecipeDetailView: View {
             guard focused else { return }
             clearIngredientFocusToken += 1
             dismissRecipeTitleKeyboard = true
+            settleIPadTitleAutoFocus()
         }
         .onChange(of: isEditing) { _, editing in
             timerManager.setSuppressPanelSafeAreaInset(editing)

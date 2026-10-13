@@ -263,6 +263,16 @@ extension YDocRecipeDetailView {
         }
     }
 
+    /// The title asked for focus on entering edit (a new recipe, or a rebuilt view the user
+    /// was typing the title in). Once the title has it, or the user went to the steps, the
+    /// request is spent: a switch between one and two columns builds the title field anew,
+    /// and a standing request would pull the focus back to the title. Only the iPad panel
+    /// switches columns; elsewhere (the iPhone) the request stays as it was.
+    func settleIPadTitleAutoFocus() {
+        guard padPanel != nil, shouldAutoFocusRecipeTitle else { return }
+        shouldAutoFocusRecipeTitle = false
+    }
+
     /// The title as typed; `nil` on the iPhone, where nothing has to outlive the view.
     var iPadTitleTextObserver: ((String) -> Void)? {
         guard iPadEditHost != nil else { return nil }
