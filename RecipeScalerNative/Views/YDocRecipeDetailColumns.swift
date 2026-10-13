@@ -103,17 +103,35 @@ enum RecipeStepsColumnMetrics {
     /// `headerRowHeight`: reading centres the header in a 44 pt row (`StepsSection`); the
     /// editor's header (`RecipeDescriptionEditorBlock`) has no row, `nil`.
     static func topPadding(leftStartsWithBox: Bool, headerRowHeight: CGFloat?) -> CGFloat {
-        let title = AppTypography.uiFont(AppFonts.display, size: AppTypography.recipeTitleSize, fallbackFamily: AppFonts.display)
-        let header = AppTypography.uiFont(AppFonts.display, size: AppTypography.title2Size, fallbackFamily: AppFonts.display)
+        let fonts = Self.fonts
         // The photo and the title both start at the left column's 16 pt top padding.
-        let leftTop = RecipeDetailLayoutMetrics.titleTopSpacing + (leftStartsWithBox ? 0 : capInset(title))
-        let rowInset = headerRowHeight.map { max(0, ($0 - header.lineHeight) / 2) } ?? 0
-        return leftTop - rowInset - capInset(header)
+        let leftTop = RecipeDetailLayoutMetrics.titleTopSpacing + (leftStartsWithBox ? 0 : fonts.titleCapInset)
+        let rowInset = headerRowHeight.map { max(0, ($0 - fonts.headerLineHeight) / 2) } ?? 0
+        return leftTop - rowInset - fonts.headerCapInset
     }
 
-    /// From the top of a line of text to the top of its capitals.
-    private static func capInset(_ font: UIFont) -> CGFloat {
-        font.ascender - font.capHeight
+    /// The recipe title and «Инструкции» have fixed sizes (`AppTypography`, no Dynamic
+    /// Type), so their fonts are measured once, not on every redraw of the recipe.
+    private static let fonts = FontMetrics(
+        title: AppTypography.uiFont(AppFonts.display, size: AppTypography.recipeTitleSize, fallbackFamily: AppFonts.display),
+        header: AppTypography.uiFont(AppFonts.display, size: AppTypography.title2Size, fallbackFamily: AppFonts.display)
+    )
+
+    private struct FontMetrics {
+        let titleCapInset: CGFloat
+        let headerCapInset: CGFloat
+        let headerLineHeight: CGFloat
+
+        init(title: UIFont, header: UIFont) {
+            titleCapInset = Self.capInset(title)
+            headerCapInset = Self.capInset(header)
+            headerLineHeight = header.lineHeight
+        }
+
+        /// From the top of a line of text to the top of its capitals.
+        private static func capInset(_ font: UIFont) -> CGFloat {
+            font.ascender - font.capHeight
+        }
     }
 }
 
