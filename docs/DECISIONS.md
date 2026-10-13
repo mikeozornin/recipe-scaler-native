@@ -599,3 +599,51 @@ The suite also has no recorded reference snapshots (`isRecording = false`, no co
 **Rationale:** User decision 2026-10-12. Recipe plus chat is the working pair while talking to the assistant. A list squeezed beside both would leave the recipe in one narrow column.
 
 ---
+
+### 2026-10-13 — iPad: one assistant session for the panel and the sheet (spec 081 T032a, T032)
+
+**Decision:** The assistant chat state (thread, messages, draft, attachments, stream, bootstrap and external-send tasks) lives in `AssistantSessionModel`, owned by `AppContainer` and passed to `AssistantSheet(session:)` explicitly. The shell drives its lifecycle: `beginPresentation` on open, `close()` when `showAssistant` turns false, `resetForLogout` from the composition root, and a session epoch change drops a stale stream. `AssistantSheet` no longer cancels anything in `onDisappear`. On `.padRegular` the assistant is a 340 pt panel in an `HStack` beside the `TabView`; elsewhere it is the phone sheet; one `showAssistant` drives both. The sheet's binding is `showAssistant && layoutMode != .padRegular`, and its setter ignores the dismissal that SwiftUI sends when the sheet yields to the panel (an `@State` mirror of the layout mode, `assistantShowsAsPanel`). Closing the assistant also drops the pending external request.
+
+**Rationale:** Panel and sheet are different view instances, so view-owned state lost the draft and cut the stream on every size class change (spike S5). A model at the container survives the swap and keeps the iPhone behavior; the only iPhone change is that the draft now survives closing and reopening the sheet (plan.md Р7). SwiftUI dismisses a sheet through the binding closure it was presented with, which still saw the compact layout; without the guard it set `showAssistant = false` and the panel never appeared. A stale external request blocked the next tab open (PI-5).
+
+---
+
+### 2026-10-13 — iPad: toggling the assistant panel (spec 081 T034, FR-021, FR-022)
+
+**Decision:** In a wide window the pinned «Ассистент» tab and ✦ open and close the panel without changing the selected tab. ✦ on «Покупки» and «Подборки» opens it with a new chat and keeps the typed draft; the tab and the recipe ✦ restore a chat opened in the last 60 s, as on the iPhone. On «Рецепты» an open panel hides the list column; whether the section is the split or the phone stack is decided on the width without the panel (`IPadLayoutPolicy`, `assistantBesideRecipe`), and «Развернуть» is hidden while the panel hides the list, with the expanded state restored on close. A tab tap in the same update as an external request does not toggle the panel shut, and an external request reaching an open assistant goes to the session directly, deduplicated by request id.
+
+**Rationale:** The panel is a companion to the current screen, so opening it must not navigate. «Покупки» and «Подборки» have no recipe in context, so ✦ there starts a new chat (T034). Deciding split vs stack without the panel means opening or closing it never swaps the recipe view (scroll position, cooking state) and never collapses an expanded recipe. The PI-5 rules stop «Купить во Вкусвилле» from opening and immediately closing the panel or sending twice.
+
+---
+
+### 2026-10-13 — iPad: assistant panel chrome (spec 081 T033)
+
+**Decision:** The panel bar shows «Ассистент» as a leading toolbar item in the display face at 20 pt (the prototype's `.insp-bar h3`), fixed at 120 pt (`IPadLayoutMetrics.inspectorTitleWidth`), with the system title removed. On the trailing side: a [history, new chat] group, a `ToolbarSpacer` and ×. History opens as an `.adaptivePopover` (`historyPopoverWidth` × `historyPopoverMaxHeight`, 316 × 420) with the `AssistantThreadListSheet` content. The panel has no accessibility id of its own; UI tests find it by its bar with × (`ipadAssistantInspectorCloseButton`). The phone sheet keeps its large title and bar.
+
+**Rationale:** The system inline title shared the 340 pt bar row with three buttons and truncated to «Асси…». Any title wider than 120 pt pushed × into the system «More» overflow. `root_content` replaces the identifiers of top-level elements, so a panel id never reached XCUITest.
+
+---
+
+### 2026-10-13 — iPad: the system folds the sidebar beside the assistant panel (spec 081 T034, layout.md deviation 9)
+
+**Decision:** We accept the iPadOS 26 behavior: when the `TabView` narrows beside the panel in landscape (11″: 1210 → 869 pt), the system folds the sidebar into the top tab bar and restores it when the panel closes. While folded there is no toolbar ✦, so the pinned «Ассистент» tab is the way in and out (consistent with FR-021). We do not hide or force the sidebar ourselves. The matrix row «Альбомная · весь · сайдбар да · инспектор да» therefore does not occur on the 11″; T049 confirms 13″ and the ⅔ window.
+
+**Rationale:** The result matches the prototype, where the assistant always hides the sidebar, and it needs no code. Keeping the sidebar through `IPadSidebarControl` would leave the recipe about 590 pt wide in one column, squeezed between the sidebar and the panel.
+
+---
+
+### 2026-10-13 — DEBUG `-DebugCompactInPortrait=1` for size class switch tests (spec 081 T035)
+
+**Decision:** A DEBUG launch argument makes the root a compact ½ window (402 pt, pinned to the leading edge) in portrait and leaves landscape regular, so a rotation is a runtime size class change. It lives in `DebugWindowWidthModifier` beside `-DebugWindowWidth` and compiles to nothing in Release. `IPadAssistantSpec.testSizeClassSwitchKeepsChat` uses it for panel → sheet → panel.
+
+**Rationale:** Split View and Stage Manager cannot be automated on the simulator, and a fixed `-DebugWindowWidth` cannot change during a test. Caveat: the sheet is still presented by the real full-width window, so under this argument it looks like a centered page sheet, not a sheet in a ½ window. The test checks the chat and the draft, not the sheet's geometry.
+
+---
+
+### 2026-10-13 — iPad: hands-free stays disarmed while the assistant panel is open (spec 081 T034, interim)
+
+**Decision:** For now the shell sets `assistantRecipeContext.isAssistantSheetOpen = showAssistant` for the panel too, so awake-scroll and hands-free control on the recipe disarm while the panel is open, as they do under the phone sheet. T036 (US4) revisits this for the panel, where the recipe stays visible.
+
+**Rationale:** The flag also keeps the recipe context for the assistant when the recipe view disappears behind the sheet. Splitting «assistant open» from «recipe covered» touches the cooking strip and hands-free work that T036 owns, so US3 keeps the existing behavior rather than half-change it.
+
+---

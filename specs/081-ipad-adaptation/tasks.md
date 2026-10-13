@@ -355,7 +355,7 @@
 **Goal**: своя панель ассистента 340 pt справа от `TabView` из любой вкладки (не `.inspector` — спайк S5), история поповером, лист в compact, один чат на панель и лист.  
 **Independent Test**: spec.md US3.
 
-- [ ] T032a [US3] Общая сессия ассистента (plan.md Р7). Сейчас `RecipeScalerNative/Views/AssistantSheet.swift` держит сессию в `@State` (~:26-56) и в `onDisappear` (~:185-210) отменяет задачи, поэтому панель и лист (разные экземпляры) теряют черновик и обрывают ответ (S5, `s5-03`–`s5-05`).
+- [x] T032a [US3] Общая сессия ассистента (plan.md Р7). Сейчас `RecipeScalerNative/Views/AssistantSheet.swift` держит сессию в `@State` (~:26-56) и в `onDisappear` (~:185-210) отменяет задачи, поэтому панель и лист (разные экземпляры) теряют черновик и обрывают ответ (S5, `s5-03`–`s5-05`).
   - Создать `RecipeScalerNative/Services/AssistantSessionModel.swift`: `@MainActor @Observable final class` с `threadId`, `threads`, `messages`, `input`, `attachments`, `isSending`, `streamTask`, `bootstrapTask`, `externalSendTask` и методами, которые сейчас живут в view (отправка, бутстрап, смена треда, сброс).
   - Владелец — `RecipeScalerNative/App/AppContainer.swift`; передавать в `AssistantSheet(session:)` явно, не через `@Environment` (ловушка iOS 26).
   - Отмена задач — в модели: явное закрытие (`close()`), смена `coordinator.assistantSessionEpoch` (перенести `teardownForSessionInvalidation`), logout. `onDisappear` view задачи не отменяет; `threadId` по-прежнему пишется в `AssistantSessionStore`.
@@ -365,7 +365,9 @@
   - Если перенос выходит за одну сессию или ломает iPhone-поведение — STOP и спросить (деградация «черновик теряется при панель ↔ лист» — только с согласия человека).
 
   — `#assistant/chat`, `#assistant/new` (на iPhone — лист без изменений)
-- [ ] T032 [US3] Панель ассистента уровня оболочки в `RecipeScalerNative/Views/AppShellView.swift` (~:426), **не `.inspector`** (S5: `.inspector` на `TabView` обнуляет верхний safe area вкладок, STOP 2):
+
+  **Сделано и проверено (abbae09):** `AssistantSessionModel` держит тред, сообщения, черновик, вложения и задачи стрима, бутстрапа и внешней отправки; владелец — `AppContainer`, в `AssistantSheet(session:)` передаётся явно. Жизненный цикл ведёт оболочка: `beginPresentation` при открытии, `close()`, когда `showAssistant` становится `false`, `resetForLogout` из корня; смена эпохи сбрасывает устаревший стрим; `onDisappear` задачи не отменяет. Смена view (панель ↔ лист) только переподключает view: чат, черновик и идущий ответ сохраняются. На iPhone всё как раньше, кроме одного: черновик переживает закрытие и повторное открытие листа (plan.md Р7). `AssistantSessionModelTests` — 10 тестов: четыре из задачи и ещё шесть (идущий ответ и внешний запрос при смене view, черновик после закрытия, «Новый чат» чистит черновик, повторное открытие возвращает недавний тред, новый чат его не подхватывает). `test-fast` зелёный; `verify-assistant.sh` на iPhone — VERIFIED (`tmp/ipad-verify/us3/verify-assistant-iphone-t032a.png`, в конце US3 — `verify-assistant-iphone-final.png`). STOP не понадобился.
+- [x] T032 [US3] Панель ассистента уровня оболочки в `RecipeScalerNative/Views/AppShellView.swift` (~:426), **не `.inspector`** (S5: `.inspector` на `TabView` обнуляет верхний safe area вкладок, STOP 2):
   - `HStack(spacing: 0) { tabView; if showAssistant && layoutMode == .padRegular { Divider().ignoresSafeArea(); AssistantSheet(session:, presentation: .inspector).frame(width: IPadLayoutMetrics.inspectorWidth).transition(.move(edge: .trailing)) } }` + `.animation(.snappy, value: showAssistant)`;
   - `AssistantSheetModifier` (~:1046-1072) получает `.constant(false)` при `.padRegular` и ту же `AssistantSessionModel` (T032a);
   - один `showAssistant` (~:106);
@@ -373,15 +375,54 @@
   - панель переживает смену вкладок.
 
   — `#assistant/chat`
-- [ ] T033 [US3] `RecipeScalerNative/Views/AssistantSheet.swift`: режим `AssistantPresentation.inspector` (содержимое панели T032) — заголовок «Ассистент», группа (история, новый чат) и × (закрыть). История (~:129) открывается `.adaptivePopover` с содержимым `RecipeScalerNative/Views/AssistantThreadListSheet.swift`. В листе — как на iPhone. — `#assistant/history`, `#assistant/new`
-- [ ] T034 [US3] Переключение.
+
+  **Сделано и проверено (2299119, 6d896ee):** панель 340 pt в `HStack` рядом с `TabView`, разделитель на всю высоту, выезд справа; один `showAssistant` на панель и лист. Смена size class меняет панель на лист и обратно над той же сессией (T032a); панель переживает смену вкладок (`IPadAssistantSpec`). Закрытие ассистента сбрасывает внешний запрос: устаревший запрос больше не мешает следующему открытию вкладки (PI-5).
+
+  **Отклонение:** у листа своя привязка, не `.constant(false)`. `get` — `showAssistant && layoutMode != .padRegular`. `set` игнорирует закрытие, когда лист уступает место панели (`@State`-зеркало `assistantShowsAsPanel`). Иначе при переходе compact → regular SwiftUI закрывал лист через замыкание, которое ещё видело compact, ставил `showAssistant = false`, и панель не появлялась (6d896ee).
+- [x] T033 [US3] `RecipeScalerNative/Views/AssistantSheet.swift`: режим `AssistantPresentation.inspector` (содержимое панели T032) — заголовок «Ассистент», группа (история, новый чат) и × (закрыть). История (~:129) открывается `.adaptivePopover` с содержимым `RecipeScalerNative/Views/AssistantThreadListSheet.swift`. В листе — как на iPhone. — `#assistant/history`, `#assistant/new`
+
+  **Сделано и проверено (06d12e2, 62e5e29):** бар панели — «Ассистент» слева, справа группа [история, новый чат], `ToolbarSpacer` и ×. История — `.adaptivePopover` 316 × 420 с содержимым `AssistantThreadListSheet` поверх чата; в листе история и бар как на iPhone. Снимки `tmp/ipad-verify/us3/panel-recipes-landscape.png`, `history-popover-landscape.png` (и копии `-900`).
+
+  **Отклонение:** системный заголовок (`.inlineLarge`) делил строку бара с тремя кнопками и обрезался до «Асси…». Поэтому заголовок — ведущий элемент бара: шрифт display 20 pt, как `.insp-bar h3` в прототипе, ширина 120 pt (новый токен `inspectorTitleWidth`, layout.md §Токены). Если шире, × уходит в системное меню «Ещё». У панели нет своего accessibility id: его перекрывает `root_content`. Тесты находят панель по бару с × (`ipadAssistantInspectorCloseButton`); константа `ipadAssistantInspector` удалена из `AccessibilityIdentifiers` и `Selectors`.
+- [x] T034 [US3] Переключение.
   - ✦ на рецепте, «Покупках», «Подборках» и `.pinned`-иконка «Ассистент» верхнего бара открывают и закрывают панель без смены вкладки (`IPadShellItem`, T012).
   - ✦ на «Покупках» и «Подборках» открывает новый чат.
   - `IPadRecipesSplitView` учитывает панель в ширине контента: ширина измеряется у раздела, панель уже вычтена.
   - На «Рецептах» открытая панель всегда прячет колонку списка (рецепт + чат), закрытие возвращает её (FR-022, решение владельца 2026-10-12).
 
   — `#assistant/chat`, `#assistant/new`
-- [ ] T035 [US3] Создать `RecipeScalerNativeUITests/Specs/IPadAssistantSpec.swift`: `testInspectorOpensFromRecipe` (панель 340 pt), `testTabSwitchKeepsInspector`, `testTabSwitchKeepsDraft`, `testSizeClassSwitchKeepsChat` (черновик и сообщения после панель → лист → панель), `testHistoryPopover`; тулбары вкладок с открытой панелью не уходят под таб-бар. iPhone: `bash scripts/verify-assistant.sh`. Ручной проход `#assistant/*` в альбомной, книжной и окне ⅓. — `#assistant/chat`, `#assistant/history`, `#assistant/new`
+
+  **Сделано и проверено (fbcea26):**
+  - Закреплённая вкладка «Ассистент» и ✦ открывают и закрывают панель, выбранная вкладка не меняется (FR-021).
+  - ✦ на «Покупках» и «Подборках» открывает панель с новым чатом, набранный черновик сохраняется. Вкладка и ✦ рецепта, как и раньше, возвращают чат, открытый в последние 60 с.
+  - На «Рецептах» с открытой панелью колонки списка нет, в альбомной рецепт в две колонки (контент 869 на iPad Pro 11" M4 с окном 1210; по §Матрица — 853). Закрытие возвращает список, открытый рецепт и выделенную строку.
+  - Сплит или стек решается по ширине без панели (`IPadLayoutPolicy`, `assistantBesideRecipe`), поэтому открытие и закрытие панели не меняет view рецепта (прокрутка, готовка) и не сворачивает развёрнутый рецепт. «Развернуть» скрыт, пока панель прячет список; после закрытия состояние «развёрнут» возвращается.
+  - PI-5: тап по вкладке в том же обновлении, что внешний запрос («Купить во Вкусвилле»), панель не закрывает. Внешний запрос в уже открытый ассистент уходит в сессию напрямую, без повторов (по id запроса).
+  - Тесты: `IPadLayoutPolicyTests`, `AppShellCoordinatorTests`, `AssistantSessionModelTests`, `IPadAssistantSpec`.
+  - Снимки `tmp/ipad-verify/us3/panel-recipes-landscape.png`, `panel-recipes-portrait.png`, `panel-shopping-landscape.png`, `shopping-sidebar-star-landscape.png` → `panel-shopping-from-star-landscape.png`.
+
+  **Отклонение:**
+  - В альбомной на весь экран iPadOS сам сворачивает сайдбар в верхний таб-бар, когда `TabView` сужается рядом с панелью (11″: 1210 → 869), и возвращает сайдбар после закрытия. ✦ в тулбаре при этом пропадает: вход и выход — закреплённая вкладка «Ассистент» (FR-021). Поведение системное, не наше. Строка «Альбомная · весь · да · да» §Матрица на 11″ поэтому не возникает; 13″ проверяет T049.
+  - Пока панель открыта, управление без рук и «не гасить экран по прокрутке» на рецепте не взводятся: оболочка ставит `assistantRecipeContext.isAssistantSheetOpen = showAssistant`, а для листа на iPhone это правильно. Рядом с панелью рецепт виден, и решать это нужно в T036 (US4).
+  - Пункта «панель + развёрнутый рецепт» нет: рядом с панелью список скрыт в любом случае, «Развернуть» не показывается.
+- [x] T035 [US3] Создать `RecipeScalerNativeUITests/Specs/IPadAssistantSpec.swift`: `testInspectorOpensFromRecipe` (панель 340 pt), `testTabSwitchKeepsInspector`, `testTabSwitchKeepsDraft`, `testSizeClassSwitchKeepsChat` (черновик и сообщения после панель → лист → панель), `testHistoryPopover`; тулбары вкладок с открытой панелью не уходят под таб-бар. iPhone: `bash scripts/verify-assistant.sh`. Ручной проход `#assistant/*` в альбомной, книжной и окне ⅓. — `#assistant/chat`, `#assistant/history`, `#assistant/new`
+
+  **Сделано и проверено 2026-10-13 (a7a9298, 62e5e29):**
+  - `IPadAssistantSpec` — 6/6 на iPad Pro 11" (iPadOS 26.3); на iPhone спека пропускается. Каждый тест — свежий пользователь с одним рецептом через REST.
+  - `testInspectorOpensFromRecipe`: панель 340 ± 2 у правого края, колонки списка нет (FR-022), рецепт не заходит под панель, «Развернуть» нет. × и вкладка «Ассистент» закрывают панель, выбор вкладки не меняется.
+  - `testTabSwitchKeepsInspector`: панель и чат переживают «Рецепты» → «Покупки» → «Подборки» → «Рецепты». «Поделиться» на «Покупках» не уходит под таб-бар и под панель.
+  - `testTabSwitchKeepsDraft`: черновик переживает смену вкладки, а также закрытие и повторное открытие панели.
+  - `testSizeClassSwitchKeepsChat`: панель → лист → панель, те же сообщения и черновик.
+  - `testHistoryPopover`: поповер поверх панели, панель остаётся.
+  - `IPadRecipesSpec` 7/7 и `IPadShellSpec` 13/13 после US3.
+  - iPhone: `verify-assistant.sh` — VERIFIED; `verify-ipad-layout.sh --iphone-regression` — 9 состояний, 0 отличий. `assistant-chat` один раз дал 1 пиксель и прошёл на штатном повторе скрипта.
+  - Ручной проход (симулятор, снимки `tmp/ipad-verify/us3/`): альбомная (панель на «Рецептах» и «Покупках», поповер истории, сворачивание сайдбара), книжная (панель на «Рецептах»), compact ½ (лист с тем же чатом и черновиком, `compact-sheet-portrait.png`).
+
+  **Отклонение:**
+  - Добавлен `testToolbarButtonTogglesPanel`: ✦ на «Покупках» при сайдбаре открывает панель; сайдбар сворачивается в верхний бар (T034), и закрывает панель закреплённая вкладка.
+  - Смена size class в тесте — новый DEBUG-аргумент `-DebugCompactInPortrait=1`: в книжной корень сужается до ½ окна (402, compact), в альбомной остаётся regular, поворот меняет size class на лету. Лист при этом показывает настоящее полноширинное окно, поэтому он выглядит как page sheet по центру, а не как лист в окне ½. Это артефакт хука.
+  - В `RecipeScalerNativeUITests/Helpers/Selectors.swift` поправлен комментарий и удалена константа `ipadAssistantInspector` (id, добавленный в T033 и перекрытый `root_content`). `SeedClient` и `BaseTestCase` не менялись.
+  - Окно ⅓ не проверено: Split View и Stage Manager на симуляторе не автоматизируются, а `-DebugWindowWidth=320` сужает только корень SwiftUI, лист показывает полное окно. Ручной проход ⅓ на устройстве — за человеком (T049).
 
 **Checkpoint (US3)**: панель ассистента открывается из любой вкладки и переживает смену вкладок, список прячется, рецепт остаётся в две колонки в альбомной; в compact — лист с тем же чатом; iPhone — лист как раньше, 0 отличий.
 
