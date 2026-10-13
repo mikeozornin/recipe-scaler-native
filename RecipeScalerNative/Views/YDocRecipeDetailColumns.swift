@@ -25,6 +25,9 @@ struct RecipeDetailPadPanel {
 /// that column above the keyboard, and `rightBottomPadding` keeps the last line clear of it.
 struct YDocRecipeDetailColumns<Left: View, Right: View, RightBar: View>: View {
     let detailWidth: CGFloat
+    /// Hands-free scrolling (FR-026, T036) moves the steps: the probe sits here, at the top
+    /// of the steps column, so its scroll view is the one the probe finds.
+    let scrollProbe: DetailScrollViewProbeBox
     var rightBottomPadding: CGFloat = 0
     @ViewBuilder let left: () -> Left
     @ViewBuilder let right: () -> Right
@@ -53,6 +56,12 @@ struct YDocRecipeDetailColumns<Left: View, Right: View, RightBar: View>: View {
 
             ScrollView {
                 right()
+                    // Behind the steps, so the probe adds no height above «Инструкции».
+                    .background(alignment: .topLeading) {
+                        DetailScrollViewProbe(box: scrollProbe)
+                            .frame(width: 1, height: 1)
+                            .accessibilityHidden(true)
+                    }
                     // Steps text ≤ 660 with the sections' own 16 pt sides, as on the left.
                     .frame(
                         maxWidth: IPadLayoutMetrics.stepsMaxWidth + 2 * Self.sectionInset,
@@ -73,10 +82,17 @@ extension YDocRecipeDetailColumns where RightBar == EmptyView {
     /// Reading: no bar under the steps.
     init(
         detailWidth: CGFloat,
+        scrollProbe: DetailScrollViewProbeBox,
         @ViewBuilder left: @escaping () -> Left,
         @ViewBuilder right: @escaping () -> Right
     ) {
-        self.init(detailWidth: detailWidth, left: left, right: right, rightBar: { EmptyView() })
+        self.init(
+            detailWidth: detailWidth,
+            scrollProbe: scrollProbe,
+            left: left,
+            right: right,
+            rightBar: { EmptyView() }
+        )
     }
 }
 

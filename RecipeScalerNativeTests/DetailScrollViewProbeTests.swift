@@ -27,8 +27,10 @@ final class DetailScrollViewProbeTests: XCTestCase {
         XCTAssertNil(box.host)
     }
 
-    /// Spec 081 (T036): in the iPad two-column recipe the probe sits at the top of the
-    /// steps, so hands-free scrolling moves the right column and leaves the left one.
+    /// Spec 081 (T036): in the iPad two-column recipe the columns place the probe at the
+    /// top of the steps, so hands-free scrolling moves the right column and leaves the left
+    /// one. The recipe view only hands its probe box to the columns (`scrollProbe`), so this
+    /// fails if the columns put the probe anywhere else.
     @MainActor
     func test_probe_in_two_columns_binds_the_right_column() throws {
         let box = DetailScrollViewProbeBox()
@@ -40,13 +42,10 @@ final class DetailScrollViewProbeTests: XCTestCase {
             }
         }
         let host = UIHostingController(
-            rootView: YDocRecipeDetailColumns(detailWidth: 900) {
+            rootView: YDocRecipeDetailColumns(detailWidth: 900, scrollProbe: box) {
                 tall("Ингредиент")
             } right: {
-                VStack(spacing: 0) {
-                    DetailScrollViewProbe(box: box).frame(width: 1, height: 1)
-                    tall("Шаг")
-                }
+                tall("Шаг")
             }
         )
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 900, height: 800))

@@ -680,6 +680,8 @@ struct YDocRecipeDetailView: View {
         if showsTwoColumns, let padPanel {
             YDocRecipeDetailColumns(
                 detailWidth: padPanel.detailWidth,
+                // Hands-free scrolling moves the steps (FR-026).
+                scrollProbe: awakeScrollController.probe,
                 rightBottomPadding: descriptionEditorScrollBottomInset
             ) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -699,11 +701,6 @@ struct YDocRecipeDetailView: View {
                     }
                 }
                 .padding(.top, stepsColumnTopPadding)
-                // Hands-free scrolling moves the steps (FR-026). Behind them, so the
-                // probe adds no height above «Инструкции».
-                .background(alignment: .topLeading) {
-                    detailScrollProbe
-                }
             } rightBar: {
                 formattingBarInset
             }
