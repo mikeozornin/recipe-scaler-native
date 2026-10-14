@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Capture App Store screenshots: 10 shots × ru/en × light/dark on a 6.9″ simulator,
-# or (--device ipad-13) the in-app shots on an iPad 13″ in landscape and portrait.
+# or (--device ipad-13) 6 in-app shots × ru/en on an iPad 13″, light, landscape.
 #
 # Locale switch = E2E relogin only (no uninstall / no data wipe) so SpringBoard
 # widget placement, app icon position, and push/LA TCC survive across ru↔en.
@@ -32,9 +32,9 @@ Usage: $(basename "$0") [options]
 
 Options:
   --device iphone-6.9|ipad-13        default iphone-6.9
-  --orientation portrait|landscape   iPad only, repeatable (default: landscape, portrait)
+  --orientation portrait|landscape   iPad only, repeatable (default: landscape)
   --locale ru|en
-  --appearance light|dark
+  --appearance light|dark   default: light and dark on iPhone, light on iPad
   --shot ID|slug|filename   e.g. 01, recipes, 01-recipes (repeatable)
   --skip-build
   --skip-sync               skip the locale relogin/sync launch (reuse current session)
@@ -43,8 +43,9 @@ Options:
 
 Captures raw 6.9″ PNGs into store/screenshots/iphone-6.9/{locale}/{appearance}/.
 iPad 13″ (spec 081): store/screenshots/ipad-13/{locale}/{appearance}/{orientation}/,
-2064×2752 portrait or 2752×2064 landscape; shots 01–05, 09, 10 (no SpringBoard,
-lock screen or push). Simulator: CAPTURE_SIM_ID=<udid>, else an «iPad Pro 13-inch».
+2752×2064 landscape (2064×2752 with --orientation portrait); shots 01–05 and 09 (no
+SpringBoard, lock screen, push or import). Simulator: CAPTURE_SIM_ID=<udid>, else an
+«iPad Pro 13-inch».
 iPad orientation: a UI test (StoreScreenshotOrientationSpec) holds the device and launches
 the app; logs in tmp/store-capture/. If the app does not turn, the simulator is rebooted
 once. With --skip-build the last build-for-testing is reused.
@@ -58,7 +59,8 @@ EOF
 }
 
 LOCALES=(ru en)
-APPEARANCES=(light dark)
+# Empty = the device default (set below). Populated via --appearance.
+APPEARANCES=()
 # Empty = all shots. Populated via --shot.
 SHOT_FILTER=()
 ORIENTATIONS=()
@@ -89,10 +91,17 @@ case "$DEVICE" in
       exit 1
     fi
     ORIENTATIONS=(portrait)
+    if [[ ${#APPEARANCES[@]} -eq 0 ]]; then
+      APPEARANCES=(light dark)
+    fi
     ;;
   ipad-13)
+    # The store set is landscape and light; portrait and dark only on request.
     if [[ ${#ORIENTATIONS[@]} -eq 0 ]]; then
-      ORIENTATIONS=(landscape portrait)
+      ORIENTATIONS=(landscape)
+    fi
+    if [[ ${#APPEARANCES[@]} -eq 0 ]]; then
+      APPEARANCES=(light)
     fi
     for orientation in "${ORIENTATIONS[@]}"; do
       case "$orientation" in
@@ -140,6 +149,11 @@ acquire_capture_lock || exit 1
 if [[ ${#SHOT_FILTER[@]} -gt 0 ]]; then
   SKIP_VALIDATE=1
 fi
+# The iPad check wants exactly the store set (ru and en, light, landscape).
+if [[ "$DEVICE" == "ipad-13" ]] &&
+  [[ ${#LOCALES[@]} -lt 2 || "${ORIENTATIONS[*]}" != "landscape" || "${APPEARANCES[*]}" != "light" ]]; then
+  SKIP_VALIDATE=1
+fi
 
 ALL_SHOTS=(
   01-recipes
@@ -154,7 +168,7 @@ ALL_SHOTS=(
   10-import
 )
 # The iPad set: in-app screens only. The SpringBoard widget, the lock-screen Live
-# Activity and the push banner stay iPhone shots.
+# Activity and the push banner stay iPhone shots, and so does the import sheet.
 if [[ "$DEVICE" == "ipad-13" ]]; then
   ALL_SHOTS=(
     01-recipes
@@ -163,7 +177,6 @@ if [[ "$DEVICE" == "ipad-13" ]]; then
     04-shopping
     05-assistant
     09-nutrition
-    10-import
   )
 fi
 

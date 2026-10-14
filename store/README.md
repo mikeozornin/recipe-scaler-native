@@ -99,16 +99,22 @@ bash scripts/validate-app-store-screenshots.sh
 
 ```bash
 bash scripts/capture-app-store-screenshots.sh --device ipad-13
-bash scripts/capture-app-store-screenshots.sh --device ipad-13 --locale ru --appearance light --orientation landscape
+bash scripts/capture-app-store-screenshots.sh --device ipad-13 --locale ru --shot 09-nutrition
 bash scripts/validate-app-store-screenshots.sh --device ipad-13
 ```
 
-Нужен симулятор «iPad Pro 13-inch (M4)» (берётся самый свежий runtime, `Scrapp…` пропускаются) или `CAPTURE_SIM_ID=<udid>`. Те же store-юзеры и fixtures, что у iPhone. Повернуть симулятор `simctl` не умеет, поэтому ориентацию держит UI-тест `StoreScreenshotOrientationSpec`: скрипт собирает его (`build-for-testing`), запускает в фоне на каждый проход (альбомный, книжный), и приложение запускает сам тест (XCUIDevice поворачивает только приложение, запущенное XCTest; после `simctl launch` оно остаётся в той ориентации, в которой стартовало). Долго работающий симулятор иногда перестаёт поворачивать приложения; тогда скрипт один раз перезагружает его и повторяет запуск. Логи — `tmp/store-capture/`.
+Store-набор iPad — **только альбомная светлая** тема, RU и EN. Это значения по умолчанию для `--device ipad-13`; `--orientation portrait` и `--appearance dark` снимают запасные кадры, но в набор для ASC они не входят. Прогон не на весь набор (одна локаль, `--shot`, книжная или тёмная) валидацию не запускает.
 
-Кадры: `01-recipes` (список + открытый рецепт), `02-cooking`, `03-discover`, `04-shopping`, `05-assistant` (ассистент рядом с рецептом), `09-nutrition`, `10-import`. Lock screen, виджет и пуш (`06`–`08`) на iPad не снимаем.
+Нужен симулятор «iPad Pro 13-inch (M4)» (берётся самый свежий runtime, `Scrapp…` пропускаются) или `CAPTURE_SIM_ID=<udid>`. Те же store-юзеры и fixtures, что у iPhone. Повернуть симулятор `simctl` не умеет, поэтому ориентацию держит UI-тест `StoreScreenshotOrientationSpec`: скрипт собирает его (`build-for-testing`), запускает в фоне на каждый проход, и приложение запускает сам тест (XCUIDevice поворачивает только приложение, запущенное XCTest; после `simctl launch` оно остаётся в той ориентации, в которой стартовало). Долго работающий симулятор иногда перестаёт поворачивать приложения; тогда скрипт один раз перезагружает его и повторяет запуск. Логи — `tmp/store-capture/`.
 
-Выход: `store/screenshots/ipad-13/{ru,en}/{light,dark}/{landscape,portrait}/0N-*.png`  
-Размер PNG: `2752×2064` (альбомная, с боковой панелью) и `2064×2752` (книжная, панель скрыта). PNG в git не коммитим.
+Скрипт сам:
+- прячет баннер «импорт из буфера»: симулятор подтягивает буфер обмена Mac, и ссылка в нём давала баннер на кадре. Под флагом съёмки приложение буфер не проверяет, буфер Mac трогать не нужно;
+- ждёт загрузки фото рецепта (`screenshot_media_ready`) и картинок карточек (`screenshot_discover_ready`) и перезапускает кадр, если их нет.
+
+Кадры: `01-recipes` (список + открытый рецепт), `02-cooking`, `03-discover`, `04-shopping`, `05-assistant` (ассистент рядом с рецептом), `09-nutrition` (блок КБЖУ рядом с ингредиентами). Lock screen, виджет и пуш (`06`–`08`) на iPad не снимаем, импорт (`10`) в набор не входит.
+
+Выход: `store/screenshots/ipad-13/{ru,en}/light/landscape/0N-*.png` — 6 PNG на локаль, 12 всего  
+Размер PNG: `2752×2064` (альбомная, с боковой панелью). Запасные книжные кадры — `2064×2752`, папка `portrait/`. `validate --device ipad-13` ждёт ровно 12 файлов набора; лишние PNG в `ipad-13/` (старые кадры, `portrait/`, `dark/`) считаются ошибкой — уберите их из папки перед загрузкой. PNG в git не коммитим.
 
 Часы (два кадра: три таймера и пустой список), размер Ultra 3 `422×514`:
 
@@ -126,7 +132,7 @@ bash scripts/capture-watch-screenshots.sh --locale ru --appearance light --shot 
 3. Порядок файлов = номер префикса `01`…`08`.
 4. Виджет на Springboard симулятор сам не ставит: кадр `06-widget` свайпает **вправо до последней страницы** Springboard (не Today слева). Виджет нужно добавить вручную один раз именно туда.
 5. App Review: в ASC Demo Account укажите seed из `users.yaml` → `app-store-review` (вход по seed phrase).
-6. Media Manager → **iPad 13" Display**: до 10 PNG на локаль из `store/screenshots/ipad-13/{locale}/light/{landscape|portrait}/`; ориентацию (альбомная или книжная) выбирает владелец. Порядок — по номеру префикса.
+6. Media Manager → **iPad 13" Display**: 6 PNG на локаль из `store/screenshots/ipad-13/{locale}/light/landscape/` (`2752×2064`). Порядок — по номеру префикса: `01`…`05`, затем `09-nutrition`.
 7. Media Manager → **Apple Watch**: два PNG `01-timers` и `02-empty` из `store/screenshots/watch/{locale}/light/`, размер `422×514` (Ultra 3). Один и тот же размер для всех локалей.
 
 ## Гейты релиза

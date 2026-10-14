@@ -3,7 +3,8 @@
 #
 # Usage: validate-app-store-screenshots.sh [--device iphone-6.9|ipad-13|all]   (default all)
 #   iphone-6.9: store/screenshots/iphone-6.9/{locale}/{appearance}/*.png
-#   ipad-13:    store/screenshots/ipad-13/{locale}/{appearance}/{portrait|landscape}/*.png
+#   ipad-13:    store/screenshots/ipad-13/{ru,en}/light/landscape/ — exactly the store set
+#               01-recipes 02-cooking 03-discover 04-shopping 05-assistant 09-nutrition
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -12,7 +13,7 @@ DEVICE="all"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --device) DEVICE="$2"; shift 2 ;;
-    -h|--help) sed -n '2,6p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,7p' "$0"; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -65,6 +66,15 @@ DEVICES = {
     ),
 }
 
+# The iPad 13″ store set (spec 081): landscape, light, these shots per locale. Anything
+# else under ipad-13/ (dark, portrait, other shots) is not for upload.
+IPAD_SHOTS = ("01-recipes", "02-cooking", "03-discover", "04-shopping", "05-assistant", "09-nutrition")
+EXPECTED = {
+    "ipad-13": {
+        f"{locale}/light/landscape/{shot}.png" for locale in ("ru", "en") for shot in IPAD_SHOTS
+    },
+}
+
 for name, (pattern, accepted_by_orientation) in DEVICES.items():
     if device not in ("all", name):
         continue
@@ -73,6 +83,13 @@ for name, (pattern, accepted_by_orientation) in DEVICES.items():
     if not pngs:
         print(f"no PNGs under {out_root} (capture first, or this is a fixtures-only checkout)")
         continue
+    expected = EXPECTED.get(name)
+    if expected is not None:
+        found = {path.relative_to(out_root).as_posix() for path in out_root.rglob("*.png")}
+        for rel in sorted(expected - found):
+            errors.append(f"{name}/{rel}: missing")
+        for rel in sorted(found - expected):
+            errors.append(f"{name}/{rel}: not in the store set (move it out of {name}/)")
     for path in pngs:
         rel = path.relative_to(shots_root)
         if None in accepted_by_orientation:
