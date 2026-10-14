@@ -466,6 +466,11 @@ struct AppShellView: View {
     }
 
     private func evaluateClipboardImport() {
+        #if DEBUG
+        // Store capture: the Simulator copies the Mac clipboard into the device, so a URL
+        // there would put «Import from the clipboard?» over the shot (like `SystemBannerChrome`).
+        if DebugLaunchOptions.screenshotCapture { return }
+        #endif
         let context = clipboardEvaluateContext
         Task { await clipboardImport.evaluate(context: context) }
     }
