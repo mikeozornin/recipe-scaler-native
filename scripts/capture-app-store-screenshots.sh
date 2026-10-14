@@ -121,10 +121,16 @@ fi
 # One capture process at a time (parallel runs fight over Home/Lock/timers).
 # mkdir is atomic on macOS/Linux; no dependency on util-linux flock.
 CAPTURE_LOCK_DIR="${CAPTURE_LOCK}.d"
+# Runs on exit: the rotation test ends, the iPad multitasking mode comes back, the lock goes.
+capture_cleanup() {
+  release_orientation 2>/dev/null || true
+  restore_multitasking_mode 2>/dev/null || true
+  rm -rf "$CAPTURE_LOCK_DIR"
+}
 acquire_capture_lock() {
   if mkdir "$CAPTURE_LOCK_DIR" 2>/dev/null; then
     echo "$$" >"$CAPTURE_LOCK_DIR/pid"
-    trap 'release_orientation 2>/dev/null || true; rm -rf "$CAPTURE_LOCK_DIR"' EXIT INT TERM
+    trap capture_cleanup EXIT INT TERM
     echo "  capture lock acquired (pid $$)"
     return 0
   fi
@@ -135,7 +141,7 @@ acquire_capture_lock() {
     rm -rf "$CAPTURE_LOCK_DIR"
     if mkdir "$CAPTURE_LOCK_DIR" 2>/dev/null; then
       echo "$$" >"$CAPTURE_LOCK_DIR/pid"
-      trap 'release_orientation 2>/dev/null || true; rm -rf "$CAPTURE_LOCK_DIR"' EXIT INT TERM
+      trap capture_cleanup EXIT INT TERM
       echo "  capture lock acquired (pid $$)"
       return 0
     fi
@@ -350,7 +356,7 @@ PY
 }
 
 restart_springboard() {
-  echo "  bouncing SpringBoard (apply OS locale)"
+  echo "  bouncing SpringBoard (${1:-apply OS locale})"
   xcrun simctl spawn "$SIM_ID" launchctl stop com.apple.SpringBoard >/dev/null 2>&1 || true
   xcrun simctl spawn "$SIM_ID" killall -9 SpringBoard >/dev/null 2>&1 || true
   # Short settle — do not poll for minutes.
@@ -393,6 +399,50 @@ PY
 
 set_appearance() {
   capture_set_appearance "$1"
+}
+
+# iPad: in «Windowed Apps» or Stage Manager the app window gets a resize grip and rounded
+# corners. Settings › Multitasking & Gestures › «Full Screen Apps» is
+# SBMedusaMultitaskingEnabled=0 and SBChamoisWindowingEnabled=0 in com.apple.springboard;
+# SpringBoard applies them when it restarts. The previous values come back on exit.
+SAVED_MULTITASKING=""
+use_full_screen_apps() {
+  [[ "$DEVICE" == "ipad-13" ]] || return 0
+  local key value saved="" switch=0
+  for key in SBMedusaMultitaskingEnabled SBChamoisWindowingEnabled; do
+    value="$(xcrun simctl spawn "$SIM_ID" defaults read com.apple.springboard "$key" 2>/dev/null || echo absent)"
+    saved+="$key=$value "
+    [[ "$value" == "0" ]] || switch=1
+  done
+  if [[ "$switch" == "0" ]]; then
+    echo "  multitasking: Full Screen Apps"
+    return 0
+  fi
+  SAVED_MULTITASKING="$saved"
+  echo "  multitasking → Full Screen Apps (was: $saved)"
+  for key in SBMedusaMultitaskingEnabled SBChamoisWindowingEnabled; do
+    xcrun simctl spawn "$SIM_ID" defaults write com.apple.springboard "$key" -bool false
+  done
+  restart_springboard "Full Screen Apps"
+}
+
+restore_multitasking_mode() {
+  [[ -n "$SAVED_MULTITASKING" ]] || return 0
+  local saved="$SAVED_MULTITASKING" pair key value
+  SAVED_MULTITASKING=""
+  echo "  multitasking → back to: $saved"
+  for pair in $saved; do
+    key="${pair%%=*}"
+    value="${pair#*=}"
+    if [[ "$value" == "absent" ]]; then
+      xcrun simctl spawn "$SIM_ID" defaults delete com.apple.springboard "$key" >/dev/null 2>&1 || true
+    elif [[ "$value" == "1" ]]; then
+      xcrun simctl spawn "$SIM_ID" defaults write com.apple.springboard "$key" -bool true >/dev/null 2>&1 || true
+    else
+      xcrun simctl spawn "$SIM_ID" defaults write com.apple.springboard "$key" -bool false >/dev/null 2>&1 || true
+    fi
+  done
+  xcrun simctl spawn "$SIM_ID" launchctl stop com.apple.SpringBoard >/dev/null 2>&1 || true
 }
 
 launch_capture() {
@@ -1390,6 +1440,7 @@ if [[ "$SKIP_BUILD" != "1" ]]; then
   sim_ensure_built
 fi
 sim_prepare
+use_full_screen_apps
 # One install per session — never uninstall between locales (keeps widget / icon / TCC).
 sim_install
 grant_capture_permissions_cold
