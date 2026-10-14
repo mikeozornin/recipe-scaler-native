@@ -46,6 +46,22 @@ enum IOSReleaseNotesCatalog {
 
             Встряхните телефон, чтобы открыть ассистента.
             """
+        ),
+        IOSReleaseNote(
+            version: 3,
+            date: releaseDate(year: 2026, month: 10, day: 15),
+            titleEn: "Recipe Scaler now works on iPad too.",
+            titleRu: "Recipe Scaler теперь работает и на iPad.",
+            bodyEn: """
+            On a big iPad you can view a recipe and discuss it with the assistant at the same time, and a smaller iPad is just as comfortable.
+
+            Of course, everything iPad can do is supported: Split View and Stage Manager.
+            """,
+            bodyRu: """
+            На большом iPad вы сможете смотреть рецепт и обсуждать его с ассистентом, но и на iPad поменьше тоже будет удобно.
+
+            Разумеется, поддерживаются все возможности iPad: Split View и Stage Manager.
+            """
         )
     ]
 
