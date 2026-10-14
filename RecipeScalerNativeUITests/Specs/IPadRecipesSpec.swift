@@ -931,11 +931,13 @@ final class IPadRecipesSpec: BaseTestCase {
         XCTAssertGreaterThanOrEqual(bar.minX, steps.minX - 1, "The formatting bar \(bar) starts left of the steps column \(steps) (\(state))", file: file, line: line)
         XCTAssertLessThanOrEqual(bar.maxX, steps.maxX + 1, "The formatting bar \(bar) ends right of the steps column \(steps) (\(state))", file: file, line: line)
         let keyboard = app.keyboards.firstMatch
-        // Headless (Simulator.app closed), after `typeText` the next field gets only the
-        // keyboard's shortcuts bar, and `app.keyboards` finds nothing.
+        // `typeText` sends hardware key presses. With the simulator's automatic keyboard
+        // minimization on, iPadOS can shrink the keyboard to its shortcuts bar for the next
+        // field, and `app.keyboards` finds nothing (docs/AGENT-WORKFLOW.md, XCTest).
         XCTAssertTrue(
             keyboard.waitForExistence(timeout: Wait.element),
-            "No software keyboard (\(state)); is Simulator.app open on this iPad with the hardware keyboard disconnected?",
+            "No software keyboard (\(state)); is AutomaticMinimizationEnabled off in this iPad's com.apple.keyboard.preferences, "
+                + "and Simulator.app open on it with the hardware keyboard disconnected?",
             file: file,
             line: line
         )
