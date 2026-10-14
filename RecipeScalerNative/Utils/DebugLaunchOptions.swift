@@ -406,6 +406,10 @@ enum DebugLaunchOptions {
         ])
     }
 
+    /// How long 03-discover keeps retrying card images, from the profile load. The capture
+    /// script waits longer than this for `screenshot_discover_ready`.
+    static let screenshotDiscoverImageDeadline: TimeInterval = 100
+
     /// Load the public profile card images (the URLs and loader the grid uses), then emit
     /// `screenshot_discover_ready` with how many loaded, for capture scripts.
     @MainActor
@@ -417,15 +421,19 @@ enum DebugLaunchOptions {
         let urls = DiscoverSearch.sortedByRecipeName(response.recipes) { $0.name }
             .compactMap { DiscoverImageURLs.publicRecipeCard(recipe: $0) }
             .prefix(24)
+        // A grid cell may already be downloading a file; waiting on it gives up after 5 s,
+        // and some production images take 30–60 s. Keep asking until the shared deadline:
+        // a relaunch would throw the half-done downloads away.
+        let deadline = Date().addingTimeInterval(screenshotDiscoverImageDeadline)
         var loaded = 0
         for url in urls {
-            if await DiscoverImageLoader.loadImage(from: url) != nil {
-                loaded += 1
-                continue
-            }
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            if await DiscoverImageLoader.loadImage(from: url) != nil {
-                loaded += 1
+            while true {
+                if await DiscoverImageLoader.loadImage(from: url) != nil {
+                    loaded += 1
+                    break
+                }
+                guard Date() < deadline else { break }
+                do { try await Task.sleep(nanoseconds: 1_000_000_000) } catch { return }
             }
         }
         // Time for the cards to draw images that finished loading just now.

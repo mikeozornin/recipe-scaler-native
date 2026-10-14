@@ -123,11 +123,11 @@ struct DiscoverRecipePreviewImage: View {
         loadedImage = await DiscoverImageLoader.loadImage(from: url)
         #if DEBUG
         // Store capture (03-discover): a cell that waited on another download of the same file
-        // and timed out stays a placeholder, so try again until the image is there.
+        // and timed out stays a placeholder, so try again until the image is there. Some
+        // production images take 30–60 s to download, hence the long deadline.
         guard DebugLaunchOptions.screenshotCapture else { return }
-        var attempt = 0
-        while loadedImage == nil, attempt < 10 {
-            attempt += 1
+        let deadline = Date().addingTimeInterval(DebugLaunchOptions.screenshotDiscoverImageDeadline)
+        while loadedImage == nil, Date() < deadline {
             do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return }
             loadedImage = await DiscoverImageLoader.loadImage(from: url)
         }

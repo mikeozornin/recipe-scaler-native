@@ -1264,7 +1264,9 @@ capture_shot() {
           "-AppLanguage=$app_lang" \
           "-AppTheme=$appearance" \
           "-OpenDiscoverProfile=$discover_profile"
-        if wait_for_discover_screenshot 90 "$since_ms" "$([[ "$discover_attempt" == 3 ]] && echo 1 || echo 0)"; then
+        # The app keeps retrying slow card images for up to 100 s
+        # (DebugLaunchOptions.screenshotDiscoverImageDeadline) before it reports.
+        if wait_for_discover_screenshot 150 "$since_ms" "$([[ "$discover_attempt" == 3 ]] && echo 1 || echo 0)"; then
           discover_ok=1
           break
         fi
