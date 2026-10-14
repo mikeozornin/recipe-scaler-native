@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Fixture self-test for scripts/verify-ipad-keyboard.sh (spec 081, US6): with fake axe,
-# curl and xcodebuild on PATH, the verifier must say VERIFIED only when the host test
-# passed and every key it asked for was sent and seen, and fail on a broken env or run.
+# curl, xcodebuild and xcrun on PATH, the verifier must say VERIFIED only when the host test
+# passed and every key it asked for was sent and seen, and fail on a broken env or run. It
+# must read the simulator's keyboard preferences before the spec and put them back after.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -29,6 +30,7 @@ SH
 # test "sees" the key unless it is FAKE_UNSEEN.
 cat >"$FAKE_BIN/xcodebuild" <<'SH'
 #!/usr/bin/env bash
+echo "xcodebuild $1" >>"$FAKE_TOOL_CALLS"
 case "$1" in
   build-for-testing) exit "${FAKE_BUILD_STATUS:-0}" ;;
   test-without-building) ;;
@@ -60,8 +62,37 @@ echo "$test_case passed (1.0 seconds)."
 echo "Executed 1 test, with 0 failures (0 unexpected) in 1.0 (1.0) seconds"
 SH
 
+# simctl as far as the verifier uses it. FAKE_PREFS: "AutomaticMinimizationEnabled=1 …" —
+# a key not listed does not exist. FAKE_SIMCTL_STATUS: every simctl call fails with it, as
+# for a simulator that is not booted.
+cat >"$FAKE_BIN/xcrun" <<'SH'
+#!/usr/bin/env bash
+echo "xcrun $*" >>"$FAKE_TOOL_CALLS"
+if [[ -n "${FAKE_SIMCTL_STATUS:-}" ]]; then
+  echo "Invalid device: $3" >&2
+  exit "$FAKE_SIMCTL_STATUS"
+fi
+case "$1 $2" in
+  "simctl bootstatus") exit 0 ;;
+  "simctl spawn") shift 3 ;;
+  *) exit 64 ;;
+esac
+[[ "$1" == defaults ]] || exit 64
+case "$2" in
+  read)
+    for pair in ${FAKE_PREFS:-}; do
+      [[ "${pair%%=*}" == "$4" ]] && { echo "${pair#*=}"; exit 0; }
+    done
+    echo "The domain/default pair of ($3, $4) does not exist" >&2
+    exit 1
+    ;;
+  write | delete) exit 0 ;;
+esac
+exit 64
+SH
+
 chmod +x "$FAKE_BIN"/*
-cp "$FAKE_BIN/curl" "$FAKE_BIN/xcodebuild" "$NO_AXE_BIN/"
+cp "$FAKE_BIN/curl" "$FAKE_BIN/xcodebuild" "$FAKE_BIN/xcrun" "$NO_AXE_BIN/"
 
 fail() {
   echo "FAIL: $*" >&2
@@ -75,10 +106,11 @@ expect() {
   shift 5
   case_index=$((case_index + 1))
   local calls="$TMP_DIR/axe-calls-$case_index"
+  local tools="$TMP_DIR/tool-calls-$case_index"
   local out status=0
   out="$(env -i HOME="$HOME" PATH="$bin:/usr/bin:/bin" \
     IPAD_SIM_ID=FAKE-SIM IPAD_KEYBOARD_OUT="$TMP_DIR/out-$case_index" IPAD_KEYBOARD_KEY_DELAY=0 \
-    FAKE_AXE_CALLS="$calls" "$@" bash "$SCRIPT" 2>&1)" || status=$?
+    FAKE_AXE_CALLS="$calls" FAKE_TOOL_CALLS="$tools" "$@" bash "$SCRIPT" 2>&1)" || status=$?
   if [[ "$status" != "$want" ]]; then
     printf '%s\n' "$out" >&2
     fail "$name: exit $status, expected $want"
@@ -88,6 +120,7 @@ expect() {
     fail "$name: output lacks '$needle'"
   fi
   LAST_CALLS="$calls"
+  LAST_TOOLS="$tools"
   echo "PASS: $name"
 }
 
@@ -110,5 +143,33 @@ expect 0 "VERIFIED ipad-keyboard (1 tests on FAKE-SIM, 3 host keys sent and seen
 want_calls=$'key-combo --modifiers 227 --key 42 --udid FAKE-SIM\nkey-combo --modifiers 227 --key 31 --udid FAKE-SIM\nkey-combo --modifiers 227 --key 40 --udid FAKE-SIM'
 [[ "$(cat "$LAST_CALLS")" == "$want_calls" ]] || fail "host keys: axe got «$(cat "$LAST_CALLS")»"
 echo "PASS: axe got ⌘⌫, ⌘2, ⌘↩ in order"
+
+PREFS="xcrun simctl spawn FAKE-SIM defaults"
+DOMAIN=com.apple.keyboard.preferences
+expect 0 "keyboard preferences put back: AutomaticMinimizationEnabled=0 HardwareKeyboardLastSeen=absent" \
+  "the keyboard preferences are read before the spec and put back after it" "$FAKE_BIN" -- \
+  FAKE_MARKERS="1 cmd-delete" FAKE_PREFS="AutomaticMinimizationEnabled=0"
+want_tools="xcodebuild build-for-testing
+xcrun simctl bootstatus FAKE-SIM -b
+$PREFS read $DOMAIN AutomaticMinimizationEnabled
+$PREFS read $DOMAIN HardwareKeyboardLastSeen
+xcodebuild test-without-building
+$PREFS write $DOMAIN AutomaticMinimizationEnabled -bool NO
+$PREFS delete $DOMAIN HardwareKeyboardLastSeen"
+[[ "$(cat "$LAST_TOOLS")" == "$want_tools" ]] || fail "keyboard preferences: calls were «$(cat "$LAST_TOOLS")»"
+echo "PASS: read before xcodebuild, the off key written back, the missing key deleted"
+
+expect 1 "keyboard preferences put back: AutomaticMinimizationEnabled=1 HardwareKeyboardLastSeen=1" \
+  "a failed run puts the keyboard preferences back" "$FAKE_BIN" -- \
+  FAKE_MODE=fail FAKE_PREFS="AutomaticMinimizationEnabled=1 HardwareKeyboardLastSeen=1"
+grep -qx "$PREFS write $DOMAIN AutomaticMinimizationEnabled -bool YES" "$LAST_TOOLS" \
+  || fail "a failed run: AutomaticMinimizationEnabled was not written back"
+
+expect 1 "FAILED: xcodebuild test-without-building exit 65" "unreadable preferences are left alone" "$FAKE_BIN" -- \
+  FAKE_MODE=fail FAKE_SIMCTL_STATUS=148
+if grep -qE "defaults (write|delete)" "$LAST_TOOLS"; then
+  fail "unreadable preferences: the verifier wrote «$(grep -E "defaults (write|delete)" "$LAST_TOOLS")»"
+fi
+echo "PASS: nothing written when the keys cannot be read"
 
 echo "verify-ipad-keyboard self-test: all cases passed"

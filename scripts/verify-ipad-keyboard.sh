@@ -18,6 +18,13 @@
 # simulator. Any ConnectHardwareKeyboard value, no Simulator window. Do not type on the
 # Mac while it runs: the keys go to the booted simulator.
 #
+# The spec's hardware keys (`typeKey` and the host keys) make iPadOS note a hardware keyboard
+# and switch on automatic keyboard minimization in the simulator
+# (com.apple.keyboard.preferences: HardwareKeyboardLastSeen, AutomaticMinimizationEnabled).
+# With it on, IPadRecipesSpec can get the shortcuts bar instead of the keyboard after
+# `typeText`. The script boots the simulator, reads both keys before the spec runs and
+# writes them back when it exits.
+#
 # Env:
 #   IPAD_SIM_ID                 iPad simulator override (scripts/resolve-ipad-simulator.sh)
 #   IPAD_KEYBOARD_OUT           output dir (default tmp/ipad-keyboard): build.log, test.log,
@@ -26,7 +33,7 @@
 #
 # Verdict: VERIFIED only when xcodebuild passes, at least one test ran, testHostKeys
 # passed (not skipped), and every key it asked for was sent and seen. FAILED otherwise
-# (exit 1); INCONCLUSIVE when AXe or the backend is missing (exit 2).
+# (exit 1); INCONCLUSIVE when AXe, the backend or the simulator is missing (exit 2).
 
 set -euo pipefail
 
@@ -44,7 +51,7 @@ while (($#)); do
       shift
       ;;
     -h|--help)
-      sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,36p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)
@@ -97,6 +104,41 @@ else
   (( build_status == 0 )) || failed "build-for-testing exit $build_status (see $BUILD_LOG)"
 fi
 
+KEYBOARD_PREFS=com.apple.keyboard.preferences
+KEYBOARD_PREF_KEYS="AutomaticMinimizationEnabled HardwareKeyboardLastSeen"
+saved_keyboard_prefs=""
+
+# Both keys are booleans. A key `defaults` says does not exist is saved as «absent» and
+# deleted at exit; a key it cannot read (the simulator is not booted) is left alone.
+save_keyboard_prefs() {
+  local key value
+  for key in $KEYBOARD_PREF_KEYS; do
+    if value="$(xcrun simctl spawn "$SIM" defaults read "$KEYBOARD_PREFS" "$key" 2>&1)"; then
+      saved_keyboard_prefs+="$key=$value "
+    elif [[ "$value" == *"does not exist"* ]]; then
+      saved_keyboard_prefs+="$key=absent "
+    fi
+  done
+}
+
+restore_keyboard_prefs() {
+  local entry key value
+  for entry in $saved_keyboard_prefs; do
+    key="${entry%%=*}"
+    value="${entry#*=}"
+    case "$value" in
+      absent) xcrun simctl spawn "$SIM" defaults delete "$KEYBOARD_PREFS" "$key" >/dev/null 2>&1 || true ;;
+      1) xcrun simctl spawn "$SIM" defaults write "$KEYBOARD_PREFS" "$key" -bool YES >/dev/null 2>&1 || true ;;
+      0) xcrun simctl spawn "$SIM" defaults write "$KEYBOARD_PREFS" "$key" -bool NO >/dev/null 2>&1 || true ;;
+    esac
+  done
+  [[ -z "$saved_keyboard_prefs" ]] || echo "keyboard preferences put back: $saved_keyboard_prefs" | tee -a "$KEYS_LOG"
+  saved_keyboard_prefs=""
+}
+
+trap restore_keyboard_prefs EXIT
+trap 'exit 130' INT TERM
+
 # AXe HID usages: ⌘ 227; Return 40, Backspace 42, «2» 31.
 combo_args() {
   case "$1" in
@@ -106,6 +148,10 @@ combo_args() {
     *) return 1 ;;
   esac
 }
+
+# Boot it now, as xcodebuild would, so the keys can be read before the spec runs.
+xcrun simctl bootstatus "$SIM" -b >/dev/null 2>&1 || true
+save_keyboard_prefs
 
 echo "== $TEST_ID with the host keys → $TEST_LOG =="
 rm -rf "$RESULT"
