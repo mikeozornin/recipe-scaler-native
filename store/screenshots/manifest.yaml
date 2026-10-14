@@ -24,6 +24,9 @@ locales:
     appearances: [light, dark]
     primaryRecipeName: Штрудель
     timerName: "Штрудель в духовке"
+    # iPad 13″ opens this recipe instead (matched by title, spec 081).
+    ipadRecipeName: Печенье с шоколадом
+    ipadTimerName: "Печенье в духовке"
     assistantPrompt: "Соус свернулся. Как спасти пасту?"
     # Prefix "!" = purchased on the shopping shot.
     shoppingItems:
@@ -38,6 +41,8 @@ locales:
     appearances: [light, dark]
     primaryRecipeName: Strudel
     timerName: "Strudel in the oven"
+    ipadRecipeName: Chocolate Cookies
+    ipadTimerName: "Cookies in the oven"
     assistantPrompt: "My sauce split. How can I save the pasta?"
     shoppingItems:
       - "Flour, 280 g — Strudel"

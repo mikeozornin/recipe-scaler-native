@@ -1457,6 +1457,13 @@ for locale in "${LOCALES[@]}"; do
   [[ -f "$archive" ]] || { echo "missing $archive" >&2; exit 1; }
   recipe_name="$(manifest_value "$locale" primaryRecipeName)"
   timer_name="$(manifest_value "$locale" timerName)"
+  if [[ "$DEVICE" == "ipad-13" ]]; then
+    ipad_recipe_name="$(manifest_value "$locale" ipadRecipeName)"
+    ipad_timer_name="$(manifest_value "$locale" ipadTimerName)"
+    [[ -n "$ipad_recipe_name" ]] && recipe_name="$ipad_recipe_name"
+    [[ -n "$ipad_timer_name" ]] && timer_name="$ipad_timer_name"
+  fi
+  echo "  open recipe: $recipe_name"
   app_lang="$(manifest_value "$locale" appLanguage)"
   shopping_seed="$(shopping_seed_arg "$locale")"
 
