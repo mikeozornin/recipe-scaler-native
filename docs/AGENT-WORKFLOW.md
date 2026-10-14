@@ -57,10 +57,30 @@ xcodebuild test-without-building -scheme RecipeScalerNative \
 Паттерн build-for-testing + test-without-building — в `scripts/verify-third-party-import.sh`.
 
 UI-спеки iPad, которые проверяют программную клавиатуру (`IPadRecipesSpec`), гоняй с открытым
-Simulator.app на этом iPad и отключённой аппаратной клавиатурой
-(`defaults read com.apple.iphonesimulator ConnectHardwareKeyboard` → 0). Без окна симулятора после
-`typeText` следующее поле получает от iPadOS только панель быстрых команд вместо клавиатуры, и
-`app.keyboards` пуст («No software keyboard»).
+Simulator.app на этом iPad, отключённой аппаратной клавиатурой
+(`defaults read com.apple.iphonesimulator ConnectHardwareKeyboard` → 0) и выключенной
+автоматической минимизацией клавиатуры в самом симуляторе:
+
+```bash
+xcrun simctl spawn <udid iPad> defaults read com.apple.keyboard.preferences AutomaticMinimizationEnabled
+xcrun simctl spawn <udid iPad> defaults write com.apple.keyboard.preferences AutomaticMinimizationEnabled -bool NO
+```
+
+Симулятор должен быть загружен; ключ действует со следующего запуска приложения, перезагрузка не
+нужна. `typeText` шлёт аппаратные нажатия, и при включённой минимизации iPadOS после них может
+свернуть клавиатуру до панели быстрых команд: следующее поле получает только её, `app.keyboards`
+пуст («No software keyboard»), а в логе приложения (`xcrun simctl spawn <udid> log show --predicate
+'eventMessage CONTAINS "Setting keyboard minimized"'`) видно `Setting keyboard minimized = 1`.
+
+Минимизацию включают аппаратные нажатия `IPadKeyboardSpec` (`typeKey` и `axe key-combo` из
+`verify-ipad-keyboard.sh`): iPadOS запоминает аппаратную клавиатуру (`HardwareKeyboardLastSeen`) и
+ставит `AutomaticMinimizationEnabled = 1`. Сворачивает UIKit, только если считает аппаратную
+клавиатуру подключённой. Это состояние запущенного симулятора, его меняют нажатия, поэтому с ключом 1
+спека то падает, то проходит, даже без перезагрузки. `verify-ipad-keyboard.sh` возвращает оба ключа
+как были. После `IPadKeyboardSpec` прямо через `xcodebuild` или на симуляторе, где её гоняли до
+этого, выключи минимизацию командой выше. Код приложения тут ни при чём: на устройстве без
+аппаратной клавиатуры клавиатура в шагах есть. Окно симулятора держи видимым: под чужими окнами
+`testEditTwoColumns` проходил, но ждал анимаций по минуте и шёл 19 минут вместо двух.
 
 `IPadKeyboardSpec` (шорткаты iPad, spec 081 US6) окно Simulator.app не нужно, `ConnectHardwareKeyboard`
 любой: `typeKey` шлёт аппаратные события. Ограничения `typeKey` на симуляторе iPadOS 26.3:

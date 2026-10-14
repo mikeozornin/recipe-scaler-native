@@ -882,3 +882,18 @@ The old shell (iPadOS 17.0–26.1, spec.md Q1) could not be checked on the simul
 - At 320 pt the large title «Список покупок» truncates with an ellipsis, as the system's large title does. Left as is.
 
 ---
+
+### 2026-10-14 — iPad: the simulator's keyboard minimization fails IPadRecipesSpec (spec 081)
+
+**Decision:** `IPadRecipesSpec` needs `AutomaticMinimizationEnabled` off in the iPad simulator's `com.apple.keyboard.preferences`. `docs/AGENT-WORKFLOW.md` gives the command, and the test's failure message names the key. `scripts/verify-ipad-keyboard.sh` reads that key and `HardwareKeyboardLastSeen` before the spec runs and writes both back when it exits. The app code does not change.
+
+**Rationale:** At 1c73997, `testEditTwoColumns` failed on the 11″ simulator with «No software keyboard (landscape)». The Simulator window was open and `ConnectHardwareKeyboard` was 0.
+- **Not the code.** 14613a2, the last commit before US7, fails the same way on that simulator. On an iPad Air 11″ (M3) with build e0f4873 and no hardware keyboard, the steps editor gets the keyboard.
+- **iPadOS minimizes the keyboard.** The app's log shows the keyboard created minimized and shown for the title field. Four seconds later, right after `typeText(" Pie")`, it logs `Setting keyboard minimized = 1`. On screen there is only the shortcuts bar («РУ», B I U, dictation). Passing runs log no minimization.
+- **The preference decides it.** In one boot session the key was set live with `simctl spawn … defaults write`. With it off the test passed, both with the window in front and with the window under other windows. With it back on the test failed both ways.
+- **IPadKeyboardSpec turns it on.** The host keys of `verify-ipad-keyboard.sh` (`axe key-combo`) wrote `HardwareKeyboardLastSeen = 1` and `AutomaticMinimizationEnabled = 1`. In another run the key was turned off beforehand and was on again before the first host key, after the `typeKey` tests. The 13″ simulator has never run that spec and has none of these keys.
+- **Not every session fails.** UIKit minimizes from `-[UIKeyboard syncMinimizedStateToHardwareKeyboardAttachedState]`, so it also depends on whether iPadOS counts a hardware keyboard as attached at that moment. That is a state of the running simulator, and the keys it gets change it. With the key on, the test failed in some runs, and in others the whole spec passed, within one boot session. With it off, no run has failed. So the workflow turns the key off rather than trusting the session.
+
+The US4/US5 review note above found that a closed Simulator window fails the same way. That was before the host keys (cf60d16 precedes b2d84a9) and was not retried. Under other windows the test passed, but it waited about a minute for animations at each step and took 19 minutes instead of 2.
+
+---
