@@ -876,4 +876,9 @@ The edit test types an ingredient in the edit of a ⌘N recipe. A recipe created
 
 The old shell (iPadOS 17.0–26.1, spec.md Q1) could not be checked on the simulator. On the iOS 18.4 runtime the app crashes at launch: dyld cannot load `/usr/lib/swift/libswiftWebKit.dylib`. The app links it through the Swift overlay `WKWebView.callAsyncJavaScript(_:arguments:in:contentWorld:) async` (deployment target 17), and the 18.4/18.5 simulator runtimes keep the library in `System/Cryptexes/OS/usr/lib/swift`, where dyld does not look. It is a known runtime bug (WebKit 293831; Apple forums threads 780073 and 785964), and devices are reported to run. No iOS 17 runtime is installed. Both are owner checks on a device.
 
+**Update 2026-10-14.** The matrix passes on both screens (11″ 1210 × 834, 13″ 1376 × 1032, iPadOS 26.3).
+- **The sidebar comes back.** Back at the whole window after a compact one, iPadOS shows the sidebar again. The recipe and shopping walks hide it; the assistant walk opens it beside the panel. On the 13″ it stands beside the content and the recipe keeps two columns; on the 11″ it covers the dimmed recipe. The list column stays hidden in both (FR-022).
+- **A hidden list column is not off screen.** It waits off the content's leading edge, and beside the sidebar that edge is the sidebar's (279 pt on the 13″). The test counts the column as shown only with its collection title in it; the hidden column is empty.
+- At 320 pt the large title «Список покупок» truncates with an ellipsis, as the system's large title does. Left as is.
+
 ---
