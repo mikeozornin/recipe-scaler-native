@@ -25,6 +25,7 @@ esac
 python3 - "$ROOT/store/screenshots" "$PBXPROJ" "$DEVICE" <<'PY'
 import re
 import struct
+import subprocess
 import sys
 from pathlib import Path
 
@@ -110,6 +111,14 @@ for name, (pattern, accepted_by_orientation) in DEVICES.items():
             errors.append(f"{rel}: unexpected size {width}x{height}")
         if path.stat().st_size > 10 * 1024 * 1024:
             errors.append(f"{rel}: larger than 10 MB")
+        # App Store Connect rejects screenshots with an alpha channel; sips is the source of truth.
+        sips = subprocess.run(
+            ["sips", "-g", "hasAlpha", str(path)], capture_output=True, text=True, check=False
+        )
+        if sips.returncode != 0:
+            errors.append(f"{rel}: sips could not read the file to check for alpha")
+        elif "hasAlpha: yes" in sips.stdout:
+            errors.append(f"{rel}: has an alpha channel (flatten to opaque RGB)")
 
 if errors:
     print("validation failed:", file=sys.stderr)
