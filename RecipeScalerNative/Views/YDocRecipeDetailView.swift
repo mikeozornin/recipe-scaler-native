@@ -39,9 +39,6 @@ struct YDocRecipeDetailView: View {
     @AppStorage(NutritionSettings.globalEnabledKey) private var showNutritionGlobal = true
     @State var nutritionViewMode: IngredientNutritionViewMode = NutritionViewModeStorage.load()
     @State private var isLoading = false
-    #if DEBUG
-    @State var didScheduleNutritionScreenshot = false
-    #endif
     @State var isEditing = false
     @State var editViewModel: RecipeEditViewModel?
     @State var editErrorMessage: String?
@@ -351,17 +348,8 @@ struct YDocRecipeDetailView: View {
                 }
             }
         }
-        .onChange(of: isLoading) { _, loading in
-            scheduleScreenshotNutritionScrollIfNeeded(
-                scrollProxy: scrollProxy,
-                loading: loading
-            )
-        }
-        .task(id: "\(recipeId)-nutrition-\(isLoading)-\(recipe == nil ? "0" : "1")") {
-            scheduleScreenshotNutritionScrollIfNeeded(
-                scrollProxy: scrollProxy,
-                loading: isLoading
-            )
+        .task(id: "\(recipeId)-nutrition-\(isLoading)-\(recipe == nil ? "0" : "1")-\(screenshotNutritionLayoutKey)") {
+            await runScreenshotNutritionScroll(scrollProxy: scrollProxy, loading: isLoading)
         }
         #endif
         }
@@ -561,9 +549,6 @@ struct YDocRecipeDetailView: View {
             syncService.acknowledgeRecipeRemoved()
             await syncService.loadRecipe(recipeId: recipeId)
             #if DEBUG
-            if DebugLaunchOptions.screenshotScrollToNutrition {
-                showNutritionGlobal = true
-            }
             if let screenshotScale = DebugLaunchOptions.screenshotScaleFactor {
                 scaleFactor = screenshotScale
                 RecipeScaleStorage.saveScaleFactor(recipeId: recipeId, scaleFactor: screenshotScale)
@@ -791,6 +776,16 @@ struct YDocRecipeDetailView: View {
         }
     }
 
+    /// The account's nutrition switch. The 09 store shot (`-ScreenshotScrollToNutrition`)
+    /// shows nutrition whatever the store account says: on iPad the sidebar footer's
+    /// `AccountSettingsViewModel` writes the server value over the switch right after launch.
+    private var nutritionShown: Bool {
+        #if DEBUG
+        if DebugLaunchOptions.screenshotScrollToNutrition { return true }
+        #endif
+        return showNutritionGlobal
+    }
+
     /// Servings, ingredients and nutrition: the left column.
     @ViewBuilder
     private func detailLeftSections(recipe: RecipeData) -> some View {
@@ -808,7 +803,7 @@ struct YDocRecipeDetailView: View {
                 baseServings: max(1, recipe.servings),
                 scaleFactor: scaleFactor,
                 accentColor: accentColor,
-                nutritionEnabled: showNutritionGlobal,
+                nutritionEnabled: nutritionShown,
                 nutritionViewMode: nutritionViewMode,
                 onCommit: { ingredient in
                     await saveIngredient(ingredient, existing: recipe.ingredients.first { $0.id == ingredient.id })
@@ -869,13 +864,13 @@ struct YDocRecipeDetailView: View {
                     : { ingredient in
                         Task { await addIngredientToShopping(ingredient) }
                     },
-                nutritionEnabled: showNutritionGlobal,
+                nutritionEnabled: nutritionShown,
                 nutritionViewMode: nutritionViewMode
             )
         }
 
         if !isEditing,
-           showNutritionGlobal,
+           nutritionShown,
            RecipeNutritionDisplay.effectiveMacros(from: recipe) != nil {
             nutritionBlock(recipe: recipe)
                 .id("recipe_nutrition")

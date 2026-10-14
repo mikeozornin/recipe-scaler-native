@@ -95,33 +95,40 @@ extension YDocRecipeDetailView {
     }
 
     #if DEBUG
-    func scheduleScreenshotNutritionScrollIfNeeded(
-        scrollProxy: ScrollViewProxy,
-        loading: Bool
-    ) {
-        guard !didScheduleNutritionScreenshot,
-              !loading,
+    /// Part of the 09 store shot's task id: the capture turns the iPad after launch, and the
+    /// two-column layout needs its own scroll.
+    var screenshotNutritionLayoutKey: String {
+        "\(showsTwoColumns ? 2 : 1)-\(Int(padPanel?.detailWidth ?? 0))"
+    }
+
+    /// Scrolls the 09 store shot to the nutrition block, then tells the capture script.
+    /// Runs again whenever the layout changes; a newer run cancels the older one.
+    func runScreenshotNutritionScroll(scrollProxy: ScrollViewProxy, loading: Bool) async {
+        guard !loading,
               recipe != nil,
               DebugLaunchOptions.screenshotScrollToNutrition else { return }
-        didScheduleNutritionScreenshot = true
-        AppLog.info(.app, "screenshot_nutrition_scroll_scheduled", data: ["recipeId": recipeId])
-        let readyRecipeId = recipeId
-        let readyImageUrl = headerImageUrl
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+        // Two columns: the block at the bottom of the left column keeps the ingredient rows
+        // with their nutrition lines in frame above it.
+        let anchor: UnitPoint = showsTwoColumns ? .bottom : .top
+        AppLog.info(.app, "screenshot_nutrition_scroll_scheduled", data: [
+            "recipeId": recipeId,
+            "twoColumns": showsTwoColumns ? "1" : "0",
+        ])
+        do {
+            try await Task.sleep(nanoseconds: 1_200_000_000)
             withAnimation(.easeOut(duration: 0.3)) {
-                scrollProxy.scrollTo("recipe_nutrition", anchor: .top)
+                scrollProxy.scrollTo("recipe_nutrition", anchor: anchor)
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                scrollProxy.scrollTo("recipe_nutrition", anchor: .top)
-            }
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 800_000_000)
-                await DebugLaunchOptions.signalScreenshotRecipeMediaReadyIfNeeded(
-                    recipeId: readyRecipeId,
-                    imageUrl: readyImageUrl
-                )
-            }
+            try await Task.sleep(nanoseconds: 350_000_000)
+            scrollProxy.scrollTo("recipe_nutrition", anchor: anchor)
+            try await Task.sleep(nanoseconds: 450_000_000)
+        } catch {
+            return
         }
+        await DebugLaunchOptions.signalScreenshotRecipeMediaReadyIfNeeded(
+            recipeId: recipeId,
+            imageUrl: headerImageUrl
+        )
     }
 
     /// Retries edit + editor sheet until recipe is loaded (verify scripts).
