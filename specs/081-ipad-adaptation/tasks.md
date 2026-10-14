@@ -797,16 +797,40 @@
 - [ ] T055 [P] iPad-скриншоты App Store: `scripts/capture-app-store-screenshots.sh` и `scripts/validate-app-store-screenshots.sh` для iPad 13″ (2064 × 2752, обе ориентации по требованиям ASC). **Human gate**: загрузка и выбор доступности на Mac и Vision Pro в ASC. — `#recipes/tabs`, `#assistant/chat`, `#shopping/recipe`
   - Сделано (2026-10-14): `--device ipad-13 [--orientation landscape|portrait]` (повторяемый, по умолчанию обе) в capture-скрипте, `--device iphone-6.9|ipad-13|all` в валидаторе, `capture_resolve_ipad_13_sim` в `scripts/sim-capture-lib.sh`; ориентацию держит и приложение запускает UI-тест `StoreScreenshotOrientationSpec` (в обычных прогонах пропускается). Снимки — `store/screenshots/ipad-13/{locale}/{appearance}/{portrait|landscape}/` (в `.gitignore`), порядок — `store/README.md`. EN (светлая и тёмная, обе ориентации, 28 снимков) снят и проходит валидатор.
   - Не сделано: RU — у русского демо-аккаунта на проде нет рецептов (его 12 рецептов оказались у английского, там же лишний «New recipe»), съёмка падает на `screenshot_media_ready`. Владельцу: заново заполнить библиотеки (`scripts/bootstrap-store-libraries.sh`), почистить EN, переснять EN и RU.
-- [ ] T056 Полная проверка по plan.md §Verification:
+- [x] T056 Полная проверка по plan.md §Verification:
   - `bash scripts/verify-all.sh`;
   - iPhone-регрессия;
   - все iPad UI-спеки;
   - `verify-ipad-layout.sh` с ручной сверкой со скриншотами прототипа.
 
   — все 24 состояния, `#recipes/sidebar` … `#menubar/view` (layout.md §Карта состояний)
+  - Сделано (2026-10-14, HEAD 437ded8 + 2a356cd, логи `tmp/t056/logs/`):
+    - policy-check, `verify-plan-policy.py`, `verify-plan-state.sh`, `lint-i18n.sh` — зелёные; `lint-composition-root.sh` — код 0 со старым WARN.
+    - Сборки iPhone, iPad (`UIDeviceFamily` [1, 2]) и Release — успешны; test-fast — 1116 тестов, 0 падений, 2 пропущены.
+    - `verify-all.sh` останавливается на проверке дрейфа каталога: реестр в вебе (990bb55b) новее синхронизации native (a575436), на master то же самое, к 081 не относится (backlog). 14 верификаторов после неё прогнаны отдельно: 12 зелёных сразу; `verify-timers-sync.sh` искал старт таймера в удалённом `RecipeDetailView.swift` — исправлено (2a356cd), зелёный; `verify-description-editor.sh` — зелёный после того, как на свежем симуляторе закрыт системный запрос уведомлений (он перекрывал панель форматирования).
+    - iPhone (временный iPhone 17 Pro, iOS 26.3): `AppShellNavigationSpec` 3/3, `verify-ui-smoke.sh` зелёный, `verify-ipad-layout.sh --iphone-regression` — 9 состояний, 0 расхождений.
+    - iPad 11″: `IPadShellSpec`, `IPadRecipesSpec`, `IPadAssistantSpec` — 30 тестов, 0 падений; `verify-ipad-keyboard.sh` зелёный (первые два прогона симулятор не поворачивался в альбомную, после перезагрузки симулятора — зелёный); матрица 11″ (59 снимков) и 13″ (60 снимков) зелёная, `tmp/t056/matrix/`.
+    - `verify-ipad-layout.sh` — 14 состояний, сверка с прототипом (`tmp/t056/cmp/`): структура сайдбар / список / рецепт, верхний бар, инспектор ассистента 340, фокус в две колонки, баннер готовки, «Готово» в правке (Q2), профиль листом (Q7), покупки, нижний бар в ½ и ⅓ — как в layout.md. Расхождения: у листа импорта нет «×» слева (layout.md `#import/text`), закрывается ручкой или тапом мимо — телефонное поведение, принято в T020; `recipes-collection` снимает плоский список, а не открытую коллекцию (ограничение скрипта); в книжной ассистент сворачивает вкладки верхнего бара в стрелки.
+    - Эмодзи на симуляторе iOS 26.3 под macOS 15 рисуются «?» — особенность хоста, не приложения.
 - [ ] T057 Независимое ревью отдельным агентом (не self-review) по plan.md: инварианты iPhone, ловушка environment в тулбарах, утечки стеков в `TabSection`, async lifecycle футера и `AssistantSessionModel`, изоляция UIKit-обхода в `IPadSidebarControl`. — все 24 состояния, `#recipes/sidebar` … `#menubar/view` (layout.md §Карта состояний)
 
 **Checkpoint (Polish)**: `verify-all.sh` зелёный, ревью без блокирующих замечаний, human gates отмечены.
+
+- [x] `verify-all.sh` зелёный — все 14 верификаторов (кроме проверки дрейфа каталога, она падает и на master, см. T056).
+- [x] Ревью без блокирующих замечаний — T057 выполнен, замечаний с уверенностью ≥ 80 нет, мелочи исправлены в 87d9774..437ded8.
+- [ ] Human gates (открыты; сборки 5724a1a и e0f4873 владелец уже проверил, включая управление окнами):
+  - «Окно» / «Закрыть окно» (T050);
+  - старая оболочка на iPadOS 17/18 (T051);
+  - расширения (T004);
+  - ручные рецепты (T031);
+  - ⌘↩ / ⌘⌫ на настоящей клавиатуре;
+  - ⌘+ в русской раскладке;
+  - вид строки меню и список при удержании ⌘;
+  - изменение размера в Stage Manager посреди правки;
+  - системное «Назад» в течение 0,5 с после смены раскладки;
+  - iPhone с аппаратной клавиатурой;
+  - ½ на 13″;
+  - загрузка в ASC и доступность на Mac и Vision Pro (T055, после пересъёмки скриншотов).
 
 ---
 
