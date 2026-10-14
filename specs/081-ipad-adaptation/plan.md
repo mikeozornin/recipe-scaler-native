@@ -387,7 +387,7 @@ HStack(spacing: 0) {
 
 | Файл | Действие | Почему |
 |------|----------|--------|
-| `RecipeScalerNative.xcodeproj/project.pbxproj` | Изменить | `TARGETED_DEVICE_FAMILY = "1,2"` для приложения (:4158, :4397, :4419, :4442); расширения — по итогам T004; регистрация новых файлов. |
+| `RecipeScalerNative.xcodeproj/project.pbxproj` | Изменить | `TARGETED_DEVICE_FAMILY = "1,2"` для приложения (:4158, :4397, :4419, :4442); расширения и ShareExtensionUI — `"1,2"`, RecipeScalerCore — `"1,2,4"` (T004); регистрация новых файлов. |
 | `RecipeScalerNative/Info.plist` | Проверить, не менять | Ориентации `~ipad` уже есть (:116-122). `UIApplicationSupportsMultipleScenes` не добавляем (STOP 5). |
 | `RecipeScalerNative/Views/IPad/AppLayoutMode.swift` | Создать | Р1: режим раскладки, ключ environment, вычисление из idiom и size class. |
 | `RecipeScalerNative/Views/IPad/IPadLayoutPolicy.swift` | Создать | Константы и чистая политика колонок, включая ширину левой колонки рецепта (layout.md §Токены). |
@@ -442,7 +442,7 @@ HStack(spacing: 0) {
   - **Подборки:** `DiscoverPublicProfileView`, `DiscoverRecipeCardGrid`.
   - **Готовка:** `ProcessTableCookingPresenter` (ветки по idiom: `:55-58`, `:63`, `:92`, `:112`, `:120`) — только проверка, без изменений.
 - **Cross-process**:
-  - `TARGETED_DEVICE_FAMILY` расширений (Share, Action, HomeWidget, TimerLiveActivity, ShareExtensionUI) — только если проверка архива T004 этого потребует; UI расширений не меняется.
+  - `TARGETED_DEVICE_FAMILY` расширений (Share, Action, HomeWidget, TimerLiveActivity, ShareExtensionUI) — `"1,2"` (T004, правило App Review для расширений); UI расширений не меняется. На iPad теперь доступны Share и Action в Safari, виджет и Live Activity таймера на экране блокировки (iPadOS 17+).
   - Часы: `WatchCredentialsBridge` уже проверяет `WCSession.isSupported()` (`RecipeScalerNative/Services/WatchCredentialsBridge.swift:20`, `:47`, `:72`, `:91`).
   - Live Activity: `TimerLiveActivityCoordinator.swift:190` проверяет `areActivitiesEnabled`.
   - App Intents, быстрые действия, Spotlight, Universal Links приходят через `AppShellCoordinator.handleDeepLink` (`:256`) и путь рецептов.
@@ -545,7 +545,7 @@ HStack(spacing: 0) {
 | Resource | Manifest | Source output | Installed path | Built `.app`/`.appex` assertion |
 |----------|----------|---------------|----------------|---------------------------------|
 | `UIDeviceFamily` в Info.plist приложения | `TARGETED_DEVICE_FAMILY` в `project.pbxproj` | сборка | `RecipeScalerNative.app/Info.plist` | `plutil -extract UIDeviceFamily json -o - <app>/Info.plist` → `[1,2]` (T003) |
-| `UIDeviceFamily` расширений | то же для расширений | сборка | `PlugIns/*.appex/Info.plist` | по итогам T004: либо `[1]` и валидация архива проходит, либо `[1,2]` |
+| `UIDeviceFamily` расширений и фреймворков | то же для расширений (Share, Action, HomeWidget, TimerLiveActivity: `"1,2"`), ShareExtensionUI (`"1,2"`) и RecipeScalerCore (`"1,2,4"`) | сборка | `PlugIns/*.appex/Info.plist`, `Frameworks/*.framework/Info.plist` | `[1,2]` у всех четырёх `.appex`, ShareExtensionUI и Core в iOS-приложении; `[4]` у часов и их Core. T004, Release-архив 2026-10-15. Основание — правило App Review из App Extension Programming Guide: расширение должно быть «iPhone/iPad» при любом семействе приложения |
 | iPad-скриншоты App Store | `scripts/capture-app-store-screenshots.sh` | симулятор iPad 13″ | каталог скриншотов скрипта | `scripts/validate-app-store-screenshots.sh` проверяет размеры iPad |
 
 ## Human gates
@@ -554,7 +554,7 @@ HStack(spacing: 0) {
 - [ ] `layout-audit.json` — не делается: эталон не Figma (решение постановки).
 - [ ] Ревью плана человеком до T005. Ответы на Q1–Q6 получены 2026-10-12 (spec.md §Clarifications); осталось одобрить план целиком.
 - [ ] Ручной проход на iPad-симуляторе по layout.md §Матрица приёмки после каждой истории; Split View, Slide Over и Stage Manager — вручную.
-- [ ] Валидация архива с семейством устройств «1,2» в App Store Connect (T004) — нужна учётка.
+- [ ] Валидация архива с семейством устройств «1,2» в App Store Connect (T004) — пройдёт при загрузке сборки 1.0.13. Локальный архив собран, `UIDeviceFamily` проверен.
 - [ ] Загрузка iPad-скриншотов и выбор в ASC доступности на Mac («Designed for iPad») и Vision Pro — по умолчанию выключить.
 - [ ] Отдельный review-агент (T057); self-review не заменяет.
 

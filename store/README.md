@@ -142,7 +142,7 @@ bash scripts/capture-watch-screenshots.sh --locale ru --appearance light --shot 
 
 ## Гейты релиза
 
-- **iPhone + iPad:** с spec 081 у main app `TARGETED_DEVICE_FAMILY = "1,2"` (`validate-app-store-screenshots.sh` проверяет). ASC требует кадры **iPad 13″** рядом с iPhone 6.9″ — см. «iPad 13″» выше. Расширения пока `1` (spec 081 T004).
+- **iPhone + iPad:** с spec 081 у main app `TARGETED_DEVICE_FAMILY = "1,2"` (`validate-app-store-screenshots.sh` проверяет). ASC требует кадры **iPad 13″** рядом с iPhone 6.9″ — см. «iPad 13″» выше. Расширения (Share, Action, HomeWidget, TimerLiveActivity) и ShareExtensionUI — тоже `"1,2"`, RecipeScalerCore — `"1,2,4"` (spec 081 T004).
 - **Watch:** companion `RecipeScalerNativeWatch` входит в архив схемы `RecipeScalerNative` (`Watch/RecipeScalerNativeWatch.app`). ASC потребует скриншоты Apple Watch отдельно от кадров iPhone 6.9″.
 - **Debug chrome:** на кадрах нет seed, splash, DB-init banner, feature-adoption оверлеев.
 

@@ -40,13 +40,17 @@
   - Ориентации `UISupportedInterfaceOrientations~ipad` в `RecipeScalerNative/Info.plist` уже есть — только проверить.
 
   — `#recipes/sidebar`
-- [ ] T004 Проверить семейство устройств расширений (Share, Action, HomeWidget, TimerLiveActivity, ShareExtensionUI).
+- [x] T004 Проверить семейство устройств расширений (Share, Action, HomeWidget, TimerLiveActivity, ShareExtensionUI).
   - Собрать архив и выполнить validate в Xcode Organizer / `xcodebuild -exportArchive` с `-validate`.
   - Если валидация требует совпадения с приложением — поставить `"1,2"` у расширений без изменения их UI.
   - Результат записать в plan.md §Generated resources.
   - **Human gate**: нужна учётная запись App Store Connect.
 
   — `#import/text` (Share/Action Extension открывают импорт; инфраструктура)
+  - Сделано (2026-10-15): `TARGETED_DEVICE_FAMILY = "1,2"` у Share, Action, HomeWidget, TimerLiveActivity и ShareExtensionUI во всех четырёх конфигурациях (Debug, Release, DebugDevice, ReleaseDevice). У RecipeScalerCore — `"1,2,4"` (было `"1,4"`): в iOS-приложении фреймворк был `[1]`, в часах остаётся `[4]`. UI расширений не менялся, Info.plist расширений без iPhone-only ключей.
+  - Почему без валидации: архивное App Extension Programming Guide требует для App Review «iPhone/iPad» у расширения при любом семействе приложения (`developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/ExtensionCreation.html`). Кода ITMS на несовпадение не нашли. Live Activities есть на iPad с iPadOS 17 (ActivityKit: «available on iPhone and iPad»), виджеты `systemSmall` — на iPadOS 14+, на экране блокировки — iPadOS 17+. Поэтому `"1,2"` у всех четырёх.
+  - Release-архив (`RS_SKIP_BUILD_BUMP=1`, `Config/Version.xcconfig` не тронут): приложение, 4 расширения, ShareExtensionUI и Core — `UIDeviceFamily` `[1, 2]`; часы и их Core — `[4]`. Ориентации `~ipad` — все четыре, `UIRequiresFullScreen` нет.
+  - Не сделано: проверка в ASC — валидация пройдёт при загрузке сборки 1.0.13. Владельцу на iPad: импорт из Safari через Share и Action, виджет в галерее, Live Activity таймера на экране блокировки.
 
 **Checkpoint**: приложение ставится на iPad-симулятор и запускается без режима совместимости (сейчас — телефонная раскладка, растянутая на iPad; это ожидаемо). iPhone-эталон скриншотов снят. `verify-ui-smoke.sh` на iPhone зелёный.
 
@@ -821,7 +825,7 @@
 - [ ] Human gates (открыты; сборки 5724a1a и e0f4873 владелец уже проверил, включая управление окнами):
   - «Окно» / «Закрыть окно» (T050);
   - старая оболочка на iPadOS 17/18 (T051);
-  - расширения (T004);
+  - расширения на iPad (T004: Share и Action в Safari, виджет, Live Activity; `"1,2"` уже стоит);
   - ручные рецепты (T031);
   - ⌘↩ / ⌘⌫ на настоящей клавиатуре;
   - ⌘+ в русской раскладке;
