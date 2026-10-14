@@ -338,6 +338,8 @@ final class AssistantSessionModel {
         let reply: String
         if isCookies {
             // iPad store shot 05 sits beside «Печенье с шоколадом» / «Chocolate Cookies».
+            // The composer hint is pinned to «adapt this recipe for 6 servings»: a random one may name strudel.
+            inputPlaceholderVariantIndex = 4
             question = isEnglish
                 ? "My cookies spread in the oven. What should I do?"
                 : "Печенье растекается, что делать?"
