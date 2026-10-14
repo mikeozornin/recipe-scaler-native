@@ -135,10 +135,7 @@ struct ShoppingListView: View {
         ) {
             shoppingList
                 .iPadReadableWidth(IPadLayoutMetrics.readablePageWidth)
-                // The margins around the 720 pt page share the list background (no-op on the phone).
-                .background(Color(.systemGroupedBackground))
-                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { pageFrame = $0 }
-                .reportsIPadSidebarShown($iPadSidebarShown)
+                .modifier(ShoppingIPadPageReader(pageFrame: $pageFrame, sidebarShown: $iPadSidebarShown))
         }
         .localizedNavigationTitle("shopping.title")
         .navigationBarTitleDisplayMode(.large)
@@ -716,6 +713,29 @@ private struct ShoppingRemindersTipBanner: View {
 
 // MARK: - Share sheet
 
+
+/// Spec 081 — the page background, frame and sidebar placement behind `vkusvillIconOnly`,
+/// iPad only. Nothing on the iPhone reads them (`vkusvillIconOnly` is `.padRegular` only),
+/// so the phone list keeps the view tree it had before the iPad shell.
+private struct ShoppingIPadPageReader: ViewModifier {
+    @Binding var pageFrame: CGRect
+    @Binding var sidebarShown: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        // Keyed on the idiom, which never changes while the app runs (as `iPadReadableWidth`),
+        // so a compact iPad window keeps the same view tree.
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            content
+                // The margins around the 720 pt page share the list background.
+                .background(Color(.systemGroupedBackground))
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { pageFrame = $0 }
+                .reportsIPadSidebarShown($sidebarShown)
+        } else {
+            content
+        }
+    }
+}
 
 /// Toolbar host with no `@Environment(Observable.self)` — required so iOS 26
 /// bar remasure after assistant dismiss does not trap in fallback env.
