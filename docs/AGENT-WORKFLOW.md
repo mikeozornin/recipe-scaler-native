@@ -56,6 +56,29 @@ xcodebuild test-without-building -scheme RecipeScalerNative \
 
 Паттерн build-for-testing + test-without-building — в `scripts/verify-third-party-import.sh`.
 
+### iPad (spec 081)
+
+iPad-симулятор выбирает `scripts/resolve-ipad-simulator.sh` (пара к `resolve-simulator.sh`):
+`IPAD_SIM_ID=<udid>` побеждает, иначе «iPad Pro 11-inch (M4)» → «iPad Air 11-inch» → любой iPad,
+свежий runtime, уже загруженный. Симуляторы `Scrapp…` чужие, скрипт их не берёт. Им пользуются все
+iPad-скрипты ниже.
+
+```bash
+IPAD_ID="$(bash scripts/resolve-ipad-simulator.sh)"
+bash scripts/verify-ipad-layout.sh --list-states          # имена состояний
+bash scripts/verify-ipad-layout.sh                        # все состояния на iPad → tmp/ipad-verify/
+bash scripts/verify-ipad-layout.sh --skip-build --only recipes-sidebar,assistant-chat
+IPAD_VERIFY_LANGUAGE=en bash scripts/verify-ipad-layout.sh --skip-build   # английский интерфейс (по умолчанию ru)
+bash scripts/verify-ipad-layout.sh --iphone-regression    # iPhone: попиксельно с базой, FAILED при любом отличии
+```
+
+iPad-режим только снимает кадры (`CHECKED`): раскладку сверяешь глазами с `specs/081-ipad-adaptation/layout.md`.
+`--iphone-regression` сравнивает те же состояния на iPhone с базой `tmp/ipad-verify/iphone-baseline/`
+(снимается `--capture-baseline` на коде без Swift-правок spec 081). Данные — shared DEBUG-юзер на
+prod, `-ScreenshotCapture=1` удаляет его активные таймеры; подробности в шапке скрипта.
+`--matrix` запускает `scripts/verify-ipad-matrix.sh` (ширины многозадачности, см. ниже). iPad-кадры
+App Store снимает `capture-app-store-screenshots.sh --device ipad-13`, см. `store/README.md`.
+
 UI-спеки iPad, которые проверяют программную клавиатуру (`IPadRecipesSpec`), гоняй с открытым
 Simulator.app на этом iPad, отключённой аппаратной клавиатурой
 (`defaults read com.apple.iphonesimulator ConnectHardwareKeyboard` → 0) и выключенной
