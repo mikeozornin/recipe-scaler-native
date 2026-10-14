@@ -940,3 +940,17 @@ The US4/US5 review note above found that a closed Simulator window fails the sam
 - `043-mac-ipad-layout` also adds a native macOS target (`RecipeScalerMac`). A Mac app is out of scope here: «Designed for iPad» and Vision Pro availability are the owner's choice in App Store Connect.
 
 ---
+
+### 2026-10-14 — iPhone behaviour that spec 081 changes on purpose (spec 081 review)
+
+**Decision:** Spec 081 keeps the iPhone as it is on `master`, with three deliberate exceptions in shared code:
+- Closing the assistant sheet in any way clears `assistantOpenRequest` (the sheet's `onDismiss` in `AppShellView`).
+- A change of `assistantSessionEpoch` (logout or account switch while the shell stays) closes an open assistant sheet, as it already closed the profile and import sheets.
+- «Создать» of a new collection is disabled when the name is blank after trimming spaces and newlines (`NewCollectionCommit.name(from:)`), the same rule the save uses on the phone and in the iPad sidebar.
+
+**Rationale:**
+- On `master` a request that opened the sheet from outside (for example «Купить во Вкусвилле») outlived a swipe-down. The assistant tab's open path stops on `guard assistantOpenRequest == nil`, so the next tap on the tab did nothing. That was a latent iPhone bug; the panel and the sheet now share one session (2026-10-13, «one assistant session»), so the request has to end with the chat.
+- On `master` the epoch tore down the sheet's session, but the sheet stayed open over the next account as an empty chat, unlike the profile and import sheets. Closing it also resets the recipe context (2026-10-13, «Logout and account switch close the assistant»).
+- The save trimmed spaces only on `master`; the shared helper also trims newlines. A name of only newlines left «Создать» enabled with nothing to save. The single-line field rarely holds a newline, so the visible change is small.
+
+---
