@@ -1,20 +1,35 @@
 #!/usr/bin/env bash
 # Validate App Store screenshot PNG sizes and store release gates.
+#
+# Usage: validate-app-store-screenshots.sh [--device iphone-6.9|ipad-13|all]   (default all)
+#   iphone-6.9: store/screenshots/iphone-6.9/{locale}/{appearance}/*.png
+#   ipad-13:    store/screenshots/ipad-13/{locale}/{appearance}/{portrait|landscape}/*.png
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUT_ROOT="$ROOT/store/screenshots/iphone-6.9"
 PBXPROJ="$ROOT/RecipeScalerNative.xcodeproj/project.pbxproj"
+DEVICE="all"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --device) DEVICE="$2"; shift 2 ;;
+    -h|--help) sed -n '2,6p' "$0"; exit 0 ;;
+    *) echo "Unknown arg: $1" >&2; exit 1 ;;
+  esac
+done
+case "$DEVICE" in
+  iphone-6.9|ipad-13|all) ;;
+  *) echo "Unknown device: $DEVICE (iphone-6.9 | ipad-13 | all)" >&2; exit 1 ;;
+esac
 
-python3 - "$OUT_ROOT" "$PBXPROJ" <<'PY'
+python3 - "$ROOT/store/screenshots" "$PBXPROJ" "$DEVICE" <<'PY'
 import re
 import struct
 import sys
 from pathlib import Path
 
-out_root = Path(sys.argv[1])
+shots_root = Path(sys.argv[1])
 pbxproj = Path(sys.argv[2]).read_text()
-accepted = {(1260, 2736), (1320, 2868), (1290, 2796)}
+device = sys.argv[3]
 errors: list[str] = []
 
 main_family = re.findall(
@@ -28,25 +43,50 @@ if not main_family:
         pbxproj,
     )
 families = {value.strip().strip('"') for value in main_family}
-if families != {"1"}:
-    errors.append(f"main app TARGETED_DEVICE_FAMILY must be 1, got {sorted(families) or 'missing'}")
+# Spec 081: the app is universal (iPhone + iPad), so ASC asks for iPad 13″ shots too.
+if families != {"1,2"}:
+    errors.append(f"main app TARGETED_DEVICE_FAMILY must be 1,2 (spec 081), got {sorted(families) or 'missing'}")
 
 if "RecipeScalerNativeWatch.app in Embed Watch Content" not in pbxproj:
     errors.append(
         "store archive must embed RecipeScalerNativeWatch via Embed Watch Content"
     )
 
-pngs = sorted(out_root.glob("*/*/*.png"))
-if not pngs:
-    print(f"no PNGs under {out_root} (capture first, or this is a fixtures-only checkout)")
-else:
+IPAD_PORTRAIT = {(2064, 2752), (2048, 2732)}
+DEVICES = {
+    # device dir: (glob, accepted sizes by orientation dir or None)
+    "iphone-6.9": ("*/*/*.png", {None: {(1260, 2736), (1320, 2868), (1290, 2796)}}),
+    "ipad-13": (
+        "*/*/*/*.png",
+        {
+            "portrait": IPAD_PORTRAIT,
+            "landscape": {(h, w) for w, h in IPAD_PORTRAIT},
+        },
+    ),
+}
+
+for name, (pattern, accepted_by_orientation) in DEVICES.items():
+    if device not in ("all", name):
+        continue
+    out_root = shots_root / name
+    pngs = sorted(out_root.glob(pattern))
+    if not pngs:
+        print(f"no PNGs under {out_root} (capture first, or this is a fixtures-only checkout)")
+        continue
     for path in pngs:
+        rel = path.relative_to(shots_root)
+        if None in accepted_by_orientation:
+            accepted = accepted_by_orientation[None]
+        else:
+            accepted = accepted_by_orientation.get(path.parent.name)
+            if accepted is None:
+                errors.append(f"{rel}: orientation folder must be portrait or landscape")
+                continue
         data = path.read_bytes()
         if data[:8] != b"\x89PNG\r\n\x1a\n":
-            errors.append(f"{path}: not a PNG")
+            errors.append(f"{rel}: not a PNG")
             continue
         width, height = struct.unpack(">II", data[16:24])
-        rel = path.relative_to(out_root)
         status = "OK" if (width, height) in accepted else "BAD"
         print(f"{rel}: {width}x{height} {status}")
         if (width, height) not in accepted:

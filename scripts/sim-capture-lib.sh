@@ -41,6 +41,49 @@ PY
   return 1
 }
 
+# iPad 13″ for App Store screenshots (spec 081): 2064 × 2752. CAPTURE_SIM_ID wins;
+# otherwise the newest available device named «iPad Pro 13-inch …» (any prefix, e.g. a
+# renamed copy). Simulators named «Scrapp…» belong to another project and are skipped.
+# Sets SIM_ID and SIM_NAME.
+capture_resolve_ipad_13_sim() {
+  local found
+  found="$(python3 - "${CAPTURE_SIM_ID:-}" <<'PY'
+import json
+import subprocess
+import sys
+
+want = sys.argv[1]
+data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))
+candidates = []
+for runtime, devices in data.get("devices", {}).items():
+    for device in devices:
+        name = device.get("name", "")
+        if not device.get("isAvailable", True) or name.startswith("Scrapp"):
+            continue
+        if want:
+            if device["udid"] == want:
+                print(f"{device['udid']}\t{name}")
+                raise SystemExit
+            continue
+        if "iPad Pro 13-inch" in name:
+            version = tuple(int(p) for p in runtime.rsplit("iOS-", 1)[-1].split("-") if p.isdigit())
+            candidates.append((version, device.get("state") == "Booted", name, device["udid"]))
+if candidates:
+    candidates.sort(reverse=True)
+    _, _, name, udid = candidates[0]
+    print(f"{udid}\t{name}")
+PY
+)"
+  if [[ -z "$found" ]]; then
+    echo "ERROR: no iPad Pro 13-inch simulator found${CAPTURE_SIM_ID:+ (CAPTURE_SIM_ID=$CAPTURE_SIM_ID)}" >&2
+    return 1
+  fi
+  SIM_ID="${found%%$'\t'*}"
+  SIM_NAME="${found#*$'\t'}"
+  export SIM_ID SIM_NAME
+  echo "== Simulator: $SIM_NAME ($SIM_ID) =="
+}
+
 capture_override_status_bar() {
   xcrun simctl status_bar "$SIM_ID" clear >/dev/null 2>&1 || true
   xcrun simctl status_bar "$SIM_ID" override \

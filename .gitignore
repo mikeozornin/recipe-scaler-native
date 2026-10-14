@@ -67,6 +67,7 @@ tmp
 .capture-screenshots.lock
 .capture-screenshots.lock.d/
 store/screenshots/iphone-6.9/**/*.png
+store/screenshots/ipad-13/**/*.png
 store/screenshots/watch/**/*.png
 # Drafts (digest/What's New) — локальные артефакты; .gitkeep держит каталог в git.
 store/drafts/*

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Capture App Store screenshots: 9 shots × ru/en × light/dark on a 6.9″ simulator.
+# Capture App Store screenshots: 10 shots × ru/en × light/dark on a 6.9″ simulator,
+# or (--device ipad-13) the in-app shots on an iPad 13″ in landscape and portrait.
 #
 # Locale switch = E2E relogin only (no uninstall / no data wipe) so SpringBoard
 # widget placement, app icon position, and push/LA TCC survive across ru↔en.
@@ -13,7 +14,7 @@ source "$ROOT/scripts/sim-verify-lib.sh"
 source "$ROOT/scripts/sim-capture-lib.sh"
 
 API_BASE="${E2E_API_BASE:-https://recipe-scaler.ru}"
-OUT_ROOT="$ROOT/store/screenshots/iphone-6.9"
+DEVICE="iphone-6.9"
 MANIFEST="$ROOT/store/screenshots/manifest.yaml"
 LOG_FILE="$ROOT/.debug-session.ndjson"
 STATUS_TIME="9:41"
@@ -30,6 +31,8 @@ usage() {
 Usage: $(basename "$0") [options]
 
 Options:
+  --device iphone-6.9|ipad-13        default iphone-6.9
+  --orientation portrait|landscape   iPad only, repeatable (default: landscape, portrait)
   --locale ru|en
   --appearance light|dark
   --shot ID|slug|filename   e.g. 01, recipes, 01-recipes (repeatable)
@@ -39,6 +42,12 @@ Options:
   --skip-validate           skip final matrix validation (useful for single-shot)
 
 Captures raw 6.9″ PNGs into store/screenshots/iphone-6.9/{locale}/{appearance}/.
+iPad 13″ (spec 081): store/screenshots/ipad-13/{locale}/{appearance}/{orientation}/,
+2064×2752 portrait or 2752×2064 landscape; shots 01–05, 09, 10 (no SpringBoard,
+lock screen or push). Simulator: CAPTURE_SIM_ID=<udid>, else an «iPad Pro 13-inch».
+iPad orientation: a UI test (StoreScreenshotOrientationSpec) holds the device and launches
+the app; logs in tmp/store-capture/. If the app does not turn, the simulator is rebooted
+once. With --skip-build the last build-for-testing is reused.
 Uses persistent users from store/fixtures/users.yaml (not register-auto).
 Does NOT uninstall between locales — only relaunches with E2E credentials.
 Exclusive lock via `.capture-screenshots.lock.d` — do not run two captures in parallel.
@@ -52,12 +61,15 @@ LOCALES=(ru en)
 APPEARANCES=(light dark)
 # Empty = all shots. Populated via --shot.
 SHOT_FILTER=()
+ORIENTATIONS=()
 SKIP_BUILD=0
 SKIP_SYNC=0
 VALIDATE_ONLY=0
 SKIP_VALIDATE=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --device) DEVICE="$2"; shift 2 ;;
+    --orientation) ORIENTATIONS+=("$2"); shift 2 ;;
     --locale) LOCALES=("$2"); shift 2 ;;
     --appearance) APPEARANCES=("$2"); shift 2 ;;
     --shot) SHOT_FILTER+=("$2"); shift 2 ;;
@@ -70,8 +82,31 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+case "$DEVICE" in
+  iphone-6.9)
+    if [[ ${#ORIENTATIONS[@]} -gt 0 ]]; then
+      echo "--orientation is for --device ipad-13 only" >&2
+      exit 1
+    fi
+    ORIENTATIONS=(portrait)
+    ;;
+  ipad-13)
+    if [[ ${#ORIENTATIONS[@]} -eq 0 ]]; then
+      ORIENTATIONS=(landscape portrait)
+    fi
+    for orientation in "${ORIENTATIONS[@]}"; do
+      case "$orientation" in
+        portrait|landscape) ;;
+        *) echo "Unknown orientation: $orientation" >&2; exit 1 ;;
+      esac
+    done
+    ;;
+  *) echo "Unknown device: $DEVICE (iphone-6.9 | ipad-13)" >&2; exit 1 ;;
+esac
+OUT_ROOT="$ROOT/store/screenshots/$DEVICE"
+
 if [[ "$VALIDATE_ONLY" == "1" ]]; then
-  exec bash "$ROOT/scripts/validate-app-store-screenshots.sh"
+  exec bash "$ROOT/scripts/validate-app-store-screenshots.sh" --device "$DEVICE"
 fi
 
 # One capture process at a time (parallel runs fight over Home/Lock/timers).
@@ -80,7 +115,7 @@ CAPTURE_LOCK_DIR="${CAPTURE_LOCK}.d"
 acquire_capture_lock() {
   if mkdir "$CAPTURE_LOCK_DIR" 2>/dev/null; then
     echo "$$" >"$CAPTURE_LOCK_DIR/pid"
-    trap 'rm -rf "$CAPTURE_LOCK_DIR"' EXIT INT TERM
+    trap 'release_orientation 2>/dev/null || true; rm -rf "$CAPTURE_LOCK_DIR"' EXIT INT TERM
     echo "  capture lock acquired (pid $$)"
     return 0
   fi
@@ -91,7 +126,7 @@ acquire_capture_lock() {
     rm -rf "$CAPTURE_LOCK_DIR"
     if mkdir "$CAPTURE_LOCK_DIR" 2>/dev/null; then
       echo "$$" >"$CAPTURE_LOCK_DIR/pid"
-      trap 'rm -rf "$CAPTURE_LOCK_DIR"' EXIT INT TERM
+      trap 'release_orientation 2>/dev/null || true; rm -rf "$CAPTURE_LOCK_DIR"' EXIT INT TERM
       echo "  capture lock acquired (pid $$)"
       return 0
     fi
@@ -118,6 +153,19 @@ ALL_SHOTS=(
   09-nutrition
   10-import
 )
+# The iPad set: in-app screens only. The SpringBoard widget, the lock-screen Live
+# Activity and the push banner stay iPhone shots.
+if [[ "$DEVICE" == "ipad-13" ]]; then
+  ALL_SHOTS=(
+    01-recipes
+    02-cooking
+    03-discover
+    04-shopping
+    05-assistant
+    09-nutrition
+    10-import
+  )
+fi
 
 shot_wanted() {
   local name="$1"
@@ -146,7 +194,11 @@ any_shot_wanted() {
 }
 
 resolve_sim() {
-  capture_resolve_sim
+  if [[ "$DEVICE" == "ipad-13" ]]; then
+    capture_resolve_ipad_13_sim
+  else
+    capture_resolve_sim
+  fi
 }
 
 login_store_user() {
@@ -342,11 +394,34 @@ launch_capture() {
   osascript <<'APPLESCRIPT' >/dev/null 2>&1 || true
 tell application "Simulator" to activate
 APPLESCRIPT
-  sim_launch \
-    -SkipSplash=1 \
-    -ScreenshotCapture=1 \
-    -DisableDebugAutoLogin=1 \
+  local args=(
+    -SkipSplash=1
+    -ScreenshotCapture=1
+    -DisableDebugAutoLogin=1
+    ${DEVICE_LAUNCH_ARGS[@]+"${DEVICE_LAUNCH_ARGS[@]}"}
     "$@"
+  )
+  # The simulator mirrors the Mac pasteboard; anything on it makes the app offer
+  # «Import … from the clipboard?» over the shot.
+  printf '' | xcrun simctl pbcopy "$SIM_ID" >/dev/null 2>&1 || true
+  if [[ -n "$ROTATION_PID" ]]; then
+    launch_through_rotation_test "${args[@]}"
+  else
+    sim_launch "${args[@]}"
+  fi
+}
+
+# iPad sidebar per orientation (spec 081 DEBUG flags): beside the content in landscape;
+# hidden in portrait, where it would float over dimmed content.
+DEVICE_LAUNCH_ARGS=()
+set_device_launch_args() {
+  DEVICE_LAUNCH_ARGS=()
+  if [[ "$DEVICE" == "ipad-13" ]]; then
+    case "$1" in
+      landscape) DEVICE_LAUNCH_ARGS=(-IPadSidebarShown=1) ;;
+      portrait) DEVICE_LAUNCH_ARGS=(-IPadSidebarHidden=1) ;;
+    esac
+  fi
 }
 
 wait_ready() {
@@ -377,18 +452,179 @@ capture_png() {
   local dest="$1"
   mkdir -p "$(dirname "$dest")"
   xcrun simctl io "$SIM_ID" screenshot "$dest"
-  python3 - "$dest" <<'PY'
+  # simctl keeps the portrait buffer: a landscape window comes out on its side.
+  if [[ "$DEVICE" == "ipad-13" && "$CURRENT_ORIENTATION" == "landscape" ]]; then
+    sips -r "$LANDSCAPE_UPRIGHT_DEGREES" "$dest" >/dev/null
+  fi
+  python3 - "$dest" "$DEVICE" "$CURRENT_ORIENTATION" <<'PY'
 import struct, sys
 from pathlib import Path
-path = Path(sys.argv[1])
+path, device, orientation = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
 data = path.read_bytes()
 assert data[:8] == b"\x89PNG\r\n\x1a\n", path
 w, h = struct.unpack(">II", data[16:24])
-ok = (w, h) in {(1260, 2736), (1320, 2868), (1290, 2796)}
+if device == "ipad-13":
+    accepted = {(2064, 2752), (2048, 2732)}
+    if orientation == "landscape":
+        accepted = {(high, wide) for wide, high in accepted}
+else:
+    accepted = {(1260, 2736), (1320, 2868), (1290, 2796)}
+ok = (w, h) in accepted
 print(f"  {path.name}: {w}x{h}{' OK' if ok else ' UNEXPECTED SIZE'}")
 if not ok:
     raise SystemExit(f"unexpected screenshot size {w}x{h} for {path}")
 PY
+}
+
+CURRENT_ORIENTATION="portrait"
+# Degrees (clockwise) that turn simctl's buffer of a landscape window upright.
+LANDSCAPE_UPRIGHT_DEGREES="${CAPTURE_LANDSCAPE_UPRIGHT_DEGREES:-270}"
+
+# Turns the iPad to landscape with StoreScreenshotOrientationSpec (XCUIDevice): simctl
+# cannot rotate, and the Simulator app's Device menu needs Automation access. XCUIDevice
+# turns only an app that XCTest launched (one started by `simctl launch` keeps the
+# orientation it came up in), and the device may change when the runner exits. So for each
+# orientation pass the test runs in the background and launches the app for the script:
+# launch_through_rotation_test writes the arguments and environment to ROTATION_LAUNCH_FILE
+# and sends request n. On release the test leaves the device in portrait. The UI-test
+# bundle comes from build_ui_tests_for_rotation.
+#
+# Darwin notification state of ROTATION_NAME: 0 hold, 1 release, n ≥ 2 launch request n
+# (the test answers STORE_CAPTURE_ORIENTATION_APPLIED n window=<w>x<h>).
+ROTATION_LOG_DIR="$ROOT/tmp/store-capture"
+ROTATION_NAME="ru.recipescaler.debug.store-capture-release"
+ROTATION_LAUNCH_FILE="$ROTATION_LOG_DIR/launch.json"
+ROTATION_PID=""
+ROTATION_LOG=""
+ROTATION_REQUEST=1
+set_orientation() {
+  local want="$1" i
+  CURRENT_ORIENTATION="$want"
+  [[ "$DEVICE" == "ipad-13" ]] || return 0
+  release_orientation
+  mkdir -p "$ROTATION_LOG_DIR"
+  ROTATION_LOG="$ROTATION_LOG_DIR/rotate-$want.log"
+  rm -rf "$ROTATION_LOG_DIR/rotate.xcresult"
+  rotation_notify 0
+  echo "  holding $want (log: $ROTATION_LOG)"
+  TEST_RUNNER_STORE_CAPTURE_ORIENTATION="$want" \
+  TEST_RUNNER_STORE_CAPTURE_LAUNCH_FILE="$ROTATION_LAUNCH_FILE" \
+  TEST_RUNNER_STORE_CAPTURE_BUNDLE_ID="$BUNDLE_ID" \
+  xcodebuild test-without-building \
+    -scheme RecipeScalerNative \
+    -destination "platform=iOS Simulator,id=$SIM_ID" \
+    -only-testing:RecipeScalerNativeUITests/StoreScreenshotOrientationSpec/testHoldOrientationForStoreCapture \
+    -resultBundlePath "$ROTATION_LOG_DIR/rotate.xcresult" \
+    >"$ROTATION_LOG" 2>&1 &
+  ROTATION_PID=$!
+  for ((i = 0; i < 180; i++)); do
+    if grep -q "STORE_CAPTURE_ORIENTATION_READY $want" "$ROTATION_LOG" 2>/dev/null; then
+      return 0
+    fi
+    kill -0 "$ROTATION_PID" 2>/dev/null || break
+    sleep 1
+  done
+  release_orientation
+  echo "ERROR: could not hold $SIM_NAME ($SIM_ID) in $want (see $ROTATION_LOG)" >&2
+  return 1
+}
+
+rotation_notify() {
+  xcrun simctl spawn "$SIM_ID" notifyutil -s "$ROTATION_NAME" "$1" >/dev/null 2>&1 || true
+  xcrun simctl spawn "$SIM_ID" notifyutil -p "$ROTATION_NAME" >/dev/null 2>&1 || true
+}
+
+# The held test launches the app with these arguments and the exported SIMCTL_CHILD_*
+# environment (prefix stripped, as simctl would pass it), then turns it. A simulator that has
+# run for a while sometimes stops turning apps (the window keeps its shape); a fresh boot
+# fixes that, so on a wrong window the simulator is rebooted once and the launch repeated.
+launch_through_rotation_test() {
+  local status=0 orientation="$CURRENT_ORIENTATION"
+  write_rotation_launch_file "$@"
+  request_rotation_launch || status=$?
+  [[ "$status" == "2" ]] || return "$status"
+  echo "  the app did not turn: rebooting $SIM_NAME and launching again"
+  release_orientation
+  xcrun simctl shutdown "$SIM_ID" >/dev/null 2>&1 || true
+  xcrun simctl boot "$SIM_ID"
+  xcrun simctl bootstatus "$SIM_ID" -b >/dev/null
+  if [[ -n "${appearance:-}" ]]; then set_appearance "$appearance"; fi
+  override_status_bar
+  set_orientation "$orientation" || return 1
+  write_rotation_launch_file "$@"
+  status=0
+  request_rotation_launch || status=$?
+  if [[ "$status" == "2" ]]; then
+    echo "ERROR: the app did not turn to $orientation even after a reboot (see $ROTATION_LOG)" >&2
+    return 1
+  fi
+  return "$status"
+}
+
+# Holds the store user's token and seed phrase: owner-only, removed by release_orientation.
+write_rotation_launch_file() {
+  python3 - "$ROTATION_LAUNCH_FILE" "$@" <<'PY'
+import json, os, sys
+path, args = sys.argv[1], sys.argv[2:]
+env = {k[len("SIMCTL_CHILD_"):]: v for k, v in os.environ.items() if k.startswith("SIMCTL_CHILD_")}
+fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+with os.fdopen(fd, "w") as f:
+    json.dump({"arguments": args, "environment": env}, f)
+PY
+}
+
+# Sends launch request n and checks the window: 0 turned, 2 wrong shape, 1 no answer.
+request_rotation_launch() {
+  local i line size w h
+  ROTATION_REQUEST=$((ROTATION_REQUEST + 1))
+  rotation_notify "$ROTATION_REQUEST"
+  for ((i = 0; i < 180; i++)); do
+    line="$(grep "STORE_CAPTURE_ORIENTATION_APPLIED $ROTATION_REQUEST " "$ROTATION_LOG" 2>/dev/null || true)"
+    if [[ -n "$line" ]]; then
+      size="${line##*window=}"
+      w="${size%x*}"; h="${size#*x}"
+      if { [[ "$CURRENT_ORIENTATION" == "landscape" ]] && ((w > h)); } ||
+        { [[ "$CURRENT_ORIENTATION" == "portrait" ]] && ((w < h)); }; then
+        echo "  launched by the rotation test: window ${w}x${h}"
+        return 0
+      fi
+      echo "  window ${w}x${h} is not $CURRENT_ORIENTATION"
+      return 2
+    fi
+    kill -0 "$ROTATION_PID" 2>/dev/null || break
+    sleep 0.5
+  done
+  echo "ERROR: the rotation test did not launch the app (see $ROTATION_LOG)" >&2
+  return 1
+}
+
+# Lets StoreScreenshotOrientationSpec finish; the device goes back to portrait.
+release_orientation() {
+  [[ -n "$ROTATION_PID" ]] || return 0
+  rotation_notify 1
+  local i
+  for ((i = 0; i < 60; i++)); do
+    kill -0 "$ROTATION_PID" 2>/dev/null || break
+    sleep 1
+  done
+  kill "$ROTATION_PID" 2>/dev/null || true
+  wait "$ROTATION_PID" 2>/dev/null || true
+  ROTATION_PID=""
+  rm -rf "$ROTATION_LOG_DIR/rotate.xcresult" "$ROTATION_LAUNCH_FILE"
+}
+
+# The UI-test bundle with StoreScreenshotOrientationSpec (iPad only). With --skip-build the
+# bundle from the last build-for-testing is reused.
+build_ui_tests_for_rotation() {
+  [[ "$DEVICE" == "ipad-13" ]] || return 0
+  mkdir -p "$ROTATION_LOG_DIR"
+  echo "== build-for-testing (iPad rotation helper) → $ROTATION_LOG_DIR/build-for-testing.log =="
+  xcodebuild build-for-testing -scheme RecipeScalerNative \
+    -destination "platform=iOS Simulator,id=$SIM_ID" \
+    >"$ROTATION_LOG_DIR/build-for-testing.log" 2>&1 || {
+    echo "ERROR: build-for-testing failed (see $ROTATION_LOG_DIR/build-for-testing.log)" >&2
+    return 1
+  }
 }
 
 # Launch + wait + dismiss + assert running; retry once on failure.
@@ -876,10 +1112,23 @@ capture_shot() {
 
   case "$shot" in
     01-recipes)
-      launch_for_shot "$user_id" "$token" "$seed" \
-        "-AppLanguage=$app_lang" \
-        "-AppTheme=$appearance" \
-        "-OpenTab=recipes"
+      if [[ "$DEVICE" == "ipad-13" ]]; then
+        # iPad: the list column beside the open recipe (layout.md #recipes/sidebar).
+        local recipes_since_ms
+        recipes_since_ms="$(python3 -c 'import time; print(int(time.time() * 1000))')"
+        CAPTURE_LAUNCH_WAIT=8 launch_for_shot "$user_id" "$token" "$seed" \
+          "-AppLanguage=$app_lang" \
+          "-AppTheme=$appearance" \
+          "-OpenTab=recipes" \
+          "-OpenRecipeName" \
+          "$recipe_name"
+        wait_for_screenshot_media_strict 90 "$recipes_since_ms" || return 1
+      else
+        launch_for_shot "$user_id" "$token" "$seed" \
+          "-AppLanguage=$app_lang" \
+          "-AppTheme=$appearance" \
+          "-OpenTab=recipes"
+      fi
       wait_for_screenshot_media 60
       dismiss_notification_alert
       capture_png "$out_dir/01-recipes.png"
@@ -935,11 +1184,24 @@ capture_shot() {
       capture_png "$out_dir/04-shopping.png"
       ;;
     05-assistant)
-      launch_for_shot "$user_id" "$token" "$seed" \
-        "-AppLanguage=$app_lang" \
-        "-AppTheme=$appearance" \
-        "-ShowAssistant=1" \
-        "-ScreenshotAssistantFixture=1"
+      if [[ "$DEVICE" == "ipad-13" ]]; then
+        # iPad: the assistant panel beside the open recipe (layout.md #assistant/chat).
+        CAPTURE_LAUNCH_WAIT=8 launch_for_shot "$user_id" "$token" "$seed" \
+          "-AppLanguage=$app_lang" \
+          "-AppTheme=$appearance" \
+          "-OpenTab=recipes" \
+          "-OpenRecipeName" \
+          "$recipe_name" \
+          "-ShowAssistant=1" \
+          "-ScreenshotAssistantFixture=1"
+        wait_for_screenshot_media 60
+      else
+        launch_for_shot "$user_id" "$token" "$seed" \
+          "-AppLanguage=$app_lang" \
+          "-AppTheme=$appearance" \
+          "-ShowAssistant=1" \
+          "-ScreenshotAssistantFixture=1"
+      fi
       wait_ready 2
       capture_png "$out_dir/05-assistant.png"
       ;;
@@ -1069,6 +1331,7 @@ capture_shot() {
 
 resolve_sim
 if [[ "$SKIP_BUILD" != "1" ]]; then
+  build_ui_tests_for_rotation
   sim_ensure_built
 fi
 sim_prepare
@@ -1076,6 +1339,8 @@ sim_prepare
 sim_install
 grant_capture_permissions_cold
 override_status_bar
+# A URL left on the simulator pasteboard shows the «import from the clipboard» banner on every shot.
+printf '' | xcrun simctl pbcopy "$SIM_ID" >/dev/null 2>&1 || true
 
 PREV_LOCALE=""
 PREV_OS_LANG=""
@@ -1129,30 +1394,38 @@ for locale in "${LOCALES[@]}"; do
     fi
   fi
 
-  for appearance in "${APPEARANCES[@]}"; do
-    if ! any_shot_wanted "${ALL_SHOTS[@]}"; then
-      continue
-    fi
-    out_dir="$OUT_ROOT/$locale/$appearance"
-    mkdir -p "$out_dir"
-    echo "== $locale / $appearance =="
-    # Do NOT unlock/Home before in-app shots — that parked us on SpringBoard for 01.
-    set_appearance "$appearance"
-    override_status_bar
-    set_flat_recipe_list
-
-    for shot in "${ALL_SHOTS[@]}"; do
-      if shot_wanted "$shot"; then
-        echo "-- shot $shot --"
-        capture_shot "$shot" "$out_dir" "$user_id" "$token" "$seed" \
-          "$app_lang" "$appearance" "$recipe_name" "$timer_name" "$discover_profile" \
-          "$shopping_seed"
+  for orientation in "${ORIENTATIONS[@]}"; do
+    set_orientation "$orientation"
+    set_device_launch_args "$orientation"
+    for appearance in "${APPEARANCES[@]}"; do
+      if ! any_shot_wanted "${ALL_SHOTS[@]}"; then
+        continue
       fi
+      out_dir="$OUT_ROOT/$locale/$appearance"
+      if [[ "$DEVICE" == "ipad-13" ]]; then
+        out_dir="$out_dir/$orientation"
+      fi
+      mkdir -p "$out_dir"
+      echo "== $locale / $appearance / $orientation =="
+      # Do NOT unlock/Home before in-app shots — that parked us on SpringBoard for 01.
+      set_appearance "$appearance"
+      override_status_bar
+      set_flat_recipe_list
+
+      for shot in "${ALL_SHOTS[@]}"; do
+        if shot_wanted "$shot"; then
+          echo "-- shot $shot --"
+          capture_shot "$shot" "$out_dir" "$user_id" "$token" "$seed" \
+            "$app_lang" "$appearance" "$recipe_name" "$timer_name" "$discover_profile" \
+            "$shopping_seed"
+        fi
+      done
     done
+    release_orientation
   done
 done
 
 if [[ "$SKIP_VALIDATE" != "1" ]]; then
-  bash "$ROOT/scripts/validate-app-store-screenshots.sh"
+  bash "$ROOT/scripts/validate-app-store-screenshots.sh" --device "$DEVICE"
 fi
 echo "Done. PNGs in $OUT_ROOT"
