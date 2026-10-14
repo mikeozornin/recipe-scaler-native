@@ -11,7 +11,7 @@ rg -q 'timer_event' RecipeScalerNative/Services/YjsSync/YjsSyncService.swift
 rg -q 'loadActiveTimersFromServer' RecipeScalerNative/Services/TimerSyncService.swift
 rg -q 'pauseTimer' RecipeScalerNative/Views/MobileTimerPanel.swift
 rg -q 'onTimerTap' RecipeScalerNative/Views/RecipeDescriptionInlineTextView.swift
-rg -q 'createAndStartTimer' RecipeScalerNative/Views/RecipeDetailView.swift
+rg -q 'createAndStartTimer' RecipeScalerNative/Views/YDocRecipeDetailDescriptionEditing.swift
 rg -q 'func tabRoot' RecipeScalerNative/Views/AppShellView.swift
 rg -q 'safeAreaInset\(edge: \.bottom' RecipeScalerNative/Views/AppShellView.swift
 
