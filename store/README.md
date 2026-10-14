@@ -43,7 +43,7 @@ Workflow перевода listing: добавить `listing/app-info/ru.json`, 
 
 ## Screenshots
 
-Сырые кадры 6.9″ (без рамок) для App Store Connect. Спека: [`specs/060-app-store-screenshots/`](../specs/060-app-store-screenshots/spec.md).
+Сырые кадры iPhone 6.9″ и iPad 13″ (без рамок) для App Store Connect. Спека: [`specs/060-app-store-screenshots/`](../specs/060-app-store-screenshots/spec.md).
 
 ## Собрать fixtures
 
@@ -95,6 +95,21 @@ bash scripts/validate-app-store-screenshots.sh
 Выход: `store/screenshots/iphone-6.9/{ru,en}/{light,dark}/0N-*.png`  
 Размер PNG: `1260×2736` (Air) или `1320×2868` (Pro Max). PNG в git не коммитим.
 
+### iPad 13″ (spec 081)
+
+```bash
+bash scripts/capture-app-store-screenshots.sh --device ipad-13
+bash scripts/capture-app-store-screenshots.sh --device ipad-13 --locale ru --appearance light --orientation landscape
+bash scripts/validate-app-store-screenshots.sh --device ipad-13
+```
+
+Нужен симулятор «iPad Pro 13-inch (M4)» (берётся самый свежий runtime, `Scrapp…` пропускаются) или `CAPTURE_SIM_ID=<udid>`. Те же store-юзеры и fixtures, что у iPhone. Повернуть симулятор `simctl` не умеет, поэтому ориентацию держит UI-тест `StoreScreenshotOrientationSpec`: скрипт собирает его (`build-for-testing`), запускает в фоне на каждый проход (альбомный, книжный), и приложение запускает сам тест (XCUIDevice поворачивает только приложение, запущенное XCTest; после `simctl launch` оно остаётся в той ориентации, в которой стартовало). Долго работающий симулятор иногда перестаёт поворачивать приложения; тогда скрипт один раз перезагружает его и повторяет запуск. Логи — `tmp/store-capture/`.
+
+Кадры: `01-recipes` (список + открытый рецепт), `02-cooking`, `03-discover`, `04-shopping`, `05-assistant` (ассистент рядом с рецептом), `09-nutrition`, `10-import`. Lock screen, виджет и пуш (`06`–`08`) на iPad не снимаем.
+
+Выход: `store/screenshots/ipad-13/{ru,en}/{light,dark}/{landscape,portrait}/0N-*.png`  
+Размер PNG: `2752×2064` (альбомная, с боковой панелью) и `2064×2752` (книжная, панель скрыта). PNG в git не коммитим.
+
 Часы (два кадра: три таймера и пустой список), размер Ultra 3 `422×514`:
 
 ```bash
@@ -111,11 +126,12 @@ bash scripts/capture-watch-screenshots.sh --locale ru --appearance light --shot 
 3. Порядок файлов = номер префикса `01`…`08`.
 4. Виджет на Springboard симулятор сам не ставит: кадр `06-widget` свайпает **вправо до последней страницы** Springboard (не Today слева). Виджет нужно добавить вручную один раз именно туда.
 5. App Review: в ASC Demo Account укажите seed из `users.yaml` → `app-store-review` (вход по seed phrase).
-6. Media Manager → **Apple Watch**: два PNG `01-timers` и `02-empty` из `store/screenshots/watch/{locale}/light/`, размер `422×514` (Ultra 3). Один и тот же размер для всех локалей.
+6. Media Manager → **iPad 13" Display**: до 10 PNG на локаль из `store/screenshots/ipad-13/{locale}/light/{landscape|portrait}/`; ориентацию (альбомная или книжная) выбирает владелец. Порядок — по номеру префикса.
+7. Media Manager → **Apple Watch**: два PNG `01-timers` и `02-empty` из `store/screenshots/watch/{locale}/light/`, размер `422×514` (Ultra 3). Один и тот же размер для всех локалей.
 
 ## Гейты релиза
 
-- **iPhone-only:** `TARGETED_DEVICE_FAMILY = 1` у main app / iOS extensions. Иначе ASC потребует iPad-скрины.
+- **iPhone + iPad:** с spec 081 у main app `TARGETED_DEVICE_FAMILY = "1,2"` (`validate-app-store-screenshots.sh` проверяет). ASC требует кадры **iPad 13″** рядом с iPhone 6.9″ — см. «iPad 13″» выше. Расширения пока `1` (spec 081 T004).
 - **Watch:** companion `RecipeScalerNativeWatch` входит в архив схемы `RecipeScalerNative` (`Watch/RecipeScalerNativeWatch.app`). ASC потребует скриншоты Apple Watch отдельно от кадров iPhone 6.9″.
 - **Debug chrome:** на кадрах нет seed, splash, DB-init banner, feature-adoption оверлеев.
 

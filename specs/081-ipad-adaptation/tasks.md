@@ -786,8 +786,8 @@
 
 ## Phase 10: Polish
 
-- [ ] T053 [P] Строки: все новые ключи en + ru в `RecipeScalerNative/Resources/Localizable.xcstrings`, телефонные ключи переиспользованы (FR-032); `bash scripts/lint-i18n.sh`, `RecipeScalerNativeTests/LocalizationConsistencyTests`. Проверить русский и английский интерфейс на iPad. — `#recipes/sidebar`, `#menubar/file`, `#menubar/recipe`, `#menubar/view`, `#profile/private`
-- [ ] T054 [P] Документация:
+- [x] T053 [P] Строки: все новые ключи en + ru в `RecipeScalerNative/Resources/Localizable.xcstrings`, телефонные ключи переиспользованы (FR-032); `bash scripts/lint-i18n.sh`, `RecipeScalerNativeTests/LocalizationConsistencyTests`. Проверить русский и английский интерфейс на iPad. — `#recipes/sidebar`, `#menubar/file`, `#menubar/recipe`, `#menubar/view`, `#profile/private`
+- [x] T054 [P] Документация:
   - `docs/DECISIONS.md` — оболочка iPad, старый путь (Q1, сайдбар на 18+ — на потом), колонки рецепта без перетаскиваемого разделителя (решение 2026-10-13, записано). Колонки (B), панель ассистента и одно окно уже записаны 2026-10-12 по итогам спайка — дополнить, если реализация от них отошла;
   - `docs/AGENT-WORKFLOW.md` — `resolve-ipad-simulator.sh`, `verify-ipad-layout.sh`;
   - `docs/PRD.md` — снять «только iPhone» (~:26, ~:544);
@@ -795,6 +795,8 @@
 
   — `#recipes/sidebar`, `#recipes/tabs` (колонки рецепта), `#menubar/view` (решения, которые фиксирует документация)
 - [ ] T055 [P] iPad-скриншоты App Store: `scripts/capture-app-store-screenshots.sh` и `scripts/validate-app-store-screenshots.sh` для iPad 13″ (2064 × 2752, обе ориентации по требованиям ASC). **Human gate**: загрузка и выбор доступности на Mac и Vision Pro в ASC. — `#recipes/tabs`, `#assistant/chat`, `#shopping/recipe`
+  - Сделано (2026-10-14): `--device ipad-13 [--orientation landscape|portrait]` (повторяемый, по умолчанию обе) в capture-скрипте, `--device iphone-6.9|ipad-13|all` в валидаторе, `capture_resolve_ipad_13_sim` в `scripts/sim-capture-lib.sh`; ориентацию держит и приложение запускает UI-тест `StoreScreenshotOrientationSpec` (в обычных прогонах пропускается). Снимки — `store/screenshots/ipad-13/{locale}/{appearance}/{portrait|landscape}/` (в `.gitignore`), порядок — `store/README.md`. EN (светлая и тёмная, обе ориентации, 28 снимков) снят и проходит валидатор.
+  - Не сделано: RU — у русского демо-аккаунта на проде нет рецептов (его 12 рецептов оказались у английского, там же лишний «New recipe»), съёмка падает на `screenshot_media_ready`. Владельцу: заново заполнить библиотеки (`scripts/bootstrap-store-libraries.sh`), почистить EN, переснять EN и RU.
 - [ ] T056 Полная проверка по plan.md §Verification:
   - `bash scripts/verify-all.sh`;
   - iPhone-регрессия;
