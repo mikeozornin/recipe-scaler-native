@@ -477,6 +477,8 @@ The description editor bridge (`description-editor-bridge.js` ↔ `DescriptionEd
 - Variant B keeps correct toolbars before and after sidebar toggles, including with the assistant panel open. STOP 3 ("both variants break") was not triggered.
 - The cost of B is a custom list button, a custom overlay and manual column styling.
 
+**Update (2026-10-14):** Variant B shipped, but the list column changed. It is ½ of the content in portrait and ⅓ in landscape, at least 320 pt, and stands beside the recipe whenever the recipe keeps ≥ 320 pt. The "Recipe list" button and the overlay were replaced by the Notes-style «Развернуть» / «Свернуть» (2026-10-12, below). The line between the recipe's own columns is static (2026-10-13, below).
+
 ---
 
 ### 2026-10-12 — iPad assistant (spec 081 Р7): own trailing panel, not TabView `.inspector`
@@ -895,5 +897,46 @@ The old shell (iPadOS 17.0–26.1, spec.md Q1) could not be checked on the simul
 - **Not every session fails.** UIKit minimizes from `-[UIKeyboard syncMinimizedStateToHardwareKeyboardAttachedState]`, so it also depends on whether iPadOS counts a hardware keyboard as attached at that moment. That is a state of the running simulator, and the keys it gets change it. With the key on, the test failed in some runs, and in others the whole spec passed, within one boot session. With it off, no run has failed. So the workflow turns the key off rather than trusting the session.
 
 The US4/US5 review note above found that a closed Simulator window fails the same way. That was before the host keys (cf60d16 precedes b2d84a9) and was not retried. Under other windows the test passed, but it waited about a minute for animations at each step and took 19 minutes instead of 2.
+
+---
+
+### 2026-10-14 — iPad shell: one `.sidebarAdaptable` TabView on iPadOS 26.2+ (spec 081 Р1, Р2, Р2a)
+
+**Decision:**
+- One switch, `AppLayoutMode`: `.padRegular` only for the iPad idiom in a regular-width window, `.phone` otherwise. iPad code reads only this value, never the device model or the orientation. The iPhone is always `.phone`, and a compact iPad window takes the phone paths.
+- On iPadOS 26.2+ and the iPad idiom, `AppShellView.tabView` builds `IPadAdaptiveTabView`: one `TabView` with `.tabViewStyle(.sidebarAdaptable)`. It is a sidebar, a top tab bar (sidebar hidden) or the phone bottom bar (compact window). The iPhone keeps `modernTabView`, earlier systems keep `legacyTabView` (next entry). Tab roots are the phone ones (`AppShellTabRoots`).
+- «Подборки», «Рецепты» and «Покупки» are tabs. «Профиль» and «Ассистент» are `.pinned` icons at the trailing edge of the top bar and are hidden from the sidebar only while it is shown.
+- The «Коллекции» `TabSection` (a tab per collection, «+» in `.sectionActions`) exists only while the tab bar is the sidebar. Badges are set only then too.
+- The sidebar's footer (`.tabViewSidebarBottomBar`, `IPadSidebarProfileFooter`) opens the profile as a form sheet. In a wide window the «Профиль» tab never becomes a page: `IPadProfileSheetPolicy` keeps the previous tab and presents the sheet, whatever selected «Профиль» (a tab tap, ⌘4, «Настроить Напоминания», `-OpenTab=profile`, widening on the profile tab).
+- The selection is `IPadShellItem` (a tab or a collection), a computed binding over `coordinator.selectedTab` and `recipesPath`, not a second source of truth.
+- The only UIKit in the shell (hiding the sidebar, `TabBarDiscovery`) lives in `IPadSidebarControl`. No `.inspector` on the `TabView`.
+
+**Rationale:** Spike S1–S6 (iPadOS 26.3, `tmp/ipad-research/spike-verdicts.md`) and US1.
+- The plan kept the «Коллекции» section in any regular window. In the top bar a collection that was selected when the sidebar hid stays in the bar together with the whole group and a «‹» button, so the section exists only while the sidebar is shown. The iPad top bar therefore never names a collection, as the plan's selection rule already said.
+- Badges in the top bar would show up next to the tab titles (`s1-11`, `s1-12`).
+- In compact `.sidebarAdaptable` flattens every tab into the bottom bar, collections and «Ассистент» included, and moves them to «Ещё» (`s3-02`). Without the section compact has the iPhone's five tabs (`s3-04`).
+- A static `.hidden` for the sidebar removes a tab from the top bar too, so the pinned tabs use a visibility that follows the placement.
+- The profile as a form sheet follows Scrapp (`RootView.swift`, read only) and the owner's Q7 answer.
+
+---
+
+### 2026-10-14 — iPad: the old shell on iPadOS 17.0–26.1, sidebar on 18+ later (spec 081 Q1, Р3)
+
+**Decision:** Below iPadOS 26.2 the iPad keeps `legacyTabView` (`.tabItem`): the system draws a top tab bar on iPadOS 18 and a bottom bar on 17. There is no sidebar, no «Коллекции» section, no profile footer and no timer capsule; collections open as the phone screen. Everything gated on `AppLayoutMode == .padRegular` works there: the list column and recipe columns, the assistant panel (a plain `HStack`), the popovers, form sheets and readable widths. The «Профиль» tab opens the same profile form sheet through the coordinator. A sidebar on iPadOS 18.0–26.1 (a third tab bar builder: `Tab` / `TabSection` without `tabViewBottomAccessory`) is low priority and not in v1.
+
+**Rationale:** The owner's Q1 answer: «на iPadOS 17/18 нет сайдбара? если нет, то ок».
+- iPadOS 17 has no sidebar API (`.sidebarAdaptable`, `Tab`, `TabSection`).
+- On 18.0–26.1 the API exists, but the new shell sits behind the shell's common `#available(iOS 26.2, *)` gate: its timer panel needs `tabViewBottomAccessory` / `safeAreaBar`, which arrive in 26.2.
+- Not checked on a simulator: the iOS 18.4/18.5 runtimes crash the app at launch (`libswiftWebKit.dylib`, see «iPad: multitasking in one window»), and no iOS 17 runtime is installed. It stays an owner check on a device.
+
+---
+
+### 2026-10-14 — Spec 081 supersedes the unmerged iPad specs 062 and 063
+
+**Decision:** `specs/081-ipad-adaptation/` is the iPad layout of record. It replaces two attempts that were never merged into `master`: `specs/062-mac-ipad-layout/` on branch `043-mac-ipad-layout` and `specs/063-ipad/` on branch `063-ipad-adaptation`. Both branches are kept as lessons only and are not to be merged or rebased. On `master` the numbers 062 and 063 belong to other specs (`062-watch-timer-expiry-notify`, `063-shopping-list-swipe-toggle`).
+
+**Rationale:** Spec 081 starts from a spike on a live iPad simulator (Р5, Р7, STOP 1–5) and keeps the iPhone unchanged by construction (`AppLayoutMode`).
+- Both branches build the wide shell and the recipes master-detail on `NavigationSplitView`. Spike S4 found that a split inside the tab bar controller keeps stale toolbar insets after the sidebar toggles (variant A, 2026-10-12 above).
+- `043-mac-ipad-layout` also adds a native macOS target (`RecipeScalerMac`). A Mac app is out of scope here: «Designed for iPad» and Vision Pro availability are the owner's choice in App Store Connect.
 
 ---
