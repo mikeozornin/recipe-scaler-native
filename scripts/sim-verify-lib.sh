@@ -213,7 +213,9 @@ sim_terminate() {
   xcrun simctl terminate "$SIM_ID" "$BUNDLE_ID" 2>/dev/null || true
 }
 
-sim_launch() {
+# Stops the app and deletes its debug log (host copy and container files), so log waits
+# only see lines from the next launch.
+sim_reset_debug_log() {
   sim_terminate
   local log="${LOG_FILE:-$ROOT/.debug-session.ndjson}"
   rm -f "$log"
@@ -226,6 +228,10 @@ sim_launch() {
       "$container/Library/Caches/debug-session.ndjson" \
       "$container/Library/Caches/$BUNDLE_ID/debug-session.ndjson" 2>/dev/null || true
   fi
+}
+
+sim_launch() {
+  sim_reset_debug_log
   xcrun simctl launch "$SIM_ID" "$BUNDLE_ID" "$@"
 }
 

@@ -377,39 +377,68 @@ enum DebugLaunchOptions {
             imageUrl: imageUrl,
             allowNetwork: true
         )
-        try? await Task.sleep(nanoseconds: 400_000_000)
+        // prefetchFull returns at once while the hero view's own download is in flight, so
+        // wait for the file (fetching again now and then) before telling the capture script.
+        let hasImage = !(imageUrl ?? "").isEmpty
+        var imageCached = false
+        if hasImage {
+            for attempt in 1 ... 80 {
+                if RecipeImageDiskCache.existingFileURL(recipeId: recipeId, variant: .full) != nil {
+                    imageCached = true
+                    break
+                }
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                if attempt % 20 == 0 {
+                    await RecipeImageService.shared.prefetchFull(
+                        recipeId: recipeId,
+                        imageUrl: imageUrl,
+                        allowNetwork: true
+                    )
+                }
+            }
+        }
+        // Time for the hero view to decode and draw the cached file.
+        try? await Task.sleep(nanoseconds: imageCached ? 800_000_000 : 400_000_000)
         AppLog.info(.app, "screenshot_media_ready", data: [
             "scope": "recipe",
             "recipeId": recipeId,
+            "image": hasImage ? (imageCached ? "cached" : "missing") : "none",
         ])
     }
 
-    /// Prefetch public profile recipe cards, then emit `screenshot_media_ready` for capture scripts.
+    /// Load the public profile card images (the URLs and loader the grid uses), then emit
+    /// `screenshot_discover_ready` with how many loaded, for capture scripts.
     @MainActor
     static func signalScreenshotDiscoverProfileMediaReadyIfNeeded(
         response: PublicProfileResponseDTO
     ) async {
         guard screenshotCapture else { return }
         guard openDiscoverProfileUsername != nil else { return }
-        let recipes = response.recipes.filter { recipe in
-            guard let url = recipe.imageUrl else { return false }
-            return !url.isEmpty
+        let urls = DiscoverSearch.sortedByRecipeName(response.recipes) { $0.name }
+            .compactMap { DiscoverImageURLs.publicRecipeCard(recipe: $0) }
+            .prefix(24)
+        var loaded = 0
+        for url in urls {
+            if await DiscoverImageLoader.loadImage(from: url) != nil {
+                loaded += 1
+                continue
+            }
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            if await DiscoverImageLoader.loadImage(from: url) != nil {
+                loaded += 1
+            }
         }
-        for recipe in recipes.prefix(12) {
-            await RecipeImageService.shared.prefetchFull(
-                recipeId: recipe.id,
-                imageUrl: recipe.imageUrl,
-                allowNetwork: true
-            )
-        }
-        try? await Task.sleep(nanoseconds: 400_000_000)
+        // Time for the cards to draw images that finished loading just now.
+        try? await Task.sleep(nanoseconds: 800_000_000)
         AppLog.info(.app, "screenshot_media_ready", data: [
             "scope": "discover_profile",
-            "count": "\(recipes.count)",
+            "count": "\(urls.count)",
         ])
         AppLog.info(.app, "screenshot_discover_ready", data: [
             "username": response.profile.username,
-            "recipes": "\(recipes.count)",
+            "recipes": "\(response.recipes.count)",
+            "images": "\(urls.count)",
+            "imagesLoaded": "\(loaded)",
         ])
     }
 

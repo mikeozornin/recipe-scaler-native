@@ -405,6 +405,9 @@ APPLESCRIPT
   # «Import … from the clipboard?» over the shot.
   printf '' | xcrun simctl pbcopy "$SIM_ID" >/dev/null 2>&1 || true
   if [[ -n "$ROTATION_PID" ]]; then
+    # The test relaunches the app itself; start its debug log afresh as sim_launch does,
+    # or log waits match lines from the previous shot.
+    sim_reset_debug_log
     launch_through_rotation_test "${args[@]}"
   else
     sim_launch "${args[@]}"
@@ -1011,20 +1014,25 @@ wait_for_screenshot_media() {
 # Strict variant: only lines at/after since_epoch_ms count, and the signal must
 # come from the recipe-detail prefetch (scope":"recipe"). Returns non-zero when
 # the signal never arrives so callers can retry instead of capturing a wrong UI.
+# With require_image=1 a recipe whose photo never reached the cache (image=missing)
+# also fails: the shot would show an empty header.
 wait_for_screenshot_media_strict() {
-  # Args: timeout_seconds [since_epoch_ms]
+  # Args: timeout_seconds [since_epoch_ms] [require_image]
   local timeout_seconds="${1:-60}"
   local since_ms="${2:-0}"
+  local require_image="${3:-0}"
   local log="${LOG_FILE:-$ROOT/.debug-session.ndjson}"
   local deadline=$((SECONDS + timeout_seconds))
+  local status
 
   while (( SECONDS < deadline )); do
     sim_pull_debug_log 2>/dev/null || true
     if [[ -f "$log" ]]; then
-      if python3 - "$log" "$since_ms" <<'PY'
+      status=0
+      python3 - "$log" "$since_ms" "$require_image" <<'PY' || status=$?
 import json, sys
 from pathlib import Path
-path, since = Path(sys.argv[1]), int(sys.argv[2])
+path, since, require_image = Path(sys.argv[1]), int(sys.argv[2]), sys.argv[3] == "1"
 if not path.is_file():
     raise SystemExit(1)
 for line in path.read_text(errors="replace").splitlines():
@@ -1035,12 +1043,19 @@ for line in path.read_text(errors="replace").splitlines():
     ts = row.get("timestamp")
     if isinstance(ts, (int, float)) and ts < since:
         continue
-    if row.get("message") == "screenshot_media_ready" and (row.get("data") or {}).get("scope") == "recipe":
+    data = row.get("data") or {}
+    if row.get("message") == "screenshot_media_ready" and data.get("scope") == "recipe":
+        if require_image and data.get("image") == "missing":
+            raise SystemExit(2)
         raise SystemExit(0)
 raise SystemExit(1)
 PY
-      then
+      if [[ "$status" == "0" ]]; then
         return 0
+      fi
+      if [[ "$status" == "2" ]]; then
+        echo "The recipe photo never reached the cache (screenshot_media_ready image=missing)" >&2
+        return 1
       fi
     fi
     sleep 0.5
@@ -1051,11 +1066,14 @@ PY
 }
 
 wait_for_discover_screenshot() {
-  # Args: timeout_seconds [since_epoch_ms]
+  # Args: timeout_seconds [since_epoch_ms] [allow_partial]
   # Match only NDJSON lines at/after since_epoch_ms so a truncated/replaced
   # host log after relaunch cannot hide a fresh screenshot_discover_ready.
+  # Fails when some card images did not load (the grid would show placeholders),
+  # unless allow_partial=1 (the last attempt: capture and warn).
   local timeout_seconds="${1:-90}"
   local since_ms="${2:-0}"
+  local allow_partial="${3:-0}"
   local log="${LOG_FILE:-$ROOT/.debug-session.ndjson}"
   local deadline=$((SECONDS + timeout_seconds))
   local status=""
@@ -1080,7 +1098,12 @@ for line in path.read_text(errors="replace").splitlines():
         continue
     msg = row.get("message") or ""
     if msg == "screenshot_discover_ready":
-        print("ready")
+        data = row.get("data") or {}
+        images, loaded = data.get("images"), data.get("imagesLoaded")
+        if images is not None and loaded is not None and loaded != images:
+            print(f"partial images={images} imagesLoaded={loaded}")
+        else:
+            print("ready")
         raise SystemExit(0)
     if msg == "screenshot_discover_failed":
         data = row.get("data") or {}
@@ -1091,6 +1114,11 @@ PY
 )"
       if [[ "$status" == ready* ]]; then
         return 0
+      fi
+      if [[ "$status" == partial* ]]; then
+        echo "WARN: public profile card images not all loaded ($status)" >&2
+        [[ "$allow_partial" == "1" ]] && return 0
+        return 1
       fi
       if [[ "$status" == failed* ]]; then
         echo "ERROR: public profile failed to load (screenshot_discover_failed)" >&2
@@ -1114,15 +1142,29 @@ capture_shot() {
     01-recipes)
       if [[ "$DEVICE" == "ipad-13" ]]; then
         # iPad: the list column beside the open recipe (layout.md #recipes/sidebar).
-        local recipes_since_ms
-        recipes_since_ms="$(python3 -c 'import time; print(int(time.time() * 1000))')"
-        CAPTURE_LAUNCH_WAIT=8 launch_for_shot "$user_id" "$token" "$seed" \
-          "-AppLanguage=$app_lang" \
-          "-AppTheme=$appearance" \
-          "-OpenTab=recipes" \
-          "-OpenRecipeName" \
-          "$recipe_name"
-        wait_for_screenshot_media_strict 90 "$recipes_since_ms" || return 1
+        # The recipe photo fills the header: relaunch while it is missing (the last
+        # attempt captures anyway).
+        local recipes_since_ms recipes_attempt recipes_ok=0
+        for recipes_attempt in 1 2 3; do
+          recipes_since_ms="$(python3 -c 'import time; print(int(time.time() * 1000))')"
+          CAPTURE_LAUNCH_WAIT=8 launch_for_shot "$user_id" "$token" "$seed" \
+            "-AppLanguage=$app_lang" \
+            "-AppTheme=$appearance" \
+            "-OpenTab=recipes" \
+            "-OpenRecipeName" \
+            "$recipe_name"
+          if wait_for_screenshot_media_strict 90 "$recipes_since_ms" \
+            "$([[ "$recipes_attempt" == 3 ]] && echo 0 || echo 1)"; then
+            recipes_ok=1
+            break
+          fi
+          echo "  recipe or its photo not ready — waiting before retry" >&2
+          wait_ready $((recipes_attempt * 8))
+        done
+        if [[ "$recipes_ok" != "1" ]]; then
+          echo "ERROR: 01-recipes never reached an open recipe ($recipe_name)" >&2
+          return 1
+        fi
       else
         launch_for_shot "$user_id" "$token" "$seed" \
           "-AppLanguage=$app_lang" \
@@ -1159,7 +1201,7 @@ capture_shot() {
           "-AppLanguage=$app_lang" \
           "-AppTheme=$appearance" \
           "-OpenDiscoverProfile=$discover_profile"
-        if wait_for_discover_screenshot 90 "$since_ms"; then
+        if wait_for_discover_screenshot 90 "$since_ms" "$([[ "$discover_attempt" == 3 ]] && echo 1 || echo 0)"; then
           discover_ok=1
           break
         fi
