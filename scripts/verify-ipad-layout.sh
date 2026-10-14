@@ -47,6 +47,7 @@
 # Env:
 #   IPAD_SIM_ID / SIM_ID               simulator overrides (iPad / iPhone)
 #   IPAD_VERIFY_OUT                    output root (default tmp/ipad-verify)
+#   IPAD_VERIFY_LANGUAGE               app language, -AppLanguage= (default ru; the iPhone baseline is ru)
 #   IPAD_VERIFY_RECIPE_NAME            recipe opened by recipe states (default «Баскский чизкейк»)
 #   IPAD_VERIFY_DISCOVER_PROFILE       public profile for discover-author. No default: without it
 #                                      discover-feed / discover-author are skipped (both show other
@@ -127,6 +128,11 @@ while (($#)); do
 done
 
 OUT_DIR="${IPAD_VERIFY_OUT:-$ROOT/tmp/ipad-verify}"
+APP_LANGUAGE="${IPAD_VERIFY_LANGUAGE:-ru}"
+case "$APP_LANGUAGE" in
+  ru|en) ;;
+  *) echo "IPAD_VERIFY_LANGUAGE must be ru or en, got: $APP_LANGUAGE" >&2; exit 2 ;;
+esac
 BASELINE_DIR="$OUT_DIR/iphone-baseline"
 REGRESSION_DIR="$OUT_DIR/iphone-regression"
 RECIPE_NAME="${IPAD_VERIFY_RECIPE_NAME:-Баскский чизкейк}"
@@ -427,7 +433,7 @@ launch_state() {
   # «Импортировать сайт из буфера обмена?» banner over the page. Only the simulator
   # pasteboard is overwritten, the Mac clipboard stays as is.
   printf 'ipad-verify' | xcrun simctl pbcopy "$SIM_ID" >/dev/null 2>&1 || true
-  sim_launch -SkipSplash=1 -ScreenshotCapture=1 -AppLanguage=ru -AppTheme=light "${STATE_ARGS[@]}" >/dev/null
+  sim_launch -SkipSplash=1 -ScreenshotCapture=1 "-AppLanguage=$APP_LANGUAGE" -AppTheme=light "${STATE_ARGS[@]}" >/dev/null
   if ! sim_wait_ready 30; then
     echo "  FAIL $state: no readiness marker (app_shell_start|container_constructed|contentview_init)" >&2
     return 1
