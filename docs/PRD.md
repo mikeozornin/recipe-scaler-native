@@ -23,9 +23,9 @@ phrase), and Y.Doc data model (yrs binary-compatible with Yjs 13.6.30).
 
 ### Platform
 
-- iOS 17.0+, iPhone only (iPad later)
+- iOS 17.0+, iPhone and iPad (iPad layout: spec 081, `specs/081-ipad-adaptation/`)
 - SwiftUI, native except Tiptap description editor (WKWebView)
-- Portrait orientation primary
+- iPhone: portrait orientation primary. iPad: every orientation, one resizable window (Split View, Slide Over, Stage Manager); on iPadOS 26.2+ a sidebar shell, on 17.0–26.1 the system tab bar
 
 ---
 
@@ -541,7 +541,8 @@ Full schema reference: [docs/YJS-SCHEMA.md](YJS-SCHEMA.md)
 
 ## 10. Out of Scope
 
-- **iPad adaptation** — iPhone only initially
+- **Multiple iPad windows** — one window only (spec 081, STOP 5); multiple scenes need their own spec
+- **Native Mac app** — the iPad app on Apple Silicon Macs («Designed for iPad») and on Vision Pro is not tuned; App Store availability there is the owner's choice in App Store Connect
 - **OAuth server/client** — not needed for iOS
 - **Apple Watch / Wearables**
 - **Siri Shortcuts** — deferred to Phase 6
