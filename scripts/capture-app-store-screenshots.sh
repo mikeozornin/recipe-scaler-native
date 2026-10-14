@@ -1293,6 +1293,7 @@ capture_shot() {
     05-assistant)
       if [[ "$DEVICE" == "ipad-13" ]]; then
         # iPad: the assistant panel beside the open recipe (layout.md #assistant/chat).
+        # The recipe is cookies (ipadRecipeName), so the canned chat is about cookies too.
         CAPTURE_LAUNCH_WAIT=8 launch_for_shot "$user_id" "$token" "$seed" \
           "-AppLanguage=$app_lang" \
           "-AppTheme=$appearance" \
@@ -1300,7 +1301,8 @@ capture_shot() {
           "-OpenRecipeName" \
           "$recipe_name" \
           "-ShowAssistant=1" \
-          "-ScreenshotAssistantFixture=1"
+          "-ScreenshotAssistantFixture=1" \
+          "-ScreenshotAssistantTopic=cookies"
         wait_for_screenshot_media 60
       else
         launch_for_shot "$user_id" "$token" "$seed" \

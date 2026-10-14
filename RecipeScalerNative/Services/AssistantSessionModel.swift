@@ -332,15 +332,32 @@ final class AssistantSessionModel {
     #if DEBUG
     private func applyScreenshotAssistantFixture() {
         let isEnglish = AppLanguagePreference.current == .en
+        let isCookies = DebugLaunchOptions.screenshotAssistantTopic == "cookies"
         let stamp = AssistantISO8601.parse("2026-04-12T10:00:00.000Z") ?? Date()
+        let question: String
+        let reply: String
+        if isCookies {
+            // iPad store shot 05 sits beside «Печенье с шоколадом» / «Chocolate Cookies».
+            question = isEnglish
+                ? "My cookies spread in the oven. What should I do?"
+                : "Печенье растекается, что делать?"
+            reply = isEnglish
+                ? "Usually the dough is just too warm, and that is easy to fix.\n\n1. Chill the dough for 30-60 minutes before baking.\n2. Use butter that is soft but not melted.\n3. Check the flour: with too little, the dough runs.\n\nThen put the dough balls on a cool baking sheet, not a hot one from the last batch."
+                : "Чаще всего тесто просто слишком теплое, и это легко исправить.\n\n1. Убери тесто в холодильник на 30-60 минут перед выпечкой.\n2. Масло бери мягкое, но не растопленное.\n3. Проверь муку: если ее меньше, чем в рецепте, тесто поплывет.\n\nВыкладывай шарики на холодный противень, а не на горячий после прошлой партии."
+        } else {
+            question = isEnglish
+                ? "My sauce split. How can I save the pasta?"
+                : "Соус свернулся. Как спасти пасту?"
+            reply = isEnglish
+                ? "Don't panic: you can usually bring the sauce back.\n\n1. Take the pan off the heat and let it rest for 20-30 seconds.\n2. Add 1-2 spoonfuls of warm pasta water and whisk quickly.\n3. If it still looks grainy, stir in a little cold butter.\n\nThen keep the sauce over low heat and do not let it boil."
+                : "Спокойно: чаще всего соус можно вернуть.\n\n1. Сними сковороду с огня и дай ей постоять 20-30 секунд.\n2. Добавь 1-2 ложки теплой воды от пасты и энергично размешай.\n3. Если соус все еще зернистый, вмешай немного холодного сливочного масла.\n\nДальше держи соус на слабом огне и не давай ему кипеть."
+        }
         threadId = "about-assistant-thread"
         messages = [
             AssistantMessage(
                 id: "about-assistant-user-message",
                 role: "user",
-                text: isEnglish
-                    ? "My sauce split. How can I save the pasta?"
-                    : "Соус свернулся. Как спасти пасту?",
+                text: question,
                 isStreaming: false,
                 metadata: nil,
                 createdAt: stamp
@@ -348,9 +365,7 @@ final class AssistantSessionModel {
             AssistantMessage(
                 id: "about-assistant-reply",
                 role: "assistant",
-                text: isEnglish
-                    ? "Don't panic: you can usually bring the sauce back.\n\n1. Take the pan off the heat and let it rest for 20-30 seconds.\n2. Add 1-2 spoonfuls of warm pasta water and whisk quickly.\n3. If it still looks grainy, stir in a little cold butter.\n\nThen keep the sauce over low heat and do not let it boil."
-                    : "Спокойно: чаще всего соус можно вернуть.\n\n1. Сними сковороду с огня и дай ей постоять 20-30 секунд.\n2. Добавь 1-2 ложки теплой воды от пасты и энергично размешай.\n3. Если соус все еще зернистый, вмешай немного холодного сливочного масла.\n\nДальше держи соус на слабом огне и не давай ему кипеть.",
+                text: reply,
                 isStreaming: false,
                 metadata: nil,
                 createdAt: stamp

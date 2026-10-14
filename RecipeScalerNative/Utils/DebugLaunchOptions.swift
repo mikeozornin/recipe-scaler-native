@@ -74,6 +74,12 @@ enum DebugLaunchOptions {
         boolFlag("ScreenshotAssistantFixture")
     }
 
+    /// `-ScreenshotAssistantTopic=cookies` — the fixture chat is about cookies spreading
+    /// in the oven (iPad store shot beside «Chocolate Cookies», spec 081). Otherwise the sauce chat.
+    static var screenshotAssistantTopic: String? {
+        stringValue("ScreenshotAssistantTopic")
+    }
+
     /// `-OpenGuideMediaScene=<scene-id>` — opens one deterministic DEBUG
     /// scene for localized guide screenshot/video capture.
     static var openGuideMediaScene: String? {
@@ -502,6 +508,7 @@ enum DebugLaunchOptions {
     static var shoppingShareAutoCopyText: Bool { false }
     static var showAssistant: Bool { false }
     static var screenshotAssistantFixture: Bool { false }
+    static var screenshotAssistantTopic: String? { nil }
     static var openGuideMediaScene: String? { nil }
     static var guideMediaSequence: String? { nil }
     static var mobileTimerPanelExpanded: Bool { false }
