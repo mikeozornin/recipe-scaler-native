@@ -141,8 +141,11 @@ struct IPadMenuCommands: Commands {
             item(recipe?.isPinned == true ? "recipe.list.unpin" : "recipe.list.pin", recipe?.togglePin)
                 .keyboardShortcut("p", modifiers: [.command, .shift])
             item("ipad.menu.recipe.add-to-collection", recipe?.assignToCollections)
+            // Not an `item()`: a toggle shows its checkmark. A held ⌃⌘A still must not
+            // flip it on every key repeat.
             Toggle(Self.title("common.enable-wake-lock"), isOn: screenAwakeBinding)
                 .disabled(recipe?.toggleScreenAwake == nil)
+                .buttonRepeatBehavior(.disabled)
                 .keyboardShortcut("a", modifiers: [.command, .control])
             Divider()
             item("recipe.list.delete", recipe?.delete)
