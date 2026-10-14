@@ -32,9 +32,13 @@ struct IPadSidebarProfileFooter: View {
         ))
     }
 
+    /// Bumped each time the sync socket connects; see the refresh task below.
+    @State private var connects = 0
+
     private struct FooterKey: Hashable {
         let userId: String?
         let revision: Int
+        let connects: Int
     }
 
     var body: some View {
@@ -59,10 +63,22 @@ struct IPadSidebarProfileFooter: View {
         .buttonStyle(.plain)
         .hoverEffect()
         .accessibilityIdentifier(AccessibilityIdentifiers.ipadSidebarFooter)
-        .task(id: FooterKey(userId: auth.userId, revision: coordinator.profileSheetRevision)) {
+        .task(id: FooterKey(
+            userId: auth.userId,
+            revision: coordinator.profileSheetRevision,
+            connects: connects
+        )) {
             guard auth.userId != nil else { return }
             // `refresh` drops what it fetched if the account changed during the request.
             await viewModel.refresh(syncService: syncService)
+        }
+        // The row is on screen from launch. A refresh that fails there (no network, or REST
+        // 401s until the device token is recovered) would keep the account number of a public
+        // profile until the profile sheet next closes. Refetch whenever the socket connects,
+        // as the phone `AccountView` does; the new key also cancels a refresh still in flight
+        // with the stale token.
+        .onChange(of: syncService.connectionState.isConnected) { _, isConnected in
+            if isConnected { connects += 1 }
         }
     }
 
