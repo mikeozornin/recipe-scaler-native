@@ -115,7 +115,8 @@ final class IPadMultitaskingSpec: BaseTestCase {
     // MARK: - Assistant
 
     /// `#assistant/chat`: the panel beside the recipe turns into the phone sheet in a compact
-    /// window and back into the panel; the chat, the recipe and the collection survive.
+    /// window and back into the panel; the chat, the recipe and the collection survive. With the
+    /// sidebar beside the panel the list column stays hidden too (FR-022).
     func testAssistantWidthsLandscape() {
         openRecipeInCollection()
         openPanelFromTopBar()
@@ -138,10 +139,25 @@ final class IPadMultitaskingSpec: BaseTestCase {
             XCTAssertTrue(waitUntil { self.fixtureQuestions.count == 1 }, "The chat is not shown once at \(label(width))")
             if !compact {
                 assertRecipeOpen(first.name, step: label(width))
-                XCTAssertFalse(listOnScreen, "The list column is beside the panel at \(label(width)) (FR-022)")
             }
             record("assistant-chat", width: width, step: index)
             shot("assistant-chat", width: width, step: index)
+            if !compact {
+                XCTAssertFalse(listOnScreen, "The list column is beside the panel at \(label(width)) (FR-022)")
+            }
+        }
+        if hasSidebarShell {
+            // The sidebar beside the panel (the system also brings it back after a compact
+            // window): the recipe keeps the content, still no list column.
+            showSidebarFromTopBar()
+            assertRecipeOpen(first.name, step: "the sidebar beside the panel")
+            if listColumn.exists {
+                print("IPAD_MATRIX_NOTE the hidden list column ends at \(Int(listColumn.frame.maxX.rounded())) pt, beside the sidebar")
+                fflush(stdout)
+            }
+            record("assistant-sidebar", width: nil, step: steps.count)
+            shot("assistant-sidebar", width: nil, step: steps.count)
+            XCTAssertFalse(listOnScreen, "The list column is beside the panel and the sidebar (FR-022)")
         }
         // Closed, the panel gives the list column back: the collection is still selected.
         inspectorClose.tap()
@@ -162,6 +178,9 @@ final class IPadMultitaskingSpec: BaseTestCase {
         for (index, width) in widths(landscape: true).enumerated() {
             resize(to: width)
             let compact = (width ?? windowWidth) < Self.regularMinWidth
+            // Back at the whole window after a compact one the system shows the sidebar again,
+            // and «Покупки» is its row, not a top tab.
+            if !compact { hideSidebarIfShown() }
             XCTAssertTrue(waitUntil { self.bottomBar == compact }, "\(compact ? "No phone bottom bar" : "No top bar") at \(label(width))")
             XCTAssertTrue(shoppingListPage.root.waitForExistence(timeout: Wait.element), "The shopping list is gone at \(label(width))")
             XCTAssertTrue(waitUntil { row.exists }, "The item is gone at \(label(width))")
@@ -413,8 +432,10 @@ final class IPadMultitaskingSpec: BaseTestCase {
     private var firstRow: XCUIElement { recipeListPage.recipeRow(id: first.id) }
     private var secondRow: XCUIElement { recipeListPage.recipeRow(id: second.id) }
     private var listColumn: XCUIElement { element(UIA.ipadRecipeListColumn) }
-    /// Hidden or expanded, the list column waits off the leading edge.
-    private var listOnScreen: Bool { listColumn.exists && listColumn.frame.maxX > 1 }
+    /// Hidden or expanded, the list column waits off the leading edge of the content, emptied
+    /// (`IPadRecipesSplitView.split`). Beside a sidebar that edge is the sidebar's, right of
+    /// the window's, so the column counts only with its collection title in it.
+    private var listOnScreen: Bool { listColumn.exists && listColumn.frame.maxX > 1 && collectionTitle.exists }
     private var leftColumn: XCUIElement { app.scrollViews.matching(identifier: UIA.ipadRecipeDetailLeftColumn).firstMatch }
     private var rightColumn: XCUIElement { app.scrollViews.matching(identifier: UIA.ipadRecipeDetailRightColumn).firstMatch }
     private var recipeMenu: XCUIElement { app.buttons.matching(identifier: UIA.recipeDetailMenu).firstMatch }
@@ -572,6 +593,15 @@ final class IPadMultitaskingSpec: BaseTestCase {
         fflush(stdout)
         toggle.tap()
         XCTAssertTrue(waitUntil { !self.sidebarShown }, "Sidebar did not hide")
+    }
+
+    /// The top bar's toggle is `ToggleSideBar`; the system may have shown the sidebar already.
+    private func showSidebarFromTopBar() {
+        guard !sidebarShown else { return }
+        let toggle = app.buttons.matching(identifier: "ToggleSideBar").firstMatch
+        XCTAssertTrue(toggle.waitForExistence(timeout: Wait.firstPaint), "No sidebar toggle in the top bar")
+        toggle.tap()
+        XCTAssertTrue(waitUntil { self.sidebarShown }, "Sidebar did not show")
     }
 
     private func dismissKeyboard() {
