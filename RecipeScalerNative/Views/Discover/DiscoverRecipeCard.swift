@@ -113,10 +113,15 @@ struct DiscoverRecipeCardGrid<Item: Identifiable, Content: View>: View {
     let items: [Item]
     @ViewBuilder let content: (Item) -> Content
 
+    @Environment(\.appLayoutMode) private var layoutMode
     @State private var availableWidth: CGFloat = 0
+    /// Spec 081: the grid width as `DiscoverRecipeCardGridPadWidthReader` measures it (iPad only).
+    @State private var padWidth: CGFloat = 0
 
     private var columnCount: Int {
-        DiscoverRecipeCardLayout.columnCount(availableWidth: availableWidth)
+        DiscoverRecipeCardLayout.columnCount(
+            availableWidth: layoutMode == .padRegular ? padWidth : availableWidth
+        )
     }
 
     private var rows: [[Item]] {
@@ -154,6 +159,25 @@ struct DiscoverRecipeCardGrid<Item: Identifiable, Content: View>: View {
             }
         }
         .onPreferenceChange(DiscoverRecipeCardGridWidthKey.self) { availableWidth = $0 }
+        .modifier(DiscoverRecipeCardGridPadWidthReader(width: $padWidth))
+    }
+}
+
+/// Spec 081 — on iPadOS 26 the background `GeometryReader` preference above reaches the grid
+/// only as 0, so the author page stayed one column of page-wide cards at any width. A
+/// regular-width iPad takes the width from `onGeometryChange` instead (columns of at least
+/// 280, as on the web). Keyed on the idiom, as `iPadReadableWidth`: the iPhone keeps the view
+/// tree it had.
+private struct DiscoverRecipeCardGridPadWidthReader: ViewModifier {
+    @Binding var width: CGFloat
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            content.onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        } else {
+            content
+        }
     }
 }
 
