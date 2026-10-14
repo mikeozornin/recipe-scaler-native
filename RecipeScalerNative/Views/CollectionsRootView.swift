@@ -119,7 +119,7 @@ struct CollectionsRootView: View {
                     }
                     .appToolbarTextButton()
                     .disabled(
-                        newFolderName.trimmingCharacters(in: .whitespaces).isEmpty || isSavingFolder
+                        NewCollectionCommit.name(from: newFolderName) == nil || isSavingFolder
                     )
                 }
             }
@@ -198,7 +198,7 @@ struct CollectionsRootView: View {
                     }
                     .appToolbarTextButton()
                     .disabled(
-                        newFolderName.trimmingCharacters(in: .whitespaces).isEmpty || isSavingFolder
+                        NewCollectionCommit.name(from: newFolderName) == nil || isSavingFolder
                     )
                 }
             }
