@@ -31,6 +31,30 @@ private struct AccountSheetDoneToolbar: ViewModifier {
     }
 }
 
+/// Spec 081 — in the iPad profile sheet «Что нового» opens on top of it. The shell's
+/// own release-notes sheet stays off while the profile sheet is up: presented from
+/// the shell root, it would land under the profile sheet.
+private struct AccountSheetReleaseNotes: ViewModifier {
+    let isProfileSheet: Bool
+    @Environment(ReleaseNotesStore.self) private var releaseNotes
+
+    func body(content: Content) -> some View {
+        if isProfileSheet {
+            content.sheet(isPresented: Binding(
+                get: { releaseNotes.isSheetPresented },
+                set: { releaseNotes.isSheetPresented = $0 }
+            )) {
+                ReleaseNotesSheet()
+                    .environment(releaseNotes)
+            }
+            // Closed together with the profile sheet: the shell must not reopen it.
+            .onDisappear { releaseNotes.isSheetPresented = false }
+        } else {
+            content
+        }
+    }
+}
+
 struct AccountView: View {
     @Environment(YjsSyncService.self) private var syncService
     @Environment(RemindersSyncService.self) private var remindersService
@@ -195,6 +219,7 @@ struct AccountView: View {
                 .localizedNavigationTitle("account.title")
                 .navigationBarTitleDisplayMode(.inline)
                 .modifier(AccountSheetDoneToolbar(onDone: onDone))
+                .modifier(AccountSheetReleaseNotes(isProfileSheet: onDone != nil))
                 .listSectionSpacing(12)
                 .appListBodyTypography()
                 .environment(

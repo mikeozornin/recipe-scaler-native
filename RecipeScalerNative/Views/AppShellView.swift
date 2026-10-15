@@ -587,7 +587,8 @@ struct AppShellView: View {
             .animation(.easeInOut(duration: 0.25), value: transientStatus != nil)
             .sheet(item: $coordinator.importPresentation, content: importSheet)
             .sheet(isPresented: Binding(
-                get: { releaseNotes.isSheetPresented },
+                // The iPad profile sheet presents it itself (`AccountView`).
+                get: { releaseNotes.isSheetPresented && !coordinator.isProfileSheetPresented },
                 set: { releaseNotes.isSheetPresented = $0 }
             )) {
                 ReleaseNotesSheet()
