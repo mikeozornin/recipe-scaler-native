@@ -6,7 +6,10 @@
 #   bash scripts/resolve-simulator.sh
 #
 # The explicit SIM_ID override is intentionally checked first so CI and paired
-# simulator workflows can retain deterministic destinations.
+# simulator workflows can retain deterministic destinations. Inside a feature
+# worktree (scripts/wt.sh) the answer is that worktree's own RS-<name> simulator.
+# Elsewhere, simulators of feature worktrees (RS-…) and of other projects
+# (Scrapp…) are never selected.
 
 set -euo pipefail
 
@@ -17,6 +20,13 @@ fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
+if bash "$ROOT/scripts/wt.sh" inside; then
+  udid="$(bash "$ROOT/scripts/wt.sh" udid iphone)"
+  echo "Resolved simulator: worktree simulator ($udid)" >&2
+  printf '%s\n' "$udid"
+  exit 0
+fi
+
 python3 - "$ROOT" <<'PY'
 from __future__ import annotations
 
@@ -26,6 +36,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+EXCLUDED_PREFIXES = ("rs-", "scrapp")
 
 def runtime_version(identifier: str) -> tuple[int, ...]:
     match = re.search(r"iOS[- ](\d+(?:[-.]\d+)*)", identifier, re.IGNORECASE)
@@ -53,6 +64,8 @@ for runtime, runtime_devices in devices.items():
             continue
         name = str(device.get("name", ""))
         if "iphone" not in name.lower():
+            continue
+        if name.lower().startswith(EXCLUDED_PREFIXES):
             continue
         udid = str(device.get("udid", ""))
         if not udid:

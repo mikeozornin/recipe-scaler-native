@@ -25,7 +25,9 @@
 После изменений в Swift/Xcode **агент обязан сам прогнать сборку** и убедиться, что проект компилируется, прежде чем считать задачу выполненной. Не проси пользователя проверить compile, если сборку можно запустить локально.
 
 Симулятор выбирай через `scripts/resolve-simulator.sh` (или явный `SIM_ID=`).
-Не хардкодь UDID машины в скриптах/доках как единственный путь.
+Не хардкодь UDID машины в скриптах/доках как единственный путь. В worktree задачи (см.
+[AGENTS.md](../AGENTS.md), «Параллельная работа») резолвер отдаёт её собственный `RS-<name>`, а
+быстрый цикл «собрать, поставить, запустить» — `bash scripts/wt.sh run [--ipad] [-SkipSplash=1]`.
 
 ```bash
 SIM_ID="$(bash scripts/resolve-simulator.sh)"
@@ -60,8 +62,8 @@ xcodebuild test-without-building -scheme RecipeScalerNative \
 
 iPad-симулятор выбирает `scripts/resolve-ipad-simulator.sh` (пара к `resolve-simulator.sh`):
 `IPAD_SIM_ID=<udid>` побеждает, иначе «iPad Pro 11-inch (M4)» → «iPad Air 11-inch» → любой iPad,
-свежий runtime, уже загруженный. Симуляторы `Scrapp…` чужие, скрипт их не берёт. Им пользуются все
-iPad-скрипты ниже.
+свежий runtime, уже загруженный; в worktree задачи — её `RS-<name>-ipad`. Симуляторы `Scrapp…` и
+чужие `RS-…` скрипт не берёт. Им пользуются все iPad-скрипты ниже.
 
 ```bash
 IPAD_ID="$(bash scripts/resolve-ipad-simulator.sh)"

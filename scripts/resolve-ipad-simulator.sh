@@ -17,13 +17,22 @@
 #   5. stable name order.
 #
 # Prints the UDID on stdout and a human-readable line on stderr.
-# Simulators whose names start with "Scrapp" belong to another project and are
-# never selected.
+# Inside a feature worktree (scripts/wt.sh) the answer is that worktree's own
+# RS-<name>-ipad simulator. Elsewhere, simulators of feature worktrees (RS-…) and
+# of another project (Scrapp…) are never selected.
 
 set -euo pipefail
 
 if [[ -n "${IPAD_SIM_ID:-}" ]]; then
   printf '%s\n' "$IPAD_SIM_ID"
+  exit 0
+fi
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if bash "$ROOT/scripts/wt.sh" inside; then
+  udid="$(bash "$ROOT/scripts/wt.sh" udid ipad)"
+  echo "Resolved iPad simulator: worktree simulator ($udid)" >&2
+  printf '%s\n' "$udid"
   exit 0
 fi
 
@@ -36,7 +45,7 @@ import subprocess
 import sys
 
 PREFERRED_NAMES = ("ipad pro 11-inch (m4)", "ipad air 11-inch")
-EXCLUDED_PREFIXES = ("scrapp",)
+EXCLUDED_PREFIXES = ("rs-", "scrapp")
 
 
 def runtime_version(identifier: str) -> tuple[int, ...]:
