@@ -6,7 +6,8 @@ import SwiftUI
 /// (compact window). Tab roots are the phone ones (`AppShellTabRoots`).
 ///
 /// System workarounds from the spike (S1, S3, S5):
-/// - badges only while the tab bar is the sidebar, or they show up in the top bar;
+/// - badges only while the tab bar is the sidebar and not sliding in or out, or they
+///   show up in the top bar;
 /// - «Профиль» and «Ассистент» are `.pinned` icons of the top bar and hidden from the
 ///   sidebar only while it is shown (plain `.hidden` removes them from the top bar too);
 /// - the «Коллекции» section exists only while the sidebar is shown: in compact
@@ -28,6 +29,7 @@ struct IPadAdaptiveTabView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     /// `\.tabBarPlacement == .sidebar`, reported from the selected page.
     @State private var sidebarShown = false
+    @State private var sidebarMotion = IPadSidebarMotion()
     @State private var isNewCollectionAlertPresented = false
     @State private var newCollectionName = ""
     @State private var isSavingCollection = false
@@ -183,10 +185,14 @@ struct IPadAdaptiveTabView: View {
         }
         .task {
             await applyLaunchSidebarVisibility()
+            // The `UITabBarController` is attached after the first layout pass.
+            try? await Task.sleep(for: .milliseconds(300))
+            IPadSidebarControl.observeMotion(sidebarMotion)
         }
         // «Развернуть» (T024) hides the sidebar; these keep that state honest.
         .onChange(of: sidebarShown) { _, shown in
             coordinator.noteSidebarShown(shown)
+            IPadSidebarControl.observeMotion(sidebarMotion)
         }
         .onChange(of: layoutMode) { _, mode in
             // The recipes stack is built anew with the path it had; the reflow may pop it.
@@ -251,7 +257,7 @@ struct IPadAdaptiveTabView: View {
     }
 
     private func sidebarBadge(_ count: Int) -> Int {
-        sidebarShown ? count : 0
+        sidebarShown && !sidebarMotion.isMoving ? count : 0
     }
 
     /// Items still to buy, from the shopping document loaded with the session.

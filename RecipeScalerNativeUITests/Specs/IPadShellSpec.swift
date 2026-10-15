@@ -43,6 +43,9 @@ final class IPadShellSpec: BaseTestCase {
         if name.contains("testAssistantEntry") {
             return ["-OpenTab=shopping", "-IPadSidebarHidden=1"]
         }
+        if name.contains("testSidebarToggleKeepsBadgesInSidebar") {
+            return ["-OpenTab=shopping"]
+        }
         if name.contains("testTopBarHasNoBadges") {
             return ["-OpenTab=shopping", "-IPadSidebarHidden=1"]
         }
@@ -211,6 +214,30 @@ final class IPadShellSpec: BaseTestCase {
         )
     }
 
+    /// The sidebar opened and closed in portrait and landscape: its rows keep their counts,
+    /// and the counts don't follow the tabs into the top bar (Scrapp `testPortraitSidebarToggle`).
+    /// The flash while the bar morphs is too short for XCTest: it was checked on a screen
+    /// recording (`IPadSidebarMotion`).
+    func testSidebarToggleKeepsBadgesInSidebar() {
+        let item = TestData.shoppingItemLabel("E2E iPad")
+        shoppingListPage.awaitReady().addManualItem(item)
+        XCTAssertTrue(shoppingListPage.row(label: item).waitForExistence(timeout: Wait.syncRoundTrip), "Added item missing")
+
+        for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
+            XCUIDevice.shared.orientation = orientation
+            for round in 1...2 {
+                let context = "\(orientation == .portrait ? "portrait" : "landscape") round \(round)"
+                showSidebar()
+                XCTAssertTrue(
+                    waitUntil { self.hasDigits(self.element(UIA.tabShopping).label) },
+                    "\(context): the sidebar «Покупки» row has no badge: «\(element(UIA.tabShopping).label)»"
+                )
+                hideSidebar()
+                assertTopBarWithoutBadges(context)
+            }
+        }
+    }
+
     /// FR-021: one assistant entry on screen. The top bar has the pinned «Ассистент» tab,
     /// so «Покупки» has no toolbar ✦.
     func testAssistantEntryInTopBar() {
@@ -304,6 +331,23 @@ final class IPadShellSpec: BaseTestCase {
             file: file,
             line: line
         )
+    }
+
+    private func hideSidebar(file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(sidebarToggle.waitForExistence(timeout: Wait.element), "Sidebar toggle missing", file: file, line: line)
+        sidebarToggle.tap()
+        XCTAssertTrue(waitUntil { !self.footer.exists }, "Sidebar did not hide", file: file, line: line)
+    }
+
+    private func assertTopBarWithoutBadges(_ context: String, file: StaticString = #filePath, line: UInt = #line) {
+        let shopping = topBarTab(UIA.tabShopping)
+        XCTAssertTrue(shopping.waitForExistence(timeout: Wait.element), "\(context): «Покупки» missing from the top bar", file: file, line: line)
+        for id in [UIA.tabShopping, UIA.tabRecipes] {
+            let tab = topBarTab(id)
+            // Held for a moment: a badge set late would show up after the first look.
+            let clean = !waitUntil(timeout: 2) { self.hasDigits(tab.label) }
+            XCTAssertTrue(clean, "\(context): top bar \(id) shows a badge: «\(tab.label)»", file: file, line: line)
+        }
     }
 
     private func scrollAccount(until target: XCUIElement) {

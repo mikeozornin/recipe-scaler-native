@@ -40,11 +40,76 @@ enum IPadSidebarControl {
         setSidebarHidden(true)
     }
 
+    /// Lets `motion` know while the sidebar shows or hides. Again on every call: the
+    /// controller is found only after the first layout pass.
+    static func observeMotion(_ motion: IPadSidebarMotion) {
+        guard let sidebar = tabBarController()?.sidebar else { return }
+        motion.attach(to: sidebar)
+    }
+
     private static func tabBarController() -> UITabBarController? {
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
         let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
         let window = scene?.windows.first { $0.isKeyWindow } ?? scene?.windows.first
         return TabBarDiscovery.find(in: window?.rootViewController)
+    }
+}
+
+/// The sidebar is sliding in or out. `\.tabBarPlacement` turns `.sidebar` as the top bar
+/// starts to grow into the sidebar and stays so while the sidebar shrinks back into the
+/// bar, so badges keyed on it alone flash in the top bar (DECISIONS: no badges there).
+@available(iOS 26.2, *)
+@MainActor
+@Observable
+final class IPadSidebarMotion {
+    private(set) var isMoving = false
+    @ObservationIgnored private var proxy: IPadSidebarDelegateProxy?
+
+    fileprivate func attach(to sidebar: UITabBarController.Sidebar) {
+        if let proxy, sidebar.delegate === proxy { return }
+        let proxy = IPadSidebarDelegateProxy(forwarded: sidebar.delegate) { [weak self] animator in
+            self?.isMoving = true
+            animator.addCompletion { self?.isMoving = false }
+        }
+        self.proxy = proxy
+        sidebar.delegate = proxy
+    }
+}
+
+/// Hears `sidebarVisibilityWillChange` and hands every delegate call on to the delegate
+/// it replaced, if SwiftUI set one.
+@available(iOS 26.2, *)
+@MainActor
+private final class IPadSidebarDelegateProxy: NSObject, UITabBarController.Sidebar.Delegate {
+    private weak var forwarded: (any UITabBarController.Sidebar.Delegate)?
+    private let willChange: (any UITabBarController.Sidebar.Animating) -> Void
+
+    init(
+        forwarded: (any UITabBarController.Sidebar.Delegate)?,
+        willChange: @escaping (any UITabBarController.Sidebar.Animating) -> Void
+    ) {
+        self.forwarded = forwarded
+        self.willChange = willChange
+    }
+
+    func tabBarController(
+        _ tabBarController: UITabBarController,
+        sidebarVisibilityWillChange sidebar: UITabBarController.Sidebar,
+        animator: any UITabBarController.Sidebar.Animating
+    ) {
+        willChange(animator)
+        forwarded?.tabBarController?(tabBarController, sidebarVisibilityWillChange: sidebar, animator: animator)
+    }
+
+    override func responds(to aSelector: Selector!) -> Bool {
+        super.responds(to: aSelector) || (forwarded?.responds(to: aSelector) ?? false)
+    }
+
+    override func forwardingTarget(for aSelector: Selector!) -> Any? {
+        if let forwarded, forwarded.responds(to: aSelector) {
+            return forwarded
+        }
+        return super.forwardingTarget(for: aSelector)
     }
 }
 
