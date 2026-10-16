@@ -83,6 +83,8 @@ bash scripts/capture-app-store-screenshots.sh --shot 09-nutrition
 bash scripts/validate-app-store-screenshots.sh
 ```
 
+`validate` без `--device` проверяет оба набора, iPhone и iPad 13″; если набора iPad нет совсем, это ошибка (ASC нужны оба). Только iPhone — `--device iphone-6.9`.
+
 Нужен симулятор **iPhone Air** или **iPhone 17 Pro Max** и доступ к `https://recipe-scaler.ru` (login-with-seed + Discover). Если сима нет, скрипт создаёт iPhone Air на свежем iOS runtime.
 
 **Не запускайте два capture параллельно** — скрипт берёт mkdir-lock `.capture-screenshots.lock.d` (Home/Lock/таймеры конфликтуют).

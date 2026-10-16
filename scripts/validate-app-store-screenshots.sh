@@ -80,17 +80,28 @@ for name, (pattern, accepted_by_orientation) in DEVICES.items():
     if device not in ("all", name):
         continue
     out_root = shots_root / name
-    pngs = sorted(out_root.glob(pattern))
-    if not pngs:
-        print(f"no PNGs under {out_root} (capture first, or this is a fixtures-only checkout)")
-        continue
+    pngs = sorted(out_root.glob(pattern)) if out_root.is_dir() else []
+    # A device with a fixed store set must have it: an empty folder fails instead of passing.
     expected = EXPECTED.get(name)
     if expected is not None:
-        found = {path.relative_to(out_root).as_posix() for path in out_root.rglob("*.png")}
+        found = (
+            {path.relative_to(out_root).as_posix() for path in out_root.rglob("*.png")}
+            if out_root.is_dir()
+            else set()
+        )
+        if not found:
+            errors.append(
+                f"{name}: no store set ({len(expected)} PNGs expected under "
+                f"store/screenshots/{name}/) — capture first"
+            )
+            continue
         for rel in sorted(expected - found):
             errors.append(f"{name}/{rel}: missing")
         for rel in sorted(found - expected):
             errors.append(f"{name}/{rel}: not in the store set (move it out of {name}/)")
+    if not pngs:
+        print(f"no PNGs under {out_root} (capture first, or this is a fixtures-only checkout)")
+        continue
     for path in pngs:
         rel = path.relative_to(shots_root)
         if None in accepted_by_orientation:
