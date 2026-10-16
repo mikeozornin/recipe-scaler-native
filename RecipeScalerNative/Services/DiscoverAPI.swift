@@ -35,11 +35,57 @@ struct PublicProfilePreviewDTO: Decodable, Identifiable, Sendable {
     let avatarURL: String?
     let recipeCount: Int
     let description: String?
+    /// Spec 082 — up to three newest recipes with a photo, for the author card collage.
+    let previewRecipes: [DiscoverPreviewRecipeDTO]
 
     private enum CodingKeys: String, CodingKey {
         case username, name, description
         case avatarURL = "avatar_url"
         case recipeCount = "recipe_count"
+        case previewRecipes = "preview_recipes"
+    }
+
+    init(
+        username: String,
+        name: String?,
+        avatarURL: String?,
+        recipeCount: Int,
+        description: String?,
+        previewRecipes: [DiscoverPreviewRecipeDTO] = []
+    ) {
+        self.username = username
+        self.name = name
+        self.avatarURL = avatarURL
+        self.recipeCount = recipeCount
+        self.description = description
+        self.previewRecipes = previewRecipes
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        username = try container.decode(String.self, forKey: .username)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+        avatarURL = try container.decodeIfPresent(String.self, forKey: .avatarURL)
+        recipeCount = try container.decode(Int.self, forKey: .recipeCount)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        // Servers before 082 omit the key: the card shows the collage placeholder.
+        previewRecipes = try container.decodeIfPresent(
+            [DiscoverPreviewRecipeDTO].self,
+            forKey: .previewRecipes
+        ) ?? []
+    }
+}
+
+/// Spec 082 — `preview_recipes[]` of a Discover author. `imageUrl` is relative
+/// (`/api/recipes/{id}/image?size=card&v=…`); `id` only keys the collage tiles.
+struct DiscoverPreviewRecipeDTO: Decodable, Identifiable, Hashable, Sendable {
+    let id: String
+    let name: String
+    let imageUrl: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name
+        case imageUrl = "image_url"
     }
 }
 
@@ -325,6 +371,17 @@ enum DiscoverAPI {
     }
 
     static func avatarURL(fromPublicProfile relativeURL: String?) -> URL? {
+        serverURL(from: relativeURL)
+    }
+
+    /// Spec 082 — collage photo of an author card: the server URL as is (size and
+    /// version are already in it).
+    static func authorPreviewRecipeImageURL(_ recipe: DiscoverPreviewRecipeDTO) -> URL? {
+        serverURL(from: recipe.imageUrl)
+    }
+
+    /// Absolute URLs as is, relative ones against `Config.baseURL`.
+    private static func serverURL(from relativeURL: String?) -> URL? {
         guard let relativeURL, !relativeURL.isEmpty else { return nil }
         if let absolute = URL(string: relativeURL), absolute.scheme != nil {
             return absolute

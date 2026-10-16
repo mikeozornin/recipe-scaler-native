@@ -531,6 +531,7 @@
 		E5F60718293A4B70F68BDA71 /* AppThemePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70C0C21DA6 /* AppThemePreference.swift */; };
 		E5F60718293A4B70F9B21071 /* DiscoverSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B7019BAC15E /* DiscoverSearch.swift */; };
 		E5F60718293A4B70FBB75338 /* DiscoverRecipePreviewImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70A8935C5F /* DiscoverRecipePreviewImage.swift */; };
+		D082A0000000000000000001 /* DiscoverAuthorCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D082A0000000000000000002 /* DiscoverAuthorCard.swift */; };
 		FF072FEEDVIEW1B293A4B701 /* DiscoverFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF072FEEDVIEWREFB293A4B70 /* DiscoverFeedView.swift */; };
 		E5F60719293A4B7000000081 /* RecipeDescriptionEditorBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000080 /* RecipeDescriptionEditorBlock.swift */; };
 		E5F60719293A4B7000000083 /* DescriptionFormattingBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60719293A4B7000000082 /* DescriptionFormattingBar.swift */; };
@@ -1373,6 +1374,7 @@
 		E5F60718293A4B70A32A1501 /* ShoppingListData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListData.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A5EF6DCE /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70A8935C5F /* DiscoverRecipePreviewImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverRecipePreviewImage.swift; sourceTree = "<group>"; };
+		D082A0000000000000000002 /* DiscoverAuthorCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverAuthorCard.swift; sourceTree = "<group>"; };
 		FF072FEEDVIEWREFB293A4B70 /* DiscoverFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverFeedView.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70AAV00001 /* AuthAvatarImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthAvatarImage.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70ACE01234 /* AccountProfileEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountProfileEditView.swift; sourceTree = "<group>"; };
@@ -2479,6 +2481,7 @@
 				E5F60718293A4B70322645C2 /* DiscoverPublicProfileView.swift */,
 				E5F60718293A4B70D1881049 /* DiscoverRecipeView.swift */,
 				E5F60718293A4B70A8935C5F /* DiscoverRecipePreviewImage.swift */,
+				D082A0000000000000000002 /* DiscoverAuthorCard.swift */,
 				E5F60718293A4B700AF73307 /* DiscoverRecipeCard.swift */,
 				FF072FEEDVIEWREFB293A4B70 /* DiscoverFeedView.swift */,
 			);
@@ -3525,6 +3528,7 @@
 				E5F60718293A4B7079EF0178 /* DiscoverPublicProfileView.swift in Sources */,
 				E5F60718293A4B70C2E684EE /* DiscoverRecipeView.swift in Sources */,
 				E5F60718293A4B70FBB75338 /* DiscoverRecipePreviewImage.swift in Sources */,
+				D082A0000000000000000001 /* DiscoverAuthorCard.swift in Sources */,
 				E5F60718293A4B708BB3E294 /* DiscoverRecipeCard.swift in Sources */,
 				FF072FEEDVIEW1B293A4B701 /* DiscoverFeedView.swift in Sources */,
 				E5F60718293A4B70A1B2C3D /* RecipeReader.swift in Sources */,

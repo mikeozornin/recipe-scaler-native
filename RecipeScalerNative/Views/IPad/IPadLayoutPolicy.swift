@@ -52,10 +52,12 @@ enum IPadLayoutMetrics {
     static let wideToolbarBesideTabBarMinContent: CGFloat = 1100
     /// «Купить во Вкусвилле» keeps its text label from this content width.
     static let shopLabeledMinContent: CGFloat = 640
-    /// «Покупки», «Профиль», the «Подборки» feed.
+    /// «Покупки», «Профиль», the «Моя лента» feed.
     static let readablePageWidth: CGFloat = 720
     /// Public author profile.
     static let authorPageWidth: CGFloat = 1100
+    /// «Подборки» with the author card grid (spec 082), as wide as the author page.
+    static let discoverPageWidth: CGFloat = authorPageWidth
     static let discoverSegmentWidth: CGFloat = 320
     static let formSheetWidth: CGFloat = 560
     static let formSheetMaxHeight: CGFloat = 720

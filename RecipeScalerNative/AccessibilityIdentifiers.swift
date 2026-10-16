@@ -28,7 +28,6 @@ enum AccessibilityIdentifiers {
     // MARK: - Discover (017)
 
     static let discoverCollectionCard = "discover_collection_card"
-    static let discoverProfileCard = "discover_profile_card"
     static let discoverProfileHeader = "discover_profile_header"
     static let discoverRecipeCard = "discover_recipe_card"
     static let discoverRecipeCardPrefix = "discover_recipe_card_"
@@ -54,6 +53,19 @@ enum AccessibilityIdentifiers {
     static func discoverRecipeCard(recipeID: String) -> String {
         "\(discoverRecipeCardPrefix)\(recipeID)"
     }
+
+    // MARK: - Discover author cards (082)
+
+    static let discoverAuthorCardPrefix = "discover.author-card."
+
+    static func discoverAuthorCard(username: String) -> String {
+        "\(discoverAuthorCardPrefix)\(username)"
+    }
+
+    static func discoverAuthorCardPhoto(username: String, index: Int) -> String {
+        "\(discoverAuthorCard(username: username)).photo.\(index)"
+    }
+
     static let shoppingList = "shopping_list"
     static let shoppingAddField = "shopping_add_field"
     static let shoppingShareButton = "shopping_share_button"

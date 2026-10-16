@@ -42,4 +42,8 @@ enum DiscoverImageURLs {
     static func publicRecipeCard(recipe: PublicRecipePreviewDTO) -> URL? {
         DiscoverAPI.publicRecipeCardImageURL(recipe: recipe)
     }
+
+    static func authorPreviewRecipe(_ recipe: DiscoverPreviewRecipeDTO) -> URL? {
+        DiscoverAPI.authorPreviewRecipeImageURL(recipe)
+    }
 }

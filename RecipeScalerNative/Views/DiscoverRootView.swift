@@ -51,12 +51,16 @@ struct DiscoverRootView: View {
                         DiscoverFeedView {
                             segment = .collections
                         }
+                        // Spec 081 — the feed keeps its 720 pt column inside the page.
+                        .iPadReadableWidth(IPadLayoutMetrics.readablePageWidth)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            // Spec 081 — on `.padRegular` the title row and the feed share a 720 pt column.
-            .iPadReadableWidth(IPadLayoutMetrics.readablePageWidth)
+            // Spec 082 — on `.padRegular` the title row and «Подборки» share a 1100 pt page for
+            // the author grid. One width for both segments: the segment control does not move
+            // when the user switches to «Моя лента».
+            .iPadReadableWidth(IPadLayoutMetrics.discoverPageWidth)
             .localizedNavigationTitle("discover.title")
             .navigationBarTitleDisplayMode(layoutMode == .padRegular ? .inline : .large)
             // The title lives in `DiscoverPadTitleRow`; the bar keeps it for «‹ Подборки».
@@ -108,7 +112,7 @@ struct DiscoverRootView: View {
 }
 
 /// Spec 081 (layout.md `.lt-row`) — «Подборки» and the segments in one row on
-/// `.padRegular`, inside the 720 pt column, instead of the picker under the large title.
+/// `.padRegular`, across the page, instead of the picker under the large title.
 private struct DiscoverPadTitleRow: View {
     @Binding var segment: DiscoverFeedSegment
     let feedBadgeStore: FeedBadgeStore
@@ -203,11 +207,46 @@ struct DiscoverFeedSegmentPicker: View {
     }
 }
 
+/// Spec 082 — columns of «Подборки». `.phone` (iPhone and compact iPad windows): one
+/// column. `.padRegular`: authors in columns of at least 260 pt (three in landscape, two in
+/// portrait on an 11″ iPad); recipe collections in two columns in a portrait viewport and
+/// three in a landscape one. Collections go by orientation, not width: a 13″ portrait page
+/// (~1000 pt) is nearly as wide as a 13″ landscape one (~1064 pt).
+enum DiscoverRootGridLayout {
+    static let authorMinimumColumnWidth: CGFloat = 260
+    static let authorSpacing: CGFloat = 18
+    static let collectionColumnSpacing: CGFloat = 28
+
+    static func collectionColumnCount(layoutMode: AppLayoutMode, isLandscapeViewport: Bool) -> Int {
+        guard layoutMode == .padRegular else { return 1 }
+        return isLandscapeViewport ? 3 : 2
+    }
+
+    static func authorColumns(layoutMode: AppLayoutMode) -> [GridItem] {
+        guard layoutMode == .padRegular else {
+            return [GridItem(.flexible(), spacing: authorSpacing)]
+        }
+        return [GridItem(.adaptive(minimum: authorMinimumColumnWidth), spacing: authorSpacing, alignment: .top)]
+    }
+
+    static func collectionColumns(layoutMode: AppLayoutMode, isLandscapeViewport: Bool) -> [GridItem] {
+        let count = collectionColumnCount(layoutMode: layoutMode, isLandscapeViewport: isLandscapeViewport)
+        return Array(
+            repeating: GridItem(.flexible(), spacing: collectionColumnSpacing, alignment: .top),
+            count: count
+        )
+    }
+}
+
 /// Renders the loaded discover root content. Extracted so the parent
 /// `DiscoverRootView` can construct the model from `@Environment(\.apiClient)`
 /// before any network call runs.
 private struct DiscoverRootContent: View {
     let model: DiscoverRootModel
+
+    @Environment(\.appLayoutMode) private var layoutMode
+    /// The scroll viewport is wider than tall (iPad only, see `DiscoverViewportOrientationReader`).
+    @State private var isLandscapeViewport = false
 
     var body: some View {
         Group {
@@ -233,38 +272,54 @@ private struct DiscoverRootContent: View {
                 }
                 .mobileTimerPanelBottomPadding()
             case .loaded(let data) where !data.collections.isEmpty || !data.profiles.isEmpty:
+                // One scroll view and lazy grids for every width: rotation and window
+                // resizes only change the columns, so the scroll position stays.
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         if !data.collections.isEmpty {
-                            section(
-                                titleKey: "discover.curated-collections",
-                                items: data.collections
-                            ) { collection in
-                                NavigationLink(
-                                    value: DiscoverRoute.collection(collection.slug)
+                            section(titleKey: "discover.curated-collections") {
+                                LazyVGrid(
+                                    columns: DiscoverRootGridLayout.collectionColumns(
+                                        layoutMode: layoutMode,
+                                        isLandscapeViewport: isLandscapeViewport
+                                    ),
+                                    alignment: .leading,
+                                    spacing: 0
                                 ) {
-                                    DiscoverCollectionCard(collection: collection)
+                                    ForEach(data.collections) { collection in
+                                        NavigationLink(
+                                            value: DiscoverRoute.collection(collection.slug)
+                                        ) {
+                                            DiscoverCollectionCard(collection: collection)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityIdentifier(
+                                            AccessibilityIdentifiers.discoverCollectionCard
+                                        )
+                                    }
                                 }
-                                .buttonStyle(.plain)
-                                .accessibilityIdentifier(
-                                    AccessibilityIdentifiers.discoverCollectionCard
-                                )
                             }
                         }
                         if !data.profiles.isEmpty {
-                            section(
-                                titleKey: "discover.featured-chefs",
-                                items: data.profiles
-                            ) { profile in
-                                NavigationLink(
-                                    value: DiscoverRoute.profile(profile.username)
+                            section(titleKey: "discover.featured-chefs") {
+                                LazyVGrid(
+                                    columns: DiscoverRootGridLayout.authorColumns(layoutMode: layoutMode),
+                                    alignment: .leading,
+                                    spacing: DiscoverRootGridLayout.authorSpacing
                                 ) {
-                                    DiscoverProfileCard(profile: profile)
+                                    ForEach(data.profiles) { profile in
+                                        NavigationLink(
+                                            value: DiscoverRoute.profile(profile.username)
+                                        ) {
+                                            DiscoverAuthorCard(profile: profile)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel(DiscoverAuthorCard.accessibilityLabel(for: profile))
+                                        .accessibilityIdentifier(
+                                            AccessibilityIdentifiers.discoverAuthorCard(username: profile.username)
+                                        )
+                                    }
                                 }
-                                .buttonStyle(.plain)
-                                .accessibilityIdentifier(
-                                    AccessibilityIdentifiers.discoverProfileCard
-                                )
                             }
                         }
                     }
@@ -272,6 +327,7 @@ private struct DiscoverRootContent: View {
                     .padding(.vertical, 20)
                     .mobileTimerPanelBottomPadding()
                 }
+                .modifier(DiscoverViewportOrientationReader(isLandscape: $isLandscapeViewport))
             case .loaded:
                 ContentUnavailableView {
                     AppEmptyState.label("discover.empty", symbol: "sparkles")
@@ -287,18 +343,31 @@ private struct DiscoverRootContent: View {
     }
 
     @ViewBuilder
-    private func section<Item: Identifiable, Content: View>(
+    private func section<Content: View>(
         titleKey: LocalizedStringKey,
-        items: [Item],
-        @ViewBuilder cell: @escaping (Item) -> Content
+        @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             AppSectionHeader(titleKey)
-            VStack(spacing: 0) {
-                ForEach(items) { item in
-                    cell(item)
-                }
+            content()
+        }
+    }
+}
+
+/// Spec 082 — viewport orientation for the collection columns, from `onGeometryChange` as
+/// `DiscoverRecipeCardGridPadWidthReader` (spec 081). Keyed on the idiom: the iPhone keeps
+/// the view tree it had and always gets one column.
+private struct DiscoverViewportOrientationReader: ViewModifier {
+    @Binding var isLandscape: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            content.onGeometryChange(for: Bool.self) { $0.size.width > $0.size.height } action: {
+                isLandscape = $0
             }
+        } else {
+            content
         }
     }
 }
@@ -341,32 +410,8 @@ struct DiscoverCollectionCard: View {
     }
 }
 
-/// Featured chef preview card (web `ProfileCard`: name, recipe list, avatar right, badge).
-struct DiscoverProfileCard: View {
-    let profile: PublicProfilePreviewDTO
-
-    var body: some View {
-        DiscoverRootPreviewCard(
-            title: profile.name ?? profile.username,
-            subtitle: profile.description,
-            badgeText: recipeCountText
-        ) {
-            DiscoverPreviewThumbnail(
-                url: DiscoverImageURLs.avatar(username: profile.username),
-                fallbackColor: .accentColor,
-                placeholderSymbol: "person.fill",
-                placeholderIconSize: 40,
-                neutralPlaceholder: true
-            )
-        }
-    }
-
-    private var recipeCountText: String {
-        Bundle.appPluralizedString(key: "discover.profile.recipe-count", count: profile.recipeCount)
-    }
-}
-
-/// Shared discover root card: title + subtitle left, thumbnail right, divider, count badge.
+/// Collection card: title + subtitle left, thumbnail right, divider, count badge.
+/// Authors have `DiscoverAuthorCard` (spec 082).
 private struct DiscoverRootPreviewCard<Thumbnail: View>: View {
     let title: String
     let subtitle: String?
@@ -410,8 +455,6 @@ private struct DiscoverPreviewThumbnail: View {
     let url: URL?
     let fallbackColor: Color
     let placeholderSymbol: String
-    var placeholderIconSize: CGFloat = 28
-    var neutralPlaceholder: Bool = false
 
     var body: some View {
         Group {
@@ -439,14 +482,12 @@ private struct DiscoverPreviewThumbnail: View {
     }
 
     private var placeholder: some View {
-        AppSymbol.sizedImage(placeholderSymbol, pointSize: placeholderIconSize)
+        AppSymbol.sizedImage(placeholderSymbol, pointSize: 28)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(neutralPlaceholder
-                          ? Color(.tertiarySystemFill)
-                          : fallbackColor.opacity(0.12))
+                    .fill(fallbackColor.opacity(0.12))
             )
     }
 }
