@@ -54,6 +54,25 @@ enum DiscoverImageLoader {
         DiscoverImageMemoryCache.store(image, for: url)
         return image
     }
+
+    /// `loadImage(from:)`, retried in store capture until the image loads or `deadline`
+    /// passes (default: `screenshotDiscoverImageDeadline` from now). A load that waited on
+    /// another download of the same file gives up after 5 s, and some production images
+    /// take 30–60 s, so a single attempt would leave placeholders in the frame. Outside
+    /// capture: one attempt. Returns `nil` if cancelled while waiting.
+    static func loadImageRetryingInCapture(from url: URL, until deadline: Date? = nil) async -> UIImage? {
+        let image = await loadImage(from: url)
+        #if DEBUG
+        guard image == nil, DebugLaunchOptions.screenshotCapture else { return image }
+        let deadline = deadline
+            ?? Date().addingTimeInterval(DebugLaunchOptions.screenshotDiscoverImageDeadline)
+        while Date() < deadline {
+            do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return nil }
+            if let image = await loadImage(from: url) { return image }
+        }
+        #endif
+        return image
+    }
 }
 
 /// Preview for Discover / Public Profile recipe grids.
@@ -120,18 +139,10 @@ struct DiscoverRecipePreviewImage: View {
             loadedImage = cached
             return
         }
-        loadedImage = await DiscoverImageLoader.loadImage(from: url)
-        #if DEBUG
-        // Store capture (03-discover): a cell that waited on another download of the same file
-        // and timed out stays a placeholder, so try again until the image is there. Some
-        // production images take 30–60 s to download, hence the long deadline.
-        guard DebugLaunchOptions.screenshotCapture else { return }
-        let deadline = Date().addingTimeInterval(DebugLaunchOptions.screenshotDiscoverImageDeadline)
-        while loadedImage == nil, Date() < deadline {
-            do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return }
-            loadedImage = await DiscoverImageLoader.loadImage(from: url)
-        }
-        #endif
+        let image = await DiscoverImageLoader.loadImageRetryingInCapture(from: url)
+        // A task cancelled by a newer URL must not overwrite that URL's image.
+        guard !Task.isCancelled else { return }
+        loadedImage = image
     }
 }
 

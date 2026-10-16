@@ -250,18 +250,7 @@ private struct DiscoverAuthorCollageTile: View {
         }
         // A new URL: the previous photo must not stay in the tile while this one loads.
         loadedImage = nil
-        var image = await DiscoverImageLoader.loadImage(from: url)
-        #if DEBUG
-        // Store capture: as `DiscoverRecipePreviewImage`, retry slow production images
-        // instead of leaving a placeholder in the frame.
-        if DebugLaunchOptions.screenshotCapture {
-            let deadline = Date().addingTimeInterval(DebugLaunchOptions.screenshotDiscoverImageDeadline)
-            while image == nil, Date() < deadline {
-                do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return }
-                image = await DiscoverImageLoader.loadImage(from: url)
-            }
-        }
-        #endif
+        let image = await DiscoverImageLoader.loadImageRetryingInCapture(from: url)
         // A task cancelled by a newer URL must not overwrite that URL's photo.
         guard !Task.isCancelled else { return }
         loadedImage = image
