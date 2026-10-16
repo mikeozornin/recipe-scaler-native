@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-16
 
-**Status**: Draft
+**Status**: Реализовано в приложении (ветка `feature/discover-author-cards`), ждёт ревью
 
 **Input**: идея из `specs/081-ipad-adaptation/spec.md` («Идеи на потом»), выбрана по HTML-прототипу
 [prototype.html](prototype.html), вариант «Обложка». В прототипе тап по фото ведёт в рецепт — это решение отменено, см. Clarifications.
