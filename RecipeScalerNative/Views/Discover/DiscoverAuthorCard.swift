@@ -142,14 +142,14 @@ struct DiscoverAuthorCard: View {
 
                 if let description {
                     Text(verbatim: description)
-                        .font(AppTypography.compact)
-                        .foregroundStyle(.secondary)
+                        .appBody()
+                        .foregroundStyle(.primary)
                         .lineLimit(4, reservesSpace: reservesDescriptionSpace)
                         .multilineTextAlignment(.leading)
                         .padding(.top, 2)
                 } else if reservesDescriptionSpace {
                     Text(verbatim: " ")
-                        .font(AppTypography.compact)
+                        .appBody()
                         .lineLimit(4, reservesSpace: true)
                         .padding(.top, 2)
                         .accessibilityHidden(true)
