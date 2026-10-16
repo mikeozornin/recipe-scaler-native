@@ -6422,6 +6422,23 @@
         }
       }
     },
+    "discover.author-card.caption-more": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ and more"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ и др."
+          }
+        }
+      }
+    },
     "discover.clone-failed": {
       "extractionState": "manual",
       "localizations": {

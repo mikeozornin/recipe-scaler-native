@@ -84,6 +84,7 @@ struct DiscoverAuthorCard: View {
     private static let cornerRadius: CGFloat = 20
     private static let avatarSize: CGFloat = 52
     private static let avatarRing: CGFloat = 3
+    static let descriptionLineLimit = 4
 
     /// The page behind the card: the avatar ring is cut out of it.
     private static let ringColor = Color(.systemBackground)
@@ -141,16 +142,16 @@ struct DiscoverAuthorCard: View {
                     .padding(.top, 8)
 
                 if let description {
-                    Text(verbatim: description)
-                        .appBody()
-                        .foregroundStyle(.primary)
-                        .lineLimit(4, reservesSpace: reservesDescriptionSpace)
-                        .multilineTextAlignment(.leading)
-                        .padding(.top, 2)
+                    DiscoverAuthorCaptionText(
+                        caption: description,
+                        recipeCount: profile.recipeCount,
+                        reservesSpace: reservesDescriptionSpace
+                    )
+                    .padding(.top, 2)
                 } else if reservesDescriptionSpace {
                     Text(verbatim: " ")
                         .appBody()
-                        .lineLimit(4, reservesSpace: true)
+                        .lineLimit(Self.descriptionLineLimit, reservesSpace: true)
                         .padding(.top, 2)
                         .accessibilityHidden(true)
                 }
@@ -166,6 +167,94 @@ struct DiscoverAuthorCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .modifier(DiscoverAuthorCardFrame(style: style, cornerRadius: Self.cornerRadius))
+    }
+}
+
+/// The server's `description` is the author's recipe names joined with « · ». Only whole names
+/// are shown: as many as fit in the line limit, then «и др.» — never a name cut in the middle.
+enum DiscoverAuthorCaption {
+    static let separator = " · "
+
+    static func names(in caption: String) -> [String] {
+        caption.components(separatedBy: separator)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// `fits` measures a candidate caption at the card width. The full list goes first; it
+    /// gets «и др.» too when the server sent fewer names than `recipeCount`.
+    static func fitted(
+        _ caption: String,
+        recipeCount: Int,
+        moreFormat: String,
+        fits: (String) -> Bool
+    ) -> String {
+        let names = names(in: caption)
+        guard !names.isEmpty else { return caption }
+        let isComplete = names.count >= recipeCount
+        if isComplete {
+            let full = names.joined(separator: separator)
+            if fits(full) { return full }
+        }
+        let longest = isComplete ? names.count - 1 : names.count
+        var candidate = String(format: moreFormat, names[0])
+        for count in stride(from: longest, through: 1, by: -1) {
+            candidate = String(format: moreFormat, names.prefix(count).joined(separator: separator))
+            if fits(candidate) { return candidate }
+        }
+        // Even one name with «и др.» overflows: the line limit truncates it.
+        return candidate
+    }
+
+    /// `.appBody()` metrics: whether `text` takes at most `maxLines` lines at `width`.
+    static func fitsBody(_ text: String, width: CGFloat, maxLines: Int) -> Bool {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineSpacing = AppTypography.bodyLineSpacing
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: AppTypography.bodyUIFont,
+            .paragraphStyle: paragraph,
+        ]
+        func height(_ string: String) -> CGFloat {
+            NSAttributedString(string: string, attributes: attributes)
+                .boundingRect(
+                    with: CGSize(width: width, height: .greatestFiniteMagnitude),
+                    options: [.usesLineFragmentOrigin, .usesFontLeading],
+                    context: nil
+                )
+                .height
+        }
+        let limit = height(Array(repeating: "A", count: maxLines).joined(separator: "\n"))
+        return height(text) <= limit + 0.5
+    }
+}
+
+/// Recipe-name caption of an author card, cut by whole names to the card width.
+private struct DiscoverAuthorCaptionText: View {
+    let caption: String
+    let recipeCount: Int
+    let reservesSpace: Bool
+
+    @State private var width: CGFloat = 0
+
+    private var text: String {
+        // Not measured yet: the full caption, truncated by the line limit for one frame.
+        guard width > 0 else { return caption }
+        let maxLines = DiscoverAuthorCard.descriptionLineLimit
+        return DiscoverAuthorCaption.fitted(
+            caption,
+            recipeCount: recipeCount,
+            moreFormat: Bundle.currentLocalizedString("discover.author-card.caption-more")
+        ) { DiscoverAuthorCaption.fitsBody($0, width: width, maxLines: maxLines) }
+    }
+
+    var body: some View {
+        Text(verbatim: text)
+            .appBody()
+            .foregroundStyle(.primary)
+            .lineLimit(DiscoverAuthorCard.descriptionLineLimit, reservesSpace: reservesSpace)
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
     }
 }
 

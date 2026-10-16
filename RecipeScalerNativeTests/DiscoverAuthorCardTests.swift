@@ -156,6 +156,38 @@ final class DiscoverAuthorCardTests: XCTestCase {
 
     // MARK: - Helpers
 
+    // MARK: - Caption
+
+    private let caption = "Галеты с овощами · Говяжий бульон · Гёзлеме с сыром"
+
+    func testCaptionThatFitsIsShownWhole() {
+        let text = DiscoverAuthorCaption.fitted(caption, recipeCount: 3, moreFormat: "%@ и др.") { _ in true }
+        XCTAssertEqual(text, caption)
+    }
+
+    func testCaptionKeepsWholeNamesThatFitAndAddsMore() {
+        let text = DiscoverAuthorCaption.fitted(caption, recipeCount: 3, moreFormat: "%@ и др.") {
+            $0.count <= 45
+        }
+        XCTAssertEqual(text, "Галеты с овощами · Говяжий бульон и др.")
+    }
+
+    func testCaptionWithFewerNamesThanRecipesAddsMore() {
+        let text = DiscoverAuthorCaption.fitted(caption, recipeCount: 25, moreFormat: "%@ и др.") { _ in true }
+        XCTAssertEqual(text, caption + " и др.")
+    }
+
+    func testCaptionFallsBackToFirstNameWhenNothingFits() {
+        let text = DiscoverAuthorCaption.fitted(caption, recipeCount: 3, moreFormat: "%@ и др.") { _ in false }
+        XCTAssertEqual(text, "Галеты с овощами и др.")
+    }
+
+    func testBodyMeasurementCountsLines() {
+        XCTAssertTrue(DiscoverAuthorCaption.fitsBody("Борщ", width: 300, maxLines: 1))
+        XCTAssertFalse(DiscoverAuthorCaption.fitsBody(caption, width: 120, maxLines: 1))
+        XCTAssertTrue(DiscoverAuthorCaption.fitsBody(caption, width: 2_000, maxLines: 1))
+    }
+
     private func decodeProfile(previewRecipes: String) throws -> PublicProfilePreviewDTO {
         let json = """
         {
