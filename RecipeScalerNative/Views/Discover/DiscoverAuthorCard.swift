@@ -187,7 +187,7 @@ private struct DiscoverAuthorCollage: View {
                 } else {
                     GeometryReader { proxy in
                         let frames = layout.tileFrames(in: proxy.size)
-                        ForEach(Array(recipes.prefix(frames.count).enumerated()), id: \.offset) { index, recipe in
+                        ForEach(Array(recipes.prefix(frames.count).enumerated()), id: \.element.id) { index, recipe in
                             DiscoverAuthorCollageTile(url: DiscoverImageURLs.authorPreviewRecipe(recipe))
                                 .frame(width: frames[index].width, height: frames[index].height)
                                 // One node per tile, the tile's frame whether the photo is loaded or
@@ -248,20 +248,24 @@ private struct DiscoverAuthorCollageTile: View {
             loadedImage = cached
             return
         }
-        loadedImage = await DiscoverImageLoader.loadImage(from: url)
+        // A new URL: the previous photo must not stay in the tile while this one loads.
+        loadedImage = nil
+        var image = await DiscoverImageLoader.loadImage(from: url)
         #if DEBUG
         // Store capture: as `DiscoverRecipePreviewImage`, retry slow production images
         // instead of leaving a placeholder in the frame.
         if DebugLaunchOptions.screenshotCapture {
             let deadline = Date().addingTimeInterval(DebugLaunchOptions.screenshotDiscoverImageDeadline)
-            while loadedImage == nil, Date() < deadline {
+            while image == nil, Date() < deadline {
                 do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return }
-                loadedImage = await DiscoverImageLoader.loadImage(from: url)
+                image = await DiscoverImageLoader.loadImage(from: url)
             }
         }
         #endif
+        // A task cancelled by a newer URL must not overwrite that URL's photo.
         guard !Task.isCancelled else { return }
-        loadFailed = loadedImage == nil
+        loadedImage = image
+        loadFailed = image == nil
     }
 }
 
