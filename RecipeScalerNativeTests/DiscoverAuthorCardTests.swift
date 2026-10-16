@@ -134,22 +134,24 @@ final class DiscoverAuthorCardTests: XCTestCase {
 
     // MARK: - «Подборки» columns
 
-    func testCollectionColumns() {
-        XCTAssertEqual(DiscoverRootGridLayout.collectionColumnCount(layoutMode: .phone, isLandscapeViewport: true), 1)
-        XCTAssertEqual(DiscoverRootGridLayout.collectionColumnCount(layoutMode: .padRegular, isLandscapeViewport: false), 2)
-        XCTAssertEqual(DiscoverRootGridLayout.collectionColumnCount(layoutMode: .padRegular, isLandscapeViewport: true), 3)
+    func testColumnCount() {
+        func count(_ mode: AppLayoutMode, landscape: Bool, sidebar: Bool) -> Int {
+            DiscoverRootGridLayout.columnCount(layoutMode: mode, isLandscapeViewport: landscape, sidebarShown: sidebar)
+        }
+        XCTAssertEqual(count(.phone, landscape: true, sidebar: false), 1)
+        XCTAssertEqual(count(.padRegular, landscape: false, sidebar: false), 2)
+        XCTAssertEqual(count(.padRegular, landscape: false, sidebar: true), 2)
+        XCTAssertEqual(count(.padRegular, landscape: true, sidebar: true), 2)
+        XCTAssertEqual(count(.padRegular, landscape: true, sidebar: false), 3)
     }
 
-    func testAuthorColumns() {
-        XCTAssertEqual(DiscoverRootGridLayout.authorColumns(layoutMode: .phone).count, 1)
-        // `.adaptive` fits as many 260 pt columns as the width allows.
-        let pad = DiscoverRootGridLayout.authorColumns(layoutMode: .padRegular)
-        XCTAssertEqual(pad.count, 1)
-        guard case .adaptive(let minimum, _) = pad[0].size else {
-            return XCTFail("The iPad author grid must be adaptive")
-        }
-        XCTAssertEqual(minimum, 260)
-        XCTAssertEqual(pad[0].spacing, 18)
+    func testGridColumns() {
+        let authors = DiscoverRootGridLayout.authorColumns(count: 3)
+        XCTAssertEqual(authors.count, 3)
+        XCTAssertEqual(authors[0].spacing, 18)
+        let collections = DiscoverRootGridLayout.collectionColumns(count: 2)
+        XCTAssertEqual(collections.count, 2)
+        XCTAssertEqual(collections[0].spacing, 28)
     }
 
     // MARK: - Helpers

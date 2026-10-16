@@ -207,34 +207,25 @@ struct DiscoverFeedSegmentPicker: View {
     }
 }
 
-/// Spec 082 — columns of «Подборки». `.phone` (iPhone and compact iPad windows): one
-/// column. `.padRegular`: authors in columns of at least 260 pt (three in landscape, two in
-/// portrait on an 11″ iPad); recipe collections in two columns in a portrait viewport and
-/// three in a landscape one. Collections go by orientation, not width: a 13″ portrait page
-/// (~1000 pt) is nearly as wide as a 13″ landscape one (~1064 pt).
+/// Spec 082 — columns of «Подборки», the same for authors and recipe collections. `.phone`
+/// (iPhone and compact iPad windows): one column. `.padRegular`: three in a landscape
+/// viewport with the sidebar hidden, otherwise two — a sidebar beside the page squeezes it,
+/// and a portrait page (~1000 pt on a 13″ iPad) is nearly as wide as a landscape one.
 enum DiscoverRootGridLayout {
-    static let authorMinimumColumnWidth: CGFloat = 260
     static let authorSpacing: CGFloat = 18
     static let collectionColumnSpacing: CGFloat = 28
 
-    static func collectionColumnCount(layoutMode: AppLayoutMode, isLandscapeViewport: Bool) -> Int {
+    static func columnCount(layoutMode: AppLayoutMode, isLandscapeViewport: Bool, sidebarShown: Bool) -> Int {
         guard layoutMode == .padRegular else { return 1 }
-        return isLandscapeViewport ? 3 : 2
+        return isLandscapeViewport && !sidebarShown ? 3 : 2
     }
 
-    static func authorColumns(layoutMode: AppLayoutMode) -> [GridItem] {
-        guard layoutMode == .padRegular else {
-            return [GridItem(.flexible(), spacing: authorSpacing)]
-        }
-        return [GridItem(.adaptive(minimum: authorMinimumColumnWidth), spacing: authorSpacing, alignment: .top)]
+    static func authorColumns(count: Int) -> [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: authorSpacing, alignment: .top), count: count)
     }
 
-    static func collectionColumns(layoutMode: AppLayoutMode, isLandscapeViewport: Bool) -> [GridItem] {
-        let count = collectionColumnCount(layoutMode: layoutMode, isLandscapeViewport: isLandscapeViewport)
-        return Array(
-            repeating: GridItem(.flexible(), spacing: collectionColumnSpacing, alignment: .top),
-            count: count
-        )
+    static func collectionColumns(count: Int) -> [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: collectionColumnSpacing, alignment: .top), count: count)
     }
 }
 
@@ -245,8 +236,18 @@ private struct DiscoverRootContent: View {
     let model: DiscoverRootModel
 
     @Environment(\.appLayoutMode) private var layoutMode
-    /// The scroll viewport is wider than tall (iPad only, see `DiscoverViewportOrientationReader`).
+    /// The scroll viewport is wider than tall and the sidebar placement (iPad only, see
+    /// `DiscoverIPadViewportReader`).
     @State private var isLandscapeViewport = false
+    @State private var sidebarShown = false
+
+    private var columnCount: Int {
+        DiscoverRootGridLayout.columnCount(
+            layoutMode: layoutMode,
+            isLandscapeViewport: isLandscapeViewport,
+            sidebarShown: sidebarShown
+        )
+    }
 
     var body: some View {
         Group {
@@ -279,10 +280,7 @@ private struct DiscoverRootContent: View {
                         if !data.collections.isEmpty {
                             section(titleKey: "discover.curated-collections") {
                                 LazyVGrid(
-                                    columns: DiscoverRootGridLayout.collectionColumns(
-                                        layoutMode: layoutMode,
-                                        isLandscapeViewport: isLandscapeViewport
-                                    ),
+                                    columns: DiscoverRootGridLayout.collectionColumns(count: columnCount),
                                     alignment: .leading,
                                     spacing: 0
                                 ) {
@@ -303,7 +301,7 @@ private struct DiscoverRootContent: View {
                         if !data.profiles.isEmpty {
                             section(titleKey: "discover.featured-chefs") {
                                 LazyVGrid(
-                                    columns: DiscoverRootGridLayout.authorColumns(layoutMode: layoutMode),
+                                    columns: DiscoverRootGridLayout.authorColumns(count: columnCount),
                                     alignment: .leading,
                                     spacing: DiscoverRootGridLayout.authorSpacing
                                 ) {
@@ -327,7 +325,7 @@ private struct DiscoverRootContent: View {
                     .padding(.vertical, 20)
                     .mobileTimerPanelBottomPadding()
                 }
-                .modifier(DiscoverViewportOrientationReader(isLandscape: $isLandscapeViewport))
+                .modifier(DiscoverIPadViewportReader(isLandscape: $isLandscapeViewport, sidebarShown: $sidebarShown))
             case .loaded:
                 ContentUnavailableView {
                     AppEmptyState.label("discover.empty", symbol: "sparkles")
@@ -354,18 +352,22 @@ private struct DiscoverRootContent: View {
     }
 }
 
-/// Spec 082 — viewport orientation for the collection columns, from `onGeometryChange` as
-/// `DiscoverRecipeCardGridPadWidthReader` (spec 081). Keyed on the idiom: the iPhone keeps
-/// the view tree it had and always gets one column.
-private struct DiscoverViewportOrientationReader: ViewModifier {
+/// Spec 082 — viewport orientation and sidebar placement for the «Подборки» columns, from
+/// `onGeometryChange` as `DiscoverRecipeCardGridPadWidthReader` (spec 081) and
+/// `reportsIPadSidebarShown` as `ShoppingIPadPageReader`. Keyed on the idiom: the iPhone
+/// keeps the view tree it had and always gets one column.
+private struct DiscoverIPadViewportReader: ViewModifier {
     @Binding var isLandscape: Bool
+    @Binding var sidebarShown: Bool
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if UIDevice.current.userInterfaceIdiom == .pad {
-            content.onGeometryChange(for: Bool.self) { $0.size.width > $0.size.height } action: {
-                isLandscape = $0
-            }
+            content
+                .onGeometryChange(for: Bool.self) { $0.size.width > $0.size.height } action: {
+                    isLandscape = $0
+                }
+                .reportsIPadSidebarShown($sidebarShown)
         } else {
             content
         }
