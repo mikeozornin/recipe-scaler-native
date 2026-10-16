@@ -249,6 +249,9 @@ private struct DiscoverRootContent: View {
         )
     }
 
+    /// One column: author cards lose their frame and are split by hairlines instead.
+    private var isSingleColumn: Bool { columnCount == 1 }
+
     var body: some View {
         Group {
             switch model.state {
@@ -303,19 +306,28 @@ private struct DiscoverRootContent: View {
                                 LazyVGrid(
                                     columns: DiscoverRootGridLayout.authorColumns(count: columnCount),
                                     alignment: .leading,
-                                    spacing: DiscoverRootGridLayout.authorSpacing
+                                    spacing: isSingleColumn ? 0 : DiscoverRootGridLayout.authorSpacing
                                 ) {
                                     ForEach(data.profiles) { profile in
-                                        NavigationLink(
-                                            value: DiscoverRoute.profile(profile.username)
-                                        ) {
-                                            DiscoverAuthorCard(profile: profile)
+                                        VStack(spacing: 0) {
+                                            NavigationLink(
+                                                value: DiscoverRoute.profile(profile.username)
+                                            ) {
+                                                DiscoverAuthorCard(
+                                                    profile: profile,
+                                                    style: isSingleColumn ? .plain : .outlined
+                                                )
+                                            }
+                                            .buttonStyle(.plain)
+                                            .accessibilityLabel(DiscoverAuthorCard.accessibilityLabel(for: profile))
+                                            .accessibilityIdentifier(
+                                                AccessibilityIdentifiers.discoverAuthorCard(username: profile.username)
+                                            )
+                                            if isSingleColumn, profile.id != data.profiles.last?.id {
+                                                Divider()
+                                                    .padding(.vertical, DiscoverRootGridLayout.authorSpacing)
+                                            }
                                         }
-                                        .buttonStyle(.plain)
-                                        .accessibilityLabel(DiscoverAuthorCard.accessibilityLabel(for: profile))
-                                        .accessibilityIdentifier(
-                                            AccessibilityIdentifiers.discoverAuthorCard(username: profile.username)
-                                        )
                                     }
                                 }
                             }

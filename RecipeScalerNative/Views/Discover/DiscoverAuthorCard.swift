@@ -69,7 +69,15 @@ enum DiscoverAuthorCollageLayout: Equatable {
 /// Spec 082 «Обложка» — Discover author card: photo collage, avatar over its bottom edge,
 /// name, description and recipe count. The caller wraps it in one `NavigationLink`.
 struct DiscoverAuthorCard: View {
+    /// `.plain` — one column: no fill, frame or rounding, the caller separates cards with a
+    /// hairline. `.outlined` — grid: a rounded hairline frame, still no fill.
+    enum Style {
+        case plain
+        case outlined
+    }
+
     let profile: PublicProfilePreviewDTO
+    var style: Style = .plain
 
     @Environment(\.appLayoutMode) private var layoutMode
 
@@ -77,8 +85,8 @@ struct DiscoverAuthorCard: View {
     private static let avatarSize: CGFloat = 52
     private static let avatarRing: CGFloat = 3
 
-    /// The prototype's `--ios-bg2`: grey on the white page, #1C1C1E on black.
-    static let background = Color(.secondarySystemBackground)
+    /// The page behind the card: the avatar ring is cut out of it.
+    private static let ringColor = Color(.systemBackground)
 
     /// Name, or `@username` when the profile has none.
     static func displayName(for profile: PublicProfilePreviewDTO) -> String {
@@ -104,7 +112,7 @@ struct DiscoverAuthorCard: View {
         return text.isEmpty ? nil : text
     }
 
-    /// In the iPad grid every card keeps two description lines, so cards in a row are one height.
+    /// In the iPad grid every card keeps four description lines, so cards in a row are one height.
     private var reservesDescriptionSpace: Bool { layoutMode == .padRegular }
 
     var body: some View {
@@ -117,10 +125,10 @@ struct DiscoverAuthorCard: View {
                     size: Self.avatarSize
                 )
                 .background {
-                    // The prototype's `outline: 3px solid var(--ios-bg2)`; also covers the photo
-                    // under the translucent avatar placeholder.
+                    // The prototype's `outline: 3px solid`; also covers the photo under the
+                    // translucent avatar placeholder.
                     RoundedRectangle(cornerRadius: 8 + Self.avatarRing, style: .continuous)
-                        .fill(Self.background)
+                        .fill(Self.ringColor)
                         .padding(-Self.avatarRing)
                 }
                 .padding(.top, -Self.avatarSize / 2)
@@ -136,13 +144,13 @@ struct DiscoverAuthorCard: View {
                     Text(verbatim: description)
                         .font(AppTypography.compact)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2, reservesSpace: reservesDescriptionSpace)
+                        .lineLimit(4, reservesSpace: reservesDescriptionSpace)
                         .multilineTextAlignment(.leading)
                         .padding(.top, 2)
                 } else if reservesDescriptionSpace {
                     Text(verbatim: " ")
                         .font(AppTypography.compact)
-                        .lineLimit(2, reservesSpace: true)
+                        .lineLimit(4, reservesSpace: true)
                         .padding(.top, 2)
                         .accessibilityHidden(true)
                 }
@@ -153,17 +161,30 @@ struct DiscoverAuthorCard: View {
                     .lineLimit(1)
                     .padding(.top, 8)
             }
-            .padding(.horizontal, 14)
-            .padding(.bottom, 14)
+            .padding(.horizontal, style == .outlined ? 14 : 0)
+            .padding(.bottom, style == .outlined ? 14 : 0)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Self.background)
-        .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
-                .strokeBorder(Color(.separator), lineWidth: 1)
-        )
-        .contentShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
+        .modifier(DiscoverAuthorCardFrame(style: style, cornerRadius: Self.cornerRadius))
+    }
+}
+
+private struct DiscoverAuthorCardFrame: ViewModifier {
+    let style: DiscoverAuthorCard.Style
+    let cornerRadius: CGFloat
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        switch style {
+        case .plain:
+            content.contentShape(Rectangle())
+        case .outlined:
+            let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            content
+                .clipShape(shape)
+                .overlay(shape.strokeBorder(Color(.separator), lineWidth: 1))
+                .contentShape(shape)
+        }
     }
 }
 
