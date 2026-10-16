@@ -56,16 +56,18 @@ enum DiscoverImageLoader {
     }
 
     /// `loadImage(from:)`, retried in store capture until the image loads or `deadline`
-    /// passes (default: `screenshotDiscoverImageDeadline` from now). A load that waited on
+    /// passes (default: `screenshotDiscoverImageDeadline` from the call). A load that waited on
     /// another download of the same file gives up after 5 s, and some production images
     /// take 30–60 s, so a single attempt would leave placeholders in the frame. Outside
     /// capture: one attempt. Returns `nil` if cancelled while waiting.
     static func loadImageRetryingInCapture(from url: URL, until deadline: Date? = nil) async -> UIImage? {
+        #if DEBUG
+        let deadline = deadline
+            ?? Date().addingTimeInterval(DebugLaunchOptions.screenshotDiscoverImageDeadline)
+        #endif
         let image = await loadImage(from: url)
         #if DEBUG
         guard image == nil, DebugLaunchOptions.screenshotCapture else { return image }
-        let deadline = deadline
-            ?? Date().addingTimeInterval(DebugLaunchOptions.screenshotDiscoverImageDeadline)
         while Date() < deadline {
             do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return nil }
             if let image = await loadImage(from: url) { return image }

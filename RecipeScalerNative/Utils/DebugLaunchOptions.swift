@@ -442,9 +442,9 @@ enum DebugLaunchOptions {
             }
             return count
         }
-        guard !Task.isCancelled else { return }
-        // Time for the cards to draw images that finished loading just now.
-        try? await Task.sleep(nanoseconds: 800_000_000)
+        // Time for the cards to draw images that finished loading just now. A cancelled
+        // task (including one cancelled during the loads) skips the logs.
+        do { try await Task.sleep(nanoseconds: 800_000_000) } catch { return }
         AppLog.info(.app, "screenshot_media_ready", data: [
             "scope": "discover_profile",
             "count": "\(urls.count)",
