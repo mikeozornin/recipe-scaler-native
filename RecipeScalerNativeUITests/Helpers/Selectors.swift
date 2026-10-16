@@ -28,7 +28,6 @@ enum UIA {
     // MARK: - Discover (011/017)
     static let discoverRoot = "discover_root"
     static let discoverCollectionCard = "discover_collection_card"
-    static let discoverProfileCard = "discover_profile_card"
     static let discoverProfileHeader = "discover_profile_header"
     static let discoverRecipeCard = "discover_recipe_card"
     static let discoverRecipeCardPrefix = "discover_recipe_card_"
@@ -39,6 +38,18 @@ enum UIA {
 
     static func discoverRecipeCard(id recipeID: String) -> String {
         "\(discoverRecipeCardPrefix)\(recipeID)"
+    }
+
+    // MARK: - Discover author cards (082)
+    static let discoverAuthorCardPrefix = "discover.author-card."
+    static let discoverAuthorCardPhotoMarker = ".photo."
+
+    static func discoverAuthorCard(username: String) -> String {
+        "\(discoverAuthorCardPrefix)\(username)"
+    }
+
+    static func discoverAuthorCardPhoto(username: String, index: Int) -> String {
+        "\(discoverAuthorCard(username: username))\(discoverAuthorCardPhotoMarker)\(index)"
     }
 
     // MARK: - Shopping list (024)

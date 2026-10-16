@@ -395,6 +395,7 @@
 		D15C00000000000000000003 /* DiscoverListStateStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000004 /* DiscoverListStateStoreTests.swift */; };
 		D15C00000000000000000005 /* DiscoverCollectionModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000006 /* DiscoverCollectionModelTests.swift */; };
 		D15C00000000000000000007 /* DiscoverPublicProfileModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15C00000000000000000008 /* DiscoverPublicProfileModelTests.swift */; };
+		D082A0000000000000000003 /* DiscoverAuthorCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D082A0000000000000000004 /* DiscoverAuthorCardTests.swift */; };
 		D1A100000000000000000001 /* TipPurchaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A100000000000000000002 /* TipPurchaseService.swift */; };
 		D1A100000000000000000003 /* AccountTipsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A100000000000000000004 /* AccountTipsSection.swift */; };
 		D32494D8B32B4083A621A5D5 /* TimerLiveActivityActionQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE9AF6E91804571BD26336B /* TimerLiveActivityActionQueue.swift */; };
@@ -1251,6 +1252,7 @@
 		D15C00000000000000000004 /* DiscoverListStateStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverListStateStoreTests.swift; sourceTree = "<group>"; };
 		D15C00000000000000000006 /* DiscoverCollectionModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverCollectionModelTests.swift; sourceTree = "<group>"; };
 		D15C00000000000000000008 /* DiscoverPublicProfileModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverPublicProfileModelTests.swift; sourceTree = "<group>"; };
+		D082A0000000000000000004 /* DiscoverAuthorCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverAuthorCardTests.swift; sourceTree = "<group>"; };
 		D1A100000000000000000002 /* TipPurchaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipPurchaseService.swift; sourceTree = "<group>"; };
 		D1A100000000000000000004 /* AccountTipsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountTipsSection.swift; sourceTree = "<group>"; };
 		D1A100000000000000000008 /* RecipeScalerTips.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = RecipeScalerTips.storekit; sourceTree = "<group>"; };
@@ -2178,6 +2180,7 @@
 				D15C00000000000000000004 /* DiscoverListStateStoreTests.swift */,
 				D15C00000000000000000006 /* DiscoverCollectionModelTests.swift */,
 				D15C00000000000000000008 /* DiscoverPublicProfileModelTests.swift */,
+				D082A0000000000000000004 /* DiscoverAuthorCardTests.swift */,
 				A5MD058293A4B7010000005 /* AssistantMarkdownRendererTests.swift */,
 				A5TH068293A4B7010000006 /* AssistantThreadSearchTests.swift */,
 				A5PA01A293A4B7010000007 /* AssistantPendingActionTests.swift */,
@@ -3797,6 +3800,7 @@
 				D15C00000000000000000003 /* DiscoverListStateStoreTests.swift in Sources */,
 				D15C00000000000000000005 /* DiscoverCollectionModelTests.swift in Sources */,
 				D15C00000000000000000007 /* DiscoverPublicProfileModelTests.swift in Sources */,
+				D082A0000000000000000003 /* DiscoverAuthorCardTests.swift in Sources */,
 				F3445BCB3A10712298441A5C /* AssistantMarkdownRendererTests.swift in Sources */,
 				98043B5A4C25AAF27D48104E /* AssistantThreadSearchTests.swift in Sources */,
 				A5PA01B293A4B7010000008 /* AssistantPendingActionTests.swift in Sources */,

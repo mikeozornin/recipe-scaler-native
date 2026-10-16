@@ -78,6 +78,7 @@ final class LocalizationConsistencyTests: XCTestCase {
             "discover.empty-description",
             "discover.curated-collections",
             "discover.featured-chefs",
+            "discover.author-card.accessibility-label",
             "discover.collection.title",
             "discover.collection.loading",
             "discover.collection.not-found",

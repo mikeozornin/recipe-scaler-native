@@ -7,6 +7,11 @@ import XCTest
 ///   - US1 — Discover root renders with cards
 ///   - US2 — Search field present (soft-skip when feed has no search UI)
 ///   - US3 — Public collection/profile cards visible (depends on server content)
+///
+/// Spec coverage: specs/082-discover-author-cards/spec.md
+///
+///   - 082 US1 — author «Обложка» card is one button «{name}, {N recipes}»
+///   - 082 US2 — a tap on a collage photo or on the name opens the author page (SC-004)
 final class DiscoverPublicSpec: BaseTestCase {
     func test_US1_discoverRootRenders() {
         Navigation.openTab(.discover, in: app)
@@ -30,6 +35,87 @@ final class DiscoverPublicSpec: BaseTestCase {
         try XCTSkipIf(
             !(collectionSearch || profileSearch),
             "No discover search field — feed has no public content for fresh user (env-conditional)"
+        )
+    }
+
+    // MARK: - Spec 082 — author cards
+
+    func test_082_US1_authorCardVisible() throws {
+        Navigation.openTab(.discover, in: app)
+        _ = discoverPage.awaitReady()
+        let card = discoverPage.firstProfileCard
+        try XCTSkipIf(
+            !card.waitForExistence(timeout: Wait.element),
+            "No public authors in Discover (env-conditional)"
+        )
+        XCTAssertEqual(card.elementType, .button, "The author card must be one button")
+        XCTAssertTrue(
+            card.label.contains(", "),
+            "The card must read «{name}, {N recipes}», got «\(card.label)»"
+        )
+    }
+
+    /// SC-004: the collage is part of the card's single tap target, not a link to a recipe.
+    func test_082_US2_tapAuthorPhotoOpensProfile() throws {
+        Navigation.openTab(.discover, in: app)
+        _ = discoverPage.awaitReady()
+        try XCTSkipIf(
+            !discoverPage.firstProfileCard.waitForExistence(timeout: Wait.element),
+            "No public authors in Discover (env-conditional)"
+        )
+        let photo = discoverPage.firstAuthorCardPhoto
+        try XCTSkipIf(
+            !discoverPage.scrollToReveal(photo),
+            "No author with recipe photos in Discover (env-conditional)"
+        )
+        let username = Self.username(fromPhotoIdentifier: photo.identifier)
+        photo.tap()
+        assertAuthorPageOpened(username: username)
+    }
+
+    func test_082_US2_tapAuthorNameOpensProfile() throws {
+        Navigation.openTab(.discover, in: app)
+        _ = discoverPage.awaitReady()
+        let card = discoverPage.firstProfileCard
+        try XCTSkipIf(
+            !card.waitForExistence(timeout: Wait.element),
+            "No public authors in Discover (env-conditional)"
+        )
+        let username = String(card.identifier.dropFirst(UIA.discoverAuthorCardPrefix.count))
+        // The first text of the card is the name: the collage and the avatar are images.
+        let name = card.staticTexts.firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: Wait.element), "The author card has no name")
+        discoverPage.scrollToReveal(name)
+        name.tap()
+        assertAuthorPageOpened(username: username)
+    }
+
+    /// `discover.author-card.{username}.photo.{index}` → `username`.
+    private static func username(fromPhotoIdentifier identifier: String) -> String {
+        let withoutPrefix = identifier.dropFirst(UIA.discoverAuthorCardPrefix.count)
+        guard let marker = withoutPrefix.range(of: UIA.discoverAuthorCardPhotoMarker, options: .backwards) else {
+            return String(withoutPrefix)
+        }
+        return String(withoutPrefix[..<marker.lowerBound])
+    }
+
+    private func assertAuthorPageOpened(
+        username: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertTrue(
+            discoverPage.profileHeader.waitForExistence(timeout: Wait.firstPaint),
+            "The author page did not open",
+            file: file,
+            line: line
+        )
+        XCTAssertTrue(
+            app.staticTexts.matching(NSPredicate(format: "label == %@", "@\(username)")).firstMatch
+                .waitForExistence(timeout: Wait.element),
+            "The opened page is not @\(username)'s",
+            file: file,
+            line: line
         )
     }
 }
