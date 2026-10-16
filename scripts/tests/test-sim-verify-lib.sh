@@ -44,4 +44,25 @@ if ! sim_wait_ready 1; then
   exit 1
 fi
 
+# xcode_derived_data_of: only folders built from the checkout itself, not from a sibling
+# whose path shares the prefix, and not folders without info.plist.
+derived_root="$TMP_DIR/DerivedData"
+mkdir -p "$derived_root/A" "$derived_root/B" "$derived_root/C"
+write_workspace_plist() {
+  plutil -create xml1 "$1/info.plist"
+  plutil -insert WorkspacePath -string "$2" "$1/info.plist"
+}
+write_workspace_plist "$derived_root/A" "$TMP_DIR/checkout/X.xcodeproj"
+write_workspace_plist "$derived_root/B" "$TMP_DIR/checkout-other/X.xcodeproj"
+found="$(xcode_derived_data_of "$TMP_DIR/checkout" "$derived_root" | tr '\0' '\n')"
+if [[ "$found" != "$derived_root/A" ]]; then
+  echo "FAIL: xcode_derived_data_of returned '$found', expected only $derived_root/A" >&2
+  exit 1
+fi
+found="$(xcode_derived_data_of "$TMP_DIR/checkout" "$TMP_DIR/no-such-dir" | tr '\0' '\n')"
+if [[ -n "$found" ]]; then
+  echo "FAIL: xcode_derived_data_of on a missing root returned '$found'" >&2
+  exit 1
+fi
+
 echo "PASS: sim-verify helper self-tests"

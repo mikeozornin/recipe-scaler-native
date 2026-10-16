@@ -16,6 +16,9 @@ WT_ROOT="$(dirname "$MAIN")/recipe-scaler-native-wt"
 DERIVED_DATA="$HOME/Library/Developer/Xcode/DerivedData"
 MIN_FREE_GB="${WT_MIN_FREE_GB:-8}"
 
+# shellcheck source=scripts/xcode-derived-data-lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/xcode-derived-data-lib.sh"
+
 die() { echo "wt: $*" >&2; exit 1; }
 check_name() { [[ "${1:-}" =~ ^[a-z0-9][a-z0-9-]*$ ]] || die "name must be lowercase letters, digits, dashes"; }
 # Exact name match: "RS-foo (" never matches "RS-foo-ipad (".
@@ -65,17 +68,6 @@ check_disk() {
   local free; free="$(df -g "$MAIN" | awk 'NR==2 {print $4}')"
   (( free >= MIN_FREE_GB )) || die "only ${free} GB free, need ${MIN_FREE_GB}+ GB (a build takes several GB)"
 }
-# Xcode keeps one DerivedData folder per project path; these are the ones built from $1.
-derived_data_of() {
-  local dir path
-  for dir in "$DERIVED_DATA"/*/; do
-    dir="${dir%/}"
-    path="$(/usr/libexec/PlistBuddy -c 'Print :WorkspacePath' "$dir/info.plist" 2>/dev/null)" || continue
-    [[ "$path" == "$1/"* ]] && echo "$dir"
-  done
-  return 0
-}
-
 cmd_new() {
   local name="${1:-}" base="${2:-master}"; check_name "$name"
   # RS-foo-ipad is task foo's iPad; a task named foo-ipad would take the same simulator name.
@@ -117,14 +109,13 @@ cmd_run() {
 cmd_rm() {
   local name="${1:-}"; check_name "$name"
   local dir="$WT_ROOT/$name"
-  local derived; derived="$(derived_data_of "$dir")"
   if [[ -d "$dir" ]]; then
     # Refuses if there are uncommitted changes.
     git -C "$MAIN" worktree remove "$dir"
   fi
-  if [[ -n "$derived" ]]; then
-    while IFS= read -r d; do rm -rf "$d"; done <<<"$derived"
-  fi
+  # Xcode keeps one DerivedData folder per project path; drop the ones built from this worktree.
+  local d
+  while IFS= read -r -d '' d; do rm -rf "$d"; done < <(xcode_derived_data_of "$dir" "$DERIVED_DATA")
   local device udid
   for device in iphone ipad; do
     udid="$(sim_udid "$(sim_suffix "$name" "$device")")"

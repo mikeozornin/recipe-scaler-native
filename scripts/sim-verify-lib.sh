@@ -8,28 +8,21 @@ ROOT="${ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 BUNDLE_ID="ru.recipescaler.RecipeScaler"
 VERIFY_BUILD_MANIFEST="${VERIFY_BUILD_MANIFEST:-$ROOT/.verify-build-manifest.json}"
 
+# shellcheck source=scripts/xcode-derived-data-lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/xcode-derived-data-lib.sh"
+
 # Stale EagerLinking TBD stubs for watchsimulator omit x86_64 (or arm64) and break
 # RecipeScalerNativeWatch link when building the iPhone scheme. Safe to delete — Xcode
 # regenerates on the next build. See verify-watch-timers.sh / AGENT-WORKFLOW.md.
-# Only this checkout's DerivedData: another worktree may be building right now.
-xcode_project_derived_data() {
-  local dir path
-  for dir in "$HOME/Library/Developer/Xcode/DerivedData"/*/; do
-    dir="${dir%/}"
-    path="$(/usr/libexec/PlistBuddy -c 'Print :WorkspacePath' "$dir/info.plist" 2>/dev/null)" || continue
-    [[ "$path" == "$ROOT/"* ]] && printf '%s\0' "$dir"
-  done
-  return 0
-}
-
 xcode_clean_watch_tbd_stubs() {
   local count=0 derived
+  # Only this checkout's DerivedData: another worktree may be building right now.
   while IFS= read -r -d '' derived; do
     while IFS= read -r -d '' stub_dir; do
       rm -rf "$stub_dir"
       count=$((count + 1))
     done < <(find "$derived" -path '*/EagerLinkingTBDs/Debug-watchsimulator' -type d -print0 2>/dev/null || true)
-  done < <(xcode_project_derived_data)
+  done < <(xcode_derived_data_of "$ROOT")
   if (( count > 0 )); then
     echo "== Cleared stale watchsimulator EagerLinking TBD stubs ($count) =="
   fi
