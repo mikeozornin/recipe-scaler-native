@@ -8,8 +8,11 @@
 #         prints matching folders NUL-separated; read with `while IFS= read -r -d '' dir`.
 
 # The "/" suffix keeps .../checkout from matching .../checkout-other.
+# An empty or "/" checkout prints nothing: it would match every folder (callers rm -rf them).
 xcode_derived_data_of() {
-  local checkout="${1%/}" root="${2:-$HOME/Library/Developer/Xcode/DerivedData}"
+  local checkout="${1:-}" root="${2:-$HOME/Library/Developer/Xcode/DerivedData}"
+  checkout="${checkout%/}"
+  [[ -n "$checkout" ]] || return 0
   local dir path
   for dir in "$root"/*/; do
     dir="${dir%/}"

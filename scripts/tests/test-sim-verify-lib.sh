@@ -59,6 +59,13 @@ if [[ "$found" != "$derived_root/A" ]]; then
   echo "FAIL: xcode_derived_data_of returned '$found', expected only $derived_root/A" >&2
   exit 1
 fi
+for empty_checkout in "" "/"; do
+  found="$(xcode_derived_data_of "$empty_checkout" "$derived_root" | tr '\0' '\n')"
+  if [[ -n "$found" ]]; then
+    echo "FAIL: xcode_derived_data_of '$empty_checkout' returned '$found', expected nothing" >&2
+    exit 1
+  fi
+done
 found="$(xcode_derived_data_of "$TMP_DIR/checkout" "$TMP_DIR/no-such-dir" | tr '\0' '\n')"
 if [[ -n "$found" ]]; then
   echo "FAIL: xcode_derived_data_of on a missing root returned '$found'" >&2
