@@ -427,21 +427,22 @@ enum DebugLaunchOptions {
         let urls = DiscoverSearch.sortedByRecipeName(response.recipes) { $0.name }
             .compactMap { DiscoverImageURLs.publicRecipeCard(recipe: $0) }
             .prefix(24)
-        // A grid cell may already be downloading a file; waiting on it gives up after 5 s,
-        // and some production images take 30–60 s. Keep asking until the shared deadline:
-        // a relaunch would throw the half-done downloads away.
+        // All images in parallel under one deadline: one slow image must not use up the
+        // retries of the rest, and the whole wait stays within the script's 150 s.
         let deadline = Date().addingTimeInterval(screenshotDiscoverImageDeadline)
-        var loaded = 0
-        for url in urls {
-            while true {
-                if await DiscoverImageLoader.loadImage(from: url) != nil {
-                    loaded += 1
-                    break
+        let loaded = await withTaskGroup(of: Bool.self) { group in
+            for url in urls {
+                group.addTask {
+                    await DiscoverImageLoader.loadImageRetryingInCapture(from: url, until: deadline) != nil
                 }
-                guard Date() < deadline else { break }
-                do { try await Task.sleep(nanoseconds: 1_000_000_000) } catch { return }
             }
+            var count = 0
+            for await isLoaded in group where isLoaded {
+                count += 1
+            }
+            return count
         }
+        guard !Task.isCancelled else { return }
         // Time for the cards to draw images that finished loading just now.
         try? await Task.sleep(nanoseconds: 800_000_000)
         AppLog.info(.app, "screenshot_media_ready", data: [
