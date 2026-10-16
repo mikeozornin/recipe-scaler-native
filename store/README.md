@@ -116,7 +116,7 @@ Store-набор iPad — **только альбомная светлая** т�
 
 Кадры: `01-recipes` (список + открытый рецепт), `02-cooking`, `03-discover`, `04-shopping`, `05-assistant` (ассистент рядом с рецептом), `09-nutrition` (блок КБЖУ рядом с ингредиентами). Lock screen, виджет и пуш (`06`–`08`) на iPad не снимаем, импорт (`10`) в набор не входит.
 
-Открытый рецепт и таймер на iPad берутся из `ipadRecipeName` / `ipadTimerName` в [`manifest.yaml`](screenshots/manifest.yaml) («Печенье с шоколадом» / «Chocolate Cookies»), рецепт ищется по названию. iPhone по-прежнему открывает `primaryRecipeName`. Чат ассистента на iPad `05` — тоже про печенье (`-ScreenshotAssistantTopic=cookies`, вопрос — `ipadAssistantPrompt`); на iPhone остаётся чат про соус.
+Открытый рецепт и таймер на iPad берутся из `ipadRecipeName` / `ipadTimerName` в [`manifest.yaml`](screenshots/manifest.yaml) («Печенье с шоколадом» / «Chocolate Cookies»), рецепт ищется по названию. iPhone по-прежнему открывает `primaryRecipeName`. Чат ассистента на iPad `05` — тоже про печенье (`-ScreenshotAssistantTopic=cookies`; вопрос и ответ берутся из fixture `AssistantSessionModel.applyScreenshotAssistantFixture`, не из manifest); на iPhone остаётся чат про соус.
 
 КБЖУ на `09` видны, только если в профиле store-аккаунта (RU и EN) включены КБЖУ: на iPad приложение сразу после запуска применяет настройку аккаунта с сервера, и съёмка её не переопределяет.
 

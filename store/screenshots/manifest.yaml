@@ -27,9 +27,9 @@ locales:
     # iPad 13″ opens this recipe instead (matched by title, spec 081).
     ipadRecipeName: Печенье с шоколадом
     ipadTimerName: "Печенье в духовке"
-    assistantPrompt: "Соус свернулся. Как спасти пасту?"
-    # iPad 05 (-ScreenshotAssistantTopic=cookies) asks about the cookies instead.
-    ipadAssistantPrompt: "Печенье растекается, что делать?"
+    # The 05 assistant chat (question and reply, iPhone sauce / iPad cookies) is the app
+    # fixture AssistantSessionModel.applyScreenshotAssistantFixture
+    # (RecipeScalerNative/Services/AssistantSessionModel.swift), not a manifest value.
     # Prefix "!" = purchased on the shopping shot.
     shoppingItems:
       - "Мука, 280 г — Штрудель"
@@ -45,8 +45,7 @@ locales:
     timerName: "Strudel in the oven"
     ipadRecipeName: Chocolate Cookies
     ipadTimerName: "Cookies in the oven"
-    assistantPrompt: "My sauce split. How can I save the pasta?"
-    ipadAssistantPrompt: "My cookies spread in the oven. What should I do?"
+    # 05 assistant chat: see the fixture note under ru.
     shoppingItems:
       - "Flour, 280 g — Strudel"
       - "Cherries, 1100 g — Strudel"
