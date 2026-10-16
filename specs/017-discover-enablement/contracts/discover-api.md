@@ -73,7 +73,21 @@
 | `name` | string? | Отображаемое имя |
 | `avatar_url` | string? | URL аватара |
 | `recipe_count` | int | Кол-во публичных рецептов |
-| `description` | string? | Описание профиля |
+| `description` | string? | Склейка названий рецептов автора, которую собирает сервер (до 20 названий через « · »), не текст «о себе». |
+| `preview_recipes` | array | Всегда присутствует, 0–3 элемента, новые первыми (`recipes.created_at DESC`). Только рецепты с фото, видимые под `share_mode` автора. |
+| `preview_recipes[].id` | string (UUID) | Ключ элемента |
+| `preview_recipes[].name` | string | Название рецепта |
+| `preview_recipes[].image_url` | string | Относительный URL: `/api/recipes/{id}/image?size=card&v={token}` (card-версия, 640 px) |
+
+Поле `preview_recipes` добавлено в 082 ([spec](../../082-discover-author-cards/spec.md)). Старые серверы ключ не отдают — клиенты должны трактовать отсутствие ключа как `[]`.
+
+Пример элемента `preview_recipes`:
+
+```json
+"preview_recipes": [
+  { "id": "8b0c…", "name": "Шарлотка с яблоками", "image_url": "/api/recipes/8b0c…/image?size=card&v=3f9a…" }
+]
+```
 
 ### 2. `GET /api/discover/collections/:slug`
 
