@@ -280,7 +280,49 @@ final class UIPerfCachingTests: XCTestCase {
         XCTAssertEqual(ShoppingViewModel.sortedAlphabetically([]).map(\.id), [])
     }
 
+    // MARK: - Recipe description
+
+    /// The description starts in TextKit 1 and keeps one highlight per timer across layout passes.
+    /// Built through `UITextView(usingTextLayoutManager:)`, its stored properties were never set
+    /// and the first `layoutSubviews` crashed.
+    func testDescriptionLaysOutTimerHighlightsInTextKit1() throws {
+        let timer = RecipeDescriptionTimerReference(
+            displayText: "30 minutes", durationSeconds: 1800, type: .minutes, name: nil
+        )
+        let description = RecipeDescriptionInlineTextView(
+            runs: [.plain("Bake for "), .timer(timer), .plain(", then let it cool on a rack.")],
+            accentColor: .orange
+        )
+        let host = UIHostingController(rootView: description.frame(width: 320))
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 400))
+        window.rootViewController = host
+        window.isHidden = false
+        defer { window.isHidden = true }
+        host.view.layoutIfNeeded()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        host.view.layoutIfNeeded()
+
+        let textView = try XCTUnwrap(firstTextView(in: host.view))
+        XCTAssertNil(textView.textLayoutManager)
+        XCTAssertEqual(textView.attributedText.string, "Bake for 30 minutes, then let it cool on a rack.")
+        XCTAssertGreaterThan(textView.bounds.height, 0)
+        let canvas = textView.subviews.first ?? textView
+        let highlights = { (canvas.layer.sublayers ?? []).filter { $0 is CAShapeLayer }.count }
+        XCTAssertEqual(highlights(), 1)
+        textView.setNeedsLayout()
+        textView.layoutIfNeeded()
+        XCTAssertEqual(highlights(), 1)
+    }
+
     // MARK: - Helpers
+
+    private func firstTextView(in view: UIView) -> UITextView? {
+        if let textView = view as? UITextView { return textView }
+        for subview in view.subviews {
+            if let textView = firstTextView(in: subview) { return textView }
+        }
+        return nil
+    }
 
     private func message(text: String, createdAt: Date) -> AssistantMessage {
         AssistantMessage(

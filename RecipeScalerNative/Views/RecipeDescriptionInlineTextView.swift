@@ -22,7 +22,7 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
         // TextKit 1 from the start: the timer highlights and tap handling read `layoutManager`,
         // which switches a TextKit 2 view to TextKit 1 on its first layout anyway. Starting in
         // TextKit 1 skips the TextKit 2 setup, the first TextKit 2 measurement and the switch.
-        let textView = RecipeDescriptionTextView(usingTextLayoutManager: false)
+        let textView = RecipeDescriptionTextView()
         textView.isEditable = false
         textView.isScrollEnabled = false
         textView.isSelectable = false
@@ -272,6 +272,25 @@ private final class RecipeDescriptionTextView: UITextView {
     private var highlightLayers: [CALayer] = []
     /// Inputs the current highlight layers were built from.
     private var highlightGeometry: HighlightGeometry?
+    /// The text view does not retain the storage of a stack passed in through its container.
+    private let ownedTextStorage: NSTextStorage
+
+    /// A TextKit 1 text view. `UITextView(usingTextLayoutManager:)` is an Objective-C factory
+    /// that skips Swift initializers on a subclass, leaving the stored properties above unset.
+    init() {
+        let storage = NSTextStorage()
+        let layoutManager = NSLayoutManager()
+        storage.addLayoutManager(layoutManager)
+        let container = NSTextContainer(size: CGSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
+        layoutManager.addTextContainer(container)
+        ownedTextStorage = storage
+        super.init(frame: .zero, textContainer: container)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not used")
+    }
 
     override var attributedText: NSAttributedString! {
         didSet { highlightGeometry = nil }
