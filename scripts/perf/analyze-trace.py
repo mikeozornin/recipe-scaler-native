@@ -58,7 +58,7 @@ def hangs(trace):
     return result
 
 
-def profile(trace, window=None, callers=None):
+def profile(trace, window=None, callers=None, all_frames=False):
     root = export(trace, "time-profile")
     caller_chains = collections.Counter()
     refs = Refs()
@@ -90,7 +90,7 @@ def profile(trace, window=None, callers=None):
             frames.append((f.get("name") or "?", binary.get("name") if binary is not None else "?"))
         if callers and any(callers in name for name, _ in frames):
             idx = next(i for i, (name, _) in enumerate(frames) if callers in name)
-            chain = [n for n, b in frames[idx:] if b == APP_BINARY or "SwiftUI" in b][:6]
+            chain = [n for n, b in frames[idx:] if all_frames or b == APP_BINARY or "SwiftUI" in b][:12 if all_frames else 6]
             caller_chains[" <- ".join(c[:70] for c in chain)] += weight
         if frames:
             leaf[f"{frames[0][0]}  [{frames[0][1]}]"] += weight
@@ -109,11 +109,12 @@ def main():
     p.add_argument("--json")
     p.add_argument("--window", help="start-end in ms since trace start, e.g. 2000-2500")
     p.add_argument("--callers", help="print app/SwiftUI caller chains of frames containing this text")
+    p.add_argument("--all-frames", action="store_true", help="caller chains include system frames")
     a = p.parse_args()
 
     hs = hangs(a.trace)
     window = tuple(float(x) for x in a.window.split("-")) if a.window else None
-    main_ms, inclusive, leaf, chains = profile(a.trace, window, a.callers)
+    main_ms, inclusive, leaf, chains = profile(a.trace, window, a.callers, a.all_frames)
 
     print(f"main thread CPU: {main_ms:.0f} ms")
     print(f"hangs: {len(hs)}, total {sum(h['duration_ms'] for h in hs):.0f} ms")

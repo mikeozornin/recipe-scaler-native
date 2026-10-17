@@ -137,6 +137,7 @@ struct ContentView: View {
             #endif
             try? await Task.sleep(nanoseconds: 500_000_000)
             showSplash = false
+            PerfMark.once("splash_hidden")
         }
         .accessibilityIdentifier(AccessibilityIdentifiers.rootContent)
         .environment(\.font, AppTypography.body)
@@ -249,6 +250,10 @@ struct ContentView: View {
                 #if DEBUG
                 container.shellCoordinator.openDebugRecipeIfNeeded(
                     in: container.sync.collectionEntries
+                )
+                await DebugLaunchOptions.runPerfRecipeOpensIfNeeded(
+                    coordinator: container.shellCoordinator,
+                    entries: container.sync.collectionEntries
                 )
                 #endif
             } else {

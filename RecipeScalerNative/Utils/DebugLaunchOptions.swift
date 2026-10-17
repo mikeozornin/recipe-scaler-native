@@ -123,6 +123,17 @@ enum DebugLaunchOptions {
         stringValue("OpenRecipeName")
     }
 
+    /// `-PerfOpenRecipes=8` — `scripts/perf/measure.sh`: opens the first 8 recipes (by id) twice,
+    /// then shows All recipes.
+    static var perfOpenRecipeCount: Int? {
+        stringValue("PerfOpenRecipes").flatMap(Int.init)
+    }
+
+    /// `-PerfOpenDelay=8` — seconds before the first `-PerfOpenRecipes` open (Instruments attach).
+    static var perfOpenDelaySeconds: Double {
+        stringValue("PerfOpenDelay").flatMap(Double.init) ?? 2
+    }
+
     /// `-OpenDiscoverProfile=<username>` — Discover → public profile.
     static var openDiscoverProfileUsername: String? {
         guard var value = stringValue("OpenDiscoverProfile") else { return nil }
@@ -368,6 +379,34 @@ enum DebugLaunchOptions {
             "scope": "list",
             "count": "\(live.count)",
         ])
+    }
+
+    @MainActor private static var didRunPerfRecipeOpens = false
+
+    /// `-PerfOpenRecipes`: home, recipe, home, … through the same `DeepLink` handling as
+    /// `recipe-scaler://recipe/<id>`, but without the simulator's "Open in …?" prompt —
+    /// confirming it through accessibility makes every `Text` resolve its accessibility label.
+    @MainActor
+    static func runPerfRecipeOpensIfNeeded(coordinator: AppShellCoordinator, entries: [CollectionEntry]) async {
+        guard let count = perfOpenRecipeCount, !didRunPerfRecipeOpens else { return }
+        let ids = entries.filter { !$0.deleted }.map(\.id).sorted().prefix(count)
+        guard !ids.isEmpty else { return }
+        didRunPerfRecipeOpens = true
+        try? await Task.sleep(for: .seconds(perfOpenDelaySeconds))
+        for pass in ["first", "repeat"] {
+            for id in ids {
+                coordinator.handleDeepLink(.openHome)
+                try? await Task.sleep(for: .milliseconds(1200))
+                PerfMark.note("perf_open \(pass) \(id)")
+                coordinator.handleDeepLink(.openRecipe(recipeId: id))
+                try? await Task.sleep(for: .milliseconds(2500))
+            }
+        }
+        coordinator.handleDeepLink(.openHome)
+        try? await Task.sleep(for: .milliseconds(1200))
+        // Leave the longest list on screen for the scroll trace.
+        coordinator.recipesPath = [.folder(CollectionVirtualFolders.allRecipesFolderId)]
+        PerfMark.note("perf_open done")
     }
 
     /// Prefetch recipe hero image, then emit `screenshot_media_ready` for capture scripts.

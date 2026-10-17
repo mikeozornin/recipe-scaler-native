@@ -333,6 +333,11 @@ enum PerfMark {
         }
     }
 
+    /// Logs `text` verbatim in the `perf` category, e.g. which step a measurement script is on.
+    static func note(_ text: String) {
+        logger.notice("\(text, privacy: .public)")
+    }
+
     /// Milliseconds since the kernel created this process, so pre-main (dyld) time is included.
     nonisolated static func millisecondsSinceProcessStart() -> Int {
         var info = kinfo_proc()

@@ -10,7 +10,10 @@
 #
 # Writes tmp/perf/<label>/:
 #   launch.tsv    cold launches: ms since process start to shell / data loaded / list on screen
-#   open.tsv      recipe opens by deep link: ms from navigation to content (first and repeat open)
+#   open.tsv      recipe opens: ms from navigation to content (first and repeat open). The app
+#                 drives them itself (-PerfOpenRecipes, DebugLaunchOptions) through the deep-link
+#                 code path: confirming the simulator's "Open in …?" prompt via accessibility
+#                 would make SwiftUI resolve accessibility text and skew every number.
 #   launch.trace, open.trace, scroll.trace   Time Profiler recordings (main thread CPU, hangs)
 #   summary.txt   medians and trace totals
 set -euo pipefail
@@ -35,15 +38,27 @@ xcrun simctl install "$SIM" "$APP"
 perf_lines() {
   xcrun simctl spawn "$SIM" log show --start "$1" --style compact \
     --predicate 'subsystem == "com.recipescaler.native" AND category == "perf"' 2>/dev/null \
-    | grep -oE 'perf_(mark|interval) .*' || true
+    | grep -oE 'perf_(mark|interval|open) .*' || true
 }
 
 now() { date '+%Y-%m-%d %H:%M:%S'; }
 
-relaunch() {
+relaunch() { # extra args go to the app
   xcrun simctl terminate "$SIM" "$BUNDLE" 2>/dev/null || true
   sleep 1
-  xcrun simctl launch "$SIM" "$BUNDLE" | awk '{print $NF}'
+  xcrun simctl launch "$SIM" "$BUNDLE" "$@" | awk '{print $NF}'
+}
+
+# Waits for the app's -PerfOpenRecipes run to finish; prints its opens as `pass<TAB>id<TAB>line`.
+collect_opens() { # $1 = log start, $2 = tag prefix
+  for _ in $(seq 1 40); do
+    sleep 5
+    perf_lines "$1" | grep -q '^perf_open done' && break
+  done
+  perf_lines "$1" | awk -v prefix="$2" '
+    /^perf_open done/ { next }
+    /^perf_open / { pass = $2; id = $3; next }
+    /^perf_interval recipe_open/ && pass != "" { print prefix pass "\t" id "\t" $0 }'
 }
 
 # Warm-up: first launch after install pays for dyld closures and font caches.
@@ -58,30 +73,11 @@ for i in $(seq 1 "$RUNS"); do
   perf_lines "$start" | grep perf_mark | sed "s/^/$i	/" >> "$OUT/launch.tsv"
 done
 
-container="$(xcrun simctl get_app_container "$SIM" "$BUNDLE" data)"
-ids=()
-while IFS= read -r id; do ids+=("$id"); done < <(
-  ls "$container/Library/Application Support/RecipeImages" 2>/dev/null \
-    | sed -n 's/_preview\.webp$//p' | sort | head -8
-)
-[[ ${#ids[@]} -gt 0 ]] || { echo "no cached recipes to open" >&2; exit 1; }
-
-open_sequence() { # $1 = tag written to open.tsv
-  for id in "${ids[@]}"; do
-    xcrun simctl openurl "$SIM" "recipe-scaler://home"
-    sleep 1.2
-    start=$(now)
-    xcrun simctl openurl "$SIM" "recipe-scaler://recipe/$id"
-    sleep 2.5
-    perf_lines "$start" | grep perf_interval | sed "s/^/$1	$id	/" >> "$OUT/open.tsv" || true
-  done
-}
-
-echo "== recipe opens (${#ids[@]} recipes, first and repeat)"
-relaunch >/dev/null
-sleep 10
-open_sequence first
-open_sequence repeat
+echo "== recipe opens (8 recipes, first and repeat)"
+start=$(now)
+relaunch -PerfOpenRecipes=8 -PerfOpenDelay=8 >/dev/null
+collect_opens "$start" "" >> "$OUT/open.tsv"
+[[ -s "$OUT/open.tsv" ]] || { echo "no recipe opens logged" >&2; exit 1; }
 
 trace() { # $1 = name, rest = xctrace target args
   local name=$1; shift
@@ -96,16 +92,14 @@ trace launch --time-limit 12s --env AGENT_DEBUG_LOG_DISABLED=1 \
   --launch -- "$(xcrun simctl get_app_container "$SIM" "$BUNDLE" app)"
 
 echo "== Time Profiler: recipe opens"
-pid=$(relaunch)
-sleep 10
-trace open --time-limit 40s --attach "$pid" &
-sleep 5
-open_sequence traced
+start=$(now)
+pid=$(relaunch -PerfOpenRecipes=8 -PerfOpenDelay=10)
+trace open --time-limit 75s --attach "$pid" &
+collect_opens "$start" "traced-" >> "$OUT/open.tsv"
 wait
 
-echo "== Time Profiler: list scroll"
-xcrun simctl openurl "$SIM" "recipe-scaler://home"
-sleep 2
+echo "== Time Profiler: list scroll (All recipes)"
+# The -PerfOpenRecipes run ends on All recipes.
 trace scroll --time-limit 20s --attach "$pid" &
 sleep 5
 for _ in 1 2 3 4 5; do
@@ -138,9 +132,18 @@ for line in open(f"{out}/launch.tsv"):
         launch[m[1]]["t"].append(int(m[2]))
         launch[m[1]]["idle"].append(int(m[3]))
 print("cold launch, ms since process start (median t / median idle, n)")
-for name in ("shell_visible", "recipes_loaded", "recipes_visible"):
+for name in ("shell_visible", "recipes_loaded", "recipes_visible", "splash_hidden"):
     v = launch.get(name, {})
     print(f"  {name:16} {med(v.get('t', [])):>6} / {med(v.get('idle', [])):>6}  n={len(v.get('t', []))}")
+# The list is on screen once it is rendered and the splash above it is gone.
+runs = defaultdict(dict)
+for line in open(f"{out}/launch.tsv"):
+    run, rest = line.split("\t", 1)
+    m = re.search(r"perf_mark (\S+) t=(-?\d+) idle=(-?\d+)", rest)
+    if m:
+        runs[run][m[1]] = int(m[3])
+seen = [max(r["recipes_visible"], r.get("splash_hidden", 0)) for r in runs.values() if "recipes_visible" in r]
+print(f"  {'list_on_screen':16} {med(seen):>6}          n={len(seen)}")
 
 opens = defaultdict(lambda: defaultdict(list))
 for line in open(f"{out}/open.tsv"):
@@ -150,9 +153,13 @@ for line in open(f"{out}/open.tsv"):
         opens[tag]["ms"].append(int(m[1]))
         opens[tag]["idle"].append(int(m[2]))
 print("recipe open, ms from navigation to content (median ms / median idle, n)")
-for tag in ("first", "repeat", "traced"):
+for tag in ("first", "repeat", "traced-first", "traced-repeat"):
     v = opens.get(tag, {})
     print(f"  {tag:16} {med(v.get('ms', [])):>6} / {med(v.get('idle', [])):>6}  n={len(v.get('ms', []))}")
+for tag in ("first", "traced-first"):
+    v = opens.get(tag, {})
+    if v.get("ms"):
+        print(f"  {tag + ' #1':16} {v['ms'][0]:>6} / {v['idle'][0]:>6}  (first open after launch)")
 
 print("Time Profiler (main thread CPU ms, hangs count / total ms)")
 for name in ("launch", "open", "scroll"):
