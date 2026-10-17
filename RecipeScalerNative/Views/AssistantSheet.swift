@@ -80,14 +80,14 @@ struct AssistantSheet: View {
             case .sheet:
                 AssistantSheetToolbarHost(
                     onShowHistory: { showHistorySheet = true },
-                    onStartNewChat: { session.startNewChat() }
+                    onStartNewChat: startNewChat
                 ) {
                     chat
                 }
             case .inspector:
                 AssistantInspectorToolbarHost(
                     isHistoryPresented: $showHistorySheet,
-                    onStartNewChat: { session.startNewChat() },
+                    onStartNewChat: startNewChat,
                     onClose: onClose,
                     history: {
                         threadList
@@ -101,6 +101,11 @@ struct AssistantSheet: View {
                 }
             }
         }
+    }
+
+    /// The user's «новый чат» starts from the recipe beside the chat, attached.
+    private func startNewChat() {
+        session.startNewChat(attachingRecipeId: contextRecipeId ?? assistantRecipeContext.visibleRecipeId)
     }
 
     /// The history list: the phone sheet, or the panel's popover (FR-020).

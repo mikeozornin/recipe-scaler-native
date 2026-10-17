@@ -239,6 +239,7 @@ struct AppShellView: View {
             assistantSession.beginPresentation(
                 openRequest: assistantOpenRequest,
                 shakeRequest: assistantShakeOpenRequest,
+                contextRecipeId: assistantContextRecipeId,
                 startsNewChat: startsNewChat
             )
         }

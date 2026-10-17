@@ -234,6 +234,45 @@ final class AssistantSessionModelTests: XCTestCase {
         await waitUntil { model.threadId == "thread-recent" }
     }
 
+    // MARK: - Context recipe
+
+    /// A new chat opened from a recipe starts with that recipe attached.
+    func testNewChatAttachesContextRecipe() async {
+        let backend = FakeAssistantBackend()
+        backend.entries = [Self.entry(id: "r1", name: "Борщ")]
+        let model = backend.makeModel()
+
+        model.beginPresentation(openRequest: nil, shakeRequest: nil, contextRecipeId: "R1")
+        model.viewDidAppear(shakeRequest: nil)
+        await waitUntil { backend.listThreadsCalls == 1 && !model.isBootstrapping }
+
+        XCTAssertNil(model.threadId)
+        XCTAssertEqual(model.attachments.map(\.recipeId), ["r1"])
+        XCTAssertEqual(model.attachments.first?.recipeName, "Борщ")
+
+        // The user's «новый чат» starts from the recipe again, once.
+        model.attachments = []
+        model.startNewChat(attachingRecipeId: "r1")
+        model.startNewChat(attachingRecipeId: nil)
+        XCTAssertTrue(model.attachments.isEmpty)
+        model.startNewChat(attachingRecipeId: "r1")
+        XCTAssertEqual(model.attachments.map(\.recipeId), ["r1"])
+    }
+
+    /// A restored recent chat is already under way: nothing is attached to it.
+    func testRestoredThreadDoesNotAttachContextRecipe() async {
+        let backend = FakeAssistantBackend()
+        backend.recentThreadId = "thread-recent"
+        backend.entries = [Self.entry(id: "r1", name: "Борщ")]
+        let model = backend.makeModel()
+
+        model.beginPresentation(openRequest: nil, shakeRequest: nil, contextRecipeId: "r1")
+        model.viewDidAppear(shakeRequest: nil)
+        await waitUntil { model.threadId == "thread-recent" && !model.isBootstrapping }
+
+        XCTAssertTrue(model.attachments.isEmpty)
+    }
+
     // MARK: - Session teardown
 
     func testEpochChangeDropsStaleStream() async {
@@ -316,6 +355,18 @@ final class AssistantSessionModelTests: XCTestCase {
 
     // MARK: - Helpers
 
+    private static func entry(id: String, name: String) -> CollectionEntry {
+        CollectionEntry(
+            id: id,
+            name: name,
+            color: "#FF0000",
+            imageUrl: nil,
+            updatedAt: "2026-01-01T00:00:00.000Z",
+            deleted: false,
+            isPinned: false
+        )
+    }
+
     private func openAndBootstrap(_ model: AssistantSessionModel, backend: FakeAssistantBackend) async {
         let before = backend.listThreadsCalls
         model.beginPresentation(openRequest: nil, shakeRequest: nil)
@@ -367,6 +418,7 @@ private final class FakeAssistantBackend {
     /// A thread saved and opened just now: the ≤60 s restore picks it.
     var recentThreadId: String?
     var getMessagesCalls: [String] = []
+    var entries: [CollectionEntry] = []
     /// `listThreads` waits for `releaseListThreads()`, ignoring cancellation, as a slow
     /// server does: the caller's guards decide what lands.
     var holdsListThreads = false
@@ -383,7 +435,7 @@ private final class FakeAssistantBackend {
         AssistantSessionModel(
             client: client(),
             isOnline: { true },
-            collectionEntries: { [] }
+            collectionEntries: { [unowned self] in entries }
         )
     }
 

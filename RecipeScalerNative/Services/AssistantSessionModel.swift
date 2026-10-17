@@ -111,6 +111,9 @@ final class AssistantSessionModel {
     /// Spec 081 (FR-021) — this presentation opens a new chat, not the recent one (✦ on
     /// «Покупки» / «Подборки» of the iPad). Set by `beginPresentation`.
     @ObservationIgnored private var startsNewChatOnOpen = false
+    /// The recipe the assistant was opened from: a new chat of this presentation starts
+    /// with it attached. Set by `beginPresentation`.
+    @ObservationIgnored private var presentationContextRecipeId: String?
     @ObservationIgnored private var interactionGeneration = 0
     /// Bumped by `beginPresentation`, `close` and `resetForLogout`: work that
     /// is not generation-guarded (thread delete) must not land in a later
@@ -146,6 +149,7 @@ final class AssistantSessionModel {
     func beginPresentation(
         openRequest: AssistantOpenRequest?,
         shakeRequest: AssistantShakeOpenRequest?,
+        contextRecipeId: String? = nil,
         startsNewChat: Bool = false
     ) {
         cancelAllWork()
@@ -159,6 +163,7 @@ final class AssistantSessionModel {
         pendingExternalRequest = openRequest
         pendingShakeRequest = shakeRequest
         startsNewChatOnOpen = startsNewChat
+        presentationContextRecipeId = contextRecipeId
         inputPlaceholderVariantIndex = Int.random(in: 0..<AssistantInputPlaceholder.variantCount)
     }
 
@@ -195,6 +200,7 @@ final class AssistantSessionModel {
         pendingExternalRequest = nil
         pendingShakeRequest = nil
         startsNewChatOnOpen = false
+        presentationContextRecipeId = nil
     }
 
     /// Logout / account switch while a presentation is visible (the chat's
@@ -310,7 +316,7 @@ final class AssistantSessionModel {
         }
 
         if startsNewChatOnOpen {
-            startNewChat(keepsDraft: true)
+            startNewChat(keepsDraft: true, attachingRecipeId: presentationContextRecipeId)
             return
         }
 
@@ -326,7 +332,7 @@ final class AssistantSessionModel {
         }
         guard isCurrent(generation) else { return }
         // Automatic, not the user's «новый чат»: the draft stays (plan.md Р7).
-        startNewChat(keepsDraft: true)
+        startNewChat(keepsDraft: true, attachingRecipeId: presentationContextRecipeId)
     }
 
     #if DEBUG
@@ -380,7 +386,12 @@ final class AssistantSessionModel {
 
     /// `keepsDraft`: an automatic new chat (bootstrap, a vanished thread)
     /// keeps the typed text; the user's «новый чат» and external intents clear it.
-    func startNewChat(clearExternalRequest: Bool = true, keepsDraft: Bool = false) {
+    /// `attachingRecipeId`: the recipe the chat starts from, attached by default.
+    func startNewChat(
+        clearExternalRequest: Bool = true,
+        keepsDraft: Bool = false,
+        attachingRecipeId: String? = nil
+    ) {
         interactionGeneration &+= 1
         isSending = false
         externalSendTask?.cancel()
@@ -393,6 +404,9 @@ final class AssistantSessionModel {
             input = ""
         }
         attachments = []
+        if let attachingRecipeId {
+            autoAttachRecipe(attachingRecipeId)
+        }
         if clearExternalRequest {
             pendingExternalRequest = nil
         }
