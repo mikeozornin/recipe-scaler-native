@@ -20,7 +20,7 @@ enum GuideAssetResolver {
     /// the localized nor the base imageset is present in the bundle.
     static func image(forBaseName baseName: String) -> Image? {
         for name in candidateNames(forBaseName: baseName) {
-            if uiImage(named: name) != nil {
+            if hasBundledImage(named: name) {
                 return Image(name)
             }
         }
@@ -29,7 +29,7 @@ enum GuideAssetResolver {
 
     /// True if either the localized or the base imageset is bundled.
     static func hasImage(forBaseName baseName: String) -> Bool {
-        candidateNames(forBaseName: baseName).contains { uiImage(named: $0) != nil }
+        candidateNames(forBaseName: baseName).contains { hasBundledImage(named: $0) }
     }
 
     static func candidateNames(forBaseName baseName: String) -> [String] {
@@ -61,4 +61,24 @@ enum GuideAssetResolver {
     private static func uiImage(named name: String) -> UIImage? {
         UIImage(named: name)
     }
+
+    /// Whether the bundle has an image named `name`. The asset catalog does not change
+    /// at runtime, so each name is looked up (and decoded) once, not on every body pass.
+    static func hasBundledImage(named name: String) -> Bool {
+        existenceLock.lock()
+        if let known = existenceByName[name] {
+            existenceLock.unlock()
+            return known
+        }
+        existenceLock.unlock()
+
+        let exists = uiImage(named: name) != nil
+        existenceLock.lock()
+        existenceByName[name] = exists
+        existenceLock.unlock()
+        return exists
+    }
+
+    private static let existenceLock = NSLock()
+    private nonisolated(unsafe) static var existenceByName: [String: Bool] = [:]
 }

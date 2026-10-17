@@ -858,10 +858,8 @@ struct AccountView: View {
         guard let date = syncService.lastSuccessfulSyncAt else {
             return Bundle.currentLocalizedString("account.sync.never")
         }
-        let formatter = RelativeDateTimeFormatter()
-        formatter.locale = locale
-        formatter.unitsStyle = .full
-        return formatter.localizedString(for: date, relativeTo: Date())
+        return AccountSyncDateFormatters.formatter(for: locale)
+            .localizedString(for: date, relativeTo: Date())
     }
     #endif
 
@@ -1093,6 +1091,25 @@ private struct AccountSeedPhraseSheet: View {
         )
             .environment(coordinator)
             .environment(ReleaseNotesStore())
+    }
+}
+#endif
+
+#if DEBUG
+/// One `RelativeDateTimeFormatter` per locale for the sync label, instead of one per body pass.
+@MainActor
+enum AccountSyncDateFormatters {
+    private static var formatters: [Locale: RelativeDateTimeFormatter] = [:]
+
+    static func formatter(for locale: Locale) -> RelativeDateTimeFormatter {
+        if let cached = formatters[locale] {
+            return cached
+        }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = locale
+        formatter.unitsStyle = .full
+        formatters[locale] = formatter
+        return formatter
     }
 }
 #endif
