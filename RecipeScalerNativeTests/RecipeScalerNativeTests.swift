@@ -1921,3 +1921,169 @@ final class DescriptionEditorScrollInsetTests: XCTestCase {
         XCTAssertNil(DescriptionEditorBridge.updateBytes(from: nil))
     }
 }
+
+/// The emoji fast path and the precomputed sort keys must give the regex-only results.
+final class RecipeTitleEmojiFastPathTests: XCTestCase {
+    /// `RecipeTitleEmoji` before the fast path: both patterns, regex on every call.
+    private enum Legacy {
+        static let fallback =
+            "([\\x{1F1E6}-\\x{1F1FF}]{2}|[0-9#*][\\x{FE0F}]?\\x{20E3}|[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}][\\x{FE0F}\\x{FE0E}]?(?:[\\x{1F3FB}-\\x{1F3FF}])?(?:\\x{200D}[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}][\\x{FE0F}\\x{FE0E}]?(?:[\\x{1F3FB}-\\x{1F3FF}])?)*)"
+        static let full =
+            "([\\p{Regional_Indicator}]{2}|[0-9#*][\\x{FE0F}]?\\x{20E3}|[\\p{Extended_Pictographic}](?:[\\x{FE0F}\\x{FE0E}])?(?:[\\x{1F3FB}-\\x{1F3FF}])?(?:\\x{200D}[\\p{Extended_Pictographic}](?:[\\x{FE0F}\\x{FE0E}])?(?:[\\x{1F3FB}-\\x{1F3FF}])?)*)"
+        static let leadingRegexes = [fallback, full].compactMap { try? NSRegularExpression(pattern: "^\\s*(\($0))") }
+        static let leading = leadingRegexes[0]
+        static let prefix = try! NSRegularExpression(pattern: "^\\s*\(fallback)\\s*")
+
+        static func leadingEmoji(in title: String?) -> String? {
+            guard let title, !title.isEmpty,
+                  let match = leading.firstMatch(in: title, range: NSRange(title.startIndex..., in: title)),
+                  match.numberOfRanges > 1,
+                  let captureRange = Range(match.range(at: 1), in: title) else {
+                return nil
+            }
+            return String(title[captureRange])
+        }
+
+        static func titleWithoutLeadingEmoji(_ title: String?) -> String? {
+            guard let title else { return title }
+            let range = NSRange(title.startIndex..., in: title)
+            guard leading.firstMatch(in: title, range: range) != nil else { return title }
+            return prefix.stringByReplacingMatches(in: title, range: range, withTemplate: "")
+        }
+
+        static func displayName(for title: String?) -> String {
+            titleWithoutLeadingEmoji(title)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        }
+
+        static func compareNames(_ a: String?, _ b: String?) -> ComparisonResult {
+            let byDisplay = displayName(for: a).localizedStandardCompare(displayName(for: b))
+            if byDisplay != .orderedSame { return byDisplay }
+            return (a ?? "").localizedStandardCompare(b ?? "")
+        }
+
+        static func sortedActive(_ folders: [RecipeFolder]) -> [RecipeFolder] {
+            folders
+                .filter { !$0.deleted }
+                .sorted { lhs, rhs in
+                    let nameOrder = compareNames(lhs.name, rhs.name)
+                    if nameOrder != .orderedSame {
+                        return nameOrder == .orderedAscending
+                    }
+                    return lhs.id.localizedStandardCompare(rhs.id) == .orderedAscending
+                }
+        }
+    }
+
+    private static let titles: [String?] = [
+        nil, "", " ", "\t", "\n", "\u{00A0}", "\u{3000}", "\u{2028}", "\u{0085}",
+        "Pizza", "pizza", "  Pizza  ", "Pizza 🍕", "🍕 Pizza", "🍕Pizza", "  🍕 Pizza", "\t🍕\tPizza",
+        "\u{00A0}🍕 Pizza", "👨‍👩‍👧 Family", "👍🏽 Thumbs", "🇷🇺 Борщ", "🇷🇺🇺🇸 Two flags", "❤️ Love", "❤ Love",
+        "☕️ Кофе", "1️⃣ First", "1⃣ First", "#️⃣ Hash", "*️⃣ Star", "1 apple", "12 стульев", "#tag", "*star",
+        "© Copyright", "® Brand", "™ Trade", "‼ Wow", "Борщ", "борщ", "Ёжик", "ёжик", "Йогурт", "Щи 🥣",
+        "Château", "Crème brûlée", "Ñandú", "Œufs", "Ελληνικά", "日本語", "ひらがな", "한국어", "עברית",
+        "العربية", "ไทย", "🍕", "🍕 ", " 🍕", "🍕🍔 Combo", "A", "a", "Z", "z", "-dash", "(paren)",
+        "\u{0301}combining", "e\u{0301}clair", "\u{FEFF}BOM", "\u{200B}zero width", "🏳️‍🌈 Flag",
+        "\r\nCRLF", "Mixed CASE 🍕", "🥗Салат «Цезарь»", "  ", "💯", "⭐️⭐️ Stars", "🫠 Melt",
+    ]
+
+    func testFastPathMatchesRegexForSampleTitles() {
+        for title in Self.titles {
+            XCTAssertEqual(RecipeTitleEmoji.leadingEmoji(in: title), Legacy.leadingEmoji(in: title), "\(String(describing: title))")
+            XCTAssertEqual(
+                RecipeTitleEmoji.titleWithoutLeadingEmoji(title).map { Array($0.unicodeScalars) },
+                Legacy.titleWithoutLeadingEmoji(title).map { Array($0.unicodeScalars) },
+                "\(String(describing: title))"
+            )
+            XCTAssertEqual(
+                Array(RecipeTitleEmoji.displayName(for: title).unicodeScalars),
+                Array(Legacy.displayName(for: title).unicodeScalars),
+                "\(String(describing: title))"
+            )
+        }
+    }
+
+    /// Every first scalar the fast path skips cannot start a match of either pattern.
+    func testFastPathSkipsOnlyScalarsThatCannotStartAMatch() {
+        XCTAssertEqual(Legacy.leadingRegexes.count, 2)
+        var skipped = 0
+        for value in UInt32(0) ... 0x10FFFF {
+            guard let scalar = Unicode.Scalar(value) else { continue }
+            let head = String(scalar)
+            guard RecipeTitleEmoji.cannotStartWithEmoji(head) else { continue }
+            skipped += 1
+            // A keycap tail catches a keycap base; an emoji tail catches a `\s` scalar.
+            for probe in [head + "\u{FE0F}\u{20E3}x", head + "🍕x", head + " 🍕x"] {
+                XCTAssertTrue(RecipeTitleEmoji.cannotStartWithEmoji(probe))
+                for regex in Legacy.leadingRegexes {
+                    XCTAssertNil(
+                        regex.firstMatch(in: probe, range: NSRange(probe.startIndex..., in: probe)),
+                        String(format: "U+%04X", value)
+                    )
+                }
+            }
+        }
+        XCTAssertGreaterThan(skipped, 30_000)
+    }
+
+    func testCompareNamesMatchesLegacy() {
+        for a in Self.titles {
+            for b in Self.titles {
+                XCTAssertEqual(RecipeTitleEmoji.compareNames(a, b), Legacy.compareNames(a, b))
+            }
+        }
+    }
+
+    private static func folders(count: Int, seed: UInt64) -> [RecipeFolder] {
+        var generator = SplitMix64(seed: seed)
+        let names = titles.compactMap { $0 }
+        return (0 ..< count).map { index in
+            let name = names[Int(generator.next() % UInt64(names.count))]
+            return RecipeFolder(
+                id: "id-\(generator.next() % 50)-\(index)",
+                name: name,
+                color: "",
+                createdAt: "",
+                updatedAt: "",
+                deleted: generator.next() % 7 == 0
+            )
+        }
+    }
+
+    func testSortedActiveMatchesLegacy() {
+        for seed in UInt64(1) ... 40 {
+            let folders = Self.folders(count: Int(seed % 13) * 9, seed: seed)
+            let expected = Legacy.sortedActive(folders)
+            XCTAssertEqual(RecipeFolder.sortedActive(folders), expected, "seed \(seed)")
+            XCTAssertEqual(RecipeFolder.sortedActive(folders.reversed()), Legacy.sortedActive(folders.reversed()), "seed \(seed)")
+            // Already sorted (the `YjsSyncService.folders` case), with and without tombstones.
+            XCTAssertEqual(RecipeFolder.sortedActive(expected), expected, "seed \(seed)")
+        }
+    }
+
+    func testSortedByNameMatchesLegacy() {
+        for seed in UInt64(1) ... 40 {
+            let names = Self.folders(count: Int(seed % 11) * 7, seed: seed).map(\.name)
+                + [nil, nil, ""]
+            let legacy = names.sorted { Legacy.compareNames($0, $1) == .orderedAscending }
+            XCTAssertEqual(RecipeTitleEmoji.sortedByName(names) { $0 }, legacy, "seed \(seed)")
+            XCTAssertEqual(DiscoverSearch.sortedByRecipeName(names) { $0 }, legacy, "seed \(seed)")
+        }
+    }
+}
+
+/// Deterministic generator for the equivalence fuzz tests.
+struct SplitMix64: RandomNumberGenerator {
+    private var state: UInt64
+
+    init(seed: UInt64) {
+        state = seed
+    }
+
+    mutating func next() -> UInt64 {
+        state &+= 0x9E37_79B9_7F4A_7C15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
+        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
+        return z ^ (z >> 31)
+    }
+}

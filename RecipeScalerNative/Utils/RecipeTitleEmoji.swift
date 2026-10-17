@@ -33,8 +33,29 @@ enum RecipeTitleEmoji {
     private static var leadingEmojiRegex: NSRegularExpression? { compiled.leading }
     private static var leadingEmojiPrefixRegex: NSRegularExpression? { compiled.prefix }
 
+    /// `true` when the first scalar of `title` can neither be `\s` nor start an emoji of
+    /// either pattern, so the regexes cannot match. Covers printable ASCII (other than
+    /// `0-9 # *`), Latin-1 Supplement and Latin Extended (other than `©`/`®`, which are
+    /// `Extended_Pictographic`), Greek, Cyrillic, kana, CJK ideographs and Hangul; any
+    /// other first scalar goes through the regex.
+    static func cannotStartWithEmoji(_ title: String) -> Bool {
+        guard let first = title.unicodeScalars.first else { return true }
+        switch first.value {
+        case 0x30 ... 0x39, 0x23, 0x2A:
+            return false
+        case 0x21 ... 0x7E:
+            return true
+        case 0xA9, 0xAE:
+            return false
+        case 0xA1 ... 0x24F, 0x370 ... 0x3FF, 0x400 ... 0x52F, 0x3040 ... 0x30FF, 0x4E00 ... 0x9FFF, 0xAC00 ... 0xD7A3:
+            return true
+        default:
+            return false
+        }
+    }
+
     static func leadingEmoji(in title: String?) -> String? {
-        guard let title, !title.isEmpty,
+        guard let title, !title.isEmpty, !cannotStartWithEmoji(title),
               let leadingEmojiRegex,
               let match = leadingEmojiRegex.firstMatch(in: title, range: NSRange(title.startIndex..., in: title)),
               match.numberOfRanges > 1,
@@ -46,6 +67,7 @@ enum RecipeTitleEmoji {
 
     static func titleWithoutLeadingEmoji(_ title: String?) -> String? {
         guard let title else { return title }
+        if cannotStartWithEmoji(title) { return title }
         let range = NSRange(title.startIndex..., in: title)
         guard let leadingEmojiRegex,
               leadingEmojiRegex.firstMatch(in: title, range: range) != nil,
@@ -62,21 +84,42 @@ enum RecipeTitleEmoji {
 
     /// Same ordering as web `compareRecipeNamesIgnoringLeadingEmoji`.
     static func compareNames(_ a: String?, _ b: String?) -> ComparisonResult {
-        compare(
-            display: displayName(for: a), name: a ?? "",
-            with: displayName(for: b), name: b ?? ""
-        )
+        compare(NameSortKey(a), NameSortKey(b))
     }
 
-    private static func compare(
-        display displayA: String, name nameA: String,
-        with displayB: String, name nameB: String
-    ) -> ComparisonResult {
-        let byDisplay = displayA.localizedStandardCompare(displayB)
+    /// `compareNames` operands computed once per item, so a sort runs the emoji regex `n`
+    /// times instead of twice per comparison.
+    struct NameSortKey: Sendable {
+        let display: String
+        let name: String
+
+        init(_ title: String?) {
+            display = RecipeTitleEmoji.displayName(for: title)
+            name = title ?? ""
+        }
+
+        init(display: String, name: String) {
+            self.display = display
+            self.name = name
+        }
+    }
+
+    /// `compareNames` on precomputed keys.
+    static func compare(_ a: NameSortKey, _ b: NameSortKey) -> ComparisonResult {
+        let byDisplay = a.display.localizedStandardCompare(b.display)
         if byDisplay != .orderedSame {
             return byDisplay
         }
-        return nameA.localizedStandardCompare(nameB)
+        return a.name.localizedStandardCompare(b.name)
+    }
+
+    /// `items` sorted A–Z by `compareNames(name(item))`: the keys are computed once per item
+    /// and the sort sees the same comparison results, so the order is the same.
+    static func sortedByName<Item>(_ items: [Item], name: (Item) -> String?) -> [Item] {
+        items
+            .map { (key: NameSortKey(name($0)), item: $0) }
+            .sorted { compare($0.key, $1.key) == .orderedAscending }
+            .map(\.item)
     }
 
     /// Pinned first, then `compareNames` order, then id. Matches web
@@ -87,8 +130,8 @@ enum RecipeTitleEmoji {
                 return lhs.isPinned && !rhs.isPinned
             }
             let nameOrder = compare(
-                display: lhs.displayName, name: lhs.name,
-                with: rhs.displayName, name: rhs.name
+                NameSortKey(display: lhs.displayName, name: lhs.name),
+                NameSortKey(display: rhs.displayName, name: rhs.name)
             )
             if nameOrder != .orderedSame {
                 return nameOrder == .orderedAscending

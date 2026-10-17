@@ -15,16 +15,27 @@ struct RecipeFolder: Identifiable, Sendable, Equatable {
 
     /// Sort active folders the way the web does: by display name
     /// (case-insensitive, ignoring a leading emoji), tie-break by id.
+    ///
+    /// The name keys are computed once per folder, and an input that is already in order
+    /// (`YjsSyncService.folders`, re-sorted by views) costs `n - 1` comparisons: the sort is
+    /// stable, so it would return that input unchanged.
     static func sortedActive(_ folders: [RecipeFolder]) -> [RecipeFolder] {
-        folders
-            .filter { !$0.deleted }
-            .sorted { lhs, rhs in
-                let nameOrder = RecipeTitleEmoji.compareNames(lhs.name, rhs.name)
-                if nameOrder != .orderedSame {
-                    return nameOrder == .orderedAscending
-                }
-                return lhs.id.localizedStandardCompare(rhs.id) == .orderedAscending
+        let active = folders.filter { !$0.deleted }
+        guard active.count > 1 else { return active }
+        let keyed = active.map { (key: RecipeTitleEmoji.NameSortKey($0.name), folder: $0) }
+        func inIncreasingOrder(
+            _ lhs: (key: RecipeTitleEmoji.NameSortKey, folder: RecipeFolder),
+            _ rhs: (key: RecipeTitleEmoji.NameSortKey, folder: RecipeFolder)
+        ) -> Bool {
+            let nameOrder = RecipeTitleEmoji.compare(lhs.key, rhs.key)
+            if nameOrder != .orderedSame {
+                return nameOrder == .orderedAscending
             }
+            return lhs.folder.id.localizedStandardCompare(rhs.folder.id) == .orderedAscending
+        }
+        let isSorted = zip(keyed, keyed.dropFirst()).allSatisfy { !inIncreasingOrder($1, $0) }
+        if isSorted { return active }
+        return keyed.sorted(by: inIncreasingOrder).map(\.folder)
     }
 }
 

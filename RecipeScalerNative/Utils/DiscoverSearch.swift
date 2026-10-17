@@ -45,9 +45,7 @@ enum DiscoverSearch {
 
     /// A–Z by display name (leading emoji ignored), same as web `compareRecipeNamesIgnoringLeadingEmoji`.
     static func sortedByRecipeName<Item>(_ items: [Item], name: (Item) -> String?) -> [Item] {
-        items.sorted { lhs, rhs in
-            RecipeTitleEmoji.compareNames(name(lhs), name(rhs)) == .orderedAscending
-        }
+        RecipeTitleEmoji.sortedByName(items, name: name)
     }
 }
 
