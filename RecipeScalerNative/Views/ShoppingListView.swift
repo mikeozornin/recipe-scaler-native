@@ -836,7 +836,7 @@ private struct ShoppingListShareSheet: View {
                     .disabled(!isOnline || !settingsLoaded || isUpdatingShare)
 
                     if shareEnabled, let shareURL {
-                        ShareLink(item: shareURL) {
+                        ActivityShareLink(item: shareURL) {
                             Text(shareURL.absoluteString)
                                 .appBody()
                                 .foregroundStyle(Color.accentColor)

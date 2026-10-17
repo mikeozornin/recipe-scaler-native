@@ -196,7 +196,7 @@ private struct RecipeShareSheetContent: View {
                     }
 
                     if isEffectivelyPublic, let url = shareURL {
-                        ShareLink(item: url) {
+                        ActivityShareLink(item: url) {
                             Text(url.absoluteString)
                                 .appBody()
                                 .foregroundStyle(Color.accentColor)
@@ -342,13 +342,83 @@ private struct RecipeShareSheetContent: View {
 
 /// Thin SwiftUI wrapper around `UIActivityViewController` so we can present
 /// AirDrop / Files / Messages as soon as the `.recipe` file is ready —
-/// without requiring a second tap on a `ShareLink`.
-private struct ActivityShareSheet: UIViewControllerRepresentable {
+/// without requiring a second tap on a `ShareLink`. For web links the system
+/// Copy is swapped for `CopyLinkActivity`, so the clipboard import banner
+/// skips the link the user just copied.
+struct ActivityShareSheet: UIViewControllerRepresentable {
     let activityItems: [Any]
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        let sharesWebLink = activityItems.contains { CopyLinkActivity.webURL(from: $0) != nil }
+        let controller = UIActivityViewController(
+            activityItems: activityItems,
+            applicationActivities: sharesWebLink ? [CopyLinkActivity()] : nil
+        )
+        if sharesWebLink {
+            controller.excludedActivityTypes = [.copyToPasteboard]
+        }
+        return controller
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+/// Copy action for a web link. The share sheet runs in another process and its
+/// own Copy writes the pasteboard there, out of `AppPasteboard`'s sight; this
+/// one writes through `AppPasteboard`, which the import banner ignores.
+private final class CopyLinkActivity: UIActivity {
+    private var url: URL?
+
+    static func webURL(from item: Any) -> URL? {
+        guard let url = item as? URL, ["http", "https"].contains(url.scheme?.lowercased()) else {
+            return nil
+        }
+        return url
+    }
+
+    override class var activityCategory: UIActivity.Category { .action }
+
+    override var activityType: UIActivity.ActivityType? {
+        UIActivity.ActivityType("ru.recipescaler.copy-link")
+    }
+
+    override var activityTitle: String? {
+        Bundle.currentLocalizedString("shopping.copy-link")
+    }
+
+    override var activityImage: UIImage? {
+        UIImage(systemName: "doc.on.doc")
+    }
+
+    override func canPerform(withActivityItems activityItems: [Any]) -> Bool {
+        activityItems.contains { Self.webURL(from: $0) != nil }
+    }
+
+    override func prepare(withActivityItems activityItems: [Any]) {
+        url = activityItems.lazy.compactMap(Self.webURL(from:)).first
+    }
+
+    override func perform() {
+        if let url {
+            AppPasteboard.setString(url.absoluteString)
+        }
+        activityDidFinish(true)
+    }
+}
+
+/// `ShareLink` for a link, presented through `ActivityShareSheet` so Copy from
+/// the sheet does not bring the link back as a clipboard import banner.
+struct ActivityShareLink<Label: View>: View {
+    let item: URL
+    @ViewBuilder let label: () -> Label
+
+    @State private var isPresented = false
+
+    var body: some View {
+        Button(action: { isPresented = true }, label: label)
+            .sheet(isPresented: $isPresented) {
+                ActivityShareSheet(activityItems: [item])
+                    .presentationDetents([.medium, .large])
+            }
+    }
 }
