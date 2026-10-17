@@ -70,7 +70,7 @@ enum AssistantMarkdownRenderer {
 
     static func headerAttributedString(from text: String, level: Int) -> AttributedString {
         var attributed = inlineAttributedString(from: text)
-        let headerStyle = headerParagraphStyle()
+        let headerStyle = headerParagraphStyle
         let headerFont = headerUIFont(level: level)
 
         for run in attributed.runs {
@@ -226,14 +226,14 @@ enum AssistantMarkdownRenderer {
     // MARK: - Inline styling
 
     private static func applyInlineStyles(to attributed: inout AttributedString) {
-        let bodyStyle = bodyParagraphStyle()
+        let bodyStyle = bodyParagraphStyle
 
         for run in attributed.runs {
             var container = AttributeContainer()
             let inlineIntent = run.inlinePresentationIntent ?? []
 
             if inlineIntent.contains(.code) {
-                container.font = monoUIFont()
+                container.font = monoUIFont
             } else {
                 container.font = bodyUIFont(strong: inlineIntent.contains(.stronglyEmphasized))
             }
@@ -267,29 +267,35 @@ enum AssistantMarkdownRenderer {
         return AppTypography.bodyUIFont
     }
 
-    private static func monoUIFont() -> UIFont {
-        AppTypography.uiFont(AppFonts.mono, size: AppTypography.bodySize * 0.875)
-    }
+    // Fonts and paragraph styles are immutable; build them once instead of per run.
+    private static let monoUIFont = AppTypography.uiFont(
+        AppFonts.mono,
+        size: AppTypography.bodySize * 0.875
+    )
+    private static let headerLevel1UIFont = AppTypography.uiFont(
+        AppFonts.display,
+        size: AppTypography.title2Size
+    )
+    private static let headerOtherLevelsUIFont = AppTypography.uiFont(
+        AppFonts.display,
+        size: AppTypography.bodySize
+    )
 
     private static func headerUIFont(level: Int) -> UIFont {
         if level == 1 {
-            return AppTypography.uiFont(AppFonts.display, size: AppTypography.title2Size)
+            return headerLevel1UIFont
         }
-        return AppTypography.uiFont(AppFonts.display, size: AppTypography.bodySize)
+        return headerOtherLevelsUIFont
     }
 
-    private static func headerParagraphStyle() -> NSParagraphStyle {
-        let style = NSMutableParagraphStyle()
-        style.lineSpacing = AppTypography.bodyLineSpacing
-        style.paragraphSpacing = 4
-        return style
-    }
+    private static let headerParagraphStyle = paragraphStyle(paragraphSpacing: 4)
+    private static let bodyParagraphStyle = paragraphStyle(paragraphSpacing: 0)
 
-    private static func bodyParagraphStyle() -> NSParagraphStyle {
+    private static func paragraphStyle(paragraphSpacing: CGFloat) -> NSParagraphStyle {
         let style = NSMutableParagraphStyle()
         style.lineSpacing = AppTypography.bodyLineSpacing
-        style.paragraphSpacing = 0
-        return style
+        style.paragraphSpacing = paragraphSpacing
+        return (style.copy() as? NSParagraphStyle) ?? style
     }
 
     // MARK: - Debug
