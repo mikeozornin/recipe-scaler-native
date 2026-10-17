@@ -48,14 +48,14 @@ enum AppTypography {
     static var tabBarUIFont: UIFont { uiFont(AppFonts.sans, size: tabBarSize) }
     static var footnoteUIFont: UIFont { uiFont(AppFonts.sans, size: footnoteSize) }
 
-    static func sans(_ size: CGFloat) -> Font { Font(uiFont(AppFonts.sans, size: size)) }
+    static func sans(_ size: CGFloat) -> Font { font(AppFonts.sans, size: size, fallbackFamily: AppFonts.sans) }
     static func sansMedium(_ size: CGFloat) -> Font {
-        Font(uiFont(AppFonts.sansMedium, size: size, fallbackFamily: AppFonts.sansMedium))
+        font(AppFonts.sansMedium, size: size, fallbackFamily: AppFonts.sansMedium)
     }
     static func display(_ size: CGFloat) -> Font {
-        Font(uiFont(AppFonts.display, size: size, fallbackFamily: AppFonts.display))
+        font(AppFonts.display, size: size, fallbackFamily: AppFonts.display)
     }
-    static func mono(_ size: CGFloat) -> Font { Font(uiFont(AppFonts.mono, size: size, fallbackFamily: AppFonts.mono)) }
+    static func mono(_ size: CGFloat) -> Font { font(AppFonts.mono, size: size, fallbackFamily: AppFonts.mono) }
 
     /// SF Symbol point size only — not for text labels.
     static func iconSize(_ points: CGFloat) -> Font { .system(size: points) }
@@ -65,6 +65,11 @@ enum AppTypography {
         size: CGFloat,
         fallbackFamily: String = AppFonts.sans
     ) -> UIFont {
+        let key = AppFontCache.Key(name: name, size: size, fallbackFamily: fallbackFamily)
+        if let cached = AppFontCache.shared.uiFont(for: key) {
+            return cached
+        }
+
         // Ensure bundled Martian faces are registered with CoreText before any lookup.
         // UIAppFonts registration from Info.plist is lazy and can race with the first
         // ContentView.body evaluation (.environment(\.font, AppTypography.body)).
@@ -75,10 +80,68 @@ enum AppTypography {
                 ?? AppFonts.postScriptName(for: face).flatMap { UIFont(name: $0, size: size) }
         }
 
-        return resolve(name)
-            ?? resolve(fallbackFamily)
+        // Only the requested face is kept: a fallback is resolved again next time,
+        // as before, in case the face was not available yet.
+        if let font = resolve(name) {
+            AppFontCache.shared.store(font, for: key)
+            return font
+        }
+        return resolve(fallbackFamily)
             ?? resolve(AppFonts.sans)
             ?? .systemFont(ofSize: size)
+    }
+
+    /// `Font(uiFont(name, size:, fallbackFamily:))`, reused once the face has resolved.
+    private static func font(_ name: String, size: CGFloat, fallbackFamily: String) -> Font {
+        let key = AppFontCache.Key(name: name, size: size, fallbackFamily: fallbackFamily)
+        if let cached = AppFontCache.shared.font(for: key) {
+            return cached
+        }
+        let font = Font(uiFont(name, size: size, fallbackFamily: fallbackFamily))
+        if AppFontCache.shared.uiFont(for: key) != nil {
+            AppFontCache.shared.store(font, for: key)
+        }
+        return font
+    }
+}
+
+/// Resolved Martian fonts. Text styles are read on every body pass of every label;
+/// resolving the face by name (and wrapping it in a `Font`) each time showed up in scrolling.
+final class AppFontCache: @unchecked Sendable {
+    struct Key: Hashable {
+        let name: String
+        let size: CGFloat
+        let fallbackFamily: String
+    }
+
+    static let shared = AppFontCache()
+
+    private let lock = NSLock()
+    private var uiFonts: [Key: UIFont] = [:]
+    private var fonts: [Key: Font] = [:]
+
+    func uiFont(for key: Key) -> UIFont? {
+        lock.lock()
+        defer { lock.unlock() }
+        return uiFonts[key]
+    }
+
+    func store(_ font: UIFont, for key: Key) {
+        lock.lock()
+        uiFonts[key] = font
+        lock.unlock()
+    }
+
+    func font(for key: Key) -> Font? {
+        lock.lock()
+        defer { lock.unlock() }
+        return fonts[key]
+    }
+
+    func store(_ font: Font, for key: Key) {
+        lock.lock()
+        fonts[key] = font
+        lock.unlock()
     }
 }
 

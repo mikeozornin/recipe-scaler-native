@@ -42,10 +42,7 @@ enum RecipeDescriptionBlockTypography {
             case .heading: return AppFonts.display
             }
         }()
-        guard let descriptor = UIFont(name: family, size: size)?.fontDescriptor.withSymbolicTraits(.traitItalic) else {
-            return nil
-        }
-        return UIFont(descriptor: descriptor, size: size)
+        return RecipeDescriptionItalicFontCache.shared.italicFont(family: family, size: size)
     }
 
     var fontSize: CGFloat {
@@ -55,6 +52,47 @@ enum RecipeDescriptionBlockTypography {
         case .heading:
             return RecipeDescriptionStyle.bodyFontSize * 1.1
         }
+    }
+}
+
+/// Italic variants for description runs, built once per face and size instead of per run.
+final class RecipeDescriptionItalicFontCache: @unchecked Sendable {
+    private struct Key: Hashable {
+        let family: String
+        let size: CGFloat
+    }
+
+    static let shared = RecipeDescriptionItalicFontCache()
+
+    private let lock = NSLock()
+    /// `nil` value: the face exists but has no italic.
+    private var fonts: [Key: UIFont?] = [:]
+
+    func italicFont(family: String, size: CGFloat) -> UIFont? {
+        let key = Key(family: family, size: size)
+        lock.lock()
+        if let cached = fonts[key] {
+            lock.unlock()
+            return cached
+        }
+        lock.unlock()
+
+        // A missing face is not stored, so a later call can still find it.
+        guard let base = UIFont(name: family, size: size) else {
+            return nil
+        }
+        let italic = Self.makeItalicFont(from: base, size: size)
+        lock.lock()
+        fonts[key] = .some(italic)
+        lock.unlock()
+        return italic
+    }
+
+    static func makeItalicFont(from base: UIFont, size: CGFloat) -> UIFont? {
+        guard let descriptor = base.fontDescriptor.withSymbolicTraits(.traitItalic) else {
+            return nil
+        }
+        return UIFont(descriptor: descriptor, size: size)
     }
 }
 
