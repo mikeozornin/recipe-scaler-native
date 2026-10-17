@@ -24,7 +24,7 @@
 
 - `VkusvillService`, MCP `mcp.vkusvill.ru`, `McpVkusvillToolsProvider`, allowlist тулов, кэш, rate limit, kill-switch `VKUSVILL_DISABLED`.
 - Сессия корзины `vkusvillCart` в metadata, инжект `<vkusvill_cart_state>`, system prompt / domain guard.
-- Отдельный UI предпросмотра товаров, цены, карточки, native MCP-клиент, `VkusvillAPI.swift`, `/api/vkusvill/*`.
+- Отдельный UI предпросмотра товаров, цены, карточки, native MCP-клиент, `VkusvillAPI.swift`, `/api/vkusvill/*` для каталога и корзины. Исключение — вход в аккаунт Вкусвилла (FR-VV-007, web spec 083).
 - Публичный MCP-транспорт Recipe Scaler, Watch / widgets / Share Extension.
 - Изменение server domain guard или tool-loop — только если всплывёт регрессия; фикс на сервере.
 
@@ -168,7 +168,7 @@ Web-прототип: кнопка на списке → ассистент → 
 
 ### FR-VV-004 — Нет native Vkusvill backend
 
-Запрещены: прямой MCP, отдельные REST match/cart, локальный матчинг, sheet предпросмотра. Только settings + UI entry + существующий assistant client.
+Запрещены: прямой MCP, отдельные REST match/cart, локальный матчинг, sheet предпросмотра. Только settings + UI entry + существующий assistant client + вход в аккаунт (FR-VV-007).
 
 ### FR-VV-005 — Локализация
 
@@ -182,6 +182,22 @@ Web-прототип: кнопка на списке → ассистент → 
 | `vkusvill.assistant-prompt` | Собери корзину во Вкусвилле из моего списка покупок | Build a Vkusvill cart from my shopping list |
 
 Tool-status: клиент мапит `toolName` из NDJSON `tool-start` → i18n-ключи `assistant.tool-status.*` (как web). Механизм — [`073-assistant-tool-status`](../073-assistant-tool-status/spec.md); Vkusvill: `assistant.tool-status.vkusvill-*`.
+
+### FR-VV-007 — Вход в аккаунт Вкусвилла
+
+Канон: [`recipe-scaler-web/specs/083-vkusvill-oauth`](../../../recipe-scaler-web/specs/083-vkusvill-oauth/spec.md) (сервер + UI). OAuth ведёт сервер; приложение открывает authorize URL и пересылает `code`/`state` на сервер.
+
+- Секция «Вкусвилл» (вариант B прототипа): тогл без входа — анонимный режим; при включённом тогле под ним строки входа. Везде «Войти», не «Подключить».
+- Без входа: «Войти в аккаунт Вкусвилла», под секцией — «Ассистент учтёт наличие товаров по вашему адресу и ваши покупки.»
+- Вход выполнен: «Аккаунт Вкусвилла · Вход выполнен <дата>» (год — только не текущий) и «Выйти из аккаунта Вкусвилла» без подтверждения.
+- `personalized: false` — оранжевое предупреждение: адрес доставки не выбран во Вкусвилле. `reconnect_required` — «Нужно войти заново», кнопки «Войти заново» и «Выйти», пояснение под секцией.
+- Строки входа скрыты при `available: false`; пока статус не загружен, видна кнопка входа. Ошибка статуса не показывается.
+- Вход: SwiftUI `WebAuthenticationSession` с `.ephemeral` — сразу страница Вкусвилла, без системного диалога «„Recipe Scaler“ хочет использовать … для входа» (решение владельца). Callback — `DeepLinkURL.baseScheme`, host `vkusvill-oauth`.
+- Отмена и `error=access_denied` молча возвращают в настройки. Ошибки (`vkusvill.account.error.*`, сеть — `account.error.unreachable`) — красный текст под секцией.
+- Выключение тогла: сервер выходит из аккаунта в `PUT /api/settings`; клиент сразу скрывает строки и перечитывает статус после сохранения.
+- Офлайн — «Войти» и «Выйти» неактивны.
+- API: `POST /api/v1/vkusvill/oauth/start` (`client: "native"`, `native_scheme`), `POST …/oauth/complete`, `GET`/`DELETE /api/v1/vkusvill/connection`. Код ошибки читается из поля `code`.
+- Accessibility ids: `vkusvill_sign_in`, `vkusvill_sign_out`, `vkusvill_account_status`, `vkusvill_account_error`.
 
 ### FR-VV-006 — Документация
 
@@ -208,7 +224,10 @@ Tool-status: клиент мапит `toolName` из NDJSON `tool-start` → i18
 |------|-----------|
 | `Services/AccountAPI.swift` | `vkusvillEnabled` в DTO; `updateVkusvillEnabled` |
 | `ViewModels/AccountSettingsViewModel.swift` | load/toggle + online |
-| `Views/AccountView.swift` (+ опц. `VkusvillConnectionView.swift`) | секция тогла |
+| `Views/AccountView.swift` | встраивает `VkusvillSettingsSection` |
+| `Views/VkusvillSettingsSection.swift` | тогл + строки входа (FR-VV-007) |
+| `ViewModels/VkusvillAccountViewModel.swift` | статус, вход, выход (FR-VV-007) |
+| `Services/VkusvillAccountAPI.swift` | `/api/v1/vkusvill/*`, разбор callback (FR-VV-007) |
 | `Views/ShoppingListView.swift` | toolbar button |
 | `Views/AppShellView.swift` / `AssistantSheet.swift` | open-with-message + new thread + deferred send |
 | `AccessibilityIdentifiers.swift` | `vkusvillBuyButton`, `vkusvillToggle` |

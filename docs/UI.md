@@ -201,6 +201,14 @@ offline or while the account setting is loading. The shared flag is owned by the
 app container so the Shopping List toolbar updates without reopening Profile. Its
 toggle uses a dedicated localized connection label.
 
+With the toggle on, the same section shows the Vkusvill account rows (spec 072
+FR-VV-007): «Войти в аккаунт Вкусвилла» when signed out; a status row with the
+sign-in date, a green check (orange warning when Vkusvill revoked access) and a
+destructive «Выйти» row without confirmation when signed in. The footer says what
+the assistant takes into account, or warns about a missing delivery address or revoked
+access; errors appear in red above it. Sign-in opens the Vkusvill page in an
+ephemeral web authentication session, so no system sign-in prompt appears.
+
 ### Shopping list
 
 Header matches Recipes: large title with sort segment in the collapsible search slot (`UISearchController` / `UISearchBar` pattern — SwiftUI has no separate API for a custom block under large title).

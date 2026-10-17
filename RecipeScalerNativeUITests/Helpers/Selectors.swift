@@ -76,6 +76,10 @@ enum UIA {
     static let accountTelegramCopy = "account_telegram_copy"
     static let accountTelegramRefresh = "account_telegram_refresh"
     static let vkusvillToggle = "vkusvill_toggle"
+    static let vkusvillSignIn = "vkusvill_sign_in"
+    static let vkusvillSignOut = "vkusvill_sign_out"
+    static let vkusvillAccountStatus = "vkusvill_account_status"
+    static let vkusvillAccountError = "vkusvill_account_error"
     static let accountTimerNotificationsToggle = "account_timer_notifications_toggle"
     /// «Открывать ассистента встряхиванием» — iPhone only (spec 081: no shake on the iPad).
     static let accountShakeOpenAssistantToggle = "account_shake_open_assistant_toggle"

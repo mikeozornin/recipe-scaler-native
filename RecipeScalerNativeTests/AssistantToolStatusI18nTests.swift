@@ -33,6 +33,7 @@ final class AssistantToolStatusI18nTests: XCTestCase {
             ("change_shopping_items_status", "assistant.tool-status.change-items-status"),
             ("vkusvill_search_products", "assistant.tool-status.vkusvill-search-products"),
             ("vkusvill_create_cart_link", "assistant.tool-status.vkusvill-create-cart-link"),
+            ("vkusvill_order_history", "assistant.tool-status.vkusvill-order-history"),
         ]
 
         for (toolName, expectedKey) in cases {

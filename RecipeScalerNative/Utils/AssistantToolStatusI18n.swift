@@ -54,6 +54,8 @@ enum AssistantToolStatusI18n {
             return "assistant.tool-status.vkusvill-search-products"
         case "vkusvill_create_cart_link":
             return "assistant.tool-status.vkusvill-create-cart-link"
+        case "vkusvill_order_history":
+            return "assistant.tool-status.vkusvill-order-history"
         default:
             return "assistant.tool-status.generic"
         }

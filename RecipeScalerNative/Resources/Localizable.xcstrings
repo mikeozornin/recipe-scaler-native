@@ -4935,6 +4935,23 @@
         }
       }
     },
+    "assistant.tool-status.vkusvill-order-history": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking your Vkusvill orders…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Смотрю ваши заказы во Вкусвилле…"
+          }
+        }
+      }
+    },
     "assistant.tool-status.vkusvill-search-products": {
       "extractionState": "stale",
       "localizations": {
@@ -15105,6 +15122,278 @@
         }
       }
     },
+    "vkusvill.account.connected-footer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The assistant takes into account product availability at your address and your purchases."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ассистент учитывает наличие товаров по вашему адресу и ваши покупки."
+          }
+        }
+      }
+    },
+    "vkusvill.account.consent-footer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The assistant will take into account product availability at your address and your purchases."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ассистент учтёт наличие товаров по вашему адресу и ваши покупки."
+          }
+        }
+      }
+    },
+    "vkusvill.account.error.not-configured": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signing in to Vkusvill is unavailable right now. Try again later."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вход во Вкусвилл сейчас недоступен. Попробуйте позже."
+          }
+        }
+      }
+    },
+    "vkusvill.account.error.sign-in-expired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in to Vkusvill didn't finish. Try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вход во Вкусвилл не завершился. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "vkusvill.account.error.sign-in-failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't sign in to Vkusvill. Try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось войти во Вкусвилл. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "vkusvill.account.error.sign-out-failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't sign out of Vkusvill. Try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось выйти из аккаунта Вкусвилла. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "vkusvill.account.error.unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't sign in: Vkusvill didn't respond. Try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось войти: Вкусвилл не ответил. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "vkusvill.account.no-address-footer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No delivery address is selected in Vkusvill, so stock isn't checked. Choose an address in the Vkusvill app — your purchases are already taken into account."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Во Вкусвилле не выбран адрес доставки, поэтому наличие не проверяется. Выберите адрес в приложении Вкусвилла — покупки ассистент уже учитывает."
+          }
+        }
+      }
+    },
+    "vkusvill.account.reconnect-footer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vkusvill revoked access — for example, after you signed out on all devices. Until you sign in again, the assistant picks products without checking stock or your purchases."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вкусвилл отозвал доступ — например, после выхода из аккаунта на всех устройствах. Пока вы не войдёте заново, ассистент подбирает товары без учёта наличия и покупок."
+          }
+        }
+      }
+    },
+    "vkusvill.account.reconnect-required": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed out by Vkusvill"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нужно войти заново"
+          }
+        }
+      }
+    },
+    "vkusvill.account.sign-in": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to Vkusvill"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Войти в аккаунт Вкусвилла"
+          }
+        }
+      }
+    },
+    "vkusvill.account.sign-in-again": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in again"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Войти заново"
+          }
+        }
+      }
+    },
+    "vkusvill.account.sign-out": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out of Vkusvill"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выйти из аккаунта Вкусвилла"
+          }
+        }
+      }
+    },
+    "vkusvill.account.signed-in": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed in"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вход выполнен"
+          }
+        }
+      }
+    },
+    "vkusvill.account.signed-in-at": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed in on %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вход выполнен %@"
+          }
+        }
+      }
+    },
+    "vkusvill.account.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vkusvill account"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Аккаунт Вкусвилла"
+          }
+        }
+      }
+    },
     "vkusvill.assistant-prompt": {
       "extractionState": "stale",
       "localizations": {
@@ -15167,6 +15456,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вкусвилл"
+          }
+        }
+      }
+    },
+    "vkusvill.settings-toggle-footer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The “Buy at Vkusvill” button in the shopping list and product picks by the assistant."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кнопка «Купить во Вкусвилле» в списке покупок и подбор товаров ассистентом."
           }
         }
       }

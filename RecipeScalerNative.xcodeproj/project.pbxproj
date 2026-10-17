@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		VKACCT0A2B3C4D5E6F709008 /* VkusvillAccountTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = VKACCT0A2B3C4D5E6F709007 /* VkusvillAccountTests.swift */; };
+		VKACCT0A2B3C4D5E6F709006 /* VkusvillSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = VKACCT0A2B3C4D5E6F709005 /* VkusvillSettingsSection.swift */; };
+		VKACCT0A2B3C4D5E6F709004 /* VkusvillAccountViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = VKACCT0A2B3C4D5E6F709003 /* VkusvillAccountViewModel.swift */; };
+		VKACCT0A2B3C4D5E6F709002 /* VkusvillAccountAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = VKACCT0A2B3C4D5E6F709001 /* VkusvillAccountAPI.swift */; };
 		0815642EC1F8F481A4E051DF /* IPadRecipesSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081A85171151F7AAC6D5F40A /* IPadRecipesSpec.swift */; };
 		0813971944D613633CE0F999 /* YDocRecipeDetailColumns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0810E26824E331FAC2A2A356 /* YDocRecipeDetailColumns.swift */; };
 		081F5ED17C0E5E55E55E0002 /* YDocRecipeDetailIPadEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 081F5ED17C0E5E55E55E0001 /* YDocRecipeDetailIPadEdit.swift */; };
@@ -883,6 +887,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		VKACCT0A2B3C4D5E6F709007 /* VkusvillAccountTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VkusvillAccountTests.swift; sourceTree = "<group>"; };
+		VKACCT0A2B3C4D5E6F709005 /* VkusvillSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VkusvillSettingsSection.swift; sourceTree = "<group>"; };
+		VKACCT0A2B3C4D5E6F709003 /* VkusvillAccountViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VkusvillAccountViewModel.swift; sourceTree = "<group>"; };
+		VKACCT0A2B3C4D5E6F709001 /* VkusvillAccountAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VkusvillAccountAPI.swift; sourceTree = "<group>"; };
 		081A85171151F7AAC6D5F40A /* IPadRecipesSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadRecipesSpec.swift; sourceTree = "<group>"; };
 		0810E26824E331FAC2A2A356 /* YDocRecipeDetailColumns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YDocRecipeDetailColumns.swift; sourceTree = "<group>"; };
 		081F5ED17C0E5E55E55E0001 /* YDocRecipeDetailIPadEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YDocRecipeDetailIPadEdit.swift; sourceTree = "<group>"; };
@@ -1836,6 +1844,7 @@
 				E5F60718293A4B7017DF9B12 /* DiscoverRootView.swift */,
 				E5F60718293A4B701A1B2001 /* Discover */,
 				E5F60718293A4B70344FA5B3 /* AccountView.swift */,
+				VKACCT0A2B3C4D5E6F709005 /* VkusvillSettingsSection.swift */,
 				D1A100000000000000000004 /* AccountTipsSection.swift */,
 				FB065VW00000000000000004 /* AccountFeedbackView.swift */,
 				B041LGB002 /* LegacyAuthBannerView.swift */,
@@ -2102,6 +2111,7 @@
 				A14001A00000000000000001A /* FeatureAdoptionGuideContentTests.swift */,
 				A1B2C3D4E5F60718293A4C03 /* AppShellCoordinatorTests.swift */,
 				VKSTOR001A2B3C4D5E6F70800 /* VkusvillSettingsStoreTests.swift */,
+				VKACCT0A2B3C4D5E6F709007 /* VkusvillAccountTests.swift */,
 				A05700000202 /* NativeFormatDetectorTests.swift */,
 				A05700000203 /* RecipeFileImportCoordinatorTests.swift */,
 				SRTIPTEST0002AA0002BB02 /* ShoppingRemindersTipPreferencesTests.swift */,
@@ -2328,6 +2338,7 @@
 				MIK200008000 /* Discover */,
 				E5F60718293A4B70DEF84A4B /* AccountSettingsViewModel.swift */,
 				E5TELEVM01A293A4B70100002 /* TelegramConnectionViewModel.swift */,
+				VKACCT0A2B3C4D5E6F709003 /* VkusvillAccountViewModel.swift */,
 				FB065MD00000000000000004 /* AccountFeedbackModel.swift */,
 				E5F60718293A4B7000000093 /* RecipeListSearchStore.swift */,
 				DD2201AABB000200000002 /* RecipeDetailViewModel.swift */,
@@ -2557,6 +2568,7 @@
 				08197448984D2DDF73D2BEE5 /* AssistantSessionModel.swift */,
 				E5F60718293A4B70ED0922D8 /* AssistantModels.swift */,
 				E5F60718293A4B705F98774E /* TelegramAPI.swift */,
+				VKACCT0A2B3C4D5E6F709001 /* VkusvillAccountAPI.swift */,
 				C45A57EDAC270C757266F8FA /* AuthService.swift */,
 				A0A052C8D8B8477FA14D812A /* WatchCredentialsBridge.swift */,
 				APURL0001000200030004000A2 /* AppURLSession.swift */,
@@ -3524,6 +3536,7 @@
 				A5VLM01293A4B7010000001 /* AssistantVoiceLevelMeter.swift in Sources */,
 				E5F60718293A4B70D7CEFCAD /* AssistantModels.swift in Sources */,
 				E5F60718293A4B70811A7C4D /* TelegramAPI.swift in Sources */,
+				VKACCT0A2B3C4D5E6F709002 /* VkusvillAccountAPI.swift in Sources */,
 				E5F60718293A4B705777B4EE /* AppShellView.swift in Sources */,
 				E5F60718293A4B7078685F7E /* ShoppingListView.swift in Sources */,
 				E5F60718293A4B70CD074276 /* ImportRecipeSheet.swift in Sources */,
@@ -3539,6 +3552,7 @@
 				FF072FEEDVIEW1B293A4B701 /* DiscoverFeedView.swift in Sources */,
 				E5F60718293A4B70A1B2C3D /* RecipeReader.swift in Sources */,
 				E5F60718293A4B704A70CD0B /* AccountView.swift in Sources */,
+				VKACCT0A2B3C4D5E6F709006 /* VkusvillSettingsSection.swift in Sources */,
 				D1A100000000000000000003 /* AccountTipsSection.swift in Sources */,
 				FB065VW00000000000000003 /* AccountFeedbackView.swift in Sources */,
 				B041LGB001 /* LegacyAuthBannerView.swift in Sources */,
@@ -3580,6 +3594,7 @@
 				E5F60718293A4B7002D26536 /* RecipeDescriptionTimerReference.swift in Sources */,
 				E5F60718293A4B7052E764B6 /* AccountSettingsViewModel.swift in Sources */,
 				E5TELEVM01A293A4B70100001 /* TelegramConnectionViewModel.swift in Sources */,
+				VKACCT0A2B3C4D5E6F709004 /* VkusvillAccountViewModel.swift in Sources */,
 				FB065MD00000000000000003 /* AccountFeedbackModel.swift in Sources */,
 				E5F60718293A4B70F68BDA71 /* AppThemePreference.swift in Sources */,
 				078A1A049E3DD14F0D6264A3 /* DeviceShakeDetector.swift in Sources */,
@@ -3726,6 +3741,7 @@
 				0AA74079F595F0F1A020DDC1 /* RecipeScalerNativeTests.swift in Sources */,
 				A1B2C3D4E5F60718293A4C04 /* AppShellCoordinatorTests.swift in Sources */,
 				VKSTOR001A2B3C4D5E6F70801 /* VkusvillSettingsStoreTests.swift in Sources */,
+				VKACCT0A2B3C4D5E6F709008 /* VkusvillAccountTests.swift in Sources */,
 				A05700000210 /* NativeFormatDetectorTests.swift in Sources */,
 				A05700000220 /* RecipeFileImportCoordinatorTests.swift in Sources */,
 				SRTIPTEST0001AA0001BB01 /* ShoppingRemindersTipPreferencesTests.swift in Sources */,

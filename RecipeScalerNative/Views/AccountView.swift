@@ -539,21 +539,16 @@ struct AccountView: View {
     @ViewBuilder
     private var vkusvillSection: some View {
         if appLanguage == .ru {
-            Section {
-                Toggle(isOn: Binding(
-                    get: { vkusvillSettings.enabled },
-                    set: { value in
-                        Task { @MainActor in await viewModel.setVkusvillEnabled(value) }
-                    }
-                )) {
-                    Text("vkusvill.settings-toggle-title").appBody()
+            VkusvillSettingsSection(
+                isEnabled: vkusvillSettings.enabled,
+                isToggleDisabled: !viewModel.isOnline || vkusvillSettings.isLoading || vkusvillSettings.isUpdating,
+                isUpdatingToggle: vkusvillSettings.isUpdating,
+                isOnline: viewModel.isOnline,
+                refreshTick: refreshTick,
+                onToggle: { value in
+                    Task { @MainActor in await viewModel.setVkusvillEnabled(value) }
                 }
-                .disabled(!viewModel.isOnline || vkusvillSettings.isLoading || vkusvillSettings.isUpdating)
-                .accessibilityIdentifier(AccessibilityIdentifiers.vkusvillToggle)
-            } header: {
-                AppSectionHeader("vkusvill.settings-title")
-            }
-            .appListSectionHeaderStyle()
+            )
         }
     }
 
