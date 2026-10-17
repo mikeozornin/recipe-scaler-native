@@ -149,7 +149,10 @@ struct VkusvillSettingsSection: View {
         if !showsAccountRows {
             Text("vkusvill.settings-toggle-footer").appFootnote()
         } else if model.needsReconnect {
-            warningNote("vkusvill.account.reconnect-footer")
+            // The status row above already shows the warning icon.
+            Text("vkusvill.account.reconnect-footer")
+                .appFootnote()
+                .foregroundStyle(.orange)
         } else if model.hasNoDeliveryAddress {
             warningNote("vkusvill.account.no-address-footer")
         } else if model.isConnected {

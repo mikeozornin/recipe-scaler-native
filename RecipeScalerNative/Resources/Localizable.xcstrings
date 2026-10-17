@@ -15264,13 +15264,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vkusvill revoked access — for example, after you signed out on all devices. Until you sign in again, the assistant picks products without checking stock or your purchases."
+            "value": "Vkusvill asks you to sign in again. Until you do, the assistant will build your cart without taking your address into account."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вкусвилл отозвал доступ — например, после выхода из аккаунта на всех устройствах. Пока вы не войдёте заново, ассистент подбирает товары без учёта наличия и покупок."
+            "value": "Вкусвилл просит, чтобы вы вошли заново. Пока вы не войдёте, Ассистент будет собирать корзину без учёта вашего адреса."
           }
         }
       }
