@@ -268,6 +268,7 @@ struct RecipeListView: View {
                 .listSectionSpacing(0)
                 .environment(\.defaultMinListRowHeight, 1)
                 .accessibilityIdentifier(AccessibilityIdentifiers.recipeList)
+                .onAppear { PerfMark.once("recipes_visible") }
             }
             }
         }

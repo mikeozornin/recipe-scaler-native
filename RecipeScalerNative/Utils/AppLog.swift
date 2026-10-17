@@ -296,3 +296,61 @@ enum AppLog {
     }
     #endif
 }
+
+/// Launch and navigation milestones for `scripts/measure-perf.sh`. Each milestone logs one
+/// unified-log line (category `perf`) and an Instruments signpost, once per process:
+/// `perf_mark <name> t=<ms since process start> idle=<ms when the main run loop next went idle>`.
+/// `idle` covers the synchronous work queued behind the mark (body, layout, commit).
+@MainActor
+enum PerfMark {
+    private nonisolated static let logger = Logger(subsystem: "com.recipescaler.native", category: "perf")
+    private nonisolated static let signposter = OSSignposter(logger: logger)
+    private static var reported: Set<String> = []
+    private static var intervals: [String: ContinuousClock.Instant] = [:]
+
+    /// Reports `name` the first time it is reached in this process.
+    static func once(_ name: String) {
+        guard reported.insert(name).inserted else { return }
+        let t = millisecondsSinceProcessStart()
+        signposter.emitEvent("milestone", "\(name, privacy: .public)")
+        whenMainRunLoopIdle { idle in
+            logger.notice("perf_mark \(name, privacy: .public) t=\(t, privacy: .public) idle=\(idle, privacy: .public)")
+        }
+    }
+
+    /// Starts a user-interaction interval, e.g. a tap that opens a recipe. A later `begin` restarts it.
+    static func begin(_ name: String) {
+        intervals[name] = .now
+    }
+
+    /// Ends the interval started by `begin`; no-op when none is running.
+    static func end(_ name: String) {
+        guard let start = intervals.removeValue(forKey: name) else { return }
+        let ms = Int((ContinuousClock.now - start) / .milliseconds(1))
+        whenMainRunLoopIdle { _ in
+            let idle = Int((ContinuousClock.now - start) / .milliseconds(1))
+            logger.notice("perf_interval \(name, privacy: .public) ms=\(ms, privacy: .public) idle=\(idle, privacy: .public)")
+        }
+    }
+
+    /// Milliseconds since the kernel created this process, so pre-main (dyld) time is included.
+    nonisolated static func millisecondsSinceProcessStart() -> Int {
+        var info = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]
+        guard sysctl(&mib, u_int(mib.count), &info, &size, nil, 0) == 0 else { return -1 }
+        let start = info.kp_proc.p_un.__p_starttime
+        let startSeconds = Double(start.tv_sec) + Double(start.tv_usec) / 1_000_000
+        return Int((Date().timeIntervalSince1970 - startSeconds) * 1000)
+    }
+
+    private static func whenMainRunLoopIdle(_ report: @escaping @MainActor (Int) -> Void) {
+        let observer = CFRunLoopObserverCreateWithHandler(
+            nil, CFRunLoopActivity.beforeWaiting.rawValue, false, Int.max
+        ) { observer, _ in
+            CFRunLoopRemoveObserver(CFRunLoopGetMain(), observer, .commonModes)
+            MainActor.assumeIsolated { report(millisecondsSinceProcessStart()) }
+        }
+        CFRunLoopAddObserver(CFRunLoopGetMain(), observer, .commonModes)
+    }
+}

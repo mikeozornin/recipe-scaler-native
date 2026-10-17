@@ -46,11 +46,16 @@ struct CollectionsRootView: View {
             ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
                 .mobileTimerPanelBottomPadding()
         } else {
-            switch layout {
-            case .list:
-                listContent
-            case .folders:
-                gridContent
+            Group {
+                switch layout {
+                case .list:
+                    listContent
+                case .folders:
+                    gridContent
+                }
+            }
+            .onChange(of: syncService.collectionIndex.live.isEmpty, initial: true) { _, isEmpty in
+                if !isEmpty { PerfMark.once("recipes_visible") }
             }
         }
     }

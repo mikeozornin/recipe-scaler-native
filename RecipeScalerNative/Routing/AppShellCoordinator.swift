@@ -78,6 +78,9 @@ final class AppShellCoordinator {
     /// the same selection through `RecipesSelection` (spec 081, plan.md Р4). Never serialized.
     var recipesPath: [RecipesRoute] = [] {
         didSet {
+            if recipesPath.count > oldValue.count, case .recipe = recipesPath.last {
+                PerfMark.begin("recipe_open")
+            }
             // The reflow's pop right after a layout change: the edit's view is being
             // rebuilt, and the keeper decides (`recipesStackPathToRestore`).
             guard !(recipesPath.isEmpty && isRecipesStackRestoreArmed()) else { return }

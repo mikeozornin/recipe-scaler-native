@@ -3933,6 +3933,7 @@ final class YjsSyncService {
             // unchanged skip the rebuild (sorts of every folder) on the main actor.
             if collectionEntries != filtered {
                 collectionEntries = filtered
+                if !filtered.isEmpty { PerfMark.once("recipes_loaded") }
                 let newIndex = CollectionRecipesIndexBuilder.build(from: filtered)
                 if collectionIndex != newIndex {
                     collectionIndex = newIndex

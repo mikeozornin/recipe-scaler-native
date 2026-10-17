@@ -605,6 +605,11 @@ struct YDocRecipeDetailView: View {
             }
             applyStartDescriptionEditIfNeeded()
         }
+        .onChange(of: recipe != nil, initial: true) { _, loaded in
+            guard loaded else { return }
+            PerfMark.end("recipe_open")
+            PerfMark.once("recipe_visible")
+        }
         .onChange(of: syncService.currentRecipe?.id) { _, loadedId in
             guard loadedId == recipeId else { return }
             applyStartInEditModeIfNeeded()

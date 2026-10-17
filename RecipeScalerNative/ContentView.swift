@@ -232,6 +232,7 @@ struct ContentView: View {
             #endif
         }
         .task(id: effectiveUserId) {
+            PerfMark.once("shell_visible")
             #if DEBUG
             if ShoppingSmokeTest.shouldRun { return }
             AgentSyncDebugLog.sync(
