@@ -615,13 +615,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Permanently delete your account and all data associated with it."
+            "value": "Permanently delete your account and all data associated with it"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Навсегда удалить аккаунт и все связанные с ним данные."
+            "value": "Навсегда удалить аккаунт и все связанные с ним данные"
           }
         }
       }
@@ -864,13 +864,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The diagnostic log is only created in debug builds while the app is running."
+            "value": "The diagnostic log is only created in debug builds while the app is running"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Журнал создаётся только в отладочной сборке во время работы приложения."
+            "value": "Журнал создаётся только в отладочной сборке во время работы приложения"
           }
         }
       }
@@ -897,13 +897,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Where the connector URL lives in popular assistants."
+            "value": "Where the connector URL lives in popular assistants"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Где находится адрес коннектора в популярных ассистентах."
+            "value": "Где находится адрес коннектора в популярных ассистентах"
           }
         }
       }
@@ -1441,13 +1441,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Example questions you can ask the assistant."
+            "value": "Example questions you can ask the assistant"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Примеры вопросов, которые можно задать ассистенту."
+            "value": "Примеры вопросов, которые можно задать ассистенту"
           }
         }
       }
@@ -2774,13 +2774,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Access to Reminders is blocked. Enable it in Settings → Privacy & Security → Reminders."
+            "value": "Access to Reminders is blocked. Enable it in Settings → Privacy & Security → Reminders"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Доступ к Напоминаниям заблокирован. Включите в Настройках → Конфиденциальность → Напоминания."
+            "value": "Доступ к Напоминаниям заблокирован. Включите в Настройках → Конфиденциальность → Напоминания"
           }
         }
       }
@@ -3328,13 +3328,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Notifications are blocked. Enable them in Settings."
+            "value": "Notifications are blocked. Enable them in Settings"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Уведомления заблокированы. Включите их в Настройках системы."
+            "value": "Уведомления заблокированы. Включите их в Настройках системы"
           }
         }
       }
@@ -3344,13 +3344,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Push notifications are also required to update the timer widget and Live Activities in the background."
+            "value": "Push notifications are also required to update the timer widget and Live Activities in the background"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Уведомления также нужны, чтобы виджет таймера и Live Activities обновлялись в фоне."
+            "value": "Уведомления также нужны, чтобы виджет таймера и Live Activities обновлялись в фоне"
           }
         }
       }
@@ -8928,13 +8928,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Illustrative conversation. The external assistant interface may look different."
+            "value": "Illustrative conversation. The external assistant interface may look different"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пример диалога. Интерфейс внешнего ассистента может отличаться."
+            "value": "Пример диалога. Интерфейс внешнего ассистента может отличаться"
           }
         }
       }
@@ -9064,13 +9064,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A short visual guide to the next action."
+            "value": "A short visual guide to the next action"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Короткая схема следующего действия."
+            "value": "Короткая схема следующего действия"
           }
         }
       }
@@ -9081,13 +9081,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The next screen belongs to another app and may change over time."
+            "value": "The next screen belongs to another app and may change over time"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Следующий экран принадлежит другому приложению и со временем может измениться."
+            "value": "Следующий экран принадлежит другому приложению и со временем может измениться"
           }
         }
       }
@@ -11720,13 +11720,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connect to the internet to upload a photo."
+            "value": "Connect to the internet to upload a photo"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Подключитесь к интернету, чтобы загрузить фото."
+            "value": "Подключитесь к интернету, чтобы загрузить фото"
           }
         }
       }
@@ -13634,13 +13634,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Offline: %lld full images not cached yet. Connect to download."
+            "value": "Offline: %lld full images not cached yet. Connect to download"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Офлайн: не в кэше %lld полных фото. Подключитесь для загрузки."
+            "value": "Офлайн: не в кэше %lld полных фото. Подключитесь для загрузки"
           }
         }
       }
@@ -13651,13 +13651,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Some images are still downloading or failed. Tap Retry below."
+            "value": "Some images are still downloading or failed. Tap Retry below"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Часть фото ещё качается или не загрузилась. Нажмите «Повторить» ниже."
+            "value": "Часть фото ещё качается или не загрузилась. Нажмите «Повторить» ниже"
           }
         }
       }
@@ -13787,13 +13787,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%d recipes are not available offline. Connect to sync them."
+            "value": "%d recipes are not available offline. Connect to sync them"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%d рецепта недоступны офлайн. Подключитесь к сети для загрузки."
+            "value": "%d рецепта недоступны офлайн. Подключитесь к сети для загрузки"
           }
         }
       }
@@ -13804,13 +13804,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%d recipes are not available offline. Connect to sync them."
+            "value": "%d recipes are not available offline. Connect to sync them"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%d рецептов недоступны офлайн. Подключитесь к сети для загрузки."
+            "value": "%d рецептов недоступны офлайн. Подключитесь к сети для загрузки"
           }
         }
       }
@@ -13821,13 +13821,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%d recipe is not available offline. Connect to sync it."
+            "value": "%d recipe is not available offline. Connect to sync it"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%d рецепт недоступен офлайн. Подключитесь к сети для загрузки."
+            "value": "%d рецепт недоступен офлайн. Подключитесь к сети для загрузки"
           }
         }
       }
@@ -13838,13 +13838,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recipe data will download in the background."
+            "value": "Recipe data will download in the background"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Данные рецептов загружаются в фоне."
+            "value": "Данные рецептов загружаются в фоне"
           }
         }
       }
@@ -15128,13 +15128,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The assistant takes into account product availability at your address and your purchases."
+            "value": "The assistant takes into account product availability at your address and your purchases"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ассистент учитывает наличие товаров по вашему адресу и ваши покупки."
+            "value": "Ассистент учитывает наличие товаров по вашему адресу и ваши покупки"
           }
         }
       }
@@ -15145,13 +15145,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The assistant will take into account product availability at your address and your purchases."
+            "value": "The assistant will take into account product availability at your address and your purchases"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ассистент учтёт наличие товаров по вашему адресу и ваши покупки."
+            "value": "Ассистент учтёт наличие товаров по вашему адресу и ваши покупки"
           }
         }
       }
@@ -15247,13 +15247,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose a delivery address in Vkusvill to see more accurate product availability."
+            "value": "Choose a delivery address in Vkusvill to see more accurate product availability"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Выберите адрес доставки во Вкусвилле, чтобы увидеть более точное наличие товаров."
+            "value": "Выберите адрес доставки во Вкусвилле, чтобы увидеть более точное наличие товаров"
           }
         }
       }
@@ -15264,13 +15264,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vkusvill asks you to sign in again. Until you do, the assistant will build your cart without taking your address into account."
+            "value": "Vkusvill asks you to sign in again. Until you do, the assistant will build your cart without taking your address into account"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вкусвилл просит, чтобы вы вошли заново. Пока вы не войдёте, Ассистент будет собирать корзину без учёта вашего адреса."
+            "value": "Вкусвилл просит, чтобы вы вошли заново. Пока вы не войдёте, Ассистент будет собирать корзину без учёта вашего адреса"
           }
         }
       }
@@ -15466,13 +15466,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The “Buy at Vkusvill” button in the shopping list and product picks by the assistant."
+            "value": "The “Buy at Vkusvill” button in the shopping list and product picks by the assistant"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Кнопка «Купить во Вкусвилле» в списке покупок и подбор товаров ассистентом."
+            "value": "Кнопка «Купить во Вкусвилле» в списке покупок и подбор товаров ассистентом"
           }
         }
       }
@@ -15712,13 +15712,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "To re-enable, open Watch Settings → Notifications → Recipe Scaler."
+            "value": "To re-enable, open Watch Settings → Notifications → Recipe Scaler"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Чтобы включить, откройте «Настройки часов» → «Уведомления» → Recipe Scaler."
+            "value": "Чтобы включить, откройте «Настройки часов» → «Уведомления» → Recipe Scaler"
           }
         }
       }
@@ -16190,13 +16190,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Allow access to Photos to pick pictures here, or choose them in the system picker."
+            "value": "Allow access to Photos to pick pictures here, or choose them in the system picker"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Разрешите доступ к Фото, чтобы выбирать снимки здесь, или выберите их в системном окне."
+            "value": "Разрешите доступ к Фото, чтобы выбирать снимки здесь, или выберите их в системном окне"
           }
         }
       }
