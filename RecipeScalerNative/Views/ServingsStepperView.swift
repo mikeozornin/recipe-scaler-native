@@ -40,28 +40,39 @@ struct ServingsStepperView: View {
     var body: some View {
         HStack(spacing: 12) {
             Text("edit.servings")
-                .appBody()
+                .font(AppTypography.sans(AppTypography.title3Size))
             Spacer()
-            Button(action: onDecrement) {
-                AppSymbol.image("minus")
-                    .font(AppTypography.iconSize(AppTypography.title3Size))
-            }
-            .disabled(currentServings <= 1 || isLoading)
-            .buttonStyle(.borderless)
+            // −, number and + share one pale accent capsule; the label above already says «Servings».
+            HStack(spacing: 0) {
+                stepButton("minus", disabled: currentServings <= 1 || isLoading, action: onDecrement)
 
-            Text(RecipeServings.formatDisplay(currentServings))
-                .appHeadline()
-                .foregroundStyle(accentColor)
-                .frame(minWidth: 32)
-                .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailServingsValue)
+                Text(RecipeServings.formatDisplay(currentServings))
+                    .font(AppTypography.sansMedium(18))
+                    .monospacedDigit()
+                    .foregroundStyle(accentColor)
+                    .lineLimit(1)
+                    .frame(minWidth: 34)
+                    .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailServingsValue)
 
-            Button(action: onIncrement) {
-                AppSymbol.image("plus")
-                    .font(AppTypography.iconSize(AppTypography.title3Size))
+                stepButton("plus", disabled: currentServings >= 99 || isLoading, action: onIncrement)
             }
-            .disabled(currentServings >= 99 || isLoading)
-            .buttonStyle(.borderless)
+            .frame(height: 36)
+            .background(Capsule().fill(accentColor.opacity(0.13)))
         }
+        .frame(minHeight: 48)
         .padding(.horizontal)
+    }
+
+    private func stepButton(_ symbol: String, disabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            AppSymbol.image(symbol)
+                .font(AppTypography.iconSize(AppTypography.title3Size))
+                .foregroundStyle(accentColor)
+                .frame(width: 34, height: 36)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .disabled(disabled)
+        .opacity(disabled ? 0.3 : 1)
     }
 }
