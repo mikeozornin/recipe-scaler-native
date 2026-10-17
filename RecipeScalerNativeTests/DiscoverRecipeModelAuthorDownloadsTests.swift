@@ -12,6 +12,7 @@
 //    - profile resolves `true` → `true`
 //    - fetch throws → swallowed, `nil` (web parity: stay on the default-on fallback)
 //    - nil / empty username → no fetch at all
+//    - share URL: profile URL once the profile resolves, `/public/{id}` otherwise
 //
 
 import XCTest
@@ -69,5 +70,37 @@ final class DiscoverRecipeModelAuthorDownloadsTests: XCTestCase {
         await model.updateAuthorDownloads(username: "")
 
         XCTAssertNil(model.authorAllowsDownloads)
+    }
+
+    func test_shareURL_profileResolved_usesProfileRecipeURL() async {
+        let model = DiscoverRecipeModel(api: .shared) { _ in true }
+
+        await model.updateAuthorDownloads(username: "author")
+
+        XCTAssertEqual(
+            model.shareURL(recipeId: "abc"),
+            PublicURLBuilder.profileRecipeURL(username: "author", recipeId: "abc")
+        )
+    }
+
+    func test_shareURL_profileFetchFailed_fallsBackToLegacyURL() async {
+        struct FetchError: Error {}
+        let model = DiscoverRecipeModel(api: .shared) { _ in
+            throw FetchError()
+        }
+
+        await model.updateAuthorDownloads(username: "author")
+
+        XCTAssertEqual(
+            model.shareURL(recipeId: "abc"),
+            PublicURLBuilder.recipeShareURL(recipeId: "abc"),
+            "a disabled / missing profile must not produce a /public/@/ link that 404s"
+        )
+    }
+
+    func test_shareURL_noProfileFetch_usesLegacyURL() {
+        let model = DiscoverRecipeModel(api: .shared) { _ in true }
+
+        XCTAssertEqual(model.shareURL(recipeId: "abc"), PublicURLBuilder.recipeShareURL(recipeId: "abc"))
     }
 }

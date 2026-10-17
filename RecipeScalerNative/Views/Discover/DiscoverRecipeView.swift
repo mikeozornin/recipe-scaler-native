@@ -27,6 +27,7 @@ struct DiscoverRecipeView: View {
     @State private var scaleFactor: Double = 1
     @State private var nutritionViewMode: IngredientNutritionViewMode = NutritionViewModeStorage.load()
     @State private var descriptionTimerPopover: DescriptionTimerPopoverState?
+    @State private var showShareSheet = false
 
     private var accentColor: Color {
         if case .loaded(let recipe) = model?.state {
@@ -116,6 +117,26 @@ struct DiscoverRecipeView: View {
         .contentMargins(.horizontal, 0, for: .scrollContent)
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(loadedRecipe?.name.isEmpty == false ? (loadedRecipe?.name ?? "") : "")
+        .toolbar {
+            if loadedRecipe != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showShareSheet = true
+                    } label: {
+                        AppToolbarStyle.iconOnly(systemName: "square.and.arrow.up")
+                    }
+                    .appToolbarIconButton()
+                    .accessibilityLabel(Text("recipe.share"))
+                    .accessibilityIdentifier(AccessibilityIdentifiers.discoverRecipeShareButton)
+                }
+            }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            if let url = model?.shareURL(recipeId: recipeId) {
+                ActivityShareSheet(activityItems: [url])
+                    .presentationDetents([.medium, .large])
+            }
+        }
         .overlay {
             DescriptionTimerPopoverOverlay(
                 state: descriptionTimerPopover,

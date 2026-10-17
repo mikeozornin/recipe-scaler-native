@@ -26,6 +26,11 @@ final class DiscoverRecipeModel {
     /// arrives a moment later. Errors are swallowed (web parity: stay default-on).
     private(set) var authorAllowsDownloads: Bool?
 
+    /// Author's username, set once their public profile loads. The state
+    /// endpoint returns `username` even when the profile is disabled, so only a
+    /// resolved profile proves `/public/@/{username}/{id}` opens.
+    private(set) var authorProfileUsername: String?
+
     private let api: APIClient
     private let fetchAuthorProfile: (String) async throws -> Bool?
 
@@ -62,7 +67,22 @@ final class DiscoverRecipeModel {
     /// Testable seam: injectable fetch, nil/empty username → no request.
     func updateAuthorDownloads(username: String?) async {
         guard let username, !username.isEmpty else { return }
-        authorAllowsDownloads = try? await fetchAuthorProfile(username)
+        do {
+            authorAllowsDownloads = try await fetchAuthorProfile(username)
+            authorProfileUsername = username
+        } catch {
+            authorAllowsDownloads = nil
+        }
+    }
+
+    /// Link for the system share sheet: the profile URL (claimed by Universal
+    /// Links, opens in the app) when the author's profile is public, else the
+    /// legacy `/public/{id}` web page.
+    func shareURL(recipeId: String) -> URL? {
+        if let authorProfileUsername {
+            return PublicURLBuilder.profileRecipeURL(username: authorProfileUsername, recipeId: recipeId)
+        }
+        return PublicURLBuilder.recipeShareURL(recipeId: recipeId)
     }
 
     func clone(recipeId: String, fallbackImageUrl: String?, syncService: YjsSyncService) async {
