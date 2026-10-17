@@ -19,7 +19,10 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> UITextView {
-        let textView = RecipeDescriptionTextView()
+        // TextKit 1 from the start: the timer highlights and tap handling read `layoutManager`,
+        // which switches a TextKit 2 view to TextKit 1 on its first layout anyway. Starting in
+        // TextKit 1 skips the TextKit 2 setup, the first TextKit 2 measurement and the switch.
+        let textView = RecipeDescriptionTextView(usingTextLayoutManager: false)
         textView.isEditable = false
         textView.isScrollEnabled = false
         textView.isSelectable = false
@@ -43,31 +46,48 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
     }
 
     func updateUIView(_ textView: UITextView, context: Context) {
-        context.coordinator.onTimerTap = onTimerTap
-        context.coordinator.textView = textView
+        let coordinator = context.coordinator
+        coordinator.onTimerTap = onTimerTap
+        coordinator.textView = textView
+        // Parent re-renders (servings, timers, collection echo) pass the same content again;
+        // rebuilding the attributed string and diffing it with the text view is wasted work.
+        let content = ContentKey(runs: runs, accentColor: accentColor, typography: typography)
+        guard coordinator.appliedContent != content else { return }
+        coordinator.appliedContent = content
         let styled = Self.attributedString(runs: runs, accentColor: accentColor, typography: typography)
         let highlight = UIColor(accentColor)
-        // Skip no-op writes — parent re-renders (servings, collection echo) used to
-        // reassign identical attributed text and force UITextView layout.
-        if let descriptionTextView = textView as? RecipeDescriptionTextView {
-            if descriptionTextView.timerHighlightColor != highlight {
-                descriptionTextView.timerHighlightColor = highlight
-            }
-            if descriptionTextView.attributedText?.isEqual(to: styled) != true {
-                descriptionTextView.attributedText = styled
-            }
-        } else if textView.attributedText?.isEqual(to: styled) != true {
+        // Skip no-op writes — identical attributed text would still force UITextView layout.
+        if let descriptionTextView = textView as? RecipeDescriptionTextView,
+           descriptionTextView.timerHighlightColor != highlight {
+            descriptionTextView.timerHighlightColor = highlight
+        }
+        if textView.attributedText?.isEqual(to: styled) != true {
             textView.attributedText = styled
+            coordinator.measuredHeights.removeAll()
         }
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
         let width = Self.resolvedMeasureWidth(proposal: proposal, uiView: uiView)
-        uiView.textContainer.size = CGSize(width: width, height: .greatestFiniteMagnitude)
-        let fitting = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
+        let containerSize = CGSize(width: width, height: .greatestFiniteMagnitude)
+        if uiView.textContainer.size != containerSize {
+            uiView.textContainer.size = containerSize
+        }
+        // SwiftUI asks again after every update of the parent; the text only changes in
+        // `updateUIView`, which drops these heights.
+        let coordinator = context.coordinator
+        let fittingHeight: CGFloat
+        if let cached = coordinator.measuredHeights[width] {
+            fittingHeight = cached
+        } else {
+            fittingHeight = ceil(uiView.sizeThatFits(containerSize).height)
+            if coordinator.measuredHeights.count >= Coordinator.measuredHeightsLimit {
+                coordinator.measuredHeights.removeAll()
+            }
+            coordinator.measuredHeights[width] = fittingHeight
+        }
         let minHeight = typography.fontSize * RecipeDescriptionStyle.lineHeightMultiple
-        let height = max(ceil(fitting.height), minHeight)
-        return CGSize(width: width, height: height)
+        return CGSize(width: width, height: max(fittingHeight, minHeight))
     }
 
     /// SwiftUI may call `sizeThatFits` with width `0` or `inf` before layout; measuring at
@@ -84,9 +104,40 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
         return max(220, screenWidth - 64 - 32)
     }
 
+    /// Everything the attributed string is built from.
+    struct ContentKey: Equatable {
+        let runs: [RecipeDescriptionInlineRun]
+        let accentColor: Color
+        let typography: TypographyKey
+
+        init(runs: [RecipeDescriptionInlineRun], accentColor: Color, typography: RecipeDescriptionBlockTypography) {
+            self.runs = runs
+            self.accentColor = accentColor
+            self.typography = TypographyKey(typography)
+        }
+    }
+
+    enum TypographyKey: Equatable {
+        case body
+        case heading(level: Int)
+
+        init(_ typography: RecipeDescriptionBlockTypography) {
+            switch typography {
+            case .body: self = .body
+            case .heading(let level): self = .heading(level: level)
+            }
+        }
+    }
+
     final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
+        static let measuredHeightsLimit = 8
+
         var onTimerTap: ((RecipeDescriptionTimerReference, CGRect) -> Void)?
         weak var textView: UITextView?
+        /// Content of the attributed text the view shows now.
+        var appliedContent: ContentKey?
+        /// Fitting heights of the current attributed text, by measured width.
+        var measuredHeights: [CGFloat: CGFloat] = [:]
 
         init(onTimerTap: ((RecipeDescriptionTimerReference, CGRect) -> Void)?) {
             self.onTimerTap = onTimerTap
@@ -215,8 +266,16 @@ struct RecipeDescriptionInlineTextView: UIViewRepresentable {
 // MARK: - Rounded timer highlight (web padding + border-radius)
 
 private final class RecipeDescriptionTextView: UITextView {
-    var timerHighlightColor: UIColor = .label
+    var timerHighlightColor: UIColor = .label {
+        didSet { highlightGeometry = nil }
+    }
     private var highlightLayers: [CALayer] = []
+    /// Inputs the current highlight layers were built from.
+    private var highlightGeometry: HighlightGeometry?
+
+    override var attributedText: NSAttributedString! {
+        didSet { highlightGeometry = nil }
+    }
 
     /// UITextView draws glyphs in the first subview; layers must match that coordinate space.
     private var textLayoutCanvasView: UIView {
@@ -225,7 +284,32 @@ private final class RecipeDescriptionTextView: UITextView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        // Layout runs on every SwiftUI layout pass. The highlight rects only depend on the text
+        // (reset in `attributedText`), the color and the geometry below.
+        let host = textLayoutCanvasView
+        let geometry = HighlightGeometry(
+            host: ObjectIdentifier(host),
+            hostFrame: host.frame,
+            bounds: bounds,
+            containerSize: textContainer.size,
+            inset: textContainerInset,
+            style: traitCollection.userInterfaceStyle,
+            contrast: traitCollection.accessibilityContrast
+        )
+        let layersAttached = highlightLayers.allSatisfy { $0.superlayer === host.layer }
+        guard geometry != highlightGeometry || !layersAttached else { return }
+        highlightGeometry = geometry
         updateTimerHighlights()
+    }
+
+    private struct HighlightGeometry: Equatable {
+        let host: ObjectIdentifier
+        let hostFrame: CGRect
+        let bounds: CGRect
+        let containerSize: CGSize
+        let inset: UIEdgeInsets
+        let style: UIUserInterfaceStyle
+        let contrast: UIAccessibilityContrast
     }
 
     private func updateTimerHighlights() {
