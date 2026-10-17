@@ -131,10 +131,10 @@ struct AwakeScrollHelpSheet: View {
     private var voiceLiveBlock: some View {
         VStack(alignment: .leading, spacing: AwakeScrollLayout.helpChipGap) {
             tryHint("recipe.awake-scroll.help.try-voice")
-            TimelineView(.periodic(from: .now, by: 0.1)) { timeline in
+            AwakeScrollPulseClock(controller: controller, channel: .voice) { now in
                 AwakeScrollChipFlow(spacing: AwakeScrollLayout.helpChipGap) {
                     ForEach(AwakeScrollVoiceChip.allCases, id: \.self) { chip in
-                        voiceChip(chip, now: timeline.date)
+                        voiceChip(chip, now: now)
                     }
                 }
             }
@@ -153,17 +153,17 @@ struct AwakeScrollHelpSheet: View {
     }
 
     private var gestureIcons: some View {
-        TimelineView(.periodic(from: .now, by: 0.1)) { timeline in
+        AwakeScrollPulseClock(controller: controller, channel: .hand) { now in
             HStack(spacing: 0) {
                 gestureIcon(
                     "hand.thumbsup.fill",
                     identifier: AccessibilityIdentifiers.screenAwakeHelpIconHandUp,
-                    fired: isChannelFired(.hand, action: .up, now: timeline.date)
+                    fired: isChannelFired(.hand, action: .up, now: now)
                 )
                 gestureIcon(
                     "hand.thumbsdown.fill",
                     identifier: AccessibilityIdentifiers.screenAwakeHelpIconHandDown,
-                    fired: isChannelFired(.hand, action: .down, now: timeline.date)
+                    fired: isChannelFired(.hand, action: .down, now: now)
                 )
             }
             .frame(height: AwakeScrollLayout.helpGestureRowHeight)
@@ -171,17 +171,17 @@ struct AwakeScrollHelpSheet: View {
     }
 
     private var faceIcons: some View {
-        TimelineView(.periodic(from: .now, by: 0.1)) { timeline in
+        AwakeScrollPulseClock(controller: controller, channel: .face) { now in
             HStack(spacing: 0) {
                 gestureIcon(
                     "eye.fill",
                     identifier: AccessibilityIdentifiers.screenAwakeHelpIconFaceUp,
-                    fired: isChannelFired(.face, action: .up, now: timeline.date)
+                    fired: isChannelFired(.face, action: .up, now: now)
                 )
                 gestureIcon(
                     "eye.fill",
                     identifier: AccessibilityIdentifiers.screenAwakeHelpIconFaceDown,
-                    fired: isChannelFired(.face, action: .down, now: timeline.date)
+                    fired: isChannelFired(.face, action: .down, now: now)
                 )
             }
             .frame(height: AwakeScrollLayout.helpGestureRowHeight)
@@ -219,6 +219,42 @@ struct AwakeScrollHelpSheet: View {
         guard controller.lastActionByChannel[channel] == action,
               let pulsed = controller.lastPulseByChannel[channel] else { return false }
         return now.timeIntervalSince(pulsed) < AwakeScrollLayout.helpDebugFiredDuration
+    }
+}
+
+/// Gives `content` the current time when a channel pulses and once more when that
+/// pulse's highlight (`helpDebugFiredDuration`) runs out. Replaces 10 Hz timelines
+/// that re-rendered the chips and icons all the time the sheet was open.
+private struct AwakeScrollPulseClock<Content: View>: View {
+    let controller: AwakeScrollController
+    let channel: AwakeScrollInputChannel
+    @ViewBuilder let content: (Date) -> Content
+
+    @State private var now = Date()
+
+    var body: some View {
+        let pulse = controller.lastPulseByChannel[channel]
+        content(now)
+            .task(id: pulse) {
+                now = Date()
+                guard let delay = AwakeScrollPulseClockTiming.delayUntilExpiry(of: pulse, now: now) else {
+                    return
+                }
+                try? await Task.sleep(for: .seconds(delay))
+                guard !Task.isCancelled else { return }
+                now = Date()
+            }
+    }
+}
+
+enum AwakeScrollPulseClockTiming {
+    /// Seconds until a pulse stops showing as fired; nil when there is nothing to wait for.
+    static func delayUntilExpiry(of pulse: Date?, now: Date) -> TimeInterval? {
+        guard let pulse else { return nil }
+        let remaining = AwakeScrollLayout.helpDebugFiredDuration - now.timeIntervalSince(pulse)
+        guard remaining > 0 else { return nil }
+        // A little past the boundary, so the fired check (`< duration`) is false on wake.
+        return remaining + 0.01
     }
 }
 
