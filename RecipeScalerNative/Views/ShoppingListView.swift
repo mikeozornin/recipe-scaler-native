@@ -552,10 +552,10 @@ struct ShoppingListView: View {
 
         #if os(iOS)
         if item.purchased {
-            UISelectionFeedbackGenerator().selectionChanged()
+            ShoppingPurchaseHaptics.selection.selectionChanged()
         } else {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            ShoppingPurchaseHaptics.lightImpact.impactOccurred()
+            ShoppingPurchaseHaptics.notification.notificationOccurred(.success)
         }
         #endif
 
@@ -949,3 +949,13 @@ private struct ShoppingListShareSheet: View {
         #endif
     }
 }
+
+#if os(iOS)
+/// Feedback generators for the purchase toggle, created once instead of on every tap.
+@MainActor
+private enum ShoppingPurchaseHaptics {
+    static let selection = UISelectionFeedbackGenerator()
+    static let lightImpact = UIImpactFeedbackGenerator(style: .light)
+    static let notification = UINotificationFeedbackGenerator()
+}
+#endif

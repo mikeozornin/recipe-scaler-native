@@ -71,11 +71,17 @@ final class ShoppingViewModel {
                 return lhs.label.localizedCompare(rhs.label) == .orderedAscending
             }
         case .alphabet:
-            return items.sorted {
-                ShoppingListFromRecipe.sortName(for: $0.label)
-                    .localizedCompare(ShoppingListFromRecipe.sortName(for: $1.label)) == .orderedAscending
-            }
+            return Self.sortedAlphabetically(items)
         }
+    }
+
+    /// Alphabet mode: by `ShoppingListFromRecipe.sortName(for:)`. The sort names are
+    /// built once per item; the comparator used to rebuild both on every comparison.
+    static func sortedAlphabetically(_ items: [ShoppingListItem]) -> [ShoppingListItem] {
+        items
+            .map { (item: $0, sortName: ShoppingListFromRecipe.sortName(for: $0.label)) }
+            .sorted { $0.sortName.localizedCompare($1.sortName) == .orderedAscending }
+            .map(\.item)
     }
 
     /// Keeps the incoming order (already sorted by recipe name, then label);
