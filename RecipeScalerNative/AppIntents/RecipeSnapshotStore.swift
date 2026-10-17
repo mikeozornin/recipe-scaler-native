@@ -6,7 +6,7 @@
 import Foundation
 import RecipeScalerCore
 
-struct RecipeSnapshot: Codable, Identifiable, Sendable {
+struct RecipeSnapshot: Codable, Identifiable, Equatable, Sendable {
     let id: String
     let name: String
 }
@@ -17,16 +17,19 @@ enum RecipeSnapshotStore {
     private static let appGroupID = AppGroup.id
     private static let key = "appIntents.recipeSnapshots"
 
-    private static var defaults: UserDefaults? {
-        UserDefaults(suiteName: appGroupID)
-    }
+    private static let defaults = UserDefaults(suiteName: appGroupID)
+    /// What `save` last wrote; most collection updates leave ids and names untouched.
+    @MainActor private static var lastSaved: [RecipeSnapshot]?
 
+    @MainActor
     static func save(_ entries: [CollectionEntry]) {
         let snapshots = entries
             .filter { !$0.deleted }
             .map { RecipeSnapshot(id: $0.id, name: $0.name) }
-        guard let data = try? JSONEncoder().encode(snapshots) else { return }
+        guard snapshots != lastSaved,
+              let data = try? JSONEncoder().encode(snapshots) else { return }
         defaults?.set(data, forKey: key)
+        lastSaved = snapshots
     }
 
     static func load() -> [RecipeSnapshot] {
@@ -39,7 +42,9 @@ enum RecipeSnapshotStore {
     /// Spec 055 Phase R: wipe persisted snapshots when the account is deleted
     /// or the user signs out, so App Intents cannot resolve recipe entities for
     /// a user that no longer exists on the server. Idempotent.
+    @MainActor
     static func clear() {
         defaults?.removeObject(forKey: key)
+        lastSaved = nil
     }
 }

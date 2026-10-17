@@ -14,7 +14,7 @@ struct TimerLiveActivityRecipeMetadata: Sendable {
 
 @MainActor
 enum TimerLiveActivityMetadataProvider {
-    /// Installed from `ContentView` where `YjsSyncService` is available.
+    /// Installed by `AppContainer.bootstrap`; reads the live collection.
     static var recipeNameLookup: ((String) -> String?)?
 
     private static let appGroupIdentifier = AppGroup.id
