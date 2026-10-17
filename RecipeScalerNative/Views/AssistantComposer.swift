@@ -16,8 +16,8 @@ import RecipeScalerCore
 /// Used inside legacy modal `AssistantComposer` (field + toolbar card).
 /// Reports the voice transcribing state through `isVoiceTranscribing` so the
 /// wrapper (which owns the text field) can disable input during transcription.
-struct AssistantComposerChrome: View {
-    fileprivate static let shellCornerRadius: CGFloat = 16
+struct AssistantComposerChrome<TopContent: View>: View {
+    fileprivate static var shellCornerRadius: CGFloat { 16 }
 
     @Binding var text: String
     @Binding var attachments: [AssistantRecipeAttachment]
@@ -28,7 +28,8 @@ struct AssistantComposerChrome: View {
     let contextRecipeId: String?
     let onSend: () -> Void
 
-    @ViewBuilder var topContent: () -> AnyView
+    /// Built by the caller's body; generic, so it is not type-erased into `AnyView`.
+    let topContent: TopContent
 
     init(
         text: Binding<String>,
@@ -39,7 +40,7 @@ struct AssistantComposerChrome: View {
         contextRecipeId: String?,
         onSend: @escaping () -> Void,
         syncService: YjsSyncService,
-        @ViewBuilder topContent: @escaping () -> some View = { EmptyView() }
+        @ViewBuilder topContent: () -> TopContent
     ) {
         _text = text
         _attachments = attachments
@@ -49,7 +50,7 @@ struct AssistantComposerChrome: View {
         self.contextRecipeId = contextRecipeId
         self.onSend = onSend
         self.syncService = syncService
-        self.topContent = { AnyView(topContent()) }
+        self.topContent = topContent()
     }
 
     /// Injected (not `@Environment`): the composer chrome can outlive the
@@ -115,7 +116,7 @@ struct AssistantComposerChrome: View {
                     .padding(.bottom, 4)
             }
 
-            topContent()
+            topContent
 
             composerToolbar
                 .padding(.horizontal, 8)
@@ -183,7 +184,8 @@ struct AssistantComposerChrome: View {
             .accessibilityLabel(Text("assistant.voice-cancel"))
             .accessibilityIdentifier(AccessibilityIdentifiers.assistantVoiceCancelButton)
 
-            AssistantVoiceLevelMeter(barHeights: voiceRecorder.barHeights)
+            // The host reads `barHeights`, so a new bar redraws the meter, not the composer.
+            AssistantVoiceLevelMeterHost(voiceRecorder: voiceRecorder)
                 .padding(.horizontal, 8)
 
             Button {
@@ -214,10 +216,13 @@ struct AssistantComposerChrome: View {
     }
 
     private var idleControls: some View {
-        HStack(spacing: 0) {
+        // One lookup in `collectionEntries` per pass (the tag check used to repeat it).
+        let contextAttachment = contextAttachment
+        let showsContextRecipeTag = contextAttachment != nil && !isContextRecipeAttached
+        return HStack(spacing: 0) {
             HStack(spacing: 4) {
                 attachButton
-                if showContextRecipeTag, let contextAttachment {
+                if showsContextRecipeTag, let contextAttachment {
                     contextRecipeTagButton(for: contextAttachment)
                 }
             }
@@ -248,10 +253,6 @@ struct AssistantComposerChrome: View {
         return attachments.contains { recipeIdsMatch($0.recipeId, effectiveContextRecipeId) }
     }
 
-    private var showContextRecipeTag: Bool {
-        contextAttachment != nil && !isContextRecipeAttached
-    }
-
     private func contextRecipeTagButton(for attachment: AssistantRecipeAttachment) -> some View {
         AssistantAttachmentChipLabel(attachment: attachment)
             .assistantAttachmentChipChrome()
@@ -275,7 +276,8 @@ struct AssistantComposerChrome: View {
     }
 
     private var attachButton: some View {
-        Button {
+        let hasAvailableEntries = !availableEntries.isEmpty
+        return Button {
             showAttachSheet = true
         } label: {
             composerIconOnly(systemName: "plus")
@@ -283,8 +285,8 @@ struct AssistantComposerChrome: View {
         .appToolbarIconButton()
         .accessibilityLabel(Text("assistant.attach-recipes"))
         .accessibilityIdentifier(AccessibilityIdentifiers.assistantAttachmentButton)
-        .disabled(availableEntries.isEmpty)
-        .opacity(availableEntries.isEmpty ? 0.4 : 1)
+        .disabled(!hasAvailableEntries)
+        .opacity(hasAvailableEntries ? 1 : 0.4)
     }
 
     private var voiceLimitAlert: some View {
@@ -437,6 +439,32 @@ struct AssistantComposerChrome: View {
     }
 }
 
+extension AssistantComposerChrome where TopContent == EmptyView {
+    init(
+        text: Binding<String>,
+        attachments: Binding<[AssistantRecipeAttachment]>,
+        isVoiceTranscribing: Binding<Bool>,
+        autoStartVoice: Binding<Bool> = .constant(false),
+        isSending: Bool,
+        contextRecipeId: String?,
+        onSend: @escaping () -> Void,
+        syncService: YjsSyncService
+    ) {
+        self.init(
+            text: text,
+            attachments: attachments,
+            isVoiceTranscribing: isVoiceTranscribing,
+            autoStartVoice: autoStartVoice,
+            isSending: isSending,
+            contextRecipeId: contextRecipeId,
+            onSend: onSend,
+            syncService: syncService
+        ) {
+            EmptyView()
+        }
+    }
+}
+
 // MARK: - Legacy modal composer (field + chrome)
 
 struct AssistantComposer: View {
@@ -531,23 +559,7 @@ struct AssistantRecipePicker: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
-
-    private var attachableEntries: [CollectionEntry] {
-        availableEntries.filter { entry in
-            !attachments.contains { $0.recipeId == entry.id }
-        }
-    }
-
-    private var filtered: [CollectionEntry] {
-        let trimmed = query.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return Array(attachableEntries.prefix(50)) }
-        let tokens = RecipeSearchUtils.tokenizeQuery(trimmed)
-        guard !tokens.isEmpty else { return [] }
-        return attachableEntries
-            .filter { RecipeSearchUtils.matchesName($0.name, tokens: tokens) }
-            .prefix(50)
-            .map { $0 }
-    }
+    @State private var normalizedNamesMemo = AssistantRecipePickerNormalizedNames()
 
     private func select(_ entry: CollectionEntry) {
         guard attachments.count < 10 else {
@@ -565,7 +577,17 @@ struct AssistantRecipePicker: View {
     }
 
     var body: some View {
-        NavigationStack {
+        // Once per pass: the branches below used to rebuild both lists, and every
+        // keystroke re-normalized every recipe name.
+        let results = AssistantRecipePickerFilter.results(
+            entries: availableEntries,
+            normalizedNames: normalizedNamesMemo.names(for: availableEntries),
+            attachments: attachments,
+            query: query
+        )
+        let attachableEntries = results.attachable
+        let filtered = results.filtered
+        return NavigationStack {
             VStack(alignment: .leading, spacing: 0) {
                 if !availableEntries.isEmpty {
                     attachRecipesIntro
@@ -637,6 +659,71 @@ struct AssistantRecipePicker: View {
             .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
             .padding(.top, RecipeRowLayoutMetrics.listHorizontalInset)
             .padding(.bottom, 8)
+    }
+}
+
+/// Attachable and matching recipes for `AssistantRecipePicker`.
+enum AssistantRecipePickerFilter {
+    struct Results: Equatable {
+        /// Entries not attached yet, in collection order.
+        let attachable: [CollectionEntry]
+        /// Up to 50 attachable entries whose name matches the query.
+        let filtered: [CollectionEntry]
+    }
+
+    static let resultLimit = 50
+
+    /// `normalizedNames[i]` is `RecipeSearchUtils.normalizeForSearch(entries[i].name)`.
+    static func results(
+        entries: [CollectionEntry],
+        normalizedNames: [String],
+        attachments: [AssistantRecipeAttachment],
+        query: String
+    ) -> Results {
+        let attachedIds = Set(attachments.map(\.recipeId))
+        var attachable: [CollectionEntry] = []
+        var attachableNames: [String] = []
+        attachable.reserveCapacity(entries.count)
+        for (index, entry) in entries.enumerated() where !attachedIds.contains(entry.id) {
+            attachable.append(entry)
+            attachableNames.append(normalizedNames[index])
+        }
+
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else {
+            return Results(attachable: attachable, filtered: Array(attachable.prefix(resultLimit)))
+        }
+        let tokens = RecipeSearchUtils.tokenizeQuery(trimmed)
+        guard !tokens.isEmpty else {
+            return Results(attachable: attachable, filtered: [])
+        }
+        var filtered: [CollectionEntry] = []
+        for (index, entry) in attachable.enumerated() {
+            guard RecipeSearchUtils.matchesName(normalized: attachableNames[index], tokens: tokens) else {
+                continue
+            }
+            filtered.append(entry)
+            if filtered.count == resultLimit {
+                break
+            }
+        }
+        return Results(attachable: attachable, filtered: filtered)
+    }
+}
+
+/// Normalized recipe names for the picker search, rebuilt only when the entries change.
+/// Held in `@State`; not observed.
+final class AssistantRecipePickerNormalizedNames {
+    private var entries: [CollectionEntry]?
+    private var cached: [String] = []
+
+    func names(for entries: [CollectionEntry]) -> [String] {
+        if let cachedEntries = self.entries, cachedEntries == entries {
+            return cached
+        }
+        cached = entries.map { RecipeSearchUtils.normalizeForSearch($0.name) }
+        self.entries = entries
+        return cached
     }
 }
 

@@ -52,3 +52,13 @@ struct AssistantVoiceLevelMeter: View {
         return max(1, Int((width + barSpacing) / step))
     }
 }
+
+/// Reads `voiceRecorder.barHeights` in its own body, so the composer around the
+/// meter does not re-render for every new bar.
+struct AssistantVoiceLevelMeterHost: View {
+    let voiceRecorder: AssistantVoiceRecorder
+
+    var body: some View {
+        AssistantVoiceLevelMeter(barHeights: voiceRecorder.barHeights)
+    }
+}
