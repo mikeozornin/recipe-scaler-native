@@ -68,6 +68,24 @@ final class AppNumberFormatTests: XCTestCase {
         XCTAssertNil(AppNumberFormat.parse("abc", locale: ru))
     }
 
+    func testFormatterIsSharedPerConfiguration() {
+        let first = AppNumberFormat.formatter(locale: ru, minimumFractionDigits: 0, maximumFractionDigits: 2)
+        let again = AppNumberFormat.formatter(locale: ru, minimumFractionDigits: 0, maximumFractionDigits: 2)
+        XCTAssertTrue(first === again)
+        XCTAssertFalse(first === AppNumberFormat.formatter(locale: en, minimumFractionDigits: 0, maximumFractionDigits: 2))
+        XCTAssertFalse(first === AppNumberFormat.formatter(locale: ru, minimumFractionDigits: 1, maximumFractionDigits: 2))
+        XCTAssertFalse(first === AppNumberFormat.formatter(locale: ru, minimumFractionDigits: 0, maximumFractionDigits: 1))
+    }
+
+    func testCachedFormattersKeepTheirOwnSettings() {
+        XCTAssertEqual(AppNumberFormat.string(1.256, maximumFractionDigits: 2, locale: ru), "1,26")
+        XCTAssertEqual(AppNumberFormat.string(1.256, maximumFractionDigits: 1, locale: en), "1.3")
+        XCTAssertEqual(AppNumberFormat.string(1.5, minimumFractionDigits: 2, maximumFractionDigits: 2, locale: en), "1.50")
+        XCTAssertEqual(AppNumberFormat.string(1.256, maximumFractionDigits: 2, locale: ru), "1,26")
+        XCTAssertEqual(AppNumberFormat.string(1.256, maximumFractionDigits: 1, locale: en), "1.3")
+        XCTAssertEqual(AppNumberFormat.string(1.5, maximumFractionDigits: 2, locale: en), "1.5")
+    }
+
     func testCurrentFollowsAppLanguagePreference() {
         let preference = AppLanguagePreference.current
         XCTAssertEqual(AppNumberFormat.current.identifier, preference.locale.identifier)

@@ -22,13 +22,48 @@ enum AppNumberFormat {
         locale: Locale = AppNumberFormat.current
     ) -> String {
         guard value.isFinite else { return "" }
+        let formatter = formatter(
+            locale: locale,
+            minimumFractionDigits: minimumFractionDigits,
+            maximumFractionDigits: maximumFractionDigits
+        )
+        return formatter.string(from: NSNumber(value: value)) ?? ""
+    }
+
+    private struct FormatterKey: Hashable {
+        let locale: Locale
+        let minimumFractionDigits: Int
+        let maximumFractionDigits: Int
+    }
+
+    private static let formattersLock = NSLock()
+    private static var formatters: [FormatterKey: NumberFormatter] = [:]
+
+    /// Ingredient rows and nutrition lines format numbers on every render; creating a
+    /// `NumberFormatter` each time showed up in the recipe open trace. Formatters are never
+    /// mutated after setup, and formatting with a shared one is thread-safe.
+    /// The returned formatter is shared: never change its settings.
+    static func formatter(
+        locale: Locale,
+        minimumFractionDigits: Int,
+        maximumFractionDigits: Int
+    ) -> NumberFormatter {
+        let key = FormatterKey(
+            locale: locale,
+            minimumFractionDigits: minimumFractionDigits,
+            maximumFractionDigits: maximumFractionDigits
+        )
+        formattersLock.lock()
+        defer { formattersLock.unlock() }
+        if let cached = formatters[key] { return cached }
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.locale = locale
         formatter.usesGroupingSeparator = false
         formatter.minimumFractionDigits = minimumFractionDigits
         formatter.maximumFractionDigits = maximumFractionDigits
-        return formatter.string(from: NSNumber(value: value)) ?? ""
+        formatters[key] = formatter
+        return formatter
     }
 
     /// Parses user/Y.Doc text with either decimal separator (`,` and `.`);
