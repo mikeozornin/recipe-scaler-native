@@ -190,24 +190,33 @@ struct ContentView: View {
     }
 
     /// Root of every screen: resolves `AppLayoutMode` once for the whole app (spec 081).
+    /// The signed-in shell is built under the splash, so its first layout and `bootstrap`
+    /// run while the splash is still up instead of after it.
     private func rootChrome(container: AppContainer?) -> some View {
-        Group {
+        ZStack {
+            if isAuthenticated, let container {
+                Group {
+                    #if DEBUG
+                    if RecipeDescriptionFixture.showsPreview {
+                        DescriptionFixturePreviewView()
+                    } else {
+                        appShell(container: container)
+                    }
+                    #else
+                    appShell(container: container)
+                    #endif
+                }
+                .accessibilityHidden(showSplash)
+                .allowsHitTesting(!showSplash)
+            } else if !showSplash {
+                if container != nil {
+                    AuthView()
+                } else {
+                    ProgressView()
+                }
+            }
             if showSplash {
                 SplashView()
-            } else if isAuthenticated, let container {
-                #if DEBUG
-                if RecipeDescriptionFixture.showsPreview {
-                    DescriptionFixturePreviewView()
-                } else {
-                    appShell(container: container)
-                }
-                #else
-                appShell(container: container)
-                #endif
-            } else if container != nil {
-                AuthView()
-            } else {
-                ProgressView()
             }
         }
         .appLayoutModeRoot()
@@ -262,18 +271,28 @@ struct ContentView: View {
                 await container.spotlight.clearAll()
             }
         }
-        .onChange(of: container.sync.collectionEntries) { _, entries in
-            ShortcutItemsUpdater.update(from: entries)
-            RecipeSnapshotStore.save(entries)
-            TimerLiveActivityMetadataProvider.recipeNameLookup = { recipeId in
-                entries.first(where: { $0.id == recipeId && !$0.deleted })?.name
+        .background(CollectionEntriesMirror(container: container))
+    }
+}
+
+/// Mirrors collection changes into Quick Actions, the App Intents snapshot and Live Activities.
+/// Its own view, so a collection update re-runs this body instead of the whole root's.
+/// The Live Activity name lookup reads the collection itself (`AppContainer.bootstrap`).
+private struct CollectionEntriesMirror: View {
+    let container: AppContainer
+
+    var body: some View {
+        Color.clear
+            .accessibilityHidden(true)
+            .onChange(of: container.sync.collectionEntries) { _, entries in
+                ShortcutItemsUpdater.update(from: entries)
+                RecipeSnapshotStore.save(entries)
+                container.timer.refreshLiveActivities()
+                container.shellCoordinator.resolvePendingSpotlightRecipe(in: entries)
+                #if DEBUG
+                container.shellCoordinator.openDebugRecipeIfNeeded(in: entries)
+                #endif
             }
-            container.timer.refreshLiveActivities()
-        container.shellCoordinator.resolvePendingSpotlightRecipe(in: entries)
-            #if DEBUG
-            container.shellCoordinator.openDebugRecipeIfNeeded(in: entries)
-            #endif
-        }
     }
 }
 
