@@ -145,12 +145,10 @@ struct AssistantComposerChrome: View {
     }
 
     private var attachmentsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(attachments) { attachment in
-                    AssistantAttachmentChip(attachment: attachment) {
-                        removeAttachment(attachment)
-                    }
+        FlowLayout(spacing: 8) {
+            ForEach(attachments) { attachment in
+                AssistantAttachmentChip(attachment: attachment) {
+                    removeAttachment(attachment)
                 }
             }
         }

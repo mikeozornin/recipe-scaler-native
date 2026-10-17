@@ -626,7 +626,12 @@ struct FlowLayout: Layout {
         var maxRowWidth: CGFloat = 0
 
         for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
+            var size = subview.sizeThatFits(.unspecified)
+            // An item wider than the row gets the row width (its text truncates).
+            if size.width > maxWidth {
+                size = subview.sizeThatFits(ProposedViewSize(width: maxWidth, height: nil))
+                size.width = min(size.width, maxWidth)
+            }
             if x + size.width > maxWidth && x > 0 {
                 maxRowWidth = max(maxRowWidth, x - spacing)
                 rows.append(currentRow)
