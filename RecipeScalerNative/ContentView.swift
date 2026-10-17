@@ -136,8 +136,11 @@ struct ContentView: View {
             }
             #endif
             try? await Task.sleep(nanoseconds: 500_000_000)
-            showSplash = false
-            PerfMark.once("splash_hidden")
+            hideSplash()
+        }
+        // The shell is already laid out under the splash, so the list can show once its data is in.
+        .onChange(of: container?.sync.isLocalDataLoaded == true) { _, loaded in
+            if loaded { hideSplash() }
         }
         .accessibilityIdentifier(AccessibilityIdentifiers.rootContent)
         .environment(\.font, AppTypography.body)
@@ -187,6 +190,13 @@ struct ContentView: View {
                 break
             }
         }
+    }
+
+    /// Hides the splash once local recipes are loaded, at the latest 500 ms after the root view appears.
+    private func hideSplash() {
+        guard showSplash else { return }
+        showSplash = false
+        PerfMark.once("splash_hidden")
     }
 
     /// Root of every screen: resolves `AppLayoutMode` once for the whole app (spec 081).
