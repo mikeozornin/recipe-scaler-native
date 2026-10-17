@@ -198,7 +198,9 @@ struct MobileTimerPanel: View {
 
     @ViewBuilder
     private var collapsedSummary: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
+        // Same view whether or not a timer counts down (keeps the chips' scroll position);
+        // the schedule just stops ticking while every timer is paused or stopped.
+        TimelineView(CollapsedTimerSummarySchedule(timers: timerManager.activeTimers)) { context in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .center, spacing: 4) {
                     ForEach(Array(timerManager.activeTimers.enumerated()), id: \.element.id) { index, timer in
@@ -230,6 +232,35 @@ struct MobileTimerPanel: View {
         if remaining < 0 { return .red }
         if duration > 0, remaining < duration / 10 { return .yellow }
         return .primary
+    }
+}
+
+/// One-second ticks for the collapsed summary while some timer counts down; a single
+/// entry otherwise, since paused and stopped timers show a fixed time.
+struct CollapsedTimerSummarySchedule: TimelineSchedule {
+    let isTicking: Bool
+
+    init(isTicking: Bool) {
+        self.isTicking = isTicking
+    }
+
+    init(timers: [RecipeTimer]) {
+        self.init(isTicking: timers.contains { $0.isRunning && !$0.isPaused })
+    }
+
+    func entries(from startDate: Date, mode: TimelineScheduleMode) -> Entries {
+        Entries(upcoming: startDate, repeats: isTicking)
+    }
+
+    struct Entries: Sequence, IteratorProtocol {
+        fileprivate var upcoming: Date?
+        fileprivate let repeats: Bool
+
+        mutating func next() -> Date? {
+            guard let date = upcoming else { return nil }
+            upcoming = repeats ? date.addingTimeInterval(1) : nil
+            return date
+        }
     }
 }
 
