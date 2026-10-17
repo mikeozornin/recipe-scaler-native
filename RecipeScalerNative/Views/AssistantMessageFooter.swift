@@ -213,33 +213,101 @@ enum AssistantMessageTimestampFormatter {
     static func format(createdAt: Date, locale: Locale) -> String {
         let calendar = Calendar.current
         let now = Date()
-
-        let timeFormatter = DateFormatter()
-        timeFormatter.locale = locale
-        timeFormatter.timeStyle = .short
-        timeFormatter.dateStyle = .none
+        let formatters = AssistantTimestampFormatterCache.shared
 
         if calendar.isDate(createdAt, inSameDayAs: now) {
-            return timeFormatter.string(from: createdAt)
+            return formatters.formatter(.time, locale: locale).string(from: createdAt)
         }
 
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
            calendar.isDate(createdAt, inSameDayAs: yesterday) {
             let yesterdayLabel = Bundle.currentLocalizedString("assistant.timestamp.yesterday")
-            return "\(yesterdayLabel), \(timeFormatter.string(from: createdAt))"
+            let time = formatters.formatter(.time, locale: locale).string(from: createdAt)
+            return "\(yesterdayLabel), \(time)"
         }
 
         if calendar.component(.year, from: createdAt) == calendar.component(.year, from: now) {
-            let formatter = DateFormatter()
-            formatter.locale = locale
-            formatter.setLocalizedDateFormatFromTemplate("MMMdHHmm")
-            return formatter.string(from: createdAt)
+            return formatters.formatter(.monthDayTime, locale: locale).string(from: createdAt)
         }
 
+        return formatters.formatter(.monthDayYear, locale: locale).string(from: createdAt)
+    }
+}
+
+/// `DateFormatter`s for the message timestamps. Each meta row used to build one or two
+/// formatters per body pass; they are now reused per locale and time zone.
+final class AssistantTimestampFormatterCache: @unchecked Sendable {
+    enum Kind: Hashable {
+        /// Time only, `.short`.
+        case time
+        /// Template `MMMdHHmm`.
+        case monthDayTime
+        /// Template `MMMdyyyy`.
+        case monthDayYear
+    }
+
+    private struct Key: Hashable {
+        let kind: Kind
+        let locale: Locale
+        let timeZone: TimeZone
+    }
+
+    static let shared = AssistantTimestampFormatterCache()
+
+    private let lock = NSLock()
+    private var formatters: [Key: DateFormatter] = [:]
+    private var localeObserver: NSObjectProtocol?
+
+    init() {
+        // User settings such as the 24-hour clock change the formats without changing the key.
+        localeObserver = NotificationCenter.default.addObserver(
+            forName: NSLocale.currentLocaleDidChangeNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            self?.removeAll()
+        }
+    }
+
+    deinit {
+        if let localeObserver {
+            NotificationCenter.default.removeObserver(localeObserver)
+        }
+    }
+
+    func formatter(_ kind: Kind, locale: Locale) -> DateFormatter {
+        let key = Key(kind: kind, locale: locale, timeZone: TimeZone.current)
+        lock.lock()
+        defer { lock.unlock() }
+        if let cached = formatters[key] {
+            return cached
+        }
+        let formatter = Self.makeFormatter(kind, locale: locale, timeZone: key.timeZone)
+        formatters[key] = formatter
+        return formatter
+    }
+
+    func removeAll() {
+        lock.lock()
+        formatters.removeAll()
+        lock.unlock()
+    }
+
+    /// The formatter the timestamp code used to build for every call.
+    static func makeFormatter(_ kind: Kind, locale: Locale, timeZone: TimeZone) -> DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = locale
-        formatter.setLocalizedDateFormatFromTemplate("MMMdyyyy")
-        return formatter.string(from: createdAt)
+        formatter.timeZone = timeZone
+        switch kind {
+        case .time:
+            formatter.timeStyle = .short
+            formatter.dateStyle = .none
+        case .monthDayTime:
+            formatter.setLocalizedDateFormatFromTemplate("MMMdHHmm")
+        case .monthDayYear:
+            formatter.setLocalizedDateFormatFromTemplate("MMMdyyyy")
+        }
+        return formatter
     }
 }
 
