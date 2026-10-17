@@ -1128,7 +1128,7 @@ final class YjsSyncService {
             }
             if changed {
                 recipe = recipe.replacing(ingredients: ingredients)
-                currentRecipe = recipe
+                setCurrentRecipe(recipe)
             }
         }
         await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
@@ -1139,7 +1139,7 @@ final class YjsSyncService {
         try await documentManager.removeIngredient(recipeId: recipeId, ingredientId: id)
         if var recipe = currentRecipe, recipe.id == recipeId {
             recipe = recipe.replacing(ingredients: recipe.ingredients.filter { $0.id != id })
-            currentRecipe = recipe
+            setCurrentRecipe(recipe)
         }
         await refreshCurrentRecipeIfAllowed(recipeId: recipeId)
     }
@@ -1162,7 +1162,7 @@ final class YjsSyncService {
         try await documentManager.tombstoneCollectionEntry(recipeId: recipeId)
         cancelPendingWork(forRecipeId: recipeId)
         if activeRecipeId == recipeId {
-            currentRecipe = nil
+            setCurrentRecipe(nil)
             activeRecipeId = nil
             activeRecipeWasRemoved = true
         }
@@ -1611,7 +1611,7 @@ final class YjsSyncService {
         isLocalDataLoaded = false
         userId = nil
         activeRecipeId = nil
-        currentRecipe = nil
+        setCurrentRecipe(nil)
         shoppingSnapshot = .empty
     }
 
@@ -3897,8 +3897,11 @@ final class YjsSyncService {
         }
     }
 
+    /// `marksLocalDataLoaded`: the cold-start load — collection views leave their spinner as
+    /// soon as entries and folders are in, before the cache-status bookkeeping below.
     private func refreshCollectionEntries(
-        sessionContext: SyncSocketSessionContext? = nil
+        sessionContext: SyncSocketSessionContext? = nil,
+        marksLocalDataLoaded: Bool = false
     ) async {
         if let sessionContext {
             guard isCurrentSession(sessionContext) else { return }
@@ -3920,7 +3923,7 @@ final class YjsSyncService {
             if let recipeId = activeRecipeId,
                !filtered.contains(where: { $0.id == recipeId }),
                entries.contains(where: { $0.id == recipeId && $0.deleted }) {
-                currentRecipe = nil
+                setCurrentRecipe(nil)
                 activeRecipeId = nil
                 activeRecipeWasRemoved = true
             }
@@ -3943,6 +3946,9 @@ final class YjsSyncService {
             guard self.userId == capturedUserId else { return }
             if let sessionContext {
                 guard isCurrentSession(sessionContext) else { return }
+            }
+            if marksLocalDataLoaded {
+                markLocalDataLoaded()
             }
             syncActiveRecipeFromCollection()
             scheduleImagePrefetch(for: filtered, sessionContext: sessionContext)
@@ -3995,12 +4001,20 @@ final class YjsSyncService {
         }
     }
 
+    /// `@Observable` notifies on every assignment, and the detail screen re-renders for each
+    /// one; collection echoes and refreshes often produce the recipe that is already shown.
+    private func setCurrentRecipe(_ recipe: RecipeData?) {
+        if currentRecipe != recipe {
+            currentRecipe = recipe
+        }
+    }
+
     private func syncActiveRecipeFromCollection() {
         guard let recipeId = activeRecipeId,
               let recipe = currentRecipe,
               recipe.id == recipeId,
               let entry = collectionEntry(for: recipeId) else { return }
-        currentRecipe = RecipeCollectionMerge.merged(recipe, with: entry)
+        setCurrentRecipe(RecipeCollectionMerge.merged(recipe, with: entry))
     }
 
     // MARK: - Local Snapshot Loading
@@ -4013,16 +4027,23 @@ final class YjsSyncService {
         await documentManager.applyOfflineQueueToLocalDocs(userId: userId)
 
         if (try? await documentManager.getOrCreateDoc(key: collectionKey)) != nil {
-            await refreshCollectionEntries()
+            await refreshCollectionEntries(marksLocalDataLoaded: true)
             logger.info("Loaded collection from local snapshot")
         }
+        // Only collection views wait for this; the shopping list renders its own snapshot.
+        markLocalDataLoaded()
 
         let shoppingKey = Self.shoppingDocKey(userId: userId)
         if (try? await documentManager.getOrCreateDoc(key: shoppingKey)) != nil {
             await refreshShoppingSnapshot()
             logger.info("Loaded shopping list from local snapshot")
         }
-        isLocalDataLoaded = true
+    }
+
+    private func markLocalDataLoaded() {
+        if !isLocalDataLoaded {
+            isLocalDataLoaded = true
+        }
     }
 
     /// Under XCTest/UI-test hosts `AppContainer.bootstrap` never loads local snapshots,
@@ -4105,7 +4126,7 @@ final class YjsSyncService {
                 if let sessionContext {
                     guard isCurrentSession(sessionContext) else { return }
                 }
-                currentRecipe = nil
+                setCurrentRecipe(nil)
                 return
             }
             guard self.userId == capturedUserId, activeRecipeId == recipeId else { return }
@@ -4113,7 +4134,7 @@ final class YjsSyncService {
                 guard isCurrentSession(sessionContext) else { return }
             }
             recipe = RecipeCollectionMerge.merged(recipe, with: collectionEntry(for: recipeId))
-            currentRecipe = recipe
+            setCurrentRecipe(recipe)
         } catch {
             logger.error("Failed to read recipe \(recipeId): \(error)")
         }
@@ -4136,14 +4157,14 @@ final class YjsSyncService {
                 ingredients.append(ingredient)
             }
         }
-        currentRecipe = recipe.replacing(
+        setCurrentRecipe(recipe.replacing(
             name: name,
             servings: servings,
             color: color,
             isPublic: isPublic,
             ingredients: ingredient == nil ? nil : ingredients,
             nutrition: nutrition.map { Optional.some($0) }
-        )
+        ))
     }
 
     private func handleSyncError(code: SyncErrorCode, message: String, recipeId: String?) async {
@@ -4178,7 +4199,7 @@ final class YjsSyncService {
             guard let recipeId else { return }
             cancelPendingWork(forRecipeId: recipeId)
             if activeRecipeId == recipeId {
-                currentRecipe = nil
+                setCurrentRecipe(nil)
                 activeRecipeId = nil
                 activeRecipeWasRemoved = true
             }

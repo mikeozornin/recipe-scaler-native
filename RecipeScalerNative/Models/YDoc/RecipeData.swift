@@ -2,7 +2,7 @@ import Foundation
 
 /// Full recipe data from a recipe Y.Doc.
 /// Read from `Y.Map('recipe')` in document `{userId}:recipe:{recipeId}`.
-struct RecipeData: Identifiable, Sendable {
+struct RecipeData: Identifiable, Equatable, Sendable {
     let id: String
     let name: String
     let servings: Int

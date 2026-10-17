@@ -2,7 +2,7 @@ import Foundation
 
 /// Ingredient data from a recipe Y.Doc.
 /// Read from `Y.Map` inside `Y.Array('ingredients')` (v2/v3) or parsed from JSON string (v1).
-struct IngredientData: Identifiable, Sendable {
+struct IngredientData: Identifiable, Equatable, Sendable {
     let id: String
     let name: String
     let amount: String
