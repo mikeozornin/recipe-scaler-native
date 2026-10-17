@@ -118,12 +118,17 @@ struct IngredientData: Identifiable, Equatable, Sendable {
     }
 
     var isHeaderRow: Bool {
-        if isSeparator { return true }
-        if name.range(of: #"^[-—–−]{2,}$"#, options: .regularExpression) != nil {
-            return true
-        }
-        return !hasQuantity
+        if isSeparator || !hasQuantity { return true }
+        // Rows ask this several times per render; only names that start with a dash can
+        // match the separator pattern, so skip the regex for every other name.
+        guard let first = name.unicodeScalars.first,
+              Self.separatorDashes.contains(first)
+        else { return false }
+        return name.range(of: #"^[-—–−]{2,}$"#, options: .regularExpression) != nil
     }
+
+    /// The characters of the `^[-—–−]{2,}$` separator pattern.
+    private static let separatorDashes: Set<Unicode.Scalar> = ["-", "—", "–", "−"]
 
     /// Numeric quantity only (web shows `originalAmount` without unit in the grid).
     var quantityText: String {

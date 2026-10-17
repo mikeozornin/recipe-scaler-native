@@ -2087,3 +2087,44 @@ struct SplitMix64: RandomNumberGenerator {
         return z ^ (z >> 31)
     }
 }
+
+
+final class IngredientHeaderRowTests: XCTestCase {
+    /// The rule before the dash fast path: separator flag, dash-only name, or no quantity.
+    private func referenceIsHeaderRow(_ ingredient: IngredientData) -> Bool {
+        if ingredient.isSeparator { return true }
+        if ingredient.name.range(of: #"^[-—–−]{2,}$"#, options: .regularExpression) != nil {
+            return true
+        }
+        return !ingredient.hasQuantity
+    }
+
+    func testDashFastPathMatchesRegexRule() {
+        let names = [
+            "", "-", "--", "---", "—", "——", "–", "––", "−−", "-—–−", "--\n", "--\r\n", "-- ", " --",
+            "-a", "a--", "--a", "- -", "Мука", "-1", "−5 °C", "—\u{0085}", "--\u{2028}", "😀--",
+        ]
+        for name in names {
+            for hasQuantity in [true, false] {
+                for isSeparator in [true, false] {
+                    let ingredient = IngredientData(
+                        id: "i",
+                        name: name,
+                        isSeparator: isSeparator,
+                        hasQuantity: hasQuantity
+                    )
+                    XCTAssertEqual(
+                        ingredient.isHeaderRow,
+                        referenceIsHeaderRow(ingredient),
+                        "name: \(name.debugDescription), hasQuantity: \(hasQuantity), isSeparator: \(isSeparator)"
+                    )
+                }
+            }
+        }
+    }
+
+    func testDashOnlyNameWithQuantityIsHeader() {
+        XCTAssertTrue(IngredientData(id: "s", name: "———", hasQuantity: true).isHeaderRow)
+        XCTAssertFalse(IngredientData(id: "m", name: "Мука", hasQuantity: true).isHeaderRow)
+    }
+}

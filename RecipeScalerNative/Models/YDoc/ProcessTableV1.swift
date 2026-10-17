@@ -63,8 +63,51 @@ struct ProcessTableV1: Equatable, Sendable, Codable {
     }
 
     /// Returns a valid v1 table or `nil` (missing / invalid / unknown version).
+    ///
+    /// `RecipeData.processTable` is read from view bodies on every render, so results are
+    /// cached by the raw JSON string (a changed table is a different string).
     static func parse(raw: String?) -> ProcessTableV1? {
         guard let raw else { return nil }
+        return ParseCache.result(for: raw)
+    }
+
+    /// Lock-protected memo of `decode(raw:)` results, `nil` results included.
+    enum ParseCache {
+        static let limit = 16
+        private static let lock = NSLock()
+        private static var results: [String: ProcessTableV1?] = [:]
+
+        static func result(for raw: String) -> ProcessTableV1? {
+            lock.lock()
+            if let cached = results[raw] {
+                lock.unlock()
+                return cached
+            }
+            lock.unlock()
+            let decoded = ProcessTableV1.decode(raw: raw)
+            lock.lock()
+            if results.count >= limit {
+                results.removeAll()
+            }
+            results[raw] = .some(decoded)
+            lock.unlock()
+            return decoded
+        }
+
+        static var count: Int {
+            lock.lock()
+            defer { lock.unlock() }
+            return results.count
+        }
+
+        static func removeAll() {
+            lock.lock()
+            results.removeAll()
+            lock.unlock()
+        }
+    }
+
+    private static func decode(raw: String) -> ProcessTableV1? {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, let data = trimmed.data(using: .utf8) else {
             return nil

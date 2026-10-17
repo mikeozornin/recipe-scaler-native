@@ -30,4 +30,41 @@ final class ProcessTableDecodeTests: XCTestCase {
         """
         XCTAssertNil(ProcessTableV1.parse(raw: raw))
     }
+
+    func testParseCacheReturnsSameResultForSameRaw() {
+        ProcessTableV1.ParseCache.removeAll()
+        let hash = String(repeating: "d", count: 64)
+        let raw = """
+        {"version":1,"sourceHash":"\(hash)","columns":[{"id":"c1","title":"Mix","kind":"cook","stepIndex":0}],"assignments":[{"ingredientId":"ing1","columnId":"c1"}]}
+        """
+        let first = ProcessTableV1.parse(raw: raw)
+        XCTAssertEqual(ProcessTableV1.ParseCache.count, 1)
+        XCTAssertEqual(ProcessTableV1.parse(raw: raw), first)
+        XCTAssertEqual(ProcessTableV1.ParseCache.count, 1)
+        XCTAssertEqual(first?.sourceHash, hash)
+    }
+
+    func testParseCacheKeepsInvalidResultsAndSeesChangedRaw() {
+        ProcessTableV1.ParseCache.removeAll()
+        XCTAssertNil(ProcessTableV1.parse(raw: "{not json"))
+        XCTAssertNil(ProcessTableV1.parse(raw: "{not json"))
+        XCTAssertEqual(ProcessTableV1.ParseCache.count, 1)
+
+        let hash = String(repeating: "e", count: 64)
+        let mix = """
+        {"version":1,"sourceHash":"\(hash)","columns":[{"id":"c1","title":"Mix","kind":"cook","stepIndex":0}],"assignments":[{"ingredientId":"ing1","columnId":"c1"}]}
+        """
+        let bake = mix.replacingOccurrences(of: "Mix", with: "Bake")
+        XCTAssertEqual(ProcessTableV1.parse(raw: mix)?.columns.first?.title, "Mix")
+        XCTAssertEqual(ProcessTableV1.parse(raw: bake)?.columns.first?.title, "Bake")
+        XCTAssertEqual(ProcessTableV1.parse(raw: mix)?.columns.first?.title, "Mix")
+    }
+
+    func testParseCacheStaysBounded() {
+        ProcessTableV1.ParseCache.removeAll()
+        for index in 0 ..< ProcessTableV1.ParseCache.limit * 2 {
+            _ = ProcessTableV1.parse(raw: "{\"version\":\(index)}")
+        }
+        XCTAssertLessThanOrEqual(ProcessTableV1.ParseCache.count, ProcessTableV1.ParseCache.limit)
+    }
 }
