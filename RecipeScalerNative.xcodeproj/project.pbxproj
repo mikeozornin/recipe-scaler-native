@@ -341,6 +341,7 @@
 		B3TESTERR0010 /* ErrorLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TESTERR0020 /* ErrorLocalizationTests.swift */; };
 		B3TIMENOTIF01B293A4B70100001 /* TimerNotificationActionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */; };
 		B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */; };
+		B3UIPERFCACHE1B293A4B70100001 /* UIPerfCachingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3UIPERFCACHE1A293A4B70100001 /* UIPerfCachingTests.swift */; };
 		B3TIMESYNC01B293A4B70100001 /* TimerSyncQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMESYNC01A293A4B70100001 /* TimerSyncQueueTests.swift */; };
 		B3TIMEWIDGET01B293A4B70100001 /* TimerWidgetTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */; };
 		B3TORD01B293A4B701000002 /* TimerOrdering.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TORD01A293A4B701000001 /* TimerOrdering.swift */; };
@@ -1208,6 +1209,7 @@
 		B3TESTERR0020 /* ErrorLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorLocalizationTests.swift; sourceTree = "<group>"; };
 		B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerNotificationActionsTests.swift; sourceTree = "<group>"; };
 		B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerPanelRefreshTests.swift; sourceTree = "<group>"; };
+		B3UIPERFCACHE1A293A4B70100001 /* UIPerfCachingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIPerfCachingTests.swift; sourceTree = "<group>"; };
 		B3TIMESYNC01A293A4B70100001 /* TimerSyncQueueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSyncQueueTests.swift; sourceTree = "<group>"; };
 		B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerWidgetTimelineTests.swift; sourceTree = "<group>"; };
 		B3TORD01A293A4B701000001 /* TimerOrdering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerOrdering.swift; sourceTree = "<group>"; };
@@ -2164,6 +2166,7 @@
 				B3AUTHINV01A293A4B70100001 /* AuthSessionInvalidationTests.swift */,
 				B3APPTEST01A293A4B70100001 /* AppContainerTests.swift */,
 				B3TIMERPANEL01A293A4B70100001 /* TimerPanelRefreshTests.swift */,
+				B3UIPERFCACHE1A293A4B70100001 /* UIPerfCachingTests.swift */,
 				B3TIMESYNC01A293A4B70100001 /* TimerSyncQueueTests.swift */,
 				B3TIMENOTIF01A293A4B70100001 /* TimerNotificationActionsTests.swift */,
 				B3TIMEWIDGET01A293A4B70100001 /* TimerWidgetTimelineTests.swift */,
@@ -3788,6 +3791,7 @@
 				B3AUTHINV01B293A4B70100001 /* AuthSessionInvalidationTests.swift in Sources */,
 				B3APPTEST01B293A4B70100001 /* AppContainerTests.swift in Sources */,
 				B3TIMERPANEL01B293A4B70100001 /* TimerPanelRefreshTests.swift in Sources */,
+				B3UIPERFCACHE1B293A4B70100001 /* UIPerfCachingTests.swift in Sources */,
 				B3TIMESYNC01B293A4B70100001 /* TimerSyncQueueTests.swift in Sources */,
 				B3TIMENOTIF01B293A4B70100001 /* TimerNotificationActionsTests.swift in Sources */,
 				B3TIMEWIDGET01B293A4B70100001 /* TimerWidgetTimelineTests.swift in Sources */,
