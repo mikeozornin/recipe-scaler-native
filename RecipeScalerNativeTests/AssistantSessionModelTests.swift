@@ -161,6 +161,112 @@ final class AssistantSessionModelTests: XCTestCase {
         XCTAssertEqual(backend.persistedThreadIds.last ?? nil, "thread-new")
     }
 
+    // MARK: - Stream text coalescing (deltas are applied at most every 33 ms)
+
+    func testBurstOfDeltasArrivesWhole() async {
+        let backend = FakeAssistantBackend()
+        let model = backend.makeModel()
+        await openAndBootstrap(model, backend: backend)
+
+        model.input = "Как спасти соус?"
+        model.launchSend()
+        await waitUntil { backend.continuation != nil }
+        let tokens = (0..<200).map { "слово\($0) " }
+        for token in tokens {
+            backend.continuation?.yield(.textDelta(token))
+        }
+        await waitUntil { model.messages.last?.text == tokens.joined() }
+        XCTAssertEqual(model.messages.last?.isStreaming, true)
+
+        backend.continuation?.finish()
+        await waitUntil { !model.isSending }
+        XCTAssertEqual(model.messages.last?.text, tokens.joined())
+    }
+
+    func testFinalWithoutContentKeepsBufferedText() async {
+        let backend = FakeAssistantBackend()
+        let model = backend.makeModel()
+        await openAndBootstrap(model, backend: backend)
+
+        model.input = "Как спасти соус?"
+        model.launchSend()
+        await waitUntil { backend.continuation != nil }
+        // Same burst: the last two deltas are still buffered when the final arrives.
+        backend.continuation?.yield(.textDelta("Сни"))
+        backend.continuation?.yield(.textDelta("ми"))
+        backend.continuation?.yield(.textDelta(" с огня"))
+        backend.continuation?.yield(.final(AssistantStreamFinalData(
+            thread: AssistantStreamFinalData.Thread(id: "thread-new", title: nil),
+            userMessage: nil,
+            assistantMessage: AssistantStreamFinalMessage(
+                id: "assistant-1",
+                content: nil,
+                metadata: nil,
+                createdAt: nil
+            )
+        )))
+        await waitUntil { !model.isSending }
+
+        XCTAssertEqual(model.messages.last?.id, "assistant-1")
+        XCTAssertEqual(model.messages.last?.text, "Сними с огня")
+        XCTAssertEqual(model.messages.last?.isStreaming, false)
+    }
+
+    func testToolStatusKeepsTextOrder() async {
+        let backend = FakeAssistantBackend()
+        let model = backend.makeModel()
+        await openAndBootstrap(model, backend: backend)
+
+        model.input = "Найди рецепт"
+        model.launchSend()
+        await waitUntil { backend.continuation != nil }
+        backend.continuation?.yield(.textDelta("Ищу"))
+        backend.continuation?.yield(.textDelta(" рецепты"))
+        backend.continuation?.yield(.toolStart(toolName: "search_recipes", toolCallId: "call-1"))
+        backend.continuation?.yield(.textDelta(": нашёл"))
+        await waitUntil { model.messages.last?.text == "Ищу рецепты: нашёл" }
+
+        XCTAssertEqual(model.messages.map(\.role), ["user", "assistant", "assistant"])
+        XCTAssertTrue(model.messages[1].isToolStatusRow)
+        XCTAssertFalse(model.messages[2].isToolStatusRow)
+
+        backend.continuation?.finish()
+        await waitUntil { !model.isSending }
+    }
+
+    func testCloseKeepsTextAlreadyReceived() async {
+        let backend = FakeAssistantBackend()
+        let model = backend.makeModel()
+        await openAndBootstrap(model, backend: backend)
+
+        model.input = "Как спасти соус?"
+        model.launchSend()
+        await waitUntil { backend.continuation != nil }
+        backend.continuation?.yield(.textDelta("Сними"))
+        await waitUntil { model.messages.last?.text == "Сними" }
+        // Consumed but still inside the 33 ms window when the chat closes.
+        backend.continuation?.yield(.textDelta(" с огня"))
+        try? await Task.sleep(nanoseconds: 5_000_000)
+        model.close()
+        await settle()
+
+        XCTAssertEqual(model.messages.last?.text, "Сними с огня")
+    }
+
+    func testStreamFlushThrottleTiming() {
+        var throttle = AssistantStreamFlushThrottle()
+        let start = ContinuousClock.now
+        XCTAssertNil(throttle.delayBeforeFlush(now: start), "the first delta shows at once")
+
+        throttle.didFlush(at: start)
+        XCTAssertEqual(throttle.delayBeforeFlush(now: start + .milliseconds(10)), .milliseconds(23))
+        XCTAssertNil(throttle.delayBeforeFlush(now: start + .milliseconds(33)))
+        XCTAssertNil(throttle.delayBeforeFlush(now: start + .milliseconds(500)))
+
+        throttle.reset()
+        XCTAssertNil(throttle.delayBeforeFlush(now: start + .milliseconds(1)))
+    }
+
     /// iPhone: the sheet reopens like before (bootstrap, thread restore), only
     /// the typed draft survives (plan.md Р7).
     func testDraftSurvivesCloseAndReopen() async {

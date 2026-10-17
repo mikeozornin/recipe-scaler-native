@@ -123,6 +123,13 @@ final class AssistantSessionModel {
     /// thread (offline / bootstrap / createThread failure). Survives
     /// offline→online transitions and is restored into the composer bubble.
     @ObservationIgnored private var undeliveredPrompt: String?
+    /// Streamed text not yet applied to `pendingStreamMessageId`: deltas are applied
+    /// at most every `AssistantStreamFlushThrottle.interval` instead of per token, so
+    /// a long reply does not re-render the chat (and copy its text) hundreds of times.
+    @ObservationIgnored private var pendingStreamText = ""
+    @ObservationIgnored private var pendingStreamMessageId: String?
+    @ObservationIgnored private var streamFlushThrottle = AssistantStreamFlushThrottle()
+    @ObservationIgnored private var streamFlushTask: Task<Void, Never>?
 
     private static let newChatTimeout: TimeInterval = 60
 
@@ -228,6 +235,8 @@ final class AssistantSessionModel {
     }
 
     private func cancelAllWork() {
+        // Deltas already received stay in the (kept) messages, as before coalescing.
+        flushStreamText()
         initialBootstrapTask?.cancel()
         initialBootstrapTask = nil
         bootstrapTask?.cancel()
@@ -398,6 +407,7 @@ final class AssistantSessionModel {
         externalSendTask = nil
         streamTask?.cancel()
         streamTask = nil
+        discardStreamText()
         threadId = nil
         messages = []
         if !keepsDraft {
@@ -421,6 +431,7 @@ final class AssistantSessionModel {
         externalSendTask = nil
         streamTask?.cancel()
         streamTask = nil
+        discardStreamText()
         pendingExternalRequest = nil
         threadId = id
         persistSession()
@@ -823,17 +834,23 @@ final class AssistantSessionModel {
 
         let stream = try await client.stream(threadId, message, attachedRecipeIds)
         guard isCurrent(generation) else { return }
+        // Whatever way the stream ends, text it delivered lands in the message.
+        defer { flushStreamText() }
         for try await event in stream {
             guard isCurrent(generation) else { return }
+            if case .textDelta(let delta) = event {
+                bufferStreamText(delta, messageId: assistantMessageId, generation: generation)
+                continue
+            }
+            // Every other event applies in order after the text received before it.
+            flushStreamText()
             switch event {
             case .textStart:
                 updateStreamingMessage(id: assistantMessageId) { msg in
                     msg.isStreaming = true
                 }
-            case .textDelta(let delta):
-                updateStreamingMessage(id: assistantMessageId) { msg in
-                    msg.text.append(delta)
-                }
+            case .textDelta:
+                break
             case .toolStart(let toolName, _):
                 insertOptimisticToolStatusRow(toolName: toolName, assistantMessageId: assistantMessageId)
             case .final(let data):
@@ -862,6 +879,50 @@ final class AssistantSessionModel {
 
     private func removeAllOptimisticMessages() {
         messages.removeAll { AssistantMessage.isOptimisticID($0.id) }
+    }
+
+    /// Leading edge: the first delta after a quiet interval shows at once; later ones
+    /// within the interval are batched into one trailing flush.
+    private func bufferStreamText(_ delta: String, messageId: String, generation: Int) {
+        if pendingStreamMessageId != messageId {
+            flushStreamText()
+            pendingStreamMessageId = messageId
+            streamFlushThrottle.reset()
+        }
+        pendingStreamText.append(delta)
+        guard let delay = streamFlushThrottle.delayBeforeFlush(now: .now) else {
+            flushStreamText()
+            return
+        }
+        guard streamFlushTask == nil else { return }
+        streamFlushTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: delay)
+            guard let self, !Task.isCancelled else { return }
+            self.streamFlushTask = nil
+            guard generation == self.interactionGeneration else { return }
+            self.flushStreamText()
+        }
+    }
+
+    private func flushStreamText() {
+        streamFlushTask?.cancel()
+        streamFlushTask = nil
+        guard let messageId = pendingStreamMessageId, !pendingStreamText.isEmpty else { return }
+        let text = pendingStreamText
+        pendingStreamText = ""
+        streamFlushThrottle.didFlush(at: .now)
+        updateStreamingMessage(id: messageId) { msg in
+            msg.text.append(text)
+        }
+    }
+
+    /// The messages the text belonged to are being replaced.
+    private func discardStreamText() {
+        streamFlushTask?.cancel()
+        streamFlushTask = nil
+        pendingStreamText = ""
+        pendingStreamMessageId = nil
+        streamFlushThrottle.reset()
     }
 
     private func updateStreamingMessage(id: String, _ mutate: (inout AssistantMessage) -> Void) {
@@ -923,5 +984,29 @@ final class AssistantSessionModel {
 
     private func stampSession() {
         persistSession()
+    }
+}
+
+/// Timing for coalesced stream text: at most one UI update per `interval`.
+struct AssistantStreamFlushThrottle {
+    /// ~30 updates a second: smooth to the eye, a fraction of a per-token render.
+    static let interval: Duration = .milliseconds(33)
+
+    private var lastFlush: ContinuousClock.Instant?
+
+    /// `nil` → flush now; otherwise wait this long for the trailing flush.
+    func delayBeforeFlush(now: ContinuousClock.Instant) -> Duration? {
+        guard let lastFlush else { return nil }
+        let elapsed = now - lastFlush
+        guard elapsed < Self.interval else { return nil }
+        return Self.interval - elapsed
+    }
+
+    mutating func didFlush(at instant: ContinuousClock.Instant) {
+        lastFlush = instant
+    }
+
+    mutating func reset() {
+        lastFlush = nil
     }
 }
