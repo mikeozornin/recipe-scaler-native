@@ -80,6 +80,7 @@ struct CollectionsRootView: View {
                 let presentation = FolderDisplayName.presentation(forStoredName: folder.name)
                 collectionRow(
                     folderId: folder.id,
+                    folder: folder,
                     title: presentation.displayName,
                     leadingEmoji: presentation.leadingEmoji,
                     icon: RecipeFolderConstants.folderIconName(recipeCount: count),
@@ -343,16 +344,17 @@ struct CollectionsRootView: View {
 
     // MARK: - Collection row
 
+    /// `folder` is the user folder of the row (`nil` for the virtual rows, whose icon
+    /// color does not depend on it), passed in rather than looked up per row.
     @ViewBuilder
     private func collectionRow(
         folderId: String,
+        folder: RecipeFolder? = nil,
         title: String,
         leadingEmoji: String? = nil,
         icon: String,
         count: Int
     ) -> some View {
-        let folder = syncService.folders.first { $0.id == folderId }
-
         Button {
             navigationPath.append(RecipesRoute.folder(folderId))
         } label: {

@@ -124,9 +124,7 @@ struct RecipeCachedImageView: View {
         }
 
         // Fast path: read .webp from Caches without waiting on the image actor queue.
-        if let fileURL = RecipeImageDiskCache.existingFileURL(recipeId: recipeId, variant: variant) {
-            await applyImage(from: fileURL)
-        }
+        await applyImageFromDisk()
 
         guard allowsNetworkRefresh else { return }
 
@@ -143,10 +141,23 @@ struct RecipeCachedImageView: View {
     }
 
     private func reloadFromDiskOnly() async {
-        guard let fileURL = RecipeImageDiskCache.existingFileURL(recipeId: recipeId, variant: variant) else {
-            return
+        await applyImageFromDisk()
+    }
+
+    /// The cached file, when there is one: the disk lookup runs off the main thread with the decode.
+    private func applyImageFromDisk() async {
+        let recipeId = recipeId
+        let variant = variant
+        let decoded = await Task.detached(priority: .userInitiated) { () -> UIImage? in
+            guard let fileURL = RecipeImageDiskCache.existingFileURL(recipeId: recipeId, variant: variant) else {
+                return nil
+            }
+            return RecipeImageDisplayCache.image(fileURL: fileURL, variant: variant)
+        }.value
+        guard let decoded else { return }
+        await MainActor.run {
+            uiImage = decoded
         }
-        await applyImage(from: fileURL)
     }
 
     private func applyImage(from fileURL: URL) async {

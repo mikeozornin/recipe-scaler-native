@@ -96,9 +96,7 @@ struct PublicCachedImageView: View {
             await MainActor.run { uiImage = cached }
         }
 
-        if let fileURL = PublicImageDiskCache.existingFileURL(for: url) {
-            await applyImage(from: fileURL, sourceURL: url)
-        }
+        await applyImageFromDisk(sourceURL: url)
 
         guard allowsNetworkRefresh else { return }
 
@@ -109,6 +107,21 @@ struct PublicCachedImageView: View {
             await applyImage(from: fileURL, sourceURL: url)
         } else if uiImage == nil {
             await MainActor.run { uiImage = nil }
+        }
+    }
+
+    /// The cached file, when there is one: hashing the URL and the disk lookup run off the
+    /// main thread with the decode.
+    private func applyImageFromDisk(sourceURL: URL) async {
+        let maxPixelSize = maxPixelSize
+        let decoded = await Task.detached(priority: .userInitiated) { () -> UIImage? in
+            guard let fileURL = PublicImageDiskCache.existingFileURL(for: sourceURL) else { return nil }
+            return RecipeImageDecoder.decode(fileURL: fileURL, maxPixelSize: maxPixelSize)
+        }.value
+        guard let decoded else { return }
+        DiscoverImageMemoryCache.store(decoded, for: sourceURL)
+        await MainActor.run {
+            uiImage = decoded
         }
     }
 

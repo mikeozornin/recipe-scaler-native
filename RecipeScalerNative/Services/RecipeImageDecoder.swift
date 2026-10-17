@@ -74,3 +74,16 @@ enum RecipeImageDisplayCache {
         return "\(fileURL.path)|\(maxPixels)|\(mod)" as NSString
     }
 }
+
+extension RecipeImageDisplayCache {
+    /// Decodes the `.full` image of `recipeId` into the cache when it is on disk. The disk
+    /// lookup runs off the main thread together with the decode.
+    static func prefetchFull(recipeId: String) async {
+        await Task.detached(priority: .utility) {
+            guard let fileURL = RecipeImageDiskCache.existingFileURL(recipeId: recipeId, variant: .full) else {
+                return
+            }
+            _ = image(fileURL: fileURL, variant: .full)
+        }.value
+    }
+}

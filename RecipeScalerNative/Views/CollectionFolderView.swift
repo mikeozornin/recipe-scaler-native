@@ -99,12 +99,13 @@ struct CollectionFolderView: View {
         return folderRecipes
     }
 
-    private var pinnedRowItems: [RecipeRowData] {
-        pinPartitionedEntries.pinned.map(RecipeRowData.init(entry:))
-    }
-
-    private var unpinnedRowItems: [RecipeRowData] {
-        pinPartitionedEntries.unpinned.map(RecipeRowData.init(entry:))
+    /// Row data of the folder. Built once per body: the rows, the headers and `.id` read it.
+    private var rowItems: RecipeListRowItems {
+        let partition = pinPartitionedEntries
+        return RecipeListRowItems(
+            pinned: partition.pinned.map(RecipeRowData.init(entry:)),
+            unpinned: partition.unpinned.map(RecipeRowData.init(entry:))
+        )
     }
 
     /// Folder lists and search snapshots are pin-first sorted; partition once.
@@ -122,12 +123,8 @@ struct CollectionFolderView: View {
     /// and produces the "jump over header / teleport / blink" artifacts).
     /// Server echoes that only bump `updatedAt` do not change this signature,
     /// so they no longer trigger a rebuild.
-    private var pinStateSignature: String {
-        pinnedRowItems.map(\.id).joined(separator: ",")
-    }
-
-    private var hasAnyRows: Bool {
-        !pinnedRowItems.isEmpty || !unpinnedRowItems.isEmpty
+    private static func pinStateSignature(of rows: RecipeListRowItems) -> String {
+        rows.pinned.map(\.id).joined(separator: ",")
     }
 
     var body: some View {
@@ -148,10 +145,11 @@ struct CollectionFolderView: View {
                 .font(AppTypography.body)
                 .mobileTimerPanelBottomPadding()
             } else {
+                let rows = rowItems
                 List {
                     // Single ForEach across both pinned and unpinned rows so
                     // SwiftUI preserves row identity during pin/unpin.
-                    recipeRowsWithHeaders
+                    recipeRowsWithHeaders(rows)
 
                     if MobileTimerPanelListChrome.needsSpacer(
                         timerManager: timerManager,
@@ -172,7 +170,7 @@ struct CollectionFolderView: View {
                 // giving an instant transition. This sacrifices SwiftUI's
                 // move animation entirely, which is the goal: a clean
                 // instant transition is preferable to a broken animated one.
-                .id(pinStateSignature)
+                .id(Self.pinStateSignature(of: rows))
             }
         }
         .searchable(
@@ -474,24 +472,36 @@ struct CollectionFolderView: View {
         }
     }
 
-    private var listItems: [ListItem] {
+    private static func listItems(_ rows: RecipeListRowItems) -> [ListItem] {
         var items: [ListItem] = []
-        if !pinnedRowItems.isEmpty {
+        if !rows.pinned.isEmpty {
             items.append(.pinnedHeader)
-            items.append(contentsOf: pinnedRowItems.map(ListItem.recipe))
+            items.append(contentsOf: rows.pinned.map(ListItem.recipe))
         }
-        if !unpinnedRowItems.isEmpty {
-            if !pinnedRowItems.isEmpty {
+        if !rows.unpinned.isEmpty {
+            if !rows.pinned.isEmpty {
                 items.append(.unpinnedHeader)
             }
-            items.append(contentsOf: unpinnedRowItems.map(ListItem.recipe))
+            items.append(contentsOf: rows.unpinned.map(ListItem.recipe))
         }
         return items
     }
 
+    /// `collectionEntries.first { $0.id == id }?.folderIds` for every recipe id, built once
+    /// for all rows instead of a scan per row.
+    private var folderIdsByRecipeId: [String: [String]] {
+        var result: [String: [String]] = [:]
+        result.reserveCapacity(syncService.collectionEntries.count)
+        for entry in syncService.collectionEntries where result[entry.id] == nil {
+            result[entry.id] = entry.folderIds
+        }
+        return result
+    }
+
     @ViewBuilder
-    private var recipeRowsWithHeaders: some View {
-        ForEach(listItems) { listItem in
+    private func recipeRowsWithHeaders(_ rows: RecipeListRowItems) -> some View {
+        let folderIds = folderIdsByRecipeId
+        ForEach(Self.listItems(rows)) { listItem in
             switch listItem {
             case .pinnedHeader:
                 RecipeListSectionHeader(isPinnedSection: true)
@@ -500,18 +510,17 @@ struct CollectionFolderView: View {
                 RecipeListSectionHeader(isPinnedSection: false)
                     .recipeListSectionHeaderRow()
             case .recipe(let item):
-                recipeRowView(for: item)
+                recipeRowView(for: item, recipeFolderIds: folderIds[item.id])
             }
         }
     }
 
     @ViewBuilder
-    private func recipeRowView(for item: RecipeRowData) -> some View {
+    private func recipeRowView(for item: RecipeRowData, recipeFolderIds: [String]?) -> some View {
         let folderContext = RecipeFolderRoutes.shouldUseFolderRecipePath(
             activeFolderId: folderId,
             viewMode: .collections,
-            recipeFolderIds: syncService.collectionEntries
-                .first { $0.id == item.id }?.folderIds
+            recipeFolderIds: recipeFolderIds
         ) ? folderId : nil
         let route = RecipesRoute.recipe(recipeId: item.id, folderContext: folderContext)
         let isSelected = column?.selectedRecipeId == item.id
@@ -586,13 +595,8 @@ struct CollectionFolderView: View {
             delete: { presentedAlert = .deleteRecipe(item) }
         ))
         .task(id: item.id) {
-            guard item.hasThumbnail,
-                  let fileURL = RecipeImageDiskCache.existingFileURL(recipeId: item.id, variant: .full) else {
-                return
-            }
-            await Task.detached(priority: .utility) {
-                _ = RecipeImageDisplayCache.image(fileURL: fileURL, variant: .full)
-            }.value
+            guard item.hasThumbnail else { return }
+            await RecipeImageDisplayCache.prefetchFull(recipeId: item.id)
         }
     }
 

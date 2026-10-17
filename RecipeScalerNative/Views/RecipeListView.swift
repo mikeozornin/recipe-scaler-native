@@ -100,12 +100,13 @@ struct RecipeListView: View {
         return syncService.collectionIndex.live
     }
 
-    private var pinnedRowItems: [RecipeRowData] {
-        pinPartitionedEntries.pinned.map(RecipeRowData.init(entry:))
-    }
-
-    private var unpinnedRowItems: [RecipeRowData] {
-        pinPartitionedEntries.unpinned.map(RecipeRowData.init(entry:))
+    /// Row data of the current list. Built once per body: the list branch reads it several times.
+    private var rowItems: RecipeListRowItems {
+        let partition = pinPartitionedEntries
+        return RecipeListRowItems(
+            pinned: partition.pinned.map(RecipeRowData.init(entry:)),
+            unpinned: partition.unpinned.map(RecipeRowData.init(entry:))
+        )
     }
 
     /// One partition of the current list (search snapshot or pre-split index).
@@ -115,10 +116,6 @@ struct RecipeListView: View {
         }
         let index = syncService.collectionIndex
         return (index.pinned, index.unpinned)
-    }
-
-    private var hasAnyRows: Bool {
-        !pinnedRowItems.isEmpty || !unpinnedRowItems.isEmpty
     }
 
     /// Whether we should show the collections root instead of the flat list.
@@ -206,69 +203,72 @@ struct RecipeListView: View {
                     ProgressView(Bundle.currentLocalizedString("recipe.list.loading"))
                         .mobileTimerPanelBottomPadding()
                 }
-            } else if !hasAnyRows {
-                if isSearching {
-                    VStack(spacing: 0) {
-                        SystemBannerChrome(systemBannerStore: systemBannerStore)
-                        ReleaseNotesChrome()
-                        ContentUnavailableView {
-                            AppEmptyState.label("recipe.list.search-empty.title", symbol: "magnifyingglass")
+            } else {
+                let rows = rowItems
+                if rows.isEmpty {
+                    if isSearching {
+                        VStack(spacing: 0) {
+                            SystemBannerChrome(systemBannerStore: systemBannerStore)
+                            ReleaseNotesChrome()
+                            ContentUnavailableView {
+                                AppEmptyState.label("recipe.list.search-empty.title", symbol: "magnifyingglass")
+                            }
+                            .font(AppTypography.body)
+                            .mobileTimerPanelBottomPadding()
                         }
-                        .font(AppTypography.body)
-                        .mobileTimerPanelBottomPadding()
-                    }
-                } else {
-                    VStack(spacing: 0) {
-                        SystemBannerChrome(systemBannerStore: systemBannerStore)
-                        ReleaseNotesChrome()
-                        ContentUnavailableView {
-                            VStack(spacing: 12) {
-                                AppEmptyStateIllustration(asset: .recipeNotebookEmpty)
-                                Text("recipe.list.empty.title")
+                    } else {
+                        VStack(spacing: 0) {
+                            SystemBannerChrome(systemBannerStore: systemBannerStore)
+                            ReleaseNotesChrome()
+                            ContentUnavailableView {
+                                VStack(spacing: 12) {
+                                    AppEmptyStateIllustration(asset: .recipeNotebookEmpty)
+                                    Text("recipe.list.empty.title")
+                                        .appBody()
+                                }
+                            } description: {
+                                Text("recipe.list.empty.description")
                                     .appBody()
                             }
-                        } description: {
-                            Text("recipe.list.empty.description")
-                                .appBody()
+                            .font(AppTypography.body)
+                            .mobileTimerPanelBottomPadding()
                         }
-                        .font(AppTypography.body)
-                        .mobileTimerPanelBottomPadding()
                     }
-                }
-            } else {
-                List {
-                    // Scrolls away with recipe rows (not sticky above the List).
-                    SystemBannerListRow(systemBannerStore: systemBannerStore)
-                    ReleaseNotesListRow()
+                } else {
+                    List {
+                        // Scrolls away with recipe rows (not sticky above the List).
+                        SystemBannerListRow(systemBannerStore: systemBannerStore)
+                        ReleaseNotesListRow()
 
-                    if !pinnedRowItems.isEmpty {
-                        RecipeListSectionHeader(isPinnedSection: true)
-                            .recipeListSectionHeaderRow()
-
-                        recipeRows(pinnedRowItems)
-                    }
-
-                    if !unpinnedRowItems.isEmpty {
-                        if !pinnedRowItems.isEmpty {
-                            RecipeListSectionHeader(isPinnedSection: false)
+                        if !rows.pinned.isEmpty {
+                            RecipeListSectionHeader(isPinnedSection: true)
                                 .recipeListSectionHeaderRow()
+
+                            recipeRows(rows.pinned)
                         }
 
-                        recipeRows(unpinnedRowItems)
-                    }
+                        if !rows.unpinned.isEmpty {
+                            if !rows.pinned.isEmpty {
+                                RecipeListSectionHeader(isPinnedSection: false)
+                                    .recipeListSectionHeaderRow()
+                            }
 
-                    if MobileTimerPanelListChrome.needsSpacer(
-                        timerManager: timerManager,
-                        isCollapsed: mobileTimerPanelIsCollapsed
-                    ) {
-                        MobileTimerPanelListSpacerRow()
+                            recipeRows(rows.unpinned)
+                        }
+
+                        if MobileTimerPanelListChrome.needsSpacer(
+                            timerManager: timerManager,
+                            isCollapsed: mobileTimerPanelIsCollapsed
+                        ) {
+                            MobileTimerPanelListSpacerRow()
+                        }
                     }
+                    .listStyle(.plain)
+                    .listSectionSpacing(0)
+                    .environment(\.defaultMinListRowHeight, 1)
+                    .accessibilityIdentifier(AccessibilityIdentifiers.recipeList)
+                    .onAppear { PerfMark.once("recipes_visible") }
                 }
-                .listStyle(.plain)
-                .listSectionSpacing(0)
-                .environment(\.defaultMinListRowHeight, 1)
-                .accessibilityIdentifier(AccessibilityIdentifiers.recipeList)
-                .onAppear { PerfMark.once("recipes_visible") }
             }
             }
         }
@@ -660,13 +660,8 @@ struct RecipeListView: View {
                 delete: { presentedAlert = .deleteRecipe(item) }
             ))
             .task(id: item.id) {
-                guard item.hasThumbnail,
-                      let fileURL = RecipeImageDiskCache.existingFileURL(recipeId: item.id, variant: .full) else {
-                    return
-                }
-                await Task.detached(priority: .utility) {
-                    _ = RecipeImageDisplayCache.image(fileURL: fileURL, variant: .full)
-                }.value
+                guard item.hasThumbnail else { return }
+                await RecipeImageDisplayCache.prefetchFull(recipeId: item.id)
             }
         }
     }
@@ -965,6 +960,14 @@ struct RecipeRow: View {
 }
 
 // MARK: - Value Type
+
+/// Pinned and unpinned rows of the recipe list.
+struct RecipeListRowItems {
+    let pinned: [RecipeRowData]
+    let unpinned: [RecipeRowData]
+
+    var isEmpty: Bool { pinned.isEmpty && unpinned.isEmpty }
+}
 
 struct RecipeRowData: Identifiable, Equatable {
     let id: String
