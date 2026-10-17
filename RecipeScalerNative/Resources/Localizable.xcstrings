@@ -15168,7 +15168,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вход во Вкусвилл сейчас недоступен. Попробуйте позже."
+            "value": "Вход во Вкусвилл сейчас недоступен. Попробуйте позднее."
           }
         }
       }
@@ -15179,13 +15179,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sign-in to Vkusvill didn't finish. Try again."
+            "value": "Couldn't sign in. Try again."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вход во Вкусвилл не завершился. Попробуйте ещё раз."
+            "value": "Не удалось войти. Попробуйте снова."
           }
         }
       }
@@ -15196,13 +15196,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Couldn't sign in to Vkusvill. Try again."
+            "value": "Couldn't sign in. Try again."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не удалось войти во Вкусвилл. Попробуйте ещё раз."
+            "value": "Не удалось войти. Попробуйте снова."
           }
         }
       }
@@ -15219,7 +15219,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не удалось выйти из аккаунта Вкусвилла. Попробуйте ещё раз."
+            "value": "Не удалось выйти из аккаунта Вкусвилла. Попробуйте снова."
           }
         }
       }
@@ -15230,13 +15230,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Couldn't sign in: Vkusvill didn't respond. Try again."
+            "value": "Couldn't sign in, Vkusvill is unavailable. Try again."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не удалось войти: Вкусвилл не ответил. Попробуйте ещё раз."
+            "value": "Не удалось войти, Вкусвилл недоступен. Попробуйте снова."
           }
         }
       }
@@ -15247,13 +15247,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No delivery address is selected in Vkusvill, so stock isn't checked. Choose an address in the Vkusvill app — your purchases are already taken into account."
+            "value": "Choose a delivery address in Vkusvill to see more accurate product availability."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Во Вкусвилле не выбран адрес доставки, поэтому наличие не проверяется. Выберите адрес в приложении Вкусвилла — покупки ассистент уже учитывает."
+            "value": "Выберите адрес доставки во Вкусвилле, чтобы увидеть более точное наличие товаров."
           }
         }
       }
