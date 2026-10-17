@@ -40,7 +40,6 @@ struct AssistantSheet: View {
     let onClose: () -> Void
 
     @State private var showHistorySheet = false
-    @State private var messageListContentWidth: CGFloat = 0
 
     init(
         session: AssistantSessionModel,
@@ -70,9 +69,6 @@ struct AssistantSheet: View {
     private var showsOnlineContent: Bool {
         !offlineGate.isVisible
     }
-
-    private static let userMessageLeadingInset: CGFloat = 48
-    private static let messageMaxWidthFraction: CGFloat = 0.9
 
     var body: some View {
         NavigationStack {
@@ -128,7 +124,9 @@ struct AssistantSheet: View {
     private var chat: some View {
         VStack(spacing: 0) {
             if showsOnlineContent {
-                messageList
+                // Its own view: a streamed delta re-renders the list only, not this
+                // body with its toolbar and composer.
+                AssistantMessageList(session: session, syncService: syncService)
                 AssistantComposer(
                     text: $session.input,
                     attachments: $session.attachments,
@@ -215,19 +213,38 @@ struct AssistantSheet: View {
         }
         .accessibilityIdentifier(AccessibilityIdentifiers.assistantSheet)
     }
+}
 
-    // MARK: - Message list
+// MARK: - Message list
 
-    private var messageList: some View {
-        // Build once per body pass (not per bubble). Streaming deltas re-render the
-        // sheet; recomputing these maps inside each message was O(visible × collection).
-        // `collectionEntries` is already filtered to non-deleted entries.
-        let lookups = AssistantAttachableRecipeLookups.build(from: syncService.collectionEntries)
+/// The message column. Reads `session.messages`, so per-delta invalidation stops here.
+private struct AssistantMessageList: View {
+    let session: AssistantSessionModel
+    let syncService: YjsSyncService
+
+    @State private var contentWidth: CGFloat = 0
+    @State private var lookupsMemo = AssistantAttachableRecipeLookupsMemo()
+
+    var body: some View {
+        // `collectionEntries` is already filtered to non-deleted entries. The maps are
+        // rebuilt only when the entries (or the untitled placeholder) change, not per delta.
+        let lookups = lookupsMemo.lookups(for: syncService.collectionEntries)
+        let messages = session.messages
+        let lastMessageId = messages.last?.id
+        let isSending = session.isSending
+        let contentWidth = contentWidth
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
-                ForEach(session.messages) { message in
-                    let isLast = message.id == session.messages.last?.id
-                    messageBubble(for: message, isLast: isLast, lookups: lookups)
+                ForEach(messages) { message in
+                    AssistantMessageRow(
+                        message: message,
+                        isLast: message.id == lastMessageId,
+                        isSending: isSending,
+                        lookups: lookups,
+                        contentWidth: contentWidth,
+                        session: session
+                    )
+                    .equatable()
                 }
             }
             .padding(14)
@@ -236,33 +253,101 @@ struct AssistantSheet: View {
         .onGeometryChange(for: CGFloat.self) { proxy in
             max(0, proxy.size.width - 28)
         } action: { width in
-            messageListContentWidth = width
+            self.contentWidth = width
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+}
 
-    private func userBubbleMaxWidth(for contentWidth: CGFloat) -> CGFloat {
-        guard contentWidth > 0 else { return 280 }
-        return min(
-            contentWidth * Self.messageMaxWidthFraction,
-            contentWidth - Self.userMessageLeadingInset
-        )
+/// Memo for `AssistantAttachableRecipeLookups.build`, held in `@State` (not observed).
+final class AssistantAttachableRecipeLookupsMemo {
+    private var entries: [CollectionEntry]?
+    private var untitled: String?
+    private var cached = AssistantAttachableRecipeLookups.empty
+
+    /// Same value as `AssistantAttachableRecipeLookups.build(from: entries)`.
+    func lookups(for entries: [CollectionEntry]) -> AssistantAttachableRecipeLookups {
+        let untitled = Bundle.currentLocalizedString("recipes.no-title")
+        if let cachedEntries = self.entries, cachedEntries == entries, self.untitled == untitled {
+            return cached
+        }
+        cached = AssistantAttachableRecipeLookups.build(from: entries)
+        self.entries = entries
+        self.untitled = untitled
+        return cached
+    }
+}
+
+/// Whether two values of a message render the same bubble. `AssistantMessage` and its
+/// metadata are not `Equatable` (shared model types); the metadata holds only value types,
+/// so its reflected description is a faithful comparison.
+enum AssistantMessageRenderEquality {
+    static func isEqual(_ lhs: AssistantMessage, _ rhs: AssistantMessage) -> Bool {
+        lhs.id == rhs.id
+            && lhs.role == rhs.role
+            && lhs.isStreaming == rhs.isStreaming
+            && lhs.createdAt == rhs.createdAt
+            && lhs.text == rhs.text
+            && isEqual(lhs.metadata, rhs.metadata)
     }
 
-    @ViewBuilder
-    private func messageBubble(
-        for message: AssistantMessage,
-        isLast: Bool,
-        lookups: AssistantAttachableRecipeLookups
-    ) -> some View {
+    static func isEqual(_ lhs: AssistantMessageMetadata?, _ rhs: AssistantMessageMetadata?) -> Bool {
+        switch (lhs, rhs) {
+        case (nil, nil):
+            return true
+        case let (lhs?, rhs?):
+            // Unchanged rows hold the same copy, so the bytes match and the slower
+            // reflected comparison is skipped.
+            if hasSameBytes(lhs, rhs) {
+                return true
+            }
+            return String(reflecting: lhs) == String(reflecting: rhs)
+        default:
+            return false
+        }
+    }
+
+    private static func hasSameBytes<T>(_ lhs: T, _ rhs: T) -> Bool {
+        withUnsafeBytes(of: lhs) { lhsBytes in
+            withUnsafeBytes(of: rhs) { rhsBytes in
+                lhsBytes.elementsEqual(rhsBytes)
+            }
+        }
+    }
+}
+
+/// One message with its meta row and follow-ups. `Equatable`, so the bubbles of a long
+/// chat do not re-render while the last reply streams.
+private struct AssistantMessageRow: View, Equatable {
+    let message: AssistantMessage
+    let isLast: Bool
+    let isSending: Bool
+    let lookups: AssistantAttachableRecipeLookups
+    let contentWidth: CGFloat
+    /// For the submit actions only; the body reads no session state.
+    let session: AssistantSessionModel
+
+    private static let userMessageLeadingInset: CGFloat = 48
+    private static let messageMaxWidthFraction: CGFloat = 0.9
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.isLast == rhs.isLast
+            && lhs.isSending == rhs.isSending
+            && lhs.contentWidth == rhs.contentWidth
+            && lhs.session === rhs.session
+            && lhs.lookups == rhs.lookups
+            && AssistantMessageRenderEquality.isEqual(lhs.message, rhs.message)
+    }
+
+    var body: some View {
         let isUser = message.role == "user"
-        let showMeta = shouldShowMessageMeta(for: message)
+        let showMeta = shouldShowMessageMeta
         let followUps = AssistantMessageFollowUps.suggestions(
             for: message,
             isLastMessage: isLast,
-            isSending: session.isSending
+            isSending: isSending
         )
-        let bubble = messageBubbleBody(for: message, isLast: isLast, isUser: isUser, lookups: lookups)
+        let bubble = messageBubbleBody(isUser: isUser)
 
         VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
             Group {
@@ -271,15 +356,15 @@ struct AssistantSheet: View {
                         Spacer(minLength: Self.userMessageLeadingInset)
                         bubble
                             .frame(
-                                maxWidth: userBubbleMaxWidth(for: messageListContentWidth),
+                                maxWidth: userBubbleMaxWidth,
                                 alignment: .trailing
                             )
                     }
                 } else {
                     bubble
                         .frame(
-                            maxWidth: messageListContentWidth > 0
-                                ? messageListContentWidth * Self.messageMaxWidthFraction
+                            maxWidth: contentWidth > 0
+                                ? contentWidth * Self.messageMaxWidthFraction
                                 : nil,
                             alignment: .leading
                         )
@@ -300,8 +385,8 @@ struct AssistantSheet: View {
                     session.submitWidgetValue(suggestion.value, displayText: suggestion.label, recipeAttachment: nil)
                 }
                 .frame(
-                    maxWidth: messageListContentWidth > 0
-                        ? messageListContentWidth * Self.messageMaxWidthFraction
+                    maxWidth: contentWidth > 0
+                        ? contentWidth * Self.messageMaxWidthFraction
                         : nil,
                     alignment: .leading
                 )
@@ -309,7 +394,15 @@ struct AssistantSheet: View {
         }
     }
 
-    private func shouldShowMessageMeta(for message: AssistantMessage) -> Bool {
+    private var userBubbleMaxWidth: CGFloat {
+        guard contentWidth > 0 else { return 280 }
+        return min(
+            contentWidth * Self.messageMaxWidthFraction,
+            contentWidth - Self.userMessageLeadingInset
+        )
+    }
+
+    private var shouldShowMessageMeta: Bool {
         if message.isToolStatusRow || message.isProcessingPlaceholder {
             return false
         }
@@ -317,12 +410,7 @@ struct AssistantSheet: View {
     }
 
     @ViewBuilder
-    private func messageBubbleBody(
-        for message: AssistantMessage,
-        isLast: Bool,
-        isUser: Bool,
-        lookups: AssistantAttachableRecipeLookups
-    ) -> some View {
+    private func messageBubbleBody(isUser: Bool) -> some View {
         if !isUser, message.isToolStatusRow, let toolName = message.metadata?.toolStatus?.toolName {
             AssistantToolStatusRow(toolName: toolName)
                 .accessibilityIdentifier("assistant_message_\(message.id)")
@@ -330,17 +418,12 @@ struct AssistantSheet: View {
             AssistantProcessingRow()
                 .accessibilityIdentifier("assistant_message_\(message.id)")
         } else {
-            assistantReplyOrUserBubble(for: message, isLast: isLast, isUser: isUser, lookups: lookups)
+            assistantReplyOrUserBubble(isUser: isUser)
         }
     }
 
     @ViewBuilder
-    private func assistantReplyOrUserBubble(
-        for message: AssistantMessage,
-        isLast: Bool,
-        isUser: Bool,
-        lookups: AssistantAttachableRecipeLookups
-    ) -> some View {
+    private func assistantReplyOrUserBubble(isUser: Bool) -> some View {
         let attachments = isUser ? (message.metadata?.attachments ?? []) : []
         let chipsOnly = isUser && AssistantUserBubblePresentation.showsAttachmentChipsOnly(message: message)
         VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
@@ -368,13 +451,13 @@ struct AssistantSheet: View {
                     }
                 }
             } else {
-                AssistantMarkdownText(content: message.text)
+                AssistantMarkdownText(content: message.text, isStreaming: message.isStreaming)
             }
 
             AssistantMessageFooter(
                 message: message,
                 isLastMessage: isLast,
-                isSending: session.isSending,
+                isSending: isSending,
                 onWidgetSubmit: { value, displayText, attachment in
                     session.submitWidgetValue(value, displayText: displayText, recipeAttachment: attachment)
                 }
