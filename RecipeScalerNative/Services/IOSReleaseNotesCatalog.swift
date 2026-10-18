@@ -62,6 +62,18 @@ enum IOSReleaseNotesCatalog {
 
             Разумеется, поддерживаются все возможности iPad: Split View и Stage Manager.
             """
+        ),
+        IOSReleaseNote(
+            version: 4,
+            date: releaseDate(year: 2026, month: 10, day: 18),
+            titleEn: "Sign in to Vkusvill",
+            titleRu: "Вход во Вкусвилл",
+            bodyEn: """
+            Ordering from Vkusvill just got better: sign in to your account, and the assistant will build your cart from what's available at your address, not from the whole catalog. It will also look at your orders and prefer the products you've bought before.
+            """,
+            bodyRu: """
+            Заказ во Вкусвилле стал лучше: войдите в свой аккаунт, и ассистент будет собирать корзину с учётом наличия товаров по вашему адресу, а не вообще по каталогу. Еще он будет учитывать ваши заказы и предпочитать те товары, что вы покупали до этого.
+            """
         )
     ]
 
