@@ -601,10 +601,12 @@ struct ShoppingListView: View {
             purchasePhases[item.id] = .exiting
             try? await Task.sleep(nanoseconds: UInt64(ShoppingPurchaseTiming.exitSeconds * 1_000_000_000))
             guard purchasePhases[item.id] == .exiting else { return }
-            purchasePhases.removeValue(forKey: item.id)
+            // Write first, then drop the phase: the faded row stays hidden until the
+            // snapshot says «purchased». The other order showed it unchecked for a moment.
             await runShoppingMutation {
                 try await syncService.setShoppingItemPurchased(id: item.id, purchased: true)
             }
+            purchasePhases.removeValue(forKey: item.id)
         }
     }
 
