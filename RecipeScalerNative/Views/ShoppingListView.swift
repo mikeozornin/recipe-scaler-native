@@ -250,8 +250,9 @@ struct ShoppingListView: View {
             }
 
             if toBuy.isEmpty {
-                // Not seeded yet → buckets are a placeholder; don't flash "basket empty".
-                if shoppingModel.isSeeded {
+                // Not seeded or not loaded from disk yet → `.empty` is a placeholder; show
+                // nothing rather than flash «Список пуст» before the items arrive.
+                if shoppingModel.isSeeded && syncService.isShoppingLoaded {
                     emptyToBuyRow
                 }
             } else if shoppingModel.toBuyGroups.isEmpty {

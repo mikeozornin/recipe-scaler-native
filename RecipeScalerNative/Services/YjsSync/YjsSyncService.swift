@@ -23,6 +23,9 @@ final class YjsSyncService {
     /// Whether the initial local snapshot load has completed. Used by collection views
     /// to avoid rendering empty state during cold start.
     private(set) var isLocalDataLoaded = false
+    /// `shoppingSnapshot` has been read at least once. Until then `.empty` means «not loaded»,
+    /// not «no items», and the shopping list shows nothing instead of its empty state.
+    private(set) var isShoppingLoaded = false
     private(set) var connectionState: ConnectionState = .disconnected
     /// Polling-first: direct WebSocket (`forceWebsockets`) hangs ~8s on Starscream
     /// then falls back anyway. Upgrade to WS still attempted after polling handshake.
@@ -1609,6 +1612,7 @@ final class YjsSyncService {
         setConnectionState(.disconnected, reason: "stop")
         connectionTransport = .pollingAndWebsocket
         isLocalDataLoaded = false
+        isShoppingLoaded = false
         userId = nil
         activeRecipeId = nil
         setCurrentRecipe(nil)
@@ -3678,6 +3682,7 @@ final class YjsSyncService {
                 guard isCurrentSession(sessionContext) else { return }
             }
             shoppingSnapshot = snapshot
+            if !isShoppingLoaded { isShoppingLoaded = true }
         } catch {
             logger.error("Failed to read shopping list: \(error)")
         }
@@ -4030,13 +4035,17 @@ final class YjsSyncService {
             await refreshCollectionEntries(marksLocalDataLoaded: true)
             logger.info("Loaded collection from local snapshot")
         }
-        // Only collection views wait for this; the shopping list renders its own snapshot.
+        // Only collection views wait for this; the shopping list waits for `isShoppingLoaded`.
         markLocalDataLoaded()
 
         let shoppingKey = Self.shoppingDocKey(userId: userId)
         if (try? await documentManager.getOrCreateDoc(key: shoppingKey)) != nil {
             await refreshShoppingSnapshot()
             logger.info("Loaded shopping list from local snapshot")
+        }
+        // No readable local doc: an empty list is the honest answer now, not a blank screen forever.
+        if self.userId == userId, !isShoppingLoaded {
+            isShoppingLoaded = true
         }
     }
 
@@ -4053,6 +4062,7 @@ final class YjsSyncService {
         let isTestingHost = DebugLaunchOptions.usesReducedTestingHostBehavior
         if isTestingHost {
             isLocalDataLoaded = true
+            isShoppingLoaded = true
         }
     }
 
