@@ -47,7 +47,10 @@ struct WidgetTimerRing: View {
 
     @ViewBuilder
     private func ringCountdownText<Content: View>(_ content: Content) -> some View {
+        // Width cap inside the stroke so `minimumScaleFactor` shrinks long labels
+        // instead of letting them spill over the ring.
         content
+            .frame(maxWidth: ringDiameter - WidgetTimerLayout.ringStrokeWidth * 2)
             .frame(height: WidgetTimerLayout.ringDigitLineHeight)
     }
 
@@ -68,7 +71,7 @@ struct WidgetTimerRing: View {
         case .paused:
             if let remaining = timer.pausedRemainingSeconds {
                 ringCountdownText(
-                    Text(WidgetTimerFormatting.shortClock(remaining))
+                    Text(WidgetTimerFormatting.ringClock(remaining))
                         .widgetMono(digitSize)
                         .widgetTimerTracking()
                         .foregroundStyle(palette.timerColor)

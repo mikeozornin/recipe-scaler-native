@@ -10,8 +10,9 @@ import CoreGraphics
 import RecipeScalerCore
 
 enum WidgetTimerFormatting {
-    /// Compact label: `4m`, `45m`, `35s`, `9h` — lowercase unit suffix, no spaces.
-    /// Hours floor to whole hours (`9h45m` → `9h`) so labels fit in rings.
+    /// Compact label: `4m`, `45m`, `35s`, `1,8h`, `2h`, `12h` — lowercase unit suffix, no spaces.
+    /// Hours round to one decimal in the current locale (`1h47m` → `1,8h`); whole
+    /// values and two-digit hours drop the decimal, so labels still fit in rings.
     static func compactRemaining(seconds: Int) -> String {
         let negative = seconds < 0
         let absSeconds = Swift.abs(seconds)
@@ -21,7 +22,9 @@ enum WidgetTimerFormatting {
 
         let body: String
         if hours > 0 {
-            body = "\(hours)h"
+            let tenths = (Double(absSeconds) / 360).rounded() / 10
+            let value = tenths >= 10 ? tenths.rounded() : tenths
+            body = "\(value.formatted(.number.precision(.fractionLength(0...1))))h"
         } else if minutes > 0 {
             body = "\(minutes)m"
         } else {
@@ -41,6 +44,14 @@ enum WidgetTimerFormatting {
             return String(format: "%d:%02d:%02d", hours, minutes, secs)
         }
         return String(format: "%d:%02d", minutes, secs)
+    }
+
+    /// Paused ring clock: `4:05` under an hour, then the running label (`1,8h`) —
+    /// `1:47:28` does not fit inside the 56pt ring.
+    static func ringClock(_ seconds: Int) -> String {
+        let absSeconds = Swift.abs(seconds)
+        guard absSeconds >= 3600 else { return shortClock(absSeconds) }
+        return compactRemaining(seconds: absSeconds)
     }
 
     /// Seconds left before switching from minute labels (`Nm`) to second labels (`Ns`).
