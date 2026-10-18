@@ -1,5 +1,11 @@
 [
   {
+    "id": "e8f01a34-e6ca-42e7-8272-64976e6e6a38",
+    "version": "1.0.14",
+    "state": "WAITING_FOR_REVIEW",
+    "platform": "IOS"
+  },
+  {
     "id": "cd772194-fda0-47f3-a331-6431dca0e616",
     "version": "1.0.13",
     "state": "READY_FOR_SALE",
