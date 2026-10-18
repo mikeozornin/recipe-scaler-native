@@ -436,7 +436,6 @@ struct ShoppingListView: View {
             }
         }
         .opacity(phase == .exiting ? 0 : 1)
-        .allowsHitTesting(phase != .exiting)
         .shoppingListItemRowInsets()
     }
 
@@ -504,7 +503,6 @@ struct ShoppingListView: View {
                 .contentTransition(.symbolEffect(.replace))
             }
             .buttonStyle(.plain)
-            .disabled(purchasePhase == .exiting)
             .accessibilityLabel(
                 showChecked
                     ? String(localized: "shopping.mark-not-purchased")
@@ -575,21 +573,19 @@ struct ShoppingListView: View {
     }
 
     private func handlePurchaseToggle(item: ShoppingListItem, phase: ToBuyPurchasePhase?) {
-        if let phase {
-            if phase == .staging {
-                purchasePhases.removeValue(forKey: item.id)
-            }
-            return
-        }
-
         #if os(iOS)
-        if item.purchased {
+        if item.purchased || phase != nil {
             ShoppingPurchaseHaptics.selection.selectionChanged()
         } else {
-            ShoppingPurchaseHaptics.lightImpact.impactOccurred()
-            ShoppingPurchaseHaptics.notification.notificationOccurred(.success)
+            ShoppingPurchaseHaptics.lightImpact.impactOccurred(intensity: ShoppingPurchaseHaptics.checkIntensity)
         }
         #endif
+
+        // A tap while the row is still staged or fading out takes the check back.
+        if phase != nil {
+            purchasePhases.removeValue(forKey: item.id)
+            return
+        }
 
         if item.purchased {
             Task {
@@ -988,6 +984,6 @@ private struct ShoppingListShareSheet: View {
 private enum ShoppingPurchaseHaptics {
     static let selection = UISelectionFeedbackGenerator()
     static let lightImpact = UIImpactFeedbackGenerator(style: .light)
-    static let notification = UINotificationFeedbackGenerator()
+    static let checkIntensity: CGFloat = 0.7
 }
 #endif
