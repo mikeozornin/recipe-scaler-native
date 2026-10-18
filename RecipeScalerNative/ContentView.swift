@@ -195,7 +195,8 @@ struct ContentView: View {
     /// Hides the splash once local recipes are loaded, at the latest 500 ms after the root view appears.
     private func hideSplash() {
         guard showSplash else { return }
-        showSplash = false
+        // Fade into the already-built shell instead of cutting; touches pass through at once.
+        withAnimation(.easeOut(duration: 0.2)) { showSplash = false }
         PerfMark.once("splash_hidden")
     }
 
@@ -227,6 +228,7 @@ struct ContentView: View {
             }
             if showSplash {
                 SplashView()
+                    .transition(.opacity)
             }
         }
         .appLayoutModeRoot()

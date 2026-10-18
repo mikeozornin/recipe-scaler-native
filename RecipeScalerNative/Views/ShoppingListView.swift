@@ -15,6 +15,32 @@ private enum ShoppingPurchaseTiming {
     static let exitSeconds: TimeInterval = 0.4
 }
 
+/// Empty «To buy» basket; springs in once when the last item has just been bought.
+private struct ShoppingBasketIllustration: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let asset: EmptyStateIllustrationAsset
+    let size: CGFloat
+    @State private var settled: Bool
+
+    init(asset: EmptyStateIllustrationAsset, size: CGFloat, popsIn: Bool) {
+        self.asset = asset
+        self.size = size
+        _settled = State(initialValue: !popsIn)
+    }
+
+    var body: some View {
+        AppEmptyStateIllustration(asset: asset, size: size)
+            .scaleEffect(settled || reduceMotion ? 1 : 0.9)
+            .opacity(settled ? 1 : 0)
+            .onAppear {
+                guard !settled else { return }
+                withAnimation(reduceMotion ? .easeOut(duration: 0.25) : .spring(duration: 0.5, bounce: 0.2)) {
+                    settled = true
+                }
+            }
+    }
+}
+
 enum VkusvillUIVisibility {
     static func showsBuyButton(enabled: Bool, localeIdentifier: String?) -> Bool {
         guard let localeIdentifier else { return false }
@@ -52,6 +78,8 @@ struct ShoppingListView: View {
     @State private var purchasePhases: [String: ToBuyPurchasePhase] = [:]
     @State private var shoppingModel = ShoppingViewModel()
     @State private var showRemindersTip = false
+    /// Previous render still had items to buy: an empty list now means the last one was just bought.
+    @State private var hadItemsToBuy = false
     @FocusState private var focusedField: Field?
 
     private enum Field: Hashable {
@@ -174,6 +202,9 @@ struct ShoppingListView: View {
         .onChange(of: purchasePhases) { _, newValue in
             shoppingModel.recompute(snapshot: snapshot, purchasePhases: newValue)
         }
+        .onChange(of: toBuy.isEmpty) { _, isEmpty in
+            hadItemsToBuy = !isEmpty
+        }
         .onChange(of: isOnline) { _, online in
             Task { @MainActor in
                 await vkusvillSettings.refresh(
@@ -199,12 +230,12 @@ struct ShoppingListView: View {
                     ShoppingRemindersTipBanner(
                         onEnable: {
                             ShoppingRemindersTipPreferences.dismiss()
-                            showRemindersTip = false
+                            withAnimation(BannerDismissMotion.animation) { showRemindersTip = false }
                             coordinator.requestRemindersSetup()
                         },
                         onDismiss: {
                             ShoppingRemindersTipPreferences.dismiss()
-                            showRemindersTip = false
+                            withAnimation(BannerDismissMotion.animation) { showRemindersTip = false }
                         }
                     )
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
@@ -357,10 +388,11 @@ struct ShoppingListView: View {
             AppSectionHeader("shopping.section.to-buy")
                 .shoppingSectionLabelRow()
             VStack(spacing: 12) {
-                AppEmptyStateIllustration(
+                ShoppingBasketIllustration(
                     asset: purchased.isEmpty ? .shoppingBasketEmpty : .shoppingBasketFull,
                     // Compact when Reminders tip sits above — otherwise add-item is clipped by the tab bar.
-                    size: showRemindersTip ? 156 : AppTypography.emptyStateIllustrationSize
+                    size: showRemindersTip ? 156 : AppTypography.emptyStateIllustrationSize,
+                    popsIn: hadItemsToBuy && !purchased.isEmpty
                 )
                 Text(
                     purchased.isEmpty

@@ -258,6 +258,7 @@ private struct YDocIngredientViewRow: View {
                         )
                     } else {
                         IngredientMonoQuantityText(text: scaledQuantityText, color: accentColor)
+                            .scalingNumberTransition(value: scaleFactor)
                     }
                 }
             },

@@ -51,6 +51,7 @@ struct ServingsStepperView: View {
                     .monospacedDigit()
                     .foregroundStyle(accentColor)
                     .lineLimit(1)
+                    .scalingNumberTransition(value: currentServings)
                     .frame(minWidth: 34)
                     .accessibilityIdentifier(AccessibilityIdentifiers.recipeDetailServingsValue)
 
@@ -74,5 +75,24 @@ struct ServingsStepperView: View {
         .buttonStyle(.borderless)
         .disabled(disabled)
         .opacity(disabled ? 0.3 : 1)
+    }
+}
+
+extension View {
+    /// Digits roll up or down when `value` changes, so a servings step visibly lands on
+    /// the numbers it rescales. A plain cross-fade under Reduce Motion.
+    func scalingNumberTransition(value: Double) -> some View {
+        modifier(ScalingNumberTransition(value: value))
+    }
+}
+
+private struct ScalingNumberTransition: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let value: Double
+
+    func body(content: Content) -> some View {
+        content
+            .contentTransition(reduceMotion ? .opacity : .numericText(value: value))
+            .animation(.timingCurve(0.23, 1, 0.32, 1, duration: 0.2), value: value)
     }
 }

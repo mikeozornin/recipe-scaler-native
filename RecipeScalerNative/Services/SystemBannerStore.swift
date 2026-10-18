@@ -80,12 +80,20 @@ final class SystemBannerStore {
     /// the next cold start will re-fetch, and (if the POST truly failed)
     /// the banner will re-appear and the user can dismiss it again.
     func dismiss() async {
-        guard let banner = activeBanner else { return }
-        let bannerId = banner.id
+        guard let bannerId = hideActiveBanner() else { return }
+        await persistDismissal(bannerId: bannerId)
+    }
 
+    /// Synchronous half of `dismiss()`, so the view can animate the banner away.
+    @discardableResult
+    func hideActiveBanner() -> UUID? {
+        guard let banner = activeBanner else { return nil }
         activeBanner = nil
-        dismissedBannerIds.insert(bannerId)
+        dismissedBannerIds.insert(banner.id)
+        return banner.id
+    }
 
+    func persistDismissal(bannerId: UUID) async {
         do {
             try await SystemBannerAPI.dismiss(bannerId: bannerId)
         } catch {
