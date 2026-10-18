@@ -194,6 +194,7 @@ struct ProcessTableGrid: View {
         if needsTopBorder { edges.insert(.top) }
 
         return Button {
+            CheckToggleHaptics.play(checked: !done)
             session.toggleCell(columnId: column.id, startIngredientId: startId)
         } label: {
             ZStack(alignment: .topLeading) {
@@ -228,6 +229,7 @@ struct ProcessTableGrid: View {
         let measured = session.measuredIngredientIds.contains(ingredient.id)
         let title = ProcessTableIngredientLabel.display(ingredient, scaleFactor: scaleFactor)
         return Button {
+            CheckToggleHaptics.play(checked: !measured)
             session.toggleIngredient(ingredient.id)
         } label: {
             HStack(alignment: .top, spacing: ProcessTableLayout.rowCheckboxToThumbGap) {

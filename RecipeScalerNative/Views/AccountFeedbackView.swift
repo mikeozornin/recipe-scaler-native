@@ -31,6 +31,7 @@ struct AccountFeedbackView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .animation(AppMotion.enter, value: model.errorMessage)
         .appListBodyTypography()
         .localizedNavigationTitle("account.feedback.title")
         .navigationBarTitleDisplayMode(.inline)

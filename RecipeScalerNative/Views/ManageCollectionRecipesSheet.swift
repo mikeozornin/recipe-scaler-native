@@ -162,9 +162,7 @@ struct ManageCollectionRecipesSheet: View {
                 currentFolderIds.append(folderId)
             }
         }
-        #if os(iOS)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        #endif
+        CheckToggleHaptics.play(checked: !isMember)
 
         do {
             try await syncService.setRecipeFolders(recipeId: recipeId, folderIds: currentFolderIds)

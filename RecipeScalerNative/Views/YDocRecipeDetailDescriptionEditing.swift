@@ -15,13 +15,15 @@ extension YDocRecipeDetailView {
         guard reference.isStartable else { return }
         let displayName = recipe?.name
             ?? syncService.collectionEntries.first(where: { $0.id == recipeId })?.name
-        _ = timerManager.createAndStartTimer(
-            name: reference.resolvedName,
-            duration: TimeInterval(reference.durationSeconds),
-            type: reference.type,
-            recipeId: recipeId,
-            recipeDisplayName: displayName
-        )
+        withAnimation(AppMotion.standard) {
+            _ = timerManager.createAndStartTimer(
+                name: reference.resolvedName,
+                duration: TimeInterval(reference.durationSeconds),
+                type: reference.type,
+                recipeId: recipeId,
+                recipeDisplayName: displayName
+            )
+        }
     }
 
     func beginDescriptionTimerMarkup() {

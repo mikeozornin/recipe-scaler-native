@@ -466,6 +466,7 @@
 		E5F60718293A4B700000101 /* RecipeSearchIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700000100 /* RecipeSearchIndex.swift */; };
 		E5F60718293A4B700000200 /* XmlFragmentToPlainText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B700000201 /* XmlFragmentToPlainText.swift */; };
 		E5F60718293A4B70000A001 /* RecipeServings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70000A002 /* RecipeServings.swift */; };
+		A1B2C3D4AF0E0001 /* AppMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4AF0E0002 /* AppMotion.swift */; };
 		E5F60718293A4B70000A003 /* AppSymbol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B70000A004 /* AppSymbol.swift */; };
 		E5F60718293A4B7002D26536 /* RecipeDescriptionTimerReference.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B707F339DC6 /* RecipeDescriptionTimerReference.swift */; };
 		E5F60718293A4B7005B62F9C /* TransientStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B707F3A30E0 /* TransientStatusBanner.swift */; };
@@ -1339,6 +1340,7 @@
 		E5F60718293A4B700000100 /* RecipeSearchIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeSearchIndex.swift; sourceTree = "<group>"; };
 		E5F60718293A4B700000201 /* XmlFragmentToPlainText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XmlFragmentToPlainText.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70000A002 /* RecipeServings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeServings.swift; sourceTree = "<group>"; };
+		A1B2C3D4AF0E0002 /* AppMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMotion.swift; sourceTree = "<group>"; };
 		E5F60718293A4B70000A004 /* AppSymbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSymbol.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7001851F51 /* AssistantSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSheet.swift; sourceTree = "<group>"; };
 		E5F60718293A4B7004E397E0 /* DescriptionTimerStartPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionTimerStartPopover.swift; sourceTree = "<group>"; };
@@ -1703,6 +1705,7 @@
 				84EBFC0FC713ABD37282509D /* AccessibilityIdentifiers.swift */,
 				3F8900665BEBF9F38AAA0747 /* AppFonts.swift */,
 				A1TYPOG1A2B3C4D5E6F7080901 /* AppTypography.swift */,
+				A1B2C3D4AF0E0002 /* AppMotion.swift */,
 				E5F60718293A4B70000A004 /* AppSymbol.swift */,
 				ESEI0001A293A4B70100002 /* AppEmptyStateIllustration.swift */,
 				B2C3D4E5F60718293A4B5F /* RecipeAccentColor.swift */,
@@ -3303,6 +3306,7 @@
 				53C6C4665C2B6A4D1D005AE3 /* AccessibilityIdentifiers.swift in Sources */,
 				E24F486705A0B9C40D05595B /* AppFonts.swift in Sources */,
 				A1TYPOG1A2B3C4D5E6F7080902 /* AppTypography.swift in Sources */,
+				A1B2C3D4AF0E0001 /* AppMotion.swift in Sources */,
 				E5F60718293A4B70000A003 /* AppSymbol.swift in Sources */,
 				ESEI0001A293A4B70100001 /* AppEmptyStateIllustration.swift in Sources */,
 				0392C51F77A1B3D7C3963B18 /* AuthService.swift in Sources */,

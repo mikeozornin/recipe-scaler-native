@@ -34,6 +34,7 @@ struct TelegramConnectionView: View {
                 Text(errorMessage)
                     .appFootnote()
                     .foregroundStyle(.secondary)
+                    .transition(.opacity)
             }
 
             if model.isConnected {
@@ -44,6 +45,7 @@ struct TelegramConnectionView: View {
                 connectButton
             }
         }
+        .animation(AppMotion.enter, value: model.errorMessage)
         .task(id: pollTaskKey) {
             await model.refreshStatus()
         }

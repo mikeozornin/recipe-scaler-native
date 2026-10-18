@@ -266,12 +266,14 @@ struct StepsSection: View {
 
     private func startTimer(from reference: RecipeDescriptionTimerReference) {
         guard reference.isStartable else { return }
-        _ = timerManager.createAndStartTimer(
-            name: reference.resolvedName,
-            duration: TimeInterval(reference.durationSeconds),
-            type: reference.type,
-            recipeId: recipeId
-        )
+        withAnimation(AppMotion.standard) {
+            _ = timerManager.createAndStartTimer(
+                name: reference.resolvedName,
+                duration: TimeInterval(reference.durationSeconds),
+                type: reference.type,
+                recipeId: recipeId
+            )
+        }
     }
 }
 

@@ -549,7 +549,7 @@ struct YDocIngredientsEditSection: View {
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
                 Button(role: .destructive) {
-                    withAnimation(.easeInOut(duration: 0.25)) {
+                    withAnimation(AppMotion.standard) {
                         deleteRevealRowId = nil
                     }
                     Task { await onDelete(ingredientId) }
@@ -567,7 +567,7 @@ struct YDocIngredientsEditSection: View {
 
             HStack(alignment: .top, spacing: RecipeRowLayoutMetrics.editListDeleteToContentSpacing) {
                 IngredientEditListLeadingControl(action: {
-                    withAnimation(.easeInOut(duration: 0.25)) {
+                    withAnimation(AppMotion.standard) {
                         deleteRevealRowId = isDeleteRevealed ? nil : ingredientId
                     }
                 })

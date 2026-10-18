@@ -200,7 +200,7 @@ struct AppShellView: View {
         Binding(
             get: { mobileTimerPanelCollapsed },
             set: { newValue in
-                withAnimation(MobileTimerPanelLayout.toggleAnimation) {
+                withAnimation(AppMotion.standard) {
                     mobileTimerPanelCollapsed = newValue
                 }
             }
@@ -411,7 +411,7 @@ struct AppShellView: View {
     private func focusRecipeSearchFromKeyboard() {
         if layoutMode == .padRegular {
             if coordinator.recipeDetailExpanded {
-                withAnimation(.easeInOut(duration: 0.25)) {
+                withAnimation(AppMotion.standard) {
                     coordinator.setRecipeDetailExpanded(false, isPadRegular: true)
                 }
             }
@@ -581,11 +581,8 @@ struct AppShellView: View {
                     clipboardBannerHeight = 0
                 }
             }
-            .animation(
-                .easeInOut(duration: ClipboardImportBannerLayout.appearDuration),
-                value: isClipboardBannerVisible
-            )
-            .animation(.easeInOut(duration: 0.25), value: transientStatus != nil)
+            .animation(AppMotion.standard, value: isClipboardBannerVisible)
+            .animation(AppMotion.standard, value: transientStatus != nil)
             .sheet(item: $coordinator.importPresentation, content: importSheet)
             .sheet(isPresented: Binding(
                 // The iPad profile sheet presents it itself (`AccountView`).
@@ -833,7 +830,7 @@ struct AppShellView: View {
                 }
                 guard let payload, !payload.message.isEmpty else { return }
                 transientStatusDismissTask?.cancel()
-                withAnimation(.easeInOut(duration: 0.25)) {
+                withAnimation(AppMotion.standard) {
                     transientStatus = payload
                 }
                 let shown = payload
@@ -844,7 +841,7 @@ struct AppShellView: View {
                         return
                     }
                     guard !Task.isCancelled else { return }
-                    withAnimation(.easeInOut(duration: 0.25)) {
+                    withAnimation(AppMotion.standard) {
                         if transientStatus == shown {
                             transientStatus = nil
                         }
@@ -1067,7 +1064,7 @@ struct AppShellView: View {
             feedBadgeStore: feedBadgeStore,
             tabRoots: tabRoots
         )
-        .animation(MobileTimerPanelLayout.toggleAnimation, value: mobileTimerPanelCollapsed)
+        .animation(AppMotion.standard, value: mobileTimerPanelCollapsed)
         .modifier(MobileTimerAccessoryModifier(
             isEnabled: showsMobileTimerPanelAccessory,
             accessory: iPadTimerAccessory
@@ -1096,7 +1093,7 @@ struct AppShellView: View {
     @available(iOS 26.2, *)
     private var modernTabView: some View {
         modernTabBar
-            .animation(MobileTimerPanelLayout.toggleAnimation, value: mobileTimerPanelCollapsed)
+            .animation(AppMotion.standard, value: mobileTimerPanelCollapsed)
             .modifier(MobileTimerAccessoryModifier(
                 isEnabled: showsMobileTimerPanelAccessory,
                 accessory: mobileTimerPanelAccessory

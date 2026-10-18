@@ -312,7 +312,7 @@ struct CollectionsRootView: View {
             }
         } else {
             Button {
-                withAnimation(.easeInOut(duration: 0.15)) {
+                withAnimation(AppMotion.quick) {
                     isCreatingNew = true
                     newFolderName = ""
                 }
@@ -432,7 +432,7 @@ struct CollectionsRootView: View {
             }
         } else {
             Button {
-                withAnimation(.easeInOut(duration: 0.15)) {
+                withAnimation(AppMotion.quick) {
                     isCreatingNew = true
                     newFolderName = ""
                 }
@@ -466,7 +466,7 @@ struct CollectionsRootView: View {
         isNewFieldFocused = false
 
         guard let name = NewCollectionCommit.name(from: newFolderName) else {
-            withAnimation(.easeInOut(duration: 0.15)) {
+            withAnimation(AppMotion.quick) {
                 isCreatingNew = false
                 newFolderName = ""
             }
@@ -474,7 +474,7 @@ struct CollectionsRootView: View {
         }
 
         NewCollectionCommit.start(name, isSaving: $isSavingFolder, syncService: syncService) {
-            withAnimation(.easeInOut(duration: 0.15)) {
+            withAnimation(AppMotion.quick) {
                 isCreatingNew = false
                 newFolderName = ""
             }
@@ -484,7 +484,7 @@ struct CollectionsRootView: View {
     private func cancelNewFolder() {
         guard !isSavingFolder else { return }
         isNewFieldFocused = false
-        withAnimation(.easeInOut(duration: 0.15)) {
+        withAnimation(AppMotion.quick) {
             isCreatingNew = false
             newFolderName = ""
         }

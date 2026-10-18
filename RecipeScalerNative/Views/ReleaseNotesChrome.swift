@@ -26,7 +26,7 @@ struct ReleaseNotesChrome: View {
             ReleaseNotesBannerView(
                 title: note.title(for: AppLanguagePreference.current.rawValue),
                 onOpen: { releaseNotes.presentSheet() },
-                onDismiss: { withAnimation(BannerDismissMotion.animation) { releaseNotes.dismissBanner() } }
+                onDismiss: { withAnimation(AppMotion.standard) { releaseNotes.dismissBanner() } }
             )
         }
     }

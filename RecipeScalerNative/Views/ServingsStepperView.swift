@@ -93,6 +93,6 @@ private struct ScalingNumberTransition: ViewModifier {
     func body(content: Content) -> some View {
         content
             .contentTransition(reduceMotion ? .opacity : .numericText(value: value))
-            .animation(.timingCurve(0.23, 1, 0.32, 1, duration: 0.2), value: value)
+            .animation(AppMotion.enter, value: value)
     }
 }

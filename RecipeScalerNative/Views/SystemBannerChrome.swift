@@ -28,7 +28,7 @@ struct SystemBannerChrome: View {
     var body: some View {
         if let banner = bannerToShow {
             SystemBannerView(banner: banner) {
-                let bannerId = withAnimation(BannerDismissMotion.animation) {
+                let bannerId = withAnimation(AppMotion.standard) {
                     systemBannerStore.hideActiveBanner()
                 }
                 guard let bannerId else { return }
@@ -36,11 +36,6 @@ struct SystemBannerChrome: View {
             }
         }
     }
-}
-
-/// Rows below a dismissed banner slide up instead of jumping (release notes, Reminders tip too).
-enum BannerDismissMotion {
-    static let animation: Animation = .easeInOut(duration: 0.25)
 }
 
 /// List-row wrapper so the banner sits inside a `List` and scrolls with rows.

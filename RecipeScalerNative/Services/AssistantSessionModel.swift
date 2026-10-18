@@ -630,7 +630,7 @@ final class AssistantSessionModel {
             try await client.deleteThread(id)
             guard presentationEpoch == epoch else { return }
             let needsNewActive = threadId == id
-            withAnimation(.easeInOut(duration: 0.25)) {
+            withAnimation(AppMotion.standard) {
                 threads.removeAll { $0.id == id }
             }
             deletingThreadId = nil

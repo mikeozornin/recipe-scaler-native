@@ -148,7 +148,7 @@ struct CollectionAssignSheet: View {
             }
         } else {
             Button {
-                withAnimation(.easeInOut(duration: 0.15)) {
+                withAnimation(AppMotion.quick) {
                     isCreatingNew = true
                     newFolderName = ""
                 }
@@ -190,9 +190,7 @@ struct CollectionAssignSheet: View {
         } else {
             selectedFolderIds.insert(folderId)
         }
-        #if os(iOS)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        #endif
+        CheckToggleHaptics.play(checked: selectedFolderIds.contains(folderId))
     }
 
     private func persistMembershipIfNeeded() async {
@@ -215,7 +213,7 @@ struct CollectionAssignSheet: View {
         isNewFieldFocused = false
 
         guard !trimmed.isEmpty else {
-            withAnimation(.easeInOut(duration: 0.15)) {
+            withAnimation(AppMotion.quick) {
                 isCreatingNew = false
                 newFolderName = ""
             }
@@ -229,15 +227,13 @@ struct CollectionAssignSheet: View {
             do {
                 let newId = try await syncService.createFolder(name: trimmed)
                 selectedFolderIds.insert(newId)
-                #if os(iOS)
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                #endif
+                CheckToggleHaptics.play(checked: true)
             } catch {
                 errorMessage = UserFacingAPIError.message(for: error)
                 showingError = true
             }
             isSavingFolder = false
-            withAnimation(.easeInOut(duration: 0.15)) {
+            withAnimation(AppMotion.quick) {
                 isCreatingNew = false
                 newFolderName = ""
             }
@@ -247,7 +243,7 @@ struct CollectionAssignSheet: View {
     private func cancelNewFolder() {
         guard !isSavingFolder else { return }
         isNewFieldFocused = false
-        withAnimation(.easeInOut(duration: 0.15)) {
+        withAnimation(AppMotion.quick) {
             isCreatingNew = false
             newFolderName = ""
         }

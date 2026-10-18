@@ -106,6 +106,7 @@ struct AuthView: View {
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                                     .stroke(Color.red.opacity(0.25), lineWidth: 1)
                             )
+                            .transition(.opacity)
                     }
 
                     if showSeedInput {
@@ -267,28 +268,28 @@ struct AuthView: View {
 
     private func registerUser() async {
         isLoading = true
-        showError = false
+        withAnimation(AppMotion.enter) { showError = false }
         defer { isLoading = false }
 
         do {
             _ = try await authService.registerAuto()
         } catch {
             errorMessage = UserFacingAPIError.message(for: error)
-            showError = true
+            withAnimation(AppMotion.enter) { showError = true }
         }
     }
 
     private func loginUser(seed: String? = nil) async {
         let phrase = seed ?? seedPhrase
         isLoading = true
-        showError = false
+        withAnimation(AppMotion.enter) { showError = false }
         defer { isLoading = false }
 
         do {
             _ = try await authService.loginWithSeed(phrase)
         } catch {
             errorMessage = UserFacingAPIError.message(for: error)
-            showError = true
+            withAnimation(AppMotion.enter) { showError = true }
         }
     }
 }

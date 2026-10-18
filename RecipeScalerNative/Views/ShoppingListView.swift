@@ -230,12 +230,12 @@ struct ShoppingListView: View {
                     ShoppingRemindersTipBanner(
                         onEnable: {
                             ShoppingRemindersTipPreferences.dismiss()
-                            withAnimation(BannerDismissMotion.animation) { showRemindersTip = false }
+                            withAnimation(AppMotion.standard) { showRemindersTip = false }
                             coordinator.requestRemindersSetup()
                         },
                         onDismiss: {
                             ShoppingRemindersTipPreferences.dismiss()
-                            withAnimation(BannerDismissMotion.animation) { showRemindersTip = false }
+                            withAnimation(AppMotion.standard) { showRemindersTip = false }
                         }
                     )
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
@@ -573,13 +573,7 @@ struct ShoppingListView: View {
     }
 
     private func handlePurchaseToggle(item: ShoppingListItem, phase: ToBuyPurchasePhase?) {
-        #if os(iOS)
-        if item.purchased || phase != nil {
-            ShoppingPurchaseHaptics.selection.selectionChanged()
-        } else {
-            ShoppingPurchaseHaptics.lightImpact.impactOccurred(intensity: ShoppingPurchaseHaptics.checkIntensity)
-        }
-        #endif
+        CheckToggleHaptics.play(checked: !item.purchased && phase == nil)
 
         // A tap while the row is still staged or fading out takes the check back.
         if phase != nil {
@@ -977,13 +971,3 @@ private struct ShoppingListShareSheet: View {
         #endif
     }
 }
-
-#if os(iOS)
-/// Feedback generators for the purchase toggle, created once instead of on every tap.
-@MainActor
-private enum ShoppingPurchaseHaptics {
-    static let selection = UISelectionFeedbackGenerator()
-    static let lightImpact = UIImpactFeedbackGenerator(style: .light)
-    static let checkIntensity: CGFloat = 0.7
-}
-#endif

@@ -95,8 +95,10 @@ struct MobileTimerPanel: View {
                 VStack(spacing: 0) {
                     ForEach(timerManager.activeTimers, id: \.id) { timer in
                         MobileTimerRow(timerManager: timerManager, timer: timer)
+                            .transition(.opacity)
                         if timer.id != timerManager.activeTimers.last?.id {
                             Divider().padding(.leading, MobileTimerPanelLayout.barHeight)
+                                .transition(.opacity)
                         }
                     }
                 }
@@ -119,8 +121,10 @@ struct MobileTimerPanel: View {
                     VStack(spacing: 0) {
                         ForEach(timerManager.activeTimers, id: \.id) { timer in
                             MobileTimerRow(timerManager: timerManager, timer: timer)
+                                .transition(.opacity)
                             if timer.id != timerManager.activeTimers.last?.id {
                                 Divider().padding(.leading, MobileTimerPanelLayout.barHeight)
+                                    .transition(.opacity)
                             }
                         }
                     }
@@ -135,6 +139,7 @@ struct MobileTimerPanel: View {
         .overlay(alignment: .bottom) { Divider() }
         .shadow(color: .black.opacity(0.06), radius: 4, y: -1)
         .accessibilityIdentifier(AccessibilityIdentifiers.mobileTimerPanel)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
     private var panelHeader: some View {
@@ -161,7 +166,7 @@ struct MobileTimerPanel: View {
         .padding(.horizontal, MobileTimerPanelLayout.horizontalInset)
         .frame(height: MobileTimerPanelLayout.barHeight, alignment: .center)
         .contentShape(Rectangle())
-        .animation(MobileTimerPanelLayout.toggleAnimation, value: collapsed)
+        .animation(AppMotion.standard, value: collapsed)
     }
 
     @ViewBuilder
@@ -293,7 +298,6 @@ enum MobileTimerPanelLayout {
     static let titleToProgressSpacing: CGFloat = 6
     static let runningIndicatorSize: CGFloat = 8
     static let runningIndicatorLeadingInset: CGFloat = 8
-    static let toggleAnimation: Animation = .easeInOut(duration: 0.25)
     /// Soft fade before the chevron when collapsed timer chips overflow horizontally.
     static let summaryTrailingFadeWidth: CGFloat = 20
 
@@ -449,7 +453,9 @@ private struct MobileTimerRow: View {
             }
             .padding(.vertical, 6)
 
-            Button(role: .destructive, action: { timerManager.deleteTimer(id: timer.id) }) {
+            Button(role: .destructive, action: {
+                withAnimation(AppMotion.standard) { timerManager.deleteTimer(id: timer.id) }
+            }) {
                 TimerPanelIcon.close()
                     .frame(width: MobileTimerPanelLayout.barHeight, height: MobileTimerPanelLayout.barHeight)
             }

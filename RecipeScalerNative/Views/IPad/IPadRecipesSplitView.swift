@@ -341,7 +341,7 @@ struct IPadRecipesSplitView: View {
     /// (`AppShellCoordinator.setRecipeDetailExpanded`). The split exists only in a regular
     /// window.
     private func setExpanded(_ expanded: Bool) {
-        withAnimation(.easeInOut(duration: 0.25)) {
+        withAnimation(AppMotion.standard) {
             coordinator.setRecipeDetailExpanded(expanded, isPadRegular: true)
         }
     }

@@ -236,12 +236,14 @@ struct ProcessTableCookingView: View {
 
     private func startTimer(_ chip: ProcessTableTimerChip) {
         guard let timerManager else { return }
-        _ = timerManager.createAndStartTimer(
-            name: chip.name,
-            duration: TimeInterval(chip.duration),
-            type: chip.type,
-            recipeId: displayedRecipe.id
-        )
+        withAnimation(AppMotion.standard) {
+            _ = timerManager.createAndStartTimer(
+                name: chip.name,
+                duration: TimeInterval(chip.duration),
+                type: chip.type,
+                recipeId: displayedRecipe.id
+            )
+        }
     }
 }
 

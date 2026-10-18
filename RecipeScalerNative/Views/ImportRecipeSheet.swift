@@ -122,6 +122,8 @@ struct ImportRecipeSheet: View {
                 }
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.importSheet)
+            .animation(AppMotion.enter, value: errorMessage)
+            .animation(AppMotion.enter, value: photoWarning)
             .localizedNavigationTitle("import.title")
             .appListBodyTypography()
             .appOpaqueGroupedListSurface()

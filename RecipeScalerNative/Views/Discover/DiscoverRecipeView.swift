@@ -319,12 +319,14 @@ struct DiscoverRecipeView: View {
 
     private func startDescriptionTimer(from reference: RecipeDescriptionTimerReference) {
         guard reference.isStartable else { return }
-        _ = timerManager.createAndStartTimer(
-            name: reference.resolvedName,
-            duration: TimeInterval(reference.durationSeconds),
-            type: reference.type,
-            recipeId: recipeId,
-            recipeDisplayName: loadedRecipe?.name
-        )
+        withAnimation(AppMotion.standard) {
+            _ = timerManager.createAndStartTimer(
+                name: reference.resolvedName,
+                duration: TimeInterval(reference.durationSeconds),
+                type: reference.type,
+                recipeId: recipeId,
+                recipeDisplayName: loadedRecipe?.name
+            )
+        }
     }
 }
