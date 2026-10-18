@@ -408,6 +408,10 @@ struct ShoppingListView: View {
                 minHeight: showRemindersTip ? 236 : 348,
                 alignment: .center
             )
+            // «Empty» and «all done» are different rows. As one row, List brought back the
+            // render left from launch (empty basket, before the list had loaded) and
+            // cross-faded it into the full basket when the last item was bought.
+            .id(purchased.isEmpty)
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
             addItemRow
