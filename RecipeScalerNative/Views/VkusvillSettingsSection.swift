@@ -73,11 +73,12 @@ struct VkusvillSettingsSection: View {
             if model.needsReconnect {
                 signInButton("vkusvill.account.sign-in-again")
             }
-            Button(role: .destructive) {
+            Button {
                 Task { await model.signOut(isOnline: isOnline) }
             } label: {
                 Text("vkusvill.account.sign-out").appBody()
             }
+            .tint(.primary)
             .disabled(actionsDisabled)
             .accessibilityIdentifier(AccessibilityIdentifiers.vkusvillSignOut)
         } else {
