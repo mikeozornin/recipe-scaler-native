@@ -1,0 +1,27 @@
+# Frozen String(localized:) calls per file. Regenerate: bash scripts/lint-localized-string.sh --update
+1 RecipeScalerNative/RecipeScalerNativeApp.swift
+1 RecipeScalerNative/Routing/AppShellCoordinator.swift
+1 RecipeScalerNative/Services/RecipeFileImportCoordinator.swift
+1 RecipeScalerNative/Services/TimerManager.swift
+4 RecipeScalerNative/Services/YjsSync/RecipeEditPolicy.swift
+1 RecipeScalerNative/Utils/AppLanguagePreference.swift
+3 RecipeScalerNative/Utils/Bundle+Language.swift
+1 RecipeScalerNative/Utils/FolderDisplayName.swift
+1 RecipeScalerNative/Utils/LocalizedNavigationTitle.swift
+1 RecipeScalerNative/Utils/SeedQRCodeView.swift
+10 RecipeScalerNative/ViewModels/AccountSettingsViewModel.swift
+1 RecipeScalerNative/Views/AccountFeedbackView.swift
+10 RecipeScalerNative/Views/AccountOptionLabels.swift
+1 RecipeScalerNative/Views/AccountProfileEditView.swift
+2 RecipeScalerNative/Views/AccountView.swift
+3 RecipeScalerNative/Views/CollectionAssignSheet.swift
+13 RecipeScalerNative/Views/CollectionFolderView.swift
+6 RecipeScalerNative/Views/CollectionsRootView.swift
+1 RecipeScalerNative/Views/DescriptionEditorBridge.swift
+1 RecipeScalerNative/Views/ManageCollectionRecipesSheet.swift
+4 RecipeScalerNative/Views/QRScannerView.swift
+6 RecipeScalerNative/Views/RecipeEditToolbar.swift
+6 RecipeScalerNative/Views/RecipeListView.swift
+13 RecipeScalerNative/Views/ShoppingListView.swift
+1 RecipeScalerNative/Views/SplashView.swift
+1 RecipeScalerNative/Views/SyncStatusSheet.swift

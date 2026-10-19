@@ -31,6 +31,7 @@ run "e2e-skip-budget" python3 -c "import json; json.load(open('scripts/e2e-skip-
 run "check-md-links" python3 scripts/check-md-links.py AGENTS.md README.md docs/AGENT-WORKFLOW.md docs/agents/ASYNC-LIFECYCLE.md docs/agents/VERIFICATION.md
 run "lint-composition-root" bash scripts/lint-composition-root.sh
 run "lint-release-api" bash scripts/lint-release-api.sh
+run "lint-localized-string" bash scripts/lint-localized-string.sh
 
 if (( failed )); then
   echo "FAILED: one or more policy checks" >&2
