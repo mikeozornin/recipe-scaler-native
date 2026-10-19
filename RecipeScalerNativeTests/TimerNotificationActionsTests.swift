@@ -77,6 +77,72 @@ final class TimerNotificationActionsTests: XCTestCase {
         XCTAssertFalse(manager.activeTimers.contains { $0.id == id })
     }
 
+    // MARK: - «Time's up» must ring once
+
+    private func serverCopy(id: String, endTime: Date, lastUpdated: Date) -> RecipeTimer {
+        RecipeTimer(
+            id: id,
+            name: "Pasta",
+            duration: 600,
+            isRunning: true,
+            endTime: endTime,
+            lastUpdated: lastUpdated,
+            startedAt: endTime.addingTimeInterval(-600),
+            hasCompleted: false
+        )
+    }
+
+    func testForegroundPullDoesNotRepeatCompletionNotification() throws {
+        let manager = try makeTimerManager()
+        let endTime = Date().addingTimeInterval(-1)
+        let lastUpdated = endTime.addingTimeInterval(-600)
+
+        manager.replaceTimersFromServer([serverCopy(id: "t1", endTime: endTime, lastUpdated: lastUpdated)])
+        manager.tickUpdateRunningTimersForTests()
+        XCTAssertEqual(manager.completionNotificationRequestsForTests, 1)
+
+        // Each app open pulls `/timers/active` again; the server copy has no `hasCompleted`.
+        for _ in 0..<3 {
+            manager.replaceTimersFromServer([serverCopy(id: "t1", endTime: endTime, lastUpdated: lastUpdated)])
+            manager.tickUpdateRunningTimersForTests()
+        }
+
+        XCTAssertEqual(manager.completionNotificationRequestsForTests, 1)
+        XCTAssertEqual(manager.timer(id: "t1")?.hasCompleted, true)
+    }
+
+    func testAddedTimeOnAnotherDeviceRingsAgain() throws {
+        let manager = try makeTimerManager()
+        let endTime = Date().addingTimeInterval(-3)
+
+        manager.replaceTimersFromServer([serverCopy(id: "t1", endTime: endTime, lastUpdated: endTime)])
+        manager.tickUpdateRunningTimersForTests()
+        manager.replaceTimersFromServer([serverCopy(id: "t1", endTime: Date().addingTimeInterval(-1), lastUpdated: Date())])
+        manager.tickUpdateRunningTimersForTests()
+
+        XCTAssertEqual(manager.completionNotificationRequestsForTests, 2)
+    }
+
+    func testTimerThatEndedWhileAppWasClosedDoesNotRingOnLaunch() throws {
+        let manager = try makeTimerManager()
+        let endTime = Date().addingTimeInterval(-20 * 60)
+
+        manager.replaceTimersFromServer([serverCopy(id: "t1", endTime: endTime, lastUpdated: endTime)])
+        manager.tickUpdateRunningTimersForTests()
+
+        XCTAssertEqual(manager.timer(id: "t1")?.hasCompleted, true)
+        if UIApplication.shared.applicationState == .active {
+            XCTAssertEqual(manager.completionNotificationRequestsForTests, 0)
+        }
+    }
+
+    func testLateCompletionNotificationPolicy() {
+        XCTAssertTrue(TimerManager.shouldNotifyCompletion(overdueSeconds: 1, appIsActive: true, apnsAvailable: true))
+        XCTAssertFalse(TimerManager.shouldNotifyCompletion(overdueSeconds: 600, appIsActive: true, apnsAvailable: false))
+        XCTAssertFalse(TimerManager.shouldNotifyCompletion(overdueSeconds: 600, appIsActive: false, apnsAvailable: true))
+        XCTAssertTrue(TimerManager.shouldNotifyCompletion(overdueSeconds: 600, appIsActive: false, apnsAvailable: false))
+    }
+
     func testNotificationActionIdentifiersRegisteredInSource() throws {
         let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

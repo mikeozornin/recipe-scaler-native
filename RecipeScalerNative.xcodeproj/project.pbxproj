@@ -141,6 +141,7 @@
 		5D0EE20ED1453C5DEED41011 /* WidgetTimerFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CCD8DBFFA5A4C5207801356 /* WidgetTimerFormatting.swift */; };
 		5EC690AD5A434697B8C0A82C /* TimerLiveActivityMetadataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 057A55B7EC424D69BA4BA244 /* TimerLiveActivityMetadataProvider.swift */; };
 		5F3CAA6DD42650B4E5C55C77 /* WidgetTimerLinearRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522FA5F6C32DEEC9F50B4A9C /* WidgetTimerLinearRow.swift */; };
+		B3TWSCHED01B293A4B70100001 /* TimerWidgetTimelineSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3TWSCHED01A293A4B70100001 /* TimerWidgetTimelineSchedule.swift */; };
 		5F8CB757055EAA81BC46E69B /* TimerWidgetKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21566C9DA1EEFF6ACCDAD702 /* TimerWidgetKind.swift */; };
 		62AB0E221B7ED6F6F79F9259 /* YrsDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 918F51E10FCE4C23134D68CE /* YrsDocument.swift */; };
 		64694ACF1805F99D988C668A /* MartianGrotesk-StdxBd.otf in Resources */ = {isa = PBXBuildFile; fileRef = 5B607E48597DEC5368CA9640 /* MartianGrotesk-StdxBd.otf */; };
@@ -964,6 +965,7 @@
 		1D90E06DB664829F1CEFCCD5 /* TimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerManager.swift; sourceTree = "<group>"; };
 		1DCF8C86EAE34546B5F18B38 /* Services/WatchCredentialsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WatchCredentialsStore.swift; sourceTree = "<group>"; };
 		1F89323F776D65016934FBB2 /* WidgetPushRegistrar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPushRegistrar.swift; sourceTree = "<group>"; };
+		B3TWSCHED01A293A4B70100001 /* TimerWidgetTimelineSchedule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimerWidgetTimelineSchedule.swift; sourceTree = "<group>"; };
 		21566C9DA1EEFF6ACCDAD702 /* TimerWidgetKind.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimerWidgetKind.swift; sourceTree = "<group>"; };
 		2422EA66740FD1BBB8B15AF1 /* RecipeScalerNativeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeScalerNativeTests.swift; sourceTree = "<group>"; };
 		2422EA66740FD1BBB8B15AF2 /* LocalizationConsistencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationConsistencyTests.swift; sourceTree = "<group>"; };
@@ -1774,6 +1776,7 @@
 				5942CB97921F9C6CC9AD6B51 /* TimerSnapshot+ServerActiveTimer.swift */,
 				B3TSPATCH01A293A4B70100001 /* TimerSnapshotDocumentPatcher.swift */,
 				21566C9DA1EEFF6ACCDAD702 /* TimerWidgetKind.swift */,
+				B3TWSCHED01A293A4B70100001 /* TimerWidgetTimelineSchedule.swift */,
 			);
 			path = Snapshots;
 			sourceTree = "<group>";
@@ -3259,6 +3262,7 @@
 				CC36F1622B2C07DCCADC8310 /* TimerSnapshot+ServerActiveTimer.swift in Sources */,
 				B3TSPATCH01B293A4B70100001 /* TimerSnapshotDocumentPatcher.swift in Sources */,
 				5F8CB757055EAA81BC46E69B /* TimerWidgetKind.swift in Sources */,
+				B3TWSCHED01B293A4B70100001 /* TimerWidgetTimelineSchedule.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

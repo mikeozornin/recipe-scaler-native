@@ -94,9 +94,9 @@
       "paths": ["HomeWidgetExtension/Views/TimerHomeSmallView.swift"]
     },
     {
-      "id": "minute-boundary-reload",
-      "description": "Timeline reload at minute boundary",
-      "pattern": "nextMinuteBoundary",
+      "id": "precomputed-timeline",
+      "description": "Timeline precomputes label-change entries instead of reloading every minute",
+      "pattern": "TimerWidgetTimelineSchedule\\.entryDates",
       "paths": ["HomeWidgetExtension/TimerWidgetProvider.swift"]
     },
     {

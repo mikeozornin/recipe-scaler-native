@@ -65,6 +65,12 @@ final class TimerManager: NSObject {
 
     private var serverScheduledPushTimerIds: Set<String> = []
 
+    #if DEBUG
+    /// Completions that asked for the «time's up» notification (before the
+    /// preference and permission checks).
+    private(set) var completionNotificationRequestsForTests = 0
+    #endif
+
     private static let backgroundTaskIdentifier = "com.recipescaler.timerUpdate"
     private static var didRegisterBackgroundTasks = false
 
@@ -397,7 +403,9 @@ final class TimerManager: NSObject {
             guard let local = localById[serverTimer.id] else { return serverTimer }
             let localMs = Int64(local.lastUpdated.timeIntervalSince1970 * 1000)
             let serverMs = Int64(serverTimer.lastUpdated.timeIntervalSince1970 * 1000)
-            return localMs > serverMs ? local : serverTimer
+            if localMs > serverMs { return local }
+            Self.carryCompletion(from: local, to: serverTimer)
+            return serverTimer
         }
         let presentIds = Set(merged.map(\.id))
         merged.append(contentsOf: localOnlyPreserved.filter { !presentIds.contains($0.id) })
@@ -437,6 +445,7 @@ final class TimerManager: NSObject {
 
     func upsertTimerFromSync(_ timer: RecipeTimer) {
         if let index = timers.firstIndex(where: { $0.id == timer.id }) {
+            Self.carryCompletion(from: timers[index], to: timer)
             timers[index] = timer
             persist(timer)
         } else {
@@ -454,6 +463,16 @@ final class TimerManager: NSObject {
         refreshPanelTimers()
         stopUpdateLoopIfIdle()
         endLiveActivity(timerId: id)
+    }
+
+    /// Server and socket copies never say whether the end was already reached
+    /// here. Without the local flag the next tick treats the overdue timer as
+    /// just finished and posts «time's up» again on every foreground pull.
+    private static func carryCompletion(from local: RecipeTimer, to incoming: RecipeTimer) {
+        guard local.hasCompleted, !incoming.hasCompleted,
+              let localEnd = local.endTime, let incomingEnd = incoming.endTime,
+              abs(localEnd.timeIntervalSince(incomingEnd)) < 1 else { return }
+        incoming.hasCompleted = true
     }
 
     func ensureUpdateLoopRunning() {
@@ -656,10 +675,37 @@ final class TimerManager: NSObject {
         timer.hasCompleted = true
         persist(timer)
         refreshPanelTimers()
-        sendCompletionNotification(for: timer)
+        let overdue = -(timer.endTime?.timeIntervalSinceNow ?? 0)
+        if Self.shouldNotifyCompletion(
+            overdueSeconds: overdue,
+            appIsActive: UIApplication.shared.applicationState == .active,
+            apnsAvailable: APnsAvailability.hasRegisteredToken
+        ) {
+            #if DEBUG
+            completionNotificationRequestsForTests += 1
+            #endif
+            sendCompletionNotification(for: timer)
+        }
         syncLiveActivity(for: timer, policy: .userAction)
         // Nothing left to detect for this timer; drop to the overdue cadence if it was the last.
         stopUpdateLoopIfIdle()
+    }
+
+    /// How late the tick may notice the end and still post «time's up».
+    static let completionNotificationGraceSeconds: TimeInterval = 5
+
+    /// A timer that ended while the app was closed is found overdue on the next
+    /// launch. By then the server push has already rung, and in the foreground
+    /// the panel shows the overdue timer, so a late local notification only
+    /// repeats it. It still goes out in the background without APNs, where it
+    /// is the only channel.
+    static func shouldNotifyCompletion(
+        overdueSeconds: TimeInterval,
+        appIsActive: Bool,
+        apnsAvailable: Bool
+    ) -> Bool {
+        if overdueSeconds <= completionNotificationGraceSeconds { return true }
+        return !appIsActive && !apnsAvailable
     }
 
     // MARK: - Push schedule helpers
