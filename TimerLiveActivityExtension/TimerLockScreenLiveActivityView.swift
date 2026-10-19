@@ -17,19 +17,32 @@ struct TimerLockScreenLiveActivityView: View {
     @Environment(\.widgetRenderingMode) private var widgetRenderingMode
     @Environment(\.showsWidgetContainerBackground) private var showsWidgetContainerBackground
 
-    private static let overdueHorizon: TimeInterval = 24 * 60 * 60
+    static let overdueHorizon: TimeInterval = 24 * 60 * 60
     private static let progressBarHeight: CGFloat = 8
     private static let appGroupIdentifier = AppGroup.id
 
     private static let timerDigitsFont = Font.custom("Martian Mono Nr Lt", size: 40)
     private static let timerNameFont = Font.custom("Martian Grotesk Nr Md", size: 16)
 
-    private static func loadThumbnail(name: String) -> UIImage? {
+    /// Server pushes can't know the App Group file name and send `nil`; the app
+    /// keeps one `la-thumb-<recipeId>-<version>.jpg` per recipe, so find it by id.
+    private static func loadThumbnail(name: String?, recipeId: String?) -> UIImage? {
         guard let container = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: appGroupIdentifier
         ) else { return nil }
-        let url = container.appendingPathComponent("la-thumbs/\(name)")
-        return UIImage(contentsOfFile: url.path)
+        let thumbDir = container.appendingPathComponent("la-thumbs", isDirectory: true)
+        guard let fileName = name ?? recipeId.flatMap({ thumbnailFileName(recipeId: $0, in: thumbDir) })
+        else { return nil }
+        return UIImage(contentsOfFile: thumbDir.appendingPathComponent(fileName).path)
+    }
+
+    private static func thumbnailFileName(recipeId: String, in thumbDir: URL) -> String? {
+        let prefix = "la-thumb-\(recipeId)-"
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: thumbDir.path)) ?? []
+        return names.first { name in
+            name.hasPrefix(prefix) && name.hasSuffix(".jpg")
+                && name.dropFirst(prefix.count).dropLast(4).allSatisfy(\.isNumber)
+        }
     }
 
     var body: some View {
@@ -37,7 +50,7 @@ struct TimerLockScreenLiveActivityView: View {
             remainingSeconds: state.remainingSeconds(),
             totalDuration: state.totalDuration
         )
-        let overdue = state.phase == .exceeded
+        let overdue = state.isOverdue()
         let resolvedAccent = TimerLiveActivityPalette.accentColor(
             for: accent,
             colorScheme: colorScheme,
@@ -160,7 +173,8 @@ struct TimerLockScreenLiveActivityView: View {
             .lineLimit(1)
             .minimumScaleFactor(0.6)
         } else if let endDate = state.endDate {
-            Text(timerInterval: Date()...endDate, countsDown: true)
+            // `min` keeps the range valid if the end passes between the overdue check and here.
+            Text(timerInterval: min(Date(), endDate)...endDate, countsDown: true)
                 .font(Self.timerDigitsFont)
                 .monospacedDigit()
                 .foregroundStyle(color)
@@ -199,8 +213,10 @@ struct TimerLockScreenLiveActivityView: View {
 
     private func recipeRow(labelColor: Color) -> some View {
         HStack(spacing: 10) {
-            if let thumbName = state.recipeThumbnailName,
-               let uiImage = Self.loadThumbnail(name: thumbName) {
+            if let uiImage = Self.loadThumbnail(
+                name: state.recipeThumbnailName,
+                recipeId: attributes.recipeId
+            ) {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()

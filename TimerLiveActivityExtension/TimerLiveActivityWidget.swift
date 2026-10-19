@@ -39,16 +39,25 @@ struct TimerLiveActivityWidget: Widget {
 
     @ViewBuilder
     private func compactTimerText(state: RecipeTimerActivityAttributes.ContentState) -> some View {
-        switch state.phase {
-        case .running:
-            if let endDate = state.endDate {
-                Text(timerInterval: Date()...endDate, countsDown: true)
-            } else {
-                Text(TimerLiveActivityFormatting.formatTime(seconds: state.remainingSeconds()))
-            }
-        case .paused:
+        if state.phase == .paused {
             Text(TimerLiveActivityFormatting.formatTime(seconds: state.pausedRemainingSeconds))
-        case .exceeded:
+        } else if let endDate = state.endDate {
+            if state.isOverdue() {
+                // Counts up past the end on its own, like the Lock Screen card.
+                HStack(spacing: 0) {
+                    Text("-")
+                    Text(
+                        timerInterval: endDate...endDate.addingTimeInterval(
+                            TimerLockScreenLiveActivityView.overdueHorizon
+                        ),
+                        countsDown: false
+                    )
+                }
+            } else {
+                // `min` keeps the range valid if the end passes between the overdue check and here.
+                Text(timerInterval: min(Date(), endDate)...endDate, countsDown: true)
+            }
+        } else {
             Text(TimerLiveActivityFormatting.formatTime(seconds: state.remainingSeconds()))
         }
     }

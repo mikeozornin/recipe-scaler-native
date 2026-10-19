@@ -58,6 +58,21 @@ extension RecipeTimerActivityAttributes.ContentState {
         return Int(value)
     }
 
+    /// A `.running` state past its end is overdue too: the extension re-renders
+    /// at the stale date (`endDate`) before any app or server update flips the
+    /// phase, and `Text(timerInterval:)` would otherwise sit at 0:00.
+    func isOverdue(now: Date = Date()) -> Bool {
+        switch phase {
+        case .exceeded:
+            return true
+        case .paused:
+            return false
+        case .running:
+            guard let endDate else { return false }
+            return endDate <= now
+        }
+    }
+
     var progress: Double {
         guard totalDuration > 0 else { return 0 }
         if phase == .exceeded { return 1 }

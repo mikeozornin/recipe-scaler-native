@@ -259,4 +259,20 @@ final class TimerLiveActivityCoordinatorPushTokenTests: XCTestCase {
             "normal → soon accent must re-render"
         )
     }
+
+    // MARK: - Overdue by the clock
+
+    /// Nothing flips `.running` to `.exceeded` while the app is suspended; the
+    /// view must still switch at the stale-date re-render instead of sitting at 0:00.
+    func testIsOverdue_RunningPastEndIsOverdue() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let state = runningState(endingIn: 0, at: now)
+        XCTAssertFalse(state.isOverdue(now: now.addingTimeInterval(-1)))
+        XCTAssertTrue(state.isOverdue(now: now))
+        XCTAssertTrue(state.isOverdue(now: now.addingTimeInterval(30)))
+
+        var paused = state
+        paused.phase = .paused
+        XCTAssertFalse(paused.isOverdue(now: now.addingTimeInterval(30)))
+    }
 }

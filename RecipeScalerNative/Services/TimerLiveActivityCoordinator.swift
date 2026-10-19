@@ -638,16 +638,10 @@ final class TimerLiveActivityCoordinator {
     ) -> Date? {
         if contentState.phase == .exceeded { return nil }
         if contentState.phase == .paused { return nil }
-        guard let endTime = timer.endTime else { return nil }
-
-        let now = Date()
-        var nextRefresh = endTime
-        if timer.duration > 0 {
-            let soonThreshold = endTime.addingTimeInterval(-timer.duration / 10)
-            if soonThreshold > now {
-                nextRefresh = min(nextRefresh, soonThreshold)
-            }
-        }
-        return nextRefresh > now ? nextRefresh : nil
+        guard let endTime = timer.endTime, endTime > Date() else { return nil }
+        // The system re-renders a stale activity, and the view then switches to
+        // overdue by time. This is the only local re-render a suspended app gets,
+        // so it goes to the end and not to the earlier «soon» accent threshold.
+        return endTime
     }
 }
