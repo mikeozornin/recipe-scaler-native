@@ -69,13 +69,14 @@ struct TelegramConnectionView: View {
 
     @ViewBuilder
     private var connectedContent: some View {
-        Label {
+        HStack(spacing: 12) {
             Text(connectedLabel)
                 .appBody()
-        } icon: {
+            Spacer(minLength: 0)
             AppSymbol.image("checkmark.circle.fill")
                 .foregroundStyle(.green)
         }
+        .accessibilityElement(children: .combine)
 
         Divider()
 
