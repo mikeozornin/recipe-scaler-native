@@ -80,15 +80,18 @@ struct TelegramConnectionView: View {
 
         Divider()
 
-        Button(String(localized: "telegram.disconnect")) {
+        Button {
             Task { await model.disconnect(isOnline: isOnline) }
+        } label: {
+            Text(Bundle.currentLocalizedString("telegram.disconnect")).appBody()
         }
+        .tint(.primary)
         .disabled(model.isLoading || !isOnline)
         .accessibilityIdentifier(AccessibilityIdentifiers.accountTelegramDisconnect)
     }
 
     private var connectedLabel: String {
-        var text = String(localized: "telegram.connected")
+        var text = Bundle.currentLocalizedString("telegram.connected")
         if let username = formattedTelegramUsername {
             text += " (\(username))"
         }
