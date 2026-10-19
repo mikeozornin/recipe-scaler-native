@@ -45,6 +45,21 @@
 коммит, rebase на `master`, merge в `master`, удаление worktree, ветки, симуляторов и временных
 файлов — без повторных вопросов.
 
+## Установка на устройство
+
+Глобальный скилл `install-on-device`, из папки задачи:
+
+```bash
+bun ~/.agents/skills/install-on-device/scripts/install.ts --scheme RecipeScalerNative-Dev \
+  --configuration DebugDevice --derived-data tmp/device-build-dd --server https://recipe-scaler.ru
+```
+
+- По умолчанию — Mike-13; добавь `--device iPad` или `--device Mike-13,iPad`.
+- `DebugDevice` — bundle `ru.recipescaler.RecipeScaler.debug` с дев-иконкой: встаёт рядом с App Store-версией
+  (спека 066). `Debug` и `Release` ставят прод-ID поверх App Store-сборки — только по прямой просьбе.
+- Сервер на устройстве всегда прод: `E2E_OVERRIDE_API_BASE` читается только из окружения запуска.
+- Последнюю строку скрипта («На … стоит ветка@sha …») — в отчёт.
+
 ## Обязательно при старте
 
 - **Сборка** — после Swift/Xcode правок агент сам прогоняет build. Команды и цикл проверок — [docs/AGENT-WORKFLOW.md](docs/AGENT-WORKFLOW.md).
