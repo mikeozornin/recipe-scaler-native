@@ -820,9 +820,12 @@ extension View {
 /// Pinned recipes as a horizontal strip of cover cards (Scrapp's pinned tags).
 /// The list row of the strip: edge-to-edge, so cards scroll under the insets.
 /// A plain `HStack`: a lazy one sizes the row by the cards measured first and clips taller titles.
+/// Card size follows the strip width so the last visible card is cut by the edge: the strip reads as scrollable.
 struct PinnedRecipeCardsRow<Card: View>: View {
     let items: [RecipeRowData]
     @ViewBuilder let card: (RecipeRowData) -> Card
+
+    @State private var width: CGFloat = 0
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -834,6 +837,8 @@ struct PinnedRecipeCardsRow<Card: View>: View {
             .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
             .padding(.top, 8)
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .environment(\.pinnedRecipeCardSide, PinnedRecipeCard.side(forStripWidth: width))
         .listRowInsets(EdgeInsets())
         .listRowSeparator(.hidden)
         .listRowBackground(Color.clear)
@@ -879,10 +884,24 @@ struct PinnedRecipeCard: View {
     /// The open recipe of the iPad list column: accent ring around the cover.
     var isSelected = false
 
-    static let side: CGFloat = 112
+    @Environment(\.pinnedRecipeCardSide) private var side
+
+    static let preferredSide: CGFloat = 112
     static let spacing: CGFloat = 12
+    /// Visible part of the card cut by the trailing edge.
+    private static let peek: CGFloat = 0.35
     private static let cornerRadius: CGFloat = 12
     private static let emojiFontSize: CGFloat = 40
+
+    /// Side for `n` whole cards plus `peek` of the next one; `n` gives the side closest to `preferredSide`.
+    static func side(forStripWidth width: CGFloat) -> CGFloat {
+        let available = width - RecipeRowLayoutMetrics.listHorizontalInset
+        guard available > preferredSide else { return preferredSide }
+        let sides = (1...12).map { n in
+            (available - CGFloat(n) * spacing) / (CGFloat(n) + peek)
+        }
+        return sides.min { abs($0 - preferredSide) < abs($1 - preferredSide) } ?? preferredSide
+    }
 
     private var titleText: String {
         let trimmed = data.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -892,7 +911,7 @@ struct PinnedRecipeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             cover
-                .frame(width: Self.side, height: Self.side)
+                .frame(width: side, height: side)
                 .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
                 .overlay {
                     if isSelected {
@@ -908,7 +927,7 @@ struct PinnedRecipeCard: View {
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(width: Self.side, alignment: .leading)
+        .frame(width: side, alignment: .leading)
         .padding(.bottom, 4)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
@@ -939,6 +958,10 @@ struct PinnedRecipeCard: View {
                 }
         }
     }
+}
+
+private extension EnvironmentValues {
+    @Entry var pinnedRecipeCardSide: CGFloat = PinnedRecipeCard.preferredSide
 }
 
 // MARK: - Row marker slot (emoji or color dot in one frame)
