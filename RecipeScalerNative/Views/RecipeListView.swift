@@ -902,7 +902,7 @@ struct PinnedRecipeCard: View {
                 }
 
             Text(titleText)
-                .font(AppTypography.footnoteSemibold)
+                .font(AppTypography.footnote)
                 .lineSpacing(AppTypography.footnoteLineSpacing)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.leading)
