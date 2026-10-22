@@ -69,6 +69,9 @@ tmp
 store/screenshots/iphone-6.9/**/*.png
 store/screenshots/ipad-13/**/*.png
 store/screenshots/watch/**/*.png
+store/screenshots/final/
+# Apple product bezel: its licence does not allow sharing the file.
+store/screenshots/compose/iphone-air.png
 # Drafts (digest/What's New) — локальные артефакты; .gitkeep держит каталог в git.
 store/drafts/*
 !store/drafts/.gitkeep

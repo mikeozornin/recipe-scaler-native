@@ -1,0 +1,74 @@
+{
+  "canvas": { "width": 428, "height": 926, "scale": 3 },
+  "screens": { "en": "en", "ru": "en" },
+  "slides": [
+    {
+      "id": "1-recipes",
+      "theme": "light",
+      "capture": "light/01-recipes",
+      "title": {
+        "en": "Recipe Scaler — All your recipes in one place",
+        "ru": "Recipe Scaler — все ваши рецепты в одном приложении"
+      }
+    },
+    {
+      "id": "2-cooking",
+      "theme": "dark",
+      "capture": "dark/02-cooking",
+      "title": {
+        "en": "Scale recipes & cook with timers",
+        "ru": "Помогает пересчитать рецепт и засечь время"
+      }
+    },
+    {
+      "id": "3-shopping",
+      "theme": "light",
+      "capture": "light/04-shopping",
+      "title": {
+        "en": "Shopping lists that sync with Reminders",
+        "ru": "Списки покупок синхронизируются с\u00a0Напоминаниями"
+      }
+    },
+    {
+      "id": "4-discover",
+      "theme": "dark",
+      "capture": "dark/03-discover",
+      "title": {
+        "en": "Discover & import recipes from text, images or websites",
+        "ru": "Магический импорт с\u00a0сайтов и\u00a0даже бабушкиной тетради"
+      }
+    },
+    {
+      "id": "5-assistant",
+      "theme": "light",
+      "capture": "light/05-assistant",
+      "title": {
+        "en": "Get help while you cook with cooking assistant",
+        "ru": "Если нужна помощь в\u00a0готовке, спросите ассистента"
+      }
+    },
+    {
+      "id": "6-ios",
+      "theme": "dark",
+      "layout": "ios",
+      "captures": {
+        "push": "light/08-push",
+        "widget": "light/06-widget",
+        "live": "light/07-live-activity"
+      },
+      "title": {
+        "en": "Deep iOS integration",
+        "ru": "Все возможности iOS"
+      },
+      "labels": {
+        "push": { "en": "Push notifications", "ru": "Уведомления" },
+        "widget": { "en": "Home and lock screen widgets", "ru": "Виджеты" },
+        "live": { "en": "Live Activities and Dynamic Island", "ru": "Live Activities и Dynamic Island" },
+        "more": {
+          "en": "And more: Spotlight search, Siri, Share menu, watchOS app",
+          "ru": "И\u00a0еще: Spotlight, Siri, меню «Поделиться» приложение для часов"
+        }
+      }
+    }
+  ]
+}

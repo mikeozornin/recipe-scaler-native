@@ -142,6 +142,19 @@ bash scripts/capture-watch-screenshots.sh --locale ru --appearance light --shot 
 
 Выход: `store/screenshots/watch/{ru,en}/{light}/01-timers.png` и `02-empty.png`. Тот же размер для всех локалей. PNG в git не коммитим.
 
+### Слайды с подписями (iPhone 6.5″)
+
+Повторяют макет из Фигмы (файл recipe-scaler-files, кадры `en/1. Recipes` … `ru/6. iOS`): подпись Martian Grotesk сверху, ниже сырой кадр в рамке iPhone Air; фон белый (слайды 1, 3, 5) или чёрный (2, 4, 6). Слайд 6 — вырезки пуша, виджета и Live Activity с подписями. Слайды, кадры-источники и тексты по локалям — [`screenshots/compose/slides.json`](screenshots/compose/slides.json), вёрстка в пунктах кадра Фигмы 428×926 — [`screenshots/compose/style.css`](screenshots/compose/style.css). Два входа лежат вне git, их лицензии не разрешают выкладывать файлы: шрифт Martian Grotesk Std Bold (`MartianGrotesk-StdBd.otf` в `~/Library/Fonts` или `/Library/Fonts`) и рамка `screenshots/compose/iphone-air.png` — PNG iPhone Air, Cloud White, portrait из Apple Design Resources (Product Bezels), `1380×2880`. Без них скрипт останавливается с ошибкой. Рендер — headless Google Chrome в 3× (`$CHROME`, если он не в `/Applications`).
+
+```bash
+python3 scripts/compose-app-store-screenshots.py
+python3 scripts/compose-app-store-screenshots.py --locale en --slide 2-cooking
+# в worktree сырых PNG нет — берите их из основной копии
+python3 scripts/compose-app-store-screenshots.py --raw-root ../recipe-scaler-native/store/screenshots
+```
+
+Выход: `store/screenshots/final/iphone-6.5/{ru,en}/<id>.png`, `1284×2778` (как экспорт Фигмы 3×; слот iPhone 6.5″), без альфа-канала; скрипт проверяет размер. Тексты `en` идут и в `en-GB`, и в `en-US`. `screens` в `slides.json` задаёт, кадры какой локали стоят на слайдах: как в Фигме, на русских слайдах английский интерфейс (`"ru": "en"`). Слайд 6 берёт `en/light/08-push`, `06-widget` и `07-live-activity`; вырезки (`.tile.* img` в `style.css`) подогнаны под кадры из Фигмы — если пересняли эти кадры, сверьте их. PNG в git не коммитим.
+
 ## Загрузка в App Store Connect
 
 1. Media Manager → **iPhone 6.9" Display** (не 6.5″). 6.5″ нужен только если 6.9″ нет.

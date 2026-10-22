@@ -1,0 +1,83 @@
+/* Geometry in Figma points of the 428×926 frames (file recipe-scaler-files, "en/1. Recipes" and
+   neighbours); the renderer exports at 3×, as Figma did. */
+
+/* The installed font: its licence does not allow sharing the file, so it is not in the repo. */
+@font-face { font-family: "Martian Grotesk"; font-weight: 700; src: local("MartianGrotesk-StdBd"); }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 428px;
+  height: 926px;
+  overflow: hidden;
+}
+
+body {
+  position: relative;
+  font-family: "Martian Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 29px;
+  /* Figma's 140% of 29 is 40.6, but it lays text out on whole 41 pt lines (text boxes are 41, 82, 123). */
+  line-height: 41px;
+  background: #fff;
+  color: #000;
+}
+
+body.dark {
+  background: #000;
+  color: #fff;
+}
+
+.caption {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 388px;
+  text-align: center;
+}
+
+.screen {
+  position: absolute;
+  top: 190.444px;
+  left: 54px;
+  width: 320px;
+  height: 695.111px;
+  border-radius: 40px;
+  object-fit: cover;
+}
+
+/* iPhone Air (Cloud White) from the iOS 26 kit: 1380×2880 with the 1260×2736 screen cut out at (60, 72),
+   scaled so the cut-out lands on the 320 pt instance at (54, 190.43). */
+.bezel {
+  position: absolute;
+  top: 172.143px;
+  left: 38.762px;
+  width: 350.476px;
+  height: 731.429px;
+}
+
+/* 6-ios: crops of three captures with labels. Image offsets are the Figma fill crops, in % of the tile. */
+.tile {
+  position: absolute;
+  overflow: hidden;
+}
+
+.tile img {
+  position: absolute;
+  max-width: none;
+}
+
+.tile.push { top: 133px; left: 20px; width: 388px; height: 130px; border-radius: 27px; }
+.tile.push img { top: 0; left: 0; width: 100%; height: 649.57%; }
+
+.tile.widget { top: 342px; left: 20px; width: 171px; height: 171px; border-radius: 30px; }
+.tile.widget img { top: -48.54%; left: -11.11%; width: 226.9%; height: 492.84%; }
+
+.tile.live { top: 545px; left: 20px; width: 320px; height: 107px; border-radius: 24px; }
+.tile.live img { top: -461.84%; left: 0; width: 100%; height: 651.95%; }
+
+.label { position: absolute; }
+.label.push { top: 269px; left: 20px; width: 388px; text-align: center; }
+.label.widget { top: 342px; left: 211px; width: 185px; }
+.label.live { top: 658px; left: 20px; width: 388px; }
+.label.more { top: 772px; left: 20px; width: 388px; }
