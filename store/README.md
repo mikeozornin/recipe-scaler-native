@@ -39,6 +39,16 @@ What's New с 1.0.9 пишем сразу на двух языках: `store/dra
 
 Workflow перевода listing: добавить `listing/app-info/ru.json`, `listing/versions/{version}/ru.json` рядом с master (`en-GB`). Push: `python3 scripts/asc-push-app-store-version-metadata.py`.
 
+Новые тексты listing'а пишем в `store/listing-drafts/<version>/{locale}.json`: name, subtitle, privacyPolicyUrl, description, keywords, promotionalText, marketingUrl, supportUrl. Папка в git, в отличие от `store/drafts/`. `store/listing/` остаётся зеркалом ASC и перезаписывается pull'ом.
+
+```bash
+python3 scripts/asc-push-app-store-version-metadata.py --listing store/listing-drafts/1.0.15 --check
+python3 scripts/asc-push-app-store-version-metadata.py --version 1.0.15 --listing store/listing-drafts/1.0.15 \
+  --whats-new ru=store/drafts/whats-new-1.0.15-ru.txt --dry-run
+```
+
+`--check` работает без ASC: проверяет лимиты (name и subtitle — 30, keywords — 100, promotional text — 170, description — 4000), запятые без пробелов и повторы в keywords. Слово, которое уже есть в name или subtitle, в keywords считается ошибкой: App Store индексирует его и так, а символы тратятся впустую. Name и subtitle меняются только после того, как версия создана в ASC; до этого скрипт останавливается с ошибкой. Новую локаль (например, `en-US`) скрипт создаёт сам. Скриншоты для неё не нужны: без своих кадров стор показывает кадры основной локали.
+
 ---
 
 ## Screenshots

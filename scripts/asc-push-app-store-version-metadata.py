@@ -12,6 +12,14 @@ Usage:
 
   # dry-run
   python3 scripts/asc-push-app-store-version-metadata.py --version 1.0.9 --from-version 1.0 --dry-run
+
+  # new texts from a drafts folder: name and subtitle (app info) plus description,
+  # keywords, promotional text and URLs (version), one <locale>.json per locale
+  python3 scripts/asc-push-app-store-version-metadata.py \\
+    --version 1.0.15 --listing store/listing-drafts/1.0.15 --dry-run
+
+  # length and keyword checks only, without ASC
+  python3 scripts/asc-push-app-store-version-metadata.py --listing store/listing-drafts/1.0.15 --check
 """
 
 from __future__ import annotations
@@ -19,6 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import urllib.error
@@ -39,6 +48,17 @@ VERSION_COPY_FIELDS = (
     "promotionalText",
     "supportUrl",
 )
+APP_INFO_FIELDS = ("name", "subtitle", "privacyPolicyUrl")
+LISTING_LIMITS = {
+    "name": 30,
+    "subtitle": 30,
+    "keywords": 100,
+    "promotionalText": 170,
+    "description": 4000,
+}
+# Name and subtitle can only change on an appInfo in one of these states,
+# that is after the new version is created in ASC.
+EDITABLE_APP_INFO_STATES = {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED"}
 
 
 def load_asc_env() -> None:
@@ -187,12 +207,178 @@ def merge_attrs(
     return merged
 
 
+def load_listing(listing_dir: Path) -> dict[str, dict[str, Any]]:
+    if not listing_dir.is_dir():
+        die(f"listing dir not found: {listing_dir}")
+    out: dict[str, dict[str, Any]] = {}
+    for path in sorted(listing_dir.glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if data.get("locale") != path.stem:
+            die(f"{path}: locale {data.get('locale')!r} does not match the file name")
+        out[path.stem] = data
+    if not out:
+        die(f"no <locale>.json files in {listing_dir}")
+    return out
+
+
+def words(text: str) -> set[str]:
+    return {w for w in re.split(r"\W+", text.casefold().replace("ё", "е")) if w}
+
+
+def lint_listing(listing: dict[str, dict[str, Any]]) -> list[str]:
+    """Limits from ASC plus keyword waste: App Store already indexes every word
+    of the name and subtitle, so repeating them in keywords spends characters."""
+    errors: list[str] = []
+    for locale, data in listing.items():
+        for field, limit in LISTING_LIMITS.items():
+            length = len(data.get(field) or "")
+            if length > limit:
+                errors.append(f"{locale}: {field} is {length} chars, limit {limit}")
+        terms = (data.get("keywords") or "").split(",")
+        if any(not term or term != term.strip() for term in terms):
+            errors.append(f"{locale}: keywords need commas without spaces and no empty terms")
+        title_words = words(f"{data.get('name') or ''} {data.get('subtitle') or ''}")
+        seen: set[str] = set()
+        for word in (w for term in terms for w in sorted(words(term))):
+            if word in seen:
+                errors.append(f"{locale}: keyword word {word!r} repeats")
+            if word in title_words:
+                errors.append(f"{locale}: keyword word {word!r} is already in the name or subtitle")
+            seen.add(word)
+    return errors
+
+
+def app_info_localization_map(client: AscClient, app_info_id: str) -> dict[str, dict[str, Any]]:
+    locs = client.get_json(f"/v1/appInfos/{app_info_id}/appInfoLocalizations", {"limit": "200"})
+    out: dict[str, dict[str, Any]] = {}
+    for loc in locs.get("data") or []:
+        locale = (loc.get("attributes") or {}).get("locale")
+        if locale:
+            out[locale] = loc
+    return out
+
+
+def changed_fields(
+    wanted: dict[str, Any], current: dict[str, Any], fields: tuple[str, ...]
+) -> dict[str, Any]:
+    return {f: wanted[f] for f in fields if f in wanted and wanted[f] != current.get(f)}
+
+
+def upsert_localization(
+    client: AscClient,
+    kind: str,
+    parent: tuple[str, str, str],
+    existing: dict[str, Any] | None,
+    locale: str,
+    wanted: dict[str, Any],
+    fields: tuple[str, ...],
+    dry_run: bool,
+) -> bool:
+    relationship, parent_type, parent_id = parent
+    if existing is None:
+        attrs = {f: wanted[f] for f in fields if wanted.get(f) not in (None, "")}
+        print(f"create {kind} {locale}: {sorted(attrs)}")
+        if not dry_run:
+            client.post_json(
+                f"/v1/{kind}",
+                {
+                    "data": {
+                        "type": kind,
+                        "attributes": {"locale": locale, **attrs},
+                        "relationships": {
+                            relationship: {"data": {"type": parent_type, "id": parent_id}}
+                        },
+                    }
+                },
+            )
+        return True
+    attrs = changed_fields(wanted, existing.get("attributes") or {}, fields)
+    if not attrs:
+        print(f"skip {kind} {locale}: already up to date")
+        return False
+    print(f"patch {kind} {locale}: {sorted(attrs)}")
+    if not dry_run:
+        client.patch_json(
+            f"/v1/{kind}/{existing['id']}",
+            {"data": {"type": kind, "id": existing["id"], "attributes": attrs}},
+        )
+    return True
+
+
+def push_listing(
+    client: AscClient,
+    app_id: str,
+    target_ver: dict[str, Any],
+    listing: dict[str, dict[str, Any]],
+    whats_new: dict[str, str],
+    dry_run: bool,
+) -> int:
+    infos = client.get_json(f"/v1/apps/{app_id}/appInfos", {"limit": "10"}).get("data") or []
+    editable = next(
+        (i for i in infos if (i.get("attributes") or {}).get("state") in EDITABLE_APP_INFO_STATES),
+        None,
+    )
+    info = editable or (infos[0] if infos else None)
+    if info is None:
+        die("app has no appInfo")
+    info_locs = app_info_localization_map(client, info["id"])
+    version_locs = localization_map(client, target_ver["id"])
+    version_string = (target_ver.get("attributes") or {}).get("versionString")
+    updated = 0
+    for locale, data in listing.items():
+        wanted = dict(data)
+        if locale in whats_new:
+            wanted["whatsNew"] = whats_new[locale]
+        current_info = info_locs.get(locale)
+        if editable is None:
+            if current_info is None or changed_fields(
+                wanted, current_info.get("attributes") or {}, APP_INFO_FIELDS
+            ):
+                die(
+                    f"{locale}: name or subtitle differ from ASC, but no appInfo is editable; "
+                    f"create version {version_string} in ASC first"
+                )
+        else:
+            updated += upsert_localization(
+                client,
+                "appInfoLocalizations",
+                ("appInfo", "appInfos", info["id"]),
+                current_info,
+                locale,
+                wanted,
+                APP_INFO_FIELDS,
+                dry_run,
+            )
+        version_fields = VERSION_COPY_FIELDS + (("whatsNew",) if "whatsNew" in wanted else ())
+        updated += upsert_localization(
+            client,
+            "appStoreVersionLocalizations",
+            ("appStoreVersion", "appStoreVersions", target_ver["id"]),
+            version_locs.get(locale),
+            locale,
+            wanted,
+            version_fields,
+            dry_run,
+        )
+    return updated
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Push ASC version localization metadata")
     parser.add_argument("--bundle-id", default=DEFAULT_BUNDLE)
     parser.add_argument("--out", type=Path, default=Path(DEFAULT_OUT))
-    parser.add_argument("--version", required=True, help="target version, e.g. 1.0.9")
-    parser.add_argument("--from-version", required=True, help="source version to copy empty fields from")
+    parser.add_argument("--version", help="target version, e.g. 1.0.9")
+    parser.add_argument(
+        "--from-version",
+        help="source version to copy empty fields from (not used with --listing)",
+    )
+    parser.add_argument(
+        "--listing",
+        type=Path,
+        metavar="DIR",
+        help="push name, subtitle and version texts from DIR/<locale>.json",
+    )
+    parser.add_argument("--check", action="store_true", help="with --listing: only lint, no ASC")
     parser.add_argument(
         "--whats-new",
         action="append",
@@ -202,6 +388,24 @@ def main() -> None:
     )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
+
+    listing = None
+    if args.listing:
+        listing = load_listing(args.listing)
+        errors = lint_listing(listing)
+        for error in errors:
+            print(f"error: {error}", file=sys.stderr)
+        if errors:
+            raise SystemExit(1)
+        if args.check:
+            print(f"ok: {', '.join(listing)}")
+            return
+    elif args.check:
+        die("--check needs --listing")
+    if not args.version:
+        die("--version is required")
+    if listing is None and not args.from_version:
+        die("--from-version is required without --listing")
 
     load_asc_env()
     client = AscClient(asc_jwt())
@@ -216,8 +420,21 @@ def main() -> None:
         die(f"app not found for bundle id {args.bundle_id}")
 
     versions = version_map(client, app["id"])
-    source_ver = versions.get(args.from_version)
     target_ver = versions.get(args.version)
+    if listing is not None:
+        if not target_ver:
+            die(f"target version {args.version!r} not found in ASC")
+        whats_new = {}
+        for locale, path in whats_new_by_locale.items():
+            if not path.is_file():
+                die(f"missing what's new file: {path}")
+            whats_new[locale] = path.read_text(encoding="utf-8").strip()
+        updated = push_listing(client, app["id"], target_ver, listing, whats_new, args.dry_run)
+        if not args.dry_run and updated:
+            print(f"updated {updated} localization(s); re-run asc-pull-app-store-metadata.py to refresh store/")
+        return
+
+    source_ver = versions.get(args.from_version)
     if not source_ver:
         die(f"source version {args.from_version!r} not found in ASC")
     if not target_ver:
