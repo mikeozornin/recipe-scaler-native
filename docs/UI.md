@@ -217,9 +217,9 @@ visible in both states. Signed out: «Подключить» with a progress ind
 issues an 8-digit code shown in a monospaced box with the hint «Введите этот код
 на странице входа навыка «Книга рецептов» или назовите его Алисе:», plus icon-only
 copy and new-code buttons. While the code is shown, the status is polled every
-3 s, and the row switches to «Подключена» with a green check and an «Отключить»
-row without confirmation. Errors appear as a secondary footnote above the row;
-buttons are disabled while offline or busy.
+3 s, and the row switches to «Подключена» with a green check and a
+«Выйти из аккаунта Алисы» row without confirmation. Errors appear as a secondary
+footnote above the row; buttons are disabled while offline or busy.
 
 ### Shopping list
 

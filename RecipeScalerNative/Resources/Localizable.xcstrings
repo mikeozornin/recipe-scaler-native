@@ -3850,13 +3850,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Disconnect"
+            "value": "Sign out of Alice"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Отключить"
+            "value": "Выйти из аккаунта Алисы"
           }
         }
       }
