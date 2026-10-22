@@ -48,6 +48,9 @@
 | `POST /api/telegram/connect` | code | `"Telegram failed to get code"` / `String(localized:)` | `telegram.failed-to-get-code` |
 | `GET /api/telegram/status` | status | `"Telegram status failed"` | `telegram.status-failed` |
 | `POST /api/telegram/disconnect` | disconnect | `"Telegram failed to disconnect"` / `String(localized:)` | `telegram.failed-to-disconnect` |
+| `POST /api/alice/connect` | code | `"Failed to generate connection code"` | `alice.failed-to-get-code` |
+| `GET /api/alice/status` | status | `"Failed to get status"` | `alice.failed-to-get-status` |
+| `POST /api/alice/disconnect` | disconnect | `"Failed to disconnect"` | `alice.failed-to-disconnect` |
 | `POST /api/assistant/threads` | create | `"assistant.threads.create.failed"` (уже OK) | `assistant.threads.create.failed` |
 | `GET /api/assistant/threads` | list | `"assistant.threads.list.failed"` (уже OK) | `assistant.threads.list.failed` |
 | `GET /api/assistant/threads/:id/messages` | messages | `"assistant.messages.load.failed"` (уже OK) | `assistant.messages.load.failed` |

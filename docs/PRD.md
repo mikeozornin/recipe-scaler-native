@@ -308,6 +308,8 @@ app feels personalized.
    one-by-one), and toggle recipe downloads.
 4. **Given** I open Settings, **Then** I can connect/disconnect Telegram (via
    connection code).
+5. **Given** I open Settings, **Then** I can get an 8-digit code for the Alice skill
+   «Книга рецептов» and later disconnect Alice (spec 084, web spec 066).
 
 ---
 
@@ -377,6 +379,7 @@ events, **so that** I don't miss anything.
 | AI assistant (chat) | ✅ | P5 | Streaming NDJSON |
 | AI assistant (voice) | ✅ | P5 | Audio recording + transcription |
 | Telegram integration | ✅ | P5 | Connection code flow |
+| Alice skill linking | ✅ | P5 | Connection code flow (spec 084) |
 | PDF cookbook export | ✅ | P5 | Native PDF generation |
 | Nutrition (view) | ✅ | P3 | Read from Y.Map |
 | Nutrition (edit/calculate) | ✅ | P5 | LLM or manual |
@@ -483,6 +486,7 @@ Full schema reference: [docs/YJS-SCHEMA.md](YJS-SCHEMA.md)
 | **Shopping** | `GET /api/v1/shopping-list/settings`, `PUT /api/v1/shopping-list/share` |
 | **Settings** | `GET /api/settings` |
 | **Telegram** | `POST /api/telegram/connect`, `POST .../disconnect`, `GET .../status` |
+| **Alice** | `POST /api/alice/connect`, `POST .../disconnect`, `GET .../status` |
 | **Push** | Register APNs token with server (endpoint TBD) |
 
 ---

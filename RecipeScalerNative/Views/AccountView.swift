@@ -189,6 +189,7 @@ struct AccountView: View {
                     telegramSection
                         .id(AccountViewSection.telegram.id)
                     vkusvillSection
+                    aliceSection
                     // TODO(payments): секция tips временно скрыта (2026-08-14);
                     // feedback перенесён в footerSection над About.
                     // AccountTipsSection()
@@ -551,6 +552,23 @@ struct AccountView: View {
                 }
             )
         }
+    }
+
+    /// Web spec 066: pairing code for the Alice skill «Книга рецептов».
+    /// Placed after VkusVill to match the web «Подключения» order.
+    private var aliceSection: some View {
+        Section {
+            Text("alice.benefits-description")
+                .appBody()
+                .foregroundStyle(.secondary)
+            AliceConnectionView(
+                isOnline: viewModel.isOnline,
+                refreshTick: refreshTick
+            )
+        } header: {
+            AppSectionHeader("alice.title")
+        }
+        .appListSectionHeaderStyle()
     }
 
     @ViewBuilder

@@ -211,6 +211,16 @@ the assistant takes into account, or warns about a missing delivery address or r
 access; errors appear in red above it. Sign-in opens the Vkusvill page in an
 ephemeral web authentication session, so no system sign-in prompt appears.
 
+The Alice section («Алиса», spec 084, web spec 066) comes after Vkusvill, matching
+the web «Подключения» order, and is shown in every locale. The description stays
+visible in both states. Signed out: «Подключить» with a progress indicator; it
+issues an 8-digit code shown in a monospaced box with the hint «Введите этот код
+на странице входа навыка «Книга рецептов» или назовите его Алисе:», plus icon-only
+copy and new-code buttons. While the code is shown, the status is polled every
+3 s, and the row switches to «Подключена» with a green check and an «Отключить»
+row without confirmation. Errors appear as a secondary footnote above the row;
+buttons are disabled while offline or busy.
+
 ### Shopping list
 
 Header matches Recipes: large title with sort segment in the collapsible search slot (`UISearchController` / `UISearchBar` pattern — SwiftUI has no separate API for a custom block under large title).

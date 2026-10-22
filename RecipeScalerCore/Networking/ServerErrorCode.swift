@@ -66,6 +66,11 @@ public enum ServerErrorCode: String, Sendable, Equatable, CaseIterable {
     case telegramStatusFailed = "telegram.status-failed"
     case telegramFailedToDisconnect = "telegram.failed-to-disconnect"
 
+    // alice.* (web spec 066: pairing code for the «Книга рецептов» skill)
+    case aliceFailedToGetCode = "alice.failed-to-get-code"
+    case aliceFailedToGetStatus = "alice.failed-to-get-status"
+    case aliceFailedToDisconnect = "alice.failed-to-disconnect"
+
     // assistant.*
     case assistantThreadsCreateFailed = "assistant.threads.create.failed"
     case assistantThreadsListFailed = "assistant.threads.list.failed"
