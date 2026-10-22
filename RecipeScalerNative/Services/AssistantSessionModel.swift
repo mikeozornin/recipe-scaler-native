@@ -31,7 +31,7 @@ import UIKit
 struct AssistantSessionClient {
     var listThreads: @MainActor () async throws -> [AssistantThreadDTO]
     var createThread: @MainActor () async throws -> AssistantThreadDTO
-    var getMessages: @MainActor (_ threadId: String) async throws -> [AssistantMessageDTO]
+    var getMessages: @MainActor (_ threadId: String) async throws -> AssistantThreadHistory
     var deleteThread: @MainActor (_ threadId: String) async throws -> Void
     var stream: @MainActor (
         _ threadId: String,
@@ -42,6 +42,9 @@ struct AssistantSessionClient {
     var lastOpenedAt: @MainActor () -> TimeInterval
     var persistThreadId: @MainActor (_ threadId: String?) -> Void
     var clearThreadId: @MainActor () -> Void
+    /// Keeps a send (stream + reply recovery) running when the app goes to the
+    /// background. Returns the idempotent end action; the caller always runs it.
+    var beginBackgroundTask: @MainActor () -> (@MainActor () -> Void)
 
     static let live = AssistantSessionClient(
         listThreads: {
@@ -67,7 +70,16 @@ struct AssistantSessionClient {
         savedThreadId: { AssistantSessionStore.threadId },
         lastOpenedAt: { AssistantSessionStore.lastOpenedAt },
         persistThreadId: { threadId in AssistantSessionStore.persist(threadId: threadId) },
-        clearThreadId: { AssistantSessionStore.clearThreadId() }
+        clearThreadId: { AssistantSessionStore.clearThreadId() },
+        beginBackgroundTask: {
+            #if os(iOS)
+            let task = AssistantReplyBackgroundTask()
+            task.begin()
+            return { task.end() }
+            #else
+            return {}
+            #endif
+        }
     )
 }
 
@@ -94,6 +106,7 @@ final class AssistantSessionModel {
     @ObservationIgnored private let client: AssistantSessionClient
     @ObservationIgnored private let isOnlineProvider: () -> Bool
     @ObservationIgnored private let collectionEntriesProvider: () -> [CollectionEntry]
+    @ObservationIgnored private let recoveryTiming: AssistantReplyRecoveryTiming
 
     @ObservationIgnored private var streamTask: Task<Void, Never>?
     @ObservationIgnored private var threadsRefreshTask: Task<Void, Never>?
@@ -136,11 +149,13 @@ final class AssistantSessionModel {
     init(
         client: AssistantSessionClient = .live,
         isOnline: @escaping () -> Bool,
-        collectionEntries: @escaping () -> [CollectionEntry]
+        collectionEntries: @escaping () -> [CollectionEntry],
+        recoveryTiming: AssistantReplyRecoveryTiming = .live
     ) {
         self.client = client
         self.isOnlineProvider = isOnline
         self.collectionEntriesProvider = collectionEntries
+        self.recoveryTiming = recoveryTiming
     }
 
     private var isOnline: Bool {
@@ -652,15 +667,11 @@ final class AssistantSessionModel {
         do {
             let history = try await client.getMessages(id)
             guard isCurrent(expectedGeneration), threadId == id else { return }
-            messages = history.map {
-                AssistantMessage(
-                    id: $0.id,
-                    role: $0.role,
-                    text: $0.content,
-                    isStreaming: false,
-                    metadata: $0.metadata,
-                    createdAt: AssistantISO8601.parse($0.createdAt) ?? Date()
-                )
+            messages = Self.chatMessages(from: history.messages)
+            if history.responseInProgress {
+                // A reply is still being generated (a stream this app lost, or
+                // another device): show it as typing until the server saves it.
+                startFollowingRunningReply(threadId: id, generation: expectedGeneration ?? interactionGeneration)
             }
         } catch {
             guard isCurrent(expectedGeneration), threadId == id else { return }
@@ -669,6 +680,19 @@ final class AssistantSessionModel {
                 threads.removeAll { $0.id == id }
                 startNewChat(keepsDraft: true)
             }
+        }
+    }
+
+    private static func chatMessages(from history: [AssistantMessageDTO]) -> [AssistantMessage] {
+        history.map {
+            AssistantMessage(
+                id: $0.id,
+                role: $0.role,
+                text: $0.content,
+                isStreaming: false,
+                metadata: $0.metadata,
+                createdAt: AssistantISO8601.parse($0.createdAt) ?? Date()
+            )
         }
     }
 
@@ -711,6 +735,10 @@ final class AssistantSessionModel {
             return
         }
 
+        // The reply keeps streaming (and is recovered) while the app is in the background.
+        let endBackgroundTask = client.beginBackgroundTask()
+        defer { endBackgroundTask() }
+
         await ensureThread(expectedGeneration: generation)
         guard isCurrent(generation), let threadId else {
             // createThread failed — keep the prompt for retry instead of losing it.
@@ -734,6 +762,8 @@ final class AssistantSessionModel {
             }
         }
 
+        // Ids shown before this turn: the recovery looks for our user turn after them.
+        let knownMessageIds = Set(messages.map(\.id))
         let userMessageId = "optimistic-user-\(UUID().uuidString)"
         let now = Date()
         messages.append(
@@ -764,6 +794,22 @@ final class AssistantSessionModel {
             )
         } catch {
             guard isCurrent(generation) else { return }
+            if Self.isTransportFailure(error) {
+                // The stream broke (network, background, server cut-off), but the
+                // server keeps generating and saves the reply: wait for it instead
+                // of failing a turn the server is still answering.
+                switch await recoverInterruptedReply(
+                    threadId: threadId,
+                    sentText: trimmedText,
+                    knownMessageIds: knownMessageIds,
+                    generation: generation
+                ) {
+                case .recovered, .superseded:
+                    return
+                case .notFound:
+                    break
+                }
+            }
             removeAllOptimisticMessages()
             input = bubbleRestoreText(for: message, displayText: displayText) ?? bubbleText
             attachments = snapshotAttachments
@@ -771,7 +817,7 @@ final class AssistantSessionModel {
                 AssistantMessage(
                     id: "error-\(UUID().uuidString)",
                     role: "assistant",
-                    text: UserFacingAPIError.message(for: error),
+                    text: Self.errorBubbleText(for: error),
                     isStreaming: false,
                     metadata: nil,
                     createdAt: Date()
@@ -780,7 +826,20 @@ final class AssistantSessionModel {
             #if os(iOS)
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             #endif
+            if case APIError.serverError(code: .assistantResponseInProgress) = error {
+                // The server is still answering an earlier turn of this thread:
+                // keep the restored draft and show that reply once it is saved.
+                showRunningReplyPlaceholder()
+                await followRunningReply(threadId: threadId, generation: generation)
+            }
         }
+    }
+
+    private static func errorBubbleText(for error: Error) -> String {
+        // A stream that closed without a reply reads as a lost connection.
+        UserFacingAPIError.message(
+            for: error is AssistantStreamInterruptedError ? URLError(.networkConnectionLost) : error
+        )
     }
 
     /// External autosends pass `message != nil`; their prompt must return to the
@@ -863,6 +922,10 @@ final class AssistantSessionModel {
                 throw APIError.serverError(code: code)
             }
         }
+        // Closed without `final` / `error`: the connection or the server cut the
+        // response; the server may still be generating the reply.
+        guard isCurrent(generation) else { return }
+        throw AssistantStreamInterruptedError()
     }
 
     private func insertOptimisticToolStatusRow(toolName: String, assistantMessageId: String) {
@@ -976,6 +1039,167 @@ final class AssistantSessionModel {
         }
     }
 
+    // MARK: - Reply recovery
+
+    private enum InterruptedReplyRecovery {
+        /// The saved reply replaced the optimistic turn.
+        case recovered
+        /// Close, new chat, another thread or logout took over: nothing to show.
+        case superseded
+        /// The turn did not reach the server (or no reply by the deadline): show the error.
+        case notFound
+    }
+
+    /// The last history the polls returned; `nil` when every poll failed.
+    private struct RunningReplyOutcome {
+        var history: AssistantThreadHistory?
+
+        var settledHistory: AssistantThreadHistory? {
+            guard let history, !history.responseInProgress else { return nil }
+            return history
+        }
+    }
+
+    /// Any URL-loading failure or a stream closed without a reply. Server error
+    /// events, HTTP statuses and validation errors are final answers.
+    private static func isTransportFailure(_ error: Error) -> Bool {
+        if error is AssistantStreamInterruptedError || error is URLError {
+            return true
+        }
+        return (error as NSError).domain == NSURLErrorDomain
+    }
+
+    /// Keeps the optimistic user bubble and the streaming placeholder (with the
+    /// text received so far) while the server finishes, then shows the saved
+    /// history when it contains our turn and a reply to it.
+    private func recoverInterruptedReply(
+        threadId: String,
+        sentText: String,
+        knownMessageIds: Set<String>,
+        generation: Int
+    ) async -> InterruptedReplyRecovery {
+        AppLog.info(.app, "assistant_reply_recovery_started")
+        guard let outcome = await waitForRunningReply(threadId: threadId, generation: generation) else {
+            return .superseded
+        }
+        guard let history = outcome.settledHistory,
+              Self.historyContainsReply(
+                  history.messages,
+                  sentText: sentText,
+                  knownMessageIds: knownMessageIds
+              ) else {
+            AppLog.info(.app, "assistant_reply_recovery_not_found", data: [
+                "settled": outcome.settledHistory == nil ? "false" : "true",
+            ])
+            return .notFound
+        }
+        discardStreamText()
+        messages = Self.chatMessages(from: history.messages)
+        promoteActiveThread()
+        AppLog.info(.app, "assistant_reply_recovered")
+        #if os(iOS)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        #endif
+        return .recovered
+    }
+
+    /// Our turn = the last user message after every message shown before the
+    /// send, whose trimmed text equals the sent text (the server stores the
+    /// trimmed message). It counts only with an assistant message after it.
+    static func historyContainsReply(
+        _ history: [AssistantMessageDTO],
+        sentText: String,
+        knownMessageIds: Set<String>
+    ) -> Bool {
+        let firstNewIndex = history.lastIndex { knownMessageIds.contains($0.id) }
+            .map { $0 + 1 } ?? history.startIndex
+        let candidates = history[firstNewIndex...]
+        guard let userIndex = candidates.lastIndex(where: {
+            $0.role == "user"
+                && $0.content.trimmingCharacters(in: .whitespacesAndNewlines) == sentText
+        }) else { return false }
+        return history[(userIndex + 1)...].contains { $0.role == "assistant" }
+    }
+
+    /// History loaded while the server is still answering: typing placeholder,
+    /// composer locked, then the saved history. Owned by `streamTask`, so close,
+    /// a new chat, another thread, a send and logout stop it.
+    private func startFollowingRunningReply(threadId: String, generation: Int) {
+        showRunningReplyPlaceholder()
+        isSending = true
+        streamTask?.cancel()
+        streamTask = Task { @MainActor in
+            await self.followRunningReply(threadId: threadId, generation: generation)
+            if self.isCurrent(generation) {
+                self.isSending = false
+            }
+        }
+    }
+
+    private func showRunningReplyPlaceholder() {
+        messages.append(
+            AssistantMessage(
+                id: "optimistic-assistant-\(UUID().uuidString)",
+                role: "assistant",
+                text: "",
+                isStreaming: true,
+                metadata: nil,
+                createdAt: Date()
+            )
+        )
+    }
+
+    /// Waits until the running reply of `threadId` is saved and shows the saved
+    /// history; at the deadline only the placeholder goes away.
+    private func followRunningReply(threadId: String, generation: Int) async {
+        guard let outcome = await waitForRunningReply(threadId: threadId, generation: generation) else {
+            return
+        }
+        if let history = outcome.settledHistory {
+            discardStreamText()
+            messages = Self.chatMessages(from: history.messages)
+        } else {
+            messages.removeAll { $0.role == "assistant" && $0.isStreaming && AssistantMessage.isOptimisticID($0.id) }
+        }
+    }
+
+    /// Polls the thread history every `pollInterval` until the server no longer
+    /// reports a running reply or `deadline` passes. Failed polls back off.
+    /// `nil` when superseded (cancelled, another generation or thread).
+    private func waitForRunningReply(threadId: String, generation: Int) async -> RunningReplyOutcome? {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: recoveryTiming.deadline)
+        var outcome = RunningReplyOutcome()
+        var consecutiveFailures = 0
+        while true {
+            do {
+                try await Task.sleep(for: recoveryTiming.delay(afterFailures: consecutiveFailures))
+            } catch {
+                return nil
+            }
+            guard isCurrent(generation), self.threadId == threadId else { return nil }
+            do {
+                let history = try await client.getMessages(threadId)
+                guard isCurrent(generation), self.threadId == threadId else { return nil }
+                outcome.history = history
+                consecutiveFailures = 0
+                if !history.responseInProgress {
+                    return outcome
+                }
+            } catch {
+                guard isCurrent(generation), self.threadId == threadId else { return nil }
+                consecutiveFailures += 1
+                AppLog.info(.app, "assistant_reply_poll_failed", data: [
+                    "failures": String(consecutiveFailures),
+                ])
+            }
+            if clock.now >= deadline {
+                AppLog.info(.app, "assistant_reply_wait_deadline")
+                return outcome
+            }
+        }
+    }
+
     // MARK: - Session persistence
 
     private func persistSession() {
@@ -1010,3 +1234,54 @@ struct AssistantStreamFlushThrottle {
         lastFlush = nil
     }
 }
+
+/// Polling of a reply the server is still generating (`responseInProgress`).
+/// Injected so tests run the recovery without real multi-second waits.
+struct AssistantReplyRecoveryTiming: Sendable {
+    /// Between polls while the reply is still running.
+    var pollInterval: Duration
+    /// Cap of the backoff after failed polls.
+    var maxRetryInterval: Duration
+    /// Give up waiting after this long (the server's own generation budget).
+    var deadline: Duration
+
+    static let live = AssistantReplyRecoveryTiming(
+        pollInterval: .seconds(2),
+        maxRetryInterval: .seconds(30),
+        deadline: .seconds(600)
+    )
+
+    /// `pollInterval` after a successful poll, doubled per consecutive failure up to `maxRetryInterval`.
+    func delay(afterFailures failures: Int) -> Duration {
+        var delay = pollInterval
+        for _ in 0..<max(0, failures) {
+            delay = delay * 2
+            if delay >= maxRetryInterval {
+                return maxRetryInterval
+            }
+        }
+        return delay
+    }
+}
+
+#if os(iOS)
+/// One `UIApplication` background task around a send; `end` is idempotent and
+/// also runs from the expiration handler.
+@MainActor
+private final class AssistantReplyBackgroundTask {
+    private var identifier: UIBackgroundTaskIdentifier = .invalid
+
+    func begin() {
+        guard identifier == .invalid else { return }
+        identifier = UIApplication.shared.beginBackgroundTask(withName: "assistant-reply") { [weak self] in
+            self?.end()
+        }
+    }
+
+    func end() {
+        guard identifier != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(identifier)
+        identifier = .invalid
+    }
+}
+#endif

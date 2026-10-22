@@ -4598,6 +4598,23 @@
         }
       }
     },
+    "assistant.response.in-progress": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The assistant is still answering your previous message. Please wait for the reply."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ассистент ещё отвечает на прошлое сообщение. Дождитесь ответа."
+          }
+        }
+      }
+    },
     "assistant.send": {
       "localizations": {
         "en": {

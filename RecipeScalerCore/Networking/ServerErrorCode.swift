@@ -82,6 +82,7 @@ public enum ServerErrorCode: String, Sendable, Equatable, CaseIterable {
     case assistantVoiceErrorTooLong = "assistant.voice-error.too-long"
     case assistantVoiceErrorTranscription = "assistant.voice-error.transcription"
     case assistantErrorUnavailable = "assistant.error-unavailable"
+    case assistantResponseInProgress = "assistant.response.in-progress"
 
     // api.* generic fallbacks (used when the server response cannot be matched
     // to a domain-specific code, or as endpoint defaults).

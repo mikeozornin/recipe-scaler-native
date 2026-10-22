@@ -13,6 +13,28 @@ extension APIClient {
         extraHeaders: [String: String] = [:],
         timeoutInterval: TimeInterval? = nil
     ) async throws -> APIResponse<T> {
+        let envelope: APIResponse<T>? = try await requestEnvelope(
+            path: path,
+            method: method,
+            body: body,
+            extraHeaders: extraHeaders,
+            timeoutInterval: timeoutInterval
+        )
+        return envelope ?? APIResponse<T>(success: true, data: nil, error: nil)
+    }
+
+    /// Same transport, auth and HTTP-failure mapping as `requestJSON`, but decodes
+    /// the 2xx body into a caller-defined envelope, for endpoints whose response
+    /// carries fields next to `success`/`data`/`error`
+    /// (e.g. `responseInProgress` on assistant thread messages).
+    /// Returns `nil` for 204/205 or an empty body.
+    public func requestEnvelope<Envelope: Decodable>(
+        path: String,
+        method: String = "GET",
+        body: Encodable? = nil,
+        extraHeaders: [String: String] = [:],
+        timeoutInterval: TimeInterval? = nil
+    ) async throws -> Envelope? {
         var bodyData: Data?
         if let body {
             bodyData = try JSONEncoder().encode(AnyEncodable(body))
@@ -35,11 +57,11 @@ extension APIClient {
         // 204/205 (and defensively any empty body) carry no JSON envelope —
         // spec 072: `DELETE /follow` and `POST /feed/seen` return bare `204`.
         if http.statusCode == 204 || http.statusCode == 205 || data.isEmpty {
-            return APIResponse<T>(success: true, data: nil, error: nil)
+            return nil
         }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode(APIResponse<T>.self, from: data)
+        return try decoder.decode(Envelope.self, from: data)
     }
 
     public func uploadMultipart(

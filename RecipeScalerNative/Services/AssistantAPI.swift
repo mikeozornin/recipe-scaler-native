@@ -29,6 +29,38 @@ struct AssistantMessageDTO: Decodable, Identifiable, Sendable {
     let updatedAt: String
 }
 
+/// Thread history plus the server flag that a reply for this thread is still
+/// being generated (`responseInProgress`). The server keeps generating after a
+/// client disconnect, so a client that lost the stream polls this until the
+/// flag drops and then reads the saved reply.
+struct AssistantThreadHistory: Sendable {
+    let messages: [AssistantMessageDTO]
+    let responseInProgress: Bool
+}
+
+/// Wire envelope of `GET /api/assistant/threads/:id/messages`:
+/// `{success, data:[...], error?, responseInProgress?}`. A missing
+/// `responseInProgress` (older server) means `false`.
+struct AssistantThreadMessagesEnvelope: Decodable {
+    let success: Bool
+    let data: [AssistantMessageDTO]?
+    let error: String?
+    let responseInProgress: Bool?
+
+    func threadHistory() throws -> AssistantThreadHistory {
+        guard success, let data else {
+            throw APIError.serverError(
+                code: ServerErrorCode.from(serverValue: error, fallback: .assistantMessagesLoadFailed)
+            )
+        }
+        return AssistantThreadHistory(messages: data, responseInProgress: responseInProgress ?? false)
+    }
+}
+
+/// The respond-stream closed (no transport error) before a `final` or `error`
+/// event arrived. The server may still be generating / have saved the reply.
+struct AssistantStreamInterruptedError: Error, Equatable {}
+
 // MARK: - Stream event types
 
 enum AssistantStreamEvent: Sendable {
@@ -64,14 +96,18 @@ enum AssistantAPI {
         return try APIClient.unwrapResponse(response, fallback: .assistantThreadsListFailed)
     }
 
-    /// `GET /api/assistant/threads/:id/messages` → messages oldest-first.
-    static func getMessages(threadId: String, language: String? = nil) async throws -> [AssistantMessageDTO] {
-        let response: APIResponse<[AssistantMessageDTO]> = try await APIClient.shared.requestJSON(
+    /// `GET /api/assistant/threads/:id/messages` → messages oldest-first plus
+    /// `responseInProgress` (missing → `false`).
+    static func getMessages(threadId: String, language: String? = nil) async throws -> AssistantThreadHistory {
+        let envelope: AssistantThreadMessagesEnvelope? = try await APIClient.shared.requestEnvelope(
             path: "/api/assistant/threads/\(threadId)/messages",
             method: "GET",
             extraHeaders: languageHeaders(language)
         )
-        return try APIClient.unwrapResponse(response, fallback: .assistantMessagesLoadFailed)
+        guard let envelope else {
+            throw APIError.serverError(code: .assistantMessagesLoadFailed)
+        }
+        return try envelope.threadHistory()
     }
 
     /// `DELETE /api/assistant/threads/:id`.
@@ -92,6 +128,8 @@ enum AssistantAPI {
     }
 
     /// `POST /api/assistant/threads/:id/respond-stream` — NDJSON stream.
+    /// Heartbeat lines are skipped; a turn sent while another reply is still
+    /// running yields `.error(.assistantResponseInProgress)`.
     ///
     /// `message` must be 1..8000 chars (server trims + validates). `attachedRecipeIds`
     /// is up to 10 UUIDv4 strings (server rejects on more / non-UUID).
@@ -215,7 +253,8 @@ enum AssistantAPI {
         return ["X-App-Language": language]
     }
 
-    /// Parses one NDJSON line into a stream event. Ignores malformed / unknown payloads.
+    /// Parses one NDJSON line into a stream event. Ignores malformed / unknown payloads,
+    /// including the server keep-alive `{"type":"heartbeat"}` (sent every ~15 s).
     private static func parseLine(_ line: String) -> AssistantStreamEvent? {
         let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,

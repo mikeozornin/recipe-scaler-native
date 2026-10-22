@@ -63,6 +63,10 @@
 
 **Когда** ассистент вызывает tools во время стрима, **тогда** native показывает отдельные tool-status строки и processing shimmer — паритет web ([`073` kanon](../../../specs/073-assistant-tool-status/spec.md)).
 
+### US10 — Ответ не теряется при обрыве стрима (P1)
+
+**Когда** стрим ответа оборвался (закрыт чат, приложение ушло в фон, сеть пропала, сервер закрыл ответ без `final`), **тогда** приложение не показывает ошибку сразу: сервер дописывает и сохраняет ответ сам, а клиент дожидается его и показывает сохранённую историю. Пользователю не нужно переотправлять вопрос, сервер не делает работу повторно.
+
 ## Требования
 
 ### FR-021-001 — Стрим UI
@@ -87,7 +91,23 @@ iOS-only (через `#if os(iOS)`). Триггер — терминальные
 - `case .final` → `UINotificationFeedbackGenerator().notificationOccurred(.success)` — ответ дописан успешно.
 - `case .error` → `UINotificationFeedbackGenerator().notificationOccurred(.error)` — stream-error (пользователь увидит локализованное сообщение об ошибке).
 
+Ответ, восстановленный после обрыва стрима (FR-021-006), тоже даёт success-haptic; путь ошибки после неудачного восстановления — error-haptic.
+
 Haptic срабатывает только когда чат открыт (пока стрим активен, sheet жив: закрытие → `streamTask?.cancel()` в `onDisappear`, поэтому отдельная проверка `AssistantRecipeContext.isAssistantSheetOpen` не нужна). На `textDelta`/`toolStart`/`textStart` haptic не срабатывает.
+
+### FR-021-006 — Восстановление ответа после обрыва стрима
+
+Контракт сервера: `respond-stream` может слать `{"type":"heartbeat"}` каждые ~15 с (клиент их пропускает); после отключения клиента сервер продолжает генерацию; `GET /api/assistant/threads/:id/messages` отдаёт `responseInProgress` (нет поля → `false`); новый ход во время идущего ответа отклоняется кодом `assistant.response.in-progress` (stream-событие `error`, HTTP 200; не-стрим маршрут — 409).
+
+`AssistantSessionModel`:
+- **Обрыв в `send()`** — любой `URLError` (и `NSURLErrorDomain`) или стрим, закрытый без `final`/`error` (`AssistantStreamInterruptedError`). Серверные `error`-события, HTTP-статусы и валидация — обычная ошибка, без восстановления. При обрыве optimistic-пузырь пользователя и стрим-плейсхолдер (с уже пришедшим текстом) остаются, `isSending` остаётся `true`, а модель опрашивает историю треда каждые ~2 с, пока `responseInProgress == true`, не дольше ~10 мин. Неудачный опрос повторяется с удвоением паузы (до 30 с).
+- **Наш ход в истории** — последнее user-сообщение после всех сообщений, которые были на экране до отправки (по id), с текстом, равным отправленному после trim. Засчитывается, только если после него есть ответ ассистента (как в web `findSentUserTurn` + `findReplyAfter`). Нашёлся — `messages` заменяются серверной историей, success-haptic. Не нашёлся или истёк срок — прежний путь ошибки: optimistic-сообщения убираются, ввод и вложения восстанавливаются, пузырь ошибки («Не удалось связаться с сервером»), error-haptic.
+- **Тред с идущим ответом** — `loadHistory` при `responseInProgress == true` показывает историю, typing-плейсхолдер и `isSending = true`, ждёт тем же опросом и подменяет историю финальной. Срок истёк — убирается только плейсхолдер.
+- **`assistant.response.in-progress`** в `send()` — путь ошибки (локализованный пузырь, ввод восстановлен), затем то же ожидание идущего ответа с плейсхолдером.
+- Всё ожидание принадлежит `streamTask` и привязано к `interactionGeneration` и `threadId`: `close`, `startNewChat`, `openThread`, новая отправка и logout его останавливают, после остановки ничего не приходит.
+- Отправка (стрим и восстановление) обёрнута в `UIApplication.beginBackgroundTask` (`#if os(iOS)`, шов `AssistantSessionClient.beginBackgroundTask`), задача завершается всегда: по окончании, отмене и истечении времени.
+
+Тайминги — `AssistantReplyRecoveryTiming` (в тестах миллисекунды). Тесты: `AssistantSessionModelTests` (обрыв после tool-start, стрим без `final`, ход не дошёл, `close` во время ожидания, тред с идущим ответом, `in-progress`), `AssistantThreadMessagesEnvelopeTests` (поле есть / `false` / отсутствует).
 
 ## Вне scope
 

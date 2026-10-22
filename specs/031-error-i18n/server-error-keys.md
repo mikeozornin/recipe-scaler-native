@@ -58,6 +58,7 @@
 | `POST /api/assistant/threads/:id/respond-stream` | empty | `"assistant.message.empty"` (уже OK) | `assistant.message.empty` |
 | `POST /api/assistant/threads/:id/respond-stream` | too long | `"assistant.message.too-long"` (уже OK) | `assistant.message.too-long` |
 | `POST /api/assistant/threads/:id/respond-stream` | http error | `"assistant.stream.http-error"` (уже OK) | `assistant.stream.http-error` |
+| `POST /api/assistant/threads/:id/respond-stream` | ответ на прошлый ход ещё генерируется (stream-событие `error`, HTTP 200; не-стрим маршрут — 409) | `"assistant.response.in-progress"` | `assistant.response.in-progress` |
 | `POST /api/assistant/transcribe` | audio too long | `"assistant.voice-error.too-long"` (уже OK) | `assistant.voice-error.too-long` |
 | `POST /api/assistant/transcribe` | transcription | `"assistant.voice-error.transcription"` (уже OK) | `assistant.voice-error.transcription` |
 | `POST /api/feedback` | send failed | — | `account.feedback.send-failed` |

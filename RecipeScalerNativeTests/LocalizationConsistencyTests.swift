@@ -308,6 +308,7 @@ final class LocalizationConsistencyTests: XCTestCase {
             "assistant.message.empty",
             "assistant.message.too-long",
             "assistant.stream.http-error",
+            "assistant.response.in-progress",
             // MARK: Spec 015 US4 — assistant voice recording UI
             "assistant.voice-cancel",
             "assistant.voice-stop",
