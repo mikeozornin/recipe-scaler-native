@@ -160,7 +160,7 @@ python3 scripts/compose-app-store-screenshots.py --raw-root ../recipe-scaler-nat
 1. Media Manager → **iPhone 6.9" Display** (не 6.5″). 6.5″ нужен только если 6.9″ нет.
 2. На каждую локаль listing (`Russian`, `English`) — 8 PNG из `light/` (по умолчанию). Dark — запасной набор рядом.
 3. Порядок файлов = номер префикса `01`…`08`.
-4. Виджет на Springboard симулятор сам не ставит: кадр `06-widget` свайпает **вправо до последней страницы** Springboard (не Today слева). Виджет нужно добавить вручную один раз именно туда.
+4. Виджет на Springboard симулятор сам не ставит: маленький виджет таймеров нужно добавить вручную один раз. Кадр `06-widget` находит его страницу по `IconState.plist` (если виджета нет — открывает последнюю). В `08-push` баннер, как в Фигме, лежит на этом виджете в состоянии «Нет активных таймеров»: виджет — один на **первой** странице, иконка Recipe Scaler — **в доке** (Home из приложения возвращает на страницу с его иконкой).
 5. App Review: в ASC Demo Account укажите seed из `users.yaml` → `app-store-review` (вход по seed phrase).
 6. Media Manager → **iPad 13" Display**: 6 PNG на локаль из `store/screenshots/ipad-13/{locale}/light/landscape/` (`2752×2064`). Порядок — по номеру префикса: `01`…`05`, затем `09-nutrition`.
 7. Media Manager → **Apple Watch**: два PNG `01-timers` и `02-empty` из `store/screenshots/watch/{locale}/light/`, размер `422×514` (Ultra 3). Один и тот же размер для всех локалей.
@@ -179,4 +179,4 @@ python3 scripts/compose-app-store-screenshots.py --raw-root ../recipe-scaler-nat
 - Кадр `01-recipes`: плоский список, не пустой, без системных алертов
 - Кадр `02-cooking`: развёрнутая панель таймера + баннер «не гасить экран» + scale ≠ 1
 - Кадр `07-live-activity`: lock screen awake, LA видна (не `44 : --`); дата ОС на языке кадра. Крупные цифры часов на Lock Screen у текущего runtime сима часто игнорируют `status_bar override` (wall clock) — ограничение Simulator.
-- Кадр `08-push`: баннер виден; относительное время `сейчас` (ru) / `now` (en)
+- Кадр `08-push`: баннер виден; относительное время `сейчас` (ru) / `now` (en); под баннером виджет без таймеров, не иконки

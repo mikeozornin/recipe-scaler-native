@@ -21,9 +21,8 @@ STATUS_TIME="9:41"
 # Keep these short — library is already on the store account; we only need UI settle.
 SYNC_WAIT_SECONDS="${CAPTURE_SYNC_WAIT:-12}"
 SHOT_WAIT_SECONDS="${CAPTURE_SHOT_WAIT:-5}"
-# Push banner: short timer, Home, then wait for fire (do not use multi-minute polls).
-PUSH_TIMER_SECONDS="${CAPTURE_PUSH_TIMER:-6}"
-PUSH_BANNER_WAIT_SECONDS="${CAPTURE_PUSH_BANNER_WAIT:-5}"
+# Without AXe to see the banner: how long after `simctl push` to take 08-push.
+PUSH_BANNER_WAIT_SECONDS="${CAPTURE_PUSH_BANNER_WAIT:-2}"
 CAPTURE_LOCK="$ROOT/.capture-screenshots.lock"
 
 usage() {
@@ -54,7 +53,7 @@ Does NOT uninstall between locales — only relaunches with E2E credentials.
 Exclusive lock via `.capture-screenshots.lock.d` — do not run two captures in parallel.
 
 Env overrides: CAPTURE_SYNC_WAIT (default 12), CAPTURE_SHOT_WAIT (default 5),
-  CAPTURE_PUSH_TIMER (default 6), CAPTURE_PUSH_BANNER_WAIT (default 5).
+  CAPTURE_PUSH_BANNER_WAIT (default 2).
 EOF
 }
 
@@ -714,7 +713,18 @@ launch_for_shot() {
   return 1
 }
 
+# AXe (brew install cameroncooke/axe/axe) presses the simulator's buttons and taps over HID.
+# The AppleScript / CGEvent fallbacks need Automation and Accessibility access, which agent
+# shells often lack (-1743), and then fail silently: the app stays in front on 07 and 08.
+axe_available() {
+  command -v axe >/dev/null 2>&1
+}
+
 lock_simulator() {
+  if axe_available && axe button lock --udid "$SIM_ID" >/dev/null 2>&1; then
+    sleep 1
+    return 0
+  fi
   # Device > Lock via menu bar item path (not menu "Device" of menu bar).
   local pass
   for pass in 1 2 3; do
@@ -755,6 +765,12 @@ APPLESCRIPT
 # instead of live MM:SS. Tap the wallpaper (not Home / not swipe) to wake
 # without unlocking so the store frame captures seconds.
 wake_lock_screen() {
+  # Upper-middle wallpaper, in points (6.9″ screens are 420–440 wide).
+  if axe_available && axe tap -x 210 -y 260 --udid "$SIM_ID" >/dev/null 2>&1; then
+    echo "  woke lock screen via tap"
+    sleep 0.8
+    return 0
+  fi
   osascript <<'APPLESCRIPT' >/dev/null 2>&1 || true
 tell application "Simulator" to activate
 APPLESCRIPT
@@ -801,6 +817,18 @@ SWIFT
 }
 
 dismiss_live_activity_allow_chip() {
+  if axe_available; then
+    # Only when the chip is there: a blind tap at its spot lands on the Live Activity itself.
+    local label
+    for label in "Allow" "Разрешить"; do
+      if axe tap --label "$label" --udid "$SIM_ID" >/dev/null 2>&1; then
+        echo "  tapped LA Allow chip"
+        sleep 0.5
+        break
+      fi
+    done
+    return 0
+  fi
   # Lock-screen "Allow Live Activities?" is often not exposed to AX in Simulator.
   # Tap the right-hand primary button by geometry inside the Simulator bezel.
   osascript <<'APPLESCRIPT' >/dev/null 2>&1 || true
@@ -850,6 +878,10 @@ SWIFT
 }
 
 press_home() {
+  if axe_available && axe button home --udid "$SIM_ID" >/dev/null 2>&1; then
+    sleep 1
+    return 0
+  fi
   # Device > Home via menu bar item path (not menu "Device" of menu bar).
   osascript <<'APPLESCRIPT' >/dev/null 2>&1 || true
 tell application "Simulator" to activate
@@ -876,6 +908,36 @@ go_home() {
   # Hard home for widget page navigation (app not needed in foreground).
   xcrun simctl terminate "$SIM_ID" "$BUNDLE_ID" >/dev/null 2>&1 || true
   press_home
+}
+
+# 08-push: the timer-complete notification, delivered with `simctl push`. Title and body are the
+# app's own strings (TimerManager), so iOS draws the same banner a finished timer gets.
+send_timer_push() {
+  local lang="$1" timer_name="$2" payload
+  payload="$(mktemp -t capture-push)"
+  python3 - "$ROOT/RecipeScalerNative/Resources/Localizable.xcstrings" "$lang" "$timer_name" "$BUNDLE_ID" \
+    >"$payload" <<'PY'
+import json, sys
+catalog, lang, name, bundle = sys.argv[1:]
+strings = json.load(open(catalog, encoding="utf-8"))["strings"]
+
+def text(key):
+    return strings[key]["localizations"][lang]["stringUnit"]["value"]
+
+print(json.dumps({
+    "Simulator Target Bundle": bundle,
+    "aps": {
+        "alert": {
+            "title": text("timer.notification.title").replace("%@", name),
+            "body": text("timer.notification.body"),
+        },
+        "sound": "default",
+        "category": "TIMER_COMPLETE",
+    },
+}))
+PY
+  xcrun simctl push "$SIM_ID" "$BUNDLE_ID" "$payload" >/dev/null || { rm -f "$payload"; return 1; }
+  rm -f "$payload"
 }
 
 # Home Widget is placed manually once (see store/README.md). Find its IconState
@@ -1364,26 +1426,31 @@ capture_shot() {
       ;;
     08-push)
       grant_capture_permissions
-      # Controlled timing: N-second timer, short settle, Home, wait for banner.
-      # Do not wait minutes — banner auto-dismisses after a few seconds.
-      local push_secs="$PUSH_TIMER_SECONDS"
-      local settle=2
-      CAPTURE_LAUNCH_WAIT=$settle launch_for_shot "$user_id" "$token" "$seed" \
+      # Not a real timer: a finished one stays on the home widget as a red overdue ring right under
+      # the banner. As in the Figma frame, the widget shows «No active timers» (-ScreenshotCapture=1
+      # without timer seconds clears the timers) and the banner comes from `simctl push`.
+      launch_for_shot "$user_id" "$token" "$seed" \
         "-AppLanguage=$app_lang" \
-        "-AppTheme=$appearance" \
-        "-ScreenshotTimerSeconds=$push_secs" \
-        "-ScreenshotTimerName=$timer_name" \
-        "-MobileTimerPanelExpanded=1"
-      dismiss_notification_alert
-      # Banner needs background — Home without terminate so the timer can fire.
+        "-AppTheme=$appearance"
+      # Home lands on the page with the app icon: keep the icon in the dock (store/README.md).
       press_home
-      # Remaining ≈ push_secs - settle; +1s for banner paint.
-      local after_home=$((push_secs - settle + 1))
-      if (( after_home < PUSH_BANNER_WAIT_SECONDS )); then
-        after_home="$PUSH_BANNER_WAIT_SECONDS"
+      send_timer_push "$app_lang" "$timer_name"
+      if axe_available; then
+        echo "  waiting for push banner"
+        local deadline=$((SECONDS + 10))
+        # Not `axe … | grep -q`: under pipefail the early grep exit fails the pipe.
+        until [[ "$(axe describe-ui --udid "$SIM_ID" 2>/dev/null || true)" == *"$timer_name"* ]]; do
+          if (( SECONDS >= deadline )); then
+            echo "ERROR: no push banner for «${timer_name}» on the home screen" >&2
+            return 1
+          fi
+          sleep 0.3
+        done
+        # Let the banner finish sliding in.
+        sleep 0.5
+      else
+        wait_ready "$PUSH_BANNER_WAIT_SECONDS"
       fi
-      echo "  waiting ${after_home}s for push banner (timer ${push_secs}s)"
-      wait_ready "$after_home"
       override_status_bar
       capture_png "$out_dir/08-push.png"
       ;;
