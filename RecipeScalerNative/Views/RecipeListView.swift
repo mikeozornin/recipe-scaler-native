@@ -821,11 +821,19 @@ extension View {
 /// The list row of the strip: edge-to-edge, so cards scroll under the insets.
 /// A plain `HStack`: a lazy one sizes the row by the cards measured first and clips taller titles.
 /// Card size follows the strip width so the last visible card is cut by the edge: the strip reads as scrollable.
+/// An inner shadow marks each edge with cards beyond it.
 struct PinnedRecipeCardsRow<Card: View>: View {
     let items: [RecipeRowData]
     @ViewBuilder let card: (RecipeRowData) -> Card
 
     @State private var width: CGFloat = 0
+    /// Content frame in the scroll view's visible space: `minX < 0` once scrolled, `maxX > width` while cards remain.
+    @State private var contentFrame: CGRect = .zero
+
+    private static var shadowWidth: CGFloat { 12 }
+
+    private var hasCardsBefore: Bool { contentFrame.minX < -1 }
+    private var hasCardsAfter: Bool { contentFrame.maxX > width + 1 }
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -836,12 +844,31 @@ struct PinnedRecipeCardsRow<Card: View>: View {
             }
             .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
             .padding(.top, 8)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .scrollView) } action: { contentFrame = $0 }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .overlay(alignment: .leading) {
+            edgeShadow(from: .leading).opacity(hasCardsBefore ? 1 : 0)
+        }
+        .overlay(alignment: .trailing) {
+            edgeShadow(from: .trailing).opacity(hasCardsAfter ? 1 : 0)
+        }
+        .animation(.easeOut(duration: 0.15), value: hasCardsBefore)
+        .animation(.easeOut(duration: 0.15), value: hasCardsAfter)
         .environment(\.pinnedRecipeCardSide, PinnedRecipeCard.side(forStripWidth: width))
         .listRowInsets(EdgeInsets())
         .listRowSeparator(.hidden)
         .listRowBackground(Color.clear)
+    }
+
+    private func edgeShadow(from edge: UnitPoint) -> some View {
+        LinearGradient(
+            colors: [Color.black.opacity(0.14), .clear],
+            startPoint: edge,
+            endPoint: edge == .leading ? .trailing : .leading
+        )
+        .frame(width: Self.shadowWidth)
+        .allowsHitTesting(false)
     }
 }
 
