@@ -63,6 +63,7 @@ struct AccountView: View {
     @Environment(AssistantRecipeContext.self) private var assistantRecipeContext
     @Environment(\.mobileTimerPanelIsCollapsed) private var mobileTimerPanelIsCollapsed
     @Environment(\.locale) private var locale
+    @Environment(\.openURL) private var openURL
     @Environment(OfflineBannerGate.self) private var offlineGate
     @Environment(ReleaseNotesStore.self) private var releaseNotes
 
@@ -868,6 +869,16 @@ struct AccountView: View {
                     .appBody()
             }
             .accessibilityIdentifier(AccessibilityIdentifiers.accountFeedbackMenu)
+
+            Button {
+                openURL(PublicURLBuilder.appStoreWriteReviewURL)
+            } label: {
+                Text("account.rate-app")
+                    .appBody()
+                    .foregroundStyle(.tint)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .accessibilityIdentifier(AccessibilityIdentifiers.accountRateApp)
 
             Button {
                 presentedSheet = .about

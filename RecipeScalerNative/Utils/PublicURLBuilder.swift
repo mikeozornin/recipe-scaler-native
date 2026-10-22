@@ -41,6 +41,11 @@ enum PublicURLBuilder {
         URL(string: "\(Config.baseURL)/#/privacy?lang=\(AppLanguagePreference.current.rawValue)")!
     }
 
+    /// The App Store page of the app with the "Write a Review" sheet open (profile, under "Share your feedback").
+    static let appStoreWriteReviewURL = URL(
+        string: "https://apps.apple.com/app/id6798054474?action=write-review"
+    )!
+
     /// Apple's Standard EULA used as the app Terms of Use (App Store Connect
     /// License Agreement selects the standard license). Required next to the
     /// purchase flow per guideline 3.1.2(c).

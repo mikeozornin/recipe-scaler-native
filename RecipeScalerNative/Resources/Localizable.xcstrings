@@ -2489,6 +2489,22 @@
         }
       }
     },
+    "account.rate-app": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rate the app"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поставить оценку"
+          }
+        }
+      }
+    },
     "account.language.en": {
       "extractionState": "stale",
       "localizations": {

@@ -104,6 +104,7 @@ enum AccessibilityIdentifiers {
     static let accountTipsTermsLink = "account_tips_terms_link"
     static let accountTipsPrivacyLink = "account_tips_privacy_link"
     static let accountFeedbackMenu = "account_feedback_menu"
+    static let accountRateApp = "account_rate_app"
     static let accountFeedbackEditor = "account_feedback_editor"
     static let accountFeedbackAttach = "account_feedback_attach"
     static let accountFeedbackSend = "account_feedback_send"

@@ -330,6 +330,7 @@ final class LocalizationConsistencyTests: XCTestCase {
             "account.feedback.rate-limited",
             "account.feedback.invalid",
             "account.feedback.too-large",
+            "account.rate-app",
             // MARK: Spec 031 — Socket.IO sync_error (SyncErrorCode)
             "sync.error.ownership",
             "sync.error.recipe-deleted",
