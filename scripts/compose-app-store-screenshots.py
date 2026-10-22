@@ -71,7 +71,9 @@ def slide_html(slide: dict[str, Any], locale: str, raw_root: Path, screens: str)
     body = [f'<p class="caption">{esc(slide["title"][locale])}</p>']
     if slide.get("layout") == "ios":
         for key, capture in slide["captures"].items():
-            src = capture_path(raw_root, screens, capture).as_uri()
+            # "captureScreens" pins a tile to one capture locale (the widget is shot in en only).
+            tile_screens = slide.get("captureScreens", {}).get(key, screens)
+            src = capture_path(raw_root, tile_screens, capture).as_uri()
             body.append(f'<div class="tile {key}"><img src="{src}"></div>')
         for key, label in slide["labels"].items():
             body.append(f'<p class="label {key}">{esc(label[locale])}</p>')

@@ -153,7 +153,7 @@ python3 scripts/compose-app-store-screenshots.py --locale en --slide 2-cooking
 python3 scripts/compose-app-store-screenshots.py --raw-root ../recipe-scaler-native/store/screenshots
 ```
 
-Выход: `store/screenshots/final/iphone-6.5/{ru,en}/<id>.png`, `1284×2778` (как экспорт Фигмы 3×; слот iPhone 6.5″), без альфа-канала; скрипт проверяет размер. Тексты `en` идут и в `en-GB`, и в `en-US`. `screens` в `slides.json` задаёт, кадры какой локали стоят на слайдах: как в Фигме, на русских слайдах английский интерфейс (`"ru": "en"`). Слайд 6 берёт `en/light/08-push`, `06-widget` и `07-live-activity`; вырезки (`.tile.* img` в `style.css`) подогнаны под кадры из Фигмы — если пересняли эти кадры, сверьте их. PNG в git не коммитим.
+Выход: `store/screenshots/final/iphone-6.5/{ru,en}/<id>.png`, `1284×2778` (как экспорт Фигмы 3×; слот iPhone 6.5″), без альфа-канала; скрипт проверяет размер. Тексты `en` идут и в `en-GB`, и в `en-US`. `screens` в `slides.json` задаёт, кадры какой локали стоят на слайдах: на русских слайдах русский интерфейс (`"ru": "ru"`). Слайд 6 берёт `light/08-push` и `07-live-activity` своей локали, а виджет в обеих локалях — из `en/light/06-widget` (`captureScreens`): русский кадр виджета не снят. Вырезки (`.tile.* img` в `style.css`) подогнаны под кадры iPhone Air `1260×2736` — если пересняли эти кадры, сверьте их. PNG в git не коммитим.
 
 ## Загрузка в App Store Connect
 

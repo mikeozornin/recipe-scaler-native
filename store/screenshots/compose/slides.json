@@ -1,6 +1,6 @@
 {
   "canvas": { "width": 428, "height": 926, "scale": 3 },
-  "screens": { "en": "en", "ru": "en" },
+  "screens": { "en": "en", "ru": "ru" },
   "slides": [
     {
       "id": "1-recipes",
@@ -56,6 +56,7 @@
         "widget": "light/06-widget",
         "live": "light/07-live-activity"
       },
+      "captureScreens": { "widget": "en" },
       "title": {
         "en": "Deep iOS integration",
         "ru": "Все возможности iOS"
@@ -66,7 +67,7 @@
         "live": { "en": "Live Activities and Dynamic Island", "ru": "Live Activities и Dynamic Island" },
         "more": {
           "en": "And more: Spotlight search, Siri, Share menu, watchOS app",
-          "ru": "И\u00a0еще: Spotlight, Siri, меню «Поделиться» приложение для часов"
+          "ru": "И\u00a0еще: Spotlight, Siri, меню «Поделиться», приложение для часов"
         }
       }
     }
