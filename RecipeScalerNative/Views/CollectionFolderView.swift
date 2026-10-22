@@ -461,22 +461,29 @@ struct CollectionFolderView: View {
     private enum ListItem: Identifiable, Equatable {
         case pinnedHeader
         case unpinnedHeader
+        /// The strip of pinned cards (outside search: search rows keep the highlight).
+        case pinnedCards([RecipeRowData])
         case recipe(RecipeRowData)
 
         var id: String {
             switch self {
             case .pinnedHeader: return "__section_pinned"
             case .unpinnedHeader: return "__section_unpinned"
+            case .pinnedCards: return "__pinned_cards"
             case .recipe(let row): return row.id
             }
         }
     }
 
-    private static func listItems(_ rows: RecipeListRowItems) -> [ListItem] {
+    private static func listItems(_ rows: RecipeListRowItems, pinnedAsCards: Bool) -> [ListItem] {
         var items: [ListItem] = []
         if !rows.pinned.isEmpty {
             items.append(.pinnedHeader)
-            items.append(contentsOf: rows.pinned.map(ListItem.recipe))
+            if pinnedAsCards {
+                items.append(.pinnedCards(rows.pinned))
+            } else {
+                items.append(contentsOf: rows.pinned.map(ListItem.recipe))
+            }
         }
         if !rows.unpinned.isEmpty {
             if !rows.pinned.isEmpty {
@@ -501,7 +508,7 @@ struct CollectionFolderView: View {
     @ViewBuilder
     private func recipeRowsWithHeaders(_ rows: RecipeListRowItems) -> some View {
         let folderIds = folderIdsByRecipeId
-        ForEach(Self.listItems(rows)) { listItem in
+        ForEach(Self.listItems(rows, pinnedAsCards: !isSearching)) { listItem in
             switch listItem {
             case .pinnedHeader:
                 RecipeListSectionHeader(isPinnedSection: true)
@@ -509,19 +516,47 @@ struct CollectionFolderView: View {
             case .unpinnedHeader:
                 RecipeListSectionHeader(isPinnedSection: false)
                     .recipeListSectionHeaderRow()
+            case .pinnedCards(let items):
+                PinnedRecipeCardsRow(items: items) { item in
+                    pinnedCard(for: item, recipeFolderIds: folderIds[item.id])
+                }
             case .recipe(let item):
                 recipeRowView(for: item, recipeFolderIds: folderIds[item.id])
             }
         }
     }
 
-    @ViewBuilder
-    private func recipeRowView(for item: RecipeRowData, recipeFolderIds: [String]?) -> some View {
-        let folderContext = RecipeFolderRoutes.shouldUseFolderRecipePath(
+    private func folderContext(recipeFolderIds: [String]?) -> String? {
+        RecipeFolderRoutes.shouldUseFolderRecipePath(
             activeFolderId: folderId,
             viewMode: .collections,
             recipeFolderIds: recipeFolderIds
         ) ? folderId : nil
+    }
+
+    private func pinnedCard(for item: RecipeRowData, recipeFolderIds: [String]?) -> some View {
+        let folderContext = folderContext(recipeFolderIds: recipeFolderIds)
+        return PinnedRecipeCardMenu(
+            data: item,
+            allowsNetworkRefresh: allowsImageNetworkRefresh,
+            isSelected: column?.selectedRecipeId == item.id,
+            open: {
+                if let column {
+                    column.selectRecipe(item.id, folderContext, false)
+                } else {
+                    navigationPath.append(RecipesRoute.recipe(recipeId: item.id, folderContext: folderContext))
+                }
+            },
+            togglePin: { Task { await togglePin(for: item) } },
+            assignToCollection: { presentedSheet = .assign(recipeId: item.id, recipeName: item.displayName) },
+            addToShopping: { Task { await addRecipeToShopping(item) } },
+            delete: { presentedAlert = .deleteRecipe(item) }
+        )
+    }
+
+    @ViewBuilder
+    private func recipeRowView(for item: RecipeRowData, recipeFolderIds: [String]?) -> some View {
+        let folderContext = folderContext(recipeFolderIds: recipeFolderIds)
         let route = RecipesRoute.recipe(recipeId: item.id, folderContext: folderContext)
         let isSelected = column?.selectedRecipeId == item.id
         ZStack(alignment: .leading) {

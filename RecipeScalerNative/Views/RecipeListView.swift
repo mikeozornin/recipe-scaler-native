@@ -244,7 +244,12 @@ struct RecipeListView: View {
                             RecipeListSectionHeader(isPinnedSection: true)
                                 .recipeListSectionHeaderRow()
 
-                            recipeRows(rows.pinned)
+                            if isSearching {
+                                // Rows keep the match highlight and snippet.
+                                recipeRows(rows.pinned)
+                            } else {
+                                pinnedCards(rows.pinned)
+                            }
                         }
 
                         if !rows.unpinned.isEmpty {
@@ -581,6 +586,27 @@ struct RecipeListView: View {
         }
     }
 
+    private func pinnedCards(_ items: [RecipeRowData]) -> some View {
+        PinnedRecipeCardsRow(items: items) { item in
+            PinnedRecipeCardMenu(
+                data: item,
+                allowsNetworkRefresh: allowsImageNetworkRefresh,
+                isSelected: column?.selectedRecipeId == item.id,
+                open: {
+                    if let column {
+                        column.selectRecipe(item.id, nil, false)
+                    } else {
+                        navigationPath.append(RecipesRoute.recipe(recipeId: item.id, folderContext: nil))
+                    }
+                },
+                togglePin: { Task { await togglePin(for: item) } },
+                assignToCollection: { presentedSheet = .assign(recipeId: item.id, recipeName: item.displayName) },
+                addToShopping: { Task { await addRecipeToShopping(item) } },
+                delete: { presentedAlert = .deleteRecipe(item) }
+            )
+        }
+    }
+
     @ViewBuilder
     private func recipeRows(_ items: [RecipeRowData]) -> some View {
         ForEach(items) { item in
@@ -786,6 +812,132 @@ extension View {
             )
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
+    }
+}
+
+// MARK: - Pinned cards (internal — shared with CollectionFolderView)
+
+/// Pinned recipes as a horizontal strip of cover cards (Scrapp's pinned tags).
+/// The list row of the strip: edge-to-edge, so cards scroll under the insets.
+/// A plain `HStack`: a lazy one sizes the row by the cards measured first and clips taller titles.
+struct PinnedRecipeCardsRow<Card: View>: View {
+    let items: [RecipeRowData]
+    @ViewBuilder let card: (RecipeRowData) -> Card
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: PinnedRecipeCard.spacing) {
+                ForEach(items) { item in
+                    card(item)
+                }
+            }
+            .padding(.horizontal, RecipeRowLayoutMetrics.listHorizontalInset)
+            .padding(.top, 8)
+        }
+        .listRowInsets(EdgeInsets())
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+    }
+}
+
+/// One card: a tap opens the recipe, a long press shows its menu. A `Menu`, not `.contextMenu`:
+/// a `List` row gives every card in it the context menu of the first card.
+struct PinnedRecipeCardMenu: View {
+    let data: RecipeRowData
+    var allowsNetworkRefresh = true
+    var isSelected = false
+    let open: () -> Void
+    let togglePin: () -> Void
+    let assignToCollection: () -> Void
+    let addToShopping: () -> Void
+    let delete: () -> Void
+
+    var body: some View {
+        Menu {
+            RecipeRowMenuItems(
+                isPinned: data.isPinned,
+                togglePin: togglePin,
+                assignToCollection: assignToCollection,
+                addToShopping: addToShopping,
+                delete: delete
+            )
+        } label: {
+            PinnedRecipeCard(data: data, allowsNetworkRefresh: allowsNetworkRefresh, isSelected: isSelected)
+        } primaryAction: {
+            open()
+        }
+        .menuOrder(.fixed)
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(AccessibilityIdentifiers.recipeRow(id: data.id))
+    }
+}
+
+/// Square cover (photo, else the recipe color with its emoji) and the title under it.
+struct PinnedRecipeCard: View {
+    let data: RecipeRowData
+    var allowsNetworkRefresh = true
+    /// The open recipe of the iPad list column: accent ring around the cover.
+    var isSelected = false
+
+    static let side: CGFloat = 112
+    static let spacing: CGFloat = 12
+    private static let cornerRadius: CGFloat = 12
+    private static let emojiFontSize: CGFloat = 40
+
+    private var titleText: String {
+        let trimmed = data.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? Bundle.currentLocalizedString("recipe.list.no-title") : trimmed
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            cover
+                .frame(width: Self.side, height: Self.side)
+                .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
+                .overlay {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
+                            .strokeBorder(Color.accentColor, lineWidth: 3)
+                    }
+                }
+
+            Text(titleText)
+                .font(AppTypography.footnoteSemibold)
+                .lineSpacing(AppTypography.footnoteLineSpacing)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(width: Self.side, alignment: .leading)
+        .padding(.bottom, 4)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    @ViewBuilder
+    private var cover: some View {
+        if data.hasThumbnail {
+            Color(.secondarySystemFill)
+                .overlay {
+                    RecipeCachedImageView(
+                        recipeId: data.id,
+                        imageUrl: data.imageUrl,
+                        variant: .full,
+                        allowsNetworkRefresh: allowsNetworkRefresh
+                    )
+                }
+                .clipped()
+        } else {
+            RecipeAccentColor.color(from: data.color ?? "oklch(0.65 0.25 270)")
+                .opacity(0.25)
+                .overlay {
+                    if let emoji = data.leadingEmoji {
+                        Text(emoji)
+                            .font(.system(size: Self.emojiFontSize))
+                    }
+                }
+        }
     }
 }
 

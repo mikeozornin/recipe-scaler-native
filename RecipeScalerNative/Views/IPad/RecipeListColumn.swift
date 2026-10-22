@@ -168,25 +168,44 @@ struct RecipeRowContextMenu: ViewModifier {
     func body(content: Content) -> some View {
         if layoutMode == .padRegular {
             content.contextMenu {
-                Button(action: togglePin) {
-                    AppLabel.make(
-                        isPinned ? "recipe.list.unpin" : "recipe.list.pin",
-                        symbol: isPinned ? "pin.slash" : "pin"
-                    )
-                }
-                Button(action: assignToCollection) {
-                    AppLabel.make("ipad.recipe.context.add-to-collection", symbol: "folder.badge.plus")
-                }
-                Button(action: addToShopping) {
-                    AppLabel.make("shopping.detail-add-all", symbol: "cart.badge.plus")
-                }
-                Divider()
-                Button(role: .destructive, action: delete) {
-                    AppLabel.make("recipe.list.delete", symbol: "trash")
-                }
+                RecipeRowMenuItems(
+                    isPinned: isPinned,
+                    togglePin: togglePin,
+                    assignToCollection: assignToCollection,
+                    addToShopping: addToShopping,
+                    delete: delete
+                )
             }
         } else {
             content
+        }
+    }
+}
+
+/// Items of the recipe row menu; also the long-press menu of a pinned card.
+struct RecipeRowMenuItems: View {
+    let isPinned: Bool
+    let togglePin: () -> Void
+    let assignToCollection: () -> Void
+    let addToShopping: () -> Void
+    let delete: () -> Void
+
+    var body: some View {
+        Button(action: togglePin) {
+            AppLabel.make(
+                isPinned ? "recipe.list.unpin" : "recipe.list.pin",
+                symbol: isPinned ? "pin.slash" : "pin"
+            )
+        }
+        Button(action: assignToCollection) {
+            AppLabel.make("ipad.recipe.context.add-to-collection", symbol: "folder.badge.plus")
+        }
+        Button(action: addToShopping) {
+            AppLabel.make("shopping.detail-add-all", symbol: "cart.badge.plus")
+        }
+        Divider()
+        Button(role: .destructive, action: delete) {
+            AppLabel.make("recipe.list.delete", symbol: "trash")
         }
     }
 }
