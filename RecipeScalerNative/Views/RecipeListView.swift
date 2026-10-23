@@ -821,18 +821,25 @@ extension View {
 /// The list row of the strip: edge-to-edge, so cards scroll under the insets.
 /// A plain `HStack`: a lazy one sizes the row by the cards measured first and clips taller titles.
 /// Card size follows the strip width so the last visible card is cut by the edge: the strip reads as scrollable.
-/// Each card takes its side from the strip width in the layout pass (`containerRelativeFrame`), not from a measured
-/// `@State`: the first frame already has the final size, so the cards do not spread apart on launch.
+/// Until the strip is measured its width is estimated (the iPad list column, else the key window inside its safe
+/// area), so the first frame already has the final card size and the cards do not spread apart on launch.
 /// An inner shadow marks each edge with cards beyond it.
 struct PinnedRecipeCardsRow<Card: View>: View {
     let items: [RecipeRowData]
     @ViewBuilder let card: (RecipeRowData) -> Card
 
-    @State private var width: CGFloat = 0
+    @Environment(\.pinnedRecipeStripWidthHint) private var widthHint
+    @State private var measuredWidth: CGFloat?
     /// Content frame in the scroll view's visible space: `minX < 0` once scrolled, `maxX > width` while cards remain.
     @State private var contentFrame: CGRect = .zero
 
     private static var shadowWidth: CGFloat { 12 }
+
+    private var width: CGFloat {
+        if let measuredWidth { return measuredWidth }
+        if let widthHint, widthHint > 0 { return widthHint }
+        return Self.keyWindowContentWidth() ?? 0
+    }
 
     private var hasCardsBefore: Bool { contentFrame.minX < -1 }
     private var hasCardsAfter: Bool { contentFrame.maxX > width + 1 }
@@ -848,7 +855,7 @@ struct PinnedRecipeCardsRow<Card: View>: View {
             .padding(.top, 8)
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .scrollView) } action: { contentFrame = $0 }
         }
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { measuredWidth = $0 }
         // The animations sit on the shadows alone: on the strip they would also animate the cards' layout.
         .overlay(alignment: .leading) {
             edgeShadow(from: .leading)
@@ -860,6 +867,7 @@ struct PinnedRecipeCardsRow<Card: View>: View {
                 .opacity(hasCardsAfter ? 1 : 0)
                 .animation(.easeOut(duration: 0.15), value: hasCardsAfter)
         }
+        .environment(\.pinnedRecipeCardSide, PinnedRecipeCard.side(forStripWidth: width))
         .listRowInsets(EdgeInsets())
         .listRowSeparator(.hidden)
         .listRowBackground(Color.clear)
@@ -873,6 +881,14 @@ struct PinnedRecipeCardsRow<Card: View>: View {
         )
         .frame(width: Self.shadowWidth)
         .allowsHitTesting(false)
+    }
+
+    /// The phone list spans the key window inside its safe area.
+    private static func keyWindowContentWidth() -> CGFloat? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+        guard let window = scene?.windows.first(where: \.isKeyWindow) ?? scene?.windows.first else { return nil }
+        return window.bounds.width - window.safeAreaInsets.left - window.safeAreaInsets.right
     }
 }
 
@@ -915,6 +931,8 @@ struct PinnedRecipeCard: View {
     /// The open recipe of the iPad list column: accent ring around the cover.
     var isSelected = false
 
+    @Environment(\.pinnedRecipeCardSide) private var side
+
     static let preferredSide: CGFloat = 112
     static let spacing: CGFloat = 12
     /// Visible part of the card cut by the trailing edge.
@@ -938,8 +956,9 @@ struct PinnedRecipeCard: View {
     }
 
     var body: some View {
-        PinnedRecipeCardLayout(spacing: 6) {
+        VStack(alignment: .leading, spacing: 6) {
             cover
+                .frame(width: side, height: side)
                 .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
                 .overlay {
                     if isSelected {
@@ -955,9 +974,7 @@ struct PinnedRecipeCard: View {
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .containerRelativeFrame(.horizontal, alignment: .leading) { length, _ in
-            Self.side(forStripWidth: length)
-        }
+        .frame(width: side, alignment: .leading)
         .padding(.bottom, 4)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
@@ -990,25 +1007,13 @@ struct PinnedRecipeCard: View {
     }
 }
 
-/// The cover as a square as wide as the proposal, the title under it at the same width.
-/// The height proposal plays no part, so the card keeps its shape whatever height the strip offers.
-private struct PinnedRecipeCardLayout: Layout {
-    let spacing: CGFloat
+private extension EnvironmentValues {
+    @Entry var pinnedRecipeCardSide: CGFloat = PinnedRecipeCard.preferredSide
+}
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let side = proposal.width ?? PinnedRecipeCard.preferredSide
-        let titleHeight = subviews[1].sizeThatFits(ProposedViewSize(width: side, height: nil)).height
-        return CGSize(width: side, height: side + spacing + titleHeight)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let side = bounds.width
-        subviews[0].place(at: bounds.origin, proposal: ProposedViewSize(width: side, height: side))
-        subviews[1].place(
-            at: CGPoint(x: bounds.minX, y: bounds.minY + side + spacing),
-            proposal: ProposedViewSize(width: side, height: nil)
-        )
-    }
+extension EnvironmentValues {
+    /// Width the pinned strip will get, known before it is measured: the iPad list column or phone stack.
+    @Entry var pinnedRecipeStripWidthHint: CGFloat? = nil
 }
 
 // MARK: - Row marker slot (emoji or color dot in one frame)

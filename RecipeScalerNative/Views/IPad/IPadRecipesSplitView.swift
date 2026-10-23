@@ -87,6 +87,7 @@ struct IPadRecipesSplitView: View {
                     pushStack
                 }
             }
+            .environment(\.pinnedRecipeStripWidthHint, layout.splitFits ? layout.listWidth : proxy.size.width)
             .onChange(of: layout.splitFits, initial: true) { _, fits in
                 // Too narrow for the list beside the recipe (push): nothing to expand any
                 // more, so the recipe collapses and the sidebar it hid comes back.
