@@ -821,6 +821,8 @@ extension View {
 /// The list row of the strip: edge-to-edge, so cards scroll under the insets.
 /// A plain `HStack`: a lazy one sizes the row by the cards measured first and clips taller titles.
 /// Card size follows the strip width so the last visible card is cut by the edge: the strip reads as scrollable.
+/// Each card takes its side from the strip width in the layout pass (`containerRelativeFrame`), not from a measured
+/// `@State`: the first frame already has the final size, so the cards do not spread apart on launch.
 /// An inner shadow marks each edge with cards beyond it.
 struct PinnedRecipeCardsRow<Card: View>: View {
     let items: [RecipeRowData]
@@ -847,15 +849,17 @@ struct PinnedRecipeCardsRow<Card: View>: View {
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .scrollView) } action: { contentFrame = $0 }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        // The animations sit on the shadows alone: on the strip they would also animate the cards' layout.
         .overlay(alignment: .leading) {
-            edgeShadow(from: .leading).opacity(hasCardsBefore ? 1 : 0)
+            edgeShadow(from: .leading)
+                .opacity(hasCardsBefore ? 1 : 0)
+                .animation(.easeOut(duration: 0.15), value: hasCardsBefore)
         }
         .overlay(alignment: .trailing) {
-            edgeShadow(from: .trailing).opacity(hasCardsAfter ? 1 : 0)
+            edgeShadow(from: .trailing)
+                .opacity(hasCardsAfter ? 1 : 0)
+                .animation(.easeOut(duration: 0.15), value: hasCardsAfter)
         }
-        .animation(.easeOut(duration: 0.15), value: hasCardsBefore)
-        .animation(.easeOut(duration: 0.15), value: hasCardsAfter)
-        .environment(\.pinnedRecipeCardSide, PinnedRecipeCard.side(forStripWidth: width))
         .listRowInsets(EdgeInsets())
         .listRowSeparator(.hidden)
         .listRowBackground(Color.clear)
@@ -911,8 +915,6 @@ struct PinnedRecipeCard: View {
     /// The open recipe of the iPad list column: accent ring around the cover.
     var isSelected = false
 
-    @Environment(\.pinnedRecipeCardSide) private var side
-
     static let preferredSide: CGFloat = 112
     static let spacing: CGFloat = 12
     /// Visible part of the card cut by the trailing edge.
@@ -936,9 +938,8 @@ struct PinnedRecipeCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        PinnedRecipeCardLayout(spacing: 6) {
             cover
-                .frame(width: side, height: side)
                 .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
                 .overlay {
                     if isSelected {
@@ -954,7 +955,9 @@ struct PinnedRecipeCard: View {
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(width: side, alignment: .leading)
+        .containerRelativeFrame(.horizontal, alignment: .leading) { length, _ in
+            Self.side(forStripWidth: length)
+        }
         .padding(.bottom, 4)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
@@ -987,8 +990,25 @@ struct PinnedRecipeCard: View {
     }
 }
 
-private extension EnvironmentValues {
-    @Entry var pinnedRecipeCardSide: CGFloat = PinnedRecipeCard.preferredSide
+/// The cover as a square as wide as the proposal, the title under it at the same width.
+/// The height proposal plays no part, so the card keeps its shape whatever height the strip offers.
+private struct PinnedRecipeCardLayout: Layout {
+    let spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let side = proposal.width ?? PinnedRecipeCard.preferredSide
+        let titleHeight = subviews[1].sizeThatFits(ProposedViewSize(width: side, height: nil)).height
+        return CGSize(width: side, height: side + spacing + titleHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let side = bounds.width
+        subviews[0].place(at: bounds.origin, proposal: ProposedViewSize(width: side, height: side))
+        subviews[1].place(
+            at: CGPoint(x: bounds.minX, y: bounds.minY + side + spacing),
+            proposal: ProposedViewSize(width: side, height: nil)
+        )
+    }
 }
 
 // MARK: - Row marker slot (emoji or color dot in one frame)
