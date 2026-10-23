@@ -1060,10 +1060,14 @@ final class AssistantSessionModel {
         }
     }
 
-    /// Any URL-loading failure or a stream closed without a reply. Server error
-    /// events, HTTP statuses and validation errors are final answers.
+    /// Any URL-loading failure, a stream closed without a reply, or a proxy
+    /// gateway status (502/503/504) — the origin may still have the turn. Server
+    /// error events, other HTTP statuses and validation errors are final answers.
     private static func isTransportFailure(_ error: Error) -> Bool {
         if error is AssistantStreamInterruptedError || error is URLError {
+            return true
+        }
+        if case APIError.httpError(let statusCode) = error, (502...504).contains(statusCode) {
             return true
         }
         return (error as NSError).domain == NSURLErrorDomain

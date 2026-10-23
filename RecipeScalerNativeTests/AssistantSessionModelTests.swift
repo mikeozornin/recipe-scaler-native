@@ -539,6 +539,30 @@ final class AssistantSessionModelTests: XCTestCase {
         XCTAssertEqual(model.messages.last?.text, "Сними с огня и добавь воды")
     }
 
+    /// (b2) The edge proxy answers 504 while the origin keeps generating: a gateway
+    /// status is a broken stream too, so the saved reply shows instead of an error.
+    func testGatewayTimeoutRecoversSavedReply() async {
+        let backend = FakeAssistantBackend()
+        let model = backend.makeModel()
+        await openAndBootstrap(model, backend: backend)
+        backend.historyResponses = [
+            .success(Self.history([
+                Self.dto("srv-user-1", "user", "Собери корзину"),
+                Self.dto("srv-assistant-1", "assistant", "Корзина готова"),
+            ], inProgress: false)),
+        ]
+
+        model.input = "Собери корзину"
+        model.launchSend()
+        await waitUntil { backend.continuation != nil }
+        backend.continuation?.finish(throwing: APIError.httpError(statusCode: 504))
+        await waitUntil { !model.isSending }
+
+        XCTAssertEqual(model.messages.map(\.id), ["srv-user-1", "srv-assistant-1"])
+        XCTAssertEqual(model.input, "")
+        XCTAssertEqual(backend.streamCalls.count, 1, "nothing is resent")
+    }
+
     /// (c) The turn never reached the server: the error bubble and the restored draft,
     /// as before. An earlier identical question already in the chat is not our turn.
     func testRequestThatNeverArrivedShowsErrorAndRestoresInput() async {
